@@ -1516,7 +1516,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     //temporary code
     // res = XPUM_OK;
     response->set_deviceid(deviceId);
-    response->set_retcode(res);
+    //response->set_retcode(res);
     response->set_errorno(res);
     return grpc::Status::OK;
 }
@@ -2574,15 +2574,15 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     xpum_result_t res = xpumCreateVf(request->deviceid(), &config);
     if (res != XPUM_OK) {
         if (res == XPUM_VGPU_INVALID_LMEM) {
-            response->set_errormsg("Invalid VF local memory");
+            response->set_errormsg("Invalid virtual GPU local memory");
         } else if (res == XPUM_VGPU_INVALID_NUMVFS) {
-            response->set_errormsg("Invalid number of VFs");
+            response->set_errormsg("Invalid number of virtual GPUs");
         } else if (res == XPUM_VGPU_DIRTY_PF) {
-            response->set_errormsg("Please clear VFs first");
+            response->set_errormsg("Please clear virtual GPUs first");
         } else if (res == XPUM_VGPU_VF_UNSUPPORTED_OPERATION) {
-            response->set_errormsg("Do not creating VFs on VF device");
+            response->set_errormsg("Do not creating virtual GPUs on virtual device");
         } else if (res == XPUM_VGPU_CREATE_VF_FAILED) {
-            response->set_errormsg("Fail to create VF");
+            response->set_errormsg("Fail to create virtual GPUs");
         } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
             response->set_errormsg("vGPU configuration file doesn't exist");
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
@@ -2627,7 +2627,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     xpum_result_t res = xpumRemoveAllVf(request->deviceid());
     if (res != XPUM_OK) {
         if (res == XPUM_VGPU_REMOVE_VF_FAILED) {
-            response->set_errormsg("Fail to remove all VFs");
+            response->set_errormsg("Fail to remove all virtual GPUs");
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
             response->set_errormsg("Error in sysfs");
         } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {

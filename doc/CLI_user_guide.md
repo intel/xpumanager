@@ -1180,9 +1180,26 @@ Power/Performance Profile = Virtualization
  Integrated Devices -> SR-IOV Global Enable = Enabled  
  Processor Settings -> Virtualization Technology = Enabled  
  System Profile Settings -> System Profile = Performance  
+
+#### Supermicro SYS-620C-TN12R
+ Advanced -> Chipset Configuration -> NorthBridge -> IIO Configuration -> Intel VT for Directed I/O (VT-d) -> Enable  
+ Advanced -> Chipset Configuration -> NorthBridge -> IIO Configuration -> PCI-E ASPM Support (Global) -> No  
+ Advanced -> Chipset Configuration -> NorthBridge -> IIO Configuration -> IIO eDPC Support -> Disable  
+ Advanced -> PCIe/PCI/PnP Configuration -> Above 4G Decoding -> Enabled  
+ Advanced -> PCIe/PCI/PnP Configuration -> SR-IOV Support -> Enable  
+ Advanced -> PCIe/PCI/PnP Configuration -> ARI Support -> Enable  
+ Advanced -> PCIe/PCI/PnP Configuration -> MMCFG Base -> Auto  
+ Advanced -> PCIe/PCI/PnP Configuration -> MMIO High Base -> 32T  
+ Advanced -> PCIE/PCI/PnP Configuration -> MMIO High Granularity Size -> 1024G or 2048G  
+
+#### HPE ProLiant DL380 Gen10
+ Virtualization Options -> Intel(R) Virtualization Technology: Enabled  
+ Virtualization Options -> Intel(R) VT-d: Enabled  
+ Virtualization Options -> SR-IOV: Enabled  
   
 ### Add Linux kernel command line options
-After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
+After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added into the "GRUB_CMDLINE_LINUX" setting of the file, /etc/default/grub. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you update the grub file, please run the command like "update-grub" to set to kernel image and reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
+The command "sudo xpumcli vgpu --addkernelparam" can automatically add these kernel parameters. 
   
   
 ### Help info of GPU SR-IOV configuration feature. 
@@ -1192,6 +1209,7 @@ Create and remove virtual GPUs in SR-IOV configuration.
 
 Usage: xpumcli vgpu [Options]
  xpumcli vgpu --precheck
+ xpumcli vgpu --addkernelparam
  xpumcli vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]
  xpumcli vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]
  xpumcli vgpu -d [deviceId] -r
@@ -1204,11 +1222,12 @@ Options:
   -j,--json                   Print result in JSON format
 
   --precheck                  Check if BIOS settings and kernel command line options are ready to create virtual GPUs
+  --addkernelparam            Add the kernel command line parameters for the virtual GPUs
 
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
-  -n                          The number of virtual GPUs to create
-  --lmem                      The memory size of each virtual GPUs, in MiB
+  -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
+  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500
 
   -l,--list                   List all virtual GPUs on the specified physical GPU
 
@@ -1232,10 +1251,17 @@ Options:
 +------------------+-------------------------------------------------------------------------------+
 ```
  
+### Add the Linux kernel command line parameters for the virtual GPUs
+```
+sudo xpumcli vgpu --addkernelparam -y
+Do you want to add the required kernel command line parameters? (y/n) y
+Succeed in adding the required kernel command line parameters, "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. Please reboot OS to take effect. 
+```
+ 
 ### Create the virtual GPUs
 After all GPU SR-IOV pre-checks are passed, you may create the virtual GPUs
 ```
-sudo xpumcli vgpu -d 0 -c -n 4 --lmem 500M
+sudo xpumcli vgpu -d 0 -c -n 4 --lmem 500
 +--------------------------------------------------------------------------------------------------+
 | Device Information                                                                               |
 +--------------------------------------------------------------------------------------------------+
@@ -1292,12 +1318,24 @@ sudo xpumcli vgpu -d 0 -l
 ### Remove all the virtual GPUs on the specified GPU
 ```
 sudo xpumcli vgpu -d 0 -r
-CAUTION: we are removing all VFs on device 0, please make sure all VF-assigned virtual machines are shut down.
+CAUTION: we are removing all virtual GPUs on device 0, please make sure all vGPU-assigned virtual machines are shut down.
 Please confirm to proceed (y/n) y
 All virtual GPUs on the device 0 are removed.
 
 ```
+### The advanced configuration of virtual GPUs
+The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME "56c0N16" means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here is the detailed info of the virtual GPU settings. 
+ * VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication 
+ * VF_DOORBELLS: Number of doorbells per virtual GPU, used for KMD-GuC communication
+ * VF_GGTT: GGTT(Global Graphics Translation Table) size per virtual GPU, used for memory mapping, in bytes
+ * VF_EXEC_QUANT_MS: Denotes the amount of time that a particular virtual GPU will be allocated in the per vGPU time-slicing round-robin, in milliseconds
+ * VF_PREEMPT_TIMEOUT_US: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds 
+ * PF_EXEC_QUANT_MS: Denotes the amount of time that the physical GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds
+ * PF_PREEMPT_TIMEOUT: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds
+ * SCHED_IF_IDLE: 0: flexible scheduling, the virtual GPU will be allocated its time slice only if it has pending workload, and the time slice shifts to next virtual GPU when all workload submitted by current virtual GPU are completed. 1: strict scheduling, the virtual GPU will always be allocated its time slice even if it's idle. 
+ * DRIVERS_AUTOPROBE: Determines whether the newly enabled virtual GPUs are immediately bound to a driver, 0 or 1
+
 
 ### Limitations
- * XPU manager (in Host OS Linux) cannot discover and monitor a VF if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 VF was created, end users may understand VF utilizations by looking at metrics of PF. 
+ * XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand virtual GPU utilizations by looking at metrics of PF. 
  * XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available

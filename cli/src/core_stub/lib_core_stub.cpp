@@ -408,23 +408,24 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
             componentJson["finished"] = task_info.componentList[i].finished;
             componentJson["message"] = task_info.componentList[i].message;
             componentJson["result"] = diagnosticResultEnumToString(task_info.componentList[i].result);
-            if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE 
-                    && task_info.componentList[i].result == XPUM_DIAG_RESULT_FAIL) {
+            if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
                 uint32_t count = 0;
                 res = xpumGetDeviceProcessState(task_info.deviceId, nullptr, &count);
-                if (res == XPUM_OK && count > 0) {
-                    xpum_device_process_t dataArray[count];
-                    res = xpumGetDeviceProcessState(task_info.deviceId, dataArray, &count);
-                    if (res == XPUM_OK) {
-                        std::vector<nlohmann::json> processList;
-                        for (uint i{0}; i < count; ++i) {
-                            auto proc = nlohmann::json();
-                            proc["process_id"] = dataArray[i].processId;
-                            proc["process_name"] = dataArray[i].processName;
-                            if (proc["process_name"] != "")
-                                processList.push_back(proc);
+                if (res == XPUM_OK) {
+                    if (count > 1) {
+                        xpum_device_process_t dataArray[count];
+                        res = xpumGetDeviceProcessState(task_info.deviceId, dataArray, &count);
+                        if (res == XPUM_OK) {
+                            std::vector<nlohmann::json> processList;
+                            for (uint i{0}; i < count; ++i) {
+                                auto proc = nlohmann::json();
+                                proc["process_id"] = dataArray[i].processId;
+                                proc["process_name"] = dataArray[i].processName;
+                                if (proc["process_name"] != "")
+                                    processList.push_back(proc);
+                            }
+                            componentJson["process_list"] = processList;
                         }
-                        componentJson["process_list"] = processList;
                     }
                 } else {
                     switch (res) {
@@ -1715,15 +1716,15 @@ std::unique_ptr<nlohmann::json> LibCoreStub::createVf(int deviceId, uint32_t num
     xpum_result_t res = xpumCreateVf(deviceId, &config);
     if (res != XPUM_OK) {
         if (res == XPUM_VGPU_INVALID_LMEM) {
-            (*json)["error"] = "Invalid VF local memory";
+            (*json)["error"] = "Invalid virtual GPU local memory";
         } else if (res == XPUM_VGPU_INVALID_NUMVFS) {
-            (*json)["error"] = "Invalid number of VFs";
+            (*json)["error"] = "Invalid number of virtual GPUs";
         } else if (res == XPUM_VGPU_DIRTY_PF) {
-            (*json)["error"] = "Please clear VFs first";
+            (*json)["error"] = "Please clear virtual GPUs first";
         } else if (res == XPUM_VGPU_VF_UNSUPPORTED_OPERATION) {
-            (*json)["error"] = "Do not creating VFs on VF device";
+            (*json)["error"] = "Do not creating virtual GPUs on virtual device";
         } else if (res == XPUM_VGPU_CREATE_VF_FAILED) {
-            (*json)["error"] = "Fail to create VF";
+            (*json)["error"] = "Fail to create virtual GPUs";
         } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
             (*json)["error"] = "vGPU configuration file doesn't exist";
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
@@ -1774,7 +1775,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::removeAllVf(int deviceId) {
         (*json)["status"] = "OK";
     } else {
         if (res == XPUM_VGPU_REMOVE_VF_FAILED) {
-            (*json)["error"] = "Fail to remove all VFs";
+            (*json)["error"] = "Fail to remove all virtual GPUs";
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
             (*json)["error"] = "Error in sysfs";
         } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {

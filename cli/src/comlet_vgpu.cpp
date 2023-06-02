@@ -91,7 +91,6 @@ ComletVgpu::ComletVgpu() : ComletBase("vgpu",
 
 void ComletVgpu::setupOptions() {
     this->opts = std::unique_ptr<ComletVgpuOptions>(new ComletVgpuOptions());
-    auto precheckFlag = addFlag("--precheck", this->opts->precheck, "Check if BIOS settings are ready to create virtual GPUs");
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID or PCI BDF address");
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be a non-negative integer or a BDF string";
@@ -102,15 +101,16 @@ void ComletVgpu::setupOptions() {
         }
         return errStr;
     });
+    auto kernFlag = addFlag("--addkernelparam", this->opts->kern, "Add the kernel command line parameters for the virtual GPUs");
+    auto precheckFlag = addFlag("--precheck", this->opts->precheck, "Check if BIOS settings are ready to create virtual GPUs");
     auto createFlag = addFlag("-c,--create", this->opts->create, "Create the virtual GPUs");
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
-    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPU, such as 500M");
+    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB. For example, --lmem 500.");
     lmemOpt->check([](const std::string &str) {
-        std::string errStr = "Invalid lmem format";
-        return std::regex_match(str, std::regex("[0-9]+M[B]{0,1}")) ? "" : "Invalid lmem format";
+        return std::regex_match(str, std::regex("^[0-9]+[M]{0,1}$")) ? "" : "Invalid lmem format";
     });
-    auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
+    auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     addFlag("-y, --assumeyes", opts->assumeYes, "Assume that the answer to any question which would be asked is yes");
 
     /*
@@ -134,10 +134,17 @@ void ComletVgpu::setupOptions() {
     removeFlag->excludes(numVfsOpt);
     removeFlag->excludes(lmemOpt);
     removeFlag->needs(deviceIdOpt);
+    kernFlag->excludes(precheckFlag);
+    kernFlag->excludes(createFlag);
+    kernFlag->excludes(listFlag);
+    kernFlag->excludes(removeFlag);
+    kernFlag->excludes(deviceIdOpt);
+    kernFlag->excludes(numVfsOpt);
+    kernFlag->excludes(lmemOpt);
 }
 
 std::unique_ptr<nlohmann::json> ComletVgpu::run() {
-    std::unique_ptr<nlohmann::json> json;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     int targetId = -1;
     if (isValidDeviceId(this->opts->deviceId)) {
         targetId = std::stoi(this->opts->deviceId);
@@ -148,54 +155,74 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
         }
     }
 
-    if (this->opts->precheck) {
-        json = this->coreStub->doVgpuPrecheck();
-    } else if (this->opts->create) {
-        /*
-         *  Do precheck first, if failed, stop creating VFs.
-         */
+    /*
+     *  Do precheck first, if failed, stop creating/listing/removing VFs.
+     */
+    if (this->opts->create || this->opts->list || this->opts->remove) {
         json = this->coreStub->doVgpuPrecheck();
         if (json->contains("iommu_status") && (*json)["iommu_status"].get<std::string>().compare("Pass") == 0
             && json->contains("sriov_status") && (*json)["sriov_status"].get<std::string>().compare("Pass") == 0
             && json->contains("vmx_flag") && (*json)["vmx_flag"].get<std::string>().compare("Pass") == 0
         ) {
             this->precheckPassFlag = true;
-            uint64_t lmemMb = 0;
-            sscanf(this->opts->lmemPerVf.c_str(), "%luM", &lmemMb);
-            json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
-            if (json->contains("error")) {
-                return json;
-            }
-            json = this->coreStub->getDeviceFunction(targetId);
         } else {
             this->precheckPassFlag = false;
             return json;
         }
+    }
+
+    if (this->opts->precheck) {
+        json = this->coreStub->doVgpuPrecheck();
+    } else if (this->opts->create) {
+        uint64_t lmemMb = 0;
+        try {
+            lmemMb = std::stoul(std::regex_replace(this->opts->lmemPerVf, std::regex("[^0-9]"), ""));
+        } catch (std::exception &e) {
+            (*json)["error"] = "Bad lmem argument";
+            (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+            return json;
+        }
+        json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
+        if (json->contains("error")) {
+            return json;
+        }
+        json = this->coreStub->getDeviceFunction(targetId);
     } else if (this->opts->list) {
         json = this->coreStub->getDeviceFunction(targetId);
-        return json;
     } else if (this->opts->remove) {
         json = this->coreStub->removeAllVf(targetId);
-        return json;
+    } else if (this->opts->kern) {
+        json = addKernelParam();
+    } else {
+        (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
+        (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     }
     return json;
 }
 
 void ComletVgpu::getTableResult(std::ostream &out) {
     /*
-     *  Warning message for vgpu remove
+     *  Warning message for vgpu remove and addkernelparam
      */
     if (this->opts->remove) {
-        std::cout << "CAUTION: we are removing all VFs on device "
-            << this->opts->deviceId
-            << ", please make sure all VF-assigned virtual machines are shut down."
-            << std::endl;
-        std::cout << "Please confirm to proceed (y/n) ";
+        std::cout << "Do you want to remove all virtual GPUs? (y/n)";
         if (!opts->assumeYes) {
             std::string confirm;
             std::cin >> confirm;
             if (confirm != "Y" && confirm != "y") {
-                out << "Remove VFs aborted" << std::endl;
+                out << "Remove virtual GPUs aborted" << std::endl;
+                return;
+            }
+        } else {
+            out << std::endl;
+        }
+    } else if (this->opts->kern) {
+        std::cout << "Do you want to add the required kernel command line parameters? (y/n) ";
+        if (!opts->assumeYes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "Add kernel parameters aborted" << std::endl;
                 return;
             }
         } else {
@@ -232,7 +259,7 @@ void ComletVgpu::getTableResult(std::ostream &out) {
     if (this->opts->precheck) {
         CharTable table(precheckTableConfig, *res);
         table.show(out);
-    } else if (this->opts->create) {
+    } else if (this->opts->create || this->opts->list) {
         /*
          *  If precheck failed, show precheck table
          */
@@ -247,12 +274,20 @@ void ComletVgpu::getTableResult(std::ostream &out) {
          */
         CharTable table(isAutoprobeEnabled ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
         table.show(out);
-    } else if (this->opts->list) {
-        CharTable table(isAutoprobeEnabled ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
-        table.show(out);
     } else if (this->opts->remove) {
+        if (!this->precheckPassFlag) {
+            CharTable table(precheckTableConfig, *res);
+            table.show(out);
+            return;
+        }
         out << "All virtual GPUs on the device " << this->opts->deviceId << " are removed." << std::endl;
+    } else if (this->opts->kern) {
+        out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
     }
+}
+
+bool ComletVgpu::isAddKernelParam() {
+    return this->opts->kern;
 }
 
 } // end namespace xpum::cli

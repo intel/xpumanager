@@ -20,6 +20,7 @@ struct ComletVgpuOptions {
     bool create = false;
     bool remove = false;
     bool list = false;
+    bool kern = false;
     bool assumeYes = false;
     int32_t numVfs = 0;
     std::string lmemPerVf = "";
@@ -33,6 +34,7 @@ class ComletVgpu: public ComletBase {
         virtual void setupOptions() override;
         virtual std::unique_ptr<nlohmann::json> run() override;
         virtual void getTableResult(std::ostream &out) override;
+        bool isAddKernelParam();
        
     private:
 

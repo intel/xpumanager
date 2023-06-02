@@ -93,7 +93,8 @@ if(NOT DAEMONLESS) # Build xpumcli
   target_sources(
     xpumcli
     PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC} ${XPUM_CLI_GRPC_STUB_SRC}
-    ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
+    ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/device_model.cpp)
   
   target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} igsc ${CMAKE_DL_LIBS})
   

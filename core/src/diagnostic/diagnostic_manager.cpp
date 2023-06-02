@@ -796,8 +796,8 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
         XPUM_LOG_DEBUG("process pid : {}, process name : {}", process.processId, command_name_str);
     }
     if (process_count > 1) {
-        component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Fail to check the software exclusive. " + std::to_string(process_count) + " processses are using the device.";
+        component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+        std::string desc = "Warning: " + std::to_string(process_count) + " processses are using the device.";
         updateMessage(component4.message, desc);
     } else {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;

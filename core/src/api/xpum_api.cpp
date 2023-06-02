@@ -27,6 +27,7 @@
 #include "device/device.h"
 #include "device/memoryEcc.h"
 #include "device/power.h"
+#include "device/amcInBand.h"
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_process.h"
@@ -893,6 +894,30 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 xpum_device_internal_property_name_t name = prop.getName();
                 prop_map[name] = prop;
             }
+
+            {
+                //sku type
+                if (prop_map[
+                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
+                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
+                    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+                    std::string value = pchProdStateToSkuType(getDevicePchProdStateType(device->getMeiDevicePath()));
+                    prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE].setValue(std::string(value));
+                }
+                //amc version for pvc
+                if(prop_map[
+                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
+                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL &&
+                        p_device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                    std::string amc_version;
+                    std::string bdf = prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS].getValue();
+                    getAMCFirmwareVersionInBand(amc_version, bdf);
+                    if (amc_version.compare("0.0.0.0") != 0) {
+                        prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION].setValue(std::string(amc_version.c_str()));
+                    }
+                }
+            }
+
             int propertyLen = 0;
             for (int i = 0; i < XPUM_DEVICE_PROPERTY_MAX; i++) {
                 xpum_device_property_name_t propName = static_cast<xpum_device_property_name_t>(i);
@@ -940,20 +965,6 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                     fw_status_str = "";
                 }
                 strcpy(copy.value, fw_status_str.c_str());
-            }
-
-            {
-                std::string value;
-                // Skip getting SKU type of VF through igsc API call
-                if (prop_map[
-                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
-                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
-                    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-                    value = pchProdStateToSkuType(getDevicePchProdStateType(device->getMeiDevicePath()));
-                }
-                auto &copy = pXpumProperties->properties[propertyLen++];
-                copy.name = XPUM_DEVICE_PROPERTY_SKU_TYPE;
-                strcpy(copy.value, value.c_str());
             }
 
             pXpumProperties->propertyLen = propertyLen;

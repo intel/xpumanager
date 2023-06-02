@@ -109,6 +109,28 @@ static CharTableConfig ComletConfigDiagnosticPreCheck(R"({
     }]
 })"_json);
 
+static CharTableConfig ComletConfigDiagnosticPreCheckErrorType(R"({
+    "width": 80,
+    "showTitleRow": true,
+    "columns": [{
+        "title": "Type",
+        "size": 35
+    }, {
+        "title": "Category",
+        "size": 23
+    }, {
+        "title": "Severity"
+    }],
+    "rows": [{
+        "instance": "error_type_list[]",
+        "cells": [
+            { "value": "type" },
+            { "value": "category" },
+            { "value": "severity" }
+        ]
+    }]
+})"_json);
+
 std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATION}, 
                                                 {2, XPUM_DIAG_MEMORY_ERROR}, 
                                                 {3, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH}, 
@@ -147,6 +169,7 @@ void ComletDiagnostic::setupOptions() {
     auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
+    auto listErrorTypeOpt = addFlag("--listtypes", this->opts->listErrorType, "List all supported GPU error types");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
     auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
 Alternatively the strings \"yesterday\", \"today\" are also understood.\n\
@@ -185,6 +208,7 @@ Scanning will starts from the latest boot if it is not specified.");
 
     onlyGPUOpt->needs(preCheckOpt);
 
+    listErrorTypeOpt->needs(preCheckOpt);
 #ifndef DAEMONLESS
     preCheckOpt->excludes(groupIdOpt);
     groupIdOpt->excludes(preCheckOpt);
@@ -280,7 +304,11 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
 
     if (this->opts->preCheck) {
-        json = getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson, this->opts->sinceTime);
+        if (this->opts->listErrorType) {
+            json = getPreCheckErrorTypes();
+        } else {
+            json = getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson, this->opts->sinceTime);
+        }
         return json;
     }
 
@@ -313,6 +341,9 @@ static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::js
     if (mode == PRE_CHECK) {
         CharTable table(ComletConfigDiagnosticPreCheck, *json, cont);
         table.show(out);
+    } else if (mode == PRE_CHECK_ERROR_TYPE) {
+        CharTable table(ComletConfigDiagnosticPreCheckErrorType, *json, cont);
+        table.show(out); 
     } else if (mode == SINGLE_TEST) {
         CharTable table(ComletConfigSpecificDiagnosticDevice, *json, cont);
         table.show(out);
@@ -411,7 +442,10 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
     }
 
     if (this->opts->preCheck) {
-        showDeviceDiagnostic(out, json, PRE_CHECK);
+        if (this->opts->listErrorType)
+            showDeviceDiagnostic(out, json, PRE_CHECK_ERROR_TYPE);
+        else
+            showDeviceDiagnostic(out, json, PRE_CHECK);
         return;
     }
 }

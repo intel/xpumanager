@@ -64,6 +64,24 @@ const std::vector<ErrorPattern> error_patterns = {
         {".*caterr.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_CPU}
 };
 
+const std::string error_types = 
+R"(
+GuC disabled                        #	Hardware            #	Critical
+GuC error                           #	Hardware            #	Critical
+GuC initialization failed           #	Hardware            #	Critical
+IOMMU catastrophic error            #	Hardware            #	Critical
+LMEM not initialized by firmware    #	Hardware            #	Critical
+PCIe error                          #	Hardware            #	Critical
+drm error                           #	Kernel Mode Driver  #	Critical
+GPU HANG                            #	Kernel Mode Driver  #	Critical
+i915 error                          #	Kernel Mode Driver  #	Critical
+i915 unloaded                       #	Kernel Mode Driver  #	Critical
+Level Zero sysman inited error      #	User Mode Driver    #	Critical
+HuC disabled                        #	Hardware            #	High
+HuC loadable                        #	Hardware            #	High
+Level Zero metrics inited error     #	User Mode Driver    #	High
+)";
+
 // The order of the vector impacts how error patterns are matched. It starts from special patterns to general patterns.
 const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", 
                                 "i915", "drm", 
@@ -107,6 +125,9 @@ std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std:
 bool isATSMPlatform(std::string str);
 
 bool isDriversAutoprobeEnabled(const std::string &bdfAddress);
+
+std::unique_ptr<nlohmann::json> getPreCheckErrorTypes();
+std::unique_ptr<nlohmann::json> addKernelParam();
 
 }
 

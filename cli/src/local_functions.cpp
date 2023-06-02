@@ -22,6 +22,8 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <unordered_set>
+#include <algorithm>
+#include <iostream>
 
 #include "config.h"
 #include "local_functions.h"
@@ -969,6 +971,152 @@ bool isDriversAutoprobeEnabled(const std::string &bdfAddress) {
         // Just prevent core dump
     }
     return res;
+}
+
+std::unique_ptr<nlohmann::json> getPreCheckErrorTypes() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::vector<nlohmann::json> error_type_list;
+    std::stringstream ss(error_types);
+    std::string current;
+    while (getline(ss, current)) {
+        if (current.empty())
+            continue;
+        
+        std::vector<std::string> error_type;
+        std::stringstream current_ss(current);
+        std::string item;
+        while (getline(current_ss, item, '#')) {
+            if (item.size() > 0) {
+                item.erase(item.find_last_not_of(" \t") + 1);
+                item.erase(0, item.find_first_not_of(" \t"));
+                error_type.push_back(item);
+            }
+        }
+
+        if (error_type.size() < 3)
+            continue;;
+        auto error_type_json = nlohmann::json();
+        error_type_json["type"] = error_type[0];
+        error_type_json["category"] = error_type[1];
+        error_type_json["severity"] = error_type[2];
+        error_type_list.push_back(error_type_json);
+
+    }
+    (*json)["error_type_list"] = error_type_list;
+    return json;
+}
+
+static int execCommand(const std::string& command, std::string &result) {
+    int exitcode = 0;
+    std::array<char, 1048576> buffer{};
+
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe != nullptr) {
+        try {
+            std::size_t bytesread;
+            while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe)) != 0) {
+                result = std::string(buffer.data(), bytesread);
+            }
+        } catch (...) {
+            pclose(pipe);
+        }
+        int ret = pclose(pipe);
+        exitcode = WEXITSTATUS(ret);
+    }
+    return exitcode;
+}
+
+std::unique_ptr<nlohmann::json> addKernelParam() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::string grubPath = "/etc/default/grub";
+    std::ifstream ifs(grubPath);
+    if (!ifs.is_open()) {
+        (*json)["error"] = "Fail to open grub file.";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    bool hasTargetParam = false;
+    std::string line;
+    std::vector<std::string> buffer;
+    while (std::getline(ifs, line)) {
+        buffer.push_back(line);
+        line = trim(line, " \t");
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+        std::istringstream lineStream(line);
+        std::string key, value;
+        if (std::getline(lineStream, key, '=') && std::getline(lineStream, value)) {
+            if (key.compare("GRUB_CMDLINE_LINUX_DEFAULT") == 0 || key.compare("GRUB_CMDLINE_LINUX") == 0) {
+                if (value.find("intel_iommu=") != std::string::npos || value.find("i915.max_vfs=") != std::string::npos) {
+                    hasTargetParam = true;
+                }
+            }
+        }
+    }
+    ifs.close();
+    if (hasTargetParam) {
+        (*json)["error"] = "intel_iommu or i915.max_vfs is already exists in GRUB command line in /etc/default/grub, please make sure the parameters are correct and take effect manually";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    
+    auto targetLine = std::find_if(buffer.begin(), buffer.end(), [](std::string &s) {
+        return s.find("GRUB_CMDLINE_LINUX") != std::string::npos && s.find("GRUB_CMDLINE_LINUX_DEFAULT") == std::string::npos;
+    });
+    if (targetLine == buffer.end()) {
+        (*json)["error"] = "Invalid grub default file";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    auto pos = targetLine->find_last_of("\"");
+    if (pos == std::string::npos) {
+        (*json)["error"] = "Invalid grub default file";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    targetLine->insert(pos, " intel_iommu=on i915.max_vfs=31");
+    std::ofstream ofs("/etc/default/grub", std::ios::out | std::ios::trunc);
+    if (!ofs.is_open()) {
+        (*json)["error"] = "Fail to open grub file.";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    for (auto str: buffer) {
+        ofs << str << std::endl;
+    }
+    ofs.flush();
+    ofs.close();
+    
+    std::string cmdStr = "grub2-mkconfig -o /boot/grub2/grub.cfg", cmdRes;
+    auto osRelease = getOsRelease();
+    if (osRelease == LINUX_OS_RELEASE_UNKNOWN) {
+        (*json)["error"] = "Unsupported Linux OS release";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    if (osRelease == LINUX_OS_RELEASE_UBUNTU || osRelease == LINUX_OS_RELEASE_DEBIAN) {
+        /*
+         *  Refer: https://manpages.ubuntu.com/manpages/jammy/man8/update-grub.8.html
+         *  Refer: https://manpages.debian.org/buster/grub2-common/update-grub.8.en.html
+         */
+        cmdStr = "update-grub";
+    } else if (osRelease == LINUX_OS_RELEASE_CENTOS && isFileExists("/boot/efi/EFI/centos/grub.cfg")) {
+        cmdStr = "grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg";
+    } else if (osRelease == LINUX_OS_RELEASE_SLES && isFileExists("/boot/efi/EFI/sles/grub.cfg")) {
+        cmdStr = "grub2-mkconfig -o /boot/efi/EFI/sles/grub.cfg";
+    } else if (osRelease == LINUX_OS_RELEASE_RHEL && isFileExists("/boot/efi/EFI/rhel/grub.cfg")) {
+        /*
+         *  Refer: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-working_with_the_grub_2_boot_loader
+         */
+        cmdStr = "grub2-mkconfig -o /boot/efi/EFI/rhel/grub.cfg";
+    }
+    if (execCommand(cmdStr, cmdRes) != 0) {
+        (*json)["error"] = "Fail to update grub.";
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
+        return json;
+    }
+    return json;
 }
 
 }

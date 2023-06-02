@@ -208,7 +208,7 @@ class CharTableConfigCellSingleSubItems {
 
     const bool append_value(std::string& res, const nlohmann::json& obj, const bool notFirst = false) const;
 
-    inline const std::string apply(const nlohmann::json& obj, const std::string& label, const CharTableConfigPath& labelTag, const bool subrow) const {
+    inline const std::string apply(const nlohmann::json& obj, const std::string& label, const CharTableConfigPath& labelTag, const bool subrow, const bool empty) const {
         std::string res;
         if (obj.is_array()) {
             bool notFirst = false;
@@ -259,6 +259,8 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
     const std::string suffix;
     const std::string fixer;
     const double scale;
+    //If true (by default), a cell would be showed even if it is empty
+    const bool empty;
 
     inline bool append_value(std::string& res, const std::string& value, const bool notFirst = false) {
         bool ret = notFirst;
@@ -337,13 +339,18 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
 
     inline const std::string apply(const nlohmann::json& obj) {
         if (subs.isEnabled()) {
-            return subs.apply(value.apply(obj), label, label_tag, subrow);
+            return subs.apply(value.apply(obj), label, label_tag, subrow, 
+                    empty);
         }
         return applyObject(obj);
     }
 
     inline const bool isSubRow() const {
         return subrow;
+    }
+
+    inline const bool isEmpty() const {
+        return empty;
     }
 };
 

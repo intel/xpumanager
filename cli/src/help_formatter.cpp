@@ -121,6 +121,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -g [groupId] --singletest [testIds] \n"
                "  " + appName + " diag -g [groupId] --singletest [testIds] -j \n"
 #endif
+               "  " + appName + " diag --precheck --listtypes\n"
+               "  " + appName + " diag --precheck --listtypes -j\n"
                "  " + appName + " diag --precheck\n"
                "  " + appName + " diag --precheck -j\n"
                "  " + appName + " diag --precheck --gpu\n"
@@ -229,6 +231,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
     } else if (app->get_name().compare("vgpu") == 0) {
         return "\nUsage: " + appName + " vgpu [Options]\n"
                " " + appName + " vgpu --precheck\n"
+               " " + appName + " vgpu --addkernelparam\n"
                " " + appName + " vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]\n"
                " " + appName + " vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]\n"
                " " + appName + " vgpu -d [deviceId] -r\n"

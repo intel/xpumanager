@@ -65,9 +65,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#add-linux-kernel-command-line-options">Add Linux kernel command line options</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#help-info-of-gpu-sr-iov-configuration-feature">Help info of GPU SR-IOV configuration feature.</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#gpu-sr-iov-precheck">GPU SR-IOV precheck</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#add-the-linux-kernel-command-line-parameters-for-the-virtual-gpus">Add the Linux kernel command line parameters for the virtual GPUs</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#create-the-virtual-gpus">Create the virtual GPUs</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#list-the-virtual-gpus">list the virtual GPUs</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#remove-all-the-virtual-gpus-on-the-specified-gpu">Remove all the virtual GPUs on the specified GPU</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-advanced-configuration-of-virtual-gpus">The advanced configuration of virtual GPUs</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#limitations">Limitations</a></li>
 </ul>
 </li>
@@ -1264,10 +1266,29 @@ Integrated Devices -&gt; SR-IOV Global Enable = Enabled<br />
 Processor Settings -&gt; Virtualization Technology = Enabled<br />
 System Profile Settings -&gt; System Profile = Performance</p>
 </section>
+<section id="supermicro-sys-620c-tn12r">
+<h4>Supermicro SYS-620C-TN12R<a class="headerlink" href="#supermicro-sys-620c-tn12r" title="Permalink to this headline"></a></h4>
+<p>Advanced -&gt; Chipset Configuration -&gt; NorthBridge -&gt; IIO Configuration -&gt; Intel VT for Directed I/O (VT-d) -&gt; Enable<br />
+Advanced -&gt; Chipset Configuration -&gt; NorthBridge -&gt; IIO Configuration -&gt; PCI-E ASPM Support (Global) -&gt; No<br />
+Advanced -&gt; Chipset Configuration -&gt; NorthBridge -&gt; IIO Configuration -&gt; IIO eDPC Support -&gt; Disable<br />
+Advanced -&gt; PCIe/PCI/PnP Configuration -&gt; Above 4G Decoding -&gt; Enabled<br />
+Advanced -&gt; PCIe/PCI/PnP Configuration -&gt; SR-IOV Support -&gt; Enable<br />
+Advanced -&gt; PCIe/PCI/PnP Configuration -&gt; ARI Support -&gt; Enable<br />
+Advanced -&gt; PCIe/PCI/PnP Configuration -&gt; MMCFG Base -&gt; Auto<br />
+Advanced -&gt; PCIe/PCI/PnP Configuration -&gt; MMIO High Base -&gt; 32T<br />
+Advanced -&gt; PCIE/PCI/PnP Configuration -&gt; MMIO High Granularity Size -&gt; 1024G or 2048G</p>
+</section>
+<section id="hpe-proliant-dl380-gen10">
+<h4>HPE ProLiant DL380 Gen10<a class="headerlink" href="#hpe-proliant-dl380-gen10" title="Permalink to this headline"></a></h4>
+<p>Virtualization Options -&gt; Intel(R) Virtualization Technology: Enabled<br />
+Virtualization Options -&gt; Intel(R) VT-d: Enabled<br />
+Virtualization Options -&gt; SR-IOV: Enabled</p>
+</section>
 </section>
 <section id="add-linux-kernel-command-line-options">
 <h3>Add Linux kernel command line options<a class="headerlink" href="#add-linux-kernel-command-line-options" title="Permalink to this headline"></a></h3>
-<p>After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are “intel_iommu=on i915.max_vfs=31”. “intel_iommmu” is for IOMMU and “i915.max_vfs” is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set.</p>
+<p>After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added into the “GRUB_CMDLINE_LINUX” setting of the file, /etc/default/grub. They are “intel_iommu=on i915.max_vfs=31”. “intel_iommmu” is for IOMMU and “i915.max_vfs” is for SR-IOV. After you update the grub file, please run the command like “update-grub” to set to kernel image and reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set.
+The command “sudo xpumcli vgpu –addkernelparam” can automatically add these kernel parameters.</p>
 </section>
 <section id="help-info-of-gpu-sr-iov-configuration-feature">
 <h3>Help info of GPU SR-IOV configuration feature.<a class="headerlink" href="#help-info-of-gpu-sr-iov-configuration-feature" title="Permalink to this headline"></a></h3>
@@ -1276,6 +1297,7 @@ System Profile Settings -&gt; System Profile = Performance</p>
 
 <span class="n">Usage</span><span class="p">:</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
  <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">--</span><span class="n">precheck</span>
+ <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">--</span><span class="n">addkernelparam</span>
  <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">vGpuNumber</span><span class="p">]</span> <span class="o">--</span><span class="n">lmem</span> <span class="p">[</span><span class="n">vGpuMemorySize</span><span class="p">]</span>
  <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">vGpuNumber</span><span class="p">]</span> <span class="o">--</span><span class="n">lmem</span> <span class="p">[</span><span class="n">vGpuMemorySize</span><span class="p">]</span>
  <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">r</span>
@@ -1288,11 +1310,12 @@ System Profile Settings -&gt; System Profile = Performance</p>
   <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
 
   <span class="o">--</span><span class="n">precheck</span>                  <span class="n">Check</span> <span class="k">if</span> <span class="n">BIOS</span> <span class="n">settings</span> <span class="ow">and</span> <span class="n">kernel</span> <span class="n">command</span> <span class="n">line</span> <span class="n">options</span> <span class="n">are</span> <span class="n">ready</span> <span class="n">to</span> <span class="n">create</span> <span class="n">virtual</span> <span class="n">GPUs</span>
+  <span class="o">--</span><span class="n">addkernelparam</span>            <span class="n">Add</span> <span class="n">the</span> <span class="n">kernel</span> <span class="n">command</span> <span class="n">line</span> <span class="n">parameters</span> <span class="k">for</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">GPUs</span>
 
   <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">Device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
   <span class="o">-</span><span class="n">c</span><span class="p">,</span><span class="o">--</span><span class="n">create</span>                 <span class="n">Create</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">GPUs</span>
-  <span class="o">-</span><span class="n">n</span>                          <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">to</span> <span class="n">create</span>
-  <span class="o">--</span><span class="n">lmem</span>                      <span class="n">The</span> <span class="n">memory</span> <span class="n">size</span> <span class="n">of</span> <span class="n">each</span> <span class="n">virtual</span> <span class="n">GPUs</span><span class="p">,</span> <span class="ow">in</span> <span class="n">MiB</span>
+  <span class="o">-</span><span class="n">n</span>                          <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">to</span> <span class="n">create</span><span class="o">.</span> <span class="n">The</span> <span class="n">acceptable</span> <span class="n">values</span> <span class="n">include</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span> <span class="ow">and</span> <span class="mf">16.</span>
+  <span class="o">--</span><span class="n">lmem</span>                      <span class="n">The</span> <span class="n">memory</span> <span class="n">size</span> <span class="n">of</span> <span class="n">each</span> <span class="n">virtual</span> <span class="n">GPUs</span><span class="p">,</span> <span class="ow">in</span> <span class="n">MiB</span><span class="o">.</span> <span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="o">--</span><span class="n">lmem</span> <span class="mi">500</span>
 
   <span class="o">-</span><span class="n">l</span><span class="p">,</span><span class="o">--</span><span class="nb">list</span>                   <span class="n">List</span> <span class="nb">all</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">physical</span> <span class="n">GPU</span>
 
@@ -1318,10 +1341,18 @@ System Profile Settings -&gt; System Profile = Performance</p>
 </pre></div>
 </div>
 </section>
+<section id="add-the-linux-kernel-command-line-parameters-for-the-virtual-gpus">
+<h3>Add the Linux kernel command line parameters for the virtual GPUs<a class="headerlink" href="#add-the-linux-kernel-command-line-parameters-for-the-virtual-gpus" title="Permalink to this headline"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>sudo xpumcli vgpu --addkernelparam -y
+Do you want to add the required kernel command line parameters? (y/n) y
+Succeed in adding the required kernel command line parameters, &quot;intel_iommu=on i915.max_vfs=31&quot;. &quot;intel_iommmu&quot; is for IOMMU and &quot;i915.max_vfs&quot; is for SR-IOV. Please reboot OS to take effect. 
+</pre></div>
+</div>
+</section>
 <section id="create-the-virtual-gpus">
 <h3>Create the virtual GPUs<a class="headerlink" href="#create-the-virtual-gpus" title="Permalink to this headline"></a></h3>
 <p>After all GPU SR-IOV pre-checks are passed, you may create the virtual GPUs</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="mi">4</span> <span class="o">--</span><span class="n">lmem</span> <span class="mi">500</span><span class="n">M</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="mi">4</span> <span class="o">--</span><span class="n">lmem</span> <span class="mi">500</span>
 <span class="o">+--------------------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                               <span class="o">|</span>
 <span class="o">+--------------------------------------------------------------------------------------------------+</span>
@@ -1380,17 +1411,32 @@ System Profile Settings -&gt; System Profile = Performance</p>
 <section id="remove-all-the-virtual-gpus-on-the-specified-gpu">
 <h3>Remove all the virtual GPUs on the specified GPU<a class="headerlink" href="#remove-all-the-virtual-gpus-on-the-specified-gpu" title="Permalink to this headline"></a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">r</span>
-<span class="n">CAUTION</span><span class="p">:</span> <span class="n">we</span> <span class="n">are</span> <span class="n">removing</span> <span class="nb">all</span> <span class="n">VFs</span> <span class="n">on</span> <span class="n">device</span> <span class="mi">0</span><span class="p">,</span> <span class="n">please</span> <span class="n">make</span> <span class="n">sure</span> <span class="nb">all</span> <span class="n">VF</span><span class="o">-</span><span class="n">assigned</span> <span class="n">virtual</span> <span class="n">machines</span> <span class="n">are</span> <span class="n">shut</span> <span class="n">down</span><span class="o">.</span>
+<span class="n">CAUTION</span><span class="p">:</span> <span class="n">we</span> <span class="n">are</span> <span class="n">removing</span> <span class="nb">all</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">device</span> <span class="mi">0</span><span class="p">,</span> <span class="n">please</span> <span class="n">make</span> <span class="n">sure</span> <span class="nb">all</span> <span class="n">vGPU</span><span class="o">-</span><span class="n">assigned</span> <span class="n">virtual</span> <span class="n">machines</span> <span class="n">are</span> <span class="n">shut</span> <span class="n">down</span><span class="o">.</span>
 <span class="n">Please</span> <span class="n">confirm</span> <span class="n">to</span> <span class="n">proceed</span> <span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="n">n</span><span class="p">)</span> <span class="n">y</span>
 <span class="n">All</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span> <span class="mi">0</span> <span class="n">are</span> <span class="n">removed</span><span class="o">.</span>
 
 </pre></div>
 </div>
 </section>
+<section id="the-advanced-configuration-of-virtual-gpus">
+<h3>The advanced configuration of virtual GPUs<a class="headerlink" href="#the-advanced-configuration-of-virtual-gpus" title="Permalink to this headline"></a></h3>
+<p>The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME “56c0N16” means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here is the detailed info of the virtual GPU settings.</p>
+<ul class="simple">
+<li><p>VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication</p></li>
+<li><p>VF_DOORBELLS: Number of doorbells per virtual GPU, used for KMD-GuC communication</p></li>
+<li><p>VF_GGTT: GGTT(Global Graphics Translation Table) size per virtual GPU, used for memory mapping, in bytes</p></li>
+<li><p>VF_EXEC_QUANT_MS: Denotes the amount of time that a particular virtual GPU will be allocated in the per vGPU time-slicing round-robin, in milliseconds</p></li>
+<li><p>VF_PREEMPT_TIMEOUT_US: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds</p></li>
+<li><p>PF_EXEC_QUANT_MS: Denotes the amount of time that the physical GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds</p></li>
+<li><p>PF_PREEMPT_TIMEOUT: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds</p></li>
+<li><p>SCHED_IF_IDLE: 0: flexible scheduling, the virtual GPU will be allocated its time slice only if it has pending workload, and the time slice shifts to next virtual GPU when all workload submitted by current virtual GPU are completed. 1: strict scheduling, the virtual GPU will always be allocated its time slice even if it’s idle.</p></li>
+<li><p>DRIVERS_AUTOPROBE: Determines whether the newly enabled virtual GPUs are immediately bound to a driver, 0 or 1</p></li>
+</ul>
+</section>
 <section id="limitations">
 <h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline"></a></h3>
 <ul class="simple">
-<li><p>XPU manager (in Host OS Linux) cannot discover and monitor a VF if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 VF was created, end users may understand VF utilizations by looking at metrics of PF.</p></li>
+<li><p>XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand virtual GPU utilizations by looking at metrics of PF.</p></li>
 <li><p>XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available</p></li>
 </ul>
 </section>

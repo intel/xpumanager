@@ -273,12 +273,18 @@ static void showHealth(std::ostream &out, std::shared_ptr<nlohmann::json> json, 
 
 static void showHealthAllComps(std::ostream &out, std::shared_ptr<nlohmann::json> json, const bool cont = false) {
     showHealth(out, json, ComletConfigHealthDeviceId, cont);
-    showHealth(out, json, ComletConfigHealthCoreTemp);
-    showHealth(out, json, ComletConfigHealthMemTemp);
-    showHealth(out, json, ComletConfigHealthPower);
-    showHealth(out, json, ComletConfigHealthMemory);
-    showHealth(out, json, ComletConfigHealthFabricPort);
-    showHealth(out, json, ComletConfigHealthFrequency);
+    if ((*json).contains("core_temperature") && (*json)["core_temperature"]["status"] != "Unknown")
+        showHealth(out, json, ComletConfigHealthCoreTemp);
+    if ((*json).contains("memory_temperature") && (*json)["memory_temperature"]["status"] != "Unknown")
+        showHealth(out, json, ComletConfigHealthMemTemp);
+    if ((*json).contains("power") && (*json)["power"]["status"] != "Unknown")
+        showHealth(out, json, ComletConfigHealthPower);
+    if ((*json).contains("memory") && (*json)["memory"]["status"] != "Unknown") 
+        showHealth(out, json, ComletConfigHealthMemory);
+    if ((*json).contains("xe_link_port") && (*json)["xe_link_port"]["status"] != "Unknown") 
+        showHealth(out, json, ComletConfigHealthFabricPort);
+    if ((*json).contains("frequency") && (*json)["frequency"]["status"] != "Unknown") 
+        showHealth(out, json, ComletConfigHealthFrequency);
 }
 
 static void showHealthComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig, const bool cont = false) {

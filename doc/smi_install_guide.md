@@ -2,7 +2,7 @@
 # Intel(R) XPU-SMI Installation Guide
 
 ## Requirements
-* Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
+* Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html)). XPU-SMI is included in the GPU driver repository. 
 * Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in package repositories)
 * Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in package repositories)
 * Intel(R) Media Driver (intel-media-va-driver-non-free or intel-media in package repositories) 
@@ -15,7 +15,7 @@ intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optio
 
 
 ## DEB install on Ubuntu
-After adding the repository and installing the required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may run apt command below to install XPU-SMI and the required dependencies. 
+After adding the repository and installing the required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may download the latest installer package from the Github release page and run apt command below to install XPU-SMI and the required dependencies. 
 ```
 sudo apt install ./xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.deb
 ```
@@ -26,13 +26,13 @@ sudo dpkg -r xpu-smi
 ```
 
 ## RPM install on RHEL and CentOS Stream
-After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may run dnf command below to install XPU-SMI and the required dependencies. 
+After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may download the latest installer package from the Github release page and run dnf command below to install XPU-SMI and the required dependencies. 
 ```
 sudo dnf install xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 ```
 
 ## RPM install on SLES
-After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may run zypper command below to install XPU-SMI and the required dependencies. 
+After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may may download the latest installer pacakge from the Github release page and run zypper command below to install XPU-SMI and the required dependencies. 
 ```
 sudo zypper install xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 ```

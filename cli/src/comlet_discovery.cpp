@@ -16,6 +16,7 @@
 #include "utility.h"
 #include "exit_code.h"
 #include "local_functions.h"
+#include "device_model.h"
 
 namespace xpum::cli {
 
@@ -78,12 +79,12 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },
                 { "label": "GFX Firmware Status", "value": "gfx_firmware_status", "dumpId": 22 },
-                { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
-                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
-                { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },
-                { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version"},)"
-                R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name"},)"
-                R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version"},)"
+                { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name", "empty": false },
+                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10, "empty": false},
+                { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name", "empty": false },
+                { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version", "empty": false},)"
+                R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name", "empty": false },)"
+                R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version", "empty": false },)"
                 R"({ "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address", "dumpId": 11 },
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
@@ -307,14 +308,6 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         } else {
             json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
         }
-        auto snAndAmcJson = this->coreStub->getSerailNumberAndAmcVersion(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
-        if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
-            std::string sn = (*snAndAmcJson)["serial_number"];
-            if (sn.size() > 0) {
-                (*json)["serial_number"] = sn;
-            }
-        }
-        (*json)["amc_firmware_version"] = (*snAndAmcJson)["amc_firmware_version"];
         return json;
     }
 
@@ -345,6 +338,40 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     return filtered;
 }
 
+bool ComletDiscovery::showWarnMsg(std::ostream &out){
+    std::string amcWarnMsg = this->coreStub->getRedfishAmcWarnMsg();
+    if (amcWarnMsg.length()) {
+        out << this->coreStub->getRedfishAmcWarnMsg() << std::endl;
+        out << "Do you want to continue? (y/n)" << std::endl;
+        std::string confirm;
+        std::cin >> confirm;
+        if (confirm != "Y" && confirm != "y") {
+            out << "Aborted" << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+void ComletDiscovery::showWarnMsgAndGetSerailNumberAndAmcVersion(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    if (json->contains("pci_device_id")) {
+        int devicePciId = std::stoul((*json)["pci_device_id"].get<std::string>(), 0, 16);
+        if (getDeviceModelByPciDeviceId(devicePciId) == XPUM_DEVICE_MODEL_PVC)
+            return;
+    }
+
+    if (!showWarnMsg(out))
+        return;
+    auto snAndAmcJson = this->coreStub->getSerailNumberAndAmcVersion(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
+    if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
+        std::string sn = (*snAndAmcJson)["serial_number"];
+        if (sn.size() > 0) {
+            (*json)["serial_number"] = sn;
+        }
+    }
+    (*json)["amc_firmware_version"] = (*snAndAmcJson)["amc_firmware_version"];
+}
+
 static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
     if (!json->contains("device_list") || (*json)["device_list"].size() <= 0) {
         out << "No device discovered" << std::endl;
@@ -356,7 +383,22 @@ static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> jso
 }
 
 static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
-    CharTable table(ComletConfigDiscoveryDetailed, *json);
+    // Set FW name to empty when version was empty
+    // And they won't be showed in the table of output
+    nlohmann::json js = *json;
+    std::string ver = js["gfx_data_firmware_version"];
+    if (ver.length() == 0) {
+        js["gfx_data_firmware_name"] = "";
+    }
+    ver = js["gfx_pscbin_firmware_version"];
+    if (ver.length() == 0) {
+        js["gfx_pscbin_firmware_name"] = "";
+    }
+    ver = js["amc_firmware_version"];
+    if (ver.length() == 0) {
+        js["amc_firmware_name"] = "";
+    }
+    CharTable table(ComletConfigDiscoveryDetailed, js);
     table.show(out);
 }
 
@@ -454,19 +496,9 @@ static void showAmcFwVersion(std::ostream &out, std::shared_ptr<nlohmann::json> 
 }
 
 void ComletDiscovery::getTableResult(std::ostream &out) {
-    if (this->opts->listamcversions || this->opts->deviceId.compare("-1") != 0) {
-        // show warning message
-        std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
-        if (amcWarnMsg.length()) {
-            out << coreStub->getRedfishAmcWarnMsg() << std::endl;
-            out << "Do you want to continue? (y/n)" << std::endl;
-            std::string confirm;
-            std::cin >> confirm;
-            if (confirm != "Y" && confirm != "y") {
-                out << "Aborted" << std::endl;
-                return;
-            }
-        }
+    if (this->opts->listamcversions) {
+        if (!showWarnMsg(out))
+            return;
     }
     auto res = run();
     if (res->contains("error")) {
@@ -482,6 +514,7 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
     } else if (this->opts->propIdList.size() > 0) {
         dumpAllDeviceInfo(out, json, this->opts->propIdList);
     } else if (this->opts->deviceId.compare("-1") != 0) {
+        showWarnMsgAndGetSerailNumberAndAmcVersion(out, json);
         showDetailedInfo(out, json);
         if (strcasecmp(std::string((*json)["gfx_firmware_version"]).c_str(), "unknown") == 0 ||
             strcasecmp(std::string((*json)["gfx_data_firmware_version"]).c_str(), "unknown") == 0) {

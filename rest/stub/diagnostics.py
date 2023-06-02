@@ -103,10 +103,10 @@ def getDiagnosticsResult(deviceId):
         new_component['finished'] = component.finished
         new_component['result'] = diagnosticResultEnumToString[component.result]
         new_component['message'] = component.message
-        if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
+        if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE:
             process_list_resp = stub.getDeviceProcessState(
                 core_pb2.DeviceId(id=deviceId))
-            if len(process_list_resp.errorMsg) == 0:
+            if len(process_list_resp.errorMsg) == 0 and len(process_list_resp.processlist) > 1:
                 processList = []
                 for process in process_list_resp.processlist:
                     new_process = dict()
@@ -168,10 +168,10 @@ def getDiagnosticsResultByGroup(groupId):
             new_component['finished'] = component.finished
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message
-            if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
+            if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE:
                 process_list_resp = stub.getDeviceProcessState(
                     core_pb2.DeviceId(id=diagTaskInfo.deviceId))
-                if len(process_list_resp.errorMsg) == 0:
+                if len(process_list_resp.errorMsg) == 0 and len(process_list_resp.processlist) > 1:
                     processList = []
                     for process in process_list_resp.processlist:
                         new_process = dict()
