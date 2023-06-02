@@ -120,7 +120,7 @@ namespace xpum {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
                     // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                     // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
-                    // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, std::to_string(driver_prop.driverVersion)));
                     // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION, getKernelVersion()));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(props.serialNumber)));
                     std::string vendor_name = std::string(props.vendorName);
@@ -163,6 +163,10 @@ namespace xpum {
                         std::string pciName = std::string(props.core.name);
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, pciName));
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
+                        if (pci_props.maxSpeed.gen > 0)
+                            p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION, std::to_string(pci_props.maxSpeed.gen)));
+                        if (pci_props.maxSpeed.width > 0)
+                            p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH, std::to_string(pci_props.maxSpeed.width)));
                         // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                         // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
                         // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
