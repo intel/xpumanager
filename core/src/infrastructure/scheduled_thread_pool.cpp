@@ -88,7 +88,7 @@ bool ScheduledThreadPoolTask::after(std::shared_ptr<ScheduledThreadPoolTask> oth
 }
 
 bool ScheduledThreadPoolTask::next() {
-    if (this->interval == 0) return false;
+    if (this->remaining_exe_time == 0) return false;
     this->scheduled_time += std::chrono::milliseconds{this->interval};
     auto now = std::chrono::steady_clock::now();
     if (now > this->scheduled_time) {
@@ -109,6 +109,10 @@ void ScheduledThreadPoolTask::run() {
                    std::chrono::duration_cast<std::chrono::microseconds>(delay).count());
 
 #endif
+    if (this->remaining_exe_time == 0)
+        return;
+    else if (this->remaining_exe_time > 0)
+        this->remaining_exe_time--;
     this->func();
 #ifdef TRACE_SCHEDULED_TASK_RUN
     auto duration = std::chrono::steady_clock::now() - start;
@@ -119,6 +123,10 @@ void ScheduledThreadPoolTask::run() {
 
 void ScheduledThreadPoolTask::cancel() {
     this->cancelled.store(true, std::memory_order_release);
+}
+
+int ScheduledThreadPoolTask::getExeTime(){
+    return exe_time;
 }
 
 /// SchedulingQueue

@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "control/device_manager.h"
+#include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
 
@@ -26,7 +27,8 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(MonitorTaskType::DEFAULT_TELEMETRY),
-      p_scheduled_task(nullptr) {
+      p_scheduled_task(nullptr),
+      exe_counter(0) {
     XPUM_LOG_TRACE("MonitorTask(), capability: {}", capability);
 }
 
@@ -40,7 +42,8 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(type),
-      p_scheduled_task(nullptr) {
+      p_scheduled_task(nullptr),
+      exe_counter(0) {
     XPUM_LOG_TRACE("MonitorTask(), capability: {}", capability);
 }
 
@@ -52,21 +55,36 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
     long long now = Utility::getCurrentMillisecond();
     long delay = freq - now % freq;
     int interval = freq;
+    int execution_times = -1;
 
     char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
     std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
     if (xpum_disable_periodic_metric_monitor == "1") {
         delay = 0;
-        interval = 0;
+        interval = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE / 2;
+        if (this->getCapability() == DeviceCapability::METRIC_RAS_ERROR ||
+        this->getCapability() == DeviceCapability::METRIC_MEMORY_USED_UTILIZATION ||
+        this->getCapability() == DeviceCapability::METRIC_FREQUENCY ||
+        this->getCapability() == DeviceCapability::METRIC_TEMPERATURE ||
+        this->getCapability() == DeviceCapability::METRIC_ENERGY ||
+        this->getCapability() == DeviceCapability::METRIC_FREQUENCY_THROTTLE_REASON_GPU) {
+            execution_times = 1;
+        } else {
+            // Currently known types that need to be executed twice as follows
+            // METRIC_ENGINE_UTILIZATION, METRIC_FABRIC_THROUGHPUT and METRIC_POWER
+            // later will move more types from executed twice to executed once
+            execution_times = 2;
+        }
     }
 
     std::weak_ptr<MonitorTask> this_weak_ptr = shared_from_this();
 
     std::lock_guard<std::mutex> lock(this->mutex);
-    p_scheduled_task = threadPool->scheduleAtFixedRate(delay, interval, [this_weak_ptr]() {
+    p_scheduled_task = threadPool->scheduleAtFixedRate(delay, interval, execution_times, [this_weak_ptr]() {
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
             XPUM_LOG_WARN("this_weak_ptr is nullptr for monitor data");
+            p_this->exe_counter++;
             return;
         }
 
@@ -76,6 +94,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
         p_this->p_device_manager->getDeviceList(p_this->capability, devices);
         if (devices.size() == 0) {
             XPUM_LOG_TRACE("no device supports capability: {}", p_this->capability);
+            p_this->exe_counter++;
             return;
         }
 
@@ -159,6 +178,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 p_this->p_data_logic->storeMeasurementData(type, now, datas);
             }
         }
+        p_this->exe_counter++;
     });
 
     XPUM_LOG_TRACE("Monitor task started for {}", this->capability);
@@ -170,6 +190,10 @@ void MonitorTask::stop() {
         p_scheduled_task->cancel();
         p_scheduled_task = nullptr;
     }
+}
+
+bool MonitorTask::finished(){
+    return exe_counter.load() == p_scheduled_task->getExeTime();
 }
 
 DeviceCapability MonitorTask::getCapability() {

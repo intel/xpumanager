@@ -122,13 +122,14 @@ bool MonitorManager::initOneTimeMetricMonitorTasks(MeasurementType type) {
             p_task->start(this->p_scheduled_thread_pool);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE/2));
-        for (auto& p_task : tasks) {
-            if (p_task->getCapability() != DeviceCapability::METRIC_RAS_ERROR && p_task->getCapability() != DeviceCapability::METRIC_MEMORY_USED_UTILIZATION) {
-                p_task->start(this->p_scheduled_thread_pool);
+        int count = 0;
+        while (std::find_if(tasks.begin(), tasks.end(), [&](const auto& it) { return !it->finished(); }) != tasks.end()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if (++count > 50) {
+                XPUM_LOG_WARN("Timed out while waiting for some monitor metrics.");
+                break;
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE/2));
 
         for (auto& p_task : tasks) {
             p_task->stop();
