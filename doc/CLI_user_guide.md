@@ -981,6 +981,8 @@ Usage: xpumcli diag [Options]
   xpumcli diag --precheck -j
   xpumcli diag --precheck --gpu
   xpumcli diag --precheck --gpu -j
+  xpumcli diag --precheck --listtypes
+  xpumcli diag --precheck --listtypes -j
 
   xpumcli diag --stress --stresstime [time]
   
@@ -997,7 +999,9 @@ Options:
   -s,--stress                 Stress the GPU(s) for the specified time
   --stresstime                Stress time (in minutes)
   --precheck                  Do the precheck on the GPU and GPU driver.
+  --listtypes                 List all supported GPU error types
   --gpu                       Show the GPU status only
+  
   --singletest                Selectively run some particular tests. Separated by the comma.
                                     1. Computation
                                     2. Memory Error
@@ -1005,6 +1009,8 @@ Options:
                                     4. Media Codec
                                     5. PCIe Bandwidth
                                     6. Power
+                                    7. Computation functional test
+                                    8. Media Codec functional test
 
 
 ```
@@ -1017,7 +1023,7 @@ Device Type: GPU
 | Device ID              | 0                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Level                  | 1                                                                       |
-| Result                 | Fail                                                                    |
+| Result                 | Pass                                                                    |
 | Items                  | 4                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Env Variables | Result: Pass                                                            |
@@ -1029,9 +1035,8 @@ Device Type: GPU
 | Software Permission    | Result: Pass                                                            |
 |                        | Message: Pass to check permission                                       |
 +------------------------+-------------------------------------------------------------------------+
-| Software Exclusive     | Result: Fail                                                            |
-|                        | Message: Fail to check the software exclusive. 2 process(es) are        |
-|                        |   using the device.                                                     |
+| Software Exclusive     | Result: Pass                                                            |
+|                        | Message: Warning: 2 process(es) are using the device.                   |
 |                        |   PID: 633972, Command: ./ze_gemm                                       |
 |                        |   PID: 633973, Command: ./ze_gemm                                       |
 +------------------------+-------------------------------------------------------------------------+
@@ -1227,7 +1232,7 @@ Options:
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
   -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
-  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500
+  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500. This parameter is optional. 
 
   -l,--list                   List all virtual GPUs on the specified physical GPU
 
