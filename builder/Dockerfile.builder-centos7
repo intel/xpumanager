@@ -9,7 +9,7 @@ ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz
 ARG ZLIB_VERSION=v1.2.13
 ARG GRPC_VERSION=v1.49.1
 ARG PROTOBUF_VERSION=v3.19.4
-ARG CARES_VERSION=cares-1_19_0
+ARG CARES_VERSION=cares-1_19_1
 
 RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm https://repo.ius.io/ius-release-el7.rpm && \
     yum update -y && \

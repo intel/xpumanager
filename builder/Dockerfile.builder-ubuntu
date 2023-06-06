@@ -9,7 +9,7 @@ ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz
 ARG ZLIB_VERSION=v1.2.13
 ARG GRPC_VERSION=v1.49.1
 ARG PROTOBUF_VERSION=v3.19.4
-ARG CARES_VERSION=cares-1_19_0
+ARG CARES_VERSION=cares-1_19_1
 
 ENV DEBIAN_FRONTEND=noninteractive
 
