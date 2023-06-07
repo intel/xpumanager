@@ -649,6 +649,7 @@ optional arguments:
                                 3. GPU Power
                                 4. GPU Memory
                                 5. Xe Link Port
+                                6. GPU Frequency
 ```
  
 Get the GPU device component health status. 
@@ -677,6 +678,10 @@ xpu-smi health -l
 | 5. Xe Link Port              | Status: Ok                                                        |
 |                              | Description: All ports are healthy.                               |
 +------------------------------+-------------------------------------------------------------------+
+| 6. GPU Frequency             | Status: OK                                                        |
+|                              | Description: The device frequency not throttled                   |
++------------------------------+-------------------------------------------------------------------+
+
 ```
   
 ## Dump the device statistics in CSV format
