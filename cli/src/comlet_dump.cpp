@@ -99,7 +99,7 @@ static xpum_stats_type_enum statsTypeFromDumpType(xpum_dump_type_t dumpType){
     case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE:
         return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE;
     case xpum_dump_type_t::XPUM_DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION:
-        return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
     case xpum_dump_type_t::XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION:
         return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
     case xpum_dump_type_t::XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION:
