@@ -90,6 +90,7 @@ int CLIWrapper::printResult(std::ostream &out) {
                         = std::dynamic_pointer_cast<ComletDiscovery>(comlet);
                     if (cd != nullptr && !cd->isDeviceList()) {
                         putenv(const_cast<char *>("XPUM_INIT_GET_PHY_MEMORY=TRUE"));
+                        putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
                     }
 
                     if (cd != nullptr && cd->isDumping()) {

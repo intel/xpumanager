@@ -16,7 +16,6 @@
 #include "utility.h"
 #include "exit_code.h"
 #include "local_functions.h"
-#include "device_model.h"
 
 namespace xpum::cli {
 
@@ -308,20 +307,6 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         } else {
             json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
         }
-
-        if (json->contains("pci_device_id")) {
-            int devicePciId = std::stoul((*json)["pci_device_id"].get<std::string>(), 0, 16);
-            if (getDeviceModelByPciDeviceId(devicePciId) == XPUM_DEVICE_MODEL_PVC)
-                return json;
-        }
-        auto snAndAmcJson = this->coreStub->getSerailNumberAndAmcVersion(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
-        if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
-            std::string sn = (*snAndAmcJson)["serial_number"];
-            if (sn.size() > 0) {
-                (*json)["serial_number"] = sn;
-            }
-        }
-        (*json)["amc_firmware_version"] = (*snAndAmcJson)["amc_firmware_version"];
         return json;
     }
 
@@ -509,13 +494,6 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
     } else if (this->opts->propIdList.size() > 0) {
         dumpAllDeviceInfo(out, json, this->opts->propIdList);
     } else if (this->opts->deviceId.compare("-1") != 0) {
-        if (json->contains("pci_device_id")) {
-            int devicePciId = std::stoul((*json)["pci_device_id"].get<std::string>(), 0, 16);
-            if (getDeviceModelByPciDeviceId(devicePciId) != XPUM_DEVICE_MODEL_PVC) {
-                if (!showWarnMsg(out))
-                        return;
-            }
-        }
         showDetailedInfo(out, json);
         if (strcasecmp(std::string((*json)["gfx_firmware_version"]).c_str(), "unknown") == 0 ||
             strcasecmp(std::string((*json)["gfx_data_firmware_version"]).c_str(), "unknown") == 0) {
