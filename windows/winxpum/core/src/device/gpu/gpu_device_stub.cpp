@@ -825,7 +825,6 @@ namespace xpum {
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(const zes_device_handle_t& device, MeasurementType type) noexcept {
-        updatePDHQuery();
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
         if (device == nullptr) {
             ret->setErrors("toGetEngineGroupUtilization error");
