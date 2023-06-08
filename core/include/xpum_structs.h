@@ -1091,16 +1091,16 @@ typedef struct xpum_vgpu_precheck_result_t {
 } xpum_vgpu_precheck_result_t;
 
 typedef struct xpum_vgpu_config_t {
-    uint32_t numVfs;
-    uint64_t lmemPerVf;
+    uint32_t numVfs;        ///< Number of vGPU to be create
+    uint64_t lmemPerVf;     ///< Local memory per vGPU (in bytes), if set to 0 then apply the configuration file to allocate local memory for vGPUs
 } xpum_vgpu_config_t;
 
 
 typedef struct xpum_vgpu_function_info_t {
-    char bdfAddress[XPUM_MAX_STR_LENGTH];
-    xpum_device_function_type_t functionType;
-    uint64_t lmemSize;
-    xpum_device_id_t deviceId;
+    char bdfAddress[XPUM_MAX_STR_LENGTH];       ///< BDF address of the function
+    xpum_device_function_type_t functionType;   ///< Physical function or virtual function
+    uint64_t lmemSize;                          ///< The size of local memory of the function
+    xpum_device_id_t deviceId;                  ///< Device ID of the function
 } xpum_vgpu_function_info_t;
 
 #define XPUM_MAX_VF_NUM 128
