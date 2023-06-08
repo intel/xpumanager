@@ -1,5 +1,5 @@
-# Intel(R) XPU-SMI Windows CLI User Guide
-This guide describes how to use Intel(R) XPU-SMI Windows CLI tool to manage Intel GPU devices on Windows Server OS. The GPU driver version on Windows should be 31.0.101.3902 or newer. 
+# Intel(R) XPU System Management Interface Windows CLI User Guide
+This guide describes how to use Intel(R) XPU System Management Interface Windows CLI tool to manage Intel GPU devices on Windows Server OS. The GPU driver version on Windows should be 31.0.101.3902 or newer. 
   
 
 ## Intel(R) XPU-SMI Windows CLI main features 
@@ -341,6 +341,15 @@ xpu-smi.exe stats -d 0
 ```
 
 ## Dump the device statistics in CSV format
+For Flex series GPU on Windows OS, the supported statistics include
+* GPU utilization
+* GPU power
+* GPU temperature
+* GPU frequency
+* GPU memory throughput
+* GPU memory usage
+* GPU engine group utilization
+  
 Help info of the device statistics dump. 
 ```
 xpu-smi.exe dump -h
