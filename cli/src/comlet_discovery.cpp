@@ -268,12 +268,14 @@ void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
                 bdf = "0000:" + bdf;
             }
             deviceJson["pci_bdf_address"] = bdf;
-            deviceJson["gfx_firmware_status"] = "GPU in bad state";
-            FirmwareVersion fwVer;
-            if (getFirmwareVersion(fwVer, bdf) == true) {
-                deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
-                deviceJson["gfx_data_firmware_version"] = 
-                    fwVer.gfx_data_fw_version;
+            if (isPhysicalFunctionDevice(bdf) == true) {
+                deviceJson["gfx_firmware_status"] = "GPU in bad state";
+                FirmwareVersion fwVer;
+                if (getFirmwareVersion(fwVer, bdf) == true) {
+                    deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
+                    deviceJson["gfx_data_firmware_version"] = 
+                        fwVer.gfx_data_fw_version;
+                }
             }
             PciDeviceData pdd;
             if (getPciDeviceData(pdd, bdf) == true) {

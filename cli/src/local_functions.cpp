@@ -284,57 +284,56 @@ bool getBdfListFromLspci(std::vector<std::string> &list) {
     }
 }
 
+//Get PCI name from lspci and then get device ID and vendor ID from sysfs
+//It returns true if one of data is available
 bool getPciDeviceData(PciDeviceData &data, const std::string &bdf) {
-    std::string cmd = "lspci -Dx -s " + bdf;
+    bool ret = false;
+    std::string cmd = "lspci -D -s " + bdf + " 2>&1|cut -d ':' -f 4";
     char buf[BUF_SIZE];
     FILE *pf = popen(cmd.c_str(), "r");
-    if (pf == NULL) {
-        return false;
-    }
-    bool found = false;
-    int line_num = 1;
-    while (fgets(buf, BUF_SIZE, pf) != NULL) {
-        string line(buf);
-        if (line.length() < 15) {
-            break;
+    if (pf != NULL && fgets(buf, BUF_SIZE, pf) != NULL) {
+        if (strnlen(buf, BUF_SIZE) > 0) {
+            std::string line(buf+1);
+            if (line.length() > 0) {
+                if (line.at(line.length() - 1) == '\n') {
+                    line.pop_back();
+                }
+                data.name = line;
+                ret = true;
+            }
         }
-        if (line_num == 1) {
-            if (line.at(line.length() - 1) == '\n') {
-                line.pop_back();
-            }
-            size_t pos = line.rfind(':');
-            if (pos == std::string::npos || pos >= line.length() - 8) {
-                break;
-            }
-            data.name = line.substr(pos + 2);
-        } else {
-#define NUM_OF_BYTES 5
-            unsigned bytes[NUM_OF_BYTES];
-            if (std::sscanf(line.c_str(), "%x: %x %x %x %x", 
-                        &bytes[0], &bytes[1], &bytes[2], &bytes[3], 
-                        &bytes[4]) != NUM_OF_BYTES) {
-                break;
-            }
-            uint16_t vendor = bytes[2] << 8 | bytes[1];
-            uint16_t device = bytes[4] << 8 | bytes[3];
-            std::stringstream ss;
-            ss << std::string("0x") << std::hex << vendor; 
-            data.vendorId = ss.str();
-            ss.str("");
-            ss << std::string("0x") << std::hex << device;
-            data.pciDeviceId = ss.str();
-            found = true;
-            break;
-        }
-        line_num++;
     }
-    int ret = pclose(pf);
-    if (ret != -1 && WEXITSTATUS(ret) == 0) {
-        return found;
-    } else {
-        return false;
+    int r = pclose(pf);
+    if (r == -1 || WEXITSTATUS(r) != 0) {
+        data.name.clear();
+        ret = false;
     }
-
+    std::string fileName = "/sys/bus/pci/devices/" + bdf + "/device";
+    int fd = open(fileName.c_str(), O_RDONLY);
+    if (fd < 0) {
+        return ret;
+    }
+    int szRead = read(fd, buf, BUF_SIZE);
+    close (fd);
+    if (szRead <= 0 || szRead >= BUF_SIZE) {
+        return ret;
+    }
+    //Remove the last '\n'
+    buf[szRead - 1] = 0;
+    data.pciDeviceId = buf;
+    fileName = "/sys/bus/pci/devices/" + bdf + "/vendor";
+    fd = open(fileName.c_str(), O_RDONLY);
+    if (fd < 0) {
+        return ret;
+    }
+    szRead = read(fd, buf, BUF_SIZE);
+    close (fd);
+    if (szRead <= 0 || szRead >= BUF_SIZE) {
+        return ret;
+    }
+    buf[szRead - 1] = 0;
+    data.vendorId = buf;
+    return true;
 }
 
 bool getPciPath(std::vector<string> &pciPath, const std::string &bdf) {
@@ -711,7 +710,7 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
     }
 }
 
-static bool isPhysicalFunctionDevice(std::string pci_addr) {
+bool isPhysicalFunctionDevice(std::string pci_addr) {
     DIR *dir;
     struct dirent *ent;
     std::stringstream ss;
