@@ -52,7 +52,7 @@ namespace xpum {
             XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
             throw LevelZeroInitializationException("zeInit error");
         }
-        initPDHQuery();
+        openPDHQuery();
     }
 
 
@@ -204,6 +204,10 @@ namespace xpum {
                         }
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE, std::to_string(physical_size)));
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_FREE_SIZE_BYTE, std::to_string(free_size)));
+                    }
+                    if (physical_size == 0) {
+                        physical_size = (uint64_t)getMemSizeByNativeAPI();
+                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE, std::to_string(physical_size)));
                     }
 
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME, std::string("GFX")));
@@ -821,7 +825,6 @@ namespace xpum {
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(const zes_device_handle_t& device, MeasurementType type) noexcept {
-        updatePDHQuery();
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
         if (device == nullptr) {
             ret->setErrors("toGetEngineGroupUtilization error");

@@ -7,6 +7,7 @@
 #include "pch.h"
 #include "gpu_device.h"
 #include "device/gpu/gpu_device_stub.h"
+#include "device/win_native.h"
 
 #include "infrastructure/configuration.h"
 
@@ -150,6 +151,7 @@ namespace xpum {
     }
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> GPUDevice::getRealtimeMetrics() noexcept {
+        updatePDHQuery();
         std::map<MeasurementType, std::shared_ptr<MeasurementData>> datas;
        
         std::shared_ptr<MeasurementData> gpu_utilization = std::make_shared<MeasurementData>();

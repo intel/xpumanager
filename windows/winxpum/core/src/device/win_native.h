@@ -6,7 +6,7 @@
 
 #pragma once
 
-void initPDHQuery();
+void openPDHQuery();
 
 void updatePDHQuery();
 
