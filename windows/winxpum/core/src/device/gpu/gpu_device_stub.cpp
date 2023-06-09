@@ -681,8 +681,25 @@ namespace xpum {
             exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
 
-        if (!exception_msgs.empty())
-            ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
+        if (!exception_msgs.empty()){
+            auto mem_used_byte = getMemUsedByNativeAPI();
+            if (type == MeasurementType::METRIC_MEMORY_USED) {
+                if (mem_used_byte > 0) {
+                    ret->setCurrent(mem_used_byte);
+                } else {
+                    ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
+                }
+            } else if (type == MeasurementType::METRIC_MEMORY_UTILIZATION) {
+                auto total_byte = getMemSizeByNativeAPI();
+                if (mem_used_byte > 0 && total_byte > 0) {
+                    uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * mem_used_byte * 100 / total_byte;
+                    ret->setCurrent(utilization);
+                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                } else {
+                    ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
+                }
+            }
+        }
         return ret;
     }
 
