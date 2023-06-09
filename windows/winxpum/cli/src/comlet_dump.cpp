@@ -377,6 +377,7 @@ bool ComletDump::printByLinePrepare(std::ostream &out) {
 void ComletDump::updateData() {
     while (keepDumping) {
         run();
+        std::this_thread::sleep_for(std::chrono::milliseconds(900));
     }
 }
 

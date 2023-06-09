@@ -17,6 +17,11 @@
 
 #include <iostream>
 #include <vector>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include "infrastructure/logger.h"
+
 
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)     \
@@ -33,6 +38,12 @@
 #pragma comment(lib, "pdh.lib")
 
 static HQUERY lastQuery = NULL;
+
+static std::chrono::time_point<std::chrono::system_clock> lastTimeStamp = std::chrono::system_clock::now();
+
+bool queryOpened = false;
+
+std::recursive_mutex queryMutex;
 
 #define COPY_ENGINE_COUNTER_INDEX 0
 #define MEDIA_ENGINE_COUNTER_INDEX 1
@@ -90,10 +101,16 @@ static std::vector<HCOUNTER> addCounter(HQUERY Query, std::vector<std::string> p
     return CounterList;
 }
 
-void initPDHQuery() {
+void openPDHQuery() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter initPDHQuery");
+    if (queryOpened)
+        return;
+    lastTimeStamp = std::chrono::system_clock::now();
     PDH_STATUS Status = ERROR_SUCCESS;
     Status = PdhOpenQuery(NULL, NULL, &lastQuery);
     if (Status != ERROR_SUCCESS) {
+        XPUM_LOG_DEBUG("PdhOpenQuery failed, return code: {}", Status);
         PdhCloseQuery(lastQuery);
         return;
     }
@@ -105,18 +122,36 @@ void initPDHQuery() {
 
     Status = PdhCollectQueryData(lastQuery);
     if (Status != ERROR_SUCCESS) {
+        XPUM_LOG_DEBUG("PdhCollectQueryData failed, return code: {}", Status);
         PdhCloseQuery(lastQuery);
         return;
     }
+    queryOpened = true;
+    XPUM_LOG_DEBUG("leave initPDHQuery");
 }
 
 void updatePDHQuery() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter updatePDHQuery");
+    // check time duration
+    auto ts = std::chrono::system_clock::now();
+    if (ts > lastTimeStamp) {
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - lastTimeStamp);
+        XPUM_LOG_DEBUG("time delta: {}", delta.count());
+        if (delta.count() < 500) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500 - delta.count()));
+        }
+    } else {
+        XPUM_LOG_DEBUG("lastTimeStamp is bigger than now");
+    }
     PDH_STATUS Status = ERROR_SUCCESS;
     DWORD CounterType;
     PDH_FMT_COUNTERVALUE DisplayValue;
     if (lastQuery) {
+        XPUM_LOG_DEBUG("lastQuery handler is valid");
         Status = PdhCollectQueryData(lastQuery);
         if (Status == ERROR_SUCCESS) {
+            XPUM_LOG_DEBUG("PdhCollectQueryData success");
             for (int i = 0; i < MAX_COUNTER_INDEX; i++) {
                 auto CounterList = lastCounterList[i];
                 double value = 0;
@@ -126,6 +161,7 @@ void updatePDHQuery() {
                                                          &CounterType,
                                                          &DisplayValue);
                     if (Status != ERROR_SUCCESS) {
+                        XPUM_LOG_DEBUG("PdhGetFormattedCounterValue failed, return code: {}", Status);
                         continue;
                     }
 
@@ -136,41 +172,62 @@ void updatePDHQuery() {
                 else
                     values[i] = value;
             }
+        } else {
+            XPUM_LOG_DEBUG("PdhCollectQueryData failed, return code: {}", Status);
         }
-        PdhCloseQuery(lastQuery);
+        Status = PdhCloseQuery(lastQuery);
+        if (Status != ERROR_SUCCESS) {
+            XPUM_LOG_DEBUG("PdhCloseQuery failed, return code: {}", Status);
+        }
     } else {
+        XPUM_LOG_DEBUG("lastQuery handler is NULL");
         for (int i = 0; i < MAX_COUNTER_INDEX; i++) {
             values[i] = 0;
         }
     }
-    initPDHQuery();
+    queryOpened = false;
+    openPDHQuery();
+    XPUM_LOG_DEBUG("leave updatePDHQuery");
 }
 
 void closePDHQuery() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
     PdhCloseQuery(lastQuery);
+    queryOpened = false;
 }
 
 double getCopyEngineUtilByNativeAPI() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter getCopyEngineUtilByNativeAPI, value: {}", values[COPY_ENGINE_COUNTER_INDEX]);
     return values[COPY_ENGINE_COUNTER_INDEX];
 }
 
 double getComputeEngineUtilByNativeAPI() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter getComputeEngineUtilByNativeAPI, value: {}", values[COMPUTE_ENGINE_COUNTER_INDEX]);
     return values[COMPUTE_ENGINE_COUNTER_INDEX];
 }
 
 double getMediaEngineUtilByNativeAPI() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter getMediaEngineUtilByNativeAPI, value: {}", values[MEDIA_ENGINE_COUNTER_INDEX]);
     return values[MEDIA_ENGINE_COUNTER_INDEX];
 }
 
 double getMemUsedByNativeAPI() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter getMemUsedByNativeAPI, value: {}", values[MEM_USED_COUNTER_INDEX]);
     return values[MEM_USED_COUNTER_INDEX];
 }
 
 double getRenderEngineUtilByNativeAPI() {
+    std::lock_guard<std::recursive_mutex> lck(queryMutex);
+    XPUM_LOG_DEBUG("enter getRenderEngineUtilByNativeAPI, value: {}", values[RENDER_ENGINE_COUNTER_INDEX]);
     return values[RENDER_ENGINE_COUNTER_INDEX];
 }
 
 double getMemSizeByNativeAPI() {
+    XPUM_LOG_DEBUG("enter getMemSizeByNativeAPI");
     HINSTANCE hDXGI = LoadLibrary(L"dxgi.dll");
     if (!hDXGI)
         return 0;
@@ -194,8 +251,10 @@ double getMemSizeByNativeAPI() {
     HRESULT hr = pCreateDXGIFactory(__uuidof(IDXGIFactory), (LPVOID*)&pDXGIFactory);
 
     if (SUCCEEDED(hr)) {
-        if (pDXGIFactory == 0)
+        if (pDXGIFactory == 0) {
+            XPUM_LOG_DEBUG("pDXGIFactory == 0");
             return 0;
+        }
 
         for (UINT index = 0;; ++index) {
             IDXGIAdapter* pAdapter = nullptr;
@@ -208,10 +267,12 @@ double getMemSizeByNativeAPI() {
             if (SUCCEEDED(pAdapter->GetDesc(&desc))) {
                 std::wstring ws(desc.Description);
                 std::string name(ws.begin(), ws.end());
+                XPUM_LOG_DEBUG("find adapter {}", name);
                 if (name.find("Intel(R) Data Center GPU Flex Series") != name.npos || name.find("Intel(R) Iris(R) Xe Graphics") != name.npos) {
                     SAFE_RELEASE(pAdapter);
                     SAFE_RELEASE(pDXGIFactory);
                     FreeLibrary(hDXGI);
+                    XPUM_LOG_DEBUG("name matched, and get mem size {}", desc.DedicatedVideoMemory);
                     return desc.DedicatedVideoMemory;
                 }
             }
