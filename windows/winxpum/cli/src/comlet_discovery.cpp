@@ -124,9 +124,6 @@ namespace xpum::cli {
             });
         auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
         deviceIdOpt->excludes(listamcversionsOpt);
-
-        addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
-        addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
     }
 
     std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
