@@ -695,6 +695,7 @@ xpu-smi health -l
   * GPU and GPU engine utilizations
   * GPU energy and power
   * GPU core temperature
+  * GPU frequency
   * GPU memory usage
   * GPU memory throughput
   * GPU EU utilization
@@ -704,6 +705,7 @@ xpu-smi health -l
   * GPU and GPU engine utilizations
   * GPU energy and power
   * GPU core and GPU memory temperature
+  * GPU frequency
   * GPU memory usage
   * GPU memory throughput
   * GPU PCIe throughput
