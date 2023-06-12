@@ -685,6 +685,28 @@ xpu-smi health -l
 ```
   
 ## Dump the device statistics in CSV format
+### The Statistics supported by Intel data center GPUs
+* Intel(R) Data Center Flex Series GPU
+  * GPU and GPU engine utilizations
+  * GPU energy and power
+  * GPU core temperature
+  * GPU memory usage
+  * GPU memory throughput
+  * GPU EU utilization
+  * GPU PCIe throughput
+  * GPU throttle reason
+* Intel(R) Data Center Max Series GPU
+  * GPU and GPU engine utilizations
+  * GPU energy and power
+  * GPU core and GPU memory temperature
+  * GPU memory usage
+  * GPU memory throughput
+  * GPU PCIe throughput
+  * Xe Link throughput
+  * GPU throttle reason
+  * GPU reset count and GPU memory error number
+  
+  
 Help info of the device statistics dump. Please note that the metrics 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 
 ```
 xpu-smi dump -h
