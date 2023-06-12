@@ -624,6 +624,11 @@ xpu-smi stats -d 0
 | Xe Link Throughput (kB/s)   |                                                                    |
 +-----------------------------+--------------------------------------------------------------------+
 ```
+Some GPU telemetries are not available for non-root users by default, such as GPU temperature. If you want to retrieve the GPU temperature with non-root privilege user, please add read permission in sysfs: /sys/class/intel_pmt/telem?/telem. Please refer to the example below. After that, you may read GPU temperature with non-root user.  
+```
+cd /sys/class/intel_pmt/telem1
+sudo chmod o+r telem
+```
 
 ## Get the device health status
 Help info of get GPU device component health status
