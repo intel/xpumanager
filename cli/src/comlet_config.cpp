@@ -102,7 +102,7 @@ void ComletConfig::setupOptions() {
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\";\"debug\".The valid range of all time values (us) is from 5000 to 100,000,000.");
-    addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset).");
+    addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset). For Intel(R) Max Series GPU, when SR-IOV is enabled, please add \"pci=realloc=off\" into Linux kernel command line parameters. When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters.");
 
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
@@ -418,6 +418,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             
             if (this->opts->deviceId >= 0) {
+                std::cout <<"It may take one minute to reset GPU "<< this->opts->deviceId<<". Please wait ..."<<std::endl;
 #ifndef DAEMONLESS
                 std::cout <<"Resetting GPU will make XPUM daemon not work."<< std::endl;
                 std::cout <<"Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
