@@ -212,7 +212,7 @@ def setMemoryecc(deviceId, enabled):
 
 
 def runReset(deviceId, force):
-    resp = stub.ResetDevice(core_pb2.ResetDeviceRequest(
+    resp = stub.resetDevice(core_pb2.ResetDeviceRequest(
         deviceId=deviceId, force=force))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
