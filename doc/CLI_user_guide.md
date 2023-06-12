@@ -519,6 +519,7 @@ Change the component custom temperature threshold
   * GPU and GPU engine utilizations
   * GPU energy and power
   * GPU core temperature
+  * GPU frequency
   * GPU memory usage
   * GPU memory throughput
   * GPU EU utilization
@@ -528,6 +529,7 @@ Change the component custom temperature threshold
   * GPU and GPU engine utilizations
   * GPU energy and power
   * GPU core and GPU memory temperature
+  * GPU frequency
   * GPU memory usage
   * GPU memory throughput
   * GPU PCIe throughput
