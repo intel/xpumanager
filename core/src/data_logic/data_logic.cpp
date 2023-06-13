@@ -525,7 +525,14 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
             xpum_device_fabric_throughput_stats_t stats;
             stats.tile_id = info.attach_id;
-            stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
+            std::string did = 
+                Core::instance().getDeviceManager()->getDeviceIDByFabricID(
+                        info.remote_fabric_id);
+            if (did.empty() == true) {
+                return XPUM_GENERIC_ERROR;
+            } else {
+                stats.remote_device_id = std::stoi(did);
+            }
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
             if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
@@ -594,7 +601,14 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
             xpum_device_fabric_throughput_metric_t stats;
             stats.tile_id = info.attach_id;
-            stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
+            std::string did = 
+                Core::instance().getDeviceManager()->getDeviceIDByFabricID(
+                        info.remote_fabric_id);
+            if (did.empty() == true) {
+                return XPUM_GENERIC_ERROR;
+            } else {
+                stats.remote_device_id = std::stoi(did);
+            }
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
             if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
@@ -634,7 +648,13 @@ bool DataLogic::getFabricLinkInfo(xpum_device_id_t deviceId,
                 if (info != nullptr) {
                     FabricLinkInfo link;
                     link.tile_id = attach_iter->first;
-                    link.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(remote_fabric_iter->first));
+                    std::string did = Core::instance().getDeviceManager(
+                            )->getDeviceIDByFabricID(remote_fabric_iter->first);
+                    if (did.empty() == true) {
+                        return false;
+                    } else {
+                        link.remote_device_id = std::stoi(did);
+                    }
                     link.remote_tile_id = remote_attach_iter->first;
                     info[index] = link;
                 }

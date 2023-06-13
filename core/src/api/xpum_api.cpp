@@ -233,11 +233,16 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
         return res;
 
     uint32_t count;
-    Core::instance().getDataLogic()->getFabricLinkInfo(deviceId, nullptr, &count);
-    if (count <= 0)
+    bool r = Core::instance().getDataLogic()->getFabricLinkInfo(
+            deviceId, nullptr, &count);
+    if (r == false || count <= 0)
         return res;
     std::vector<FabricLinkInfo> info(count);
-    Core::instance().getDataLogic()->getFabricLinkInfo(deviceId, info.data(), &count);
+    r = Core::instance().getDataLogic()->getFabricLinkInfo(
+            deviceId, info.data(), &count);
+    if (r == false) {
+        return res;
+    }
 
     Property prop;
     pDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
