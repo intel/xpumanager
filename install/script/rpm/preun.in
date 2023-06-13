@@ -40,4 +40,17 @@ systemctl disable xpum_rest >> ${LOG_FILE} 2>&1
 rm -rf ${SERVICE_PATH}/xpum.service
 rm -rf ${SERVICE_PATH}/xpum_rest.service
 systemctl daemon-reload
+
+if [ $1 -eq 0 ]; then
+  if [ -n "${RPM_INSTALL_PREFIX}" ]; then
+    if [ -d ${RPM_INSTALL_PREFIX}/lib/xpum/rest ]; then
+      find ${RPM_INSTALL_PREFIX}/lib/xpum/rest -type d -name  "__pycache__" -exec rm -rf {} +
+    fi
+  else
+    if [ -d @CMAKE_INSTALL_PREFIX@/lib/xpum/rest ]; then
+      find @CMAKE_INSTALL_PREFIX@/lib/xpum/rest -type d -name  "__pycache__" -exec rm -rf {} +
+    fi
+  fi
+fi
+
 RemoveUser xpum
