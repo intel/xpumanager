@@ -444,7 +444,8 @@ Options:
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
-  --reset                     Reset device by SBR (Secondary Bus Reset).
+  --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
+                                BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
 
 ```
 
