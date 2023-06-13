@@ -113,7 +113,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20230612"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20230613"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-jammy"
       resources:
@@ -209,7 +209,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20230612"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20230613"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos-stream9"
       resources:
