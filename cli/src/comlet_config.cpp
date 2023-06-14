@@ -418,11 +418,6 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             
             if (this->opts->deviceId >= 0) {
-                std::cout <<"It may take one minute to reset GPU "<< this->opts->deviceId<<". Please wait ..."<<std::endl;
-#ifndef DAEMONLESS
-                std::cout <<"Resetting GPU will make XPUM daemon not work."<< std::endl;
-                std::cout <<"Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
-#endif
                 json = this->coreStub->resetDevice(this->opts->deviceId, true); 
 #if 0
                 char confirmed;
@@ -470,7 +465,31 @@ static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::j
 }
 
 void ComletConfig::getTableResult(std::ostream &out) {
+    if (this->opts->resetDevice) {
+        if (this->opts->device != "") {
+            if (isNumber(this->opts->device)) {
+                this->opts->deviceId = std::stoi(this->opts->device);
+            } else {
+                auto json = this->coreStub->getDeivceIdByBDF(
+                    this->opts->device.c_str(), &this->opts->deviceId);
+                if (json->contains("error")) {
+                    out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+                    setExitCodeByJson(*json);
+                    return;
+                }
+            }
+        }
+        if (this->opts->deviceId >= 0 && this->opts->tileId == -1) {
+            out << "It may take one minute to reset GPU " << this->opts->deviceId << ". Please wait ..." << std::endl;
+        }
+    }
     auto res = run();
+#ifndef DAEMONLESS
+    if (this->opts->deviceId >= 0 && this->opts->tileId == -1 && this->opts->resetDevice) {
+        out << "Resetting GPU will make XPUM daemon not work." << std::endl;
+        out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
+    }
+#endif
     if (res->contains("return")) {
         out << "Return: " << (*res)["return"].get<std::string>() << std::endl;
         if ((res->contains("status") == false) || 

@@ -1315,6 +1315,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool forc
             (*json)["error"] = "device Id or tile Id is invalid";
         } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
             (*json)["error"] = "device is updating firmware";
+        } else if (res == XPUM_RESULT_RESET_FAIL) {
+            (*json)["error"] = "Fail to reset device";
         } else {
             (*json)["error"] = "Error";
         }

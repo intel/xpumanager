@@ -41,6 +41,8 @@
 #include "ext-include/igsc_lib.h"
 #include "log/dbg_log.h"
 #include "vgpu/precheck.h"
+#include "level_zero/ze_api.h"
+#include "level_zero/zes_api.h"
 
 namespace xpum {
 
@@ -2439,15 +2441,46 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     if (device->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
-    
+
     if (Core::instance().getFirmwareManager() && Core::instance().getFirmwareManager()->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
 
-    if (Core::instance().getDeviceManager()->resetDevice(std::to_string(deviceId), force)) {
-        return XPUM_OK;
+    uint32_t driver_count = 0;
+    auto res = zeDriverGet(&driver_count, nullptr);
+    if (res != ZE_RESULT_SUCCESS)
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    std::vector<ze_driver_handle_t> drivers(driver_count);
+    res = zeDriverGet(&driver_count, drivers.data());
+    if (res != ZE_RESULT_SUCCESS)
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    int idx = 0;
+
+    for (auto &p_driver : drivers) {
+        uint32_t device_count = 0;
+        res = zeDeviceGet(p_driver, &device_count, nullptr);
+        if (res != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        std::vector<ze_device_handle_t> devices(device_count);
+        zeDeviceGet(p_driver, &device_count, devices.data());
+        if (res != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        for (auto device : devices) {
+            if (idx == deviceId) {
+                xpumShutdown();
+                res = zesDeviceReset(device, true);
+                XPUM_LOG_INFO("reset result: {}", res);
+                if (res == ZE_RESULT_SUCCESS) {
+                    return XPUM_OK;
+                } else {
+                    return XPUM_RESULT_RESET_FAIL;
+                }
+            }
+            idx++;
+        }
     }
-    return XPUM_GENERIC_ERROR;
+    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {

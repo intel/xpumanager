@@ -541,7 +541,7 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_p
 
 /**
  * @brief Reset the device
- * @details This function is used to reset the device
+ * @details This function is used to reset the device. Caution: xpumResetDevice calls xpumShutdown internally, please make sure other API calls are finished before calling xpumResetDevice, the behaviour of calling other APIs during resetting is undefined. And it is recommended to stop current process and use a new process to initialize XPUM after resetting.
  *
  * @param deviceId          IN: The device Id
  * @param force             IN: force to reset the device or not
