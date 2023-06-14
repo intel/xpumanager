@@ -708,6 +708,9 @@ static std::string getPciName(std::string bdf) {
         }
     }
     pclose(pf);
+    if (name.find("Intel") == std::string::npos) {
+        name.clear();
+    }
     return name;
 }
 
