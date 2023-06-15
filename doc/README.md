@@ -16,10 +16,10 @@ pip install --no-cache-dir -r requirements.txt
 
 # Build doc
 
-To build XPUM doc, run below command, `-DDAEMONLESS=ON` is to build xpu-smi doc.
+To build XPUM doc, run below command
 
 ```
-./build.sh [-DDAEMONLESS=ON]
+./build.sh
 ```
 
 # Provisioning doc
