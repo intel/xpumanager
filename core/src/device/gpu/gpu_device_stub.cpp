@@ -1283,7 +1283,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     sort(p_devices->begin(), p_devices->end(),
         [](const std::shared_ptr<Device> & a, const std::shared_ptr<Device> & b) -> bool
     {
-        return a->getId() < b->getId();
+        return std::stoi(a->getId()) < std::stoi(b->getId());
     });
 
     return p_devices;
