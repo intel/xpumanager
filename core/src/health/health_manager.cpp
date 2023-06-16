@@ -144,11 +144,17 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
         data->throttleThreshold = getThrottleCoreTemperature(pciDeviceId);
         data->shutdownThreshold = getShutdownCoreTemperature(pciDeviceId);
+        if (Configuration::XPUM_MODE == "xpu-smi")
+            p_health_core_thermal_configs[deviceId] = data->throttleThreshold;
     } else if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL) {
         data->throttleThreshold = 85;
         data->shutdownThreshold = getShutdownMemoryTemperature(pciDeviceId);
+        if (Configuration::XPUM_MODE == "xpu-smi")
+            p_health_memory_thermal_configs[deviceId] = data->throttleThreshold;
     } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
         data->throttleThreshold = getThrottlePower(pciDeviceId);
+        if (Configuration::XPUM_MODE == "xpu-smi")
+            p_health_power_configs[deviceId] = data->throttleThreshold;
     } else {
         if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT
             && type != xpum_health_type_t::XPUM_HEALTH_FREQUENCY)

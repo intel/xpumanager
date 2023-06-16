@@ -41,7 +41,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
         </div>
@@ -122,7 +123,10 @@
 <li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#get-and-change-xpu-manager-settings">Get and change XPU Manager settings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#get-the-aggregated-device-statistics">Get the aggregated device statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#get-the-device-health-status">Get the device health status</a></li>
-<li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="CLI_user_guide.html#the-statistics-supported-by-intel-data-center-gpus">The Statistics supported by Intel data center GPUs</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#get-the-system-topology">Get the system topology</a></li>
 <li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#update-the-gpu-firmware">Update the GPU firmware</a></li>
 <li class="toctree-l3"><a class="reference internal" href="CLI_user_guide.html#get-and-change-the-gpu-settings">Get and change the GPU settings</a></li>
@@ -176,7 +180,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Linux Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="SMI_README.html">Intel XPU System Management Interface</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="SMI_README.html#intel-xpu-system-management-interface-feature">Intel XPU System Management Interface feature</a></li>
 <li class="toctree-l3"><a class="reference internal" href="SMI_README.html#suppored-devices">Suppored Devices</a></li>
@@ -210,7 +214,11 @@
 <li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#diagnose-gpu-with-different-test-suites">Diagnose GPU with different test suites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#get-and-change-the-gpu-settings">Get and change the GPU settings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#get-the-device-real-time-statistics">Get the device real-time statistics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#get-the-device-health-status">Get the device health status</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smi_user_guide.html#the-statistics-supported-by-intel-data-center-gpus">The Statistics supported by Intel data center GPUs</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#collect-the-gpu-debug-log-files">Collect the GPU debug log files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="smi_user_guide.html#set-up-gpu-sr-iov-configuration">Set up GPU SR-IOV configuration</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="smi_user_guide.html#bios-settings-for-gpu-sr-iov">BIOS settings for GPU SR-IOV</a><ul>
@@ -236,6 +244,28 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="win_index.html">XPU-SMI Windows Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="WIN_README.html">Intel XPU Manager for Windows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="WIN_README.html#supported-devices">Supported Devices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="WIN_README.html#supported-os">Supported OS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="WIN_README.html#how-to-build">How to build</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="xpum_win_user_guide.html">Intel(R) XPU System Management Interface Windows CLI User Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#intel-r-xpu-smi-windows-cli-main-features">Intel(R) XPU-SMI Windows CLI main features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#help-info">Help info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#discover-the-gpu-devices-in-this-machine">Discover the GPU devices in this machine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#update-the-gpu-firmware">Update the GPU firmware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#get-and-change-the-gpu-settings">Get and change the GPU settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#get-the-device-real-time-statistics">Get the device real-time statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="xpum_win_user_guide.html#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="windoc/rst/index.html">Core Library API</a><ul>
 </ul>
 </li>
 </ul>

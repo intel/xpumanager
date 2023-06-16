@@ -16,7 +16,6 @@
 #include "utility.h"
 #include "exit_code.h"
 #include "local_functions.h"
-#include "device_model.h"
 
 namespace xpum::cli {
 
@@ -269,12 +268,14 @@ void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
                 bdf = "0000:" + bdf;
             }
             deviceJson["pci_bdf_address"] = bdf;
-            deviceJson["gfx_firmware_status"] = "GPU in bad state";
-            FirmwareVersion fwVer;
-            if (getFirmwareVersion(fwVer, bdf) == true) {
-                deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
-                deviceJson["gfx_data_firmware_version"] = 
-                    fwVer.gfx_data_fw_version;
+            if (isPhysicalFunctionDevice(bdf) == true) {
+                deviceJson["gfx_firmware_status"] = "GPU in bad state";
+                FirmwareVersion fwVer;
+                if (getFirmwareVersion(fwVer, bdf) == true) {
+                    deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
+                    deviceJson["gfx_data_firmware_version"] = 
+                        fwVer.gfx_data_fw_version;
+                }
             }
             PciDeviceData pdd;
             if (getPciDeviceData(pdd, bdf) == true) {
@@ -351,25 +352,6 @@ bool ComletDiscovery::showWarnMsg(std::ostream &out){
         }
     }
     return true;
-}
-
-void ComletDiscovery::showWarnMsgAndGetSerailNumberAndAmcVersion(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
-    if (json->contains("pci_device_id")) {
-        int devicePciId = std::stoul((*json)["pci_device_id"].get<std::string>(), 0, 16);
-        if (getDeviceModelByPciDeviceId(devicePciId) == XPUM_DEVICE_MODEL_PVC)
-            return;
-    }
-
-    if (!showWarnMsg(out))
-        return;
-    auto snAndAmcJson = this->coreStub->getSerailNumberAndAmcVersion(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
-    if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
-        std::string sn = (*snAndAmcJson)["serial_number"];
-        if (sn.size() > 0) {
-            (*json)["serial_number"] = sn;
-        }
-    }
-    (*json)["amc_firmware_version"] = (*snAndAmcJson)["amc_firmware_version"];
 }
 
 static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
@@ -514,7 +496,6 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
     } else if (this->opts->propIdList.size() > 0) {
         dumpAllDeviceInfo(out, json, this->opts->propIdList);
     } else if (this->opts->deviceId.compare("-1") != 0) {
-        showWarnMsgAndGetSerailNumberAndAmcVersion(out, json);
         showDetailedInfo(out, json);
         if (strcasecmp(std::string((*json)["gfx_firmware_version"]).c_str(), "unknown") == 0 ||
             strcasecmp(std::string((*json)["gfx_data_firmware_version"]).c_str(), "unknown") == 0) {

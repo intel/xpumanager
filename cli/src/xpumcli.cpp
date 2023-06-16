@@ -136,8 +136,8 @@ int main(int argc, char** argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletGroup))
 #endif
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiagnostic))
-#ifndef DAEMONLESS
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletHealth))
+#ifndef DAEMONLESS
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
 #endif
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))

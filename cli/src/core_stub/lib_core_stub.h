@@ -64,6 +64,10 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> setHealthConfig(int deviceId, int cfgtype, int threshold);
     std::unique_ptr<nlohmann::json> setHealthConfigByGroup(uint32_t groupId, int cfgtype, int threshold);
 
+    std::unique_ptr<nlohmann::json> getHealth(int deviceId, xpum_health_type_t type);
+    nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json json, xpum_health_type_t type,
+                                               uint64_t throttleValue, uint64_t shutdownValue);
+
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false, bool enableScale = false);
     std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false, bool enableScale = false);
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);

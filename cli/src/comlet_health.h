@@ -17,7 +17,9 @@ namespace xpum::cli {
 struct ComletHealthOptions {
     bool listAll = false;
     std::string deviceId = "-1";
+#ifndef DAEMONLESS
     uint32_t groupId = UINT_MAX;
+#endif
     int componentType = INT_MIN;
     int threshold = INT_MIN;
 };
@@ -38,9 +40,11 @@ class ComletHealth : public ComletBase {
         return opts->deviceId != "-1";
     }
 
+#ifndef DAEMONLESS
     inline const bool isGroupOperation() const {
         return opts->groupId > 0;
     }
+#endif
 
     inline const bool isListAll() const {
         return opts->listAll;

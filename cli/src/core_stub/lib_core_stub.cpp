@@ -524,18 +524,186 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResultByGroup(uint32_
     return json;
 }
 
+nlohmann::json LibCoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, xpum_health_type_t type,
+                                               uint64_t throttleValue, uint64_t shutdownValue) {
+    if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
+        json["throttle_threshold"] = throttleValue;
+    }
+    if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
+        json["throttle_threshold"] = throttleValue;
+        json["shutdown_threshold"] = shutdownValue;
+    }
+    if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL) {
+        json["throttle_threshold"] = throttleValue;
+        json["shutdown_threshold"] = shutdownValue;
+    }
+    return json;
+}
+
+static std::string healthStatusEnumToString(xpum_health_status_t status) {
+    std::string ret;
+    switch (status) {
+        case xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN:
+            ret = "Unknown";
+            break;
+        case xpum_health_status_t::XPUM_HEALTH_STATUS_OK:
+            ret = "OK";
+            break;
+        case xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING:
+            ret = "Warning";
+            break;
+        case xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL:
+            ret = "Critical";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string healthTypeEnumToString(xpum_health_type_t type) {
+    std::string ret;
+    switch (type) {
+        case xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL:
+            ret = "core_temperature";
+            break;
+        case xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL:
+            ret = "memory_temperature";
+            break;
+        case xpum_health_type_t::XPUM_HEALTH_POWER:
+            ret = "power";
+            break;
+        case xpum_health_type_t::XPUM_HEALTH_MEMORY:
+            ret = "memory";
+            break;
+        case xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT:
+            ret = "xe_link_port";
+            break;
+        case xpum_health_type_t::XPUM_HEALTH_FREQUENCY:
+            ret = "frequency";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
 std::unique_ptr<nlohmann::json> LibCoreStub::getAllHealth() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    int count{XPUM_MAX_NUM_DEVICES};
+    xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
+    xpum_result_t res = xpumGetDeviceList(devices, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> healthJsonList;
+        for (int i = 0; i < count; i++) {
+            auto healthJson = (*getHealth(devices[i].deviceId, -1));
+            healthJsonList.push_back(healthJson);
+        }
+        (*json)["device_list"] = healthJsonList;
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            default:
+                (*json)["error"] = "Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+        }
+    }
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getHealth(int deviceId, int componentType) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::vector<xpum_health_type_t> types = {   XPUM_HEALTH_CORE_THERMAL,
+                                                XPUM_HEALTH_MEMORY_THERMAL,
+                                                XPUM_HEALTH_POWER,
+                                                XPUM_HEALTH_MEMORY,
+                                                XPUM_HEALTH_FABRIC_PORT,
+                                                XPUM_HEALTH_FREQUENCY};
+    if (componentType >= 1 && componentType <= (int)(types.size())) {
+        xpum_health_type_t targetType = types[componentType - 1];
+        types.clear();
+        types.push_back(targetType);
+    }
+    (*json)["device_id"] = deviceId;
+    for (auto& type : types) {
+        auto componentJson = (*getHealth(deviceId, type));
+        if (componentJson.contains("error")) {
+            auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+            (*errorJson)["error"] = componentJson["error"];
+            (*errorJson)["errno"] = componentJson["errno"];
+            return errorJson;
+        }
+        std::string currentHealthType = healthTypeEnumToString(type);
+        (*json)[currentHealthType]["status"] = componentJson["status"];
+        (*json)[currentHealthType]["description"] = componentJson["description"];
+        if (componentJson.contains("custom_threshold")) {
+            (*json)[currentHealthType]["custom_threshold"] = componentJson["custom_threshold"];
+        }
+        if (componentJson.contains("throttle_threshold")) {
+            (*json)[currentHealthType]["throttle_threshold"] = componentJson["throttle_threshold"];
+        }
+        if (componentJson.contains("shutdown_threshold")) {
+            (*json)[currentHealthType]["shutdown_threshold"] = componentJson["shutdown_threshold"];
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::getHealth(int deviceId, xpum_health_type_t type) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_health_data_t data;
+    xpum_result_t res = xpumGetHealth(deviceId, type, &data);
+    if (res == XPUM_OK) {
+        (*json)["type"] = healthTypeEnumToString(data.type);
+        (*json)["status"] = healthStatusEnumToString(data.status);
+        (*json)["description"] = data.description;
+        (*json) = appendHealthThreshold(deviceId, (*json), data.type, data.throttleThreshold, data.shutdownThreshold);
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            default:
+                (*json)["error"] = "Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+        }
+    }
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setHealthConfig(int deviceId, int cfgtype, int threshold) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res = xpumSetHealthConfig(deviceId, static_cast<xpum_health_config_type_t>(cfgtype), &threshold);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            default:
+                (*json)["error"] = "Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+        }
+    }
     return json;
 }
 
@@ -1147,6 +1315,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool forc
             (*json)["error"] = "device Id or tile Id is invalid";
         } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
             (*json)["error"] = "device is updating firmware";
+        } else if (res == XPUM_RESULT_RESET_FAIL) {
+            (*json)["error"] = "Fail to reset device";
         } else {
             (*json)["error"] = "Error";
         }

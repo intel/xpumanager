@@ -514,6 +514,29 @@ Change the component custom temperature threshold
 ```
  
 ## Dump the device statistics in CSV format
+### The Statistics supported by Intel data center GPUs
+* Intel(R) Data Center Flex Series GPU
+  * GPU and GPU engine utilizations
+  * GPU energy and power
+  * GPU core temperature
+  * GPU frequency
+  * GPU memory usage
+  * GPU memory throughput
+  * GPU EU utilization
+  * GPU PCIe throughput
+  * GPU throttle reason
+* Intel(R) Data Center Max Series GPU
+  * GPU and GPU engine utilizations
+  * GPU energy and power
+  * GPU core and GPU memory temperature
+  * GPU frequency
+  * GPU memory usage
+  * GPU memory throughput
+  * GPU PCIe throughput
+  * Xe Link throughput
+  * GPU throttle reason
+  * GPU reset count and GPU memory error number
+    
 Help info of the device statistics dump. Please note that the metrics 'GPU Energy Consumed', 'Reset Counter', 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 
 ```
 ./xpumcli dump
@@ -756,7 +779,8 @@ Options:
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
-  --reset                     Reset device by SBR (Secondary Bus Reset).
+  --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
+                                BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
 
 ```
 
@@ -981,6 +1005,8 @@ Usage: xpumcli diag [Options]
   xpumcli diag --precheck -j
   xpumcli diag --precheck --gpu
   xpumcli diag --precheck --gpu -j
+  xpumcli diag --precheck --listtypes
+  xpumcli diag --precheck --listtypes -j
 
   xpumcli diag --stress --stresstime [time]
   
@@ -997,7 +1023,9 @@ Options:
   -s,--stress                 Stress the GPU(s) for the specified time
   --stresstime                Stress time (in minutes)
   --precheck                  Do the precheck on the GPU and GPU driver.
+  --listtypes                 List all supported GPU error types
   --gpu                       Show the GPU status only
+  
   --singletest                Selectively run some particular tests. Separated by the comma.
                                     1. Computation
                                     2. Memory Error
@@ -1005,6 +1033,8 @@ Options:
                                     4. Media Codec
                                     5. PCIe Bandwidth
                                     6. Power
+                                    7. Computation functional test
+                                    8. Media Codec functional test
 
 
 ```
@@ -1017,7 +1047,7 @@ Device Type: GPU
 | Device ID              | 0                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Level                  | 1                                                                       |
-| Result                 | Fail                                                                    |
+| Result                 | Pass                                                                    |
 | Items                  | 4                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Env Variables | Result: Pass                                                            |
@@ -1029,9 +1059,8 @@ Device Type: GPU
 | Software Permission    | Result: Pass                                                            |
 |                        | Message: Pass to check permission                                       |
 +------------------------+-------------------------------------------------------------------------+
-| Software Exclusive     | Result: Fail                                                            |
-|                        | Message: Fail to check the software exclusive. 2 process(es) are        |
-|                        |   using the device.                                                     |
+| Software Exclusive     | Result: Pass                                                            |
+|                        | Message: Warning: 2 process(es) are using the device.                   |
 |                        |   PID: 633972, Command: ./ze_gemm                                       |
 |                        |   PID: 633973, Command: ./ze_gemm                                       |
 +------------------------+-------------------------------------------------------------------------+
@@ -1227,7 +1256,7 @@ Options:
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
   -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
-  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500
+  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500. This parameter is optional. 
 
   -l,--list                   List all virtual GPUs on the specified physical GPU
 

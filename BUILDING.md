@@ -41,7 +41,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid) $PWD/build.sh -DBUILD_DOC=ON
+    $(cat /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid) $PWD/build.sh
 
 ## ==> $PWD/build/xpumanager*.deb generated
 
@@ -52,7 +52,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+    $(cat /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid) $PWD/build.sh -DDAEMONLESS=ON
 
 ## ==> $PWD/build/xpu-smi*.deb generated
 ```
@@ -75,7 +75,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_centos7.iid) $PWD/build.sh -DBUILD_DOC=ON
+    $(cat /tmp/xpum_builder_centos7.iid) $PWD/build.sh
 
 ## ==> $PWD/build/xpumanager*.rpm generated
 ```
@@ -98,7 +98,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_centos8.iid) $PWD/build.sh -DBUILD_DOC=ON
+    $(cat /tmp/xpum_builder_centos8.iid) $PWD/build.sh
 
 ## ==> $PWD/build/xpumanager*.rpm generated
 
@@ -109,7 +109,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_centos8.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+    $(cat /tmp/xpum_builder_centos8.iid) $PWD/build.sh -DDAEMONLESS=ON
 
 ## ==> $PWD/build/xpu-smi*.rpm generated.
 ```
@@ -132,7 +132,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_centos_stream9.iid) $PWD/build.sh -DBUILD_DOC=ON
+    $(cat /tmp/xpum_builder_centos_stream9.iid) $PWD/build.sh
 
 ## ==> $PWD/build/xpumanager*.rpm generated
 
@@ -143,7 +143,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_centos_stream9.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+    $(cat /tmp/xpum_builder_centos_stream9.iid) $PWD/build.sh -DDAEMONLESS=ON
 
 ## ==> $PWD/build/xpu-smi*.rpm generated.
 ```
@@ -166,7 +166,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh -DBUILD_DOC=ON
+    $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh
 
 ## ==> $PWD/build/xpumanager*.rpm generated
 
@@ -177,7 +177,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+    $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh -DDAEMONLESS=ON
 
 ## ==> $PWD/build/xpu-smi*.rpm generated.
 ```

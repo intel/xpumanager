@@ -358,7 +358,7 @@ void DumpRawDataTask::start() {
         p_this->writeToFile(ss.str());
     };
     // schedule task
-    pThreadPoolTask = pThreadPool->scheduleAtFixedRate(0, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, lambda);
+    pThreadPoolTask = pThreadPool->scheduleAtFixedRate(0, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, -1, lambda);
 }
 
 void DumpRawDataTask::stop() {
@@ -372,7 +372,7 @@ void DumpRawDataTask::reschedule() {
     // stop task first
     stop();
     // reschedule the task to refresh the dump interval
-    pThreadPoolTask = pThreadPool->scheduleAtFixedRate(0, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, lambda);
+    pThreadPoolTask = pThreadPool->scheduleAtFixedRate(0, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, -1, lambda);
 }
 
 void DumpRawDataTask::fillTaskInfoBuffer(xpum_dump_raw_data_task_t* taskInfo) {

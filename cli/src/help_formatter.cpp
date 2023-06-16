@@ -93,6 +93,9 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " health -d [pciBdfAddress] \n"
                "  " + appName + " health -d [deviceId] -j \n"
                "  " + appName + " health -d [pciBdfAddress] -j \n"
+               "  " + appName + " health -d [deviceId] -c [componentTypeId] \n"
+               "  " + appName + " health -d [pciBdfAddress] -c [componentTypeId] -j \n"
+#ifndef DAEMONLESS
                "  " + appName + " health -g [groupId] \n"
                "  " + appName + " health -g [groupId] -j \n"
                "  " + appName + " health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
@@ -100,7 +103,9 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j \n"
                "  " + appName + " health -d [pciBdfAddress] -c [componentTypeId] --threshold [threshold] -j \n"
                "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] \n"
-               "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n";
+               "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n"
+#endif
+               ;
     } else if (app->get_name().compare("diag") == 0) {
         return "\nUsage: " + appName + " diag [Options] \n"
                "  " + appName + " diag -d [deviceId] -l [level] \n"

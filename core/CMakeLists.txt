@@ -47,7 +47,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
 # Specifiy link file location
 link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/lib)
 link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/pcm)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/pcm/pcm-iio-gpu)
 
 # Specifiy header file location
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
@@ -92,7 +92,7 @@ target_include_directories(
           /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
           ${CMAKE_CURRENT_LIST_DIR}/src
           ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 
@@ -104,7 +104,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             /usr/include/level_zero/
             ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
-            ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
+            ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
             ${CMAKE_CURRENT_LIST_DIR}/src
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 endif()

@@ -29,6 +29,7 @@ Options:
 Subcommands:
   discovery                   Discover the GPU devices installed on this machine and provide the device info.
   diag                        Run some test suites to diagnose GPU.
+  health                      Get the GPU device component health status.
   updatefw                    Update GPU firmware.
   topology                    get the system topology
   config                      Get and change the GPU settings.
@@ -301,6 +302,8 @@ Usage: xpu-smi diag [Options]
   xpu-smi diag -d [deviceIds] --stress --stresstime [stress time]
   xpu-smi diag --precheck
   xpu-smi diag --precheck -j
+  xpu-smi diag --precheck --listtypes
+  xpu-smi diag --precheck --listtypes -j
   xpu-smi diag --precheck --gpu
   xpu-smi diag --precheck --gpu -j
   xpu-smi diag --stress
@@ -319,6 +322,18 @@ Options:
   --stress                    Stress the GPU(s) for the specified time
   --stresstime                Stress time (in minutes). It is an optional parameter. If not specified, CLI does the stress until manually stopped.
   --precheck                  Do the precheck on the GPU and GPU driver
+  --listtypes                 List all supported GPU error types
+
+  --singletest                Selectively run some particular tests. Separated by the comma.
+                                    1. Computation
+                                    2. Memory Error
+                                    3. Memory Bandwidth
+                                    4. Media Codec
+                                    5. PCIe Bandwidth
+                                    6. Power
+                                    7. Computation functional test
+                                    8. Media Codec functional test
+
 ```
 
 Run test to diagnose GPU
@@ -329,7 +344,7 @@ Device Type: GPU
 | Device ID              | 0                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Level                  | 1                                                                       |
-| Result                 | Fail                                                                    |
+| Result                 | Pass                                                                    |
 | Items                  | 4                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Env Variables | Result: Pass                                                            |
@@ -341,9 +356,8 @@ Device Type: GPU
 | Software Permission    | Result: Pass                                                            |
 |                        | Message: Pass to check permission                                       |
 +------------------------+-------------------------------------------------------------------------+
-| Software Exclusive     | Result: Fail                                                            |
-|                        | Message: Fail to check the software exclusive. 2 process(es) are        |
-|                        |   using the device.                                                     |
+| Software Exclusive     | Result: Pass                                                            |
+|                        | Message: warning: 2 process(es) are using the device.                   |
 |                        |   PID: 633972, Command: ./ze_gemm                                       |
 |                        |   PID: 633973, Command: ./ze_gemm                                       |
 +------------------------+-------------------------------------------------------------------------+
@@ -430,7 +444,8 @@ Options:
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
-  --reset                     Reset device by SBR (Secondary Bus Reset).
+  --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
+                                BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
 
 ```
 
@@ -610,8 +625,96 @@ xpu-smi stats -d 0
 | Xe Link Throughput (kB/s)   |                                                                    |
 +-----------------------------+--------------------------------------------------------------------+
 ```
+Some GPU telemetries are not available for non-root users by default, such as GPU temperature. If you want to retrieve the GPU temperature with non-root privilege user, please add read permission in sysfs: /sys/class/intel_pmt/telem?/telem. Please refer to the example below. After that, you may read GPU temperature with non-root user.  
+```
+cd /sys/class/intel_pmt/telem1
+sudo chmod o+r telem
+```
+
+## Get the device health status
+Help info of get GPU device component health status
+```
+xpu-smi health
+
+Get the GPU device component health status
+
+Usage: xpu-smi health [Options]
+  xpu-smi health -l
+  xpu-smi health -l -j
+  xpu-smi health -d [deviceId] -j
+
+optional arguments:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -l,--list                   Display health info for all devices
+  -d,--device                 The device ID
+  -c,--component              Component types
+                                1. GPU Core Temperature
+                                2. GPU Memory Temperature
+                                3. GPU Power
+                                4. GPU Memory
+                                5. Xe Link Port
+                                6. GPU Frequency
+```
+ 
+Get the GPU device component health status. 
+```
+xpu-smi health -l
++------------------------------+-------------------------------------------------------------------+
+| Device ID                    | 0                                                                 |
++------------------------------+-------------------------------------------------------------------+
+| 1. GPU Core Temperature      | Status: Ok                                                        |
+|                              | Description: All temperature sensors are healthy.                 |
+|                              | Throttle Threshold: 105 Celsius Degree                            |
+|                              | Shutdown Threshold: 130 Celsius Degree                            |
++------------------------------+-------------------------------------------------------------------+
+| 2. GPU Memory Temperature    | Status: Ok                                                        |
+|                              | Description: All temperature sensors are healthy.                 |
+|                              | Throttle Threshold: 85  Celsius Degree                            |
+|                              | Shutdown Threshold: 100 Celsius Degree                            |
++------------------------------+-------------------------------------------------------------------+
+| 3. GPU Power                 | Status: Ok                                                        |
+|                              | Description: All power domains are healthy.                       |
+|                              | Throttle Threshold: 150 watts                                     |
++------------------------------+-------------------------------------------------------------------+
+| 4. GPU Memory                | Status: Ok                                                        |
+|                              | Description: All memory channels are healthy.                     |
++------------------------------+-------------------------------------------------------------------+
+| 5. Xe Link Port              | Status: Ok                                                        |
+|                              | Description: All ports are healthy.                               |
++------------------------------+-------------------------------------------------------------------+
+| 6. GPU Frequency             | Status: OK                                                        |
+|                              | Description: The device frequency not throttled                   |
++------------------------------+-------------------------------------------------------------------+
+
+```
   
 ## Dump the device statistics in CSV format
+### The Statistics supported by Intel data center GPUs
+* Intel(R) Data Center Flex Series GPU
+  * GPU and GPU engine utilizations
+  * GPU energy and power
+  * GPU core temperature
+  * GPU frequency
+  * GPU memory usage
+  * GPU memory throughput
+  * GPU EU utilization
+  * GPU PCIe throughput
+  * GPU throttle reason
+* Intel(R) Data Center Max Series GPU
+  * GPU and GPU engine utilizations
+  * GPU energy and power
+  * GPU core and GPU memory temperature
+  * GPU frequency
+  * GPU memory usage
+  * GPU memory throughput
+  * GPU PCIe throughput
+  * Xe Link throughput
+  * GPU throttle reason
+  * GPU reset count and GPU memory error number
+  
+  
 Help info of the device statistics dump. Please note that the metrics 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 
 ```
 xpu-smi dump -h
@@ -797,7 +900,7 @@ Options:
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
   -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
-  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500
+  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500. This parameter is optional. 
 
   -l,--list                   List all virtual GPUs on the specified physical GPU
 

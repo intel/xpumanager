@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device realtime metrics &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Global Namespace" href="global.html" />
+    <link rel="prev" title="Firmware flash" href="group_FIRMWARE_UPDATE_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../WIN_README.html">Intel XPU Manager for Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../xpum_win_user_guide.html">Intel(R) XPU System Management Interface Windows CLI User Guide</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Device realtime metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../win_index.html">XPU-SMI Windows Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+      <li>Device realtime metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="device-realtime-metrics">
+<span id="win-doxid-group-realtime-metric-api"></span><span id="index-0"></span><h1>Device realtime metrics<a class="headerlink" href="#device-realtime-metrics" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>These APIs are for realtime metrics <a class="reference internal" href="#details-group-realtime-metric-api"><span class="std std-ref">More…</span></a></p>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetRealtimeMetrics<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_metrics_t.html#win-doxid-structxpum-1-1xpum-device-realtime-metrics-t"><span class="std std-ref">xpum_device_realtime_metrics_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetRealtimeMetricsEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_metrics_t.html#win-doxid-structxpum-1-1xpum-device-realtime-metrics-t"><span class="std std-ref">xpum_device_realtime_metrics_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetRealtimeEngineData<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_engine_data_t.html#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t"><span class="std std-ref">xpum_device_realtime_engine_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetRealtimeEngineDataEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_engine_data_t.html#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t"><span class="std std-ref">xpum_device_realtime_engine_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[]</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetSubDevices<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a8d0c174b9a2cdaa877af19debc721999"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileIdList</span><span class="p">[]</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetSimpleEccState<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint8_t</span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <span class="kt">uint8_t</span><span class="o">*</span> <span class="n">pending</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumSetSimpleEccState<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">enabled</span>
+    <span class="p">);</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-group-realtime-metric-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>These APIs are for realtime metrics</p>
+<section id="global-functions">
+<h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1gac876287117e684b84bf61c811a2e0ef8"><span id="index-1"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetRealtimeMetrics</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_metrics_t.html#win-doxid-structxpum-1-1xpum-device-realtime-metrics-t"><span class="std std-ref">xpum_device_realtime_metrics_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get realtime metrics (not including per engine utilization) by device.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store realtime metrics for device <em>deviceId</em>. First pass NULL to query realtime metrics count. Then pass array with desired length to store realtime metrics.</p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>dataList</em> is NULL, <em>count</em> will be filled with the number of available entries, and return. When <em>dataList</em> is not NULL, <em>count</em> denotes the length of <em>dataList</em>, <em>count</em> should be equal to or larger than the number of available entries, when return, the <em>count</em> will store real number of entries returned by <em>dataList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a4986f001e164f37dcf1060407dc8db67"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1ga47ee0337dce247507e273f0819d90010"><span id="index-2"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetRealtimeMetricsEx</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_metrics_t.html#win-doxid-structxpum-1-1xpum-device-realtime-metrics-t"><span class="std std-ref">xpum_device_realtime_metrics_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get realtime metrics (not including per engine utilization) by device list.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceIdList</p></td>
+<td><p>IN: Device id list</p></td>
+</tr>
+<tr class="row-even"><td><p>deviceCount</p></td>
+<td><p>IN: Device id count</p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store realtime metrics for device list <em>deviceIdList</em>. First pass NULL to query realtime metrics count. Then pass array with desired length to store realtime metrics.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>dataList</em> is NULL, <em>count</em> will be filled with the number of available entries, and return. When <em>dataList</em> is not NULL, <em>count</em> denotes the length of <em>dataList</em>, <em>count</em> should be equal to or larger than the number of available entries, when return, the <em>count</em> will store real number of entries returned by <em>dataList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a4986f001e164f37dcf1060407dc8db67"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1gab7262b6d85770cfa142546012a3a92f9"><span id="index-3"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetRealtimeEngineData</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_engine_data_t.html#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t"><span class="std std-ref">xpum_device_realtime_engine_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get realtime engine data by device [unsupported].</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store engine data for device <em>deviceId</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: When passed in, <em>count</em> denotes the length of <em>dataList</em>, which should be equal to or larger than stats_size of this device. A device’s stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. When return, <em>count</em> will store the actual number of entries stored in <em>dataList</em>.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a4986f001e164f37dcf1060407dc8db67"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1gaef00652e4eefd51ffb99639083a2bb14"><span id="index-4"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetRealtimeEngineDataEx</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_device_realtime_engine_data_t.html#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t"><span class="std std-ref">xpum_device_realtime_engine_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[]</span>
+    <span class="p">)</span></pre>
+<p>Get realtime engine data by device list [unsupported].</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceIdList</p></td>
+<td><p>IN: Device id list</p></td>
+</tr>
+<tr class="row-even"><td><p>deviceCount</p></td>
+<td><p>IN: Device id count</p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store engine data for device list <em>deviceIdList</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When passed in, <em>count</em> denotes the length of <em>dataList</em>, which should be equal to or larger than stats_size of this device. A device’s stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. When return, <em>count</em> will store the actual number of entries stored in <em>dataList</em>.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a4986f001e164f37dcf1060407dc8db67"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1ga9e792f013de0b59298e208695c9853ff"><span id="index-5"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetSubDevices</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a8d0c174b9a2cdaa877af19debc721999"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileIdList</span><span class="p">[]</span>
+    <span class="p">)</span></pre>
+<p>Get all sub-devices of a device.</p>
+<p>This method is used to get identifiers of sub-devices corresponding to a device.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>tileIdList</p></td>
+<td><p>OUT: The array of sub device Ids</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>tileIdList</em> is NULL, <em>count</em> will be filled with the number of available sub-devices, and return. When <em>tileIdList</em> is not NULL, <em>count</em> denotes the length of <em>sub-deviceList</em>, <em>count</em> should be equal to or larger than the number of available sub-devices, when return, the <em>count</em> will store real number of sub-devices returned by <em>tileIdList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p><a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a></p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1gaf1fe1aa934776f463a0feab56e2bb683"><span id="index-6"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetSimpleEccState</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint8_t</span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <span class="kt">uint8_t</span><span class="o">*</span> <span class="n">pending</span>
+    <span class="p">)</span></pre>
+<p>Get the memory ECC state of the device (simple method)</p>
+<p>This function is used to get the memory ECC state of the device</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: The device Id</p></td>
+</tr>
+<tr class="row-even"><td><p>current</p></td>
+<td><p>OUT: the current state of memory ECC</p></td>
+</tr>
+<tr class="row-odd"><td><p>pending</p></td>
+<td><p>OUT: the pending state of memory ECC</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a66291e72e2b1fd4287f4ba6b1b0aea00"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-realtime-metric-api-1gaf2899d7d81c86c48c8af68346823d001"><span id="index-7"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumSetSimpleEccState</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">enabled</span>
+    <span class="p">)</span></pre>
+<p>Set the memory ECC state of the device (simple method)</p>
+<p>This function is used to set the memory ECC state of the device</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: The device Id</p></td>
+</tr>
+<tr class="row-even"><td><p>enabled</p></td>
+<td><p>IN: True: enable Ecc; False: disable Ecc</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a66291e72e2b1fd4287f4ba6b1b0aea00"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="group_FIRMWARE_UPDATE_API.html" class="btn btn-neutral float-left" title="Firmware flash" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="global.html" class="btn btn-neutral float-right" title="Global Namespace" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

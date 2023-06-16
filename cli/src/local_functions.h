@@ -129,5 +129,7 @@ bool isDriversAutoprobeEnabled(const std::string &bdfAddress);
 std::unique_ptr<nlohmann::json> getPreCheckErrorTypes();
 std::unique_ptr<nlohmann::json> addKernelParam();
 
+bool isPhysicalFunctionDevice(std::string pci_addr);
+
 }
 

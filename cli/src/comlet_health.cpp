@@ -48,7 +48,7 @@ static CharTableConfig ComletConfigHealthCoreTemp(R"({
             { "label": "Description", "value": "description" },
             { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
             { "label": "Shutdown Threshold", "suffix": " Celsius Degree", "value": "shutdown_threshold", "fixer": "negint_novalue" },
-            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue" }
+            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue", "empty": false }
         ]]
     }]
 })"_json);
@@ -69,7 +69,7 @@ static CharTableConfig ComletConfigHealthMemTemp(R"({
             { "label": "Description", "value": "description" },
             { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
             { "label": "Shutdown Threshold", "suffix": " Celsius Degree", "value": "shutdown_threshold", "fixer": "negint_novalue" },
-            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue" }
+            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue", "empty": false }
         ]]
     }]
 })"_json);
@@ -89,7 +89,7 @@ static CharTableConfig ComletConfigHealthPower(R"({
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" },
             { "label": "Throttle Threshold", "suffix": " watts", "value": "throttle_threshold", "fixer": "negint_novalue" },
-            { "label": "Custom Threshold", "suffix": " watts", "value": "custom_threshold", "fixer": "negint_novalue" }
+            { "label": "Custom Threshold", "suffix": " watts", "value": "custom_threshold", "fixer": "negint_novalue", "empty": false }
         ]]
     }]
 })"_json);
@@ -161,7 +161,9 @@ void ComletHealth::setupOptions() {
         }
         return errStr;
     });
+#ifndef DAEMONLESS
     addOption("-g,--group", this->opts->groupId, "The group ID");
+#endif
     addOption("-c,--component", this->opts->componentType,
               "Component types\n\
       1. GPU Core Temperature\n\
@@ -170,7 +172,9 @@ void ComletHealth::setupOptions() {
       4. GPU Memory\n\
       5. Xe Link Port\n\
       6. GPU Frequency");
+#ifndef DAEMONLESS
     addOption("--threshold", this->opts->threshold, "Set custom threshold for device component");
+#endif
 }
 
 std::unique_ptr<nlohmann::json> ComletHealth::run() {
@@ -180,11 +184,13 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
+#ifndef DAEMONLESS
     if (this->opts->groupId == 0) {
         (*json)["error"] = "group not found";
         (*json)["errno"] = XPUM_CLI_ERROR_GROUP_NOT_FOUND;
         return json;
     }
+#endif
 
     if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 6)) {
         (*json)["error"] = "invalid component";
@@ -236,6 +242,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         }
     }
 
+#ifndef DAEMONLESS
     if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
         if (this->opts->threshold >= -1) {
             if (this->opts->componentType == 1) {
@@ -261,6 +268,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
             return json;
         }
     }
+#endif
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     return json;
@@ -301,6 +309,7 @@ static void showHealthMultiDevicesAllComps(std::ostream &out, std::shared_ptr<nl
     }
 }
 
+#ifndef DAEMONLESS
 static void showHealthMultiDeviceComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig) {
     auto devices = (*json)["device_list"].get<std::vector<nlohmann::json>>();
     bool cont = false;
@@ -309,6 +318,7 @@ static void showHealthMultiDeviceComp(std::ostream &out, std::shared_ptr<nlohman
         cont = true;
     }
 }
+#endif
 
 void ComletHealth::getTableResult(std::ostream &out) {
     auto res = run();
@@ -353,6 +363,7 @@ void ComletHealth::getTableResult(std::ostream &out) {
         }
         return;
     }
+#ifndef DAEMONLESS
     if (this->opts->groupId > 0) {
         if (ct >= 1 && ct <= 6) {
             switch (ct) {
@@ -380,5 +391,6 @@ void ComletHealth::getTableResult(std::ostream &out) {
         }
         return;
     }
+#endif
 }
 } // end namespace xpum::cli

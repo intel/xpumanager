@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>struct xpum::xpum_device_realtime_engine_data_t &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="struct xpum::xpum_device_realtime_metric_t" href="struct_xpum_xpum_device_realtime_metric_t.html" />
+    <link rel="prev" title="struct xpum::xpum_device_property_t" href="struct_xpum_xpum_device_property_t.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../WIN_README.html">Intel XPU Manager for Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../xpum_win_user_guide.html">Intel(R) XPU System Management Interface Windows CLI User Guide</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="namespace_xpum.html">namespace xpum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="global.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="global.html#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../win_index.html">XPU-SMI Windows Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+          <li><a href="global.html">Global Namespace</a> &raquo;</li>
+          <li><a href="namespace_xpum.html">namespace xpum</a> &raquo;</li>
+      <li>struct xpum::xpum_device_realtime_engine_data_t</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="struct-xpum-xpum-device-realtime-engine-data-t">
+<span id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t"></span><span id="index-0"></span><h1>struct xpum::xpum_device_realtime_engine_data_t<a class="headerlink" href="#struct-xpum-xpum-device-realtime-engine-data-t" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>Struct to store device engine realtime data. <a class="reference internal" href="#details-structxpum-1-1xpum-device-realtime-engine-data-t"><span class="std std-ref">More…</span></a></p>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
+
+<span class="k">struct</span> <span class="n">xpum_device_realtime_engine_data_t</span>
+<span class="p">{</span>
+    <span class="c1">// fields</span>
+
+    <span class="kt">bool</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1ad05156a6d1f46716b4340652140517cc"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a619ba679fde0a1be6b8974098af270ad"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1ae903293454e2cd0b48e9bac48d758009"><span class="std std-ref">index</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1ac88f38d8b64736472adf4aa3efe2ce45"><span class="std std-ref">xpum_engine_type_t</span></a><span></span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a1ddc2ddd1f307333449f84fb870da351"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1ac0eb3a950318dba0b77166bfdc407977"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a6cbe8ccbeb65e9b0bc34a3987b38d763"><span class="std std-ref">min</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a32121b82a07860b6b017067699ad062a"><span class="std std-ref">avg</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a6a55f8631fb517f8257fcf5d960da36f"><span class="std std-ref">max</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a56297117c793df133cf88fc25b138ddd"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a22892a130a3a3ea0a400fad1c4228d38"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+<span class="p">};</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-structxpum-1-1xpum-device-realtime-engine-data-t"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>Struct to store device engine realtime data.</p>
+<section id="fields">
+<h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1ad05156a6d1f46716b4340652140517cc"><span id="index-1"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
+<p>If this statistics data is tile level.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a619ba679fde0a1be6b8974098af270ad"><span id="index-2"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
+<p>The tile id, only valid if isTileData is true.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1ae903293454e2cd0b48e9bac48d758009"><span id="index-3"></span><span></span><span class="kt">uint64_t</span> <span class="n">index</span></pre>
+<p>The index of the engine in the same type on the device or sub-device.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a1ddc2ddd1f307333449f84fb870da351"><span id="index-4"></span><a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1ac88f38d8b64736472adf4aa3efe2ce45"><span class="std std-ref">xpum_engine_type_t</span></a><span></span> <span class="n">type</span></pre>
+<p>The type of the engine.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1ac0eb3a950318dba0b77166bfdc407977"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
+<p>The value of engine utilization.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a6cbe8ccbeb65e9b0bc34a3987b38d763"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">min</span></pre>
+<p>The min value since last call.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a32121b82a07860b6b017067699ad062a"><span id="index-7"></span><span></span><span class="kt">uint64_t</span> <span class="n">avg</span></pre>
+<p>The average value since last call.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a6a55f8631fb517f8257fcf5d960da36f"><span id="index-8"></span><span></span><span class="kt">uint64_t</span> <span class="n">max</span></pre>
+<p>The max value since last call.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a56297117c793df133cf88fc25b138ddd"><span id="index-9"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
+<p>The magnification of the value, accumulated, min, avg, and max fields.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-structxpum-1-1xpum-device-realtime-engine-data-t-1a22892a130a3a3ea0a400fad1c4228d38"><span id="index-10"></span><a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<p>Device id.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="struct_xpum_xpum_device_property_t.html" class="btn btn-neutral float-left" title="struct xpum::xpum_device_property_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="struct_xpum_xpum_device_realtime_metric_t.html" class="btn btn-neutral float-right" title="struct xpum::xpum_device_realtime_metric_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

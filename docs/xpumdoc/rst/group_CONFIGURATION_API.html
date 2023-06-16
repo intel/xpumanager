@@ -69,7 +69,8 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
         </div>
@@ -670,7 +671,7 @@
 </ul>
 <pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-configuration-api-1ga60305825e5d67f1017863cc0369ebb5e"><span id="index-15"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumResetDevice</span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">force</span><span class="p">)</span></pre>
 <p>Reset the device.</p>
-<p>This function is used to reset the device</p>
+<p>This function is used to reset the device. Caution: xpumResetDevice calls xpumShutdown internally, please make sure other API calls are finished before calling xpumResetDevice, the behaviour of calling other APIs during resetting is undefined. And it is recommended to stop current process and use a new process to initialize XPUM after resetting.</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>

@@ -8,11 +8,57 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    - name: cmake
+      run: |
+        rm -rf ${{ github.workspace }}/build
+        cmake -B ${{ github.workspace }}/build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}
     - name: make
-      run: make install prefix=. -j
-
+      run: |
+        cd ${{ github.workspace }}/build
+        make install -j
+  build-systemd-unit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: cmake
+      run: |
+        rm -rf ${{ github.workspace }}/build
+        cmake -B ${{ github.workspace }}/build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DLINUX_SYSTEMD=TRUE -DLINUX_SYSTEMD_UNITDIR=${{ github.workspace }}/build/systemd
+    - name: make
+      run: |
+        cd ${{ github.workspace }}/build
+        make install -j
+  build-system-simdjson:
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: install dependencies
+      run: |
+        apt update
+        apt -y --no-install-recommends install build-essential cmake libsimdjson-dev
+    - name: cmake
+      run: |
+        rm -rf ${{ github.workspace }}/build
+        cmake -B ${{ github.workspace }}/build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}
+    - name: make
+      run: |
+        cd ${{ github.workspace }}/build
+        make install -j
+  build-source-simdjson:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: cmake
+      run: |
+        rm -rf ${{ github.workspace }}/build
+        cmake -B ${{ github.workspace }}/build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}
+    - name: make
+      run: |
+        cd ${{ github.workspace }}/build
+        make install -j

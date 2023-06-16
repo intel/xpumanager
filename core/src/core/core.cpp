@@ -102,10 +102,6 @@ void Core::init() {
     p_device_manager = std::make_shared<DeviceManager>(p_data_logic);
     p_device_manager->init();
 
-    XPUM_LOG_INFO("initialize monitor manager");
-    p_monitor_manager = std::make_shared<MonitorManager>(p_device_manager, p_data_logic);
-    p_monitor_manager->init();
-
     XPUM_LOG_INFO("initialize health manager");
     p_health_manager = std::make_shared<HealthManager>(p_device_manager, p_data_logic);
     p_health_manager->init();
@@ -124,11 +120,14 @@ void Core::init() {
 
     XPUM_LOG_INFO("initialize dump raw data manager");
     p_dump_raw_data_manager = std::make_shared<DumpRawDataManager>();
-    // p_dump_raw_data_manager->init();
 
     XPUM_LOG_INFO("initialize firmware manager");
     p_firmware_manager = std::make_shared<FirmwareManager>();
     p_firmware_manager->init();
+
+    XPUM_LOG_INFO("initialize monitor manager");
+    p_monitor_manager = std::make_shared<MonitorManager>(p_device_manager, p_data_logic);
+    p_monitor_manager->init();
 
     p_vgpu_manager = std::make_shared<VgpuManager>();
 

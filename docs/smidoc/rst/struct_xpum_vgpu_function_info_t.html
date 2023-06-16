@@ -42,7 +42,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../SMI_README.html">Intel XPU System Management Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../smi_install_guide.html">Intel(R) XPU-SMI Installation Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../smi_user_guide.html">Intel(R) XPU System Management Interface User Guide</a></li>
@@ -149,6 +149,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
         </div>
@@ -165,7 +166,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+          <li><a href="../../smi_index.html">XPU-SMI Linux Documentation</a> &raquo;</li>
           <li><a href="index.html">Core Library API</a> &raquo;</li>
           <li><a href="global.html">Global Namespace</a> &raquo;</li>
       <li>struct xpum_vgpu_function_info_t</li>
@@ -181,17 +182,34 @@
 <span id="smi-doxid-structxpum-vgpu-function-info-t"></span><span id="index-0"></span><h1>struct xpum_vgpu_function_info_t<a class="headerlink" href="#struct-xpum-vgpu-function-info-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
 
 <span class="k">struct</span> <span class="n">xpum_vgpu_function_info_t</span>
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">char</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-vgpu-function-info-t-1a14fe5b4821516d9e4d3e799114d21778"><span></span><span class="n">bdfAddress</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aaa8966e1fb01d7fb9024eedb05c7caa8"><span class="std std-ref">xpum_device_function_type_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-vgpu-function-info-t-1aa12a6f721c1c48f88d3a6508ff3eb37f"><span></span><span class="n">functionType</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-vgpu-function-info-t-1a85af2fd2e5859cafd63489e4c70e19da"><span></span><span class="n">lmemSize</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-vgpu-function-info-t-1a378efcd358eb093dccef9602116d9abc"><span></span><span class="n">deviceId</span></span><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-vgpu-function-info-t-1a14fe5b4821516d9e4d3e799114d21778"><span class="std std-ref">bdfAddress</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aaa8966e1fb01d7fb9024eedb05c7caa8"><span class="std std-ref">xpum_device_function_type_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-vgpu-function-info-t-1aa12a6f721c1c48f88d3a6508ff3eb37f"><span class="std std-ref">functionType</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-vgpu-function-info-t-1a85af2fd2e5859cafd63489e4c70e19da"><span class="std std-ref">lmemSize</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-vgpu-function-info-t-1a378efcd358eb093dccef9602116d9abc"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-structxpum-vgpu-function-info-t"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<section id="fields">
+<h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-vgpu-function-info-t-1a14fe5b4821516d9e4d3e799114d21778"><span id="index-1"></span><span></span><span class="kt">char</span> <span class="n">bdfAddress</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<p>BDF address of the function.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-vgpu-function-info-t-1aa12a6f721c1c48f88d3a6508ff3eb37f"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aaa8966e1fb01d7fb9024eedb05c7caa8"><span class="std std-ref">xpum_device_function_type_t</span></a><span></span> <span class="n">functionType</span></pre>
+<p>Physical function or virtual function.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-vgpu-function-info-t-1a85af2fd2e5859cafd63489e4c70e19da"><span id="index-3"></span><span></span><span class="kt">uint64_t</span> <span class="n">lmemSize</span></pre>
+<p>The size of local memory of the function.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-vgpu-function-info-t-1a378efcd358eb093dccef9602116d9abc"><span id="index-4"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<p>Device ID of the function.</p>
+</section>
+</section>
 </section>
 
 

@@ -155,7 +155,8 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
         </div>
@@ -188,15 +189,28 @@
 <span id="xpum-doxid-structxpum-vgpu-config-t"></span><span id="index-0"></span><h1>struct xpum_vgpu_config_t<a class="headerlink" href="#struct-xpum-vgpu-config-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
 
 <span class="k">struct</span> <span class="n">xpum_vgpu_config_t</span>
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-vgpu-config-t-1a4d1203599264bd74af0aca5823aab65a"><span></span><span class="n">numVfs</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-vgpu-config-t-1aa54ac4e05686cd59e8e16b7e55b3ee37"><span></span><span class="n">lmemPerVf</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-vgpu-config-t-1a4d1203599264bd74af0aca5823aab65a"><span class="std std-ref">numVfs</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-vgpu-config-t-1aa54ac4e05686cd59e8e16b7e55b3ee37"><span class="std std-ref">lmemPerVf</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-structxpum-vgpu-config-t"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<section id="fields">
+<h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-vgpu-config-t-1a4d1203599264bd74af0aca5823aab65a"><span id="index-1"></span><span></span><span class="kt">uint32_t</span> <span class="n">numVfs</span></pre>
+<p>Number of vGPU to be create.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-vgpu-config-t-1aa54ac4e05686cd59e8e16b7e55b3ee37"><span id="index-2"></span><span></span><span class="kt">uint64_t</span> <span class="n">lmemPerVf</span></pre>
+<p>Local memory per vGPU (in bytes), if set to 0 then apply the configuration file to allocate local memory for vGPUs.</p>
+</section>
+</section>
 </section>
 
 

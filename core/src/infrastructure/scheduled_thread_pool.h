@@ -27,10 +27,11 @@ class ScheduledThreadPoolTask {
      * @brief Constructs a new Scheduled Thread Pool Task object
      * 
      * @param delay the time in milliseconds to delay first execution
-     * @param interval the interval in milliseconds between successive executions (0 indicates non-repeated task)
+     * @param interval the interval in milliseconds between successive executions
+     * @param execution_times the execution times of the task (-1 indicates run forever)
      * @param func the function to execute
      */
-    ScheduledThreadPoolTask(uint64_t delay, uint32_t interval, std::function<void()> func) : interval(interval), func(func), cancelled(false) {
+    ScheduledThreadPoolTask(uint64_t delay, uint32_t interval, int execution_times, std::function<void()> func) : interval(interval), remaining_exe_time(execution_times), exe_time(execution_times), func(func), cancelled(false) {
         scheduled_time = std::chrono::steady_clock::now() + std::chrono::milliseconds{delay};
     }
 
@@ -69,8 +70,14 @@ class ScheduledThreadPoolTask {
      */
     void cancel();
 
+    int getExeTime();
+
    private:
     uint32_t interval;
+    // One design option is that we can use remaining_exe_time to judge whether is the task finished.
+    // But then this member will need to be public and should be sync. So, we choose the member exe_time to finish the work.
+    int remaining_exe_time;
+    const int exe_time;
     std::function<void()> func;
     std::chrono::steady_clock::time_point scheduled_time;
     std::atomic<bool> cancelled;
@@ -109,9 +116,9 @@ class ScheduledThreadPool {
     ~ScheduledThreadPool();
 
     template <class F, class... Args>
-    std::shared_ptr<ScheduledThreadPoolTask> scheduleAtFixedRate(uint64_t delay, uint32_t interval, F &&f, Args &&... args) {
+    std::shared_ptr<ScheduledThreadPoolTask> scheduleAtFixedRate(uint64_t delay, uint32_t interval, int execution_times, F &&f, Args &&... args) {
         auto func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-        auto p_task = std::make_shared<ScheduledThreadPoolTask>(delay, interval, func);
+        auto p_task = std::make_shared<ScheduledThreadPoolTask>(delay, interval, execution_times, func);
         p_taskqueue->enqueue(p_task);
         return p_task;
     }

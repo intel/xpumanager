@@ -578,6 +578,27 @@ static bool readStrSysFsFile(char *buf, const char *fileName) {
     return true;
 }
 
+bool GPUDeviceStub::isOamPlatform(zes_device_handle_t device){
+   zes_device_properties_t props;
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    props.pNext = nullptr;
+    bool is_OAM = false;
+    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        switch (props.core.deviceId) {
+            case 0x0bd5:
+            case 0x0bd6:
+            case 0x0bd7:
+            case 0x0bd8:
+            case 0x0b69:
+              is_OAM = true;
+              break;
+            default:
+              is_OAM = false;
+        }
+    }
+    return is_OAM;
+}
+
 std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
     std::string bdf_address = to_string(address);
     char link_path[PATH_MAX];
@@ -687,6 +708,9 @@ static std::string getPciName(std::string bdf) {
         }
     }
     pclose(pf);
+    if (name.find("Intel") == std::string::npos) {
+        name.clear();
+    }
     return name;
 }
 
@@ -1162,7 +1186,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     }
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
+
+                    if (isOamPlatform((zes_device_handle_t)device) ) {
+                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
+                    } else {
+                        //p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, ""));
+                    }
                     func_type = getGPUFunctionType(
                             to_string(pci_props.address));
                     p_gpu->addProperty(
@@ -1254,7 +1283,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     sort(p_devices->begin(), p_devices->end(),
         [](const std::shared_ptr<Device> & a, const std::shared_ptr<Device> & b) -> bool
     {
-        return a->getId() < b->getId();
+        return std::stoi(a->getId()) < std::stoi(b->getId());
     });
 
     return p_devices;
@@ -1528,6 +1557,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(con
             zes_freq_properties_t props;
             XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
+                if (props.type != ZES_FREQ_DOMAIN_GPU) {
+                    continue;
+                }
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {

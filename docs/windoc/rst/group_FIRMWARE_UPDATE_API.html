@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firmware flash &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Device realtime metrics" href="group_REALTIME_METRIC_API.html" />
+    <link rel="prev" title="Device configurations" href="group_CONFIGURATION_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../WIN_README.html">Intel XPU Manager for Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../xpum_win_user_guide.html">Intel(R) XPU System Management Interface Windows CLI User Guide</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Firmware flash</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../win_index.html">XPU-SMI Windows Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+      <li>Firmware flash</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="firmware-flash">
+<span id="win-doxid-group-firmware-update-api"></span><span id="index-0"></span><h1>Firmware flash<a class="headerlink" href="#firmware-flash" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>APIs are for firmware update <a class="reference internal" href="../../xpumdoc/rst/group_FIRMWARE_UPDATE_API.html#details-group-firmware-update-api"><span class="std std-ref">More…</span></a></p>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumRunFirmwareFlash<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_firmware_flash_job.html#win-doxid-structxpum-1-1xpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumRunFirmwareFlashEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_firmware_flash_job.html#win-doxid-structxpum-1-1xpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">force</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetFirmwareFlashResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aacd3de3c579b889fb28a1e010cb46e3a"><span class="std std-ref">xpum_firmware_type_t</span></a><span></span> <span class="n">firmwareType</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_firmware_flash_task_result_t.html#win-doxid-structxpum-1-1xpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> xpum::xpumGetFirmwareFlashErrorMsg<span></span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-group-firmware-update-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>APIs are for firmware update</p>
+<section id="global-functions">
+<h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-firmware-update-api-1gabef2217adce4f854b37f870352a88787"><span id="index-1"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumRunFirmwareFlash</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_firmware_flash_job.html#win-doxid-structxpum-1-1xpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
+    <span class="p">)</span></pre>
+<p>Run firmware flashing by device.</p>
+<p>This function will return immediately. To query the firmware flash job status, call <a class="reference internal" href="#win-doxid-group-firmware-update-api-1gabf168c58f37b5690a2bdf3934300040b"><span class="std std-ref">xpumGetFirmwareFlashResult</span></a></p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>job</p></td>
+<td><p>IN: The job description for firmware flash</p></td>
+</tr>
+<tr class="row-odd"><td><p>username</p></td>
+<td><p>IN: Username used for authentication</p></td>
+</tr>
+<tr class="row-even"><td><p>password</p></td>
+<td><p>IN: Password used for authentication</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-firmware-update-api-1ga9b4ab66de1ee73a8ac54bf660ecacad5"><span id="index-2"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumRunFirmwareFlashEx</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_firmware_flash_job.html#win-doxid-structxpum-1-1xpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">force</span>
+    <span class="p">)</span></pre>
+<p>Run firmware flashing by device.</p>
+<p>This function will return immediately. To query the firmware flash job status, call <a class="reference internal" href="#win-doxid-group-firmware-update-api-1gabf168c58f37b5690a2bdf3934300040b"><span class="std std-ref">xpumGetFirmwareFlashResult</span></a></p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>job</p></td>
+<td><p>IN: The job description for firmware flash</p></td>
+</tr>
+<tr class="row-odd"><td><p>username</p></td>
+<td><p>IN: Username used for authentication</p></td>
+</tr>
+<tr class="row-even"><td><p>password</p></td>
+<td><p>IN: Password used for authentication</p></td>
+</tr>
+<tr class="row-odd"><td><p>force</p></td>
+<td><p>IN: Force to flash firmware or not</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-firmware-update-api-1gabf168c58f37b5690a2bdf3934300040b"><span id="index-3"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetFirmwareFlashResult</span><span class="p">(</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1a1a13e09e5f43abc06e47886d224d06ef"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aacd3de3c579b889fb28a1e010cb46e3a"><span class="std std-ref">xpum_firmware_type_t</span></a><span></span> <span class="n">firmwareType</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_xpum_firmware_flash_task_result_t.html#win-doxid-structxpum-1-1xpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">)</span></pre>
+<p>Get the status of firmware flash job.</p>
+<p>This function will return immediately. Caller may have to call this function multiple times until <em>result</em> indicates firmware flash job is finished.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>firmwareType</p></td>
+<td><p>IN: The firmware type to query status</p></td>
+</tr>
+<tr class="row-odd"><td><p>result</p></td>
+<td><p>OUT: The result of the job</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6aecad93cf2c08afd00ff291e6bbb13bb1"><span class="std std-ref">XPUM_RESULT_DEVICE_NOT_FOUND</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a495f9bbe8dbd294afced6065d5a495bd"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND</span></a></p></li>
+<li><p>XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a694d54753dab70381e49540b05993452"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a2bb99e4c10060b9a26a9bd5e364ead32"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6ae651dec65b4800f82cc64e25d1ef4426"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6aa9f968569187c60d7911e9988f90830a"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6ac34b556b68a8e414fbeb0e3120eec81f"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a9382b387726c4f51f73c93d2b38cfa42"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a4c30aa61624f387d9b7931599676bf7e"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a66291e72e2b1fd4287f4ba6b1b0aea00"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a></p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="win-doxid-group-firmware-update-api-1ga97807769cf02cd0a61f9190ae7ca6b42"><span id="index-4"></span><a class="reference internal" href="global.html#win-doxid-xpum-api-8h-1a7f99119de004b284632ea2c1092dda5c"><span class="std std-ref">XPUM_API</span></a><span></span> <a class="reference internal" href="namespace_xpum.html#win-doxid-namespacexpum-1aa97041fcf50520200b67eec1c25cbbbb"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpum</span><span class="o">::</span><span class="n">xpumGetFirmwareFlashErrorMsg</span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get error message when fail to flash firmware.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>buffer</p></td>
+<td><p>IN/OUT: The buffer to store error message</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>buffer</em> is NULL, <em>count</em> will be filled with the length of buffer needed, and return. When <em>buffer</em> is not NULL, <em>count</em> denotes the length of <em>buffer</em>, <em>count</em> should be equal to or larger than needed length, if not, it will return XPUM_BUFFER_TOO_SMALL; if return successfully, the error message will be stored in <em>buffer</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a5153f20f439bd942a2998305d5198eb5"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_xpum_result_enum.html#win-doxid-namespacexpum-1a81cf6fb3f3f3a3e77176e5d3129a7fa6a4986f001e164f37dcf1060407dc8db67"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="group_CONFIGURATION_API.html" class="btn btn-neutral float-left" title="Device configurations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="group_REALTIME_METRIC_API.html" class="btn btn-neutral float-right" title="Device realtime metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

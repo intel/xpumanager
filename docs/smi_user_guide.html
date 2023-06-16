@@ -42,7 +42,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Linux Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="SMI_README.html">Intel XPU System Management Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="smi_install_guide.html">Intel(R) XPU-SMI Installation Guide</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Intel(R) XPU System Management Interface User Guide</a><ul>
@@ -54,7 +54,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#diagnose-gpu-with-different-test-suites">Diagnose GPU with different test suites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#get-and-change-the-gpu-settings">Get and change the GPU settings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#get-the-device-real-time-statistics">Get the device real-time statistics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-device-health-status">Get the device health status</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-statistics-supported-by-intel-data-center-gpus">The Statistics supported by Intel data center GPUs</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#collect-the-gpu-debug-log-files">Collect the GPU debug log files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#set-up-gpu-sr-iov-configuration">Set up GPU SR-IOV configuration</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#bios-settings-for-gpu-sr-iov">BIOS settings for GPU SR-IOV</a></li>
@@ -74,6 +78,7 @@
 <li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
         </div>
@@ -90,7 +95,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+          <li><a href="smi_index.html">XPU-SMI Linux Documentation</a> &raquo;</li>
       <li>Intel(R) XPU System Management Interface User Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -133,6 +138,7 @@
 <span class="n">Subcommands</span><span class="p">:</span>
   <span class="n">discovery</span>                   <span class="n">Discover</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">devices</span> <span class="n">installed</span> <span class="n">on</span> <span class="n">this</span> <span class="n">machine</span> <span class="ow">and</span> <span class="n">provide</span> <span class="n">the</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span>
   <span class="n">diag</span>                        <span class="n">Run</span> <span class="n">some</span> <span class="n">test</span> <span class="n">suites</span> <span class="n">to</span> <span class="n">diagnose</span> <span class="n">GPU</span><span class="o">.</span>
+  <span class="n">health</span>                      <span class="n">Get</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">device</span> <span class="n">component</span> <span class="n">health</span> <span class="n">status</span><span class="o">.</span>
   <span class="n">updatefw</span>                    <span class="n">Update</span> <span class="n">GPU</span> <span class="n">firmware</span><span class="o">.</span>
   <span class="n">topology</span>                    <span class="n">get</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span>
   <span class="n">config</span>                      <span class="n">Get</span> <span class="ow">and</span> <span class="n">change</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">settings</span><span class="o">.</span>
@@ -396,6 +402,8 @@ Update firmware successfully. Please reboot OS to take effect.
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceIds</span><span class="p">]</span> <span class="o">--</span><span class="n">stress</span> <span class="o">--</span><span class="n">stresstime</span> <span class="p">[</span><span class="n">stress</span> <span class="n">time</span><span class="p">]</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">precheck</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">precheck</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">precheck</span> <span class="o">--</span><span class="n">listtypes</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">precheck</span> <span class="o">--</span><span class="n">listtypes</span> <span class="o">-</span><span class="n">j</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">precheck</span> <span class="o">--</span><span class="n">gpu</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">precheck</span> <span class="o">--</span><span class="n">gpu</span> <span class="o">-</span><span class="n">j</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">--</span><span class="n">stress</span>
@@ -414,6 +422,18 @@ Update firmware successfully. Please reboot OS to take effect.
   <span class="o">--</span><span class="n">stress</span>                    <span class="n">Stress</span> <span class="n">the</span> <span class="n">GPU</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">time</span>
   <span class="o">--</span><span class="n">stresstime</span>                <span class="n">Stress</span> <span class="n">time</span> <span class="p">(</span><span class="ow">in</span> <span class="n">minutes</span><span class="p">)</span><span class="o">.</span> <span class="n">It</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">optional</span> <span class="n">parameter</span><span class="o">.</span> <span class="n">If</span> <span class="ow">not</span> <span class="n">specified</span><span class="p">,</span> <span class="n">CLI</span> <span class="n">does</span> <span class="n">the</span> <span class="n">stress</span> <span class="n">until</span> <span class="n">manually</span> <span class="n">stopped</span><span class="o">.</span>
   <span class="o">--</span><span class="n">precheck</span>                  <span class="n">Do</span> <span class="n">the</span> <span class="n">precheck</span> <span class="n">on</span> <span class="n">the</span> <span class="n">GPU</span> <span class="ow">and</span> <span class="n">GPU</span> <span class="n">driver</span>
+  <span class="o">--</span><span class="n">listtypes</span>                 <span class="n">List</span> <span class="nb">all</span> <span class="n">supported</span> <span class="n">GPU</span> <span class="n">error</span> <span class="n">types</span>
+
+  <span class="o">--</span><span class="n">singletest</span>                <span class="n">Selectively</span> <span class="n">run</span> <span class="n">some</span> <span class="n">particular</span> <span class="n">tests</span><span class="o">.</span> <span class="n">Separated</span> <span class="n">by</span> <span class="n">the</span> <span class="n">comma</span><span class="o">.</span>
+                                    <span class="mf">1.</span> <span class="n">Computation</span>
+                                    <span class="mf">2.</span> <span class="n">Memory</span> <span class="n">Error</span>
+                                    <span class="mf">3.</span> <span class="n">Memory</span> <span class="n">Bandwidth</span>
+                                    <span class="mf">4.</span> <span class="n">Media</span> <span class="n">Codec</span>
+                                    <span class="mf">5.</span> <span class="n">PCIe</span> <span class="n">Bandwidth</span>
+                                    <span class="mf">6.</span> <span class="n">Power</span>
+                                    <span class="mf">7.</span> <span class="n">Computation</span> <span class="n">functional</span> <span class="n">test</span>
+                                    <span class="mf">8.</span> <span class="n">Media</span> <span class="n">Codec</span> <span class="n">functional</span> <span class="n">test</span>
+
 </pre></div>
 </div>
 <p>Run test to diagnose GPU</p>
@@ -423,7 +443,7 @@ Update firmware successfully. Please reboot OS to take effect.
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>              <span class="o">|</span> <span class="mi">0</span>                                                                       <span class="o">|</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Level</span>                  <span class="o">|</span> <span class="mi">1</span>                                                                       <span class="o">|</span>
-<span class="o">|</span> <span class="n">Result</span>                 <span class="o">|</span> <span class="n">Fail</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Result</span>                 <span class="o">|</span> <span class="n">Pass</span>                                                                    <span class="o">|</span>
 <span class="o">|</span> <span class="n">Items</span>                  <span class="o">|</span> <span class="mi">4</span>                                                                       <span class="o">|</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Software</span> <span class="n">Env</span> <span class="n">Variables</span> <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                            <span class="o">|</span>
@@ -435,9 +455,8 @@ Update firmware successfully. Please reboot OS to take effect.
 <span class="o">|</span> <span class="n">Software</span> <span class="n">Permission</span>    <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                            <span class="o">|</span>
 <span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">Pass</span> <span class="n">to</span> <span class="n">check</span> <span class="n">permission</span>                                       <span class="o">|</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
-<span class="o">|</span> <span class="n">Software</span> <span class="n">Exclusive</span>     <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Fail</span>                                                            <span class="o">|</span>
-<span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">Fail</span> <span class="n">to</span> <span class="n">check</span> <span class="n">the</span> <span class="n">software</span> <span class="n">exclusive</span><span class="o">.</span> <span class="mi">2</span> <span class="n">process</span><span class="p">(</span><span class="n">es</span><span class="p">)</span> <span class="n">are</span>        <span class="o">|</span>
-<span class="o">|</span>                        <span class="o">|</span>   <span class="n">using</span> <span class="n">the</span> <span class="n">device</span><span class="o">.</span>                                                     <span class="o">|</span>
+<span class="o">|</span> <span class="n">Software</span> <span class="n">Exclusive</span>     <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                            <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">warning</span><span class="p">:</span> <span class="mi">2</span> <span class="n">process</span><span class="p">(</span><span class="n">es</span><span class="p">)</span> <span class="n">are</span> <span class="n">using</span> <span class="n">the</span> <span class="n">device</span><span class="o">.</span>                   <span class="o">|</span>
 <span class="o">|</span>                        <span class="o">|</span>   <span class="n">PID</span><span class="p">:</span> <span class="mi">633972</span><span class="p">,</span> <span class="n">Command</span><span class="p">:</span> <span class="o">./</span><span class="n">ze_gemm</span>                                       <span class="o">|</span>
 <span class="o">|</span>                        <span class="o">|</span>   <span class="n">PID</span><span class="p">:</span> <span class="mi">633973</span><span class="p">,</span> <span class="n">Command</span><span class="p">:</span> <span class="o">./</span><span class="n">ze_gemm</span>                                       <span class="o">|</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
@@ -522,7 +541,8 @@ Update firmware successfully. Please reboot OS to take effect.
   <span class="o">--</span><span class="n">xelinkport</span>                <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">down</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">up</span><span class="o">.</span>
   <span class="o">--</span><span class="n">xelinkportbeaconing</span>       <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">beaconing</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">off</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">on</span><span class="o">.</span>
   <span class="o">--</span><span class="n">memoryecc</span>                 <span class="n">Enable</span><span class="o">/</span><span class="n">disable</span> <span class="n">memory</span> <span class="n">ECC</span> <span class="n">setting</span><span class="o">.</span> <span class="mi">0</span><span class="p">:</span><span class="n">disable</span><span class="p">;</span> <span class="mi">1</span><span class="p">:</span><span class="n">enable</span>
-  <span class="o">--</span><span class="n">reset</span>                     <span class="n">Reset</span> <span class="n">device</span> <span class="n">by</span> <span class="n">SBR</span> <span class="p">(</span><span class="n">Secondary</span> <span class="n">Bus</span> <span class="n">Reset</span><span class="p">)</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">reset</span>                     <span class="n">Reset</span> <span class="n">device</span> <span class="n">by</span> <span class="n">SBR</span> <span class="p">(</span><span class="n">Secondary</span> <span class="n">Bus</span> <span class="n">Reset</span><span class="p">)</span><span class="o">.</span> <span class="n">For</span> <span class="n">Max</span> <span class="n">series</span> <span class="n">GPU</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=off&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span> <span class="n">when</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">enabled</span> <span class="ow">in</span> 
+                                <span class="n">BIOS</span><span class="o">.</span> <span class="n">If</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=on&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span><span class="o">.</span> 
 
 </pre></div>
 </div>
@@ -693,9 +713,104 @@ Update firmware successfully. Please reboot OS to take effect.
 <span class="o">+-----------------------------+--------------------------------------------------------------------+</span>
 </pre></div>
 </div>
+<p>Some GPU telemetries are not available for non-root users by default, such as GPU temperature. If you want to retrieve the GPU temperature with non-root privilege user, please add read permission in sysfs: /sys/class/intel_pmt/telem?/telem. Please refer to the example below. After that, you may read GPU temperature with non-root user.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">class</span><span class="o">/</span><span class="n">intel_pmt</span><span class="o">/</span><span class="n">telem1</span>
+<span class="n">sudo</span> <span class="n">chmod</span> <span class="n">o</span><span class="o">+</span><span class="n">r</span> <span class="n">telem</span>
+</pre></div>
+</div>
+</section>
+<section id="get-the-device-health-status">
+<h2>Get the device health status<a class="headerlink" href="#get-the-device-health-status" title="Permalink to this headline"></a></h2>
+<p>Help info of get GPU device component health status</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span>
+
+<span class="n">Get</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">device</span> <span class="n">component</span> <span class="n">health</span> <span class="n">status</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+
+<span class="n">optional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">l</span><span class="p">,</span><span class="o">--</span><span class="nb">list</span>                   <span class="n">Display</span> <span class="n">health</span> <span class="n">info</span> <span class="k">for</span> <span class="nb">all</span> <span class="n">devices</span>
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span>
+  <span class="o">-</span><span class="n">c</span><span class="p">,</span><span class="o">--</span><span class="n">component</span>              <span class="n">Component</span> <span class="n">types</span>
+                                <span class="mf">1.</span> <span class="n">GPU</span> <span class="n">Core</span> <span class="n">Temperature</span>
+                                <span class="mf">2.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Temperature</span>
+                                <span class="mf">3.</span> <span class="n">GPU</span> <span class="n">Power</span>
+                                <span class="mf">4.</span> <span class="n">GPU</span> <span class="n">Memory</span>
+                                <span class="mf">5.</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">Port</span>
+                                <span class="mf">6.</span> <span class="n">GPU</span> <span class="n">Frequency</span>
+</pre></div>
+</div>
+<p>Get the GPU device component health status.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>                    <span class="o">|</span> <span class="mi">0</span>                                                                 <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mf">1.</span> <span class="n">GPU</span> <span class="n">Core</span> <span class="n">Temperature</span>      <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Ok</span>                                                        <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Description</span><span class="p">:</span> <span class="n">All</span> <span class="n">temperature</span> <span class="n">sensors</span> <span class="n">are</span> <span class="n">healthy</span><span class="o">.</span>                 <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Throttle</span> <span class="n">Threshold</span><span class="p">:</span> <span class="mi">105</span> <span class="n">Celsius</span> <span class="n">Degree</span>                            <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Shutdown</span> <span class="n">Threshold</span><span class="p">:</span> <span class="mi">130</span> <span class="n">Celsius</span> <span class="n">Degree</span>                            <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mf">2.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Temperature</span>    <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Ok</span>                                                        <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Description</span><span class="p">:</span> <span class="n">All</span> <span class="n">temperature</span> <span class="n">sensors</span> <span class="n">are</span> <span class="n">healthy</span><span class="o">.</span>                 <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Throttle</span> <span class="n">Threshold</span><span class="p">:</span> <span class="mi">85</span>  <span class="n">Celsius</span> <span class="n">Degree</span>                            <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Shutdown</span> <span class="n">Threshold</span><span class="p">:</span> <span class="mi">100</span> <span class="n">Celsius</span> <span class="n">Degree</span>                            <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mf">3.</span> <span class="n">GPU</span> <span class="n">Power</span>                 <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Ok</span>                                                        <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Description</span><span class="p">:</span> <span class="n">All</span> <span class="n">power</span> <span class="n">domains</span> <span class="n">are</span> <span class="n">healthy</span><span class="o">.</span>                       <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Throttle</span> <span class="n">Threshold</span><span class="p">:</span> <span class="mi">150</span> <span class="n">watts</span>                                     <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mf">4.</span> <span class="n">GPU</span> <span class="n">Memory</span>                <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Ok</span>                                                        <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Description</span><span class="p">:</span> <span class="n">All</span> <span class="n">memory</span> <span class="n">channels</span> <span class="n">are</span> <span class="n">healthy</span><span class="o">.</span>                     <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mf">5.</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">Port</span>              <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Ok</span>                                                        <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Description</span><span class="p">:</span> <span class="n">All</span> <span class="n">ports</span> <span class="n">are</span> <span class="n">healthy</span><span class="o">.</span>                               <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mf">6.</span> <span class="n">GPU</span> <span class="n">Frequency</span>             <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">OK</span>                                                        <span class="o">|</span>
+<span class="o">|</span>                              <span class="o">|</span> <span class="n">Description</span><span class="p">:</span> <span class="n">The</span> <span class="n">device</span> <span class="n">frequency</span> <span class="ow">not</span> <span class="n">throttled</span>                   <span class="o">|</span>
+<span class="o">+------------------------------+-------------------------------------------------------------------+</span>
+
+</pre></div>
+</div>
 </section>
 <section id="dump-the-device-statistics-in-csv-format">
 <h2>Dump the device statistics in CSV format<a class="headerlink" href="#dump-the-device-statistics-in-csv-format" title="Permalink to this headline"></a></h2>
+<section id="the-statistics-supported-by-intel-data-center-gpus">
+<h3>The Statistics supported by Intel data center GPUs<a class="headerlink" href="#the-statistics-supported-by-intel-data-center-gpus" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>Intel(R) Data Center Flex Series GPU</p>
+<ul>
+<li><p>GPU and GPU engine utilizations</p></li>
+<li><p>GPU energy and power</p></li>
+<li><p>GPU core temperature</p></li>
+<li><p>GPU frequency</p></li>
+<li><p>GPU memory usage</p></li>
+<li><p>GPU memory throughput</p></li>
+<li><p>GPU EU utilization</p></li>
+<li><p>GPU PCIe throughput</p></li>
+<li><p>GPU throttle reason</p></li>
+</ul>
+</li>
+<li><p>Intel(R) Data Center Max Series GPU</p>
+<ul>
+<li><p>GPU and GPU engine utilizations</p></li>
+<li><p>GPU energy and power</p></li>
+<li><p>GPU core and GPU memory temperature</p></li>
+<li><p>GPU frequency</p></li>
+<li><p>GPU memory usage</p></li>
+<li><p>GPU memory throughput</p></li>
+<li><p>GPU PCIe throughput</p></li>
+<li><p>Xe Link throughput</p></li>
+<li><p>GPU throttle reason</p></li>
+<li><p>GPU reset count and GPU memory error number</p></li>
+</ul>
+</li>
+</ul>
 <p>Help info of the device statistics dump. Please note that the metrics ‘Programming Errors’, ‘Driver Errors’, ‘Cache Errors Correctable’ and ‘Cache Errors Uncorrectable’ are not implemented in dump sub-command so far. Please do not dump these metrics.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="o">-</span><span class="n">h</span>
 <span class="n">Dump</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">data</span><span class="o">.</span>
@@ -766,6 +881,7 @@ Update firmware successfully. Please reboot OS to take effect.
 <span class="mi">06</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mf">50.000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">14.61</span><span class="p">,</span>    <span class="mi">0</span>
 </pre></div>
 </div>
+</section>
 </section>
 <section id="collect-the-gpu-debug-log-files">
 <h2>Collect the GPU debug log files<a class="headerlink" href="#collect-the-gpu-debug-log-files" title="Permalink to this headline"></a></h2>
@@ -887,7 +1003,7 @@ The command “sudo xpu-smi vgpu –addkernelparam” can automatically add thes
   <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">Device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
   <span class="o">-</span><span class="n">c</span><span class="p">,</span><span class="o">--</span><span class="n">create</span>                 <span class="n">Create</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">GPUs</span>
   <span class="o">-</span><span class="n">n</span>                          <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">to</span> <span class="n">create</span><span class="o">.</span> <span class="n">The</span> <span class="n">acceptable</span> <span class="n">values</span> <span class="n">include</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span> <span class="ow">and</span> <span class="mf">16.</span>
-  <span class="o">--</span><span class="n">lmem</span>                      <span class="n">The</span> <span class="n">memory</span> <span class="n">size</span> <span class="n">of</span> <span class="n">each</span> <span class="n">virtual</span> <span class="n">GPUs</span><span class="p">,</span> <span class="ow">in</span> <span class="n">MiB</span><span class="o">.</span> <span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="o">--</span><span class="n">lmem</span> <span class="mi">500</span>
+  <span class="o">--</span><span class="n">lmem</span>                      <span class="n">The</span> <span class="n">memory</span> <span class="n">size</span> <span class="n">of</span> <span class="n">each</span> <span class="n">virtual</span> <span class="n">GPUs</span><span class="p">,</span> <span class="ow">in</span> <span class="n">MiB</span><span class="o">.</span> <span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="o">--</span><span class="n">lmem</span> <span class="mf">500.</span> <span class="n">This</span> <span class="n">parameter</span> <span class="ow">is</span> <span class="n">optional</span><span class="o">.</span> 
 
   <span class="o">-</span><span class="n">l</span><span class="p">,</span><span class="o">--</span><span class="nb">list</span>                   <span class="n">List</span> <span class="nb">all</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">physical</span> <span class="n">GPU</span>
 

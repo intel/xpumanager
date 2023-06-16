@@ -31,4 +31,5 @@ latex/
 *.vcxproj.user
 .vs/
 .idea/
-unitTest/urltest
+build
+src/simdjson

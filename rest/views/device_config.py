@@ -585,7 +585,7 @@ def run_reset(deviceId):
         return jsonify("json string is missing"), 500
 
     req = request.get_json()
-    code, message, data = stub.runReset(deviceId, 1)
+    code, message, data = stub.runReset(deviceId, True)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

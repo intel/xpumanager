@@ -447,18 +447,19 @@ void DiagnosticManager::doDeviceLevelDiagnosticCore(const ze_device_handle_t &ze
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
             }
 
-            XPUM_LOG_INFO("start power diagnostic");
-            try {
-                doDeviceDiagnosticPeformancePower(ze_device, ze_driver, p_task_info);
-            } catch (BaseException &e) {
-                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_POWER, e.what(), p_task_info);
-            }
-
+            // Memory bandwidth test might fail if it starts behind power test on some platforms.
             XPUM_LOG_INFO("start memory bandwidth diagnostic");
             try {
                 doDeviceDiagnosticPeformanceMemoryBandwidth(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH, e.what(), p_task_info);
+            }
+            
+            XPUM_LOG_INFO("start power diagnostic");
+            try {
+                doDeviceDiagnosticPeformancePower(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_POWER, e.what(), p_task_info);
             }
 
             XPUM_LOG_INFO("start memory allocation diagnostic ");

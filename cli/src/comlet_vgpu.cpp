@@ -107,7 +107,7 @@ void ComletVgpu::setupOptions() {
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
     auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB. For example, --lmem 500.");
     lmemOpt->check([](const std::string &str) {
-        return std::regex_match(str, std::regex("^[0-9]+[M]{0,1}$")) ? "" : "Invalid lmem format";
+        return std::regex_match(str, std::regex("^[0-9]*[1-9]+[0-9]*[M]{0,1}$")) ? "" : "Invalid lmem format";
     });
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
     auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
@@ -122,7 +122,6 @@ void ComletVgpu::setupOptions() {
     createFlag->excludes(precheckFlag);
     createFlag->needs(deviceIdOpt);
     createFlag->needs(numVfsOpt);
-    createFlag->needs(lmemOpt);
     listFlag->excludes(precheckFlag);
     listFlag->excludes(createFlag);
     listFlag->excludes(numVfsOpt);
@@ -175,12 +174,14 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
         json = this->coreStub->doVgpuPrecheck();
     } else if (this->opts->create) {
         uint64_t lmemMb = 0;
-        try {
-            lmemMb = std::stoul(std::regex_replace(this->opts->lmemPerVf, std::regex("[^0-9]"), ""));
-        } catch (std::exception &e) {
-            (*json)["error"] = "Bad lmem argument";
-            (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
-            return json;
+        if (this->opts->lmemPerVf.size()) {
+            try {
+                lmemMb = std::stoul(std::regex_replace(this->opts->lmemPerVf, std::regex("[^0-9]"), ""));
+            } catch (std::exception &e) {
+                (*json)["error"] = "Bad lmem argument";
+                (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+                return json;
+            }
         }
         json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
         if (json->contains("error")) {

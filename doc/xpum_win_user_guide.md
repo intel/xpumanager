@@ -1,28 +1,28 @@
-# Intel(R) XPU Manager Windows CLI User Guide
-This guide describes how to use Intel(R) XPU Manager Windows CLI tool to manage Intel GPU devices on Windows Server OS. The GPU driver version on Windows should be 31.0.101.3902 or newer. 
+# Intel(R) XPU System Management Interface Windows CLI User Guide
+This guide describes how to use Intel(R) XPU System Management Interface Windows CLI tool to manage Intel GPU devices on Windows Server OS. The GPU driver version on Windows should be 31.0.101.3902 or newer. 
   
 
-## Intel(R) XPU Manager Windows CLI main features 
+## Intel(R) XPU-SMI Windows CLI main features 
 * Show the device info. 
 * Update the GPU GFX firmware. 
 * Get and change GPU configurations
 * Get GPU telemetries
 
 ## Help info
-Show the XPU Manager Windows CLI tool help info. 
+Show the XPU-SMI Windows CLI tool help info. 
 ```
-xpumcli.exe -h
-Intel XPU Manager Command Line Interface -- v1.2 for Windows
-Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.
-Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.
+xpu-smi.exe -h
+Intel XPU-SMI Command Line Interface -- v1.2 for Windows
+Intel XPU-SMI Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.
+Intel XPU-SMI is based on Intel oneAPI Level Zero. Before using Intel XPU-SMI, the GPU driver and Intel oneAPI Level Zero should be installed rightly.
 
 Supported devices:
 - Intel Data Center GPU
 
-Usage: xpumcli [Options]
-  xpumcli -v
-  xpumcli -h
-  xpumcli discovery
+Usage: xpu-smi [Options]
+  xpu-smi -v
+  xpu-smi -h
+  xpu-smi discovery
 
 Options:
   -h,--help                   Print this help message and exit
@@ -36,36 +36,43 @@ Subcommands:
   dump                        Dump device statistics data.
 ```
 
-Show XPU Manager Windows CLI version and Level Zero version. 
+Show XPU-SMI Windows CLI version and Level Zero version. 
 ```
-xpumcli.exe -v
+xpu-smi.exe -v
 CLI:
-    Version: 1.2.0
-    Build ID: 1.2.0
-    Level Zero Version: 1.8.12
+    Version: 1.2.11
+    Build ID: c62f126b
+
+Service:
+    Version: 1.2.11
+    Build ID: c62f126b
+    Level Zero Version: 1.9.9
 ```
 
 ## Discover the GPU devices in this machine
 Help info of the "discovery" subcommand
 ```
-xpumcli.exe discovery -h
+xpu-smi.exe discovery -h
 Discover the GPU devices installed on this machine and provide the device info.
 
-Usage: xpumcli discovery [Options]
-  xpumcli discovery
-  xpumcli discovery -d [deviceId]
-  xpumcli discovery -d [deviceId] -j
+Usage: xpu-smi discovery [Options]
+  xpu-smi discovery
+  xpu-smi discovery -d [deviceId]
+  xpu-smi discovery -d [deviceId] -j
+  xpu-smi discovery --listamcversions
 
 Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
   -d,--device                 Device ID to query. It will show more detailed info.
+
+  --listamcversions           Show all AMC firmware versions. This command only works on Intel M50CYP server (BMC firmware version is 2.82 or newer).
 ```
 
 Discover the devices in this machine
 ```
-xpumcli.exe discovery
+xpu-smi.exe discovery
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
@@ -78,7 +85,7 @@ xpumcli.exe discovery
 
 Discover the devices in this machine and get the JSON format output
 ```
-xpumcli.exe discovery -j
+xpu-smi.exe discovery -j
 {
     "device_list": [
         {
@@ -96,7 +103,7 @@ xpumcli.exe discovery -j
 
 Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info. 
 ```
-xpumcli.exe discovery -d 0
+xpu-smi.exe discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
@@ -143,26 +150,28 @@ xpumcli.exe discovery -d 0
 ## Update the GPU firmware
 Help info of updating GPU firmware
 ```
-xpumcli.exe updatefw -h
+xpu-smi.exe updatefw -h
 Update GPU firmware.
 
-Usage: xpumcli updatefw [Options]
-  xpumcli updatefw -d [deviceId] -t GFX -f [imageFilePath]
-  xpumcli updatefw -d [deviceId] -t GFX_DATA -f [imageFilePath]
+Usage: xpu-smi updatefw [Options]
+  xpu-smi updatefw -d [deviceId] -t GFX -f [imageFilePath]
+  xpu-smi updatefw -d [deviceId] -t GFX_DATA -f [imageFilePath]
+  xpu-smi updatefw -t AMC -f [imageFilePath]
 
 Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GFX, GFX_DATA.
+  -t,--type                   The firmware name. Valid options: GFX, GFX_DATA, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer).
   -f,--file                   The firmware image file path on this server
   -y,--assumeyes              Assume that the answer to any question which would be asked is yes
+  --force                     Force GFX firmware update. This parameter only works for GFX firmware.
 ```
 
 Update GPU GFX firmware
 ```
-xpumcli.exe updatefw -d 0 -t GFX -f ATS_M150_512_C0_PVT_ES_065_gfx_fwupdate_SOC1.bin
+xpu-smi.exe updatefw -d 0 -t GFX -f ATS_M150_512_C0_PVT_ES_065_gfx_fwupdate_SOC1.bin
 Device 0 FW version: DG02_1.3185
 Image FW version: DG02_1.3218
 Do you want to continue? (y/n)
@@ -170,26 +179,26 @@ y
 Start to update firmware
 Firmware Name: GFX
 Image path: C:\Users\xxx\xxx\ATS_M150_512_C0_PVT_ES_065_gfx_fwupdate_SOC1.bin
-..........
+[============================================================] 100 %
 Update firmware successfully.
 ```
 
 ## Get and change the GPU settings
 Help info of getting/changing the GPU settings
 ```
-xpumcli.exe config -h
+xpu-smi.exe config -h
 Get and change the GPU settings.
 
-Usage: xpumcli config [Options]
- xpumcli config -d [deviceId]
- xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
- xpumcli config -d [deviceId] --powerlimit [powerValue]
- xpumcli config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable
- xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
- xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
- xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
- xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]
- xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
+Usage: xpu-smi config [Options]
+ xpu-smi config -d [deviceId]
+ xpu-smi config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
+ xpu-smi config -d [deviceId] --powerlimit [powerValue]
+ xpu-smi config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable
+ xpu-smi config -d [deviceId] -t [tileId] --standby [standbyMode]
+ xpu-smi config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
+ xpu-smi config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
+ xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]
+ xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
 
 Options:
   -h,--help                   Print this help message and exit
@@ -210,7 +219,7 @@ Options:
 
 show the GPU settings
 ```
-xpumcli.exe config -d 0
+xpu-smi.exe config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
 | Device Type | Device ID/Tile ID | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
@@ -258,31 +267,31 @@ xpumcli.exe config -d 0
 
 Change the GPU memory ECC mode.
 ```
-xpumcli.exe config -d 0 --memoryecc 0
+xpu-smi.exe config -d 0 --memoryecc 0
 Return: Successfully disable ECC memory on GPU 0. Please reset the GPU or reboot the OS for the change to take effect.
 ```
 
 Change the GPU tile core frequency range.
 ```
-xpumcli.exe config -d 0 -t 0 --frequencyrange 1200,1300
+xpu-smi.exe config -d 0 -t 0 --frequencyrange 1200,1300
 Return: Succeed to change the core frequency range on GPU 0 tile 0.
 ```
  
 Change the GPU power limit.
 ```
-xpumcli.exe config -d 0 --powerlimit 120
+xpu-smi.exe config -d 0 --powerlimit 120
 Return: Succeed to set the power limit on GPU 0.
 ```
 
 ## Get the device real-time statistics
 Help info for getting the GPU device real-time statistics 
 ```
-xpumcli.exe stats -h
-List the GPU aggregated statistics.
+xpu-smi.exe stats -h
+List the GPU real-time statistics.
 
-Usage: xpumcli stats [Options]
-  xpumcli stats
-  xpumcli stats -d [deviceId]
+Usage: xpu-smi stats [Options]
+  xpu-smi stats -d [deviceId]
+  xpu-smi stats -d [deviceId] -j
 
 Options:
   -h,--help                   Print this help message and exit
@@ -293,62 +302,62 @@ Options:
 
 List the GPU device real-time statistics
 ```
-xpumcli.exe stats -d 0
-+----------------------------+---------------------------------------------------------------------+
-| Device ID                  | 0                                                                   |
-+----------------------------+---------------------------------------------------------------------+
-| Start Time                 | 2023-02-15T05:47:08.879                                             |
-| End Time                   | 2023-02-15T05:47:09.380                                             |
-| Elapsed Time (Second)      | 0.50                                                                |
-| Energy Consumed (J)        | Tile 0: 25.49                                                       |
-| GPU Utilization (%)        | Tile 0: 0                                                           |
-| EU Array Active (%)        | Tile 0:                                                             |
-| EU Array Stall (%)         | Tile 0:                                                             |
-| EU Array Idle (%)          | Tile 0:                                                             |
-+----------------------------+---------------------------------------------------------------------+
-| Reset                      | Tile 0: , total:                                                    |
-| Programming Errors         | Tile 0: , total:                                                    |
-| Driver Errors              | Tile 0: , total:                                                    |
-| Cache Errors Correctable   | Tile 0: , total:                                                    |
-| Cache Errors Uncorrectable | Tile 0: , total:                                                    |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Power (W)              | Tile 0: avg: 49, min: 49, max: 49, current: 49                      |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Frequency (MHz)        | Tile 0: avg: 2050, min: 2050, max: 2050, current: 2050              |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Core Temperature       | Tile 0: avg: 38, min: 38, max: 38, current: 38                      |
-| (Celsius Degree)           |                                                                     |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Memory Temperature     | Tile 0: avg: 36, min: 36, max: 36, current: 36                      |
-| (Celsius Degree)           |                                                                     |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Memory Read (kB/s)     | Tile 0: avg: 4836, min: 4836, max: 4836, current: 4836              |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Memory Write (kB/s)    | Tile 0: avg: 54238, min: 54238, max: 54238, current: 54238          |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Memory Bandwidth (%)   | Tile 0: avg: 0, min: 0, max: 0, current: 0                          |
-+----------------------------+---------------------------------------------------------------------+
-| GPU Memory Used (MiB)      | Tile 0: avg: 113, min: 113, max: 113, current: 113                  |
-+----------------------------+---------------------------------------------------------------------+
-| PCIe Read (kB/s)           | avg: , min: , max: , current:                                       |
-+----------------------------+---------------------------------------------------------------------+
-| PCIe Write (kB/s)          | avg: , min: , max: , current:                                       |
-+----------------------------+---------------------------------------------------------------------+
-| Compute Engine Util (%)    | Tile 0: 0                                                           |
-+----------------------------+---------------------------------------------------------------------+
-| Media Engine Util (%)      | Tile 0: 0                                                           |
-+----------------------------+---------------------------------------------------------------------+
+xpu-smi.exe stats -d 0
++-----------------------------+--------------------------------------------------------------------+
+| Device ID                   | 0                                                                  |
++-----------------------------+--------------------------------------------------------------------+
+| GPU Utilization (%)         | 0                                                                  |
+| EU Array Active (%)         |                                                                    |
+| EU Array Stall (%)          |                                                                    |
+| EU Array Idle (%)           |                                                                    |
+|                             |                                                                    |
+| Compute Engine Util (%)     | 0                                                                  |
+| Render Engine Util (%)      | 0                                                                  |
+| Media Engine Util (%)       | 0                                                                  |
+| Decoder Engine Util (%)     |                                                                    |
+| Encoder Engine Util (%)     |                                                                    |
+| Copy Engine Util (%)        | 0                                                                  |
+| Media EM Engine Util (%)    |                                                                    |
+| 3D Engine Util (%)          |                                                                    |
++-----------------------------+--------------------------------------------------------------------+
+| Reset                       |                                                                    |
+| Programming Errors          |                                                                    |
+| Driver Errors               |                                                                    |
+| Cache Errors Correctable    |                                                                    |
+| Cache Errors Uncorrectable  |                                                                    |
+| Mem Errors Correctable      |                                                                    |
+| Mem Errors Uncorrectable    |                                                                    |
++-----------------------------+--------------------------------------------------------------------+
+| GPU Power (W)               | 16                                                                 |
+| GPU Frequency (MHz)         | 1950                                                               |
+| GPU Core Temperature (C)    | 52                                                                 |
+| GPU Memory Temperature (C)  | 48                                                                 |
+| GPU Memory Read (kB/s)      | 0                                                                  |
+| GPU Memory Write (kB/s)     | 0                                                                  |
+| GPU Memory Bandwidth (%)    | 0                                                                  |
+| GPU Memory Used (MiB)       | 186                                                                |
+| Xe Link Throughput (kB/s)   |                                                                    |
++-----------------------------+--------------------------------------------------------------------+
 ```
 
 ## Dump the device statistics in CSV format
+For Flex series GPU on Windows OS, the supported statistics include
+* GPU utilization
+* GPU power
+* GPU temperature
+* GPU frequency
+* GPU memory throughput
+* GPU memory usage
+* GPU engine group utilization
+  
 Help info of the device statistics dump. 
 ```
-xpumcli.exe dump -h
+xpu-smi.exe dump -h
 Dump device statistics data.
 
-Usage: xpumcli dump [Options]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] --file [filename]
+Usage: xpu-smi dump [Options]
+  xpu-smi dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpu-smi dump -d [deviceId] -t [deviceTileId] -m [metricsIds] --file [filename]
 
 Options:
   -h,--help                   Print this help message and exit
@@ -379,8 +388,21 @@ Options:
                               18. GPU Memory Used (MiB)
                               19. PCIe Read (kB/s), per GPU
                               20. PCIe Write (kB/s), per GPU
-                              21. Compute Engine (%), per tile
-                              22. Media Engine (%), per tile
+                              21. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput.
+                              22. Compute engine utilizations (%), per tile.
+                              23. Render engine utilizations (%), per tile.
+                              24. Media decoder engine utilizations (%), per tile.
+                              25. Media encoder engine utilizations (%), per tile.
+                              26. Copy engine utilizations (%), per tile.
+                              27. Media enhancement engine utilizations (%), per tile.
+                              28. 3D engine utilizations (%), per tile.
+                              29. GPU Memory Errors Correctable, per tile. Other non-compute correctable errors are also included.
+                              30. GPU Memory Errors Uncorrectable, per tile. Other non-compute uncorrectable errors are also included.
+                              31. Compute engine group utilization (%), per tile.
+                              32. Render engine group utilization (%), per tile.
+                              33. Media engine group utilization (%), per tile.
+                              34. Copy engine group utilization (%), per tile.
+                              35. Throttle reason, per tile.
 
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.
@@ -390,16 +412,16 @@ Options:
 
 Dump the device statistics to screen in CSV format.
 ```
-xpumcli.exe dump -d 0 -m 0,1,2
+xpu-smi.exe dump -d 0 -m 0,1,2
 Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
-05:47:42.000, 0, 0.00, 51.82, 2050
-05:47:43.000, 0, 0.00, 50.37, 2050
-05:47:44.000, 0, 0.00, 51.78, 2050
+05:47:42.000, 0, 0.00, 51, 2050
+05:47:43.000, 0, 0.00, 50, 2050
+05:47:44.000, 0, 0.00, 51, 2050
 ```
 
 Dump the device statistics to csv file.
 ```
-xpumcli.exe dump -d 0 -m 0,1,2 --file gpudata.csv
+xpu-smi.exe dump -d 0 -m 0,1,2 --file gpudata.csv
 Dump stats to file gpudata.csv. Press the key ESC to stop dumping.
 ESC is pressed. Dumping is stopped.
 Dumping cycle end

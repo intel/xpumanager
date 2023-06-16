@@ -19,16 +19,25 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'opcm/pcm' }}
+    if: ${{ github.repository == 'intel/pcm' }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       # Runs a set of commands using the runners shell
-      - name: scan-build
+      - name: preparation
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -qq -y make clang clang-tools perl g++
-          scan-build --status-bugs make -j
+          sudo apt-get install -qq -y make clang clang-tools perl g++ cmake
+      - name: cmake
+        run: |
+          rm -rf ${{ github.workspace }}/build
+          scan-build cmake -B ${{ github.workspace }}/build
+      - name: scan-build
+        run: |
+          cd ${{ github.workspace }}/build
+          scan-build --exclude src/simdjson --status-bugs make -j

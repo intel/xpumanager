@@ -12,6 +12,7 @@
 #include <sstream>
 #include <mutex>
 #include <thread>
+#include <csignal>
 
 #include "internal_api.h"
 #include "logger.h"
@@ -1498,26 +1499,28 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         response->set_errorno(res);
         return grpc::Status::OK;
     }
-    //test code
-    //response->set_deviceid (deviceId);
-    //response->set_retcode(XPUM_OK);
-    //return grpc::Status::OK;
     
     res = xpumResetDevice(deviceId, force);
     if (res != XPUM_OK) {
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
             response->set_errormsg("device Id or tile Id is invalid");
-        } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
+        } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING) {
             response->set_errormsg("device is updating firmware");
+        } else if (res == XPUM_RESULT_RESET_FAIL) {
+            response->set_errormsg("Fail to reset device");
         } else {
             response->set_errormsg("Error");
         }
     }
-    //temporary code
-    // res = XPUM_OK;
     response->set_deviceid(deviceId);
-    //response->set_retcode(res);
     response->set_errorno(res);
+
+    std::thread([] {
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        // Send SIGKILL signal to make daemon exit after reseting device
+        std::raise(SIGKILL);
+    }).detach();
+
     return grpc::Status::OK;
 }
 

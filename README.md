@@ -82,11 +82,11 @@ Update firmware successfully.
 | GPU Firmware Update       | GFX, GFX_Data, AMC     | GFX, GFX_Data, AMC   | GFX, GFX_Data, AMC           | AMC (IPMI)      |
 | GPU Configuration         | Yes                    | Yes                  | Yes                          | No              |
 | GPU Diagnostics           | Yes                    | Yes                  | No                           | No              |
-| GPU Health                | Yes                    | No                   | No                           | No              |
+| GPU Health                | Yes                    | Yes                  | No                           | No              |
 | GPU Grouping              | Yes                    | No                   | No                           | No              |
 | GPU policy                | Yes                    | No                   | No                           | No              |
 | Architecture              | Daemon based           | Daemon-less          | Daemon-less                  | Daemon-less     |
-| Interfaces                | CLI, RESTFul, Library  | CLI, Library         | CLI                          | CLI             |
+| Interfaces                | CLI, RESTFul, Library  | CLI, Library         | CLI, Library                 | CLI             |
 
 ## How to get XPU Manager, XPU-SMI, Windows CLI and amcmcli binaries. 
 You may get the latest installers or binaries in [Releases](https://github.com/intel/xpumanager/releases).
@@ -120,6 +120,7 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 * Refer to the [XPU Manager amcmcli User Guide](doc/amcmcli_user_guide.md) to start to use XPU Manager amcmcli.
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
 * Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
+* Refer to [XPU Manager/XPU-SMI API documents](https://intel.github.io/xpumanager/smi_index.html) to integrate the library or RESTFul interface. 
  
 ## Architecture
 ![XPU Manager Architecture](doc/img/architecture.PNG)

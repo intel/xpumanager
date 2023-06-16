@@ -76,7 +76,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/third_party/googletest)
 endif()
 add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/hwloc)
-add_subdirectory(third_party/pcm)
+add_subdirectory(third_party/pcm/pcm-iio-gpu)
 
 add_subdirectory(core)
 add_subdirectory(cli)
