@@ -22,7 +22,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         XPUM_STATS_GPU_FREQUENCY,
         XPUM_STATS_GPU_CORE_TEMPERATURE,
         XPUM_STATS_MEMORY_USED,
-        // XPUM_STATS_MEMORY_UTILIZATION,
+        XPUM_STATS_MEMORY_UTILIZATION,
         XPUM_STATS_MEMORY_BANDWIDTH,
         // XPUM_STATS_MEMORY_READ,
         // XPUM_STATS_MEMORY_WRITE,
