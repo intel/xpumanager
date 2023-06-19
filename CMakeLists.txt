@@ -190,6 +190,7 @@ if(CPACK_GENERATOR MATCHES "RPM")
     "/usr/local/lib")
 
   if(NOT DAEMONLESS)
+    set(CPACK_RPM_PACKAGE_CONFLICTS "xpu-smi")
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin.in" 
                   "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin" @ONLY)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun.in" 
@@ -220,6 +221,7 @@ if(CPACK_GENERATOR MATCHES "DEB")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
   if(NOT DAEMONLESS)
+    set(CPACK_DEBIAN_PACKAGE_CONFLICTS "xpu-smi")
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst.in" 
                   "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst" @ONLY)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm.in" 
