@@ -68,5 +68,8 @@
 #define XPUM_CLI_ERROR_VGPU_SYSFS_ERROR                                     59
 #define XPUM_CLI_ERROR_VGPU_UNSUPPORTED_DEVICE_MODEL                        60
 #define XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED                         61
+#define XPUM_CLI_ERROR_VGPU_NO_VMX_FLAG                                     62
+#define XPUM_CLI_ERROR_VGPU_IOMMU_DISABLED                                  63
+#define XPUM_CLI_ERROR_VGPU_SRIOV_DISABLED                                  64
 
 int errorNumTranslate(int coreErrNo);

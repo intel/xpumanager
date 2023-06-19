@@ -172,6 +172,13 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
 
     if (this->opts->precheck) {
         json = this->coreStub->doVgpuPrecheck();
+        if (json->contains("vmx_flag") && (*json)["vmx_flag"].get<std::string>().compare("Fail") == 0) {
+            (*json)["errno"] = XPUM_CLI_ERROR_VGPU_NO_VMX_FLAG;
+        } else if (json->contains("iommu_status") && (*json)["iommu_status"].get<std::string>().compare("Fail") == 0) {
+            (*json)["errno"] = XPUM_CLI_ERROR_VGPU_IOMMU_DISABLED;
+        } else if (json->contains("sriov_status") && (*json)["sriov_status"].get<std::string>().compare("Fail") == 0) {
+            (*json)["errno"] = XPUM_CLI_ERROR_VGPU_SRIOV_DISABLED;
+        }
     } else if (this->opts->create) {
         uint64_t lmemMb = 0;
         if (this->opts->lmemPerVf.size()) {
@@ -260,6 +267,7 @@ void ComletVgpu::getTableResult(std::ostream &out) {
     if (this->opts->precheck) {
         CharTable table(precheckTableConfig, *res);
         table.show(out);
+        setExitCodeByJson(*res);
     } else if (this->opts->create || this->opts->list) {
         /*
          *  If precheck failed, show precheck table
