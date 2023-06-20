@@ -47,13 +47,6 @@ def getDeviceProperties(deviceId, username="", password=""):
         data[prop.name.lower()] = prop.value
     # device_id
     data["device_id"] = deviceId
-    # serial number
-    resp = stub.getDeviceSerialNumberAndAmcFwVersion(core_pb2.GetDeviceSerialNumberRequest(
-        deviceId=deviceId, username=username, password=password))
-    if resp.serialNumber:
-        data["serial_number"] = resp.serialNumber
-    if resp.amcFwVersion:
-        data["amc_firmware_version"] = resp.amcFwVersion
     # links
     data["health"] = {
         "@odata.id": "/rest/v1/devices/{}/health".format(deviceId)}
