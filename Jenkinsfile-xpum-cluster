@@ -546,7 +546,7 @@ spec:
                     cp -rp deployment/docker deployment/docker_ats
                     cp rest/requirements.txt deployment/docker_ats
                     cp third-party-programs.txt deployment/docker_ats
-                    mkdir deployment/docker_ats/build-deb && cp build-deb-focal/xpum*.deb deployment/docker_ats/build-deb
+                    mkdir deployment/docker_ats/build-deb && cp build-deb-jammy/xpum*.deb deployment/docker_ats/build-deb
                     export http_proxy=http://proxy-dmz.intel.com:911
                     export HTTP_PROXY=http://proxy-dmz.intel.com:911
                     export https_proxy=http://proxy-dmz.intel.com:912
@@ -561,7 +561,7 @@ spec:
                       --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
                       --build-arg no_proxy=.intel.com \
                       --build-arg NO_PROXY=.intel.com \
-                      --dockerfile `pwd`/deployment/docker_ats/Dockerfile.ubuntu.20.04 \
+                      --dockerfile `pwd`/deployment/docker_ats/Dockerfile.ubuntu.22.04 \
                       --context `pwd`/deployment/docker_ats \
                       --skip-tls-verify \
                       --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager-ats:$DOCKER_IMG_TAG
@@ -597,7 +597,7 @@ spec:
                       --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
                       --build-arg no_proxy=.intel.com \
                       --build-arg NO_PROXY=.intel.com \
-                      --dockerfile `pwd`/deployment/docker_pvc/Dockerfile.ubuntu.22.04.pvc \
+                      --dockerfile `pwd`/deployment/docker_pvc/Dockerfile.ubuntu.22.04.max \
                       --context `pwd`/deployment/docker_pvc \
                       --skip-tls-verify \
                       --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager-pvc:$DOCKER_IMG_TAG
