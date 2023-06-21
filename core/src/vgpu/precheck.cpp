@@ -53,7 +53,7 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
     *   iommu status: /sys/class/iommu
     *   sr-iov status /sys/bus/pci/devices/[device BDF address]/sriov_totalvfs
     */
-    auto cmdRes = execCommand("lscpu | grep -o vmx");
+    auto cmdRes = execCommand("lscpu");
     XPUM_LOG_DEBUG("Checking VMX flag, result: {}", cmdRes.output());
     if (cmdRes.exitStatus()) {
         result->vmxFlag = false;
