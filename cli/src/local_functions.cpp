@@ -92,11 +92,15 @@ size_t findCaseInsensitive(std::string data, std::string toSearch, size_t pos) {
     return data.find(toSearch, pos);
 }
 
-void updateErrorComponentInfo(ComponentInfo& cinfo, std::string status, int category, int severity, std::string time) {
+void updateErrorComponentInfo(ComponentInfo& cinfo, std::string status, std::string error_detail, int error_id, std::string time, int error_category, int error_severity) {
     if (cinfo.status == "Pass") {
         cinfo.status = status;
-        cinfo.category = category;
-        cinfo.severity = severity;
+        cinfo.error_detail = error_detail;
+        cinfo.error_id = error_id;
+        if (error_id > 0) {
+            cinfo.error_category = std::get<1>(gpu_driver_error_type_lists.at(error_id));
+            cinfo.error_severity = std::get<2>(gpu_driver_error_type_lists.at(error_id));
+        }
         cinfo.time = time;
     }
 }
@@ -392,13 +396,17 @@ std::vector<ComponentInfo> component_gpus;
 std::unordered_set<std::string> error_gpus;
 std::unordered_set<int> error_cpus;
 
-static void updateErrorComponentInfoList(std::string bdf, int id, std::string status, int category, int severity, std::string time = "") {
+static void updateErrorComponentInfoList(std::string bdf, int id, std::string status, std::string error_detail, int error_id, std::string time = "", int error_category = 0, int error_severity = 0) {
     if (bdf != "") {
         for (auto& component_gpu : component_gpus) {
             if (extractLastNChars(component_gpu.bdf, 7) == extractLastNChars(bdf, 7) && component_gpu.status == "Pass") {
                 component_gpu.status = status;
-                component_gpu.category = category;
-                component_gpu.severity = severity;
+                component_gpu.error_detail = error_detail;
+                component_gpu.error_id = error_id;
+                if (error_id > 0) {
+                    component_gpu.error_category = std::get<1>(gpu_driver_error_type_lists.at(error_id));
+                    component_gpu.error_severity = std::get<2>(gpu_driver_error_type_lists.at(error_id));
+                }
                 component_gpu.time = time;
                 error_gpus.insert(bdf);
                 break;
@@ -410,8 +418,10 @@ static void updateErrorComponentInfoList(std::string bdf, int id, std::string st
         for (auto& component_cpu : component_cpus)
             if (component_cpu.id == id && component_cpu.status == "Pass") {
                 component_cpu.status = status;
-                component_cpu.category = category;
-                component_cpu.severity = severity;
+                component_cpu.error_detail = error_detail;
+                component_cpu.error_id = -1;
+                component_cpu.error_category = error_category;
+                component_cpu.error_severity = error_severity;
                 component_cpu.time = time;
                 error_cpus.insert(id);
                 break;
@@ -441,9 +451,9 @@ static void updateErrorLogLine(std::string line, ErrorPattern error_pattern) {
     // kernel issue but not related with gpu driver will not update driver info
     if (error_pattern.target_type == COMPONET_TYE_DRIVER) {
         if (bdf == "") {
-            updateErrorComponentInfo(component_driver, line, error_pattern.error_category, error_pattern.error_severity, time);
+            updateErrorComponentInfo(component_driver, "Fail", line, error_pattern.error_id, time);
         } else {
-            updateErrorComponentInfoList(bdf, -1, line, error_pattern.error_category, error_pattern.error_severity, time);
+            updateErrorComponentInfoList(bdf, -1, "Fail", line, error_pattern.error_id, time);
         }
     } else if (error_pattern.target_type == COMPONET_TYE_CPU) {
         auto pos = line.find("CPU ");
@@ -451,10 +461,10 @@ static void updateErrorLogLine(std::string line, ErrorPattern error_pattern) {
             std::string temp_str = line.substr(pos + 1);
             int cpu_id = std::stoi(temp_str);
             if (!component_cpus.empty())
-                updateErrorComponentInfoList("", cpu_id / (processor_count / component_cpus.size()), line, error_pattern.error_category, error_pattern.error_severity, time);
+                updateErrorComponentInfoList("", cpu_id / (processor_count / component_cpus.size()), "Fail", line, -1, time, error_pattern.error_category, error_pattern.error_severity);
         }
     } else if (bdf != "") {
-        updateErrorComponentInfoList(bdf, -1, line, error_pattern.error_category, error_pattern.error_severity, time);
+        updateErrorComponentInfoList(bdf, -1, "Fail", line, error_pattern.error_id, time);
     }
 }
 
@@ -605,10 +615,9 @@ static void doPreCheckDriver() {
     pclose(f);
 
     if (!is_i915_loaded) {
-        updateErrorComponentInfo(component_driver, "i915 not loaded", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL);
+        updateErrorComponentInfo(component_driver, "Fail", "i915 not loaded", i915_Not_Loaded);
     } else if (!level0_driver_error_info.empty()) {
-        updateErrorComponentInfo(component_driver, level0_driver_error_info, 
-            ERROR_CATEGORY_UMD, dependency_issue? ERROR_SEVERITY_HIGH : ERROR_SEVERITY_CIRTICAL);
+        updateErrorComponentInfo(component_driver, "Fail", level0_driver_error_info, dependency_issue? Level_Zero_Metrics_Init_Error : Level_Zero_Init_Error);
     }
 }
 
@@ -631,7 +640,7 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
                 }
             }
             if (!is_guc_running) {
-                updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "GuC is disabled", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL);
+                updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "Fail", "GuC is not running", GuC_Not_Running);
             }
         }
         guc_info_file.close();
@@ -655,9 +664,9 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
                 }
                 if (!is_huc_running) {
                     if (is_huc_disabled)
-                        updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "HuC is disabled", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH);
+                        updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "Fail", "HuC is disabled", HuC_Disabled);
                     else
-                        updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "HuC is not running", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH);
+                        updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "Fail", "HuC is not running", HuC_Not_Running);
                 }
             }
             huc_info_file.close();
@@ -674,7 +683,7 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
                 }
             }
             if (is_i915_wedged) {
-                updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "i915 wedged", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL);
+                updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "Fail", "i915 wedged", i915_Error);
             }
         }
         i915_wedged_file.close();
@@ -705,7 +714,7 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
         }
         pclose(f);
         if (!is_pcie_ok) {
-            updateErrorComponentInfoList(bdf, -1, "PCIe error", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL);
+            updateErrorComponentInfoList(bdf, -1, "Fail", "PCIe error", PCIe_Error);
         }
     }
 }
@@ -809,7 +818,7 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
             if (isPhysicalFunctionDevice(bdf)) {
                 gpu_ids.push_back(std::to_string(gpu_id));
                 gpu_bdfs.push_back(bdf);
-                component_gpus.push_back({COMPONET_TYE_GPU, has_privilege ? "Pass" : "Unknown", 0, 0, -1, bdf, ""});
+                component_gpus.push_back({COMPONET_TYE_GPU, has_privilege ? "Pass" : "Unknown", 0, 0, -1, bdf});
                 gpu_id++;
             }
         }
@@ -852,10 +861,10 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
                     close(fd);
                     int val = std::stoi(thermal_value)/1000;
                     if (val > cpu_temperature_threshold) {
-                        component_cpus.push_back({COMPONET_TYE_CPU, "Temperature is high (" + std::to_string(val) + " Celsius Degree)", 
-                            ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, pk_id, "", ""});
+                        component_cpus.push_back({COMPONET_TYE_CPU, "Fail",
+                            ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, pk_id, "", "", "Temperature is high (" + std::to_string(val) + " Celsius Degree)"});
                     } else {
-                        component_cpus.push_back({COMPONET_TYE_CPU, has_privilege ? "Pass" : "Unknown", 0, 0, pk_id, "", ""});
+                        component_cpus.push_back({COMPONET_TYE_CPU, has_privilege ? "Pass" : "Unknown", 0, 0, pk_id});
                     }
                     pk_id += 1;
                 }
@@ -886,17 +895,37 @@ std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std:
     component_driver_json["type"] = componentTypeToStr(component_driver.type);
     if (rawJson) {
         component_driver_json["status"] = component_driver.status;
-        if (component_driver.severity > 0)
-            component_driver_json["severity"] = errorSeverityToStr(component_driver.severity);
+        if (component_driver.error_id > 0) {
+            component_driver_json["error_id"] = component_driver.error_id;
+            component_driver_json["error_type"] = std::get<0>(gpu_driver_error_type_lists.at(component_driver.error_id));
+        }
+        if (component_driver.error_severity > 0)
+            component_driver_json["error_severity"] = errorSeverityToStr(component_driver.error_severity);
+        if (component_driver.error_detail.size() > 0)
+            component_driver_json["error_detail"] = component_driver.error_detail;
     } else {
         std::vector<nlohmann::json> component_details;
         auto status = nlohmann::json();
         status["field_value"] = "Status: " + component_driver.status;
         component_details.push_back(status);
-        if (component_driver.severity > 0) {
-            auto severity = nlohmann::json();
-            severity["field_value"] = "Severity: " + errorSeverityToStr(component_driver.severity);
-            component_details.push_back(severity);
+        if (component_driver.error_id > 0) {
+            auto error_id = nlohmann::json();
+            error_id["field_value"] = "Error ID: " + std::to_string(component_driver.error_id);
+            component_details.push_back(error_id);
+
+            auto error_type = nlohmann::json();
+            error_type["field_value"] = "Error Type: " + std::get<0>(gpu_driver_error_type_lists.at(component_driver.error_id));
+            component_details.push_back(error_type);
+        }
+        if (component_driver.error_severity > 0) {
+            auto error_severity = nlohmann::json();
+            error_severity["field_value"] = "Error Severity: " + errorSeverityToStr(component_driver.error_severity);
+            component_details.push_back(error_severity);
+        }
+        if (component_driver.error_detail.size() > 0) {
+            auto error_detail = nlohmann::json();
+            error_detail["field_value"] = "Error Detail: " + component_driver.error_detail;
+            component_details.push_back(error_detail);
         }
         component_driver_json["error_details"] = component_details;
     }
@@ -922,8 +951,14 @@ std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std:
             component_json["status"] = component.status;
             if (component.time != "")
                 component_json["time"] = component.time;
-            if (component.severity > 0)
-                component_json["severity"] = errorSeverityToStr(component.severity);
+            if (component.error_id > 0) {
+                component_json["error_id"] = component.error_id;
+                component_json["error_type"] = std::get<0>(gpu_driver_error_type_lists.at(component.error_id));
+            }
+            if (component.error_severity > 0)
+                component_json["error_severity"] = errorSeverityToStr(component.error_severity);
+            if (component.error_detail.size() > 0)
+                component_json["error_detail"] = component.error_detail;
         } else {
             std::vector<nlohmann::json> component_details;
             if (component.type == COMPONET_TYE_CPU) {
@@ -943,10 +978,24 @@ std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std:
                 time["field_value"] = "Time: " + component.time;
                 component_details.push_back(time);
             }
-            if (component.severity > 0) {
-                auto severity = nlohmann::json();
-                severity["field_value"] = "Severity: " + errorSeverityToStr(component.severity);
-                component_details.push_back(severity);
+            if (component.error_id > 0) {
+                auto error_id = nlohmann::json();
+                error_id["field_value"] = "Error ID: " + std::to_string(component.error_id);
+                component_details.push_back(error_id);
+
+                auto error_type = nlohmann::json();
+                error_type["field_value"] = "Error Type: " + std::get<0>(gpu_driver_error_type_lists.at(component.error_id));
+                component_details.push_back(error_type);
+            }
+            if (component.error_severity > 0) {
+                auto error_severity = nlohmann::json();
+                error_severity["field_value"] = "Error Severity: " + errorSeverityToStr(component.error_severity);
+                component_details.push_back(error_severity);
+            }
+            if (component.error_detail.size() > 0) {
+                auto error_detail = nlohmann::json();
+                error_detail["field_value"] = "Error Detail: " + component.error_detail;
+                component_details.push_back(error_detail);
             }
             component_json["error_details"] = component_details;
         }
@@ -975,29 +1024,12 @@ bool isDriversAutoprobeEnabled(const std::string &bdfAddress) {
 std::unique_ptr<nlohmann::json> getPreCheckErrorTypes() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     std::vector<nlohmann::json> error_type_list;
-    std::stringstream ss(error_types);
-    std::string current;
-    while (getline(ss, current)) {
-        if (current.empty())
-            continue;
-        
-        std::vector<std::string> error_type;
-        std::stringstream current_ss(current);
-        std::string item;
-        while (getline(current_ss, item, '#')) {
-            if (item.size() > 0) {
-                item.erase(item.find_last_not_of(" \t") + 1);
-                item.erase(0, item.find_first_not_of(" \t"));
-                error_type.push_back(item);
-            }
-        }
-
-        if (error_type.size() < 3)
-            continue;;
+    for (auto error_type : gpu_driver_error_type_lists) {
         auto error_type_json = nlohmann::json();
-        error_type_json["type"] = error_type[0];
-        error_type_json["category"] = error_type[1];
-        error_type_json["severity"] = error_type[2];
+        error_type_json["error_id"] = error_type.first;
+        error_type_json["error_type"] = std::get<0>(error_type.second);
+        error_type_json["error_category"] = errorCategoryToStr(std::get<1>(error_type.second)); 
+        error_type_json["error_severity"] = errorSeverityToStr(std::get<2>(error_type.second));
         error_type_list.push_back(error_type_json);
 
     }

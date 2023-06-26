@@ -33,54 +33,75 @@ const int processor_count = std::thread::hardware_concurrency();
 struct ErrorPattern {
     std::string pattern;
     std::string filter;
-    int error_category;
-    int error_severity;
     int target_type;
+    int error_id;               // only for gpu and driver, -1 means cpu
+    int error_category;
+    int error_severity;         
 };
 
 struct ComponentInfo {
     int type;
-    std::string status;
-    int category;
-    int severity;
-    int id; // cpu physical id
-    std::string bdf;
+    std::string status;         // Pass or Fail
+    int error_category;
+    int error_severity;
+    int id;                     // only for cpu, cpu physical id
+    std::string bdf;            // only for gpu
     std::string time;
+    std::string error_detail;
+    int error_id;               // only for gpu and driver, -1 means cpu
+};
+
+enum error_type {
+    GuC_Not_Running = 1,
+    GuC_Error = 2,
+    GuC_Initialization_Failed = 3,
+    IOMMU_Catastrophic_Error = 4,
+    LMEM_Not_Initialized_By_Firmware = 5,
+    PCIe_Error = 6,
+    DRM_Error = 7,
+    GPU_Hang = 8,
+    i915_Error = 9,
+    i915_Not_Loaded = 10,
+    Level_Zero_Init_Error = 11,
+    HuC_Disabled = 12,
+    HuC_Not_Running = 13,
+    Level_Zero_Metrics_Init_Error = 14,
+};
+
+// error_type_id => {error_type, error_category, error_severity}
+const std::map<int, std::tuple<std::string, int, int>> gpu_driver_error_type_lists = {
+    {GuC_Not_Running, {"GuC Not Running", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}},
+    {GuC_Error, {"GuC Error", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}},
+    {GuC_Initialization_Failed, {"GuC Initialization Failed", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}},
+    {IOMMU_Catastrophic_Error, {"IOMMU Catastrophic Error", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}},
+    {LMEM_Not_Initialized_By_Firmware, {"LMEM Not Initialized By Firmware", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}},
+    {PCIe_Error, {"PCIe Error", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}},
+    {DRM_Error, {"DRM Error", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL}},
+    {GPU_Hang, {"GPU Hang", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL}},
+    {i915_Error, {"i915 Error", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL}},
+    {i915_Not_Loaded, {"i915 Not Loaded", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL}},
+    {Level_Zero_Init_Error, {"Level Zero Init Error", ERROR_CATEGORY_UMD, ERROR_SEVERITY_CIRTICAL}},
+    {HuC_Disabled, {"HuC Disabled", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH}},
+    {HuC_Not_Running, {"HuC Not Running", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH}},
+    {Level_Zero_Metrics_Init_Error, {"Level Zero Metrics Init Error", ERROR_CATEGORY_UMD, ERROR_SEVERITY_HIGH}}
 };
 
 const std::vector<ErrorPattern> error_patterns = {
-        {".*(GPU HANG).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(GuC initialization failed).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*ERROR.*GUC.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(IO: IOMMU catastrophic error).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(LMEM not initialized by firmware).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
+        {".*(GPU HANG).*", "", COMPONET_TYE_GPU, GPU_Hang},
+        {".*(GuC initialization failed).*", "", COMPONET_TYE_GPU, GuC_Initialization_Failed},
+        {".*ERROR.*GUC.*", "", COMPONET_TYE_GPU, GuC_Error},
+        {".*(IO: IOMMU catastrophic error).*", "", COMPONET_TYE_GPU, IOMMU_Catastrophic_Error},
+        {".*(LMEM not initialized by firmware).*", "", COMPONET_TYE_GPU, LMEM_Not_Initialized_By_Firmware},
     
         // i915/drm error
-        {".*i915.*drm.*ERROR.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
-        {".*i915.* ERROR .*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
-        {".*drm.*ERROR.*", "i915", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
+        {".*i915.*drm.*ERROR.*", "", COMPONET_TYE_DRIVER, i915_Error},
+        {".*i915.* ERROR .*", "", COMPONET_TYE_DRIVER, i915_Error},
+        {".*drm.*ERROR.*", "i915", COMPONET_TYE_DRIVER, DRM_Error},
         // cpu error
-        {".*(mce|mca).*err.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_CPU},
-        {".*caterr.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_CPU}
+        {".*(mce|mca).*err.*", "", COMPONET_TYE_CPU, -1, ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL},
+        {".*caterr.*", "", COMPONET_TYE_CPU, -1, ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL}
 };
 
-const std::string error_types = 
-R"(
-GuC disabled                        #	Hardware            #	Critical
-GuC error                           #	Hardware            #	Critical
-GuC initialization failed           #	Hardware            #	Critical
-IOMMU catastrophic error            #	Hardware            #	Critical
-LMEM not initialized by firmware    #	Hardware            #	Critical
-PCIe error                          #	Hardware            #	Critical
-drm error                           #	Kernel Mode Driver  #	Critical
-GPU HANG                            #	Kernel Mode Driver  #	Critical
-i915 error                          #	Kernel Mode Driver  #	Critical
-i915 unloaded                       #	Kernel Mode Driver  #	Critical
-Level Zero sysman inited error      #	User Mode Driver    #	Critical
-HuC disabled                        #	Hardware            #	High
-HuC loadable                        #	Hardware            #	High
-Level Zero metrics inited error     #	User Mode Driver    #	High
-)";
 
 // The order of the vector impacts how error patterns are matched. It starts from special patterns to general patterns.
 const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", 
@@ -97,7 +118,7 @@ std::string extractLastNChars(std::string const &str, int n);
 
 size_t findCaseInsensitive(std::string data, std::string toSearch, size_t pos = 0);
 
-void updateErrorComponentInfo(ComponentInfo& cinfo, std::string status, int category, int severity, std::string time = "");
+void updateErrorComponentInfo(ComponentInfo& cinfo, std::string status, std::string error_detail, int error_id, std::string time = "", int error_category = 0, int error_severity = 0);
 
 std::string zeInitResultToString(const int result);
 
