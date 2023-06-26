@@ -362,7 +362,7 @@ static xpum_result_t getGPUFwInventoryList(DNPRedfishHostInterface interface,
         for (auto inv : fwInventoryJson["Members"]) {
             if (inv.contains("@odata.id")) {
                 std::string link = inv["@odata.id"].get<std::string>();
-                if (link.find("/redfish/v1/UpdateService/FirmwareInventory/PonteVecchio") != link.npos) {
+                if (link.find("/redfish/v1/UpdateService/FirmwareInventory/PonteVecchio") != link.npos || link.find("/redfish/v1/UpdateService/FirmwareInventory/IntelDataCenterGPUMaxSeries") != link.npos) {
                     gpuOdataIdList.push_back(link);
                 } else {
                     auto tmp = link;
