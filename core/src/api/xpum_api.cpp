@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "api/device_model.h"
 #include "api_types.h"
@@ -2284,6 +2285,58 @@ int32_t defaultMaxPowerLimit(std::string device_name) {
    return -1;
 }
 
+int32_t mergeMaxPowerLimit(std::string card_idx, int32_t default_maxLimit, Power power){
+    if (power.getMaxLimit() != -1) 
+        return power.getMaxLimit();
+    if (card_idx.empty())
+        return default_maxLimit;
+    std::string dirPath = "/sys/class/drm/" + card_idx + "/device/hwmon";
+    std::vector<std::string> listOfAllDirs = {};
+    DIR* dir = opendir(dirPath.c_str());
+    struct dirent* ent;
+    if (nullptr != dir) {
+        while ((ent = readdir(dir)) != nullptr) {
+            listOfAllDirs.push_back(dirPath + "/" + ent->d_name);
+        }
+        closedir(dir);
+    }
+    std::string deviceDir;
+    for (const auto &tempDir : listOfAllDirs) {
+        std::string name;
+        std::ifstream f(tempDir + "/" + "name");
+        if (f.is_open()) {
+            getline(f, name);
+            f.close();
+            if (power.onSubdevice() == true) {
+                if (name == ("i915_gt" + power.getSubdeviceId())) {
+                    deviceDir = tempDir;
+                    break;
+                }
+            } else if (name == "i915") {
+                deviceDir = tempDir;
+                break;
+            }
+        }
+    }
+    if(deviceDir.empty())
+        return default_maxLimit;
+    std::string line;
+    std::ifstream f(deviceDir + "/power1_rated_max");
+    if (f.is_open()) {
+        getline(f, line);
+        f.close();
+        try {
+            int val = std::stoi(line);
+            int32_t limit = static_cast<int32_t>(val / 1000u);
+            if (limit != 0)
+                return limit;
+        } catch (std::exception &e) {
+            return default_maxLimit;
+        }
+    }
+    return default_maxLimit;
+}
+
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -2309,6 +2362,14 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     } else {
         *count = powers.size();
     }
+    Property prop_drm;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop_drm);
+    std::string card_idx;
+    std::regex pattern("card\\d+");
+    std::smatch match;
+    if (std::regex_search(prop_drm.getValue(), match, pattern)) {
+        card_idx = match.str();
+    }
     if (dataArray != nullptr) {
         int i = 0;
         for (auto &power : powers) {
@@ -2318,12 +2379,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
             dataArray[i].min_limit = power.getMinLimit();
-            if (power.getMaxLimit() == -1) {
-                dataArray[i].max_limit = default_maxLimit;
-            } else {
-                dataArray[i].max_limit = power.getMaxLimit();
-            }
-            
+            dataArray[i].max_limit = mergeMaxPowerLimit(card_idx, default_maxLimit, power);           
             i++;
         }
     }
