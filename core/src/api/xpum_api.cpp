@@ -2248,48 +2248,11 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-int32_t defaultMaxPowerLimit(std::string device_name) {
-   if (device_name == "Intel(R) Graphics [0x56c0]"){
-    return 120 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x56c1]"){
-    return 23 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd0]"){
-    return 600 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd5]"){
-    return 600 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd6]"){
-    return 600 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd7]"){
-    return 450 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd8]"){
-    return 450 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd9]"){
-    return 300 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bda]"){
-    return 300 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bdb]"){
-    return 300 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0be5]"){
-    return 600 *1000;
-   }
-   return -1;
-}
-
-int32_t mergeMaxPowerLimit(std::string card_idx, int32_t default_maxLimit, Power power){
+int32_t mergeMaxPowerLimit(std::string card_idx, Power power){
     if (power.getMaxLimit() != -1) 
         return power.getMaxLimit();
     if (card_idx.empty())
-        return default_maxLimit;
+        return -1;
     std::string dirPath = "/sys/class/drm/" + card_idx + "/device/hwmon";
     std::vector<std::string> listOfAllDirs = {};
     DIR* dir = opendir(dirPath.c_str());
@@ -2319,7 +2282,7 @@ int32_t mergeMaxPowerLimit(std::string card_idx, int32_t default_maxLimit, Power
         }
     }
     if(deviceDir.empty())
-        return default_maxLimit;
+        return -1;
     std::string line;
     std::ifstream f(deviceDir + "/power1_rated_max");
     if (f.is_open()) {
@@ -2331,10 +2294,10 @@ int32_t mergeMaxPowerLimit(std::string card_idx, int32_t default_maxLimit, Power
             if (limit != 0)
                 return limit;
         } catch (std::exception &e) {
-            return default_maxLimit;
+            return -1;
         }
     }
-    return default_maxLimit;
+    return -1;
 }
 
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
@@ -2347,12 +2310,6 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-
-    Property prop;
-    int32_t default_maxLimit = -1;
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop);
-
-    default_maxLimit = defaultMaxPowerLimit(prop.getValue());
 
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
@@ -2379,7 +2336,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
             dataArray[i].min_limit = power.getMinLimit();
-            dataArray[i].max_limit = mergeMaxPowerLimit(card_idx, default_maxLimit, power);           
+            dataArray[i].max_limit = mergeMaxPowerLimit(card_idx, power);           
             i++;
         }
     }

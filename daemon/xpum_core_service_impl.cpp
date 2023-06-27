@@ -1363,7 +1363,8 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
-            if (val1 < 1 || (uint32_t(powerRangeArray[i].default_limit) > 0  && val1 > uint32_t(powerRangeArray[i].default_limit))) {
+            if (val1 < 1 || (uint32_t(powerRangeArray[i].max_limit) > 0  && val1 > uint32_t(powerRangeArray[i].max_limit)) ||
+            (uint32_t(powerRangeArray[i].max_limit) == 0  && uint32_t(powerRangeArray[i].default_limit) > 0  && val1 > uint32_t(powerRangeArray[i].default_limit))) {
                 response->set_errormsg("Invalid power limit value");
                 response->set_errorno(XPUM_GENERIC_ERROR);
                 return grpc::Status::OK;
