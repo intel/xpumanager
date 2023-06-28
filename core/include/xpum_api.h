@@ -490,7 +490,7 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_timeslice_t sched_timeslice);
 /**
  * @brief Set device the scheduler(exclusive) mode
- * @details This function is used to set the scheduler (exclusive) mode
+ * @details This function is used to set the scheduler (exclusive) mode. Caution: It calls xpumShutdown internally.Please make sure other API calls are finished before calling the API, the behaviour of calling other APIs during setting is undefined. And it is recommended to stop current process and use a new process to initialize XPUM after setting.
  *
  * @param deviceId          IN: The device Id
  * @param sched_exclusive     IN: The scheduler time slice mode need to be set
@@ -502,7 +502,7 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_exclusive_t sched_exclusive);
 /**
  * @brief Set device the scheduler(debug) mode
- * @details This function is used to set the scheduler (debug) mode
+ * @details This function is used to set the scheduler (debug) mode.Caution: It calls xpumShutdown internally.Please make sure other API calls are finished before calling the API, the behaviour of calling other APIs during setting is undefined. And it is recommended to stop current process and use a new process to initialize XPUM after setting.
  *
  * @param deviceId          IN: The device Id
  * @param sched_debug     IN: The scheduler debug mode need to be set

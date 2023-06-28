@@ -2412,13 +2412,57 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
         return res;
     }
 
-    SchedulerExclusiveMode mode;
-    mode.subdevice_Id = sched_exclusive.subdevice_Id;
-
-    if (Core::instance().getDeviceManager()->setDeviceSchedulerExclusiveMode(std::to_string(deviceId), mode)) {
-        return XPUM_OK;
+    uint32_t driver_count = 0;
+    auto result = zeDriverGet(&driver_count, nullptr);
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    return XPUM_GENERIC_ERROR;
+    std::vector<ze_driver_handle_t> drivers(driver_count);
+    result = zeDriverGet(&driver_count, drivers.data());
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    int idx = 0;
+    for (auto &p_driver : drivers) {
+        uint32_t device_count = 0;
+        result = zeDeviceGet(p_driver, &device_count, nullptr);
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        std::vector<ze_device_handle_t> devices(device_count);
+
+        result = zeDeviceGet(p_driver, &device_count, devices.data());
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        for (auto device : devices) {
+            if (idx == deviceId) {
+                uint32_t scheduler_count = 0;
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, nullptr);
+                std::vector<zes_sched_handle_t> scheds(scheduler_count);
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
+                for (auto& sched : scheds) {
+                    zes_sched_properties_t props;
+                    result = zesSchedulerGetProperties(sched, &props);
+                    if (result == ZE_RESULT_SUCCESS) {
+                        if (props.subdeviceId != sched_exclusive.subdevice_Id) {
+                            continue;
+                        }
+                        xpumShutdown();
+                        ze_bool_t needReload;
+                        result = zesSchedulerSetExclusiveMode(sched, &needReload);
+                        if (result == ZE_RESULT_SUCCESS) {
+                            return XPUM_OK;
+                        } else {
+                            return XPUM_RESULT_RESET_FAIL;
+                        }
+                    }
+                }
+                return XPUM_GENERIC_ERROR;
+            }
+            idx++;
+        }
+    }
+    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
@@ -2437,13 +2481,57 @@ xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
         return res;
     }
 
-    SchedulerDebugMode mode;
-    mode.subdevice_Id = sched_debug.subdevice_Id;
-
-    if (Core::instance().getDeviceManager()->setDeviceSchedulerDebugMode(std::to_string(deviceId), mode)) {
-        return XPUM_OK;
+    uint32_t driver_count = 0;
+    auto result = zeDriverGet(&driver_count, nullptr);
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    return XPUM_GENERIC_ERROR;
+    std::vector<ze_driver_handle_t> drivers(driver_count);
+    result = zeDriverGet(&driver_count, drivers.data());
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    int idx = 0;
+    for (auto &p_driver : drivers) {
+        uint32_t device_count = 0;
+        result = zeDeviceGet(p_driver, &device_count, nullptr);
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        std::vector<ze_device_handle_t> devices(device_count);
+
+        result = zeDeviceGet(p_driver, &device_count, devices.data());
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        for (auto device : devices) {
+            if (idx == deviceId) {
+                uint32_t scheduler_count = 0;
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, nullptr);
+                std::vector<zes_sched_handle_t> scheds(scheduler_count);
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
+                for (auto& sched : scheds) {
+                    zes_sched_properties_t props;
+                    result = zesSchedulerGetProperties(sched, &props);
+                    if (result == ZE_RESULT_SUCCESS) {
+                        if (props.subdeviceId != sched_debug.subdevice_Id) {
+                            continue;
+                        }
+                        xpumShutdown();
+                        ze_bool_t needReload;
+                        result = zesSchedulerSetComputeUnitDebugMode(sched, &needReload);
+                        if (result == ZE_RESULT_SUCCESS) {
+                            return XPUM_OK;
+                        } else {
+                            return XPUM_RESULT_RESET_FAIL;
+                        }
+                    }
+                }
+                return XPUM_GENERIC_ERROR;
+            }
+            idx++;
+        }
+    }
+    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
