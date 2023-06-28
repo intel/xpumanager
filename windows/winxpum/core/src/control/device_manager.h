@@ -47,6 +47,7 @@ namespace xpum {
 
         bool setDeviceFrequencyRange(const std::string& id, int32_t tileId, double min, double max) override;
 
+        void getFreqAvailableClocks(const std::string& id, int32_t tileId, std::vector<double>& clocksList) override;
     private:
         std::vector<std::shared_ptr<Device>> devices;
 

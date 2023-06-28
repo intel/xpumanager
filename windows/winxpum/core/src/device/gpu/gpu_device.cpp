@@ -56,6 +56,11 @@ namespace xpum {
         return GPUDeviceStub::instance().toSetDeviceFrequencyRange(zes_device_handle, tileId, min, max);
     }
 
+    
+     void GPUDevice::getFreqAvailableClocks(int32_t tileId, std::vector<double>& clocksList) noexcept {
+        return GPUDeviceStub::instance().toGetFreqAvailableClocks(zes_device_handle, tileId, clocksList);
+    }
+
     void GPUDevice::getSimpleEccState(uint8_t& current, uint8_t& pending) noexcept {
         return;
     }

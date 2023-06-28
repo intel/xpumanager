@@ -80,6 +80,8 @@ namespace xpum {
 
 		void getsubDeviceList(std::vector<int32_t>& subDeviceList) noexcept override;
 
+        void getFreqAvailableClocks(int32_t tileId, std::vector<double>& clocksList) noexcept override;
+
 		std::map<MeasurementType, std::shared_ptr<MeasurementData>> getRealtimeMetrics() noexcept override;
 
 		virtual ~GPUDevice();

@@ -258,7 +258,6 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
-extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);
 
 /**
  * @brief Struct for one device property
@@ -704,6 +703,33 @@ typedef struct xpum_device_metrics_t {
     int32_t count;             ///< The count of data stored in dataList array
     xpum_device_metric_data_t dataList[XPUM_STATS_MAX];
 } xpum_device_metrics_t;
+
+
+typedef xpum_stats_type_t xpum_realtime_metric_type_t;
+
+/**
+ * @brief Struct to store realtime data for different metric types
+ *
+ */
+typedef struct xpum_device_realtime_metric_t {
+    xpum_realtime_metric_type_t metricsType;  ///< Metric type
+    bool isCounter;                           ///< If this metric is a counter
+    uint64_t value;                           ///< The value of this metric type
+    uint32_t scale;                           ///< The magnification of the value
+} xpum_device_realtime_metric_t;
+
+/**
+ * @brief Struct to store device realtime datas
+ *
+ */
+typedef struct xpum_device_realtime_metrics_t {
+    xpum_device_id_t deviceId; ///< Device id
+    bool isTileData;           ///< If this statistics data is tile level
+    int32_t tileId;            ///< The tile id, only valid if isTileData is true
+    int32_t count;             ///< The count of data stored in dataList array
+    xpum_device_realtime_metric_t dataList[XPUM_STATS_MAX];
+} xpum_device_realtime_metrics_t;
+
 
 typedef struct xpum_fabric_port_config_t {
     bool onSubdevice;

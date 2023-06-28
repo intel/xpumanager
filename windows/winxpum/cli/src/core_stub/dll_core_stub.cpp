@@ -14,107 +14,6 @@
 
 namespace xpum::cli {
 
-    const char* getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
-        switch (name) {
-        case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
-            return "DEVICE_TYPE";
-        case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
-            return "DEVICE_NAME";
-        case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
-            return "VENDOR_NAME";
-        case XPUM_DEVICE_PROPERTY_UUID:
-            return "UUID";
-        case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
-            return "PCI_DEVICE_ID";
-        case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
-            return "PCI_VENDOR_ID";
-        case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
-            return "PCI_BDF_ADDRESS";
-        case XPUM_DEVICE_PROPERTY_DRM_DEVICE:
-            return "DRM_DEVICE";
-        case XPUM_DEVICE_PROPERTY_PCI_SLOT:
-            return "PCI_SLOT";
-        case XPUM_DEVICE_PROPERTY_OAM_SOCKET_ID:
-            return "OAM_SOCKET_ID";
-        case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
-            return "PCIE_GENERATION";
-        case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
-            return "PCIE_MAX_LINK_WIDTH";
-        case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
-            return "DEVICE_STEPPING";
-        case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
-            return "DRIVER_VERSION";
-        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME:
-            return "GFX_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION:
-            return "GFX_FIRMWARE_VERSION";
-        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME:
-            return "GFX_DATA_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
-            return "GFX_DATA_FIRMWARE_VERSION";
-        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
-            return "AMC_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
-            return "AMC_FIRMWARE_VERSION";
-        case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
-            return "SERIAL_NUMBER";
-        case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
-            return "CORE_CLOCK_RATE_MHZ";
-        case XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE:
-            return "MEMORY_PHYSICAL_SIZE_BYTE";
-        case XPUM_DEVICE_PROPERTY_MEMORY_FREE_SIZE_BYTE:
-            return "MEMORY_FREE_SIZE_BYTE";
-        case XPUM_DEVICE_PROPERTY_MAX_MEM_ALLOC_SIZE_BYTE:
-            return "MAX_MEM_ALLOC_SIZE_BYTE";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEMORY_CHANNELS:
-            return "NUMBER_OF_MEMORY_CHANNELS";
-        case XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH:
-            return "MEMORY_BUS_WIDTH";
-        case XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS:
-            return "MAX_HARDWARE_CONTEXTS";
-        case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
-            return "MAX_COMMAND_QUEUE_PRIORITY";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS:
-            return "NUMBER_OF_EUS";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
-            return "NUMBER_OF_TILES";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
-            return "NUMBER_OF_SLICES";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE:
-            return "NUMBER_OF_SUB_SLICES_PER_SLICE";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE:
-            return "NUMBER_OF_EUS_PER_SUB_SLICE";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU:
-            return "NUMBER_OF_THREADS_PER_EU";
-        case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
-            return "PHYSICAL_EU_SIMD_WIDTH";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENGINES:
-            return "NUMBER_OF_MEDIA_ENGINES";
-        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENH_ENGINES:
-            return "NUMBER_OF_MEDIA_ENH_ENGINES";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
-            return "NUMBER_OF_FABRIC_PORTS";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
-            return "MAX_FABRIC_PORT_SPEED";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
-            return "NUMBER_OF_LANES_PER_FABRIC_PORT";
-        case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
-            return "KERNEL_VERSION";
-        case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_NAME:
-            return "GFX_PSCBIN_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION:
-            return "GFX_PSCBIN_FIRMWARE_VERSION";
-        case XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE:
-            return "MEMORY_ECC_STATE";
-        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS:
-            return "GFX_FIRMWARE_STATUS";
-        case XPUM_DEVICE_PROPERTY_SKU_TYPE:
-            return "SKU_TYPE";
-        default:
-            return "";
-        }
-    }
-
     DllCoreStub::DllCoreStub(bool initCore) {
         char* env = std::getenv("SPDLOG_LEVEL");
         if (!env) {
@@ -207,7 +106,7 @@ namespace xpum::cli {
         if (res == XPUM_OK) {
             for (int i = 0; i < data.propertyLen; i++) {
                 auto& p = data.properties[i];
-                std::string name = getXpumDevicePropertyNameString(p.name);
+                std::string name = xpum::getXpumDevicePropertyNameString(p.name);
                 std::transform(name.begin(), name.end(), name.begin(),
                     [](unsigned char c) { return std::tolower(c); });
                 (*json)[name] = p.value;
@@ -521,15 +420,12 @@ namespace xpum::cli {
         std::vector<nlohmann::json> tileJsonList;
         xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
         int count{XPUM_MAX_NUM_DEVICES};
-        xpum_device_tile_id_t tileIdList[4];
-        uint32_t freqCount{64};
-        uint32_t subDeviceCount{16};
+        xpum_device_tile_id_t tileIdList[8];
+        uint32_t freqCount{16};
+        uint32_t subDeviceCount{8};
         char bdfAddress[255];
-        xpum_frequency_range_t freqRange;
+        xpum_frequency_range_t freqRange[16];
         xpum_power_limits_t powerLimit;
-        bool supported = false;
-        uint8_t cur = 0xFF;
-        uint8_t pen = 0xFF;
         
         res = xpumGetDeviceList(devices, &count);
         if (res != XPUM_OK) {
@@ -541,12 +437,34 @@ namespace xpum::cli {
             return json;
         }
         (*json)["device_id"] = deviceId;
-                
-        res = xpumGetSubDevices(deviceId, &subDeviceCount, tileIdList);
+       
+        xpum_device_properties_t properties;
+        res = xpumGetDeviceProperties(deviceId, &properties);
         if (res != XPUM_OK) {
-            (*json)["error"] = "fail to get sub device list";
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    (*json)["error"] = "Level Zero Initialization Error";
+                    break;
+                default:
+                    (*json)["error"] = "Error";
+                    break;
+            }
+            (*json)["errno"] = errorNumTranslate(res);
             return json;
         }
+
+        for (int i = 0; i < properties.propertyLen; i++) {
+            auto& prop = properties.properties[i];
+            if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
+                continue;
+            }
+            subDeviceCount = atoi(prop.value);
+            break;
+        }
+
+        for (uint32_t i = 0; i < subDeviceCount; i++) {
+            tileIdList[i] = i;
+        } 
 
         if (subDeviceCount > 0 && tileId >= (int)subDeviceCount) {
             (*json)["error"] = "invalid tile id";
@@ -567,46 +485,59 @@ namespace xpum::cli {
             }
         }
 
-        res = xpumGetDevicePowerLimits(deviceId, &powerLimit, &supported);
+        res = xpumGetDevicePowerLimits(deviceId, 0, &powerLimit);
         if (res != XPUM_OK) {
             (*json)["error"] = "fail to get device power limit";
             return json;
         }
-        if (!supported) {
+        if (!powerLimit.sustained_limit.enabled) {
             (*json)["error"] = "unsupported feature or insufficient privilege";
             return json;
         }
         (*json)["power_limit"] = std::to_string(powerLimit.sustained_limit.power);
 
-        int32_t max_limit;
-        res = xpumGetDevicePowerMaxLimits(deviceId, &max_limit, &supported);
-        if (supported == false) {
-            max_limit = 300;
-        }
-        (*json)["power_vaild_range"] = "1 to " + std::to_string(max_limit);
+        xpum_power_prop_data_t powerRangeArray[32];
+        uint32_t powerRangeCount = 32;
+        res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
+        (*json)["power_vaild_range"] = "1 to " + std::to_string(powerRangeArray[0].max_limit);
         
-        res = xpumGetSimpleEccState(deviceId, &cur, &pen);
+        bool available, configurable;
+        xpum_ecc_state_t current, pending;
+        xpum_ecc_action_t action;
+
+        res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action); 
         if (res != XPUM_OK) {
             (*json)["error"] = "fail to get device Ecc state";
             return json;
         }
-        (*json)["memory_ecc_current_state"] = eccStateToString(cur);
-        (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
+        (*json)["memory_ecc_current_state"] = eccStateToString(current);
+        (*json)["memory_ecc_pending_state"] = eccStateToString(pending);
+        
+        freqCount = subDeviceCount;
+        for (int i = 0; i < freqCount; i++) {
+            freqRange[i].subdevice_Id = tileIdList[i];
+        }
+        res = xpumGetDeviceFrequencyRanges(deviceId, freqRange, &freqCount);
 
         for (int i = 0; i < subDeviceCount; ++i) {
             auto tileJson = nlohmann::json();
             tileJson["tile_id"] = tileIdList[i];
-            freqRange.type = XPUM_GPU_FREQUENCY;
-            freqRange.subdevice_Id = tileIdList[i];
-            res = xpumGetDeviceFrequencyRange(deviceId, tileIdList[i], &freqRange, &supported);
-            if (!supported) {
-                (*json)["error"] = "unsupported feature or insufficient privilege";
-                return json;
+            for (int j = 0; j < freqCount; j++) {
+                if (tileIdList[i] == freqRange[j].subdevice_Id) {
+                    double dataArray[255];
+                    uint32_t freqCount = 255;
+                    tileJson["min_frequency"] = int(freqRange[j].min);
+                    tileJson["max_frequency"] = int(freqRange[j].max);
+
+                    xpumGetFreqAvailableClocks(deviceId, tileIdList[i], dataArray, &freqCount);
+                    std::string str = std::to_string((int)dataArray[0]);
+                    for (uint32_t i = 1; i < freqCount; i++) {
+                        str = str + ", " + std::to_string((int)(dataArray[i]));
+                    }
+                    tileJson["gpu_frequency_valid_options"] = str;
+                    tileJson["tile_id"] = std::to_string(deviceId) + "/" + std::to_string(tileIdList[i]);
+                }
             }
-            tileJson["min_frequency"] = int(freqRange.min);
-            tileJson["max_frequency"] = int(freqRange.max);
-            tileJson["gpu_frequency_valid_options"] = freqRange.freqOption;
-            tileJson["tile_id"] = std::to_string(deviceId) + "/" + std::to_string(i);
             tileJsonList.push_back(tileJson);
         }
         (*json)["tile_config_data"] = tileJsonList;
@@ -623,10 +554,24 @@ namespace xpum::cli {
         }
     }
 
+    std::string DllCoreStub::eccStateToString(xpum_ecc_state_t state) {
+        if (state == XPUM_ECC_STATE_ENABLED) {
+            return "enabled";
+        } else if (state == XPUM_ECC_STATE_DISABLED) {
+            return "disabled";
+        } else {
+            return "unavailable";
+        }
+    }
+
     std::unique_ptr<nlohmann::json> DllCoreStub::setDevicePowerlimit(int deviceId, int tileId, int powerLimit) {
         auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         xpum_result_t res;
-        res = xpumSetDevicePowerSustainedLimits((xpum_device_id_t)deviceId, powerLimit);
+        xpum_power_sustained_limit_t sustained_limit;
+        sustained_limit.power = powerLimit;
+        sustained_limit.enabled = true;
+
+        res = xpumSetDevicePowerSustainedLimits((xpum_device_id_t)deviceId, 0, sustained_limit);
         if (res != XPUM_OK) {
             (*json)["error"] = "unsupported feature or setting failure";
         } else {
@@ -639,7 +584,11 @@ namespace xpum::cli {
     std::unique_ptr<nlohmann::json> DllCoreStub::setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) {
         auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         xpum_result_t res;
-        res = xpumSetDeviceFrequencyRange(deviceId, tileId, minFreq, maxFreq);
+        xpum_frequency_range_t frequency;
+        frequency.subdevice_Id = tileId;
+        frequency.min = minFreq;
+        frequency.max = maxFreq;
+        res = xpumSetDeviceFrequencyRange(deviceId, frequency);
         if (res != XPUM_OK) {
             (*json)["error"] = "unsupported feature or setting failure";
         } else {
@@ -650,20 +599,23 @@ namespace xpum::cli {
 
     std::unique_ptr<nlohmann::json> DllCoreStub::setMemoryEccState(int deviceId, bool enabled) {
         auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-        uint8_t cur = 0xFF;
-        uint8_t pen = 0xFF;
         xpum_result_t res;
-        res = xpumSetSimpleEccState(deviceId, enabled);
+        bool available, configurable;
+        xpum_ecc_state_t current, pending;
+        xpum_ecc_action_t action;
+        xpum_ecc_state_t newState;
+        newState = enabled == true ? XPUM_ECC_STATE_ENABLED : XPUM_ECC_STATE_DISABLED;
+        res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
         if (res != XPUM_OK) {
             (*json)["error"] = "unsupported feature or setting failure";
         } else {
-            res = xpumGetSimpleEccState(deviceId, &cur, &pen);
+            res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
             if (res != XPUM_OK) {
                 (*json)["error"] = "fail to get device Ecc state";
                 return json;
             }
-            (*json)["memory_ecc_current_state"] = eccStateToString(cur);
-            (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
+            (*json)["memory_ecc_current_state"] = eccStateToString(current);
+            (*json)["memory_ecc_pending_state"] = eccStateToString(pending);
             (*json)["status"] = "OK";
         }
         return json;

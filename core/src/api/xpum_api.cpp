@@ -47,7 +47,7 @@
 
 namespace xpum {
 
-extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
+const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
     switch (name) {
         case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
             return "DEVICE_TYPE";
