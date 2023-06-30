@@ -49,11 +49,15 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">enum xpum_device_config_type_enum</a></li>
@@ -104,6 +108,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metric_t.html">struct xpum_device_realtime_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metrics_t.html">struct xpum_device_realtime_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_util_by_process_t.html">struct xpum_device_util_by_process_t</a></li>
@@ -185,12 +191,12 @@
 <span class="k">enum</span> <span class="n">xpum_device_config_type_enum</span>
 <span class="p">{</span>
     <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a16e7941abe39940f0b8341bc5964c91f"><span></span><span class="n">XPUM_DEVICE_CONFIG_DEVICE_MODE</span></span><span></span>            <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4af349309d5f1d5a75e9dc68c6c4c7103e"><span></span><span class="n">XPUM_DEVICE_CONFIG_POWER_LIMIT_ENABLED</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a0842111b09efa727f077ad3f8d85d90b"><span></span><span class="n">XPUM_DEVICE_CONFIG_POWER_LIMIT_VALUE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a5c71b6bc430da25470cb132491257bd3"><span></span><span class="n">XPUM_DEVICE_CONFIG_POWER_LIMIT_AVG_WINDOW</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a99727631eb19431923b2e2ed802d93df"><span></span><span class="n">XPUM_DEVICE_CONFIG_CORE_FREQ_MIN</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4af01a9719a1b6ca6f7b268755744e9f65"><span></span><span class="n">XPUM_DEVICE_CONFIG_CORE_FREQ_MAX</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4aa4ad63a87827dbed7f4b28997363a3f3"><span></span><span class="n">XPUM_DEVICE_CONFIG_RESET</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4af349309d5f1d5a75e9dc68c6c4c7103e"><span></span><span class="n">XPUM_DEVICE_CONFIG_POWER_LIMIT_ENABLED</span></span><span></span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a0842111b09efa727f077ad3f8d85d90b"><span></span><span class="n">XPUM_DEVICE_CONFIG_POWER_LIMIT_VALUE</span></span><span></span>      <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a5c71b6bc430da25470cb132491257bd3"><span></span><span class="n">XPUM_DEVICE_CONFIG_POWER_LIMIT_AVG_WINDOW</span></span><span></span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4a99727631eb19431923b2e2ed802d93df"><span></span><span class="n">XPUM_DEVICE_CONFIG_CORE_FREQ_MIN</span></span><span></span>          <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4af01a9719a1b6ca6f7b268755744e9f65"><span></span><span class="n">XPUM_DEVICE_CONFIG_CORE_FREQ_MAX</span></span><span></span>          <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4aa4ad63a87827dbed7f4b28997363a3f3"><span></span><span class="n">XPUM_DEVICE_CONFIG_RESET</span></span><span></span>                  <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>
 

@@ -14,7 +14,6 @@ string(REGEX REPLACE "NAME=\"(.*)\"" "\\1" distro "${distro}")
 
 add_subdirectory(smidoc)
 add_subdirectory(xpumdoc)
-add_subdirectory(windoc)
 
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/img DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/doc)
 
@@ -32,7 +31,7 @@ add_custom_target(
   COMMAND /bin/sh -c ${CMAKE_CURRENT_LIST_DIR}/../rest/gen_grpc_py_files.sh
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/../rest/gen_doc.py > ${CMAKE_CURRENT_BINARY_DIR}/schema.yml
   COMMAND sphinx-build -c ${CMAKE_CURRENT_LIST_DIR}/sphinxconf/ ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
-  DEPENDS SMI_LIB_CORE_RST XPUM_LIB_CORE_RST WIN_DLL_RST)
+  DEPENDS SMI_LIB_CORE_RST XPUM_LIB_CORE_RST)
 
 if(NOT DAEMONLESS)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION lib/xpum/doc # PATTERN ".buildinfo" EXCLUDE

@@ -101,6 +101,18 @@ namespace xpum {
         return false;
     }
 
+    void DeviceManager::getFreqAvailableClocks(const std::string& id, int32_t tileId, std::vector<double>& clocksList) {
+        std::unique_lock<std::mutex> lock(this->mutex);
+        for (auto& p_device : this->devices) {
+            if (p_device->getId() == id) {
+                p_device->getFreqAvailableClocks(tileId, clocksList);
+                return ;
+            }
+        }
+        return;
+    }
+
+
     void DeviceManager::getSimpleEccState(const std::string& id, uint8_t& current, uint8_t& pending) {
         std::unique_lock<std::mutex> lock(this->mutex);
         for (auto& p_device : this->devices) {

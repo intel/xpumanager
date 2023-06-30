@@ -60,6 +60,9 @@
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
@@ -110,6 +113,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metric_t.html">struct xpum_device_realtime_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metrics_t.html">struct xpum_device_realtime_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_util_by_process_t.html">struct xpum_device_util_by_process_t</a></li>
@@ -192,14 +197,14 @@
 <span class="k">enum</span> <span class="n">xpum_ras_type_enum</span>
 <span class="p">{</span>
     <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a781784c9e585a14783b2be8a7273458b"><span></span><span class="n">XPUM_RAS_ERROR_CAT_RESET</span></span><span></span>                            <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18aa52e3aac7afbb6cb6a3fc1848f951f24"><span></span><span class="n">XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18aafae925d90fbbd368990492bb0020555"><span></span><span class="n">XPUM_RAS_ERROR_CAT_DRIVER_ERRORS</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a356a3d9f4988f809d68a5d867a41eff2"><span></span><span class="n">XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a34325a648f32ddb9801a803406c720af"><span></span><span class="n">XPUM_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a4902b29b52ce8a7d89a8f29cf1c63fd9"><span></span><span class="n">XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a52ee4c83cc4d85fd8ec03d05d1039fbc"><span></span><span class="n">XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18aeec56931ad8158e73a65f33112014a27"><span></span><span class="n">XPUM_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a7baec3a62f2b13c7b27a1b83b9c4cb6b"><span></span><span class="n">XPUM_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18aa52e3aac7afbb6cb6a3fc1848f951f24"><span></span><span class="n">XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS</span></span><span></span>               <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18aafae925d90fbbd368990492bb0020555"><span></span><span class="n">XPUM_RAS_ERROR_CAT_DRIVER_ERRORS</span></span><span></span>                    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a356a3d9f4988f809d68a5d867a41eff2"><span></span><span class="n">XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE</span></span><span></span>         <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a34325a648f32ddb9801a803406c720af"><span></span><span class="n">XPUM_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE</span></span><span></span>       <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a4902b29b52ce8a7d89a8f29cf1c63fd9"><span></span><span class="n">XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE</span></span><span></span>       <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a52ee4c83cc4d85fd8ec03d05d1039fbc"><span></span><span class="n">XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE</span></span><span></span>     <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18aeec56931ad8158e73a65f33112014a27"><span></span><span class="n">XPUM_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE</span></span><span></span>   <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a7baec3a62f2b13c7b27a1b83b9c4cb6b"><span></span><span class="n">XPUM_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE</span></span><span></span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
     <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18a208735e3d9e40d39820d13fa535ffd0b"><span></span><span class="n">XPUM_RAS_ERROR_MAX</span></span><span></span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>

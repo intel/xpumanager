@@ -64,6 +64,9 @@
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
 </ul>
 </li>
@@ -107,25 +110,36 @@
 <p>These APIs are for device <a class="reference internal" href="#details-group-device-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceList<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_device_basic_info.html#xpum-doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceList<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_device_basic_info.html#xpum-doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProperties<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProperties<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_device_properties_t.html#xpum-doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceIdByBDF<span></span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">);</span>
+XPUM_API<span></span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> getXpumDevicePropertyNameString<span></span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a9aa4acf19619a57f00e1bd71c392353d"><span class="std std-ref">xpum_device_property_name_t</span></a><span></span> <span class="n">name</span><span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersions<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceIdByBDF<span></span><span class="p">(</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersions<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_amc_fw_version_t.html#xpum-doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <span class="n">versionList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersionsErrorMsg<span></span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersionsErrorMsg<span></span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetSerialNumberAndAmcFwVersion<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetSerialNumberAndAmcFwVersion<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
@@ -138,9 +152,13 @@
 <p>These APIs are for device</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1gae1c339201d7bc5d9e5ccf7ef313f86b7"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceList</span><span class="p">(</span><a class="reference internal" href="struct_xpum_device_basic_info.html#xpum-doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1gaa7410ca15df1925fe9461d69ef505b9a"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceList</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_device_basic_info.html#xpum-doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
 <p>Get all device basic info.</p>
 <p>This method is used to get identifiers corresponding to all the devices on the system. The identifier represents device id corresponding to each device on the system and is immutable during the lifespan of the engine. The list should be queried again if the engine is restarted.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -164,11 +182,12 @@
 </table>
 <p class="rubric">Returns:</p>
 <p><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga1c973faf038592614d98dce1ec550862"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceProperties</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga8fd669fb34f58040124953a368ee8b92"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceProperties</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_device_properties_t.html#xpum-doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
     <span class="p">)</span></pre>
 <p>Get device properties corresponding to the <em>deviceId</em>.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -186,8 +205,29 @@
 </table>
 <p class="rubric">Returns:</p>
 <p><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga52cd385be81ee641e20e66fa5ad83636"><span id="index-3"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceIdByBDF</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga7b7a044749f58ccf2f9204350094a798"><span id="index-3"></span>XPUM_API<span></span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">getXpumDevicePropertyNameString</span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a9aa4acf19619a57f00e1bd71c392353d"><span class="std std-ref">xpum_device_property_name_t</span></a><span></span> <span class="n">name</span><span class="p">)</span></pre>
+<p>Get device property name string.</p>
+<p>Support Platform: Linux, Windows</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>name</p></td>
+<td><p>IN: Device property name enum value</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>const char*</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1gacf56f8a9f8b4e4b7950176b7edcef411"><span id="index-4"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceIdByBDF</span><span class="p">(</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span>
+    <span class="p">)</span></pre>
 <p>Get device id corresponding to the <em>PCI</em> BDF address.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -205,13 +245,14 @@
 </table>
 <p class="rubric">Returns:</p>
 <p><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1gaa7065cfa6df0e9d4d5b99ea808a88e6b"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCFirmwareVersions</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga5c34be384d611968d758bc3a17cf3ce2"><span id="index-5"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCFirmwareVersions</span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_amc_fw_version_t.html#xpum-doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <span class="n">versionList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
     <span class="p">)</span></pre>
 <p>Get all AMC firmware versions.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -239,8 +280,12 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga8997d86294ee82fb31379006ee9409aa"><span id="index-5"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCFirmwareVersionsErrorMsg</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga08eb3becb5faf2294af851848b4ae73e"><span id="index-6"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCFirmwareVersionsErrorMsg</span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
 <p>Get error message when fail to get amc firmware versions.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -262,7 +307,7 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga19438779185a5db0c0a7afdb6f65595c"><span id="index-6"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetSerialNumberAndAmcFwVersion</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-device-api-1ga02acef7d83fa9c53da7110e254960ab4"><span id="index-7"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetSerialNumberAndAmcFwVersion</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
@@ -270,6 +315,7 @@
     <span class="kt">char</span> <span class="n">amcFwVersion</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span>
     <span class="p">)</span></pre>
 <p>Get device serial number from AMC.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>

@@ -465,6 +465,7 @@ static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::j
 }
 
 void ComletConfig::getTableResult(std::ostream &out) {
+    bool needRestart = false;
     if (this->opts->resetDevice) {
         if (this->opts->device != "") {
             if (isNumber(this->opts->device)) {
@@ -483,10 +484,37 @@ void ComletConfig::getTableResult(std::ostream &out) {
             out << "It may take one minute to reset GPU " << this->opts->deviceId << ". Please wait ..." << std::endl;
         }
     }
+    else if (!this->opts->scheduler.empty()) {
+        std::vector<std::string> paralist = split(this->opts->scheduler, ",");
+        std::string command = paralist.at(0);
+        if (command.compare("debug") == 0 ||command.compare("exclusive") == 0 ) {
+            needRestart = true;
+            if (this->opts->device != "") {
+                if (isNumber(this->opts->device)) {
+                    this->opts->deviceId = std::stoi(this->opts->device);
+                } else {
+                    auto json = this->coreStub->getDeivceIdByBDF(
+                        this->opts->device.c_str(), &this->opts->deviceId);
+                    if (json->contains("error")) {
+                        out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+                        setExitCodeByJson(*json);
+                        return;
+                    }
+                }
+            }
+            if (this->opts->deviceId >= 0 && this->opts->tileId == -1) {
+                out << "It may take a few seconds to set scheduler debug mode" << this->opts->deviceId << ". Please wait ..." << std::endl;
+            }
+        }
+    }
     auto res = run();
 #ifndef DAEMONLESS
     if (this->opts->deviceId >= 0 && this->opts->tileId == -1 && this->opts->resetDevice) {
         out << "Resetting GPU will make XPUM daemon not work." << std::endl;
+        out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
+    }
+    if (needRestart) {
+        out << "Setting GPU scheduler exclusive/debug mode will make XPUM daemon not work." << std::endl;
         out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
     }
 #endif

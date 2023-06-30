@@ -217,6 +217,18 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
+            { "rowTitle": "GPU Memory Util (%) " }
+        ], [
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].avg", "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].min", "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].max", "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].value", "fixer": "round" }
+            ]}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
             { "rowTitle": "PCIe Read (kB/s) " }
         ], [
             { "value": "", "subs": [
@@ -396,6 +408,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Write (kB/s) " },
             { "rowTitle": "GPU Memory Bandwidth (%) " },
             { "rowTitle": "GPU Memory Used (MiB) " },
+            { "rowTitle": "GPU Memory Util (%) " },
             { "rowTitle": "Xe Link Throughput (kB/s) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
@@ -414,6 +427,8 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1, "fixer": "round" }
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].value", "fixer": "round" }
             ]}, { "value": "fabric_throughput"}
         ]]
     }]
@@ -517,6 +532,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
             { "rowTitle": "GPU Memory Write (kB/s) " },
             { "rowTitle": "GPU Memory Bandwidth (%) " },
             { "rowTitle": "GPU Memory Used (MiB) " },
+            { "rowTitle": "GPU Memory Util (%) " },
             { "rowTitle": "Xe Link Throughput (kB/s) " }
         ], [
             { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
@@ -535,6 +551,8 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1, "fixer": "round" }
+            ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].value", "fixer": "round" }
             ]}, { "value": "fabric_throughput"}
         ]]
     }]

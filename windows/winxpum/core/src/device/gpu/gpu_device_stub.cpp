@@ -475,6 +475,35 @@ namespace xpum {
         return;
     }
 
+    void GPUDeviceStub::toGetFreqAvailableClocks(const zes_device_handle_t& device, int32_t tileId, std::vector<double>& clocksList) noexcept {
+        uint32_t freq_count = 0;
+        ze_result_t res;
+        res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+        std::vector<zes_freq_handle_t> freq_handles(freq_count);
+        if (res == ZE_RESULT_SUCCESS) {
+            res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+            for (auto& ph_freq : freq_handles) {
+                zes_freq_properties_t prop = {};
+                prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+                res = zesFrequencyGetProperties(ph_freq, &prop);
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (prop.type != ZES_FREQ_DOMAIN_GPU || prop.subdeviceId != tileId) {
+                        continue;
+                    }
+                    uint32_t pCount = 0;
+                    res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, nullptr);
+                    double clockArray[255];
+                    if (res == ZE_RESULT_SUCCESS) {
+                        res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, clockArray);
+                        for (uint32_t i = 0; i < pCount; i++) {
+                            clocksList.push_back(clockArray[i]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_handle_t& device) noexcept {
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
         if (device == nullptr) {

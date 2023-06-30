@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "api/device_model.h"
 #include "api_types.h"
@@ -46,7 +47,7 @@
 
 namespace xpum {
 
-extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
+const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
     switch (name) {
         case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
             return "DEVICE_TYPE";
@@ -2247,41 +2248,56 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-int32_t defaultMaxPowerLimit(std::string device_name) {
-   if (device_name == "Intel(R) Graphics [0x56c0]"){
-    return 120 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x56c1]"){
-    return 23 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd0]"){
-    return 600 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd5]"){
-    return 600 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd6]"){
-    return 600 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd7]"){
-    return 450 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd8]"){
-    return 450 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bd9]"){
-    return 300 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bda]"){
-    return 300 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0bdb]"){
-    return 300 *1000;
-   }
-   if (device_name == "Intel(R) Graphics [0x0be5]"){
-    return 600 *1000;
-   }
-   return -1;
+int32_t mergeMaxPowerLimit(std::string card_idx, Power power){
+    if (power.getMaxLimit() != -1) 
+        return power.getMaxLimit();
+    if (card_idx.empty())
+        return -1;
+    std::string dirPath = "/sys/class/drm/" + card_idx + "/device/hwmon";
+    std::vector<std::string> listOfAllDirs = {};
+    DIR* dir = opendir(dirPath.c_str());
+    struct dirent* ent;
+    if (nullptr != dir) {
+        while ((ent = readdir(dir)) != nullptr) {
+            listOfAllDirs.push_back(dirPath + "/" + ent->d_name);
+        }
+        closedir(dir);
+    }
+    std::string deviceDir;
+    for (const auto &tempDir : listOfAllDirs) {
+        std::string name;
+        std::ifstream f(tempDir + "/" + "name");
+        if (f.is_open()) {
+            getline(f, name);
+            f.close();
+            if (power.onSubdevice() == true) {
+                if (name == ("i915_gt" + power.getSubdeviceId())) {
+                    deviceDir = tempDir;
+                    break;
+                }
+            } else if (name == "i915") {
+                deviceDir = tempDir;
+                break;
+            }
+        }
+    }
+    if(deviceDir.empty())
+        return -1;
+    std::string line;
+    std::ifstream f(deviceDir + "/power1_rated_max");
+    if (f.is_open()) {
+        getline(f, line);
+        f.close();
+        try {
+            int val = std::stoi(line);
+            int32_t limit = static_cast<int32_t>(val / 1000u);
+            if (limit != 0)
+                return limit;
+        } catch (std::exception &e) {
+            return -1;
+        }
+    }
+    return -1;
 }
 
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
@@ -2295,12 +2311,6 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
-    Property prop;
-    int32_t default_maxLimit = -1;
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop);
-
-    default_maxLimit = defaultMaxPowerLimit(prop.getValue());
-
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
 
@@ -2308,6 +2318,14 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
         return XPUM_BUFFER_TOO_SMALL;
     } else {
         *count = powers.size();
+    }
+    Property prop_drm;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop_drm);
+    std::string card_idx;
+    std::regex pattern("card\\d+");
+    std::smatch match;
+    if (std::regex_search(prop_drm.getValue(), match, pattern)) {
+        card_idx = match.str();
     }
     if (dataArray != nullptr) {
         int i = 0;
@@ -2318,12 +2336,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
             dataArray[i].min_limit = power.getMinLimit();
-            if (power.getMaxLimit() == -1) {
-                dataArray[i].max_limit = default_maxLimit;
-            } else {
-                dataArray[i].max_limit = power.getMaxLimit();
-            }
-            
+            dataArray[i].max_limit = mergeMaxPowerLimit(card_idx, power);           
             i++;
         }
     }
@@ -2399,13 +2412,57 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
         return res;
     }
 
-    SchedulerExclusiveMode mode;
-    mode.subdevice_Id = sched_exclusive.subdevice_Id;
-
-    if (Core::instance().getDeviceManager()->setDeviceSchedulerExclusiveMode(std::to_string(deviceId), mode)) {
-        return XPUM_OK;
+    uint32_t driver_count = 0;
+    auto result = zeDriverGet(&driver_count, nullptr);
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    return XPUM_GENERIC_ERROR;
+    std::vector<ze_driver_handle_t> drivers(driver_count);
+    result = zeDriverGet(&driver_count, drivers.data());
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    int idx = 0;
+    for (auto &p_driver : drivers) {
+        uint32_t device_count = 0;
+        result = zeDeviceGet(p_driver, &device_count, nullptr);
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        std::vector<ze_device_handle_t> devices(device_count);
+
+        result = zeDeviceGet(p_driver, &device_count, devices.data());
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        for (auto device : devices) {
+            if (idx == deviceId) {
+                uint32_t scheduler_count = 0;
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, nullptr);
+                std::vector<zes_sched_handle_t> scheds(scheduler_count);
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
+                for (auto& sched : scheds) {
+                    zes_sched_properties_t props;
+                    result = zesSchedulerGetProperties(sched, &props);
+                    if (result == ZE_RESULT_SUCCESS) {
+                        if (props.subdeviceId != sched_exclusive.subdevice_Id) {
+                            continue;
+                        }
+                        xpumShutdown();
+                        ze_bool_t needReload;
+                        result = zesSchedulerSetExclusiveMode(sched, &needReload);
+                        if (result == ZE_RESULT_SUCCESS) {
+                            return XPUM_OK;
+                        } else {
+                            return XPUM_RESULT_RESET_FAIL;
+                        }
+                    }
+                }
+                return XPUM_GENERIC_ERROR;
+            }
+            idx++;
+        }
+    }
+    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
@@ -2424,13 +2481,57 @@ xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
         return res;
     }
 
-    SchedulerDebugMode mode;
-    mode.subdevice_Id = sched_debug.subdevice_Id;
-
-    if (Core::instance().getDeviceManager()->setDeviceSchedulerDebugMode(std::to_string(deviceId), mode)) {
-        return XPUM_OK;
+    uint32_t driver_count = 0;
+    auto result = zeDriverGet(&driver_count, nullptr);
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    return XPUM_GENERIC_ERROR;
+    std::vector<ze_driver_handle_t> drivers(driver_count);
+    result = zeDriverGet(&driver_count, drivers.data());
+    if (result != ZE_RESULT_SUCCESS) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    int idx = 0;
+    for (auto &p_driver : drivers) {
+        uint32_t device_count = 0;
+        result = zeDeviceGet(p_driver, &device_count, nullptr);
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        std::vector<ze_device_handle_t> devices(device_count);
+
+        result = zeDeviceGet(p_driver, &device_count, devices.data());
+        if (result != ZE_RESULT_SUCCESS)
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        for (auto device : devices) {
+            if (idx == deviceId) {
+                uint32_t scheduler_count = 0;
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, nullptr);
+                std::vector<zes_sched_handle_t> scheds(scheduler_count);
+                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
+                for (auto& sched : scheds) {
+                    zes_sched_properties_t props;
+                    result = zesSchedulerGetProperties(sched, &props);
+                    if (result == ZE_RESULT_SUCCESS) {
+                        if (props.subdeviceId != sched_debug.subdevice_Id) {
+                            continue;
+                        }
+                        xpumShutdown();
+                        ze_bool_t needReload;
+                        result = zesSchedulerSetComputeUnitDebugMode(sched, &needReload);
+                        if (result == ZE_RESULT_SUCCESS) {
+                            return XPUM_OK;
+                        } else {
+                            return XPUM_RESULT_RESET_FAIL;
+                        }
+                    }
+                }
+                return XPUM_GENERIC_ERROR;
+            }
+            idx++;
+        }
+    }
+    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {

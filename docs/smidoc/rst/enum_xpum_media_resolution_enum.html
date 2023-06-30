@@ -49,11 +49,15 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
@@ -104,6 +108,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metric_t.html">struct xpum_device_realtime_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metrics_t.html">struct xpum_device_realtime_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_util_by_process_t.html">struct xpum_device_util_by_process_t</a></li>
@@ -185,7 +191,7 @@
 <span class="k">enum</span> <span class="n">xpum_media_resolution_enum</span>
 <span class="p">{</span>
     <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1af785692e28dcdc2a61225d3d50a9e932aaf2a27d5a5173434700c0b1306d46b20"><span></span><span class="n">XPUM_MEDIA_RESOLUTION_1080P</span></span><span></span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1af785692e28dcdc2a61225d3d50a9e932aef42e7a9492e95cf0fd3515aff080a8d"><span></span><span class="n">XPUM_MEDIA_RESOLUTION_4K</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1af785692e28dcdc2a61225d3d50a9e932aef42e7a9492e95cf0fd3515aff080a8d"><span></span><span class="n">XPUM_MEDIA_RESOLUTION_4K</span></span><span></span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>
 

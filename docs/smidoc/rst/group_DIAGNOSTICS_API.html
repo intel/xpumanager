@@ -49,6 +49,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Diagnostics</a><ul>
@@ -58,6 +59,9 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
 </ul>
 </li>
@@ -100,31 +104,34 @@
 <p>These APIs are for diagnostics <a class="reference internal" href="../../xpumdoc/rst/group_DIAGNOSTICS_API.html#details-group-diagnostics-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunDiagnostics<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunDiagnostics<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunMultipleSpecificDiagnostics<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunMultipleSpecificDiagnostics<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">types</span><span class="p">[],</span>
     <span class="kt">int</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsResult<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsResult<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_task_info_t.html#smi-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsMediaCodecResult<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsMediaCodecResult<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html#smi-doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunStress<span></span><span class="p">(</span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">stressTime</span><span class="p">);</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunStress<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">stressTime</span>
+    <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCheckStress<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCheckStress<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_task_info_t.html#smi-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
@@ -135,11 +142,12 @@
 <p>These APIs are for diagnostics</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga63c9157f62e1f7b3998863c81fece569"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunDiagnostics</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga8e079bace396e23bb609c357114ca42b"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunDiagnostics</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
     <span class="p">)</span></pre>
-<p>Run diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#smi-doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
+<p>Run diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#smi-doxid-group-diagnostics-api-1gaa122dfc47b5fd256ddff87c21951c0c1"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -157,12 +165,13 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga1194b5ba0f4155716cd4eee534e568b1"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunMultipleSpecificDiagnostics</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga2b31494070c907d2a9dfaa4676bebf73"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunMultipleSpecificDiagnostics</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">types</span><span class="p">[],</span>
     <span class="kt">int</span> <span class="n">count</span>
     <span class="p">)</span></pre>
-<p>Run multiple specific diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#smi-doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
+<p>Run multiple specific diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#smi-doxid-group-diagnostics-api-1gaa122dfc47b5fd256ddff87c21951c0c1"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -183,11 +192,12 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span id="index-3"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsResult</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1gaa122dfc47b5fd256ddff87c21951c0c1"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsResult</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_task_info_t.html#smi-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
     <span class="p">)</span></pre>
 <p>Get diagnostics result This function will return immediately. Caller may have to call this function multiple times until <em>result</em> indicates diagnostics job is finished.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -205,12 +215,13 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1gabdb86046eaeb0d3be9754f3972413c30"><span id="index-4"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsMediaCodecResult</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga243ee589bbd9b1da7bc1eaf9dd8fae3c"><span id="index-4"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsMediaCodecResult</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html#smi-doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get diagnostics media codec result.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -234,8 +245,12 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga1ea852cb7ff55021186a2b992e560200"><span id="index-5"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunStress</span><span class="p">(</span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">stressTime</span><span class="p">)</span></pre>
-<p>Run stress test on GPU This function will return immediately. To check status of a stress test , call <a class="reference internal" href="#smi-doxid-group-diagnostics-api-1gaf96bee6482679efa66d4b6c9268ddda7"><span class="std std-ref">xpumCheckStress</span></a>.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1gab1ed2ffc76be05fdc43d4bbbbde776de"><span id="index-5"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunStress</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">stressTime</span>
+    <span class="p">)</span></pre>
+<p>Run stress test on GPU This function will return immediately. To check status of a stress test , call <a class="reference internal" href="#smi-doxid-group-diagnostics-api-1ga87bef12e343bbbb0005261cdaee72d59"><span class="std std-ref">xpumCheckStress</span></a>.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -253,12 +268,13 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1gaf96bee6482679efa66d4b6c9268ddda7"><span id="index-6"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumCheckStress</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga87bef12e343bbbb0005261cdaee72d59"><span id="index-6"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumCheckStress</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_task_info_t.html#smi-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Check stress test status.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>

@@ -129,7 +129,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(ProjectDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\core\include;$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(ProjectDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -150,7 +150,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(ProjectDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\core\include;$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(ProjectDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard_C>Default</LanguageStandard_C>
     </ClCompile>
@@ -165,8 +165,8 @@
       <DelayLoadDLLs>igsc.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)include\xpum_structs.h" "$(TargetDir)"
-copy /Y "$(ProjectDir)include\xpum_api.h" "$(TargetDir)"</Command>
+      <Command>copy /Y "$(ProjectDir)..\..\..\core\include\xpum_structs.h" "$(TargetDir)"
+copy /Y "$(ProjectDir)..\..\..\core\include\xpum_api.h" "$(TargetDir)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -201,8 +201,6 @@ copy /Y "$(ProjectDir)include\xpum_api.h" "$(TargetDir)"</Command>
     <ClInclude Include="src\firmware\ipmi\winopenssl.h" />
     <ClInclude Include="src\firmware\ipmi\wintypes.h" />
     <ClInclude Include="src\framework.h" />
-    <ClInclude Include="include\xpum_api.h" />
-    <ClInclude Include="include\xpum_structs.h" />
     <ClInclude Include="src\infrastructure\configuration.h" />
     <ClInclude Include="src\infrastructure\device_capability.h" />
     <ClInclude Include="src\infrastructure\device_property.h" />
@@ -221,6 +219,9 @@ copy /Y "$(ProjectDir)include\xpum_api.h" "$(TargetDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\api\device_model.cpp" />
+    <ClCompile Include="src\api\unsupported.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\control\device_manager.cpp" />
     <ClCompile Include="src\core\core.cpp" />
     <ClCompile Include="src\device\device.cpp" />

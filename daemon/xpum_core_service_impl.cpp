@@ -1324,11 +1324,18 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
             default:
-                response->set_errormsg("not support this scheduler mode");
+                response->set_errormsg("not support this scheduler mode or setting failed");
                 break;
         }
     }
     response->set_errorno(res);
+    if (scheduler == SCHEDULER_DEBUG || scheduler == SCHEDULER_EXCLUSIVE) {
+        std::thread([] {
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            // Send SIGKILL signal to make daemon exit after scheduler exclusive/debug mode setting
+            std::raise(SIGKILL);
+        }).detach();
+    }
     return grpc::Status::OK;
 }
 
@@ -1363,7 +1370,8 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
-            if (val1 < 1 || (uint32_t(powerRangeArray[i].default_limit) > 0  && val1 > uint32_t(powerRangeArray[i].default_limit))) {
+            if (val1 < 1 || (uint32_t(powerRangeArray[i].max_limit) > 0  && val1 > uint32_t(powerRangeArray[i].max_limit)) ||
+            (uint32_t(powerRangeArray[i].max_limit) == 0  && uint32_t(powerRangeArray[i].default_limit) > 0  && val1 > uint32_t(powerRangeArray[i].default_limit))) {
                 response->set_errormsg("Invalid power limit value");
                 response->set_errorno(XPUM_GENERIC_ERROR);
                 return grpc::Status::OK;

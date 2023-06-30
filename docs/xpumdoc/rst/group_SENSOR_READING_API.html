@@ -21,7 +21,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Global Namespace" href="global.html" />
+    <link rel="next" title="VGPU management" href="group_VGPU_API.html" />
     <link rel="prev" title="Policy management" href="group_POLICY_API.html" /> 
 </head>
 
@@ -64,6 +64,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
 </ul>
 </li>
@@ -107,26 +110,22 @@
 <p>These APIs are for sensor reading <a class="reference internal" href="#details-group-sensor-reading-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCSensorReading<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_sensor_reading_t.html#xpum-doxid-structxpum-sensor-reading-t"><span class="std std-ref">xpum_sensor_reading_t</span></a><span></span> <span class="n">data</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumDoVgpuPrecheck<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span><span class="p">);</span>
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCreateVf<span></span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_vgpu_config_t.html#xpum-doxid-structxpum-vgpu-config-t"><span class="std std-ref">xpum_vgpu_config_t</span></a><span></span><span class="o">*</span> <span class="n">conf</span><span class="p">);</span>
-
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceFunctionList<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_vgpu_function_info_t.html#xpum-doxid-structxpum-vgpu-function-info-t"><span class="std std-ref">xpum_vgpu_function_info_t</span></a><span></span> <span class="n">list</span><span class="p">[],</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCSensorReading<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_sensor_reading_t.html#xpum-doxid-structxpum-sensor-reading-t"><span class="std std-ref">xpum_sensor_reading_t</span></a><span></span> <span class="n">data</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
-    <span class="p">);</span>
-
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRemoveAllVf<span></span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">);</span>
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGenerateDebugLog<span></span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">fileName</span><span class="p">);</span></pre>
+    <span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
 <span id="details-group-sensor-reading-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <p>These APIs are for sensor reading</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1gad7ff20380c396a47b3b686385f089280"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCSensorReading</span><span class="p">(</span><a class="reference internal" href="struct_xpum_sensor_reading_t.html#xpum-doxid-structxpum-sensor-reading-t"><span class="std std-ref">xpum_sensor_reading_t</span></a><span></span> <span class="n">data</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1ga5d9c81f20e9648420ae0e4d7045b518c"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCSensorReading</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_sensor_reading_t.html#xpum-doxid-structxpum-sensor-reading-t"><span class="std std-ref">xpum_sensor_reading_t</span></a><span></span> <span class="n">data</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
 <p>Get device sensor reading.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -149,102 +148,6 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a39f0f309fc63915badf58f571eb5dd5d"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC</span></a> if no AMC can be found</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1ga461e78239fbc496919bfc9104f203cd1"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumDoVgpuPrecheck</span><span class="p">(</span><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span><span class="p">)</span></pre>
-<p>Do SR-IOV prerequisite check and get result, including VMX flag check, IOMMU status check and SR-IOV status check.</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>result</p></td>
-<td><p>OUT: The result of vgpu precheck</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1ga086ac05d2a1d6fe80ab73925042c23ec"><span id="index-3"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumCreateVf</span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_vgpu_config_t.html#xpum-doxid-structxpum-vgpu-config-t"><span class="std std-ref">xpum_vgpu_config_t</span></a><span></span><span class="o">*</span> <span class="n">conf</span><span class="p">)</span></pre>
-<p>Create VF.</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>deviceId</p></td>
-<td><p>IN: Device Id</p></td>
-</tr>
-<tr class="row-even"><td><p>conf</p></td>
-<td><p>IN: Configurations for creating VFs</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1gaa4aad7c39636c97a98751fd0edbba700"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceFunctionList</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_vgpu_function_info_t.html#xpum-doxid-structxpum-vgpu-function-info-t"><span class="std std-ref">xpum_vgpu_function_info_t</span></a><span></span> <span class="n">list</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
-    <span class="p">)</span></pre>
-<p>Get a list containing both PF and VFs.</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>deviceId</p></td>
-<td><p>IN: Device Id</p></td>
-</tr>
-<tr class="row-even"><td><p>list</p></td>
-<td><p>OUT: The buffer to store PF/VF list</p></td>
-</tr>
-<tr class="row-odd"><td><p>count</p></td>
-<td><p>IN/OUT: When <em>list</em> is NULL, <em>count</em> will be filled with the array size needed, and return. When <em>list</em> is not NULL, <em>count</em> denotes the length of <em>list</em>, <em>count</em> should be equal to or larger than needed size. When return, the <em>count</em> will store real size of array returned by <em>list</em>.</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1gac61011af93b665147e0a849e4016de96"><span id="index-5"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRemoveAllVf</span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">)</span></pre>
-<p>Remove VFs on a specified physical device.</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>deviceId</p></td>
-<td><p>IN: Device Id</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-sensor-reading-api-1gaada63ce6f030189b04cd870bb986a7d7"><span id="index-6"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGenerateDebugLog</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">fileName</span><span class="p">)</span></pre>
-<p>Generate a debug log file.</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>fileName</p></td>
-<td><p>IN: The file name (a .tar.gz) of debug log.</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<p>xpum_result_t</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if log file is generated successfully</p></li>
-</ul>
 </section>
 </section>
 </section>
@@ -254,7 +157,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="group_POLICY_API.html" class="btn btn-neutral float-left" title="Policy management" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="global.html" class="btn btn-neutral float-right" title="Global Namespace" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="group_VGPU_API.html" class="btn btn-neutral float-right" title="VGPU management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

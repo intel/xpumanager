@@ -1172,7 +1172,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDevicePowerlimit(int deviceId, i
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
-            if (pwr_mW < 1 || (uint32_t(powerRangeArray[i].default_limit) > 0  && pwr_mW > uint32_t(powerRangeArray[i].default_limit))) {
+            if (pwr_mW < 1 || (uint32_t(powerRangeArray[i].max_limit) > 0  && pwr_mW > uint32_t(powerRangeArray[i].max_limit)) || 
+            (uint32_t(powerRangeArray[i].max_limit) == 0  && uint32_t(powerRangeArray[i].default_limit) > 0  && pwr_mW > uint32_t(powerRangeArray[i].default_limit))) {
                 (*json)["error"] = "Invalid power limit value";
                 (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
                 goto LOG_ERR;

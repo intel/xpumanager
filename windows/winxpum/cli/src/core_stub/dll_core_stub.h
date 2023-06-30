@@ -60,5 +60,6 @@ namespace xpum::cli {
 
         std::string eccStateToString(uint8_t state);
 
+        std::string eccStateToString(xpum_ecc_state_t state);
     };
 } // end namespace xpum::cli

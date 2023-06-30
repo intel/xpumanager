@@ -49,6 +49,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Firmware flash</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
@@ -58,6 +59,9 @@
 <li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
 </ul>
 </li>
@@ -100,14 +104,14 @@
 <p>APIs are for firmware update <a class="reference internal" href="../../xpumdoc/rst/group_FIRMWARE_UPDATE_API.html#details-group-firmware-update-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunFirmwareFlash<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunFirmwareFlash<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_firmware_flash_job.html#smi-doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunFirmwareFlashEx<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunFirmwareFlashEx<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_firmware_flash_job.html#smi-doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
@@ -115,27 +119,28 @@
     <span class="kt">bool</span> <span class="n">force</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFirmwareFlashResult<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFirmwareFlashResult<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aa9fbf56c59280e7d89168f97e2ae43c6"><span class="std std-ref">xpum_firmware_type_t</span></a><span></span> <span class="n">firmwareType</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_firmware_flash_task_result_t.html#smi-doxid-structxpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFirmwareFlashErrorMsg<span></span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span></pre>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFirmwareFlashErrorMsg<span></span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
 <span id="details-group-firmware-update-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <p>APIs are for firmware update</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1gab16a52d28334511c16b65f28c3954505"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunFirmwareFlash</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1gacdcdec029125d3d64cdfb6abd9d19ab7"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunFirmwareFlash</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_firmware_flash_job.html#smi-doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
     <span class="p">)</span></pre>
 <p>Run firmware flashing by device.</p>
-<p>This function will return immediately. To query the firmware flash job status, call <a class="reference internal" href="#smi-doxid-group-firmware-update-api-1ga1cd7824715c148f0085c9c945028a1be"><span class="std std-ref">xpumGetFirmwareFlashResult</span></a></p>
+<p>This function will return immediately. To query the firmware flash job status, call <a class="reference internal" href="#smi-doxid-group-firmware-update-api-1ga05e8f6b8db1f9d1989377ae1b75100d2"><span class="std std-ref">xpumGetFirmwareFlashResult</span></a></p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -159,7 +164,7 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1ga0769200700dc45ca39da6a05e215f939"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunFirmwareFlashEx</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1ga6ec751338c6c6b5335f10c4bcda1e379"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunFirmwareFlashEx</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_firmware_flash_job.html#smi-doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
@@ -167,7 +172,8 @@
     <span class="kt">bool</span> <span class="n">force</span>
     <span class="p">)</span></pre>
 <p>Run firmware flashing by device.</p>
-<p>This function will return immediately. To query the firmware flash job status, call <a class="reference internal" href="#smi-doxid-group-firmware-update-api-1ga1cd7824715c148f0085c9c945028a1be"><span class="std std-ref">xpumGetFirmwareFlashResult</span></a></p>
+<p>This function will return immediately. To query the firmware flash job status, call <a class="reference internal" href="#smi-doxid-group-firmware-update-api-1ga05e8f6b8db1f9d1989377ae1b75100d2"><span class="std std-ref">xpumGetFirmwareFlashResult</span></a></p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -194,13 +200,14 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1ga1cd7824715c148f0085c9c945028a1be"><span id="index-3"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFirmwareFlashResult</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1ga05e8f6b8db1f9d1989377ae1b75100d2"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFirmwareFlashResult</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aa9fbf56c59280e7d89168f97e2ae43c6"><span class="std std-ref">xpum_firmware_type_t</span></a><span></span> <span class="n">firmwareType</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_firmware_flash_task_result_t.html#smi-doxid-structxpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
     <span class="p">)</span></pre>
 <p>Get the status of firmware flash job.</p>
 <p>This function will return immediately. Caller may have to call this function multiple times until <em>result</em> indicates firmware flash job is finished.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -234,8 +241,9 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a2eb406008c8230bd96f42e487ae2c478"><span class="std std-ref">XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE</span></a></p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a></p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1gaf886a6951338d68458bb87580a78a4ad"><span id="index-4"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFirmwareFlashErrorMsg</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-firmware-update-api-1gaefee57bfa8cac3cb83687c3a76b92d99"><span id="index-4"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFirmwareFlashErrorMsg</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
 <p>Get error message when fail to flash firmware.</p>
+<p>Support Platform: Linux, Windows</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>

@@ -88,6 +88,7 @@ namespace xpum {
 
         virtual void getsubDeviceList(std::vector<int32_t>& subDeviceList) noexcept = 0;
 
+        virtual void getFreqAvailableClocks(int32_t tileId, std::vector<double>& clocksList) noexcept = 0;
         virtual ~Device() {}
 
     protected:

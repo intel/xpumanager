@@ -10,7 +10,7 @@
 #include <vector>
 #include <functional>
 #include <atomic>
-#include "../xpum_structs.h"
+#include "xpum_structs.h"
 
 using namespace std;
 namespace xpum {

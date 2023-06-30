@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device health &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Device configurations" href="group_CONFIGURATION_API.html" />
+    <link rel="prev" title="Device API" href="group_DEVICE_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../SMI_README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../smi_install_guide.html">Intel(R) XPU-SMI Installation Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../smi_user_guide.html">Intel(R) XPU System Management Interface User Guide</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Device health</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../smi_index.html">XPU-SMI Linux Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+      <li>Device health</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="device-health">
+<span id="smi-doxid-group-health-api"></span><span id="index-0"></span><h1>Device health<a class="headerlink" href="#device-health" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>These APIs are for health <a class="reference internal" href="../../xpumdoc/rst/group_HEALTH_API.html#details-group-health-api"><span class="std std-ref">More…</span></a></p>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetHealthConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetHealthConfigByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthConfigByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">valueList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealth<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span><span class="o">*</span> <span class="n">data</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-group-health-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>These APIs are for health</p>
+<section id="global-functions">
+<h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1gac720900f037fbc4b08ceed032d905f75"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetHealthConfig</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+    <span class="p">)</span></pre>
+<p>Set health configuration by device.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>key</p></td>
+<td><p>IN: Configuration key to set</p></td>
+</tr>
+<tr class="row-odd"><td><p>value</p></td>
+<td><p>IN: Pointer to configuration value to set, the type of value is decided by <em>key</em> type, which should be documented</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga4e1f0b069ca4a9ed702b45025de8f4b8"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetHealthConfigByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+    <span class="p">)</span></pre>
+<p>Set health configuration by group.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>groupId</p></td>
+<td><p>IN: Group id</p></td>
+</tr>
+<tr class="row-even"><td><p>key</p></td>
+<td><p>IN: Configuration key to set</p></td>
+</tr>
+<tr class="row-odd"><td><p>value</p></td>
+<td><p>IN: Pointer to health configuration value to set the type of value is decided by <em>key</em> type, which should be documented</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga670a3d70fb810b9680b7795927ef0827"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthConfig</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+    <span class="p">)</span></pre>
+<p>Get health configuration by device.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>key</p></td>
+<td><p>IN: Configuration key to get</p></td>
+</tr>
+<tr class="row-odd"><td><p>value</p></td>
+<td><p>OUT: Pointer to configuration value to get the type of value is decided by <em>key</em> type, which should be documented</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga39f9395f8344e87b0c3eabfae109841f"><span id="index-4"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthConfigByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">void</span><span class="o">*</span> <span class="n">valueList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get health configuration by group.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>groupId</p></td>
+<td><p>IN: Group id</p></td>
+</tr>
+<tr class="row-even"><td><p>key</p></td>
+<td><p>IN: Configuration key to get</p></td>
+</tr>
+<tr class="row-odd"><td><p>deviceIdList</p></td>
+<td><p>OUT: Array of device ids in this group</p></td>
+</tr>
+<tr class="row-even"><td><p>valueList</p></td>
+<td><p>OUT: Array to store configuration values for devices’ <em>key</em> in <em>deviceIdList</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: The number of entries that <em>deviceIdList</em> and <em>valueList</em> array can store, count should equal to or larger than device count of the group (<em>groupid</em>); when return, the <em>count</em> will store real number of entries returned by <em>deviceIdList</em> and <em>valueList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than device count of group</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga6f775fc0314335ec0d7e229a9bfebb46"><span id="index-5"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealth</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span><span class="o">*</span> <span class="n">data</span>
+    <span class="p">)</span></pre>
+<p>Get health status by device for specific health type.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td><p>IN: Health type to get</p></td>
+</tr>
+<tr class="row-odd"><td><p>data</p></td>
+<td><p>OUT: Health status data</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga8b71d9f5973a7a39ae6c114b73fd2525"><span id="index-6"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get health status by group for specific health type.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>groupId</p></td>
+<td><p>IN: Group id</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td><p>IN: Health type to get</p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: Array of health status datas, the array length should equal to device count of this group.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: The number of entries that <em>dataList</em> array can store, count should equal to or larger than device count of the group (<em>groupid</em>); when return, the <em>count</em> will store real number of entries returned by <em>dataList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than device count of group</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="group_DEVICE_API.html" class="btn btn-neutral float-left" title="Device API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="group_CONFIGURATION_API.html" class="btn btn-neutral float-right" title="Device configurations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

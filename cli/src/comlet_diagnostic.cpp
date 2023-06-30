@@ -110,23 +110,27 @@ static CharTableConfig ComletConfigDiagnosticPreCheck(R"({
 })"_json);
 
 static CharTableConfig ComletConfigDiagnosticPreCheckErrorType(R"({
-    "width": 80,
+    "width": 90,
     "showTitleRow": true,
     "columns": [{
-        "title": "Type",
-        "size": 35
+        "title": "Error ID",
+        "size": 10
     }, {
-        "title": "Category",
-        "size": 23
+        "title": "Error Type",
+        "size": 33
     }, {
-        "title": "Severity"
+        "title": "Error Category",
+        "size": 20
+    }, {
+        "title": "Error Severity"
     }],
     "rows": [{
         "instance": "error_type_list[]",
         "cells": [
-            { "value": "type" },
-            { "value": "category" },
-            { "value": "severity" }
+            { "value": "error_id" },
+            { "value": "error_type" },
+            { "value": "error_category" },
+            { "value": "error_severity" }
         ]
     }]
 })"_json);

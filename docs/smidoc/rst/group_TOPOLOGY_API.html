@@ -21,7 +21,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Global Namespace" href="global.html" />
+    <link rel="next" title="VGPU management" href="group_VGPU_API.html" />
     <link rel="prev" title="Device statistics" href="group_STATISTICS_API.html" /> 
 </head>
 
@@ -49,6 +49,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
@@ -58,6 +59,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
 </ul>
 </li>
@@ -100,15 +104,15 @@
 <p>These APIs are for <a class="reference internal" href="../../xpumdoc/rst/group_TOPOLOGY_API.html#details-group-topology-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetTopology<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetTopology<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_topology_t.html#smi-doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="o">*</span> <span class="n">topology</span><span class="p">,</span>
     <span class="kt">long</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumExportTopology2XML<span></span><span class="p">(</span><span class="kt">char</span> <span class="n">xmlBuffer</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span><span class="p">);</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumExportTopology2XML<span></span><span class="p">(</span><span class="kt">char</span> <span class="n">xmlBuffer</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span><span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-group-topology-api-1ga0a69b66c85f85ba78b68d28338014ae1"><span></span><span class="n">xpumGetXelinkTopology</span></span><span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetXelinkTopology<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_xelink_topo_info.html#smi-doxid-structxpum-xelink-topo-info"><span class="std std-ref">xpum_xelink_topo_info</span></a><span></span> <span class="n">xelink_topo</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
@@ -118,12 +122,13 @@
 <p>These APIs are for</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-topology-api-1gab305358208669e6ad90d540dbef811f2"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetTopology</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-topology-api-1ga9cdcaa34a6aba73a6a75be604b1b627f"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetTopology</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_topology_t.html#smi-doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="o">*</span> <span class="n">topology</span><span class="p">,</span>
     <span class="kt">long</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span>
     <span class="p">)</span></pre>
 <p>Get topology by device.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -147,8 +152,9 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>memSize</em> is smaller real memory size of <em>topology</em></p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-topology-api-1gab41d191138d7aa10fa181c90724f1fcc"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumExportTopology2XML</span><span class="p">(</span><span class="kt">char</span> <span class="n">xmlBuffer</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-topology-api-1gab942852701ce46b87a36885c1a6d8be7"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumExportTopology2XML</span><span class="p">(</span><span class="kt">char</span> <span class="n">xmlBuffer</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span><span class="p">)</span></pre>
 <p>Export topology by node.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -169,6 +175,29 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>memSize</em> is smaller real memory size of <em>topology</em></p></li>
 </ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-topology-api-1ga012aaf198855655d9f9554c46f5f6181"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetXelinkTopology</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_xelink_topo_info.html#smi-doxid-structxpum-xelink-topo-info"><span class="std std-ref">xpum_xelink_topo_info</span></a><span></span> <span class="n">xelink_topo</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get xelink topology.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>xelink_topo</p></td>
+<td><p>OUT: The xelink topology</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>xelink_topo</em> is NULL, <em>count</em> will be filled with the needed size of xelink_topo, and return. When <em>xelink_topo</em> is not NULL, <em>count</em> denotes the size of <em>xelink_topo</em>, <em>count</em> should be equal to or large than the size of <em>xelink_topo</em>, when return, the <em>count</em> will store real size of <em>xelink_topo</em>.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
 </section>
 </section>
 </section>
@@ -178,7 +207,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="group_STATISTICS_API.html" class="btn btn-neutral float-left" title="Device statistics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="global.html" class="btn btn-neutral float-right" title="Global Namespace" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="group_VGPU_API.html" class="btn btn-neutral float-right" title="VGPU management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

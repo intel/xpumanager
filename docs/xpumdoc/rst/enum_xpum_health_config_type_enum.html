@@ -60,6 +60,9 @@
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
@@ -110,6 +113,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metric_t.html">struct xpum_device_realtime_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metrics_t.html">struct xpum_device_realtime_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_util_by_process_t.html">struct xpum_device_util_by_process_t</a></li>
@@ -195,8 +200,8 @@
 <span class="k">enum</span> <span class="n">xpum_health_config_type_enum</span>
 <span class="p">{</span>
     <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3a1993c1fa0259074555743fa7cd26e6e8"><span class="std std-ref">XPUM_HEALTH_CORE_THERMAL_LIMIT</span></a><span></span>   <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3a286ed84f280a4936a706acdb52e00f26"><span class="std std-ref">XPUM_HEALTH_MEMORY_THERMAL_LIMIT</span></a><span></span><span class="p">,</span>
-    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3ab305a2a233df5e3c51a9a4fd890c6a4e"><span class="std std-ref">XPUM_HEALTH_POWER_LIMIT</span></a><span></span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3a286ed84f280a4936a706acdb52e00f26"><span class="std std-ref">XPUM_HEALTH_MEMORY_THERMAL_LIMIT</span></a><span></span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3ab305a2a233df5e3c51a9a4fd890c6a4e"><span class="std std-ref">XPUM_HEALTH_POWER_LIMIT</span></a><span></span>          <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">

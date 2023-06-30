@@ -60,6 +60,9 @@
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
@@ -110,6 +113,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metric_t.html">struct xpum_device_realtime_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_realtime_metrics_t.html">struct xpum_device_realtime_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_util_by_process_t.html">struct xpum_device_util_by_process_t</a></li>
@@ -192,8 +197,8 @@
 <span class="k">enum</span> <span class="n">xpum_media_format_enum</span>
 <span class="p">{</span>
     <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34a7a3b03a29e165b94ad00fea2c5d5572c"><span></span><span class="n">XPUM_MEDIA_FORMAT_H265</span></span><span></span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34a1f383218688815b1b61fb255c2a46065"><span></span><span class="n">XPUM_MEDIA_FORMAT_H264</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34a370e020b32e42cc2b6fb6dc35d2a2a6e"><span></span><span class="n">XPUM_MEDIA_FORMAT_AV1</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34a1f383218688815b1b61fb255c2a46065"><span></span><span class="n">XPUM_MEDIA_FORMAT_H264</span></span><span></span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34a370e020b32e42cc2b6fb6dc35d2a2a6e"><span></span><span class="n">XPUM_MEDIA_FORMAT_AV1</span></span><span></span>  <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>
 

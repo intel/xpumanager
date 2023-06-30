@@ -64,6 +64,9 @@
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
 </ul>
 </li>
@@ -107,7 +110,7 @@
 <p>These APIs are for collecting metrics raw data <a class="reference internal" href="#details-group-dump-raw-data-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStartDumpRawDataTask<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStartDumpRawDataTask<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
     <span class="k">const</span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[],</span>
@@ -116,12 +119,12 @@
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStopDumpRawDataTask<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStopDumpRawDataTask<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <span class="n">taskId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumListDumpRawDataTasks<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumListDumpRawDataTasks<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span> <span class="n">taskList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
@@ -131,7 +134,7 @@
 <p>These APIs are for collecting metrics raw data</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-dump-raw-data-api-1gaf93fab667533a5c38e251b160e4a684e"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumStartDumpRawDataTask</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-dump-raw-data-api-1ga7a05236973b99e03f358bdda0758b523"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumStartDumpRawDataTask</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
     <span class="k">const</span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[],</span>
@@ -140,6 +143,7 @@
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
     <span class="p">)</span></pre>
 <p>Start dump raw data task. When call this function, core lib will start to write raw data into dump file.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -174,11 +178,12 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a0d7d6ad6c725268d29d2fc4bb1ccffec"><span class="std std-ref">XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT</span></a> if not supported metrics type passed in</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if other error happens</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-dump-raw-data-api-1ga0d24c1d5ab7226c335c600f228f36445"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumStopDumpRawDataTask</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-dump-raw-data-api-1ga76a89c381ea6c2ab2928fe19ac567c1d"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumStopDumpRawDataTask</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <span class="n">taskId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
     <span class="p">)</span></pre>
 <p>Stop write to dumpFilePath.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -201,11 +206,12 @@
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a71cd28cf7f2457ff93f0e25d21f7ca2d"><span class="std std-ref">XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST</span></a> if task id not exists</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if other error happens</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-dump-raw-data-api-1ga891385decc431203284f5e909222f8c0"><span id="index-3"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumListDumpRawDataTasks</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-dump-raw-data-api-1ga183e6b5edfb7df0e59bec82152daa3cf"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumListDumpRawDataTasks</span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span> <span class="n">taskList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>List all the active dump tasks.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>

@@ -39,5 +39,7 @@ namespace xpum {
         virtual void getDeviceFrequencyRange(const std::string& id, int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) = 0;
 
         virtual bool setDeviceFrequencyRange(const std::string& id, int32_t tileId, double min, double max) = 0;
+
+        virtual void getFreqAvailableClocks(const std::string& id, int32_t tileId, std::vector<double>& clocksList) = 0;
     };
 }

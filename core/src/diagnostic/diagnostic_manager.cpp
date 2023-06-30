@@ -2183,6 +2183,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeKernelDestroy()");
                 }
+                ret = zeCommandListDestroy(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListDestroy()");
+                }
+                ret = zeCommandQueueDestroy(command_queue);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandQueueDestroy()");
+                }
                 ret = zeMemFree(context, device_input_value);
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeMemFree()");
@@ -2480,6 +2488,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformancePower(const ze_device_handle
                 ret = zeKernelDestroy(compute_int_v1);
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeKernelDestroy()");
+                }
+                ret = zeCommandListDestroy(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListDestroy()");
+                }
+                ret = zeCommandQueueDestroy(command_queue);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandQueueDestroy()");
                 }
                 ret = zeMemFree(context, device_input_value);
                 if (ret != ZE_RESULT_SUCCESS) {
@@ -2973,6 +2989,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeKernelDestroy()");
                 }
+                ret = zeCommandListDestroy(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListDestroy()");
+                }
+                ret = zeCommandQueueDestroy(command_queue);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandQueueDestroy()");
+                }
                 ret = zeMemFree(context, inputBuf);
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeMemFree()");
@@ -3237,6 +3261,14 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                 ret = zeKernelDestroy(compute_int_v1);
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeKernelDestroy()");
+                }
+                ret = zeCommandListDestroy(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListDestroy()");
+                }
+                ret = zeCommandQueueDestroy(command_queue);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandQueueDestroy()");
                 }
                 ret = zeMemFree(context, device_input_value);
                 if (ret != ZE_RESULT_SUCCESS) {

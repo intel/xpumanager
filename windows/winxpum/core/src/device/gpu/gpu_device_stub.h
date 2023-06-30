@@ -31,9 +31,9 @@ namespace xpum {
         bool toSetDeviceFrequencyRange(const zes_device_handle_t& device, int32_t tileId, double min, double max) noexcept;
 
         void toGetSimpleEccState(uint8_t& current, uint8_t& pending) noexcept;
-
         uint32_t toGetDeviceId(const zes_device_handle_t& device) noexcept;
         uint32_t toGetDevicePowerLimit(const zes_device_handle_t& device) noexcept;
+        void toGetFreqAvailableClocks(const zes_device_handle_t& device, int32_t tileId, std::vector<double>& clocksList) noexcept;
 
         std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device) noexcept;
 
