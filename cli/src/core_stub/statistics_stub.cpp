@@ -84,13 +84,13 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricCount(int deviceId) {
     auto fabricCountInfo = getDeviceAndTileFabricCount(xpum_device_id);
     for (auto tileFabricCountInfo : fabricCountInfo) {
         std::string tileId = tileFabricCountInfo.isTileLevel ? std::to_string(tileFabricCountInfo.tileId) : "device";
-        nlohmann::json obj;
         for (auto d : tileFabricCountInfo.dataList) {
+            nlohmann::json obj;
             obj["tile_id"] = d.tile_id;
             obj["remote_device_id"] = d.remote_device_id;
             obj["remote_tile_id"] = d.remote_tile_id;
+            json[tileId].push_back(obj);
         }
-        json[tileId].push_back(obj);
     }
 
     return std::make_shared<nlohmann::json>(json);

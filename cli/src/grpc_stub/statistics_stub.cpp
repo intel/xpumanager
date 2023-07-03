@@ -59,13 +59,13 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricCount(int deviceId) {
     if (response.errormsg().length() == 0) {
         for (auto &tileInfo : response.fabriccountlist()) {
             std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
-            nlohmann::json obj;
             for (auto &countInfo : tileInfo.datalist()) {
+                nlohmann::json obj;
                 obj["tile_id"] = countInfo.tileid();
                 obj["remote_device_id"] = countInfo.remotedeviceid();
                 obj["remote_tile_id"] = countInfo.remotetileid();
+                json[tileId].push_back(obj);
             }
-            json[tileId].push_back(obj);
         }
     }
     else {
