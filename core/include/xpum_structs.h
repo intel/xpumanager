@@ -159,7 +159,8 @@ typedef enum xpum_result_enum {
     XPUM_VGPU_SYSFS_ERROR = 58,
     XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL = 59,
     XPUM_RESULT_RESET_FAIL = 60, ///< Fail to reset device
-    XPUM_API_UNSUPPORTED = 61
+    XPUM_API_UNSUPPORTED = 61,
+    XPUM_PRECHECK_INVALID_SINCETIME = 62
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -1130,6 +1131,66 @@ typedef struct xpum_vgpu_function_info_t {
 
 #define XPUM_MAX_VF_NUM 128
 
+typedef enum xpum_precheck_error_category_t {
+    XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE = 0,
+    XPUM_PRECHECK_ERROR_CATEGORY_KMD = 1,
+    XPUM_PRECHECK_ERROR_CATEGORY_UMD = 2
+} xpum_precheck_error_category_t;
+
+typedef enum xpum_precheck_error_severity_t {
+    XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL = 0,
+    XPUM_PRECHECK_ERROR_SEVERITY_HIGH = 1,
+    XPUM_PRECHECK_ERROR_SEVERITY_MEDIUM = 2,
+    XPUM_PRECHECK_ERROR_SEVERITY_LOW = 3
+} xpum_precheck_error_severity_t;
+
+typedef enum xpum_precheck_error_type_t {
+    XPUM_GUC_NOT_RUNNING = 1,
+    XPUM_GUC_ERROR = 2,
+    XPUM_GUC_INITIALIZATION_FAILED = 3,
+    XPUM_IOMMU_CATASTROPHIC_ERROR = 4,
+    XPUM_LMEM_NOT_INITIALIZED_BY_FIRMWARE = 5,
+    XPUM_PCIE_ERROR = 6,
+    XPUM_DRM_ERROR = 7,
+    XPUM_GPU_HANG = 8,
+    XPUM_I915_ERROR = 9,
+    XPUM_I915_NOT_LOADED = 10,
+    XPUM_LEVEL_ZERO_INIT_ERROR = 11,
+    XPUM_HUC_DISABLED = 12,
+    XPUM_HUC_NOT_RUNNING = 13,
+    XPUM_LEVEL_ZERO_METRICS_INIT_ERROR = 14,
+} xpum_precheck_error_type_t;
+
+typedef struct xpum_precheck_error_t {
+    uint32_t errorId;
+    xpum_precheck_error_type_t errorType;
+    xpum_precheck_error_category_t errorCategory;
+    xpum_precheck_error_severity_t errorSeverity;
+} xpum_precheck_error_t;
+
+typedef enum xpum_precheck_component_type_t {
+    XPUM_PRECHECK_COMPONENT_TYPE_DRIVER = 0,
+    XPUM_PRECHECK_COMPONENT_TYPE_CPU = 1,
+    XPUM_PRECHECK_COMPONENT_TYPE_GPU = 2,
+} xpum_precheck_component_type_t;
+
+typedef enum xpum_precheck_component_status_t {
+    XPUM_PRECHECK_COMPONENT_STATUS_UNKNOWN = 0,
+    XPUM_PRECHECK_COMPONENT_STATUS_PASS = 1,
+    XPUM_PRECHECK_COMPONENT_STATUS_FAIL = 2,
+} xpum_precheck_component_status_t;
+
+typedef struct xpum_precheck_component_info_t {
+    xpum_precheck_component_type_t componentType;
+    char bdf[XPUM_MAX_STR_LENGTH];                          // for GPU and Driver
+    int32_t cpuId;                                          // only for CPU
+    xpum_precheck_component_status_t status;
+    char time[XPUM_MAX_STR_LENGTH];
+    int32_t errorId;                                        // for GPU and Driver
+    xpum_precheck_error_category_t errorCategory;
+    xpum_precheck_error_severity_t errorSeverity;
+    char errorDetail[XPUM_MAX_STR_LENGTH];
+} xpum_precheck_component_info_t;
 
 #if defined(__cplusplus)
 } // extern "C"

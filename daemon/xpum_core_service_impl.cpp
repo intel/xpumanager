@@ -2548,6 +2548,57 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::precheck(::grpc::ServerContext* context, const ::PrecheckRequest* request,
+                                    ::PrecheckComponentInfoListResponse* response) {
+    int count = 32;
+    xpum_precheck_component_info_t resultList[count]; 
+    xpum_result_t res = xpumPrecheck(resultList, &count, request->onlygpu(), request->sincetime().c_str());
+    if (res != XPUM_OK) {
+        if (res == XPUM_PRECHECK_INVALID_SINCETIME)
+            response->set_errormsg("invalid since time");
+        else
+            response->set_errormsg("Error");
+    } else {
+        response->set_count(count);
+        for (int i = 0; i < count; i++) {
+            PrecheckComponentInfo* precheckComponentInfo = response->add_componentinfolist();
+            precheckComponentInfo->set_componenttype(static_cast<PrecheckComponentType>(resultList[i].componentType));
+            precheckComponentInfo->set_bdf(resultList[i].bdf);
+            precheckComponentInfo->set_cpuid(resultList[i].cpuId);
+            precheckComponentInfo->set_status(static_cast<PrecheckComponentStatus>(resultList[i].status));
+            precheckComponentInfo->set_time(resultList[i].time);
+            precheckComponentInfo->set_errorid(resultList[i].errorId);
+            precheckComponentInfo->set_errorcategory(static_cast<PrecheckErrorCategory>(resultList[i].errorCategory));
+            precheckComponentInfo->set_errorseverity(static_cast<PrecheckErrorSeverity>(resultList[i].errorSeverity));
+            precheckComponentInfo->set_errordetail(resultList[i].errorDetail);
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+};
+
+::grpc::Status XpumCoreServiceImpl::getPrecheckErrorList(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                    ::PrecheckErrorListResponse* response) {
+    int count = 32;
+    xpum_precheck_error_t resultList[count]; 
+    xpum_result_t res = xpumGetPrecheckErrorList(resultList, &count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    } else {
+        response->set_count(count);
+        for (int i = 0; i < count; i++) {
+            PrecheckError* precheckError = response->add_precheckerrorlist();
+            precheckError->set_errorid(resultList[i].errorId);
+            // Keep errorId and errorType value consistent
+            precheckError->set_errortype(static_cast<PrecheckErrorType>(resultList[i].errorType - 1));
+            precheckError->set_errorcategory(static_cast<PrecheckErrorCategory>(resultList[i].errorCategory));
+            precheckError->set_errorseverity(static_cast<PrecheckErrorSeverity>(resultList[i].errorSeverity));
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+};
+
 ::grpc::Status XpumCoreServiceImpl::genDebugLog(::grpc::ServerContext* context, const ::FileName* request, ::GenDebugLogResponse *response) {
     xpum_result_t res = xpumGenerateDebugLog(request->filename().c_str());
     if (res != XPUM_OK) {

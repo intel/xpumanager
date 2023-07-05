@@ -100,6 +100,13 @@ public:
         return PD;
     }
 
+    virtual ::grpc::Status precheck(::grpc::ServerContext* context, const ::PrecheckRequest* request, ::PrecheckComponentInfoListResponse* response) override {
+        return PD;
+    }
+
+    virtual ::grpc::Status getPrecheckErrorList(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::PrecheckErrorListResponse* response) override {
+        return PD;
+    } 
 private:
     static const grpc::Status PD;
 };

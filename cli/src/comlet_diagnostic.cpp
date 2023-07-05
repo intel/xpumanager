@@ -15,7 +15,6 @@
 #include <set>
 #include <unordered_map>
 
-#include "local_functions.h"
 
 namespace xpum::cli {
 
@@ -178,7 +177,7 @@ void ComletDiagnostic::setupOptions() {
     auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
 Alternatively the strings \"yesterday\", \"today\" are also understood.\n\
 Relative times also may be specified, prefixed with \"-\" referring to times before the current time.\n\
-Scanning will starts from the latest boot if it is not specified.");
+Scanning would start from the latest boot if it is not specified.");
 
     auto singleTestIdList = addOption("--singletest", this->opts->singleTestIdList,
               "Selectively run some particular tests. Separated by the comma.\n\
@@ -309,9 +308,9 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
 
     if (this->opts->preCheck) {
         if (this->opts->listErrorType) {
-            json = getPreCheckErrorTypes();
+            json = this->coreStub->getPrecheckErrorTypes();
         } else {
-            json = getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson, this->opts->sinceTime);
+            json = this->coreStub->precheck(this->opts->onlyGPU, this->opts->sinceTime, this->opts->rawJson);
         }
         return json;
     }

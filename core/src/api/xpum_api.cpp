@@ -44,6 +44,7 @@
 #include "vgpu/precheck.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
+#include "diagnostic/precheck.h"
 
 namespace xpum {
 
@@ -3660,6 +3661,15 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
         return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
     return Core::instance().getVgpuManager()->removeAllVf(deviceId);
+}
+
+
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime) {
+    return PrecheckManager::precheck(resultList, count, onlyGPU, sinceTime);
+}
+
+xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count) {
+    return PrecheckManager::getPrecheckErrorList(resultList, count);
 }
 
 } // end namespace xpum

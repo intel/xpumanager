@@ -120,6 +120,8 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_VGPU_SYSFS_ERROR;
         case XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL:
             return XPUM_CLI_ERROR_VGPU_UNSUPPORTED_DEVICE_MODEL;
+        case XPUM_PRECHECK_INVALID_SINCETIME:
+            return XPUM_CLI_ERROR_DIAGNOSTIC_PRECHECK_SINCE_TIME;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
     }

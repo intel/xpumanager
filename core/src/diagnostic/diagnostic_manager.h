@@ -116,6 +116,22 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static void doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t type, std::string error, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
+    static std::map<std::string, std::map<std::string, int>> thresholds;
+
+    static std::map<ze_device_handle_t, std::string> device_names;
+
+    static std::string MEDIA_CODER_TOOLS_PATH;
+
+    static std::string MEDIA_CODER_TOOLS_1080P_FILE;
+
+    static std::string MEDIA_CODER_TOOLS_4K_FILE;
+
+    static std::string MEDIA_CODEC_TOOLS_LIGHT_FILE;
+
+    static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
+
+    static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
+    
    private:
     static bool countDevEntry(const std::string &entry_name);
 
@@ -155,28 +171,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static std::string roundDouble(double r, int precision);
 
-    static void readConfigFile();
-
     static void stressThreadFunc(int stress_time,
                                  const ze_device_handle_t &ze_device,
                                  const ze_driver_handle_t &ze_driver,
                                  std::shared_ptr<xpum_diag_task_info_t> p_task_info);
-
-    static std::map<std::string, std::map<std::string, int>> thresholds;
-
-    static std::map<ze_device_handle_t, std::string> device_names;
-
-    static std::string MEDIA_CODER_TOOLS_PATH;
-
-    static std::string MEDIA_CODER_TOOLS_1080P_FILE;
-
-    static std::string MEDIA_CODER_TOOLS_4K_FILE;
-
-    static std::string MEDIA_CODEC_TOOLS_LIGHT_FILE;
-
-    static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
-
-    static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
 
     static const std::string COMPONENT_TYPE_NOT_SUPPORTED;
 

@@ -224,6 +224,86 @@ message CheckStressResponse {
     int32 errorNo = 3;
 }
 
+enum PrecheckErrorType {
+    GUC_NOT_RUNNING = 0;
+    GUC_ERROR = 1;
+    GUC_INITIALIZATION_FAILED = 2;
+    IOMMU_CATASTROPHIC_ERROR = 3;
+    LMEM_NOT_INITIALIZED_BY_FIRMWARE = 4;
+    PCIE_ERROR = 5;
+    DRM_ERROR = 6;
+    GPU_HANG = 7;
+    I915_ERROR = 8;
+    I915_NOT_LOADED = 9;
+    LEVEL_ZERO_INIT_ERROR = 10;
+    HUC_DISABLED = 11;
+    HUC_NOT_RUNNING = 12;
+    LEVEL_ZERO_METRICS_INIT_ERROR = 13;
+}
+
+enum PrecheckErrorCategory {
+    PRECHECK_ERROR_CATEGORY_HARDWARE = 0;
+    PRECHECK_ERROR_CATEGORY_KMD = 1;
+    PRECHECK_ERROR_CATEGORY_UMD = 2;
+}
+
+enum PrecheckErrorSeverity {
+    PRECHECK_ERROR_SEVERITY_CRITICAL = 0;
+    PRECHECK_ERROR_SEVERITY_HIGH = 1;
+    PRECHECK_ERROR_SEVERITY_MEDIUM = 2;
+    PRECHECK_ERROR_SEVERITY_LOW = 3;
+}
+
+enum PrecheckComponentType {
+    PRECHECK_COMPONENT_TYPE_DRIVER = 0;
+    PRECHECK_COMPONENT_TYPE_CPU = 1;
+    PRECHECK_COMPONENT_TYPE_GPU = 2;
+}
+
+enum PrecheckComponentStatus {
+    PRECHECK_COMPONENT_STATUS_UNKNOWN = 0;
+    PRECHECK_COMPONENT_STATUS_PASS = 1;
+    PRECHECK_COMPONENT_STATUS_FAIL = 2;
+}
+
+message PrecheckRequest {
+    bool onlyGPU = 1;
+    string sinceTime = 2;
+}
+
+message PrecheckComponentInfo {
+    PrecheckComponentType componentType = 1;
+    string bdf = 2;
+    int32 cpuId = 3;
+    PrecheckComponentStatus status = 4;
+    string time = 5;
+    int32 errorId = 6;                                   
+    PrecheckErrorCategory errorCategory = 7;
+    PrecheckErrorSeverity errorSeverity = 8;
+    string errorDetail = 9;
+}
+
+message PrecheckComponentInfoListResponse {
+    repeated PrecheckComponentInfo componentInfoList = 1;
+    uint32 count = 2;
+    string errorMsg = 3;
+    int32 errorNo = 4;
+}
+
+message PrecheckError {
+    uint32 errorId = 1;
+    PrecheckErrorType errorType = 2;
+    PrecheckErrorCategory errorCategory = 3;
+    PrecheckErrorSeverity errorSeverity = 4;
+}
+
+message PrecheckErrorListResponse {
+    repeated PrecheckError precheckErrorList = 1;
+    uint32 count = 2;
+    string errorMsg = 3;
+    int32 errorNo = 4;    
+}
+
 enum HealthType{
     HEALTH_CORE_THERMAL = 0;
     HEALTH_MEMORY_THERMAL = 1;
@@ -1033,6 +1113,8 @@ service XpumCoreService {
     rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );
     rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
     rpc checkStress( CheckStressRequest ) returns ( CheckStressResponse );
+    rpc precheck ( PrecheckRequest ) returns ( PrecheckComponentInfoListResponse );
+    rpc getPrecheckErrorList( google.protobuf.Empty ) returns ( PrecheckErrorListResponse );
     rpc getHealth( HealthDataRequest ) returns ( HealthData );
     rpc getHealthByGroup( HealthDataByGroupRequest ) returns ( HealthDataByGroup );
     rpc getHealthConfig( HealthConfigRequest ) returns ( HealthConfigInfo );
