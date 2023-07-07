@@ -22,4 +22,6 @@ namespace xpum::cli {
 
 	bool isShortBDF(const std::string& str);
 
+	bool isATSMPlatform(std::string str);
+
 } // end namespace xpum::cli

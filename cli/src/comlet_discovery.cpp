@@ -380,6 +380,12 @@ static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> 
     if (ver.length() == 0) {
         js["amc_firmware_name"] = "";
     }
+    ver = js["pci_device_id"];
+    if (ver.length() != 0 && isATSMPlatform(ver)) {
+        js["number_of_fabric_ports"] = XPUM_TABLE_HIDE_TAG;
+        js["max_fabric_port_speed"] = XPUM_TABLE_HIDE_TAG;
+        js["number_of_lanes_per_fabric_port"] = XPUM_TABLE_HIDE_TAG;
+    }
     CharTable table(ComletConfigDiscoveryDetailed, js);
     table.show(out);
 }

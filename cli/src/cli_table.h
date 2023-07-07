@@ -16,6 +16,7 @@
 #include <vector>
 
 #define TABLE_COLUMN_AUTO -1
+#define XPUM_TABLE_HIDE_TAG "xpum_table_hide_tag"
 
 namespace xpum::cli {
 
@@ -351,6 +352,10 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
 
     inline const bool isEmpty() const {
         return empty;
+    }
+
+    inline const nlohmann::json getvalue(const nlohmann::json& obj) const {
+        return value.apply(obj);
     }
 };
 

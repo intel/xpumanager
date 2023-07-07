@@ -338,6 +338,10 @@ CharTable::CharTable(CharTableConfig& tableConf, const nlohmann::json& res, cons
                                 hasValue(cellValue) == false) {
                             continue;
                         }
+                        auto emp = cellConf->getvalue(objIns);
+                        if (emp.size() == 1 && emp.at(0) == XPUM_TABLE_HIDE_TAG) {
+                            continue;
+                        }
                         if (!(cellConf->isSubRow() && cellValue.empty())) {
                             rowHasNoData = false;
                             config.setCellValue(dataRow, j, cellValue);

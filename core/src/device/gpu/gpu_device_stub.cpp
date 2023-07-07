@@ -687,33 +687,6 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     return res;
 }
 
-static std::string getPciName(std::string bdf) {
-    std::string cmd = "lspci -D -s " + bdf + " 2>&1|cut -d ':' -f 4";
-    std::string name;
-    char buf[BUF_SIZE];
-    FILE *pf = popen(cmd.c_str(), "r");
-    if (pf == NULL) {
-        return name;
-    }
-    if (fgets(buf, BUF_SIZE, pf) != NULL) {
-        if (strnlen(buf, BUF_SIZE) <= 0) {
-            return name;
-        } 
-        std::string line(buf+1);
-        if (line.length() > 0) {
-            if (line.at(line.length() - 1) == '\n') {
-                line.pop_back();
-            }
-            name = line;
-        }
-    }
-    pclose(pf);
-    if (name.find("Intel") == std::string::npos) {
-        name.clear();
-    }
-    return name;
-}
-
 static std::string getI915Version() {
     std::string ret = "";
     char buf[BUF_SIZE];
@@ -1116,6 +1089,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(i), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
@@ -1153,12 +1127,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::string pciName = getPciName(
-                            to_string(pci_props.address));
-                    if (pciName.length() == 0) {
-                        pciName = std::string(props.core.name);
-                    }
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, pciName));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, getDRMDevice(pci_props)));
                     auto tmpAddr = pci_props.address;
@@ -1200,8 +1168,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             func_type
                         )
                     );
-                } else {
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 }
 
                 addMemUtilizationCapAndMemProperty(device, p_gpu);

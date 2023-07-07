@@ -30,6 +30,8 @@ namespace xpum {
 
         bool toSetDeviceFrequencyRange(const zes_device_handle_t& device, int32_t tileId, double min, double max) noexcept;
 
+        static void toGetDeviceMediaEngineCount(const zes_device_handle_t& device, uint32_t& media_engine_count, uint32_t& meida_enhancement_engine_count, int32_t deviceId) noexcept;
+
         void toGetSimpleEccState(uint8_t& current, uint8_t& pending) noexcept;
         uint32_t toGetDeviceId(const zes_device_handle_t& device) noexcept;
         uint32_t toGetDevicePowerLimit(const zes_device_handle_t& device) noexcept;
