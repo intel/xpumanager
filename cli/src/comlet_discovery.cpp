@@ -385,6 +385,7 @@ static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> 
         js["number_of_fabric_ports"] = XPUM_TABLE_HIDE_TAG;
         js["max_fabric_port_speed"] = XPUM_TABLE_HIDE_TAG;
         js["number_of_lanes_per_fabric_port"] = XPUM_TABLE_HIDE_TAG;
+        js["oam_socket_id"] = XPUM_TABLE_HIDE_TAG;
     }
     CharTable table(ComletConfigDiscoveryDetailed, js);
     table.show(out);
