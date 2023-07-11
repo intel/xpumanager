@@ -1730,6 +1730,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkTopology() {
             componentJson["local_cpu_affinity"] = topoInfo[i].localDevice.cpuAffinity;
             componentJson["remote_device_id"] = topoInfo[i].remoteDevice.deviceId;
             componentJson["remote_subdevice_id"] = topoInfo[i].remoteDevice.subdeviceId;
+            componentJson["max_bit_rate"] = topoInfo[i].maxBitRate;
             std::string linkType;
             if (topoInfo[i].linkType == XPUM_LINK_SELF) {
                 linkType = "S";

@@ -2475,6 +2475,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                 linkType = "Unknown";
             }
             info->set_linktype(linkType);
+            info->set_maxbitrate(topoInfo[i].maxBitRate);
         }
     }
 

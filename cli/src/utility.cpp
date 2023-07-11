@@ -151,4 +151,20 @@ bool isFileExists(const char* path) {
     return ifs.good();
 }
 
+std::string getKeyNumberValue(std::string key, const nlohmann::json &item) {
+    auto sub = item.find(key);
+    if (sub != item.end()) {
+        return std::to_string((uint32_t)sub.value());
+    }
+    return "";
+}
+
+std::string getKeyStringValue(std::string key, const nlohmann::json &item) {
+    auto sub = item.find(key);
+    if (sub != item.end()) {
+        return sub.value();
+    }
+    return "";
+}
+
 }// end namespace xpum::cli

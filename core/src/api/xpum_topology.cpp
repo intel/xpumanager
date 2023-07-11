@@ -184,6 +184,7 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
                 setXelinkTransfer(topoInfos, info);
             }
             currentInfo->linkPorts[localPort.portNumber - 1] = info.linkPorts[localPort.portNumber - 1];
+            currentInfo->maxBitRate = info.maxBitRate;
             //XPUM_LOG_INFO("bFound info.linkType == XPUM_LINK_XE");
         }
         //XPUM_LOG_INFO("bFound last");
@@ -232,21 +233,25 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 
+            topoInfo.maxBitRate = -1;
+
             if (fabricPorts[x].enabled && fabricPorts[x].healthy && fabricPorts[x].fabric_existing) {
                 if (fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId) {
                     topoInfo.linkType = XPUM_LINK_XE;
-                    //XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}",
-                    //fabricPorts[x].deviceId, fabricPorts[x].localPortProp.subdeviceId,
-                    //fabricPorts[x].localPortProp.portId.fabricId,
-                    //fabricPorts[x].localPortProp.portId.attachId, fabricPorts[x].localPortProp.portId.portNumber,
-                    //fabricPorts[y].deviceId, fabricPorts[y].localPortProp.subdeviceId,
-                    //fabricPorts[y].localPortProp.portId.fabricId, fabricPorts[y].localPortProp.portId.attachId,
-                    //fabricPorts[y].localPortProp.portId.portNumber
-                    //);
+                    XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}",
+                                   fabricPorts[x].deviceId, fabricPorts[x].localPortProp.subdeviceId,
+                                   fabricPorts[x].localPortProp.portId.fabricId,
+                                   fabricPorts[x].localPortProp.portId.attachId, fabricPorts[x].localPortProp.portId.portNumber,
+                                   fabricPorts[y].deviceId, fabricPorts[y].localPortProp.subdeviceId,
+                                   fabricPorts[y].localPortProp.portId.fabricId, fabricPorts[y].localPortProp.portId.attachId,
+                                   fabricPorts[y].localPortProp.portId.portNumber);
                     topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber - 1] = std::min(
                         fabricPorts[x].localPortProp.maxRxSpeed.width, fabricPorts[x].localPortProp.maxTxSpeed.width);
-                    //XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{} :LaneCount:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
+                    // XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{} :LaneCount:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
                     // fabricPorts[x].localPortProp.maxTxSpeed.width, topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber-1]);
+                    topoInfo.maxBitRate = fabricPorts[x].localPortProp.maxTxSpeed.bitRate;
+                    XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{} :LaneCount:{}", fabricPorts[x].localPortProp.maxRxSpeed.bitRate,
+                                   fabricPorts[x].localPortProp.maxTxSpeed.bitRate, topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber - 1]);
                 }
             }
 

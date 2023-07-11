@@ -324,6 +324,12 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
+            case XPUM_METRIC_NOT_SUPPORTED:
+                response->set_errormsg("Metric not supported");
+                break;
+            case XPUM_METRIC_NOT_ENABLED:
+                response->set_errormsg("Metric not enabled");
+                break;
             default:
                 response->set_errormsg("Fail to get fabric throughput statistics data count");
                 break;
@@ -337,6 +343,12 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
+                break;
+            case XPUM_METRIC_NOT_SUPPORTED:
+                response->set_errormsg("Metric not supported");
+                break;
+            case XPUM_METRIC_NOT_ENABLED:
+                response->set_errormsg("Metric not enabled");
                 break;
             default:
                 response->set_errormsg("Fail to get fabric throughput statistics");

@@ -646,7 +646,7 @@ typedef struct xpum_device_fabric_throughput_stats_t {
     uint32_t remote_device_id;          ///< remote device id
     uint32_t remote_device_tile_id;     ///< remote tile id
     xpum_fabric_throughput_type_t type; ///< fabric throughput type
-    uint64_t value;                     ///< The value
+    uint64_t value;                     ///< The value, in B/s
     uint64_t accumulated;               ///< The accumulated value for counter type
     uint64_t min;                       ///< The min value since last call
     uint64_t avg;                       ///< The average value since last call
@@ -964,6 +964,7 @@ typedef struct xpum_xelink_topo_info {
     xpum_xelink_unit remoteDevice;
     xpum_xelink_type_t linkType;
     uint8_t linkPorts[XPUM_MAX_XELINK_PORT];
+    int64_t maxBitRate;
 } xpum_xelink_topo_info;
 
 typedef enum xpum_ras_type_enum {

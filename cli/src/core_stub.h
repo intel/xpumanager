@@ -76,6 +76,7 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId)=0;
     virtual std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId)=0;
     virtual std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId)=0;
+    virtual std::unique_ptr<nlohmann::json> getXelinkThroughputAndUtilMatrix()=0;
     //config related interface
     virtual std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId)=0;
     virtual std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2)=0;

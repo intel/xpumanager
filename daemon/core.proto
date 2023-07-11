@@ -944,6 +944,7 @@ message XpumXelinkTopoInfoArray{
         XelinkTopoUnit remoteDevice = 2;
         string linkType = 3;    
         repeated uint32 linkPortList = 4;
+        int64 maxBitRate = 5;
     }
     repeated XelinkTopoInfo topoInfo=1;
     string errorMsg = 4;

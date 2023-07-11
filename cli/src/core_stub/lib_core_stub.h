@@ -76,6 +76,7 @@ class LibCoreStub : public CoreStub {
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId);
     std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId);
+    std::unique_ptr<nlohmann::json> getXelinkThroughputAndUtilMatrix();
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2);

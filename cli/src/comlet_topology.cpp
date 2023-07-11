@@ -106,22 +106,6 @@ static void showDeviceTopology(std::ostream &out, std::shared_ptr<nlohmann::json
     table.show(out);
 }
 
-std::string ComletTopology::getKeyNumberValue(std::string key, const nlohmann::json &item) {
-    auto sub = item.find(key);
-    if (sub != item.end()) {
-        return std::to_string((uint32_t)sub.value());
-    }
-    return "";
-}
-
-std::string ComletTopology::getKeyStringValue(std::string key, const nlohmann::json &item) {
-    auto sub = item.find(key);
-    if (sub != item.end()) {
-        return sub.value();
-    }
-    return "";
-}
-
 std::string ComletTopology::getPortList(const nlohmann::json &item) {
     std::string key = "port_list";
     std::string result = "";
