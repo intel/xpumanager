@@ -44,6 +44,8 @@ linux_os_release_t getOsRelease();
 
 bool isFileExists(const char* path);
 
+std::string roundDouble(double r, int precision);
+
 std::string getKeyNumberValue(std::string key, const nlohmann::json &item);
 
 std::string getKeyStringValue(std::string key, const nlohmann::json &item);

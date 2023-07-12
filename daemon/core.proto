@@ -164,6 +164,7 @@ message DiagnosticsComponentInfo{
     DIAG_PERFORMANCE_MEMORY_ALLOCATION = 11;
     DIAG_MEMORY_ERROR = 12;
     DIAG_LIGHT_CODEC = 13;
+    DIAG_XE_LINK_THROUGHPUT = 14;
   }
   Type type = 1;
   bool finished = 2;
@@ -206,6 +207,25 @@ message DiagnosticsMediaCodecInfo{
 
 message DiagnosticsMediaCodecInfoArray{
     repeated DiagnosticsMediaCodecInfo dataList = 1;
+    string errorMsg = 2;
+    int32 errorNo = 3;
+}
+
+message DiagnosticsXeLinkThroughputInfo{
+    int32 deviceId = 1;
+    int32 srcDeviceId = 2;
+    int32 srcTileId = 3;
+    int32 srcPortId = 4;
+    int32 dstDeviceId = 5;
+    int32 dstTileId = 6;
+    int32 dstPortId = 7;
+    double currentSpeed = 8;
+    double maxSpeed = 9;
+    double threshold = 10;
+}
+
+message DiagnosticsXeLinkThroughputInfoArray{
+    repeated DiagnosticsXeLinkThroughputInfo dataList = 1;
     string errorMsg = 2;
     int32 errorNo = 3;
 }
@@ -1112,6 +1132,7 @@ service XpumCoreService {
     rpc runStress( RunStressRequest ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );
+    rpc getDiagnosticsXeLinkThroughputResult ( DeviceId ) returns ( DiagnosticsXeLinkThroughputInfoArray );
     rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
     rpc checkStress( CheckStressRequest ) returns ( CheckStressResponse );
     rpc precheck ( PrecheckRequest ) returns ( PrecheckComponentInfoListResponse );

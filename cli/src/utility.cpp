@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <string>
 #include <regex>
+#include <sstream>
 #include <iomanip>
 #include <fstream>
 
@@ -149,6 +150,12 @@ linux_os_release_t getOsRelease() {
 bool isFileExists(const char* path) {
     std::ifstream ifs(path);
     return ifs.good();
+}
+
+std::string roundDouble(double r, int precision) {
+    std::stringstream buffer;
+    buffer << std::fixed << std::setprecision(precision) << r;
+    return buffer.str();
 }
 
 std::string getKeyNumberValue(std::string key, const nlohmann::json &item) {

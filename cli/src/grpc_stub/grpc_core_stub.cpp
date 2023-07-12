@@ -416,6 +416,9 @@ static std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type
         case DiagnosticsComponentInfo_Type_DIAG_MEMORY_ERROR:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_MEMORY_ERROR" : "Memory Error");
             break;
+        case DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_XE_LINK_THROUGHPUT" : "Xe Link Throughput");
+            break;
         default:
             break;
     }
@@ -570,6 +573,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(int deviceId,
                 if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
                     && response.componentinfo(i).result() == DIAG_RESULT_PASS) {
                     componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.deviceid(), rawComponentTypeStr))["media_codec_list"];
+                }            
+                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT
+                    && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
+                    auto json = getDiagnosticsXeLinkThroughputResult(response.deviceid(), rawComponentTypeStr);
+                    if ((*json)["xe_link_throughput_list_count"] > 0) {
+                        componentJson["xe_link_throughput_list"] = (*json)["xe_link_throughput_list"];
+                        componentJson["xe_link_throughput_list_count"] = (*json)["xe_link_throughput_list_count"];
+                    }
                 }                
                 componentJsonList.push_back(componentJson);
             }
@@ -608,6 +619,51 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsMediaCodecResult(int
                 mediaPerfJsonList.push_back(perfJson); 
             }
             (*json)["media_codec_list"] = mediaPerfJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
+std::shared_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr) {
+    auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceId request;
+    request.set_id(deviceId);
+    DiagnosticsXeLinkThroughputInfoArray response;
+    grpc::Status status = stub->getDiagnosticsXeLinkThroughputResult(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> xeLinkThroughputJsonList;
+            for (int i = 0; i < response.datalist_size(); ++i) {
+                auto xeLinkThroughput = nlohmann::json();
+                if (rawFpsStr) {
+                    xeLinkThroughput["device_id"] = response.datalist(i).deviceid();
+                    xeLinkThroughput["src_device_id"] = response.datalist(i).srcdeviceid();
+                    xeLinkThroughput["src_tile_id"] = response.datalist(i).srctileid();
+                    xeLinkThroughput["src_port_id"] = response.datalist(i).srcportid();
+                    xeLinkThroughput["dst_device_id"] = response.datalist(i).dstdeviceid();
+                    xeLinkThroughput["dst_tile_id"] = response.datalist(i).dsttileid();
+                    xeLinkThroughput["dst_port_id"] = response.datalist(i).dstportid();
+                    xeLinkThroughput["current_speed"] = response.datalist(i).currentspeed();
+                    xeLinkThroughput["max_speed"] = response.datalist(i).maxspeed();
+                    xeLinkThroughput["threshold"] = response.datalist(i).threshold();
+                } else {
+                    xeLinkThroughput["xe_link_throughput"] = " GPU " + std::to_string(response.datalist(i).srcdeviceid()) + "/" 
+                    + std::to_string(response.datalist(i).srctileid()) + " port " + std::to_string(response.datalist(i).srcportid()) 
+                    + " to GPU " + std::to_string(response.datalist(i).dstdeviceid()) + "/" 
+                    + std::to_string(response.datalist(i).dsttileid()) + " port " + std::to_string(response.datalist(i).dstportid()) 
+                    + ": " + roundDouble(response.datalist(i).currentspeed(), 3) + " GBPS. Threshold: " + roundDouble(response.datalist(i).threshold(), 3) + " GBPS.";
+                }
+                xeLinkThroughputJsonList.push_back(xeLinkThroughput); 
+            }
+            (*json)["xe_link_throughput_list"] = xeLinkThroughputJsonList;
+            (*json)["xe_link_throughput_list_count"] = response.datalist_size();
         } else {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
@@ -742,6 +798,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResultByGroup(uint32
                         && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_PASS) {
                         componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.taskinfo(i).deviceid(), rawComponentTypeStr))["media_codec_list"];
                     } 
+                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT
+                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
+                        auto json = getDiagnosticsXeLinkThroughputResult(response.taskinfo(i).deviceid(), rawComponentTypeStr);
+                        if ((*json)["xe_link_throughput_list_count"] > 0) {
+                            componentJson["xe_link_throughput_list"] = (*json)["xe_link_throughput_list"];
+                            componentJson["xe_link_throughput_list_count"] = (*json)["xe_link_throughput_list_count"];
+                        }
+                    }   
                     componentJsonList.push_back(componentJson);
                 }
                 deviceInfoJson["component_list"] = componentJsonList;

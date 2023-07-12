@@ -1970,6 +1970,22 @@ xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
     return Core::instance().getDiagnosticManager()->getDiagnosticsMediaCodecResult(deviceId, resultList, count);
 }
 
+xpum_result_t xpumGetDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId,
+                                                xpum_diag_xe_link_throughput_t resultList[],
+                                                int *count) {
+    xpum_result_t ret = Core::instance().apiAccessPreCheck();
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+
+    ret = validateDeviceId(deviceId);
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+    
+    return Core::instance().getDiagnosticManager()->getDiagnosticsXeLinkThroughputResult(deviceId, resultList, count);
+}
+
 void convertStandbyData(Standby &src, xpum_standby_data_t *des) {
     des->type = (xpum_standby_type_t)src.getType();
     des->mode = (xpum_standby_mode_t)src.getMode();

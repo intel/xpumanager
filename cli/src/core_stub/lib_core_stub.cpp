@@ -22,6 +22,7 @@
 #include "internal_api.h"
 #include "lib_core_stub.h"
 #include "exit_code.h"
+#include "utility.h"
 
 #include <iostream>
 
@@ -275,6 +276,9 @@ static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool r
         case xpum_diag_task_type_t::XPUM_DIAG_MEMORY_ERROR:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_MEMORY_ERROR" : "Memory Error");
             break;
+        case xpum_diag_task_type_t::XPUM_DIAG_XE_LINK_THROUGHPUT:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_XE_LINK_THROUGHPUT" : "Xe Link Throughput");
+            break;
         default:
             break;
     }
@@ -448,6 +452,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
                 && task_info.componentList[i].result == XPUM_DIAG_RESULT_PASS) {
                 componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(task_info.deviceId, rawComponentTypeStr))["media_codec_list"];
             }
+            if (task_info.componentList[i].type == XPUM_DIAG_XE_LINK_THROUGHPUT 
+                && task_info.componentList[i].result == XPUM_DIAG_RESULT_FAIL) {
+                auto json = getDiagnosticsXeLinkThroughputResult(task_info.deviceId, rawComponentTypeStr);
+                if ((*json)["xe_link_throughput_list_count"] > 0) {
+                    componentJson["xe_link_throughput_list"] = (*json)["xe_link_throughput_list"];
+                    componentJson["xe_link_throughput_list_count"] = (*json)["xe_link_throughput_list_count"];
+                }
+            }
             componentJsonList.push_back(componentJson);
         }
         (*json)["component_list"] = componentJsonList;
@@ -509,6 +521,58 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsMediaCodecResult(int 
                 (*json)["errno"] = errorNumTranslate(res);
                 break;
         }
+    }
+
+    return json;
+}
+
+std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr) {
+    auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
+    int count = 64;
+    xpum_diag_xe_link_throughput_t resultList[count];
+    xpum_result_t res = xpumGetDiagnosticsXeLinkThroughputResult(deviceId, resultList, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> xeLinkThroughputJsonList;
+        for (int i = 0; i < count; ++i) {
+            auto xeLinkThroughput = nlohmann::json();
+            if (rawFpsStr) {
+                xeLinkThroughput["device_id"] = resultList[i].deviceId;
+                xeLinkThroughput["src_device_id"] = resultList[i].srcDeviceId;
+                xeLinkThroughput["src_tile_id"] = resultList[i].srcTileId;
+                xeLinkThroughput["src_port_id"] = resultList[i].srcPortId;
+                xeLinkThroughput["dst_device_id"] = resultList[i].dstDeviceId;
+                xeLinkThroughput["dst_tile_id"] = resultList[i].dstTileId;
+                xeLinkThroughput["dst_port_id"] = resultList[i].dstPortId;
+                xeLinkThroughput["current_speed"] = resultList[i].currentSpeed;
+                xeLinkThroughput["max_speed"] = resultList[i].maxSpeed;
+                xeLinkThroughput["threshold"] = resultList[i].threshold;
+            } else {
+                xeLinkThroughput["xe_link_throughput"] = " GPU " + std::to_string(resultList[i].srcDeviceId) + "/" 
+                + std::to_string(resultList[i].srcTileId) + " port " + std::to_string(resultList[i].srcPortId) 
+                + " to GPU " + std::to_string(resultList[i].dstDeviceId) + "/" 
+                + std::to_string(resultList[i].dstTileId) + " port " + std::to_string(resultList[i].dstPortId) 
+                + ": " + roundDouble(resultList[i].currentSpeed, 3) + " GBPS. Threshold: " + roundDouble(resultList[i].threshold, 3) + " GBPS.";
+            }
+            xeLinkThroughputJsonList.push_back(xeLinkThroughput); 
+        }
+        (*json)["xe_link_throughput_list"] = xeLinkThroughputJsonList;
+        (*json)["xe_link_throughput_list_count"] = count;
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                (*json)["error"] = "task not found";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
     }
 
     return json;

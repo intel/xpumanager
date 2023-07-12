@@ -44,6 +44,9 @@ public:
     virtual ::grpc::Status getDiagnosticsMediaCodecResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsMediaCodecInfoArray* response) {
         return PD;
     }
+    virtual ::grpc::Status getDiagnosticsXeLinkThroughputResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsXeLinkThroughputInfoArray* response) {
+        return PD;
+    }
     virtual ::grpc::Status getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request, ::DiagnosticsGroupTaskInfo* response) override {
         return PD;
     }

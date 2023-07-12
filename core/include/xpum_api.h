@@ -932,6 +932,21 @@ XPUM_API xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t devic
                                                 int *count);
 
 /**
+ * @brief Get diagnostics xe link throughput result
+ * 
+ * @param deviceId          IN: The device id to query diagnostics xe link throughput result
+ * @param resultList       OUT: The result of diagnostics xe link throughput result run on device with \a deviceId
+ * @param count         IN/OUT: When \a resultList is NULL, \a count will be filled with the number of available entries, and return. When \a resultList is not NULL, \a count denotes the length of \a resultList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ * @note Support Platform: Linux
+ */
+XPUM_API xpum_result_t xpumGetDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId,
+                                                xpum_diag_xe_link_throughput_t resultList[],
+                                                int *count);
+
+/**
  * @brief Run stress test on GPU
  * This function will return immediately. To check status of a stress test , call \ref xpumCheckStress
  * 

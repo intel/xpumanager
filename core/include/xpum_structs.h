@@ -432,6 +432,9 @@ typedef enum xpum_diag_task_type_enum {
     // Not in level diagnostic
     XPUM_DIAG_LIGHT_CODEC = 13,
 
+    // level 3
+    XPUM_DIAG_XE_LINK_THROUGHPUT = 14,
+
     XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 
@@ -486,6 +489,19 @@ typedef struct xpum_diag_media_codec_metrics_t {
     xpum_media_resolution_t resolution;
     char fps[XPUM_MAX_STR_LENGTH];
 } xpum_diag_media_codec_metrics_t;
+
+typedef struct xpum_diag_xe_link_throughput_t {
+    xpum_device_id_t deviceId;
+    xpum_device_id_t srcDeviceId;
+    xpum_device_tile_id_t srcTileId;
+    int32_t srcPortId;
+    xpum_device_id_t dstDeviceId;
+    xpum_device_tile_id_t dstTileId;
+    int32_t dstPortId;
+    double currentSpeed;        // GBPS  
+    double maxSpeed;           // GBPS
+    double threshold;          // GBPS  
+} xpum_diag_xe_link_throughput_t;
 /**************************************************************************/
 /**
  * Definitions for agent setting

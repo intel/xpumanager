@@ -54,6 +54,9 @@ static CharTableConfig ComletConfigDiagnosticDevice(R"({
             ]},
             { "value": "media_codec_list[]", "subrow": true, "subs": [
                 { "label": "", "value": "fps" }
+            ]},
+            { "value": "xe_link_throughput_list[]", "subrow": true, "subs": [
+                { "label": "", "value": "xe_link_throughput" }
             ]}
         ]]
     }]
@@ -84,6 +87,9 @@ static CharTableConfig ComletConfigSpecificDiagnosticDevice(R"({
             ]},
             { "value": "media_codec_list[]", "subrow": true, "subs": [
                 { "label": "", "value": "fps" }
+            ]},
+            { "value": "xe_link_throughput_list[]", "subrow": true, "subs": [
+                { "label": "", "value": "xe_link_throughput" }
             ]}
         ]]
     }]
@@ -141,7 +147,8 @@ std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATI
                                                 {5, XPUM_DIAG_INTEGRATION_PCIE}, 
                                                 {6, XPUM_DIAG_PERFORMANCE_POWER},
                                                 {7, XPUM_DIAG_COMPUTATION},
-                                                {8, XPUM_DIAG_LIGHT_CODEC}};
+                                                {8, XPUM_DIAG_LIGHT_CODEC},
+                                                {9, XPUM_DIAG_XE_LINK_THROUGHPUT}};
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
@@ -188,7 +195,8 @@ Scanning would start from the latest boot if it is not specified.");
       5. PCIe Bandwidth\n\
       6. Power\n\
       7. Computation functional test\n\
-      8. Media Codec functional test");
+      8. Media Codec functional test\n\
+      9. Xe Link Throughput");
     singleTestIdList->delimiter(',');
     singleTestIdList->check(CLI::Range(1, (int)testIdToType.size()));
 

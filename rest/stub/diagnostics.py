@@ -24,6 +24,7 @@ diagnosticTypeEnumToString = {
     core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_MEMORY_ALLOCATION: "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION",
     core_pb2.DiagnosticsComponentInfo.DIAG_MEMORY_ERROR: "XPUM_DIAG_MEMORY_ERROR",
     core_pb2.DiagnosticsComponentInfo.DIAG_LIGHT_CODEC: "XPUM_DIAG_LIGHT_CODEC",
+    core_pb2.DiagnosticsComponentInfo.DIAG_XE_LINK_THROUGHPUT: "XPUM_DIAG_XE_LINK_THROUGHPUT",
 }
 
 diagnosticResultEnumToString = {
@@ -126,6 +127,26 @@ def getDiagnosticsResult(deviceId):
                     new_perf_data[fps_key] = media_codec_data.fps
                     mediaPerfList.append(new_perf_data)
                 new_component['media_codec_list'] = mediaPerfList
+        if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_XE_LINK_THROUGHPUT and component.result == core_pb2.DIAG_RESULT_FAIL:
+            xe_link_throughput_list_resp = stub.getDiagnosticsXeLinkThroughputResult(
+                core_pb2.DeviceId(id=deviceId))
+            if len(xe_link_throughput_list_resp.errorMsg) == 0 and len(xe_link_throughput_list_resp.dataList) > 1:
+                xeLinkThroughputList = []
+                for xe_link_throughput_data in xe_link_throughput_list_resp.dataList:
+                    new_xe_link_throughput_data = dict()
+                    new_xe_link_throughput_data["device_id"] = xe_link_throughput_data.deviceId
+                    new_xe_link_throughput_data["src_device_id"] = xe_link_throughput_data.srcDeviceId
+                    new_xe_link_throughput_data["src_tile_id"] = xe_link_throughput_data.srcTileId
+                    new_xe_link_throughput_data["src_port_id"] = xe_link_throughput_data.srcPortId
+                    new_xe_link_throughput_data["dst_device_id"] = xe_link_throughput_data.dstDeviceId
+                    new_xe_link_throughput_data["dst_tile_id"] = xe_link_throughput_data.dstTileId
+                    new_xe_link_throughput_data["dst_port_id"] = xe_link_throughput_data.dstPortId
+                    new_xe_link_throughput_data["current_speed"] = xe_link_throughput_data.currentSpeed
+                    new_xe_link_throughput_data["max_speed"] = xe_link_throughput_data.maxSpeed
+                    new_xe_link_throughput_data["threshold"] = xe_link_throughput_data.threshold
+                    xeLinkThroughputList.append(new_xe_link_throughput_data)
+                new_component['xe_link_throughput_list'] = xeLinkThroughputList
+                new_component['xe_link_throughput_list_count'] = len(xe_link_throughput_list_resp.dataList)
         componentList.append(new_component)
     data['component_list'] = componentList
 
@@ -191,6 +212,26 @@ def getDiagnosticsResultByGroup(groupId):
                         new_perf_data[fps_key] = media_codec_data.fps
                         mediaPerfList.append(new_perf_data)
                     new_component['media_codec_list'] = mediaPerfList
+            if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_XE_LINK_THROUGHPUT and component.result == core_pb2.DIAG_RESULT_FAIL:
+                xe_link_throughput_list_resp = stub.getDiagnosticsXeLinkThroughputResult(
+                    core_pb2.DeviceId(id=diagTaskInfo.deviceId))
+                if len(xe_link_throughput_list_resp.errorMsg) == 0 and len(xe_link_throughput_list_resp.dataList) > 1:
+                    xeLinkThroughputList = []
+                    for xe_link_throughput_data in xe_link_throughput_list_resp.dataList:
+                        new_xe_link_throughput_data = dict()
+                        new_xe_link_throughput_data["device_id"] = xe_link_throughput_data.deviceId
+                        new_xe_link_throughput_data["src_device_id"] = xe_link_throughput_data.srcDeviceId
+                        new_xe_link_throughput_data["src_tile_id"] = xe_link_throughput_data.srcTileId
+                        new_xe_link_throughput_data["src_port_id"] = xe_link_throughput_data.srcPortId
+                        new_xe_link_throughput_data["dst_device_id"] = xe_link_throughput_data.dstDeviceId
+                        new_xe_link_throughput_data["dst_tile_id"] = xe_link_throughput_data.dstTileId
+                        new_xe_link_throughput_data["dst_port_id"] = xe_link_throughput_data.dstPortId
+                        new_xe_link_throughput_data["current_speed"] = xe_link_throughput_data.currentSpeed
+                        new_xe_link_throughput_data["max_speed"] = xe_link_throughput_data.maxSpeed
+                        new_xe_link_throughput_data["threshold"] = xe_link_throughput_data.threshold
+                        xeLinkThroughputList.append(new_xe_link_throughput_data)
+                    new_component['xe_link_throughput_list'] = xeLinkThroughputList
+                    new_component['xe_link_throughput_list_count'] = len(xe_link_throughput_list_resp.dataList)
             componentList.append(new_component)
         data['component_list'] = componentList
         datas.append(data)

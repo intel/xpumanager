@@ -53,6 +53,7 @@ class GrpcCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
     std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr);
+    std::shared_ptr<nlohmann::json> getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr);
     std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
 

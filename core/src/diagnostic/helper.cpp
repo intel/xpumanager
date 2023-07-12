@@ -77,6 +77,12 @@ namespace xpum {
                         if (val > 0 && val <= 1)
                             DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = val;
                     } catch(...) { }
+                } else if (name == "XE_LINK_THROUGHPUT_USAGE_PERCENTAGE") {
+                    try {
+                        float val = std::stof(value);
+                        if (val > 0 && val <= 1)
+                            DiagnosticManager::XE_LINK_THROUGHPUT_USAGE_PERCENTAGE = val;
+                    } catch(...) { }
                 } else if (name == "NAME") {
                     current_device = value;
                 } else {

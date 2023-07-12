@@ -674,6 +674,47 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::getDiagnosticsXeLinkThroughputResult(::grpc::ServerContext* context, const ::DeviceId* request, 
+                                                                   ::DiagnosticsXeLinkThroughputInfoArray* response) {
+    int count = 64;
+    xpum_diag_xe_link_throughput_t resultList[count];
+    xpum_result_t res = xpumGetDiagnosticsXeLinkThroughputResult(request->id(), resultList, &count);
+    if (res == XPUM_OK) {
+        for (int i = 0; i < count; i++) {
+            DiagnosticsXeLinkThroughputInfo * data = response->add_datalist();
+            data->set_deviceid(resultList[i].deviceId);
+            data->set_srcdeviceid(resultList[i].srcDeviceId);
+            data->set_srctileid(resultList[i].srcTileId);
+            data->set_srcportid(resultList[i].srcPortId);
+            data->set_dstdeviceid(resultList[i].dstDeviceId);
+            data->set_dsttileid(resultList[i].dstTileId);
+            data->set_dstportid(resultList[i].dstPortId);
+            data->set_currentspeed(resultList[i].currentSpeed);
+            data->set_maxspeed(resultList[i].maxSpeed);
+            data->set_threshold(resultList[i].threshold);
+        }
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                response->set_errormsg("task not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
+    }
+    
+    response->set_errorno(res);
+
+    return grpc::Status::OK;
+}
+
 ::grpc::Status XpumCoreServiceImpl::getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request,
                                                                 ::DiagnosticsGroupTaskInfo* response) {
     int count = XPUM_MAX_NUM_DEVICES;
