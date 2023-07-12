@@ -240,7 +240,7 @@ namespace xpum {
 
     void GPUDeviceStub::toGetDeviceMediaEngineCount(const zes_device_handle_t& device, uint32_t& media_engine_count, uint32_t& meida_enhancement_engine_count, int32_t deviceId) noexcept{
         ze_result_t res;
-        uint32_t engine_grp_count;
+        uint32_t engine_grp_count = 0;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
         if (res == ZE_RESULT_SUCCESS) {
             std::vector<zes_engine_handle_t> engines(engine_grp_count);
@@ -249,6 +249,7 @@ namespace xpum {
                 for (auto& engine : engines) {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                    props.pNext = nullptr;
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
@@ -928,6 +929,7 @@ namespace xpum {
                 for (auto& engine : engines) {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                    props.pNext = nullptr;
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         switch (type) {

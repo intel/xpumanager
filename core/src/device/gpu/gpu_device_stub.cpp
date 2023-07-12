@@ -1203,7 +1203,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 }
                 }
 
-                uint32_t engine_grp_count;
+                uint32_t engine_grp_count = 0;
                 uint32_t media_engine_count = 0;
                 uint32_t meida_enhancement_engine_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
@@ -1214,10 +1214,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         for (auto& engine : engines) {
                             zes_engine_properties_t props;
                             props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                            props.pNext = nullptr;
                             XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                             if (res == ZE_RESULT_SUCCESS) {
                                 if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
+                                    XPUM_LOG_DEBUG("toDiscover addEngine {} type {}", (uint64_t)engine, props.type);
                                 }
                                 if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
                                     media_engine_count += 1;
@@ -2523,6 +2525,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_de
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (props.type == ZES_ENGINE_GROUP_ALL) {
@@ -2593,6 +2596,7 @@ std::shared_ptr<EngineCollectionMeasurementData> GPUDeviceStub::toGetEngineUtili
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_engine_stats_t snap = {};
@@ -2655,6 +2659,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (engine_group_type) {
