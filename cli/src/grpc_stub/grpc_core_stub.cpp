@@ -2078,6 +2078,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkTopology() {
                 componentJson["remote_subdevice_id"] = response.topoinfo(i).remotedevice().subdeviceid();
 
                 componentJson["link_type"] = response.topoinfo(i).linktype();
+                componentJson["max_bit_rate"] = response.topoinfo(i).maxbitrate();
 
                 int nCount = response.topoinfo(i).linkportlist_size();
                 if (nCount > 0) {
