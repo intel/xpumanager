@@ -3075,9 +3075,9 @@ xpum_result_t DiagnosticManager::getDiagnosticsXeLinkThroughputResult(xpum_devic
                 continue;
             val += 1;
         }
-    *count = val;
 
     if (resultList == NULL) {
+        *count = val;
         return XPUM_OK;
     }
 
@@ -3085,6 +3085,7 @@ xpum_result_t DiagnosticManager::getDiagnosticsXeLinkThroughputResult(xpum_devic
         return XPUM_BUFFER_TOO_SMALL;
     }
 
+    *count = val;
     int pos = 0;
     for (auto id : related_device_ids) {
         for (int i = 0; i < (int)xe_link_throughput_datas[id].size(); i++) {
