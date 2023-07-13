@@ -3143,13 +3143,34 @@ void DiagnosticManager::getXeLinkPortTransmitCounters(const ze_device_handle_t& 
         state.pNext = nullptr;
         XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesFabricPortGetState(fabric_port, &state));
         if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zesFabricPortGetState()[" + zeResultErrorCodeStr(ret) + "]");
+            // workaround for zesFabricPortGetState not ready
+            XPUM_LOG_DEBUG("failed to invoke zesFabricPortGetState() on deviceId: {}, tileId: {}, portId: {}, result: {}", 
+                        fabric_id_convert_to_device_id[properties.portId.fabricId],
+                        (int32_t)properties.portId.attachId, 
+                        (int32_t)properties.portId.portNumber,
+                        ret);
+            if (ret == ZE_RESULT_NOT_READY) {
+                int cnt = 0;
+                while (ret != ZE_RESULT_SUCCESS && cnt < 2) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesFabricPortGetState(fabric_port, &state));
+                    cnt += 1;
+                }
+            } 
+            if (ret != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_DEBUG("skip the port after retries on deviceId: {}, tileId: {}, portId: {}, result: {}", 
+                            fabric_id_convert_to_device_id[properties.portId.fabricId],
+                            (int32_t)properties.portId.attachId, 
+                            (int32_t)properties.portId.portNumber,
+                            ret);
+                continue;
+            }
         }
 
         zes_fabric_port_throughput_t fabric_port_throughput;
         XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesFabricPortGetThroughput(fabric_port, &fabric_port_throughput));
         if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zesFabricPortGetState()[" + zeResultErrorCodeStr(ret) + "]");
+            throw BaseException("zesFabricPortGetThroughput()[" + zeResultErrorCodeStr(ret) + "]");
         }
         if (state.status != ZES_FABRIC_PORT_STATUS_HEALTHY && state.status != ZES_FABRIC_PORT_STATUS_DEGRADED) {
             // remote id is invalid, so skip to the port
