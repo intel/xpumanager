@@ -14,6 +14,7 @@
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/utility.h"
+#include "api/device_model.h"
 
 #include <iomanip>
 
@@ -224,29 +225,9 @@ namespace xpum {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME, std::string("GFX_PSCBIN")));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION, fwVersion));
 
-                    uint32_t engine_grp_count;
                     uint32_t media_engine_count = 0;
                     uint32_t meida_enhancement_engine_count = 0;
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        std::vector<zes_engine_handle_t> engines(engine_grp_count);
-                        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data()));
-                        if (res == ZE_RESULT_SUCCESS) {
-                            for (auto& engine : engines) {
-                                zes_engine_properties_t props;
-                                props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                                XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
-                                if (res == ZE_RESULT_SUCCESS) {
-                                    if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
-                                        media_engine_count += 1;
-                                    }
-                                    if (props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
-                                        meida_enhancement_engine_count += 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    toGetDeviceMediaEngineCount(device, media_engine_count, meida_enhancement_engine_count, props.core.deviceId);
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
 
@@ -256,6 +237,41 @@ namespace xpum {
         }
         return p_devices;
     }
+
+    void GPUDeviceStub::toGetDeviceMediaEngineCount(const zes_device_handle_t& device, uint32_t& media_engine_count, uint32_t& meida_enhancement_engine_count, int32_t deviceId) noexcept{
+        ze_result_t res;
+        uint32_t engine_grp_count = 0;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_engine_handle_t> engines(engine_grp_count);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data()));
+            if (res == ZE_RESULT_SUCCESS) {
+                for (auto& engine : engines) {
+                    zes_engine_properties_t props;
+                    props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                    props.pNext = nullptr;
+                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
+                            media_engine_count += 1;
+                        }
+                        if (props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
+                            meida_enhancement_engine_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+        if (media_engine_count == 0 || meida_enhancement_engine_count == 0){
+            int model_type = getDeviceModelByPciDeviceId(deviceId);
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_3) {
+                media_engine_count = (media_engine_count == 0) ? 2 : media_engine_count;
+                meida_enhancement_engine_count = (meida_enhancement_engine_count == 0) ? 2 : meida_enhancement_engine_count;
+            }
+        }
+        return;
+    }
+
 
     void GPUDeviceStub::toGetDeviceSusPower(const zes_device_handle_t& device, int32_t& susPower, bool& supported) noexcept{
         ze_result_t status;
@@ -913,6 +929,7 @@ namespace xpum {
                 for (auto& engine : engines) {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                    props.pNext = nullptr;
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         switch (type) {

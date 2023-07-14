@@ -19,6 +19,7 @@
 #include <sstream>
 #include <vector>
 
+#include "device/device.h"
 #include "control/device_manager_interface.h"
 #include "data_logic/data_logic_interface.h"
 #include "diagnostic_data_type.h"
@@ -32,6 +33,15 @@ namespace xpum {
  * will be assigned a thread.
  *
  */
+
+struct DeviceInstance {
+    ze_device_handle_t device;
+    ze_driver_handle_t driver;
+    void *src_region;
+    void *dst_region;
+    ze_command_list_handle_t cmd_list;
+    ze_command_queue_handle_t cmd_queue;
+};
 
 class DiagnosticManager : public DiagnosticManagerInterface {
    public:
@@ -57,21 +67,29 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     xpum_result_t getDiagnosticsMediaCodecResult(xpum_device_id_t deviceId, xpum_diag_media_codec_metrics_t resultList[], int *count) override;
 
+    xpum_result_t getDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId, xpum_diag_xe_link_throughput_t resultList[], int *count) override;
+
     xpum_result_t runStress(xpum_device_id_t deviceId, uint32_t stressTime) override;
 
     xpum_result_t checkStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) override;
+
+    static bool isLevelDiagnosticType(xpum_diag_task_type_t type);
 
     static void doDeviceLevelDiagnosticCore(const ze_device_handle_t &ze_device,
                                        const ze_driver_handle_t &ze_driver,
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                        int gpu_total_count,
-                                       std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas);
+                                       std::vector<std::shared_ptr<Device>> devices,
+                                       std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas,
+                                       std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas);
 
     static void doDeviceMultipleSpecificDiagnosticCore(const ze_device_handle_t &ze_device,
                                        const ze_driver_handle_t &ze_driver,
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                        int gpu_total_count,
-                                       std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas);
+                                       std::vector<std::shared_ptr<Device>> devices,
+                                       std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas,
+                                       std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas);
 
     static void doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
@@ -114,8 +132,32 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                                             const ze_driver_handle_t &ze_driver,
                                                             std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
+    static void doDeviceDiagnosticXeLinkThroughput(const ze_device_handle_t &ze_device,
+                                                            const ze_driver_handle_t &ze_driver,
+                                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+                                                            std::vector<std::shared_ptr<Device>> devices,
+                                                            std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas);
+
     static void doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t type, std::string error, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
+    static std::map<std::string, std::map<std::string, int>> thresholds;
+
+    static std::map<ze_device_handle_t, std::string> device_names;
+
+    static std::string MEDIA_CODER_TOOLS_PATH;
+
+    static std::string MEDIA_CODER_TOOLS_1080P_FILE;
+
+    static std::string MEDIA_CODER_TOOLS_4K_FILE;
+
+    static std::string MEDIA_CODEC_TOOLS_LIGHT_FILE;
+
+    static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
+
+    static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
+
+    static float XE_LINK_THROUGHPUT_USAGE_PERCENTAGE;
+    
    private:
     static bool countDevEntry(const std::string &entry_name);
 
@@ -155,28 +197,21 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static std::string roundDouble(double r, int precision);
 
-    static void readConfigFile();
-
     static void stressThreadFunc(int stress_time,
                                  const ze_device_handle_t &ze_device,
                                  const ze_driver_handle_t &ze_driver,
                                  std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+    
+    static void copyMemoryDataAndCalculateXeLinkThroughput(const ze_driver_handle_t &ze_driver, std::vector<std::tuple<ze_device_handle_t, int32_t, ze_device_handle_t, int32_t>> test_pairs,
+                                                        std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas);
 
-    static std::map<std::string, std::map<std::string, int>> thresholds;
+    static void getXeLinkPortTransmitCounters(const ze_device_handle_t& ze_device, int32_t device_id, std::map<std::vector<int32_t>, uint64_t>& tx_counters, double& max_speed);
 
-    static std::map<ze_device_handle_t, std::string> device_names;
+    // zes_fabric_port_id_t.fabricId to xpum deviceId, each device has a unique fabricId
+    static std::map<uint32_t, int32_t> fabric_id_convert_to_device_id;
 
-    static std::string MEDIA_CODER_TOOLS_PATH;
-
-    static std::string MEDIA_CODER_TOOLS_1080P_FILE;
-
-    static std::string MEDIA_CODER_TOOLS_4K_FILE;
-
-    static std::string MEDIA_CODEC_TOOLS_LIGHT_FILE;
-
-    static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
-
-    static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
+    // device id to its neighbors accessed by xe link
+    static std::map<int32_t, std::set<int32_t>> device_id_link_to_device_ids;
 
     static const std::string COMPONENT_TYPE_NOT_SUPPORTED;
 
@@ -186,7 +221,9 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> diagnostic_task_infos;
 
-    std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>> media_codec_perf_datas; 
+    std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>> media_codec_perf_datas;
+    
+    std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>> xe_link_throughput_datas; 
 
     std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> stress_task_map;
 

@@ -53,11 +53,15 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
     std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr);
+    std::shared_ptr<nlohmann::json> getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr);
     std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
     std::unique_ptr<nlohmann::json> checkStress(int deviceId);
 
+    std::unique_ptr<nlohmann::json> precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> getPrecheckErrorTypes();
+    
     std::unique_ptr<nlohmann::json> getAllHealth();
     std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType);
     std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId, int componentType);
@@ -73,6 +77,7 @@ class LibCoreStub : public CoreStub {
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId);
     std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId);
+    std::unique_ptr<nlohmann::json> getXelinkThroughputAndUtilMatrix();
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2);

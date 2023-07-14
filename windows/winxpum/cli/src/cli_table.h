@@ -15,6 +15,7 @@
 #include <regex>
 
 #define TABLE_COLUMN_AUTO           -1
+#define XPUM_TABLE_HIDE_TAG "xpum_table_hide_tag"
 
 inline void output_repeat_char(std::ostream& out, const char ch, const unsigned int times) {
     for (unsigned int i = 0; i < times; i++) {
@@ -355,6 +356,10 @@ public:
 
     inline const bool isSubRow() const {
         return subrow;
+    }
+
+    inline const nlohmann::json getvalue(const nlohmann::json& obj) const {
+        return value.apply(obj);
     }
 };
 

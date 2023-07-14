@@ -19,6 +19,8 @@ struct ComletStatisticsOptions {
     bool showEuMetrics = false;
     bool showRASMetrics = false;
     uint32_t groupId = 0;
+    bool xelinkThroughputMatrix = false;
+    bool xelinkUtilMatrix = false;
 };
 
 class ComletStatistics : public ComletBase {
@@ -56,5 +58,9 @@ class ComletStatistics : public ComletBase {
 
    private:
     std::unique_ptr<ComletStatisticsOptions> opts;
+
+    void printXelinkTable(std::shared_ptr<nlohmann::json> json);
+    void printHead(std::string head[], int count, int headsize, int rowsize);
+    void printContent(std::string head[], const nlohmann::json &table, int count, int headsize, int rowsize);
 };
 } // end namespace xpum::cli

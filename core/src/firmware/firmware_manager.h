@@ -105,6 +105,8 @@ class FirmwareManager {
     static std::string transGfxFwStatusToString(gfx_fw_status::GfxFwStatus status);
     
     xpum_result_t getAMCSerialNumbersByRiserSlot(uint8_t riser, uint8_t slot, std::string &serialNumber);
+
+    void credentialCheckIfFail(AmcCredential credential, std::string& errMsg);
 };
 
 std::vector<char> readImageContent(const char* filePath);

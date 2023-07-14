@@ -40,8 +40,6 @@ class ComletTopology : public ComletBase {
 
     void showXelinkTopology(std::shared_ptr<nlohmann::json> json);
     void printXelinkTable(const nlohmann::json &table);
-    std::string getKeyNumberValue(std::string key, const nlohmann::json &item);
-    std::string getKeyStringValue(std::string key, const nlohmann::json &item);
     std::string getPortList(const nlohmann::json &item);
     void printHead(std::string head[], int count, int headsize, int rowsize);
     void printContent(std::string head[], const nlohmann::json &table, int count, int headsize, int rowsize);

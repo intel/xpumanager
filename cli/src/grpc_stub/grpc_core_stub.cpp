@@ -416,6 +416,9 @@ static std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type
         case DiagnosticsComponentInfo_Type_DIAG_MEMORY_ERROR:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_MEMORY_ERROR" : "Memory Error");
             break;
+        case DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_XE_LINK_THROUGHPUT" : "Xe Link Throughput");
+            break;
         default:
             break;
     }
@@ -570,6 +573,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(int deviceId,
                 if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
                     && response.componentinfo(i).result() == DIAG_RESULT_PASS) {
                     componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.deviceid(), rawComponentTypeStr))["media_codec_list"];
+                }            
+                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT
+                    && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
+                    auto json = getDiagnosticsXeLinkThroughputResult(response.deviceid(), rawComponentTypeStr);
+                    if ((*json)["xe_link_throughput_list_count"] > 0) {
+                        componentJson["xe_link_throughput_list"] = (*json)["xe_link_throughput_list"];
+                        componentJson["xe_link_throughput_list_count"] = (*json)["xe_link_throughput_list_count"];
+                    }
                 }                
                 componentJsonList.push_back(componentJson);
             }
@@ -608,6 +619,51 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsMediaCodecResult(int
                 mediaPerfJsonList.push_back(perfJson); 
             }
             (*json)["media_codec_list"] = mediaPerfJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
+std::shared_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr) {
+    auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceId request;
+    request.set_id(deviceId);
+    DiagnosticsXeLinkThroughputInfoArray response;
+    grpc::Status status = stub->getDiagnosticsXeLinkThroughputResult(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> xeLinkThroughputJsonList;
+            for (int i = 0; i < response.datalist_size(); ++i) {
+                auto xeLinkThroughput = nlohmann::json();
+                if (rawFpsStr) {
+                    xeLinkThroughput["device_id"] = response.datalist(i).deviceid();
+                    xeLinkThroughput["src_device_id"] = response.datalist(i).srcdeviceid();
+                    xeLinkThroughput["src_tile_id"] = response.datalist(i).srctileid();
+                    xeLinkThroughput["src_port_id"] = response.datalist(i).srcportid();
+                    xeLinkThroughput["dst_device_id"] = response.datalist(i).dstdeviceid();
+                    xeLinkThroughput["dst_tile_id"] = response.datalist(i).dsttileid();
+                    xeLinkThroughput["dst_port_id"] = response.datalist(i).dstportid();
+                    xeLinkThroughput["current_speed"] = response.datalist(i).currentspeed();
+                    xeLinkThroughput["max_speed"] = response.datalist(i).maxspeed();
+                    xeLinkThroughput["threshold"] = response.datalist(i).threshold();
+                } else {
+                    xeLinkThroughput["xe_link_throughput"] = " GPU " + std::to_string(response.datalist(i).srcdeviceid()) + "/" 
+                    + std::to_string(response.datalist(i).srctileid()) + " port " + std::to_string(response.datalist(i).srcportid()) 
+                    + " to GPU " + std::to_string(response.datalist(i).dstdeviceid()) + "/" 
+                    + std::to_string(response.datalist(i).dsttileid()) + " port " + std::to_string(response.datalist(i).dstportid()) 
+                    + ": " + roundDouble(response.datalist(i).currentspeed(), 3) + " GBPS. Threshold: " + roundDouble(response.datalist(i).threshold(), 3) + " GBPS.";
+                }
+                xeLinkThroughputJsonList.push_back(xeLinkThroughput); 
+            }
+            (*json)["xe_link_throughput_list"] = xeLinkThroughputJsonList;
+            (*json)["xe_link_throughput_list_count"] = response.datalist_size();
         } else {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
@@ -742,6 +798,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResultByGroup(uint32
                         && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_PASS) {
                         componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.taskinfo(i).deviceid(), rawComponentTypeStr))["media_codec_list"];
                     } 
+                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT
+                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
+                        auto json = getDiagnosticsXeLinkThroughputResult(response.taskinfo(i).deviceid(), rawComponentTypeStr);
+                        if ((*json)["xe_link_throughput_list_count"] > 0) {
+                            componentJson["xe_link_throughput_list"] = (*json)["xe_link_throughput_list"];
+                            componentJson["xe_link_throughput_list_count"] = (*json)["xe_link_throughput_list_count"];
+                        }
+                    }   
                     componentJsonList.push_back(componentJson);
                 }
                 deviceInfoJson["component_list"] = componentJsonList;
@@ -2078,6 +2142,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkTopology() {
                 componentJson["remote_subdevice_id"] = response.topoinfo(i).remotedevice().subdeviceid();
 
                 componentJson["link_type"] = response.topoinfo(i).linktype();
+                componentJson["max_bit_rate"] = response.topoinfo(i).maxbitrate();
 
                 int nCount = response.topoinfo(i).linkportlist_size();
                 if (nCount > 0) {
@@ -2158,6 +2223,189 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::checkStress(int deviceId) {
         (*json)["error"] = status.error_message();
         (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to check stress test on device %d", deviceId);
+    }
+    return json;
+}
+
+std::string errorTypeToStr(PrecheckErrorType type) {
+    std::string ret = "Unknown";
+    switch (type)
+    {
+        case GUC_NOT_RUNNING: ret = "GuC Not Running"; break;
+        case GUC_ERROR: ret = "GuC Error"; break;
+        case GUC_INITIALIZATION_FAILED: ret = "mGuC Initialization Failed"; break;
+        case IOMMU_CATASTROPHIC_ERROR: ret = "IOMMU Catastrophic Error"; break;
+        case LMEM_NOT_INITIALIZED_BY_FIRMWARE: ret = "LMEM Not Initialized By Firmware"; break;
+        case PCIE_ERROR: ret = "PCIe Error"; break;
+        case DRM_ERROR: ret = "DRM Error"; break;
+        case GPU_HANG: ret = "GPU Hang"; break;
+        case I915_ERROR: ret = "i915 Error"; break;
+        case I915_NOT_LOADED: ret = "i915 Not Loaded"; break;
+        case LEVEL_ZERO_INIT_ERROR: ret = "Level Zero Init Error"; break;
+        case HUC_DISABLED: ret = "HuC Disabled"; break;
+        case HUC_NOT_RUNNING: ret = "HuC Not Running"; break;
+        case LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string errorCategoryToStr(PrecheckErrorCategory category) {
+    std::string ret = "Unknown";
+    switch (category)
+    {
+        case PRECHECK_ERROR_CATEGORY_HARDWARE: ret = "Hardware"; break;
+        case PRECHECK_ERROR_CATEGORY_KMD: ret = "Kernel Mode Driver"; break;
+        case PRECHECK_ERROR_CATEGORY_UMD: ret = "User Mode Driver"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string errorSeverityToStr(PrecheckErrorSeverity severity) {
+    std::string ret = "Unknown";
+    switch (severity)
+    {
+        case PRECHECK_ERROR_SEVERITY_CRITICAL: ret = "Critical"; break;
+        case PRECHECK_ERROR_SEVERITY_HIGH: ret = "High"; break;
+        case PRECHECK_ERROR_SEVERITY_MEDIUM: ret = "Medium"; break;
+        case PRECHECK_ERROR_SEVERITY_LOW: ret = "Low"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string componentTypeToStr(PrecheckComponentType component_type) {
+    std::string ret = "Unknown";
+    switch (component_type)
+    {
+        case PRECHECK_COMPONENT_TYPE_DRIVER: ret = "Driver"; break;
+        case PRECHECK_COMPONENT_TYPE_CPU: ret = "CPU"; break;
+        case PRECHECK_COMPONENT_TYPE_GPU: ret = "GPU"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string componentStatusToStr(PrecheckComponentStatus status) {
+    std::string ret = "Unknown";
+    switch (status)
+    {
+        case PRECHECK_COMPONENT_STATUS_PASS: ret = "Pass"; break;
+        case PRECHECK_COMPONENT_STATUS_FAIL: ret = "Fail"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    PrecheckRequest request;
+    request.set_onlygpu(onlyGPU);
+    request.set_sincetime(sinceTime);
+    PrecheckComponentInfoListResponse response;
+    grpc::Status status = stub->precheck(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            return json;
+        }
+        std::vector<nlohmann::json> component_list;
+        for (uint i{0}; i < response.count(); ++i) {
+        auto component_json = nlohmann::json();
+        component_json["type"] = componentTypeToStr(response.componentinfolist(i).componenttype());
+        if (rawComponentTypeStr) {
+            if (response.componentinfolist(i).componenttype() == PRECHECK_COMPONENT_TYPE_CPU)
+                component_json["id"] = response.componentinfolist(i).cpuid();
+            else if (response.componentinfolist(i).componenttype() == PRECHECK_COMPONENT_TYPE_GPU)
+                component_json["bdf"] = response.componentinfolist(i).bdf();
+            component_json["status"] = componentStatusToStr(response.componentinfolist(i).status());
+            if (response.componentinfolist(i).time() != "")
+                component_json["time"] = response.componentinfolist(i).time();
+            if (response.componentinfolist(i).errorid() > 0) {
+                component_json["error_id"] = response.componentinfolist(i).errorid();
+                component_json["error_type"] = errorTypeToStr(static_cast<PrecheckErrorType>(response.componentinfolist(i).errorid() - 1));
+            }   
+            if (response.componentinfolist(i).errordetail() != "") {
+                component_json["error_severity"] = errorSeverityToStr(response.componentinfolist(i).errorseverity());
+                component_json["error_detail"] = response.componentinfolist(i).errordetail();
+            }
+        } else {
+            std::vector<nlohmann::json> component_details;
+            if (response.componentinfolist(i).componenttype() == PRECHECK_COMPONENT_TYPE_CPU) {
+                auto id = nlohmann::json();
+                id["field_value"] = "CPU ID: " + std::to_string(response.componentinfolist(i).cpuid());
+                component_details.push_back(id);
+            } else if (response.componentinfolist(i).componenttype() == PRECHECK_COMPONENT_TYPE_GPU) {
+                auto bdf = nlohmann::json();
+                bdf["field_value"] = "BDF: " + response.componentinfolist(i).bdf();
+                component_details.push_back(bdf);
+            }
+            auto status = nlohmann::json();
+            status["field_value"] = "Status: " + componentStatusToStr(response.componentinfolist(i).status());
+            component_details.push_back(status);
+            if (response.componentinfolist(i).time() != "") {
+                auto time_json = nlohmann::json();
+                time_json["field_value"] = "Time: " + response.componentinfolist(i).time();
+                component_details.push_back(time_json);
+            }
+            if (response.componentinfolist(i).errorid() > 0) {
+                auto error_id = nlohmann::json();
+                error_id["field_value"] = "Error ID: " + std::to_string(response.componentinfolist(i).errorid());
+                component_details.push_back(error_id);
+                auto error_type = nlohmann::json();
+                error_type["field_value"] = "Error Type: " + errorTypeToStr(static_cast<PrecheckErrorType>(response.componentinfolist(i).errorid() - 1));
+                component_details.push_back(error_type);
+            }
+            if (response.componentinfolist(i).errordetail() != "") {
+                auto error_severity = nlohmann::json();
+                error_severity["field_value"] = "Error Severity: " + errorSeverityToStr(response.componentinfolist(i).errorseverity());
+                component_details.push_back(error_severity);
+                auto error_detail = nlohmann::json();
+                error_detail["field_value"] = "Error Detail: " + response.componentinfolist(i).errordetail();
+                component_details.push_back(error_detail);
+            }
+            component_json["error_details"] = component_details;
+        }
+        component_list.push_back(component_json);
+        }
+        (*json)["component_list"] = component_list;
+        (*json)["component_count"] = response.count();
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getPrecheckErrorTypes() {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    PrecheckErrorListResponse response;
+    grpc::Status status = stub->getPrecheckErrorList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            return json;
+        }
+        std::vector<nlohmann::json> error_type_list;
+        for (uint i{0}; i < response.count(); ++i) {
+            auto error_type = nlohmann::json();
+            error_type["error_id"] = response.precheckerrorlist(i).errorid();
+            error_type["error_type"] = errorTypeToStr(response.precheckerrorlist(i).errortype());
+            error_type["error_category"] = errorCategoryToStr(response.precheckerrorlist(i).errorcategory());
+            error_type["error_severity"] = errorSeverityToStr(response.precheckerrorlist(i).errorseverity());
+            error_type_list.push_back(error_type);
+        }
+        (*json)["error_type_list"] = error_type_list;
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }

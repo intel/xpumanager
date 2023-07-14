@@ -159,7 +159,8 @@ typedef enum xpum_result_enum {
     XPUM_VGPU_SYSFS_ERROR = 58,
     XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL = 59,
     XPUM_RESULT_RESET_FAIL = 60, ///< Fail to reset device
-    XPUM_API_UNSUPPORTED = 61
+    XPUM_API_UNSUPPORTED = 61,
+    XPUM_PRECHECK_INVALID_SINCETIME = 62
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -431,6 +432,9 @@ typedef enum xpum_diag_task_type_enum {
     // Not in level diagnostic
     XPUM_DIAG_LIGHT_CODEC = 13,
 
+    // level 3
+    XPUM_DIAG_XE_LINK_THROUGHPUT = 14,
+
     XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 
@@ -485,6 +489,19 @@ typedef struct xpum_diag_media_codec_metrics_t {
     xpum_media_resolution_t resolution;
     char fps[XPUM_MAX_STR_LENGTH];
 } xpum_diag_media_codec_metrics_t;
+
+typedef struct xpum_diag_xe_link_throughput_t {
+    xpum_device_id_t deviceId;
+    xpum_device_id_t srcDeviceId;
+    xpum_device_tile_id_t srcTileId;
+    int32_t srcPortId;
+    xpum_device_id_t dstDeviceId;
+    xpum_device_tile_id_t dstTileId;
+    int32_t dstPortId;
+    double currentSpeed;        // GBPS  
+    double maxSpeed;           // GBPS
+    double threshold;          // GBPS  
+} xpum_diag_xe_link_throughput_t;
 /**************************************************************************/
 /**
  * Definitions for agent setting
@@ -645,7 +662,7 @@ typedef struct xpum_device_fabric_throughput_stats_t {
     uint32_t remote_device_id;          ///< remote device id
     uint32_t remote_device_tile_id;     ///< remote tile id
     xpum_fabric_throughput_type_t type; ///< fabric throughput type
-    uint64_t value;                     ///< The value
+    uint64_t value;                     ///< The value, in B/s
     uint64_t accumulated;               ///< The accumulated value for counter type
     uint64_t min;                       ///< The min value since last call
     uint64_t avg;                       ///< The average value since last call
@@ -963,6 +980,7 @@ typedef struct xpum_xelink_topo_info {
     xpum_xelink_unit remoteDevice;
     xpum_xelink_type_t linkType;
     uint8_t linkPorts[XPUM_MAX_XELINK_PORT];
+    int64_t maxBitRate;
 } xpum_xelink_topo_info;
 
 typedef enum xpum_ras_type_enum {
@@ -1130,6 +1148,66 @@ typedef struct xpum_vgpu_function_info_t {
 
 #define XPUM_MAX_VF_NUM 128
 
+typedef enum xpum_precheck_error_category_t {
+    XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE = 0,
+    XPUM_PRECHECK_ERROR_CATEGORY_KMD = 1,
+    XPUM_PRECHECK_ERROR_CATEGORY_UMD = 2
+} xpum_precheck_error_category_t;
+
+typedef enum xpum_precheck_error_severity_t {
+    XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL = 0,
+    XPUM_PRECHECK_ERROR_SEVERITY_HIGH = 1,
+    XPUM_PRECHECK_ERROR_SEVERITY_MEDIUM = 2,
+    XPUM_PRECHECK_ERROR_SEVERITY_LOW = 3
+} xpum_precheck_error_severity_t;
+
+typedef enum xpum_precheck_error_type_t {
+    XPUM_GUC_NOT_RUNNING = 1,
+    XPUM_GUC_ERROR = 2,
+    XPUM_GUC_INITIALIZATION_FAILED = 3,
+    XPUM_IOMMU_CATASTROPHIC_ERROR = 4,
+    XPUM_LMEM_NOT_INITIALIZED_BY_FIRMWARE = 5,
+    XPUM_PCIE_ERROR = 6,
+    XPUM_DRM_ERROR = 7,
+    XPUM_GPU_HANG = 8,
+    XPUM_I915_ERROR = 9,
+    XPUM_I915_NOT_LOADED = 10,
+    XPUM_LEVEL_ZERO_INIT_ERROR = 11,
+    XPUM_HUC_DISABLED = 12,
+    XPUM_HUC_NOT_RUNNING = 13,
+    XPUM_LEVEL_ZERO_METRICS_INIT_ERROR = 14,
+} xpum_precheck_error_type_t;
+
+typedef struct xpum_precheck_error_t {
+    uint32_t errorId;
+    xpum_precheck_error_type_t errorType;
+    xpum_precheck_error_category_t errorCategory;
+    xpum_precheck_error_severity_t errorSeverity;
+} xpum_precheck_error_t;
+
+typedef enum xpum_precheck_component_type_t {
+    XPUM_PRECHECK_COMPONENT_TYPE_DRIVER = 0,
+    XPUM_PRECHECK_COMPONENT_TYPE_CPU = 1,
+    XPUM_PRECHECK_COMPONENT_TYPE_GPU = 2,
+} xpum_precheck_component_type_t;
+
+typedef enum xpum_precheck_component_status_t {
+    XPUM_PRECHECK_COMPONENT_STATUS_UNKNOWN = 0,
+    XPUM_PRECHECK_COMPONENT_STATUS_PASS = 1,
+    XPUM_PRECHECK_COMPONENT_STATUS_FAIL = 2,
+} xpum_precheck_component_status_t;
+
+typedef struct xpum_precheck_component_info_t {
+    xpum_precheck_component_type_t componentType;
+    char bdf[XPUM_MAX_STR_LENGTH];                          // for GPU and Driver
+    int32_t cpuId;                                          // only for CPU
+    xpum_precheck_component_status_t status;
+    char time[XPUM_MAX_STR_LENGTH];
+    int32_t errorId;                                        // for GPU and Driver
+    xpum_precheck_error_category_t errorCategory;
+    xpum_precheck_error_severity_t errorSeverity;
+    char errorDetail[XPUM_MAX_STR_LENGTH];
+} xpum_precheck_component_info_t;
 
 #if defined(__cplusplus)
 } // extern "C"

@@ -106,22 +106,6 @@ static void showDeviceTopology(std::ostream &out, std::shared_ptr<nlohmann::json
     table.show(out);
 }
 
-std::string ComletTopology::getKeyNumberValue(std::string key, const nlohmann::json &item) {
-    auto sub = item.find(key);
-    if (sub != item.end()) {
-        return std::to_string((uint32_t)sub.value());
-    }
-    return "";
-}
-
-std::string ComletTopology::getKeyStringValue(std::string key, const nlohmann::json &item) {
-    auto sub = item.find(key);
-    if (sub != item.end()) {
-        return sub.value();
-    }
-    return "";
-}
-
 std::string ComletTopology::getPortList(const nlohmann::json &item) {
     std::string key = "port_list";
     std::string result = "";
@@ -170,8 +154,8 @@ void ComletTopology::printXelinkTable(const nlohmann::json &table) {
     int nCount = table.size();
     int instance = sqrt(nCount);
     std::string title[instance];
-    int headsize = 12;
-    int rowsize = 20;
+    int headsize = 9;
+    int rowsize = 9;
 
     for (int i = 0; i < instance; i++) {
         title[i] = "GPU " + getKeyNumberValue("remote_device_id", table[i]) + "/" + getKeyNumberValue("remote_subdevice_id", table[i]);

@@ -687,33 +687,6 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     return res;
 }
 
-static std::string getPciName(std::string bdf) {
-    std::string cmd = "lspci -D -s " + bdf + " 2>&1|cut -d ':' -f 4";
-    std::string name;
-    char buf[BUF_SIZE];
-    FILE *pf = popen(cmd.c_str(), "r");
-    if (pf == NULL) {
-        return name;
-    }
-    if (fgets(buf, BUF_SIZE, pf) != NULL) {
-        if (strnlen(buf, BUF_SIZE) <= 0) {
-            return name;
-        } 
-        std::string line(buf+1);
-        if (line.length() > 0) {
-            if (line.at(line.length() - 1) == '\n') {
-                line.pop_back();
-            }
-            name = line;
-        }
-    }
-    pclose(pf);
-    if (name.find("Intel") == std::string::npos) {
-        name.clear();
-    }
-    return name;
-}
-
 static std::string getI915Version() {
     std::string ret = "";
     char buf[BUF_SIZE];
@@ -1116,6 +1089,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(i), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
@@ -1153,12 +1127,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::string pciName = getPciName(
-                            to_string(pci_props.address));
-                    if (pciName.length() == 0) {
-                        pciName = std::string(props.core.name);
-                    }
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, pciName));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, getDRMDevice(pci_props)));
                     auto tmpAddr = pci_props.address;
@@ -1200,8 +1168,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             func_type
                         )
                     );
-                } else {
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 }
 
                 addMemUtilizationCapAndMemProperty(device, p_gpu);
@@ -1237,7 +1203,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 }
                 }
 
-                uint32_t engine_grp_count;
+                uint32_t engine_grp_count = 0;
                 uint32_t media_engine_count = 0;
                 uint32_t meida_enhancement_engine_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
@@ -1248,10 +1214,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         for (auto& engine : engines) {
                             zes_engine_properties_t props;
                             props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                            props.pNext = nullptr;
                             XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                             if (res == ZE_RESULT_SUCCESS) {
                                 if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
+                                    XPUM_LOG_DEBUG("toDiscover addEngine {} type {}", (uint64_t)engine, props.type);
                                 }
                                 if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
                                     media_engine_count += 1;
@@ -2557,6 +2525,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_de
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (props.type == ZES_ENGINE_GROUP_ALL) {
@@ -2627,6 +2596,7 @@ std::shared_ptr<EngineCollectionMeasurementData> GPUDeviceStub::toGetEngineUtili
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_engine_stats_t snap = {};
@@ -2689,6 +2659,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (engine_group_type) {

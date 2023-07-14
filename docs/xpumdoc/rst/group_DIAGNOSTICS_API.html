@@ -149,6 +149,12 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsXeLinkThroughputResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_xe_link_throughput_t.html#xpum-doxid-structxpum-diag-xe-link-throughput-t"><span class="std std-ref">xpum_diag_xe_link_throughput_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
 XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunStress<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">uint32_t</span> <span class="n">stressTime</span>
@@ -157,6 +163,18 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCheckStress<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_task_info_t.html#xpum-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumPrecheck<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#xpum-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPrecheckErrorList<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_precheck_error_t.html#xpum-doxid-structxpum-precheck-error-t"><span class="std std-ref">xpum_precheck_error_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
 </section>
@@ -348,7 +366,37 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1gab1ed2ffc76be05fdc43d4bbbbde776de"><span id="index-8"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunStress</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1gaeefbadca3b98dbe4f742df09b3d24c5c"><span id="index-8"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsXeLinkThroughputResult</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_xe_link_throughput_t.html#xpum-doxid-structxpum-diag-xe-link-throughput-t"><span class="std std-ref">xpum_diag_xe_link_throughput_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get diagnostics xe link throughput result.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: The device id to query diagnostics xe link throughput result</p></td>
+</tr>
+<tr class="row-even"><td><p>resultList</p></td>
+<td><p>OUT: The result of diagnostics xe link throughput result run on device with <em>deviceId</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>resultList</em> is NULL, <em>count</em> will be filled with the number of available entries, and return. When <em>resultList</em> is not NULL, <em>count</em> denotes the length of <em>resultList</em>, <em>count</em> should be equal to or larger than the number of available entries, when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1gab1ed2ffc76be05fdc43d4bbbbde776de"><span id="index-9"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunStress</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">uint32_t</span> <span class="n">stressTime</span>
     <span class="p">)</span></pre>
@@ -371,7 +419,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga87bef12e343bbbb0005261cdaee72d59"><span id="index-9"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumCheckStress</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga87bef12e343bbbb0005261cdaee72d59"><span id="index-10"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumCheckStress</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_diag_task_info_t.html#xpum-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
@@ -398,6 +446,64 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1gaf79ffd6d640fc9e397b2b540bd8916e6"><span id="index-11"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumPrecheck</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#xpum-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
+    <span class="p">)</span></pre>
+<p>Run precheck on the machine.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>resultList</p></td>
+<td><p>OUT: The component list result of precheck</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: The number of entries that <em>resultList</em> array can store, count should equal to or larger than component count; when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>onlyGPU</p></td>
+<td><p>IN: Check GPU-related error and ignore CPU error or not</p></td>
+</tr>
+<tr class="row-even"><td><p>sinceTime</p></td>
+<td><p>IN: Start time for log scanning. Scanning would start from the latest boot if it is NULL. The generic format is “YYYY-MM-DD HH:MM:SS”. Alternatively the strings “yesterday”, “today” are also understood. Relative times also may be specified, prefixed with “-” referring to times before the current time.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than component count</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga331a0d69ea377153ad1400a5ed3799ba"><span id="index-12"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPrecheckErrorList</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_precheck_error_t.html#xpum-doxid-structxpum-precheck-error-t"><span class="std std-ref">xpum_precheck_error_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get precheck error type list.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>resultList</p></td>
+<td><p>OUT: The supported precheck error list</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: The number of entries that <em>resultList</em> array can store, count should equal to or larger than error type count; when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than error type count</p></li>
+</ul>
 </section>
 </section>
 </section>

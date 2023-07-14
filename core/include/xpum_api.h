@@ -932,6 +932,21 @@ XPUM_API xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t devic
                                                 int *count);
 
 /**
+ * @brief Get diagnostics xe link throughput result
+ * 
+ * @param deviceId          IN: The device id to query diagnostics xe link throughput result
+ * @param resultList       OUT: The result of diagnostics xe link throughput result run on device with \a deviceId
+ * @param count         IN/OUT: When \a resultList is NULL, \a count will be filled with the number of available entries, and return. When \a resultList is not NULL, \a count denotes the length of \a resultList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ * @note Support Platform: Linux
+ */
+XPUM_API xpum_result_t xpumGetDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId,
+                                                xpum_diag_xe_link_throughput_t resultList[],
+                                                int *count);
+
+/**
  * @brief Run stress test on GPU
  * This function will return immediately. To check status of a stress test , call \ref xpumCheckStress
  * 
@@ -952,6 +967,39 @@ XPUM_API xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressT
  * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count);
+
+/**
+ * @brief Run precheck on the machine
+ * 
+ * @param resultList       OUT: The component list result of precheck
+ * @param count         IN/OUT: The number of entries that \a resultList array can store, 
+ *                              count should equal to or larger than component count;
+ *                              when return, the \a count will store real number of entries returned by
+ *                              \a resultList
+ * @param onlyGPU          IN:  Check GPU-related error and ignore CPU error or not
+ * @param sinceTime        IN:  Start time for log scanning. Scanning would start from the latest boot if it is NULL. The generic format is "YYYY-MM-DD HH:MM:SS".
+ *                              Alternatively the strings "yesterday", "today" are also understood.
+*                               Relative times also may be specified, prefixed with "-" referring to times before the current time.
+ * 
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than component count
+ */
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime);
+
+/**
+ * @brief Get precheck error type list
+ * 
+ * @param resultList       OUT: The supported precheck error list
+ * @param count         IN/OUT: The number of entries that \a resultList array can store, 
+ *                              count should equal to or larger than error type count;
+ *                              when return, the \a count will store real number of entries returned by
+ *                              \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than error type count
+ */
+xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count);
 
 /** @} */ // Closing for DIAGNOSTICS_API
 

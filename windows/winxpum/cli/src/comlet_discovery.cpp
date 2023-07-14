@@ -164,7 +164,26 @@ namespace xpum::cli {
     }
 
     static void showDetailedInfo(std::ostream& out, std::shared_ptr<nlohmann::json> json) {
-        CharTable table(ComletConfigDiscoveryDetailed, *json);
+        nlohmann::json js = *json;
+        std::string ver = js["pci_device_id"];
+        if (ver.length() != 0 && isATSMPlatform(ver)) {
+            js["serial_number"] = XPUM_TABLE_HIDE_TAG;
+            js["device_stepping"] = XPUM_TABLE_HIDE_TAG;
+            js["sku_type"] = XPUM_TABLE_HIDE_TAG;
+            js["pci_slot"] = XPUM_TABLE_HIDE_TAG;
+            js["oam_socket_id"] = XPUM_TABLE_HIDE_TAG;
+            js["max_command_queue_priority"] = XPUM_TABLE_HIDE_TAG;
+            js["number_of_fabric_ports"] = XPUM_TABLE_HIDE_TAG;
+            js["max_fabric_port_speed"] = XPUM_TABLE_HIDE_TAG;
+            js["number_of_lanes_per_fabric_port"] = XPUM_TABLE_HIDE_TAG;
+            js["kernel_version"] = XPUM_TABLE_HIDE_TAG;
+            js["gfx_firmware_status"] = XPUM_TABLE_HIDE_TAG;
+            js["gfx_pscbin_firmware_name"] = XPUM_TABLE_HIDE_TAG;
+            js["gfx_pscbin_firmware_version"] = XPUM_TABLE_HIDE_TAG;
+            js["amc_firmware_name"] = XPUM_TABLE_HIDE_TAG;
+            js["amc_firmware_version"] = XPUM_TABLE_HIDE_TAG;
+        }
+        CharTable table(ComletConfigDiscoveryDetailed, js);
         table.show(out);
     }
 

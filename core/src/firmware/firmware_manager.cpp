@@ -208,6 +208,7 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
     
     p_amc_manager->getAmcFirmwareVersions(param);
     amcFwErrMsg = param.errMsg;
+    credentialCheckIfFail(credential, amcFwErrMsg);
     if (param.errCode != xpum_result_t::XPUM_OK) {
         return param.errCode;
     }
@@ -245,6 +246,7 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
 
     p_amc_manager->flashAMCFirmware(param);
     flashFwErrMsg = param.errMsg;
+    credentialCheckIfFail(credential, flashFwErrMsg);
     return (xpum_result_t)param.errCode;
 }
 
@@ -258,6 +260,7 @@ xpum_result_t FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_tas
     p_amc_manager->getAMCFirmwareFlashResult(param);
 
     flashFwErrMsg = param.errMsg;
+    credentialCheckIfFail(credential, flashFwErrMsg);
 
     if (param.errCode != XPUM_OK) {
         return param.errCode;
@@ -825,6 +828,18 @@ void FirmwareManager::getFwCodeDataFlashResult(xpum_device_id_t deviceId, xpum_f
     if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
         flashFwErrMsg = param.errMsg;
         result->result = res;
+    }
+}
+
+void FirmwareManager::credentialCheckIfFail(AmcCredential credential, std::string& errMsg) {
+    if (p_amc_manager->getProtocol() != "redfish")
+        return;
+
+    if(errMsg.empty())
+        return;
+    
+    if(credential.username.empty() || credential.password.empty()){
+        errMsg = "Access denied, please specify username/password.";
     }
 }
 } // namespace xpum

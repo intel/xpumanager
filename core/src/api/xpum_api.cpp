@@ -44,6 +44,7 @@
 #include "vgpu/precheck.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
+#include "diagnostic/precheck.h"
 
 namespace xpum {
 
@@ -1969,6 +1970,22 @@ xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
     return Core::instance().getDiagnosticManager()->getDiagnosticsMediaCodecResult(deviceId, resultList, count);
 }
 
+xpum_result_t xpumGetDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId,
+                                                xpum_diag_xe_link_throughput_t resultList[],
+                                                int *count) {
+    xpum_result_t ret = Core::instance().apiAccessPreCheck();
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+
+    ret = validateDeviceId(deviceId);
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+    
+    return Core::instance().getDiagnosticManager()->getDiagnosticsXeLinkThroughputResult(deviceId, resultList, count);
+}
+
 void convertStandbyData(Standby &src, xpum_standby_data_t *des) {
     des->type = (xpum_standby_type_t)src.getType();
     des->mode = (xpum_standby_mode_t)src.getMode();
@@ -3660,6 +3677,15 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
         return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
     return Core::instance().getVgpuManager()->removeAllVf(deviceId);
+}
+
+
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime) {
+    return PrecheckManager::precheck(resultList, count, onlyGPU, sinceTime);
+}
+
+xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count) {
+    return PrecheckManager::getPrecheckErrorList(resultList, count);
 }
 
 } // end namespace xpum

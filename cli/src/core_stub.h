@@ -57,11 +57,14 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr)=0;
     virtual std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr)=0;
+    virtual std::shared_ptr<nlohmann::json> getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr)=0;
     virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime)=0;
     virtual std::unique_ptr<nlohmann::json> checkStress(int deviceId)=0;
 
+    virtual std::unique_ptr<nlohmann::json> precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr)=0;
+    virtual std::unique_ptr<nlohmann::json> getPrecheckErrorTypes()=0;
 
     virtual std::unique_ptr<nlohmann::json> getAllHealth()=0;
     virtual std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType)=0;
@@ -74,6 +77,7 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId)=0;
     virtual std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId)=0;
     virtual std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId)=0;
+    virtual std::unique_ptr<nlohmann::json> getXelinkThroughputAndUtilMatrix()=0;
     //config related interface
     virtual std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId)=0;
     virtual std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2)=0;

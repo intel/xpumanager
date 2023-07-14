@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <string>
 #include <regex>
+#include <sstream>
 #include <iomanip>
 #include <fstream>
 
@@ -149,6 +150,28 @@ linux_os_release_t getOsRelease() {
 bool isFileExists(const char* path) {
     std::ifstream ifs(path);
     return ifs.good();
+}
+
+std::string roundDouble(double r, int precision) {
+    std::stringstream buffer;
+    buffer << std::fixed << std::setprecision(precision) << r;
+    return buffer.str();
+}
+
+std::string getKeyNumberValue(std::string key, const nlohmann::json &item) {
+    auto sub = item.find(key);
+    if (sub != item.end()) {
+        return std::to_string((uint32_t)sub.value());
+    }
+    return "";
+}
+
+std::string getKeyStringValue(std::string key, const nlohmann::json &item) {
+    auto sub = item.find(key);
+    if (sub != item.end()) {
+        return sub.value();
+    }
+    return "";
 }
 
 }// end namespace xpum::cli

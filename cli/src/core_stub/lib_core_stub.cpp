@@ -22,6 +22,7 @@
 #include "internal_api.h"
 #include "lib_core_stub.h"
 #include "exit_code.h"
+#include "utility.h"
 
 #include <iostream>
 
@@ -275,6 +276,9 @@ static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool r
         case xpum_diag_task_type_t::XPUM_DIAG_MEMORY_ERROR:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_MEMORY_ERROR" : "Memory Error");
             break;
+        case xpum_diag_task_type_t::XPUM_DIAG_XE_LINK_THROUGHPUT:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_XE_LINK_THROUGHPUT" : "Xe Link Throughput");
+            break;
         default:
             break;
     }
@@ -448,6 +452,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
                 && task_info.componentList[i].result == XPUM_DIAG_RESULT_PASS) {
                 componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(task_info.deviceId, rawComponentTypeStr))["media_codec_list"];
             }
+            if (task_info.componentList[i].type == XPUM_DIAG_XE_LINK_THROUGHPUT 
+                && task_info.componentList[i].result == XPUM_DIAG_RESULT_FAIL) {
+                auto json = getDiagnosticsXeLinkThroughputResult(task_info.deviceId, rawComponentTypeStr);
+                if ((*json)["xe_link_throughput_list_count"] > 0) {
+                    componentJson["xe_link_throughput_list"] = (*json)["xe_link_throughput_list"];
+                    componentJson["xe_link_throughput_list_count"] = (*json)["xe_link_throughput_list_count"];
+                }
+            }
             componentJsonList.push_back(componentJson);
         }
         (*json)["component_list"] = componentJsonList;
@@ -509,6 +521,58 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsMediaCodecResult(int 
                 (*json)["errno"] = errorNumTranslate(res);
                 break;
         }
+    }
+
+    return json;
+}
+
+std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr) {
+    auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
+    int count = 64;
+    xpum_diag_xe_link_throughput_t resultList[count];
+    xpum_result_t res = xpumGetDiagnosticsXeLinkThroughputResult(deviceId, resultList, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> xeLinkThroughputJsonList;
+        for (int i = 0; i < count; ++i) {
+            auto xeLinkThroughput = nlohmann::json();
+            if (rawFpsStr) {
+                xeLinkThroughput["device_id"] = resultList[i].deviceId;
+                xeLinkThroughput["src_device_id"] = resultList[i].srcDeviceId;
+                xeLinkThroughput["src_tile_id"] = resultList[i].srcTileId;
+                xeLinkThroughput["src_port_id"] = resultList[i].srcPortId;
+                xeLinkThroughput["dst_device_id"] = resultList[i].dstDeviceId;
+                xeLinkThroughput["dst_tile_id"] = resultList[i].dstTileId;
+                xeLinkThroughput["dst_port_id"] = resultList[i].dstPortId;
+                xeLinkThroughput["current_speed"] = resultList[i].currentSpeed;
+                xeLinkThroughput["max_speed"] = resultList[i].maxSpeed;
+                xeLinkThroughput["threshold"] = resultList[i].threshold;
+            } else {
+                xeLinkThroughput["xe_link_throughput"] = " GPU " + std::to_string(resultList[i].srcDeviceId) + "/" 
+                + std::to_string(resultList[i].srcTileId) + " port " + std::to_string(resultList[i].srcPortId) 
+                + " to GPU " + std::to_string(resultList[i].dstDeviceId) + "/" 
+                + std::to_string(resultList[i].dstTileId) + " port " + std::to_string(resultList[i].dstPortId) 
+                + ": " + roundDouble(resultList[i].currentSpeed, 3) + " GBPS. Threshold: " + roundDouble(resultList[i].threshold, 3) + " GBPS.";
+            }
+            xeLinkThroughputJsonList.push_back(xeLinkThroughput); 
+        }
+        (*json)["xe_link_throughput_list"] = xeLinkThroughputJsonList;
+        (*json)["xe_link_throughput_list_count"] = count;
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                (*json)["error"] = "task not found";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
     }
 
     return json;
@@ -1730,6 +1794,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkTopology() {
             componentJson["local_cpu_affinity"] = topoInfo[i].localDevice.cpuAffinity;
             componentJson["remote_device_id"] = topoInfo[i].remoteDevice.deviceId;
             componentJson["remote_subdevice_id"] = topoInfo[i].remoteDevice.subdeviceId;
+            componentJson["max_bit_rate"] = topoInfo[i].maxBitRate;
             std::string linkType;
             if (topoInfo[i].linkType == XPUM_LINK_SELF) {
                 linkType = "S";
@@ -1822,6 +1887,178 @@ std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
         tasks.push_back(taskJson);
     }
     (*json)["task_list"] = tasks;
+    return json;
+}
+
+std::string errorTypeToStr(xpum_precheck_error_type_t error_type) {
+    std::string ret = "Unknown";
+    switch (error_type)
+    {
+        case XPUM_GUC_NOT_RUNNING: ret = "GuC Not Running"; break;
+        case XPUM_GUC_ERROR: ret = "GuC Error"; break;
+        case XPUM_GUC_INITIALIZATION_FAILED: ret = "mGuC Initialization Failed"; break;
+        case XPUM_IOMMU_CATASTROPHIC_ERROR: ret = "IOMMU Catastrophic Error"; break;
+        case XPUM_LMEM_NOT_INITIALIZED_BY_FIRMWARE: ret = "LMEM Not Initialized By Firmware"; break;
+        case XPUM_PCIE_ERROR: ret = "PCIe Error"; break;
+        case XPUM_DRM_ERROR: ret = "DRM Error"; break;
+        case XPUM_GPU_HANG: ret = "GPU Hang"; break;
+        case XPUM_I915_ERROR: ret = "i915 Error"; break;
+        case XPUM_I915_NOT_LOADED: ret = "i915 Not Loaded"; break;
+        case XPUM_LEVEL_ZERO_INIT_ERROR: ret = "Level Zero Init Error"; break;
+        case XPUM_HUC_DISABLED: ret = "HuC Disabled"; break;
+        case XPUM_HUC_NOT_RUNNING: ret = "HuC Not Running"; break;
+        case XPUM_LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string errorCategoryToStr(xpum_precheck_error_category_t category) {
+    std::string ret = "Unknown";
+    switch (category)
+    {
+        case XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE: ret = "Hardware"; break;
+        case XPUM_PRECHECK_ERROR_CATEGORY_KMD: ret = "Kernel Mode Driver"; break;
+        case XPUM_PRECHECK_ERROR_CATEGORY_UMD: ret = "User Mode Driver"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string errorSeverityToStr(xpum_precheck_error_severity_t severity) {
+    std::string ret = "Unknown";
+    switch (severity)
+    {
+        case XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL: ret = "Critical"; break;
+        case XPUM_PRECHECK_ERROR_SEVERITY_HIGH: ret = "High"; break;
+        case XPUM_PRECHECK_ERROR_SEVERITY_MEDIUM: ret = "Medium"; break;
+        case XPUM_PRECHECK_ERROR_SEVERITY_LOW: ret = "Low"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string componentTypeToStr(xpum_precheck_component_type_t component_type) {
+    std::string ret = "Unknown";
+    switch (component_type)
+    {
+        case XPUM_PRECHECK_COMPONENT_TYPE_DRIVER: ret = "Driver"; break;
+        case XPUM_PRECHECK_COMPONENT_TYPE_CPU: ret = "CPU"; break;
+        case XPUM_PRECHECK_COMPONENT_TYPE_GPU: ret = "GPU"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::string componentStatusToStr(xpum_precheck_component_status_t status) {
+    std::string ret = "Unknown";
+    switch (status)
+    {
+        case XPUM_PRECHECK_COMPONENT_STATUS_PASS: ret = "Pass"; break;
+        case XPUM_PRECHECK_COMPONENT_STATUS_FAIL: ret = "Fail"; break;
+        default: break;
+    }
+    return ret;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    int count = 32;
+    xpum_precheck_component_info_t resultList[count]; 
+    xpum_result_t res = xpumPrecheck(resultList, &count, onlyGPU, sinceTime.c_str());
+    if (res != XPUM_OK) {
+        if (res == XPUM_PRECHECK_INVALID_SINCETIME) {
+            (*json)["error"] = "invalid since time";
+            (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_PRECHECK_SINCE_TIME;
+        } else {
+            (*json)["error"] = "Error";
+            (*json)["errno"] = errorNumTranslate(res);
+        }
+        return json;
+    }
+    std::vector<nlohmann::json> component_list;
+    for (int i = 0; i < count; i++) {
+        auto component_json = nlohmann::json();
+        component_json["type"] = componentTypeToStr(resultList[i].componentType);
+        if (rawComponentTypeStr) {
+            if (resultList[i].componentType == XPUM_PRECHECK_COMPONENT_TYPE_CPU)
+                component_json["id"] = resultList[i].cpuId;
+            else if (resultList[i].componentType == XPUM_PRECHECK_COMPONENT_TYPE_GPU)
+                component_json["bdf"] = resultList[i].bdf;
+            component_json["status"] = componentStatusToStr(resultList[i].status);
+            if (std::string(resultList[i].time) != "")
+                component_json["time"] = std::string(resultList[i].time);
+            if (resultList[i].errorId > 0) {
+                component_json["error_id"] = resultList[i].errorId;
+                component_json["error_type"] = errorTypeToStr(static_cast<xpum_precheck_error_type_t>(resultList[i].errorId));
+            }   
+            if (std::string(resultList[i].errorDetail) != "") {
+                component_json["error_severity"] = errorSeverityToStr(resultList[i].errorSeverity);
+                component_json["error_detail"] = std::string(resultList[i].errorDetail);
+            }
+        } else {
+            std::vector<nlohmann::json> component_details;
+            if (resultList[i].componentType == XPUM_PRECHECK_COMPONENT_TYPE_CPU) {
+                auto id = nlohmann::json();
+                id["field_value"] = "CPU ID: " + std::to_string(resultList[i].cpuId);
+                component_details.push_back(id);
+            } else if (resultList[i].componentType == XPUM_PRECHECK_COMPONENT_TYPE_GPU) {
+                auto bdf = nlohmann::json();
+                bdf["field_value"] = "BDF: " + std::string(resultList[i].bdf);
+                component_details.push_back(bdf);
+            }
+            auto status = nlohmann::json();
+            status["field_value"] = "Status: " + componentStatusToStr(resultList[i].status);
+            component_details.push_back(status);
+            if (std::string(resultList[i].time) != "") {
+                auto time_json = nlohmann::json();
+                time_json["field_value"] = "Time: " + std::string(resultList[i].time);
+                component_details.push_back(time_json);
+            }
+            if (resultList[i].errorId > 0) {
+                auto error_id = nlohmann::json();
+                error_id["field_value"] = "Error ID: " + std::to_string(resultList[i].errorId);
+                component_details.push_back(error_id);
+                auto error_type = nlohmann::json();
+                error_type["field_value"] = "Error Type: " + errorTypeToStr(static_cast<xpum_precheck_error_type_t>(resultList[i].errorId));
+                component_details.push_back(error_type);
+            }
+            if (std::string(resultList[i].errorDetail) != "") {
+                auto error_severity = nlohmann::json();
+                error_severity["field_value"] = "Error Severity: " + errorSeverityToStr(resultList[i].errorSeverity);
+                component_details.push_back(error_severity);
+                auto error_detail = nlohmann::json();
+                error_detail["field_value"] = "Error Detail: " + std::string(resultList[i].errorDetail);
+                component_details.push_back(error_detail);
+            }
+            component_json["error_details"] = component_details;
+        }
+        component_list.push_back(component_json);
+    }
+    (*json)["component_list"] = component_list;
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::getPrecheckErrorTypes() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    int count = 32;
+    xpum_precheck_error_t resultList[count]; 
+    xpum_result_t res = xpumGetPrecheckErrorList(resultList, &count);
+    if (res != XPUM_OK) {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    std::vector<nlohmann::json> error_type_list;
+    for (int i = 0; i < count; i++) {
+        auto error_type = nlohmann::json();
+        error_type["error_id"] = resultList[i].errorId;
+        error_type["error_type"] = errorTypeToStr(resultList[i].errorType);
+        error_type["error_category"] = errorCategoryToStr(resultList[i].errorCategory);
+        error_type["error_severity"] = errorSeverityToStr(resultList[i].errorSeverity);
+        error_type_list.push_back(error_type);
+    }
+    (*json)["error_type_list"] = error_type_list;
     return json;
 }
 

@@ -571,7 +571,7 @@ void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());
 #ifndef DAEMONLESS
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
-    addOption("-g,--group", this->opts->groupId, "The group ID to query");
+    auto groupIdOpt = addOption("-g,--group", this->opts->groupId, "The group ID to query");
 #else
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address to query");
     addFlag("-e,--eu", this->opts->showEuMetrics, "Show EU metrics");
@@ -587,9 +587,22 @@ void ComletStatistics::setupOptions() {
     }
     return errStr;
     });
+
+    auto xeLinkThroughputMatrixFlag = addFlag("--xelink", this->opts->xelinkThroughputMatrix, "Show the all the Xe Link throughput (GB/s) matrix");
+
+    auto xeLinkUtilMatrixFlag = addFlag("--utils", this->opts->xelinkUtilMatrix, "Show the Xe Link throughput utilization");
+
+    xeLinkThroughputMatrixFlag->excludes(deviceIdOpt);
+    xeLinkUtilMatrixFlag->needs(xeLinkThroughputMatrixFlag);
+#ifndef DAEMONLESS
+    xeLinkThroughputMatrixFlag->excludes(groupIdOpt);
+#endif
 }
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
+    if(this->opts->xelinkThroughputMatrix){
+        return this->coreStub->getXelinkThroughputAndUtilMatrix();
+    }
     if (isDeviceOp()) {
         int targetId = -1;
         if (isNumber(this->opts->deviceId)) {
@@ -771,6 +784,61 @@ static void showDeviceStatistics(std::ostream& out, std::shared_ptr<nlohmann::js
     table.show(out);
 }
 
+void ComletStatistics::printHead(std::string head[], int count, int headsize, int rowsize) {
+    std::cout << std::left << std::setw(headsize) << "From\\To";
+    for (int i = 0; i < count; i++) {
+        std::cout << std::left << std::setw(rowsize) << head[i];
+    }
+    std::cout << std::endl;
+}
+
+std::string to_string_with_precision(const double a_value, const int n = 2) {
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return std::move(out).str();
+}
+
+void ComletStatistics::printContent(std::string head[], const nlohmann::json &table, int count, int headsize, int rowsize) {
+    for (int col = 0; col < count; col++) {
+        std::cout << std::left << std::setw(headsize) << head[col];
+        for (int row = 0; row < count; row++) {
+            std::string value = "---";
+            if (this->opts->xelinkThroughputMatrix) {
+                if (!this->opts->xelinkUtilMatrix) {
+                    if (table[col * count + row].contains("throughput") && table[col * count + row]["throughput"] != -1) {
+                        value = to_string_with_precision(table[col * count + row]["throughput"].get<double>());
+                    }
+                } else {
+                    if (table[col * count + row].contains("utilization") && table[col * count + row]["utilization"] != -1) {
+                        value = to_string_with_precision(table[col * count + row]["utilization"].get<double>());
+                    }
+                }
+            }
+            std::cout << std::left << std::setw(rowsize) << value;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void ComletStatistics::printXelinkTable(std::shared_ptr<nlohmann::json> json) {
+    if(!json->contains("xelink_stats_list"))
+        return;
+    const nlohmann::json &table = (*json)["xelink_stats_list"];
+    int nCount = table.size();
+    int instance = sqrt(nCount);
+    std::string title[instance];
+    int headsize = 9;
+    int rowsize = 9;
+
+    for (int i = 0; i < instance; i++) {
+        title[i] = "GPU " + getKeyNumberValue("remote_device_id", table[i]) + "/" + getKeyNumberValue("remote_subdevice_id", table[i]);
+    }
+
+    printHead(title, instance, headsize, rowsize);
+    printContent(title, table, instance, headsize, rowsize);
+}
+
 void ComletStatistics::getTableResult(std::ostream& out) {
     auto res = run();
     if (res->contains("error")) {
@@ -780,7 +848,9 @@ void ComletStatistics::getTableResult(std::ostream& out) {
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
     *json = *res;
-    if (this->opts->groupId != 0) {
+    if (this->opts->xelinkThroughputMatrix) {
+        printXelinkTable(json);
+    } else if (this->opts->groupId != 0) {
         auto devices = (*json)["datas"].get<std::vector<nlohmann::json>>();
         bool cont = false;
         for (auto device : devices) {

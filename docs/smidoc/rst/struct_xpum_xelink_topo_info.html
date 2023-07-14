@@ -86,6 +86,11 @@
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_action_type_enum.html">enum xpum_policy_action_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_conditon_type_enum.html">enum xpum_policy_conditon_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_type_enum.html">enum xpum_policy_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_component_status_t.html">enum xpum_precheck_component_status_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_component_type_t.html">enum xpum_precheck_component_type_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_error_category_t.html">enum xpum_precheck_error_category_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_error_severity_t.html">enum xpum_precheck_error_severity_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_error_type_t.html">enum xpum_precheck_error_type_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_ras_type_enum.html">enum xpum_ras_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_result_enum.html">enum xpum_result_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_scheduler_mode_t.html">enum xpum_scheduler_mode_t</a></li>
@@ -116,6 +121,7 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_component_info_t.html">struct xpum_diag_component_info_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html">struct xpum_diag_media_codec_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_task_info_t.html">struct xpum_diag_task_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_xe_link_throughput_t.html">struct xpum_diag_xe_link_throughput_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html">struct xpum_dump_raw_data_task_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_fabric_port_config_t.html">struct xpum_fabric_port_config_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_firmware_flash_job.html">struct xpum_firmware_flash_job</a></li>
@@ -133,6 +139,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_peak_limit_t.html">struct xpum_power_peak_limit_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_prop_data_t.html">struct xpum_power_prop_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_sustained_limit_t.html">struct xpum_power_sustained_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_precheck_component_info_t.html">struct xpum_precheck_component_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_precheck_error_t.html">struct xpum_precheck_error_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_data_t.html">struct xpum_scheduler_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_debug_t.html">struct xpum_scheduler_debug_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html">struct xpum_scheduler_exclusive_t</a></li>
@@ -198,6 +206,7 @@
     <a class="reference internal" href="struct_xpum_xelink_unit.html#smi-doxid-structxpum-xelink-unit"><span class="std std-ref">xpum_xelink_unit</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-xelink-topo-info-1a63eb7c9738bd7630ff893b9ab68a7a35"><span></span><span class="n">remoteDevice</span></span><span></span><span class="p">;</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a28b0d6cb197dd155fc07518af0bb0730"><span class="std std-ref">xpum_xelink_type_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-xelink-topo-info-1ab249c615977176ecd03c8528788cff86"><span></span><span class="n">linkType</span></span><span></span><span class="p">;</span>
     <span class="kt">uint8_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-xelink-topo-info-1a4815f453fd35f3b612667cf5b920a0bc"><span></span><span class="n">linkPorts</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_XELINK_PORT</span><span class="p">];</span>
+    <span class="kt">int64_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-xelink-topo-info-1a2075fe4db90f9c316965a230804db1fe"><span></span><span class="n">maxBitRate</span></span><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 

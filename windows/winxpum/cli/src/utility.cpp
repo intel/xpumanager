@@ -70,4 +70,9 @@ namespace xpum::cli {
         return std::regex_match(str, std::regex(bdfFormat));
     }
 
+    bool isATSMPlatform(std::string str) {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
+    }
+
 }// end namespace xpum::cli

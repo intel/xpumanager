@@ -7,6 +7,9 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <vector>
+#include <tuple>
+#include <map>
+#include <iostream>
 
 #include "core_stub.h"
 #include "xpum_structs.h"
@@ -84,13 +87,13 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricCount(int deviceId) {
     auto fabricCountInfo = getDeviceAndTileFabricCount(xpum_device_id);
     for (auto tileFabricCountInfo : fabricCountInfo) {
         std::string tileId = tileFabricCountInfo.isTileLevel ? std::to_string(tileFabricCountInfo.tileId) : "device";
-        nlohmann::json obj;
         for (auto d : tileFabricCountInfo.dataList) {
+            nlohmann::json obj;
             obj["tile_id"] = d.tile_id;
             obj["remote_device_id"] = d.remote_device_id;
             obj["remote_tile_id"] = d.remote_tile_id;
+            json[tileId].push_back(obj);
         }
-        json[tileId].push_back(obj);
     }
 
     return std::make_shared<nlohmann::json>(json);
@@ -254,6 +257,161 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricStatistics(int deviceId) {
     }
 
     return std::make_shared<nlohmann::json>(json);
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkThroughputAndUtilMatrix(){
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::map<std::tuple<int, int, int, int>, xpum_device_fabric_throughput_stats_t> m;
+    { // get all devices
+        int deviceCount{XPUM_MAX_NUM_DEVICES};
+        xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
+
+        xpum_result_t res = xpumGetDeviceList(devices, &deviceCount);
+        if (res != XPUM_OK) {
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    (*json)["error"] = "Level Zero Initialization Error";
+                    break;
+                default:
+                    (*json)["error"] = "Error";
+                    break;
+            }
+            (*json)["errno"] = errorNumTranslate(res);
+            return json;
+        }
+
+        // get xelink throughput
+        for (int i = 0; i < deviceCount; i++) {
+            auto xpum_device_id = devices[i].deviceId;
+            uint64_t sessionId = 0;
+            uint32_t count;
+            uint64_t begin, end;
+            auto res = xpumGetFabricThroughputStats(xpum_device_id, nullptr, &count, &begin, &end, sessionId);
+            if (res != XPUM_OK) {
+                switch (res) {
+                    case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                        (*json)["error"] = "Level Zero Initialization Error";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                    case XPUM_METRIC_NOT_SUPPORTED:
+                        (*json)["error"] = "Metric not supported";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                    case XPUM_METRIC_NOT_ENABLED:
+                        (*json)["error"] = "Metric not enabled";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                    default:
+                        (*json)["error"] = "Fail to get Xe Link throughput";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                }
+                return json;
+            }
+            xpum_device_fabric_throughput_stats_t dataList[count];
+            res = xpumGetFabricThroughputStats(xpum_device_id, dataList, &count, &begin, &end, sessionId);
+            if (res != XPUM_OK) {
+                switch (res) {
+                    case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                        (*json)["error"] = "Level Zero Initialization Error";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                    case XPUM_METRIC_NOT_SUPPORTED:
+                        (*json)["error"] = "Metric not supported";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                    case XPUM_METRIC_NOT_ENABLED:
+                        (*json)["error"] = "Metric not enabled";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                    default:
+                        (*json)["error"] = "Fail to get Xe Link throughput";
+                        (*json)["errno"] = errorNumTranslate(res);
+                        break;
+                }
+                return json;
+            }
+            for (uint32_t i = 0; i < count; i++) {
+                xpum_device_fabric_throughput_stats_t& fabricInfo = dataList[i];
+                if (fabricInfo.type == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED) {
+                    m[std::make_tuple(fabricInfo.deviceId, fabricInfo.tile_id, fabricInfo.remote_device_id, fabricInfo.remote_device_tile_id)] = fabricInfo;
+                } else {
+                    continue;
+                }
+            }
+        }
+    }
+
+    xpum_xelink_topo_info* topoInfo;
+    int count{1024};
+    xpum_xelink_topo_info xelink_topo[count];
+    topoInfo = xelink_topo;
+    xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        xpum_xelink_topo_info xelink_topo[count];
+        topoInfo = xelink_topo;
+        res = xpumGetXelinkTopology(xelink_topo, &count);
+    }
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> topoJsonList;
+        for (int i{0}; i < count; ++i) {
+            auto componentJson = nlohmann::json();
+            componentJson["local_device_id"] = topoInfo[i].localDevice.deviceId;
+            componentJson["local_on_subdevice"] = topoInfo[i].localDevice.onSubdevice;
+            componentJson["local_subdevice_id"] = topoInfo[i].localDevice.subdeviceId;
+            componentJson["remote_device_id"] = topoInfo[i].remoteDevice.deviceId;
+            componentJson["remote_subdevice_id"] = topoInfo[i].remoteDevice.subdeviceId;
+            componentJson["throughput"] = -1;
+            componentJson["utilization"] = -1;
+            std::string linkType;
+            if (topoInfo[i].linkType == XPUM_LINK_SELF) {
+                linkType = "S";
+            } else if (topoInfo[i].linkType == XPUM_LINK_MDF) {
+                linkType = "MDF";
+            } else if (topoInfo[i].linkType == XPUM_LINK_XE) {
+                linkType = "XL";
+                // add real throughput and util
+                std::tuple<int, int, int, int> key = {topoInfo[i].localDevice.deviceId,topoInfo[i].localDevice.subdeviceId,topoInfo[i].remoteDevice.deviceId,topoInfo[i].remoteDevice.subdeviceId};
+                auto it = m.find(key);
+                if (it != m.end()) {
+                    uint32_t totalWidth = 0;
+                    for (int n = 0; n < XPUM_MAX_XELINK_PORT; n++) {
+                        uint32_t value = topoInfo[i].linkPorts[n];
+                        totalWidth += value;
+                    }
+                    auto& data = m[key];
+                    double throughput = data.scale > 0 ? (((double)data.value / data.scale) / 1e9) : -1;
+                    componentJson["throughput"] = throughput;
+                    componentJson["utilization"] = (throughput >= 0 && totalWidth > 0) ? (throughput / (topoInfo[i].maxBitRate * totalWidth / (8 * 1e9)) * 100) : -1;
+                }
+            } else if (topoInfo[i].linkType == XPUM_LINK_SYS) {
+                linkType = "SYS";
+            } else if (topoInfo[i].linkType == XPUM_LINK_NODE) {
+                linkType = "NODE";
+            } else if (topoInfo[i].linkType == XPUM_LINK_XE_TRANSMIT) {
+                linkType = "XL*";
+            } else {
+                linkType = "Unknown";
+            }
+            componentJson["link_type"] = linkType;
+            topoJsonList.push_back(componentJson);
+        }
+        (*json)["xelink_stats_list"] = topoJsonList;
+    }
+
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+
+    return json;
 }
 
 static int32_t getCliScale(xpum_stats_type_t metricsType) {

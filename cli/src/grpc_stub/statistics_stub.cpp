@@ -59,13 +59,13 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricCount(int deviceId) {
     if (response.errormsg().length() == 0) {
         for (auto &tileInfo : response.fabriccountlist()) {
             std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
-            nlohmann::json obj;
             for (auto &countInfo : tileInfo.datalist()) {
+                nlohmann::json obj;
                 obj["tile_id"] = countInfo.tileid();
                 obj["remote_device_id"] = countInfo.remotedeviceid();
                 obj["remote_tile_id"] = countInfo.remotetileid();
+                json[tileId].push_back(obj);
             }
-            json[tileId].push_back(obj);
         }
     }
     else {
@@ -221,6 +221,109 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricStatistics(int deviceId) 
         json["fabric_throughput"].push_back(obj);
     }
     return std::make_shared<nlohmann::json>(json);
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkThroughputAndUtilMatrix() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::map<std::tuple<int, int, int, int>, FabricStatsInfo> m;
+
+    {
+        // get all devices
+        grpc::ClientContext context;
+        XpumDeviceBasicInfoArray response;
+        grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+        if (!status.ok()) {
+            return json;
+        }
+        if (response.errormsg().length() != 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            return json;
+        }
+
+        // get xelink throughput
+        for (int i{0}; i < response.info_size(); ++i) {
+            auto &deviceInfo = response.info(i);
+            auto xpum_device_id = deviceInfo.id().id();
+
+            grpc::ClientContext context;
+            GetFabricStatsRequest request;
+            GetFabricStatsResponse response;
+            request.set_deviceid(xpum_device_id);
+            request.set_sessionid(0);
+            grpc::Status status = stub->getFabricStatistics(&context, request, &response);
+            if (!status.ok()) {
+                (*json)["error"] = status.error_message();
+                return json;
+            }
+            if (response.errormsg().length() != 0) {
+                (*json)["error"] = response.errormsg();
+                (*json)["errno"] = errorNumTranslate(response.errorno());
+                return json;
+            }
+
+            for (auto &fabricInfo : response.datalist()) {
+                if (fabricInfo.type() == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED) {
+                    m[std::make_tuple(xpum_device_id, fabricInfo.tileid(), fabricInfo.remote_device_id(), fabricInfo.remote_device_tile_id())] = fabricInfo;
+                } else {
+                    continue;
+                }
+            }
+        }
+    }
+    {
+        grpc::ClientContext context;
+        XpumXelinkTopoInfoArray response;
+        grpc::Status status = stub->getXelinkTopology(&context, google::protobuf::Empty(), &response);
+        if (!status.ok()) {
+            (*json)["error"] = status.error_message();
+            (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+            return json;
+        }
+        if (response.errormsg().length() != 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            return json;
+        }
+        std::vector<nlohmann::json> topoJsonList;
+        for (int i{0}; i < response.topoinfo_size(); ++i) {
+            auto componentJson = nlohmann::json();
+
+            componentJson["local_device_id"] = response.topoinfo(i).localdevice().deviceid();
+            componentJson["local_on_subdevice"] = response.topoinfo(i).localdevice().onsubdevice();
+            componentJson["local_subdevice_id"] = response.topoinfo(i).localdevice().subdeviceid();
+            componentJson["remote_device_id"] = response.topoinfo(i).remotedevice().deviceid();
+            componentJson["remote_subdevice_id"] = response.topoinfo(i).remotedevice().subdeviceid();
+            componentJson["throughput"] = -1;
+            componentJson["utilization"] = -1;
+            componentJson["link_type"] = response.topoinfo(i).linktype();
+
+            if (response.topoinfo(i).linktype() == "XL") {
+                std::tuple<int, int, int, int> key = {response.topoinfo(i).localdevice().deviceid(), response.topoinfo(i).localdevice().subdeviceid(), response.topoinfo(i).remotedevice().deviceid(), response.topoinfo(i).remotedevice().subdeviceid()};
+                auto it = m.find(key);
+                if (it != m.end()) {
+                    uint32_t totalWidth = 0;
+                    int nCount = response.topoinfo(i).linkportlist_size();
+                    if (nCount > 0) {
+                        for (int n{0}; n < nCount; n++) {
+                            uint32_t value = response.topoinfo(i).linkportlist(n);
+                            totalWidth += value;
+                        }
+                    }
+                    auto &data = m[key];
+                    double throughput = data.scale() > 0 ? (((double)data.value() / data.scale()) / 1e9) : -1;
+                    componentJson["throughput"] = throughput;
+                    componentJson["utilization"] = (throughput >= 0 && totalWidth > 0) ? (throughput / (response.topoinfo(i).maxbitrate() * totalWidth / (8 * 1e9)) * 100) : -1;
+                }
+            }
+
+            topoJsonList.push_back(componentJson);
+        }
+
+        (*json)["xelink_stats_list"] = topoJsonList;
+    }
+
+    return json;
 }
 
 static int32_t getCliScale(xpum_stats_type_t metricsType) {
