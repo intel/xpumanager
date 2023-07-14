@@ -167,6 +167,7 @@ namespace xpum::cli {
         nlohmann::json js = *json;
         std::string ver = js["pci_device_id"];
         if (ver.length() != 0 && isATSMPlatform(ver)) {
+            js["serial_number"] = XPUM_TABLE_HIDE_TAG;
             js["device_stepping"] = XPUM_TABLE_HIDE_TAG;
             js["sku_type"] = XPUM_TABLE_HIDE_TAG;
             js["pci_slot"] = XPUM_TABLE_HIDE_TAG;
