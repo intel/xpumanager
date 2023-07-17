@@ -31,6 +31,7 @@ if [ -n "${RPM_INSTALL_PREFIX}" ]; then
 
   chown -R xpum ${RPM_INSTALL_PREFIX}/lib/xpum
   chmod g+x ${RPM_INSTALL_PREFIX}/lib/xpum/keytool.sh
+  chmod g+x ${RPM_INSTALL_PREFIX}/lib/xpum/enable_restful.sh
 
   if [ ! -f ${RPM_INSTALL_PREFIX}/bin/xpumcli ]; then
     cp -f ${RPM_INSTALL_PREFIX}/lib/xpum/xpumcli ${RPM_INSTALL_PREFIX}/bin/xpumcli
@@ -49,6 +50,7 @@ else
 
   chown -R xpum ${RPM_INSTALL_PREFIX}/lib/xpum
   chmod g+x @CMAKE_INSTALL_PREFIX@/lib/xpum/keytool.sh
+  chmod g+x @CMAKE_INSTALL_PREFIX@/lib/xpum/enable_restful.sh
 
   if [ ! -f @CMAKE_INSTALL_PREFIX@/bin/xpumcli ]; then
     cp -f @CMAKE_INSTALL_PREFIX@/lib/xpum/xpumcli @CMAKE_INSTALL_PREFIX@/bin/xpumcli
