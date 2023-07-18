@@ -897,18 +897,6 @@ namespace xpum {
             return ret;
         }
 
-        if (type == MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) {
-            ret->setCurrent((uint64_t)(getCopyEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
-            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-            return ret;
-        }
-
-        if (type == MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) {
-            ret->setCurrent((uint64_t)(getRenderEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
-            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-            return ret;
-        }
-
         std::map<std::string, ze_result_t> exception_msgs;
         uint32_t engine_count = 0;
         ze_result_t res;
@@ -987,6 +975,18 @@ namespace xpum {
                 exception_msgs["zesDeviceEnumEngineGroups"] = res;
             }
         } else {
+            if (type == MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) {
+                ret->setCurrent((uint64_t)(getCopyEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
+                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                return ret;
+            }
+
+            if (type == MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) {
+                ret->setCurrent((uint64_t)(getRenderEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
+                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                return ret;
+            }
+            
             if (type == MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION) {
                 ret->setCurrent((uint64_t)(getComputeEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
                 ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
