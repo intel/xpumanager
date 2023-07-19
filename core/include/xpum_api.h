@@ -204,6 +204,7 @@ XPUM_API xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *cou
  * @param username       IN: Username used for redfish host authentication      
  * @param password       IN: Password used for redfish host authentication 
  * @param serialNumber  OUT: Device serial number
+ * @param amcFwVersion  OUT: AMC firmware version
  * @return xpum_result_t 
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
@@ -435,7 +436,7 @@ XPUM_API xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  *
  * @param deviceId          IN: The device Id
  * @param tileId            IN: The tile Id. if tileId is -1, return device's powerlimit; otherwise return tile's powerlimit.
- * @param powerLimits      IN/OUT: The detailed power limit data. Parameter \'interval\' has been obsoleted.
+ * @param pPowerLimits      IN/OUT: The detailed power limit data. Parameter \'interval\' has been obsoleted.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
@@ -801,7 +802,6 @@ XPUM_API xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_fi
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
  *      - \ref XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND
- *      - \ref XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL
