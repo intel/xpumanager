@@ -87,10 +87,6 @@ class ConfigParameterSchema(Schema):
 
 class TileConfigSchema(Schema):
     tileId = fields.String(metadata={"description": "Tile id"})
-    power_limit = fields.Integer(
-        metadata={"description": "The power limit value"})
-    power_vaild_range = fields.String(
-        metadata={"description": "power's scope"})
     #power_average_window = fields.Integer(
     #    metadata={"description": "The interval window"})
     #power_average_window_vaild_range = fields.String(
@@ -115,7 +111,10 @@ class TileConfigSchema(Schema):
 
 class ConfigSchema(Schema):
     deviceId = fields.Integer(metadata={"description": "Device id"})
-    tileCount = fields.Integer(metadata={"description": "Tile count"})
+    memory_ecc_current_state = fields.String(metadata={"description": "The current state of memory ecc"})
+    memory_ecc_pending_state = fields.String(metadata={"description": "The pending state of memory ecc"})
+    power_limit = fields.Integer(metadata={"description": "The power limit value"})
+    power_vaild_range = fields.String(metadata={"description": "power's scope"})
     tileConfigData = fields.Nested(TileConfigSchema)
 
 

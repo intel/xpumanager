@@ -322,7 +322,7 @@ namespace xpum {
         uint32_t deviceId = toGetDeviceId(device);
         switch (deviceId) {
             case 0x56c1:
-                max_limit = 23;
+                max_limit = 25;
                 break;
             case 0x56c0:
                 max_limit = 120;

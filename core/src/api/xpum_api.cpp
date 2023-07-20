@@ -2265,9 +2265,15 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-int32_t mergeMaxPowerLimit(std::string card_idx, Power power){
-    if (power.getMaxLimit() != -1) 
-        return power.getMaxLimit();
+int32_t getMaxPowerFromSysfs(std::string id, Power power){
+    Property prop_drm;
+    Core::instance().getDeviceManager()->getDevice(id)->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop_drm);
+    std::string card_idx;
+    std::regex pattern("card\\d+");
+    std::smatch match;
+    if (std::regex_search(prop_drm.getValue(), match, pattern)) {
+        card_idx = match.str();
+    }
     if (card_idx.empty())
         return -1;
     std::string dirPath = "/sys/class/drm/" + card_idx + "/device/hwmon";
@@ -2317,6 +2323,45 @@ int32_t mergeMaxPowerLimit(std::string card_idx, Power power){
     return -1;
 }
 
+void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& min_power, int32_t& max_power){
+    //get minLimit and maxLimit from register
+    Property prop_drm;
+    Core::instance().getDeviceManager()->getDevice(id)->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop_drm);
+    std::string region_base;
+    if (!getDeviceRegion(prop_drm.getValue(), region_base)){
+        return;
+    }
+    uint32_t power_limit_offset = 0x281080;
+    std::string temp = add_two_hex_string(region_base, to_hex_string(power_limit_offset));
+    uint64_t value = access_device_memory(temp, 64);
+
+    uint64_t min_mask = 0x7fffull << 16;
+    uint64_t min_result =  (value & min_mask) >> 16; //get bits of 16 to 30
+    if (min_result) {
+        min_power = min_result * 125; //Power is unit of 125mW
+    }
+
+    uint64_t max_mask = 0x7fffull << 32;
+    uint64_t max_result =  (value & max_mask) >> 32; //get bits of 32 to 64
+    if (max_result) {
+        max_power = max_result * 125; //Power is unit of 125mW
+    } else {
+        //get maxLimit from power1_rated_max
+        int32_t val = getMaxPowerFromSysfs(id, power);
+        if (val != -1)
+            max_power = val;
+        else{
+            //use TDP value
+            int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1)
+                max_power = 120 * 1000;
+            else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
+                max_power = 25 * 1000;
+        }
+    }
+    return;
+}
+
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -2336,14 +2381,6 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     } else {
         *count = powers.size();
     }
-    Property prop_drm;
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop_drm);
-    std::string card_idx;
-    std::regex pattern("card\\d+");
-    std::smatch match;
-    if (std::regex_search(prop_drm.getValue(), match, pattern)) {
-        card_idx = match.str();
-    }
     if (dataArray != nullptr) {
         int i = 0;
         for (auto &power : powers) {
@@ -2352,8 +2389,11 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].can_control = power.canControl();
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
-            dataArray[i].min_limit = power.getMinLimit();
-            dataArray[i].max_limit = mergeMaxPowerLimit(card_idx, power);           
+            int32_t max_power = -1, min_power = -1;
+            getMinAndMaxPowerLimitMultiMethods(std::to_string(deviceId), power, min_power, max_power);
+            dataArray[i].min_limit = (power.getMinLimit() != -1) ? power.getMinLimit() : min_power;
+            dataArray[i].max_limit = (power.getMaxLimit() != -1) ? power.getMaxLimit() : max_power;
+            XPUM_LOG_DEBUG("dataArray[i].max_limit:{}, {}", dataArray[i].min_limit, dataArray[i].max_limit);
             i++;
         }
     }

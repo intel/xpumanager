@@ -571,6 +571,16 @@ namespace xpum::cli {
         sustained_limit.power = powerLimit;
         sustained_limit.enabled = true;
 
+        xpum_power_prop_data_t powerRangeArray[32];
+        uint32_t powerRangeCount = 32;
+        res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
+        if (res == XPUM_OK) {
+            if (powerLimit < 1 || (powerRangeArray[0].max_limit > 0  && powerLimit > powerRangeArray[0].max_limit)) {
+                (*json)["error"] = "Invalid power limit value";
+                return json;
+            }
+        }
+
         res = xpumSetDevicePowerSustainedLimits((xpum_device_id_t)deviceId, 0, sustained_limit);
         if (res != XPUM_OK) {
             (*json)["error"] = "unsupported feature or setting failure";
