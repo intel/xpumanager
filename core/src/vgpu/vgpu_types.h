@@ -32,12 +32,15 @@ struct DeviceSriovInfo {
     std::string drmPath;
     std::string bdfAddress;
     xpum_ecc_state_t eccState;
+    uint32_t numTiles;
     uint64_t lmemSizeFree;
     uint64_t ggttSizeFree;
     uint32_t doorbellFree;
     uint32_t contextFree;
     DeviceSriovInfo():
-        deviceModel(0),
+        deviceModel(XPUM_DEVICE_MODEL_UNKNOWN),
+        eccState(XPUM_ECC_STATE_UNAVAILABLE),
+        numTiles(0),
         lmemSizeFree(0),
         ggttSizeFree(0),
         doorbellFree(0),

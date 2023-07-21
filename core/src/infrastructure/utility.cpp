@@ -11,6 +11,7 @@
 #include <thread>
 #include <functional>
 #include <vector>
+#include <sstream>
 
 #include "../include/xpum_structs.h"
 #include "device/device.h"
@@ -639,6 +640,17 @@ void Utility::parallel_in_batches(unsigned num_elements, unsigned num_threads,
     // Wait for all other threads to finish their tasks
     if (use_multithreading)
         std::for_each(total_threads.begin(), total_threads.end(), std::mem_fn(&std::thread::join));
+}
+
+std::vector<std::string> Utility::split(const std::string &s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss (s);
+    std::string item;
+    while (getline (ss, item, delim)) {
+        if (item.size() > 0)
+            result.push_back(item);
+    }
+    return result;
 }
 
 } // end namespace xpum

@@ -59,6 +59,8 @@ class Utility {
     static void parallel_in_batches(unsigned num_elements, unsigned num_threads,
                   std::function<void (int start, int end)> functor,
                   bool use_multithreading = true);
+   
+   static std::vector<std::string> split(const std::string &s, char delim);
 };
 
 } // end namespace xpum
