@@ -26,6 +26,9 @@ namespace xpum {
         if (!isPathExist(file_name)) {
             char exe_path[XPUM_MAX_PATH_LEN];
             ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+            if (len < 0 || len >= XPUM_MAX_PATH_LEN) {
+                len = XPUM_MAX_PATH_LEN - 1;
+            }            
             exe_path[len] = '\0';
             std::string current_file = exe_path;
             std::string xpum_mode = "xpum";

@@ -929,6 +929,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         if (!isPathExist(mediadata_folder)) {
             char exe_path[XPUM_MAX_PATH_LEN];
             ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+            if (len < 0 || len >= XPUM_MAX_PATH_LEN) {
+                throw BaseException("readlink returns error");
+            }
             exe_path[len] = '\0';
             std::string  current_file = exe_path;
             mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/resources/mediadata/";
@@ -1563,6 +1566,9 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
     if (!isPathExist(folder)) {
         char exe_path[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        if (len < 0 || len >= XPUM_MAX_PATH_LEN) {
+            throw BaseException("readlink returns error");
+        }
         exe_path[len] = '\0';
         std::string current_file = exe_path;
         folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/resources/kernels/";
