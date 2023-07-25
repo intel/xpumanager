@@ -4,7 +4,7 @@ apispec-webframeworks==0.5.2
 asn1crypto==0.24.0
 attrs==21.4.0
 Babel==2.10.1
-certifi==2022.12.07
+certifi==2023.7.22
 charset-normalizer==2.0.12
 click==8.0.4
 docutils==0.17.1
