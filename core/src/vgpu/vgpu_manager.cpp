@@ -153,6 +153,9 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
         std::ifstream ifs(ueventPath);
         std::string line;
         while (std::getline(ifs, line)) {
+            if (line.length() >= XPUM_MAX_STR_LENGTH) {
+                return XPUM_VGPU_SYSFS_ERROR;
+            }
             sscanf(line.c_str(), "PCI_SLOT_NAME=%s", info.bdfAddress);
             if (info.bdfAddress[0] != 0) {
                 XPUM_LOG_DEBUG("BDF Address: {}", info.bdfAddress);
@@ -234,7 +237,10 @@ bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data
     data.deviceModel = device->getDeviceModel();
 
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop);
-    char drm[256];
+    char drm[XPUM_MAX_STR_LENGTH];
+    if (prop.getValue().length() >= XPUM_MAX_STR_LENGTH) {
+        return false;
+    }
     sscanf(prop.getValue().c_str(), "/dev/dri/%s", drm);
     data.drmPath = std::string(drm);
     
@@ -326,6 +332,9 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
     if (!is_path_exist(fileName)) {
         char exe_path[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        if (len < 0 || len >= XPUM_MAX_PATH_LEN) {
+            throw BaseException("readlink returns error");
+        }
         exe_path[len] = '\0';
         std::string current_file = exe_path;
         fileName = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/config/" + std::string("vgpu.conf");
