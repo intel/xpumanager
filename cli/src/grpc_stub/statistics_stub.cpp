@@ -226,7 +226,7 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricStatistics(int deviceId) 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkThroughputAndUtilMatrix() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     std::map<std::tuple<int, int, int, int>, FabricStatsInfo> m;
-
+    std::vector<int> deviceIdList;
     {
         // get all devices
         grpc::ClientContext context;
@@ -240,34 +240,38 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkThroughputAndUtilMatrix()
             (*json)["errno"] = errorNumTranslate(response.errorno());
             return json;
         }
-
+        for (auto info : response.info()) {
+            deviceIdList.push_back(info.id().id());
+        }
+    }
+    {
         // get xelink throughput
-        for (int i{0}; i < response.info_size(); ++i) {
-            auto &deviceInfo = response.info(i);
-            auto xpum_device_id = deviceInfo.id().id();
+        grpc::ClientContext context;
+        GetFabricStatsExRequest request;
+        GetFabricStatsResponse response;
 
-            grpc::ClientContext context;
-            GetFabricStatsRequest request;
-            GetFabricStatsResponse response;
-            request.set_deviceid(xpum_device_id);
-            request.set_sessionid(0);
-            grpc::Status status = stub->getFabricStatistics(&context, request, &response);
-            if (!status.ok()) {
-                (*json)["error"] = status.error_message();
-                return json;
-            }
-            if (response.errormsg().length() != 0) {
-                (*json)["error"] = response.errormsg();
-                (*json)["errno"] = errorNumTranslate(response.errorno());
-                return json;
-            }
+        request.set_sessionid(0);
+        for (auto deviceId : deviceIdList) {
+            request.add_deviceidlist(deviceId);
+        }
 
-            for (auto &fabricInfo : response.datalist()) {
-                if (fabricInfo.type() == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED) {
-                    m[std::make_tuple(xpum_device_id, fabricInfo.tileid(), fabricInfo.remote_device_id(), fabricInfo.remote_device_tile_id())] = fabricInfo;
-                } else {
-                    continue;
-                }
+        auto status = stub->getFabricStatisticsEx(&context, request, &response);
+
+        if (!status.ok()) {
+            (*json)["error"] = status.error_message();
+            return json;
+        }
+        if (response.errormsg().length() != 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            return json;
+        }
+
+        for (auto &fabricInfo : response.datalist()) {
+            if (fabricInfo.type() == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED) {
+                m[std::make_tuple(fabricInfo.deviceid(), fabricInfo.tileid(), fabricInfo.remote_device_id(), fabricInfo.remote_device_tile_id())] = fabricInfo;
+            } else if (fabricInfo.type() == XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED) {
+                m[std::make_tuple(fabricInfo.remote_device_id(), fabricInfo.remote_device_tile_id(), fabricInfo.deviceid(), fabricInfo.tileid())] = fabricInfo;
             }
         }
     }

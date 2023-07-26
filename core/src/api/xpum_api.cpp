@@ -1403,36 +1403,34 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         }
     }
 
+    std::vector<xpum_device_fabric_throughput_stats_t> _dataList;
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+        uint32_t __count = 32;
+        std::vector<xpum_device_fabric_throughput_stats_t> __dataList(__count);
+        res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, __dataList.data(), &__count, begin, end, sessionId);
+        if (res == XPUM_BUFFER_TOO_SMALL) {
+            __dataList.reserve(__count);
+            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, __dataList.data(), &__count, begin, end, sessionId);
+        }
+        if (res != XPUM_OK)
+            return res;
+        for (uint32_t j = 0; j < __count; j++) {
+            _dataList.push_back(__dataList[j]);
+        }
+    }
     if (dataList == nullptr) {
-        *count = 0;
-        for (uint32_t i = 0; i < deviceCount; i++) {
-            xpum_device_id_t deviceId = deviceIdList[i];
-            uint32_t count_ = 0;
-            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, &count_, begin, end, sessionId);
-            if (res != XPUM_OK) {
-                return res;
-            }
-            *count += count_;
-        }
-        return XPUM_OK;
-    } else {
-        uint32_t used = 0;
-        uint32_t count_;
-        for (uint32_t i = 0; i < deviceCount; i++) {
-            xpum_device_id_t deviceId = deviceIdList[i];
-            count_ = *count - used;
-            if (count_ <= 0) {
-                return XPUM_BUFFER_TOO_SMALL;
-            }
-            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList + used, &count_, begin, end, sessionId);
-            if (res != XPUM_OK) {
-                return res;
-            }
-            used += count_;
-        }
-        *count = used;
+        *count = _dataList.size();
         return XPUM_OK;
     }
+    if (*count < _dataList.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    *count = _dataList.size();
+    for (uint32_t i = 0; i < _dataList.size(); i++) {
+        dataList[i] = _dataList[i];
+    }
+    return XPUM_OK;
 }
 
 xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,

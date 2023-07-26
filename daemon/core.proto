@@ -976,6 +976,11 @@ message GetFabricStatsRequest {
     uint64 sessionId = 2;
 }
 
+message GetFabricStatsExRequest {
+    repeated int32 deviceIdList = 1;
+    uint64 sessionId = 2;
+}
+
 message FabricStatsInfo {
     int32 tileId = 1;
     int32 remote_device_id = 2;
@@ -987,6 +992,7 @@ message FabricStatsInfo {
     uint64 max = 8;
     uint64 scale = 9;
     uint64 accumulated = 10;
+    int32 deviceId = 11;
 }
 
 message GetFabricStatsResponse {
@@ -1179,6 +1185,7 @@ service XpumCoreService {
     rpc getTopoXMLBuffer( google.protobuf.Empty ) returns ( TopoXMLResponse );
     rpc getXelinkTopology( google.protobuf.Empty ) returns ( XpumXelinkTopoInfoArray );
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
+    rpc getFabricStatisticsEx( GetFabricStatsExRequest ) returns ( GetFabricStatsResponse );
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
     rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );

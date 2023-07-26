@@ -147,6 +147,7 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
     virtual ::grpc::Status getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::XpumXelinkTopoInfoArray* response) override;
 
     virtual ::grpc::Status getFabricStatistics(::grpc::ServerContext* context, const ::GetFabricStatsRequest* request, ::GetFabricStatsResponse* response) override;
+    virtual ::grpc::Status getFabricStatisticsEx(::grpc::ServerContext* context, const ::GetFabricStatsExRequest* request, ::GetFabricStatsResponse* response) override;
 
     virtual ::grpc::Status getFabricCount(::grpc::ServerContext* context, const ::GetFabricCountRequest* request, ::GetFabricCountResponse* response) override;
 
