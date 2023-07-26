@@ -326,6 +326,14 @@ bool isATSMPlatform(std::string str) {
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
 }
+
+bool isOamPlatform(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str.find("bd5") != std::string::npos || str.find("bd6") != std::string::npos ||
+    str.find("bd7") != std::string::npos || str.find("bd8") != std::string::npos ||
+    str.find("b69") != std::string::npos;
+}
+
 bool isDriversAutoprobeEnabled(const std::string &bdfAddress) {
     bool res = false;
     std::stringstream path, content;

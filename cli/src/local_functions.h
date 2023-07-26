@@ -36,6 +36,8 @@ bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
 
 bool isATSMPlatform(std::string str);
 
+bool isOamPlatform(std::string str);
+
 bool isDriversAutoprobeEnabled(const std::string &bdfAddress);
 
 std::unique_ptr<nlohmann::json> addKernelParam();
