@@ -204,6 +204,12 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
             snprintf(path, PATH_MAX, "/sys/class/hwmon/%s", pdirent->d_name);
             char full_path[PATH_MAX];
             ssize_t full_len = ::readlink(path, full_path, sizeof(full_path));
+            if (full_len < 0) {
+                full_len = 0;
+            }
+            if ( full_len >= PATH_MAX) {
+                full_len = PATH_MAX - 1;
+            } 
             full_path[full_len] = '\0';
 
             for (auto& gpu_bdf: gpu_bdfs) {
@@ -551,6 +557,12 @@ static std::string getCardFullPath(std::string& bdf_address) {
         }
         char full_path[PATH_MAX];
         ssize_t full_len = ::readlink(link_path, full_path, sizeof(full_path));
+        if (full_len < 0) {
+            full_len = 0;
+        }
+        if (full_len >= PATH_MAX) {
+            full_len = PATH_MAX -1;
+        }
         full_path[full_len] = '\0';
 
         if (strstr(full_path, bdf_address.c_str()) != NULL) {
@@ -631,6 +643,12 @@ std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
             char socketId_buf[16];
 
             ssize_t full_len = ::readlink(link_path, full_path, sizeof(full_path));
+            if (full_len < 0) {
+                full_len = 0;
+            }
+            if (full_len >= PATH_MAX) {
+                full_len = PATH_MAX -1;
+            }
             full_path[full_len] = '\0';
             if (strstr(full_path, bdf_address.c_str()) != NULL) {
                 int cardLen = snprintf(card_path, PATH_MAX,"%s/iaf_socket_id",link_path);

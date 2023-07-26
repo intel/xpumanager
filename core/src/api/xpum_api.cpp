@@ -431,7 +431,8 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
     *count = versions.size();
     for (int i = 0; i < *count; i++) {
         std::string version = versions[i];
-        std::strcpy(versionList[i].version, version.c_str());
+        std::strncpy(versionList[i].version, version.c_str(),XPUM_MAX_STR_LENGTH-1);
+        versionList[i].version[XPUM_MAX_STR_LENGTH-1] = '\0';
     }
     return XPUM_OK;
 }
@@ -2991,8 +2992,9 @@ xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId,
             dataArray[i].deviceId = util.getDeviceId();
             dataArray[i].memSize = util.getMemSize();
             dataArray[i].sharedMemSize = util.getSharedMemSize();
-            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
-                    util.getProcessName().length() + 1);
+            auto tempNameLen = util.getProcessName().length() >= XPUM_MAX_STR_LENGTH ? XPUM_MAX_STR_LENGTH-1: util.getProcessName().length();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),tempNameLen);
+            dataArray[i].processName[tempNameLen] = '\0';
             dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
             dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
             dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
@@ -3035,8 +3037,9 @@ xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval,
             dataArray[i].deviceId = util.getDeviceId();
             dataArray[i].memSize = util.getMemSize();
             dataArray[i].sharedMemSize = util.getSharedMemSize();
-            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
-                    util.getProcessName().length() + 1);
+            auto tempNameLen = util.getProcessName().length() >= XPUM_MAX_STR_LENGTH ? XPUM_MAX_STR_LENGTH-1: util.getProcessName().length();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),tempNameLen);
+            dataArray[i].processName[tempNameLen] = '\0';
             dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
             dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
             dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
@@ -3611,6 +3614,7 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     std::string ret = GPUDeviceStub::getPciSlotByPath(pciPathVec);
     if (ret.length() > 0 && ret.length() < sizeSlotName) {
         strncpy(slotName, ret.c_str(), sizeSlotName);
+        slotName[sizeSlotName-1] = '\0';
         return XPUM_OK;
     } else {
         return XPUM_GENERIC_ERROR;
