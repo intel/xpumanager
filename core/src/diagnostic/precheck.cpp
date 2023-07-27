@@ -533,6 +533,9 @@ namespace xpum {
                             continue;
                         }
                         int cnt = read(fd, thermal_value, 1024);
+                        if (cnt < 0 || cnt >= 1024) {
+                            continue;
+                        }
                         thermal_value[cnt] = 0;
                         close(fd);
                         int val = std::stoi(thermal_value)/1000;
