@@ -6,8 +6,11 @@
 
 #include <iostream>
 #include <cstring>
+#include <chrono>
+#include <thread>
 #include "skuType.h"
 #include "logger.h"
+#include "infrastructure/handle_lock.h"
 
 namespace xpum {
 std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices(){
@@ -62,8 +65,9 @@ TEESTATUS teeInitAndConnectByPath(TEEHANDLE *cl, const GUID *guid, const char *d
     TEESTATUS status;
     for (uint32_t counter = 0; counter < 3; counter++){
         status = TeeInit(cl, guid, device_path);
-        if (status != TEE_DEVICE_NOT_READY)
+        if (status != TEE_DEVICE_NOT_READY && status != TEE_BUSY )
             break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
     if (status != TEE_SUCCESS)
         return status;
@@ -120,6 +124,7 @@ static TEESTATUS validMkhiGetPchInfoMsg(mkhi_get_pch_info_res *resp, size_t rece
 
 uint32_t getDevicePchProdStateType(std::string meiPath)
 {
+    std::lock_guard<std::mutex> lock(metee_mutex);
     uint32_t pchProdState = 0;
     TEEHANDLE cl;
     TEESTATUS status;
@@ -131,8 +136,10 @@ uint32_t getDevicePchProdStateType(std::string meiPath)
 
     const GUID *guid = &GUID_METEE_MKHI;
     status = teeInitAndConnectByPath(&cl, guid, meiPath.c_str());
-    if (status != TEE_SUCCESS)
+    if (status != TEE_SUCCESS) {
+        XPUM_LOG_DEBUG("teeInitAndConnect failed status:{}", status);
         return pchProdState;
+    }
 
     read_len = cl.maxMsgLen;
     req = (struct mkhi_get_pch_info_req *)(uint8_t *)malloc(read_len);
