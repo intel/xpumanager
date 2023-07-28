@@ -338,6 +338,12 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
     registry, metrics = registries.setdefault(
         metrics_owner, (CollectorRegistry(), {}))
 
+    if 'xpum_topology_link' in metrics:
+        metrics['xpum_topology_link'].clear()
+
+    if 'xpum_xelink_port_status' in metrics:
+        metrics['xpum_xelink_port_status'].clear()
+
     for stat in datalist:
         metrics_list = metrics_map.get(stat.get('metrics_type'))
         if metrics_list is None:
