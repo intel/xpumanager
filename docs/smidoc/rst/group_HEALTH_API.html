@@ -110,37 +110,16 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
     <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
     <span class="p">);</span>
 
-XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetHealthConfigByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
-    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
-    <span class="p">);</span>
-
 XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthConfig<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
     <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
     <span class="p">);</span>
 
-XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthConfigByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
-    <span class="kt">void</span><span class="o">*</span> <span class="n">valueList</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
-    <span class="p">);</span>
-
 XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealth<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span><span class="o">*</span> <span class="n">data</span>
-    <span class="p">);</span>
-
-XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -175,34 +154,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga4e1f0b069ca4a9ed702b45025de8f4b8"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetHealthConfigByGroup</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
-    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
-    <span class="p">)</span></pre>
-<p>Set health configuration by group.</p>
-<p>Support Platform: Linux</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>groupId</p></td>
-<td><p>IN: Group id</p></td>
-</tr>
-<tr class="row-even"><td><p>key</p></td>
-<td><p>IN: Configuration key to set</p></td>
-</tr>
-<tr class="row-odd"><td><p>value</p></td>
-<td><p>IN: Pointer to health configuration value to set the type of value is decided by <em>key</em> type, which should be documented</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga670a3d70fb810b9680b7795927ef0827"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthConfig</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga670a3d70fb810b9680b7795927ef0827"><span id="index-2"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthConfig</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
     <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
@@ -229,45 +181,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga39f9395f8344e87b0c3eabfae109841f"><span id="index-4"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthConfigByGroup</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
-    <span class="kt">void</span><span class="o">*</span> <span class="n">valueList</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
-    <span class="p">)</span></pre>
-<p>Get health configuration by group.</p>
-<p>Support Platform: Linux</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>groupId</p></td>
-<td><p>IN: Group id</p></td>
-</tr>
-<tr class="row-even"><td><p>key</p></td>
-<td><p>IN: Configuration key to get</p></td>
-</tr>
-<tr class="row-odd"><td><p>deviceIdList</p></td>
-<td><p>OUT: Array of device ids in this group</p></td>
-</tr>
-<tr class="row-even"><td><p>valueList</p></td>
-<td><p>OUT: Array to store configuration values for devices’ <em>key</em> in <em>deviceIdList</em></p></td>
-</tr>
-<tr class="row-odd"><td><p>count</p></td>
-<td><p>IN/OUT: The number of entries that <em>deviceIdList</em> and <em>valueList</em> array can store, count should equal to or larger than device count of the group (<em>groupid</em>); when return, the <em>count</em> will store real number of entries returned by <em>deviceIdList</em> and <em>valueList</em></p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than device count of group</p></li>
-</ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga6f775fc0314335ec0d7e229a9bfebb46"><span id="index-5"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealth</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga6f775fc0314335ec0d7e229a9bfebb46"><span id="index-3"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealth</span><span class="p">(</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span><span class="o">*</span> <span class="n">data</span>
@@ -294,40 +208,6 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-health-api-1ga8b71d9f5973a7a39ae6c114b73fd2525"><span id="index-6"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetHealthByGroup</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
-    <span class="p">)</span></pre>
-<p>Get health status by group for specific health type.</p>
-<p>Support Platform: Linux</p>
-<p class="rubric">Parameters:</p>
-<table class="colwidths-given docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>groupId</p></td>
-<td><p>IN: Group id</p></td>
-</tr>
-<tr class="row-even"><td><p>type</p></td>
-<td><p>IN: Health type to get</p></td>
-</tr>
-<tr class="row-odd"><td><p>dataList</p></td>
-<td><p>OUT: Array of health status datas, the array length should equal to device count of this group.</p></td>
-</tr>
-<tr class="row-even"><td><p>count</p></td>
-<td><p>IN/OUT: The number of entries that <em>dataList</em> array can store, count should equal to or larger than device count of the group (<em>groupid</em>); when return, the <em>count</em> will store real number of entries returned by <em>dataList</em></p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Returns:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than device count of group</p></li>
-</ul>
 </section>
 </section>
 </section>

@@ -11,7 +11,7 @@ The Intel XPU Manager source repository can be found at [intel/xpumanager](https
 ## Enable TLS
 Generate certificate for TLS and configure REST user credential:
 ```sh
-xpum_src_root=... # e.g., $HOME/XPUManagerGit
+xpum_src_root=... # e.g., $HOME/xpumanager
 mkdir -p rest/conf
 sudo ${xpum_src_root}/install/tools/rest/keytool.sh --owner=root --group=root
 sudo ${xpum_src_root}/install/tools/rest/rest_config.py --owner=root --group=root
@@ -29,7 +29,7 @@ ${xpum_image}
 ## Disable TLS
 Configure REST user credential:
 ```sh
-xpum_src_root=... # e.g., $HOME/XPUManagerGit
+xpum_src_root=... # e.g., $HOME/xpumanager
 mkdir -p rest/conf
 sudo ${xpum_src_root}/install/tools/rest/rest_config.py --owner=root --group=root
 ```

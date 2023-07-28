@@ -15,14 +15,14 @@
 
 namespace xpum {
 
-uint32_t access_device_memory(std::string hex_base) {
+uint64_t access_device_memory(std::string hex_base, uint64_t width) {
     int fd = -1;
     void *map_base, *virt_addr; 
-    uint32_t read_result = 0;
+    uint64_t read_result = 0;
     off_t target = strtoul(hex_base.c_str(), 0, 0);
 
     if ((fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1) {
-        return -1;
+        return 0;
     }
 
     int map_size = 4096UL;
@@ -30,10 +30,25 @@ uint32_t access_device_memory(std::string hex_base) {
     map_base = mmap(0, map_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, target & ~map_mask);
     
     virt_addr = (char *)map_base + (target & map_mask);
-    read_result = *((uint32_t *) virt_addr);	
+    switch (width) {
+        case 8:
+            read_result = *((uint8_t *) virt_addr);
+            break;
+        case 16:
+            read_result = *((uint16_t *) virt_addr);
+            break;
+        case 32:
+            read_result = *((uint32_t *) virt_addr);
+            break;
+        case 64:
+            read_result = *((uint64_t *) virt_addr);
+            break;
+        default:
+            read_result = *((uint32_t *) virt_addr);
+    }
     
     if (munmap(map_base, map_size) == -1) {
-        return -1;
+        return 0;
     }
 
     close(fd);
@@ -71,7 +86,7 @@ bool getDeviceRegion(std::string bdf, std::string& region_base){
     return true;
 }
 
-std::string to_hex_string(uint64_t val, int width = 0) {
+std::string to_hex_string(uint64_t val, int width) {
     std::stringstream s;
     if (width == 0)
         s << std::string("0x") << std::hex << val;

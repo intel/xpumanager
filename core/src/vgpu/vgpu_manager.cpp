@@ -12,11 +12,13 @@
 #include <dirent.h>
 #include <algorithm>
 #include <sys/stat.h>
+#include <iomanip>
 
 #include "./vgpu_manager.h"
 #include "core/core.h"
 #include "infrastructure/xpum_config.h"
 #include "infrastructure/configuration.h"
+#include "infrastructure/utility.h"
 #include "xpum_api.h"
 
 namespace xpum {
@@ -26,9 +28,12 @@ static bool is_path_exist(const std::string &s) {
   return (stat(s.c_str(), &buffer) == 0);
 }
 
-
 xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_t* param) {
     XPUM_LOG_DEBUG("vgpuCreateVf, {}, {}, {}", deviceId, param->numVfs, param->lmemPerVf);
+    auto res = vgpuValidateDevice(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
 
     DeviceSriovInfo deviceInfo;
     if (!loadSriovData(deviceId, deviceInfo)) {
@@ -49,10 +54,14 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
         return XPUM_VGPU_DIRTY_PF;
     }
 
-    AttrFromConfigFile attrs;
+    AttrFromConfigFile attrs = {};
     bool readFlag = readConfigFromFile(deviceId, param->numVfs, attrs);
     if (!readFlag) {
         return XPUM_VGPU_NO_CONFIG_FILE;
+    }
+    if (attrs.vfLmem == 0) {
+        XPUM_LOG_ERROR("Configuration item for {} VFs not found", param->numVfs);
+        return XPUM_VGPU_INVALID_NUMVFS;
     }
 
     uint64_t lmemToUse = 0;
@@ -68,32 +77,7 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
         XPUM_LOG_ERROR("LMEM size too large");
         return XPUM_VGPU_INVALID_LMEM;
     }
-
-    std::stringstream devicePath;
-    devicePath << "/sys/class/drm/" << deviceInfo.drmPath;
-    std::string devicePathString = devicePath.str();
-    try {
-        writeFile(std::string(devicePathString).append("/iov/pf/gt/exec_quantum_ms"), std::to_string(attrs.pfExec));
-        writeFile(std::string(devicePathString).append("/iov/pf/gt/preempt_timeout_us"), std::to_string(attrs.pfPreempt));
-        writeFile(std::string(devicePathString).append("/iov/pf/gt/policies/sched_if_idle"), attrs.schedIfIdle ? "1": "0");
-        for (uint32_t i = 0; i < param->numVfs; i++) {
-            std::stringstream vfPath;
-            vfPath << devicePath.str() << "/iov/vf" << i + 1 << "/gt/";
-            std::string vfPathString = vfPath.str();
-            writeFile(std::string(vfPathString).append("exec_quantum_ms"), std::to_string(attrs.vfExec));
-            writeFile(std::string(vfPathString).append("preempt_timeout_us"), std::to_string(attrs.vfPreempt));
-            writeFile(std::string(vfPathString).append("lmem_quota"), std::to_string(lmemToUse));
-            writeFile(std::string(vfPathString).append("ggtt_quota"), std::to_string(attrs.vfGgtt));
-            writeFile(std::string(vfPathString).append("doorbells_quota"), std::to_string(attrs.vfDoorbells));
-            writeFile(std::string(vfPathString).append("contexts_quota"), std::to_string(attrs.vfContexts));
-        }
-        writeFile(std::string(devicePathString).append("/device/sriov_drivers_autoprobe"), attrs.driversAutoprobe ? "1" : "0");
-        writeFile(std::string(devicePathString).append("/device/sriov_numvfs"), std::to_string(param->numVfs));
-    } catch (std::ios::failure &e) {
-        return XPUM_VGPU_CREATE_VF_FAILED;
-    }
-
-    return XPUM_OK;
+    return createVfInternal(deviceInfo, attrs, param->numVfs, lmemToUse) ? XPUM_OK : XPUM_VGPU_CREATE_VF_FAILED;
 }
 
 /*
@@ -102,18 +86,20 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
  */
 xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vector<xpum_vgpu_function_info_t> &result) {
     XPUM_LOG_DEBUG("getFunctionList, device id: {}", deviceId);
+    auto res = vgpuValidateDevice(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
     
     DeviceSriovInfo deviceInfo;
     if (!loadSriovData(deviceId, deviceInfo)) {
         return XPUM_VGPU_SYSFS_ERROR;
     }
     std::string numVfsString;
-    std::stringstream devicePath;
-
-    devicePath << "/sys/class/drm/" << deviceInfo.drmPath;
-    XPUM_LOG_DEBUG("device Path: {}", devicePath.str());
+    std::string devicePath = std::string("/sys/class/drm/") + deviceInfo.drmPath;
+    XPUM_LOG_DEBUG("device Path: {}", devicePath);
     try {
-        readFile(devicePath.str().append("/device/sriov_numvfs"), numVfsString);
+        readFile(devicePath + "/device/sriov_numvfs", numVfsString);
     } catch (std::ios::failure &e) {
         return XPUM_VGPU_SYSFS_ERROR;
     }
@@ -123,30 +109,53 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
     /*
      *  Put PF info into index 0, and VF1..n into index 1..n respectively
      */
-    for (int i = 0; i < numVfs + 1; i++) {
-        std::string lmemString, uevent;
-        std::stringstream lmemPath, ueventPath;
-        if (i == 0) {
-            lmemPath << devicePath.str() << "/iov/pf/gt/available/lmem_free";
-            ueventPath << devicePath.str() << "/iov/pf/device/uevent";
+    for (int functionIndex = 0; functionIndex < numVfs + 1; functionIndex++) {
+        xpum_vgpu_function_info_t info = {};
+        info.functionType = (functionIndex == 0 ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL);
+        std::string lmemString, uevent, lmemPath, ueventPath;
+        if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
+            if (functionIndex == 0) {
+                lmemPath = devicePath + "/iov/pf/gt/available/lmem_free";
+            } else {
+                lmemPath = devicePath + "/iov/vf" + std::to_string(functionIndex) + "/gt/lmem_quota";
+            }
+            try {
+                readFile(lmemPath, lmemString);
+            } catch (std::ios::failure &e) {
+                return XPUM_VGPU_SYSFS_ERROR;
+            }
+            info.lmemSize = std::stoul(lmemString);
+        } else if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_PVC) {
+            for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
+                std::string gtNum = std::to_string(tile);
+                if (functionIndex == 0) {
+                    lmemPath = devicePath + "/iov/pf/gt" + gtNum + "/available/lmem_free";
+                } else {
+                    lmemPath = devicePath + "/iov/vf" + std::to_string(functionIndex) + "/gt" + gtNum + "/lmem_quota";
+                }
+                try {
+                    readFile(lmemPath, lmemString);
+                } catch (std::ios::failure &e) {
+                    return XPUM_VGPU_SYSFS_ERROR;
+                }
+                info.lmemSize += std::stoul(lmemString);
+            }
         } else {
-            lmemPath << devicePath.str() << "/iov/vf" << i << "/gt/lmem_quota";
-            ueventPath << devicePath.str() << "/iov/vf" << i << "/device/uevent";
+            return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
         }
 
-        try {
-            readFile(lmemPath.str(), lmemString);
-        } catch (std::ios::failure &e) {
-            return XPUM_VGPU_SYSFS_ERROR;
+        if (functionIndex == 0) {
+            ueventPath = devicePath + "/iov/pf/device/uevent";
+        } else {
+            ueventPath = devicePath + "/iov/vf" + std::to_string(functionIndex) + "/device/uevent";
         }
-        xpum_vgpu_function_info_t info;
-        info.lmemSize = std::stoul(lmemString);
-        info.functionType = (i == 0 ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL);
-        
         info.bdfAddress[0] = 0;
-        std::ifstream ifs(ueventPath.str());
+        std::ifstream ifs(ueventPath);
         std::string line;
         while (std::getline(ifs, line)) {
+            if (line.length() >= XPUM_MAX_STR_LENGTH) {
+                return XPUM_VGPU_SYSFS_ERROR;
+            }
             sscanf(line.c_str(), "PCI_SLOT_NAME=%s", info.bdfAddress);
             if (info.bdfAddress[0] != 0) {
                 XPUM_LOG_DEBUG("BDF Address: {}", info.bdfAddress);
@@ -167,6 +176,10 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
 }
 
 xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
+    auto res = vgpuValidateDevice(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
     std::unique_lock<std::mutex> lock(mutex);
     
     DeviceSriovInfo deviceInfo;
@@ -191,25 +204,27 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
     DIR *dir;
     dirent *ent;
     iovPath << "/sys/class/drm/" << deviceInfo.drmPath << "/iov/";
+    AttrFromConfigFile zeroAttr = {};
     if ((dir = opendir(iovPath.str().c_str())) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             if (strstr(ent->d_name, "vf") == NULL) {
                 continue;
             }
-            std::string vfPath = iovPath.str().append(ent->d_name).append("/gt/");
             try {
-                writeFile(std::string(vfPath).append("doorbells_quota"), "0");
-                writeFile(std::string(vfPath).append("contexts_quota"), "0");
-                writeFile(std::string(vfPath).append("ggtt_quota"), "0");
-                writeFile(std::string(vfPath).append("lmem_quota"), "0");
-                writeFile(std::string(vfPath).append("exec_quantum_ms"), "0");
-                writeFile(std::string(vfPath).append("preempt_timeout_us"), "0");
-            } catch (std::ios::failure &e) {
+                if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
+                    writeVfAttrToSysfs(iovPath.str() + ent->d_name + "/gt", zeroAttr, 0);
+                } else if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_PVC) {
+                    for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
+                        writeVfAttrToSysfs(iovPath.str() + ent->d_name + "/gt" + std::to_string(tile), zeroAttr, 0);
+                    }
+                }
+            } catch(std::ios::failure &e) {
                 return XPUM_VGPU_REMOVE_VF_FAILED;
             }
         }
     } else {
         XPUM_LOG_ERROR("Failed to open directory {}", iovPath.str());
+        return XPUM_VGPU_REMOVE_VF_FAILED;
     }
     return XPUM_OK;
 }
@@ -222,12 +237,18 @@ bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data
     data.deviceModel = device->getDeviceModel();
 
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop);
-    char drm[256];
+    char drm[XPUM_MAX_STR_LENGTH];
+    if (prop.getValue().length() >= XPUM_MAX_STR_LENGTH) {
+        return false;
+    }
     sscanf(prop.getValue().c_str(), "/dev/dri/%s", drm);
     data.drmPath = std::string(drm);
     
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop);
     data.bdfAddress = prop.getValue();
+
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
+    data.numTiles = prop.getValueInt();
     
     bool available;
     bool configurable;
@@ -237,23 +258,39 @@ bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data
     data.eccState = current;
     
     std::string lmem, ggtt, doorbell, context;
-    std::stringstream lmemPath, ggttPath, doorbellPath, contextPath;
-    lmemPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/lmem_free";
-    ggttPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/ggtt_free";
-    doorbellPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/doorbells_free";
-    contextPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/contexts_free";
-    try {
-        readFile(lmemPath.str(), lmem);
-        readFile(ggttPath.str(), ggtt);
-        readFile(doorbellPath.str(), doorbell);
-        readFile(contextPath.str(), context);
-    } catch (std::ios::failure &e) {
+    if (data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
+        std::string pfIovPath = std::string("/sys/class/drm/") + drm + "/iov/pf/gt/available/";
+        try {
+            readFile(pfIovPath + "lmem_free", lmem);
+            readFile(pfIovPath + "ggtt_free", ggtt);
+            readFile(pfIovPath + "doorbells_free", doorbell);
+            readFile(pfIovPath + "contexts_free", context);
+        } catch (std::ios::failure &e) {
+            return false;
+        }
+        data.lmemSizeFree = std::stoul(lmem);
+        data.ggttSizeFree = std::stoul(ggtt);
+        data.contextFree = std::stoi(context);
+        data.doorbellFree = std::stoi(doorbell);
+    } else if (data.deviceModel == XPUM_DEVICE_MODEL_PVC) {
+        for (uint32_t tile = 0; tile < data.numTiles; tile++) {
+            std::string pfIovPath = std::string("/sys/class/drm/") + drm + "/iov/pf/gt" + std::to_string(tile) + "/available/";
+            try {
+                readFile(pfIovPath + "lmem_free", lmem);
+                readFile(pfIovPath + "ggtt_free", ggtt);
+                readFile(pfIovPath + "doorbells_free", doorbell);
+                readFile(pfIovPath + "contexts_free", context);
+            } catch (std::ios::failure &e) {
+                return false;
+            }
+            data.lmemSizeFree += std::stoul(lmem);
+            data.ggttSizeFree += std::stoul(ggtt);
+            data.contextFree += std::stoi(context);
+            data.doorbellFree += std::stoi(doorbell);
+        }
+    } else {
         return false;
     }
-    data.lmemSizeFree = std::stoul(lmem);
-    data.ggttSizeFree = std::stoul(ggtt);
-    data.contextFree = std::stoi(context);
-    data.doorbellFree = std::stoi(doorbell);
     return true;
 }
 
@@ -274,7 +311,7 @@ void VgpuManager::readFile(const std::string& path, std::string& content) {
     XPUM_LOG_DEBUG("read: {} {}", path, ss.str());
 }
 
-void VgpuManager::writeFile(const std::string& path, const std::string& content) {
+void VgpuManager::writeFile(const std::string path, const std::string& content) {
     std::ofstream ofs;
     ofs.exceptions(std::ios::failbit | std::ios::badbit);
     try {
@@ -295,6 +332,9 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
     if (!is_path_exist(fileName)) {
         char exe_path[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        if (len < 0 || len >= XPUM_MAX_PATH_LEN) {
+            throw BaseException("readlink returns error");
+        }
         exe_path[len] = '\0';
         std::string current_file = exe_path;
         fileName = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/config/" + std::string("vgpu.conf");
@@ -302,13 +342,11 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
             fileName = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/config/" + std::string("vgpu.conf");
     }
 
-    auto deviceModel = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel();
-    std::string devicePciId;
-    if (deviceModel == XPUM_DEVICE_MODEL_ATS_M_1) {
-        devicePciId = "56c0";
-    } else if (deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
-        devicePciId = "56c1";
-    }
+    Property prop;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
+    std::ostringstream oss;
+    oss << std::setw(4) << std::setfill('0') << prop.getValue().substr(2);
+    std::string devicePciId = oss.str();
 
     std::ifstream ifs(fileName);
     if (ifs.fail()) {
@@ -327,11 +365,15 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
             if (strcmp(key.c_str(), "NAME") == 0) {
                 char s[16];
                 uint32_t i;
-                sscanf(value.c_str(), "%4sN%d", s, &i);
-                if (strcmp(s, devicePciId.c_str()) == 0 && i == numVfs) {
-                    target = true;
-                } else {
-                    target = false;
+                auto nameList = Utility::split(value, ',');
+                for (auto nameItem: nameList) {
+                    sscanf(nameItem.c_str(), "%4sN%d", s, &i);
+                    if (strcmp(s, devicePciId.c_str()) == 0 && i == numVfs) {
+                        target = true;
+                        break;
+                    } else {
+                        target = false;
+                    }
                 }
             } else if (strcmp(key.c_str(), "VF_LMEM") == 0 && target) {
                 attrs.vfLmem = std::stoul(value);
@@ -359,6 +401,79 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
         }
     }
     return true;
+}
+
+xpum_result_t VgpuManager::vgpuValidateDevice(xpum_device_id_t deviceId) {
+    auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    
+    Property prop;
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
+    if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    
+    // Now we only need to support ATSM and some of PVC
+    std::vector<int> supportedDevices{0x56c0, 0x56c1, 0x0bd5, 0x0bd6, 0x0bda, 0x0bdb};
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
+    int pciDeviceId = std::stoi(prop.getValue().substr(2), nullptr, 16);
+    if (std::find(supportedDevices.begin(), supportedDevices.end(), pciDeviceId) == supportedDevices.end()) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
+    }
+
+    return XPUM_OK;
+}
+
+bool VgpuManager::createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromConfigFile& attrs, uint32_t numVfs, uint64_t lmem) {
+    std::string devicePathString = std::string("/sys/class/drm/") + deviceInfo.drmPath;
+    try {
+        if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
+            writeFile(devicePathString + "/iov/pf/gt/exec_quantum_ms", std::to_string(attrs.pfExec));
+            writeFile(devicePathString + "/iov/pf/gt/preempt_timeout_us", std::to_string(attrs.pfPreempt));
+            writeFile(devicePathString + "/iov/pf/gt/policies/sched_if_idle", attrs.schedIfIdle ? "1": "0");
+            for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+                writeVfAttrToSysfs(devicePathString + "/iov/vf" + std::to_string(vfNum) + "/gt", attrs, lmem);
+            }
+        } else if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_PVC) {
+            for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
+                std::string gtNum = std::to_string(tile);
+                writeFile(devicePathString + "/iov/pf/gt" + gtNum + "/exec_quantum_ms", std::to_string(attrs.pfExec));
+                writeFile(devicePathString + "/iov/pf/gt" + gtNum + "/preempt_timeout_us", std::to_string(attrs.pfPreempt));
+                writeFile(devicePathString + "/iov/pf/gt" + gtNum + "/policies/sched_if_idle", attrs.schedIfIdle ? "1": "0");
+                // Each VF should be mapped to only one tile, except the case of 1 VF on 2 tiles
+                if (numVfs == 1 && deviceInfo.numTiles > 1) {
+                    std::string vfResPath = devicePathString + "/iov/vf1/gt" + gtNum + "/";
+                    attrs.vfGgtt /= deviceInfo.numTiles;
+                    attrs.vfDoorbells /= deviceInfo.numTiles;
+                    attrs.vfContexts /= deviceInfo.numTiles;
+                    writeVfAttrToSysfs(devicePathString + "/iov/vf1/gt" + gtNum, attrs, lmem / deviceInfo.numTiles);
+                } else {
+                    for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+                        if (vfNum % deviceInfo.numTiles != tile) {
+                            continue;
+                        }
+                        writeVfAttrToSysfs(devicePathString + "/iov/vf" + std::to_string(vfNum) + "/gt" + gtNum, attrs, lmem);
+                    }
+                }   
+            }
+        }
+        writeFile(devicePathString + "/device/sriov_drivers_autoprobe", attrs.driversAutoprobe ? "1" : "0");
+        writeFile(devicePathString + "/device/sriov_numvfs", std::to_string(numVfs));
+    } catch (std::ios::failure &e) {
+        return false;
+    }
+    return true;
+}
+
+void VgpuManager::writeVfAttrToSysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem) {
+    writeFile(vfDir + "/exec_quantum_ms", std::to_string(attrs.vfExec));
+    writeFile(vfDir + "/preempt_timeout_us", std::to_string(attrs.vfPreempt));
+    writeFile(vfDir + "/lmem_quota", std::to_string(lmem));
+    writeFile(vfDir + "/ggtt_quota", std::to_string(attrs.vfGgtt));
+    writeFile(vfDir + "/doorbells_quota", std::to_string(attrs.vfDoorbells));
+    writeFile(vfDir + "/contexts_quota", std::to_string(attrs.vfContexts));
 }
 
 }

@@ -23,6 +23,7 @@ cp -f @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/xpum.service.template ${SERVICE_
 cp -f @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
 chown -R xpum @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum
 chmod g+x @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/keytool.sh
+chmod g+x @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/enable_restful.sh
 
 # sed -e "s:@CPACK_XPUM_LIB_INSTALL_DIR@:${LIB_PATH}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
 # mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service

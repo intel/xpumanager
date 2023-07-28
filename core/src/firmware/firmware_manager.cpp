@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
+#include <array>
 
 namespace xpum {
 
@@ -31,7 +32,7 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
 
 SystemCommandResult execCommand(const std::string& command) {
     int exitcode = 0;
-    std::array<char, 1048576> buffer{};
+    std::array<char, 1048576> buffer = {};
     std::string result;
 
     FILE* pipe = popen(command.c_str(), "r");

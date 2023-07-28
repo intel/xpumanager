@@ -465,7 +465,9 @@ static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::j
 }
 
 void ComletConfig::getTableResult(std::ostream &out) {
+#ifndef DAEMONLESS
     bool needRestart = false;
+#endif
     if (this->opts->resetDevice) {
         if (this->opts->device != "") {
             if (isNumber(this->opts->device)) {
@@ -488,7 +490,9 @@ void ComletConfig::getTableResult(std::ostream &out) {
         std::vector<std::string> paralist = split(this->opts->scheduler, ",");
         std::string command = paralist.at(0);
         if (command.compare("debug") == 0 ||command.compare("exclusive") == 0 ) {
+#ifndef DAEMONLESS
             needRestart = true;
+#endif
             if (this->opts->device != "") {
                 if (isNumber(this->opts->device)) {
                     this->opts->deviceId = std::stoi(this->opts->device);

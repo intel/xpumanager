@@ -169,7 +169,6 @@ XPUM_API const char *getXpumDevicePropertyNameString(xpum_device_property_name_t
  */
 XPUM_API xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
 
-/// @cond DAEMON_ONLY
 /**
  * @brief Get all AMC firmware versions
  * 
@@ -194,7 +193,7 @@ XPUM_API xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionL
  * @return xpum_result_t 
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *count);
 
@@ -205,13 +204,13 @@ XPUM_API xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *cou
  * @param username       IN: Username used for redfish host authentication      
  * @param password       IN: Password used for redfish host authentication 
  * @param serialNumber  OUT: Device serial number
+ * @param amcFwVersion  OUT: AMC firmware version
  * @return xpum_result_t 
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId, const char *username, const char *password, char serialNumber[XPUM_MAX_STR_LENGTH], char amcFwVersion[XPUM_MAX_STR_LENGTH]);
-/// @endcond
 
 /** @} */ // Closing for DEVICE_API
 
@@ -308,6 +307,7 @@ XPUM_API xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[], int *count
  */
 XPUM_API xpum_result_t xpumSetHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void *value);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Set health configuration by group
  * 
@@ -320,6 +320,7 @@ XPUM_API xpum_result_t xpumSetHealthConfig(xpum_device_id_t deviceId, xpum_healt
  * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumSetHealthConfigByGroup(xpum_group_id_t groupId, xpum_health_config_type_t key, void *value);
+/// @endcond
 
 /**
  * @brief Get health configuration by device
@@ -334,6 +335,7 @@ XPUM_API xpum_result_t xpumSetHealthConfigByGroup(xpum_group_id_t groupId, xpum_
  */
 XPUM_API xpum_result_t xpumGetHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void *value);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get health configuration by group
  * 
@@ -355,6 +357,7 @@ XPUM_API xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId,
                                          xpum_device_id_t deviceIdList[],
                                          void *valueList[],
                                          int *count);
+/// @endcond
 
 /**
  * @brief Get health status by device for specific health type
@@ -367,6 +370,7 @@ XPUM_API xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId,
  */
 XPUM_API xpum_result_t xpumGetHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t *data);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get health status by group for specific health type
  * 
@@ -387,6 +391,7 @@ XPUM_API xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
                                    xpum_health_type_t type,
                                    xpum_health_data_t dataList[],
                                    int *count);
+/// @endcond
 
 /** @} */ // Closing for HEALTH_API
 
@@ -407,7 +412,7 @@ XPUM_API xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
                                     xpum_standby_data_t dataArray[], uint32_t *count);
@@ -431,7 +436,7 @@ XPUM_API xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  *
  * @param deviceId          IN: The device Id
  * @param tileId            IN: The tile Id. if tileId is -1, return device's powerlimit; otherwise return tile's powerlimit.
- * @param powerLimits      IN/OUT: The detailed power limit data. Parameter \'interval\' has been obsoleted.
+ * @param pPowerLimits      IN/OUT: The detailed power limit data. Parameter \'interval\' has been obsoleted.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
@@ -487,7 +492,7 @@ XPUM_API xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, co
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
                                       xpum_scheduler_data_t dataArray[], uint32_t *count);
@@ -500,7 +505,7 @@ XPUM_API xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_timeout_t sched_timeout);
@@ -671,7 +676,7 @@ XPUM_API xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterva
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t dataArray[], uint32_t *count);
 
@@ -684,7 +689,7 @@ XPUM_API xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId, xpum_
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t performanceFactor);
 
@@ -698,7 +703,7 @@ XPUM_API xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t dataArray[], uint32_t *count);
 /**
@@ -710,7 +715,7 @@ XPUM_API xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_f
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t fabricPortConfig);
 /**
@@ -797,7 +802,6 @@ XPUM_API xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_fi
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
  *      - \ref XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND
- *      - \ref XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL
@@ -984,8 +988,9 @@ XPUM_API xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task
  * @return
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than component count
+ * @note Support Platform: Linux
  */
-xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime);
+XPUM_API xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime);
 
 /**
  * @brief Get precheck error type list
@@ -998,8 +1003,9 @@ xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *cou
  * @return
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than error type count
+ * @note Support Platform: Linux
  */
-xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count);
+XPUM_API xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count);
 
 /** @} */ // Closing for DIAGNOSTICS_API
 
@@ -1363,7 +1369,7 @@ XPUM_API xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t po
  * @param groupId            IN: The group id to set policy
  * @param policy             IN: The policy will be set on the device. I
  * @return xpum_result_t       Not Support
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy);
 
@@ -1375,7 +1381,7 @@ XPUM_API xpum_result_t xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy
  * @param count          IN/OUT: When \a resultList is NULL, \a count will be filled with the number of policys. \a count should be equal to or larger than the number of available policys. When return, the \a count will store real number of entries returned by \a resultList.
  * @return
  *      - \ref XPUM_OK                  if query successfully
- * @note Support Platform: Linux, Windows
+ * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int *count);
 

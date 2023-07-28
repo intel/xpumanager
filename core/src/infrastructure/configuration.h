@@ -46,6 +46,12 @@ class Configuration {
     static void init() {
         char exePath[PATH_MAX];
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        if (len < 0) {
+            len = 0;
+        }
+        if (len >= PATH_MAX) {
+            len = PATH_MAX -1;
+        }
         exePath[len] = '\0';
         std::string commandLine = exePath;
         if (commandLine.find_last_of('/') != std::string::npos)

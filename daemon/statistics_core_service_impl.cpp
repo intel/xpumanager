@@ -371,6 +371,59 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         fabricStatsInfo->set_max(stats.max);
         fabricStatsInfo->set_scale(stats.scale);
         fabricStatsInfo->set_accumulated(stats.accumulated);
+        fabricStatsInfo->set_deviceid(stats.deviceId);
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getFabricStatisticsEx(::grpc::ServerContext* context, const ::GetFabricStatsExRequest* request, ::GetFabricStatsResponse* response) {
+    std::vector<xpum_device_id_t> deviceIdList;
+    for (auto deviceId : request->deviceidlist()) {
+        deviceIdList.push_back(deviceId);
+    }
+    uint64_t sessionId = request->sessionid();
+    uint32_t count = deviceIdList.size() * 32;
+    std::vector<xpum_device_fabric_throughput_stats_t> dataList(count);
+    uint64_t begin, end;
+    auto res = xpumGetFabricThroughputStatsEx(deviceIdList.data(), deviceIdList.size(), dataList.data(), &count, &begin, &end, sessionId);
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        dataList.reserve(count);
+        res = xpumGetFabricThroughputStatsEx(deviceIdList.data(), deviceIdList.size(), dataList.data(), &count, &begin, &end, sessionId);
+    }
+    response->set_errorno(res);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            case XPUM_METRIC_NOT_SUPPORTED:
+                response->set_errormsg("Metric not supported");
+                break;
+            case XPUM_METRIC_NOT_ENABLED:
+                response->set_errormsg("Metric not enabled");
+                break;
+            default:
+                response->set_errormsg("Fail to get fabric throughput statistics");
+                break;
+        }
+        return grpc::Status::OK;
+    }
+    response->set_begin(begin);
+    response->set_end(end);
+    for (uint32_t i = 0; i < count; i++) {
+        FabricStatsInfo* fabricStatsInfo = response->add_datalist();
+        xpum_device_fabric_throughput_stats_t& stats = dataList[i];
+        fabricStatsInfo->set_tileid(stats.tile_id);
+        fabricStatsInfo->set_remote_device_id(stats.remote_device_id);
+        fabricStatsInfo->set_remote_device_tile_id(stats.remote_device_tile_id);
+        fabricStatsInfo->set_type(stats.type);
+        fabricStatsInfo->set_value(stats.value);
+        fabricStatsInfo->set_min(stats.min);
+        fabricStatsInfo->set_avg(stats.avg);
+        fabricStatsInfo->set_max(stats.max);
+        fabricStatsInfo->set_scale(stats.scale);
+        fabricStatsInfo->set_accumulated(stats.accumulated);
+        fabricStatsInfo->set_deviceid(stats.deviceId);
     }
     return grpc::Status::OK;
 }

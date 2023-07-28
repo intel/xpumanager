@@ -248,6 +248,14 @@ xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     return XPUM_API_UNSUPPORTED;
 }
 
+xpum_result_t xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy){
+    return XPUM_API_UNSUPPORTED;
+}
+
+xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int *count){
+    return XPUM_API_UNSUPPORTED;
+}
+
 xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int* count) {
     return XPUM_API_UNSUPPORTED;
 }
@@ -273,6 +281,18 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
 }
 
 xpum_result_t xpumGenerateDebugLog(const char* fileName) {
+    return XPUM_API_UNSUPPORTED;
+}
+
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime){
+    return XPUM_API_UNSUPPORTED;
+}
+
+xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count){
+    return XPUM_API_UNSUPPORTED;
+}
+
+xpum_result_t xpumGetDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId,xpum_diag_xe_link_throughput_t resultList[],int *count){
     return XPUM_API_UNSUPPORTED;
 }
 

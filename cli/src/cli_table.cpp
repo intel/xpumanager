@@ -254,8 +254,8 @@ void CharTable::calculateHangRows() {
     const unsigned int iw = config.hangIndentation();
     auto row = rows.begin();
     while (row != rows.end()) {
-        const int cols = (*row)->numberOfCells();
         CharTableRow* nRow = (CharTableRow*)(*row);
+        const int cols = nRow->numberOfCells();
         row++;
         int ciw = 0;
         bool hasNewRow;

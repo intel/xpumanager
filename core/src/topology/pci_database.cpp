@@ -59,6 +59,12 @@ bool PciDatabase::init() {
         XPUM_LOG_DEBUG("PciDatabase::init()- open file {} error.", fileName);
         char exePath[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        if (len < 0) {
+            len = 0;
+        }
+        if (len >= XPUM_MAX_PATH_LEN) {
+            len = XPUM_MAX_PATH_LEN -1;
+        }
         exePath[len] = '\0';
         std::string currentFile = exePath;
         folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/config/";

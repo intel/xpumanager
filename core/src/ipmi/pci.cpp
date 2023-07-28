@@ -137,7 +137,7 @@ bool check_pci_device(const pci_address_t *address) {
         return false;
     }
 #else
-    path_size = sprintf(path, SYSFS_PCI_DEVICE_VALUE_FORMAT,
+    path_size = snprintf(path, sizeof(path), SYSFS_PCI_DEVICE_VALUE_FORMAT,
                         address->bus, address->device, address->function,
                         SYSFS_PCI_DEVICE);
     if (path_size < 0)

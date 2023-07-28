@@ -608,7 +608,7 @@ static int cmd_firmware_update(const char* file, nrv_list cards, uint8_t *bsmc_d
 		return err;
 #endif
 
-    firmware_versions cur_fw_version;
+    firmware_versions cur_fw_version{};
     bool parse_success = parse_cur_fw_version(file, &cur_fw_version);
 
     /* BSMC firmware update */

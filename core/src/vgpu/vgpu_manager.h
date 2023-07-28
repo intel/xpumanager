@@ -26,7 +26,13 @@ private:
 
     void readFile(const std::string& path, std::string& content);
 
-    void writeFile(const std::string& path, const std::string& content);
+    void writeFile(const std::string path, const std::string& content);
+
+    xpum_result_t vgpuValidateDevice(xpum_device_id_t deviceId);
+
+    bool createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromConfigFile& attrs, uint32_t numVfs, uint64_t lmem);
+    
+    void writeVfAttrToSysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem);
 
     std::mutex mutex;
 

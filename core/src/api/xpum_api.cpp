@@ -431,7 +431,8 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
     *count = versions.size();
     for (int i = 0; i < *count; i++) {
         std::string version = versions[i];
-        std::strcpy(versionList[i].version, version.c_str());
+        std::strncpy(versionList[i].version, version.c_str(),XPUM_MAX_STR_LENGTH-1);
+        versionList[i].version[XPUM_MAX_STR_LENGTH-1] = '\0';
     }
     return XPUM_OK;
 }
@@ -1403,36 +1404,34 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         }
     }
 
+    std::vector<xpum_device_fabric_throughput_stats_t> _dataList;
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+        uint32_t __count = 32;
+        std::vector<xpum_device_fabric_throughput_stats_t> __dataList(__count);
+        res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, __dataList.data(), &__count, begin, end, sessionId);
+        if (res == XPUM_BUFFER_TOO_SMALL) {
+            __dataList.reserve(__count);
+            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, __dataList.data(), &__count, begin, end, sessionId);
+        }
+        if (res != XPUM_OK)
+            return res;
+        for (uint32_t j = 0; j < __count; j++) {
+            _dataList.push_back(__dataList[j]);
+        }
+    }
     if (dataList == nullptr) {
-        *count = 0;
-        for (uint32_t i = 0; i < deviceCount; i++) {
-            xpum_device_id_t deviceId = deviceIdList[i];
-            uint32_t count_ = 0;
-            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, &count_, begin, end, sessionId);
-            if (res != XPUM_OK) {
-                return res;
-            }
-            *count += count_;
-        }
-        return XPUM_OK;
-    } else {
-        uint32_t used = 0;
-        uint32_t count_;
-        for (uint32_t i = 0; i < deviceCount; i++) {
-            xpum_device_id_t deviceId = deviceIdList[i];
-            count_ = *count - used;
-            if (count_ <= 0) {
-                return XPUM_BUFFER_TOO_SMALL;
-            }
-            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList + used, &count_, begin, end, sessionId);
-            if (res != XPUM_OK) {
-                return res;
-            }
-            used += count_;
-        }
-        *count = used;
+        *count = _dataList.size();
         return XPUM_OK;
     }
+    if (*count < _dataList.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    *count = _dataList.size();
+    for (uint32_t i = 0; i < _dataList.size(); i++) {
+        dataList[i] = _dataList[i];
+    }
+    return XPUM_OK;
 }
 
 xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
@@ -2265,9 +2264,15 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-int32_t mergeMaxPowerLimit(std::string card_idx, Power power){
-    if (power.getMaxLimit() != -1) 
-        return power.getMaxLimit();
+int32_t getMaxPowerFromSysfs(std::string id, Power power){
+    Property prop_drm;
+    Core::instance().getDeviceManager()->getDevice(id)->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop_drm);
+    std::string card_idx;
+    std::regex pattern("card\\d+");
+    std::smatch match;
+    if (std::regex_search(prop_drm.getValue(), match, pattern)) {
+        card_idx = match.str();
+    }
     if (card_idx.empty())
         return -1;
     std::string dirPath = "/sys/class/drm/" + card_idx + "/device/hwmon";
@@ -2317,6 +2322,45 @@ int32_t mergeMaxPowerLimit(std::string card_idx, Power power){
     return -1;
 }
 
+void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& min_power, int32_t& max_power){
+    //get minLimit and maxLimit from register
+    Property prop_drm;
+    Core::instance().getDeviceManager()->getDevice(id)->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop_drm);
+    std::string region_base;
+    if (!getDeviceRegion(prop_drm.getValue(), region_base)){
+        return;
+    }
+    uint32_t power_limit_offset = 0x281080;
+    std::string temp = add_two_hex_string(region_base, to_hex_string(power_limit_offset));
+    uint64_t value = access_device_memory(temp, 64);
+
+    uint64_t min_mask = 0x7fffull << 16;
+    uint64_t min_result =  (value & min_mask) >> 16; //get bits of 16 to 30
+    if (min_result) {
+        min_power = min_result * 125; //Power is unit of 125mW
+    }
+
+    uint64_t max_mask = 0x7fffull << 32;
+    uint64_t max_result =  (value & max_mask) >> 32; //get bits of 32 to 64
+    if (max_result) {
+        max_power = max_result * 125; //Power is unit of 125mW
+    } else {
+        //get maxLimit from power1_rated_max
+        int32_t val = getMaxPowerFromSysfs(id, power);
+        if (val != -1)
+            max_power = val;
+        else{
+            //use TDP value
+            int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1)
+                max_power = 120 * 1000;
+            else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
+                max_power = 25 * 1000;
+        }
+    }
+    return;
+}
+
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -2336,14 +2380,6 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     } else {
         *count = powers.size();
     }
-    Property prop_drm;
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop_drm);
-    std::string card_idx;
-    std::regex pattern("card\\d+");
-    std::smatch match;
-    if (std::regex_search(prop_drm.getValue(), match, pattern)) {
-        card_idx = match.str();
-    }
     if (dataArray != nullptr) {
         int i = 0;
         for (auto &power : powers) {
@@ -2352,8 +2388,11 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].can_control = power.canControl();
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
-            dataArray[i].min_limit = power.getMinLimit();
-            dataArray[i].max_limit = mergeMaxPowerLimit(card_idx, power);           
+            int32_t max_power = -1, min_power = -1;
+            getMinAndMaxPowerLimitMultiMethods(std::to_string(deviceId), power, min_power, max_power);
+            dataArray[i].min_limit = (power.getMinLimit() != -1) ? power.getMinLimit() : min_power;
+            dataArray[i].max_limit = (power.getMaxLimit() != -1) ? power.getMaxLimit() : max_power;
+            XPUM_LOG_DEBUG("dataArray[i].max_limit:{}, {}", dataArray[i].min_limit, dataArray[i].max_limit);
             i++;
         }
     }
@@ -2953,8 +2992,9 @@ xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId,
             dataArray[i].deviceId = util.getDeviceId();
             dataArray[i].memSize = util.getMemSize();
             dataArray[i].sharedMemSize = util.getSharedMemSize();
-            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
-                    util.getProcessName().length() + 1);
+            auto tempNameLen = util.getProcessName().length() >= XPUM_MAX_STR_LENGTH ? XPUM_MAX_STR_LENGTH-1: util.getProcessName().length();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),tempNameLen);
+            dataArray[i].processName[tempNameLen] = '\0';
             dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
             dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
             dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
@@ -2997,8 +3037,9 @@ xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval,
             dataArray[i].deviceId = util.getDeviceId();
             dataArray[i].memSize = util.getMemSize();
             dataArray[i].sharedMemSize = util.getSharedMemSize();
-            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
-                    util.getProcessName().length() + 1);
+            auto tempNameLen = util.getProcessName().length() >= XPUM_MAX_STR_LENGTH ? XPUM_MAX_STR_LENGTH-1: util.getProcessName().length();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),tempNameLen);
+            dataArray[i].processName[tempNameLen] = '\0';
             dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
             dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
             dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
@@ -3573,23 +3614,11 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     std::string ret = GPUDeviceStub::getPciSlotByPath(pciPathVec);
     if (ret.length() > 0 && ret.length() < sizeSlotName) {
         strncpy(slotName, ret.c_str(), sizeSlotName);
+        slotName[sizeSlotName-1] = '\0';
         return XPUM_OK;
     } else {
         return XPUM_GENERIC_ERROR;
     }
-}
-
-static bool isDevicePf(xpum_device_id_t deviceId) {
-    auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
-        return false;
-    }
-    Property prop;
-    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
-    if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
-        return false;
-    }
-    return true;
 }
 
 xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
@@ -3605,22 +3634,7 @@ xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf) 
     if (res != XPUM_OK) {
         return res;
     }
-    res = validateDeviceId(deviceId);
-    if (res != XPUM_OK) {
-        return res;
-    }
-    if (!isDevicePf(deviceId)) {
-        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
-    }
-    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
-        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
-    }
 
-    // Hardcode supported number of VF temporary
-    std::vector<int> validNumVfs = {1,2,4,8,16};
-    if (std::find(validNumVfs.begin(), validNumVfs.end(), conf->numVfs) == validNumVfs.end()) {
-        return XPUM_VGPU_INVALID_NUMVFS;
-    }
     return Core::instance().getVgpuManager()->createVf(deviceId, conf);
 }
 
@@ -3628,16 +3642,6 @@ xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_fun
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
-    }
-    res = validateDeviceId(deviceId);
-    if (res != XPUM_OK) {
-        return res;
-    }
-    if (!isDevicePf(deviceId)) {
-        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
-    }
-    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
-        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
 
     std::vector<xpum_vgpu_function_info_t> functionArray;
@@ -3665,16 +3669,6 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
-    }
-    res = validateDeviceId(deviceId);
-    if (res != XPUM_OK) {
-        return res;
-    }
-    if (!isDevicePf(deviceId)) {
-        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
-    }
-    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
-        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
     return Core::instance().getVgpuManager()->removeAllVf(deviceId);
 }

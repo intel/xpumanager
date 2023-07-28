@@ -385,7 +385,7 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
                 memset(tmpBuffer.get(), 0, 512);
 
                 if (!name.empty()) {
-                    strncpy(tmpBuffer.get(), name.c_str(), name.length());
+                    strncpy(tmpBuffer.get(), name.c_str(), name.length() >= 511? 511:name.length());
                     obj->userdata = (void*)tmpBuffer.get();
                 }
             }

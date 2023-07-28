@@ -125,6 +125,13 @@ void Configuration::initPerfMetrics() {
     if (stat(file_name.c_str(), &buffer) != 0) {
         char exePath[PATH_MAX];
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        if (len < 0 ) {
+            XPUM_LOG_ERROR("couldn't read link : {}", exePath);
+            len = 0;
+        }
+        if (len >= PATH_MAX) {
+            len = PATH_MAX -1;
+        }
         exePath[len] = '\0';
         std::string current_file = exePath;
         file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/config/" + std::string("perf_metrics.conf");

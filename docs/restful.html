@@ -1390,11 +1390,13 @@
 <dt class="field-even">Response JSON Object</dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
+<li><p><strong>memory_ecc_current_state</strong> (<em>string</em>) – The current state of memory ecc</p></li>
+<li><p><strong>memory_ecc_pending_state</strong> (<em>string</em>) – The pending state of memory ecc</p></li>
+<li><p><strong>power_limit</strong> (<em>integer</em>) – The power limit value</p></li>
+<li><p><strong>power_vaild_range</strong> (<em>string</em>) – power’s scope</p></li>
 <li><p><strong>tileConfigData.gpu_frequency_valid_options</strong> (<em>string</em>) – frequency scope</p></li>
 <li><p><strong>tileConfigData.max_frequency</strong> (<em>integer</em>) – max frequency</p></li>
 <li><p><strong>tileConfigData.min_frequency</strong> (<em>integer</em>) – min frequency</p></li>
-<li><p><strong>tileConfigData.power_limit</strong> (<em>integer</em>) – The power limit value</p></li>
-<li><p><strong>tileConfigData.power_vaild_range</strong> (<em>string</em>) – power’s scope</p></li>
 <li><p><strong>tileConfigData.scheduler_mode</strong> (<em>string</em>) – The scheduler mode: timeout, timeslice, exclusive and debug</p></li>
 <li><p><strong>tileConfigData.scheduler_timeslice_interval</strong> (<em>integer</em>) – scheduler timeslice’s interval value</p></li>
 <li><p><strong>tileConfigData.scheduler_timeslice_yield_timeout</strong> (<em>integer</em>) – scheduler timeslice’s yield value</p></li>
@@ -1402,7 +1404,6 @@
 <li><p><strong>tileConfigData.standby_mode</strong> (<em>string</em>) – The standby mode: never, default</p></li>
 <li><p><strong>tileConfigData.standby_mode_valid_options</strong> (<em>string</em>) – standby option</p></li>
 <li><p><strong>tileConfigData.tileId</strong> (<em>string</em>) – Tile id</p></li>
-<li><p><strong>tileCount</strong> (<em>integer</em>) – Tile count</p></li>
 </ul>
 </dd>
 </dl>

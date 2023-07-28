@@ -1,5 +1,5 @@
 XPU-SMI Linux Documentation
-=========================
+============================
 
 .. toctree::
     SMI_README

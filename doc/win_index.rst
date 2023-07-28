@@ -1,5 +1,5 @@
 XPU-SMI Windows Documentation
-=========================
+==============================
 
 .. toctree::
     WIN_README

@@ -119,6 +119,26 @@ XPUM_API<span></span> <span class="k">const</span> <span class="kt">char</span><
 XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceIdByBDF<span></span><span class="p">(</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span>
     <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersions<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_amc_fw_version_t.html#smi-doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <span class="n">versionList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersionsErrorMsg<span></span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetSerialNumberAndAmcFwVersion<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
+    <span class="kt">char</span> <span class="n">serialNumber</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">],</span>
+    <span class="kt">char</span> <span class="n">amcFwVersion</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span>
     <span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -219,6 +239,107 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
 </table>
 <p class="rubric">Returns:</p>
 <p><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-device-api-1ga5c34be384d611968d758bc3a17cf3ce2"><span id="index-5"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCFirmwareVersions</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_amc_fw_version_t.html#smi-doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <span class="n">versionList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
+    <span class="p">)</span></pre>
+<p>Get all AMC firmware versions.</p>
+<p>Support Platform: Linux, Windows</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>versionList</p></td>
+<td><p>IN/OUT: The array to store AMC firmware version</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>versionList</em> is NULL, <em>count</em> will be filled with the number of AMC firmware versions, and return. When <em>versionList</em> is not NULL, <em>count</em> denotes the length of <em>versionList</em>, <em>count</em> should be equal to or larger than the number of AMC firmware versions, when return, the <em>count</em> will store real number of AMC firmware versions returned by <em>versionList</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>username</p></td>
+<td><p>IN: Username used for redfish host authentication</p></td>
+</tr>
+<tr class="row-even"><td><p>password</p></td>
+<td><p>IN: Password used for redfish host authentication</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-device-api-1ga08eb3becb5faf2294af851848b4ae73e"><span id="index-6"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAMCFirmwareVersionsErrorMsg</span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get error message when fail to get amc firmware versions.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>buffer</p></td>
+<td><p>IN/OUT: The buffer to store error message</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>buffer</em> is NULL, <em>count</em> will be filled with the length of buffer needed, and return. When <em>buffer</em> is not NULL, <em>count</em> denotes the length of <em>buffer</em>, <em>count</em> should be equal to or larger than needed length, if not, it will return XPUM_BUFFER_TOO_SMALL; if return successfully, the error message will be stored in <em>buffer</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-device-api-1ga02acef7d83fa9c53da7110e254960ab4"><span id="index-7"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetSerialNumberAndAmcFwVersion</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
+    <span class="kt">char</span> <span class="n">serialNumber</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">],</span>
+    <span class="kt">char</span> <span class="n">amcFwVersion</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span>
+    <span class="p">)</span></pre>
+<p>Get device serial number from AMC.</p>
+<p>Support Platform: Linux</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>username</p></td>
+<td><p>IN: Username used for redfish host authentication</p></td>
+</tr>
+<tr class="row-odd"><td><p>password</p></td>
+<td><p>IN: Password used for redfish host authentication</p></td>
+</tr>
+<tr class="row-even"><td><p>serialNumber</p></td>
+<td><p>OUT: Device serial number</p></td>
+</tr>
+<tr class="row-odd"><td><p>amcFwVersion</p></td>
+<td><p>OUT: AMC firmware version</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a></p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a45e5ebe1fb3e6842f2967c3d9b4c8aae"><span class="std std-ref">XPUM_RESULT_DEVICE_NOT_FOUND</span></a></p></li>
+</ul>
 </section>
 </section>
 </section>

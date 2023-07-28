@@ -322,7 +322,7 @@ namespace xpum {
         uint32_t deviceId = toGetDeviceId(device);
         switch (deviceId) {
             case 0x56c1:
-                max_limit = 23;
+                max_limit = 25;
                 break;
             case 0x56c0:
                 max_limit = 120;
@@ -897,18 +897,6 @@ namespace xpum {
             return ret;
         }
 
-        if (type == MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) {
-            ret->setCurrent((uint64_t)(getCopyEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
-            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-            return ret;
-        }
-
-        if (type == MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) {
-            ret->setCurrent((uint64_t)(getRenderEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
-            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-            return ret;
-        }
-
         std::map<std::string, ze_result_t> exception_msgs;
         uint32_t engine_count = 0;
         ze_result_t res;
@@ -933,6 +921,11 @@ namespace xpum {
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         switch (type) {
+                            case MeasurementType::METRIC_COMPUTATION:
+                                if (props.type != ZES_ENGINE_GROUP_ALL) {
+                                    continue;
+                                }
+                                break;
                             case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
                                 if (props.type != ZES_ENGINE_GROUP_COMPUTE_ALL) {
                                     continue;
@@ -987,6 +980,19 @@ namespace xpum {
                 exception_msgs["zesDeviceEnumEngineGroups"] = res;
             }
         } else {
+            // When running on VF, zesDeviceEnumEngineGroups would return ZE_RESULT_SUCCESS and the engine_count would be 0; on PF, the engine_count would be greater than 0. So use this condition to see if on VF. If the behavior of zesDeviceEnumEngineGroups API was changed in the future, we may need to update the code here accordingly.
+            if (type == MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) {
+                ret->setCurrent((uint64_t)(getCopyEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
+                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                return ret;
+            }
+
+            if (type == MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) {
+                ret->setCurrent((uint64_t)(getRenderEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
+                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                return ret;
+            }
+            
             if (type == MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION) {
                 ret->setCurrent((uint64_t)(getComputeEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
                 ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);

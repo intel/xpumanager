@@ -79,6 +79,9 @@ bool privilegeCheck() {
 bool levelZeroLoaderCheck() {
     char exe_path[PATH_MAX];
     ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+    if (len < 0 || len >= XPUM_MAX_PATH_LEN) {
+        return false;
+    }
     exe_path[len] = '\0';
     std::string current_file = exe_path;
     std::string xpumd_path = current_file.substr(0, current_file.find_last_of('/')) + "/xpumd";

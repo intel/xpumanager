@@ -143,14 +143,14 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumPrecheck<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumPrecheck<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#smi-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
     <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPrecheckErrorList<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPrecheckErrorList<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_error_t.html#smi-doxid-structxpum-precheck-error-t"><span class="std std-ref">xpum_precheck_error_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
@@ -343,13 +343,14 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1gaf79ffd6d640fc9e397b2b540bd8916e6"><span id="index-8"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumPrecheck</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga41465e570c7a3d7d65b6efafa4ec1c58"><span id="index-8"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumPrecheck</span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#smi-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
     <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
     <span class="p">)</span></pre>
 <p>Run precheck on the machine.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -376,11 +377,12 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than component count</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1ga331a0d69ea377153ad1400a5ed3799ba"><span id="index-9"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPrecheckErrorList</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-diagnostics-api-1gac8457970cf7e5d7bcf9377839be1a80f"><span id="index-9"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPrecheckErrorList</span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_error_t.html#smi-doxid-structxpum-precheck-error-t"><span class="std std-ref">xpum_precheck_error_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get precheck error type list.</p>
+<p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>

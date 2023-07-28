@@ -158,15 +158,11 @@ namespace xpum {
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> GPUDevice::getRealtimeMetrics() noexcept {
         updatePDHQuery();
         std::map<MeasurementType, std::shared_ptr<MeasurementData>> datas;
-       
-        std::shared_ptr<MeasurementData> gpu_utilization = std::make_shared<MeasurementData>();
+
         int val = -1;
         int scale = 1;
 
         for (auto type : Configuration::getEnabledMetrics()) {
-            if (type == METRIC_COMPUTATION) {
-                continue;
-            }
             std::shared_ptr<MeasurementData> data = std::make_shared<MeasurementData>();
             switch (type) {
                 case xpum::METRIC_POWER:
@@ -195,6 +191,7 @@ namespace xpum {
                 case xpum::METRIC_MEMORY_READ_THROUGHPUT:
                     getMemoryReadWrite(data, type);
                     break;
+                case xpum::METRIC_COMPUTATION:
                 case xpum::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
                 case xpum::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
                 case xpum::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
@@ -270,13 +267,21 @@ namespace xpum {
             }
                
         }
-
-        if (val >= 0) {
+        XPUM_LOG_TRACE("val: {}", val);
+        if (datas.find(METRIC_COMPUTATION) != datas.end()) {
+            XPUM_LOG_TRACE("METRIC_COMPUTATION found");
+            if (val > (int)datas[METRIC_COMPUTATION]->getCurrent()) {
+                datas[METRIC_COMPUTATION]->setCurrent(val);
+                datas[METRIC_COMPUTATION]->setScale(scale);
+            }
+        } else if (val >= 0) {
+            std::shared_ptr<MeasurementData> gpu_utilization = std::make_shared<MeasurementData>();
             gpu_utilization->setCurrent(val);
             gpu_utilization->setScale(scale);
             datas.insert({METRIC_COMPUTATION, gpu_utilization});
             XPUM_LOG_TRACE("set GPU utilization val to {} from compute, media, copy and render group utilization", val);
         }
+            
         return datas;
     }
 

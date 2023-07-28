@@ -46,9 +46,9 @@
 <li class="toctree-l2 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="Install_guide.html">Intel(R) XPU Manager Installation Guide</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">XPUM REST API Setup Guide</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#installation">Installation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#run-script">Run Script</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#start-service">Start Service</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pre-installation-actions">Pre-installation Actions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#quick-installation">Quick Installation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-by-step-installation">Step by Step Installation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#change-rest-service-binding-address-port">Change rest service binding address &amp; port</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#replace-rest-service-certificate-private-key">Replace rest service certificate &amp; private key</a></li>
 </ul>
@@ -91,26 +91,41 @@
              
   <section class="tex2jax_ignore mathjax_ignore" id="xpum-rest-api-setup-guide">
 <h1>XPUM REST API Setup Guide<a class="headerlink" href="#xpum-rest-api-setup-guide" title="Permalink to this headline"></a></h1>
-<section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
+<section id="pre-installation-actions">
+<h2>Pre-installation Actions<a class="headerlink" href="#pre-installation-actions" title="Permalink to this headline"></a></h2>
 <ol class="arabic simple">
 <li><p>install python3, may need to soft link python if your python package doesn’t auto generate one.</p></li>
 <li><p>install python3-devel ( Redhat or CentOS only )</p></li>
 <li><p>install pip3.</p></li>
-<li><p>install python packages as root for all user.<br />
+</ol>
+</section>
+<section id="quick-installation">
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline"></a></h2>
+<ol class="arabic simple">
+<li><p>Run enable_restful.sh in the folder /usr/lib/xpum to enable restful feature.
+<br>If start xpum_rest.service failed with error “Executable path is not absolute, ignoring: gunicorn” on Centos 7, please refer to the following section “Start Service”.</p></li>
+</ol>
+</section>
+<section id="step-by-step-installation">
+<h2>Step by Step Installation<a class="headerlink" href="#step-by-step-installation" title="Permalink to this headline"></a></h2>
+<section id="python-packages-installation">
+<h3>Python Packages Installation<a class="headerlink" href="#python-packages-installation" title="Permalink to this headline"></a></h3>
+<ol class="arabic simple">
+<li><p>Install python packages as root for all user. The INSTALLDIR is /usr/lib/xpum on the Linux platform.
+<br>
 <code class="docutils literal notranslate"><span class="pre">umask</span> <span class="pre">022</span></code><br />
 <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">INSTALLDIR/rest/requirements.txt</span></code></p></li>
 </ol>
 </section>
 <section id="run-script">
-<h2>Run Script<a class="headerlink" href="#run-script" title="Permalink to this headline"></a></h2>
+<h3>Run Script<a class="headerlink" href="#run-script" title="Permalink to this headline"></a></h3>
 <ol class="arabic simple">
 <li><p>Run rest_config.py to setup password for REST API user xpumadmin.</p></li>
 <li><p>Run keytool.sh to generate self-signed certificate and keys.</p></li>
 </ol>
 </section>
 <section id="start-service">
-<h2>Start Service<a class="headerlink" href="#start-service" title="Permalink to this headline"></a></h2>
+<h3>Start Service<a class="headerlink" href="#start-service" title="Permalink to this headline"></a></h3>
 <ol class="arabic simple">
 <li><p>systemctl start xpum_rest.service</p></li>
 <li><p>systemctl enable xpum_rest.service
@@ -120,6 +135,7 @@
 <br>
 <code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">xpum_rest.service</span></code></p></li>
 </ol>
+</section>
 </section>
 <section id="change-rest-service-binding-address-port">
 <h2>Change rest service binding address &amp; port<a class="headerlink" href="#change-rest-service-binding-address-port" title="Permalink to this headline"></a></h2>

@@ -387,14 +387,28 @@ XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-struct
     <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span>
     <span class="p">);</span>
 
-XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetHealthConfig<span></span><span class="p">(</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
-    <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
+XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersions<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_amc_fw_version_t.html#smi-doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <span class="n">versionList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
     <span class="p">);</span>
 
-XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetHealthConfigByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCFirmwareVersionsErrorMsg<span></span><span class="p">(</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetSerialNumberAndAmcFwVersion<span></span><span class="p">(</span>
+    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span><span class="p">,</span>
+    <span class="kt">char</span> <span class="n">serialNumber</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">],</span>
+    <span class="kt">char</span> <span class="n">amcFwVersion</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetHealthConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
     <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
     <span class="p">);</span>
@@ -405,25 +419,10 @@ XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-struct
     <span class="kt">void</span><span class="o">*</span> <span class="n">value</span>
     <span class="p">);</span>
 
-XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthConfigByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span> <span class="n">key</span><span class="p">,</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
-    <span class="kt">void</span><span class="o">*</span> <span class="n">valueList</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
-    <span class="p">);</span>
-
 XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealth<span></span><span class="p">(</span>
     <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span><span class="o">*</span> <span class="n">data</span>
-    <span class="p">);</span>
-
-XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetHealthByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_health_data_t.html#smi-doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
-    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
 XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceStandbys<span></span><span class="p">(</span>
@@ -631,14 +630,14 @@ XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-struct
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumPrecheck<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumPrecheck<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#smi-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
     <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPrecheckErrorList<span></span><span class="p">(</span>
+XPUM_API<span></span> <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPrecheckErrorList<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_error_t.html#smi-doxid-structxpum-precheck-error-t"><span class="std std-ref">xpum_precheck_error_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>

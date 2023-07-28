@@ -56,7 +56,12 @@ namespace xpum {
             xpum_precheck_error_severity_t error_severity = XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL) {
         if (cinfo.status == XPUM_PRECHECK_COMPONENT_STATUS_PASS) {
             cinfo.status = status;
-            strncpy(cinfo.errorDetail, errorDetail.c_str(), errorDetail.size() + 1);
+            if (errorDetail.size() < sizeof(cinfo.errorDetail)) {
+                strncpy(cinfo.errorDetail, errorDetail.c_str(), errorDetail.size() + 1);
+            } else {
+                strncpy(cinfo.errorDetail, errorDetail.c_str(), 
+                        sizeof(cinfo.errorDetail));
+            }
             cinfo.errorDetail[sizeof(cinfo.errorDetail)-1] = '\0';
             cinfo.errorId = errorId;
             if (errorId > 0) {
@@ -90,7 +95,13 @@ namespace xpum {
             for (auto& component_gpu : PrecheckManager::component_gpus) {
                 if (extractLastNChars(component_gpu.bdf, 7) == extractLastNChars(bdf, 7) && component_gpu.status == XPUM_PRECHECK_COMPONENT_STATUS_PASS) {
                     component_gpu.status = status;
-                    strncpy(component_gpu.errorDetail, errorDetail.c_str(), errorDetail.size() + 1);
+                    if (errorDetail.size() < 
+                            sizeof(component_gpu.errorDetail)) {
+                        strncpy(component_gpu.errorDetail, errorDetail.c_str(), errorDetail.size() + 1);
+                    } else {
+                        strncpy(component_gpu.errorDetail, errorDetail.c_str(),
+                                sizeof(component_gpu.errorDetail));
+                    }
                     component_gpu.errorDetail[sizeof(component_gpu.errorDetail) - 1] = '\0';
                     component_gpu.errorId = errorId;
                     if (errorId > 0) {
@@ -108,7 +119,13 @@ namespace xpum {
             for (auto& component_cpu : PrecheckManager::component_cpus)
                 if (component_cpu.cpuId == cpuId && component_cpu.status == XPUM_PRECHECK_COMPONENT_STATUS_PASS) {
                     component_cpu.status = status;
-                    strncpy(component_cpu.errorDetail, errorDetail.c_str(), errorDetail.size() + 1);
+                    if (errorDetail.size() < 
+                            sizeof(component_cpu.errorDetail)) {
+                        strncpy(component_cpu.errorDetail, errorDetail.c_str(), errorDetail.size() + 1);
+                    } else {
+                        strncpy(component_cpu.errorDetail, errorDetail.c_str(),
+                                sizeof(component_cpu.errorDetail));
+                    }
                     component_cpu.errorDetail[sizeof(component_cpu.errorDetail)-1] = '\0';  
                     component_cpu.errorId = -1;
                     component_cpu.errorCategory = errorCategory;
@@ -516,6 +533,9 @@ namespace xpum {
                             continue;
                         }
                         int cnt = read(fd, thermal_value, 1024);
+                        if (cnt < 0 || cnt >= 1024) {
+                            continue;
+                        }
                         thermal_value[cnt] = 0;
                         close(fd);
                         int val = std::stoi(thermal_value)/1000;
