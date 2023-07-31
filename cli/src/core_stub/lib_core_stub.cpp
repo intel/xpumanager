@@ -249,8 +249,8 @@ static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool r
         case xpum_diag_task_type_t::XPUM_DIAG_HARDWARE_SYSMAN:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
             break;
-        case xpum_diag_task_type_t::XPUM_DIAG_COMPUTATION:
-            ret = (rawComponentTypeStr ? "XPUM_DIAG_COMPUTATION" : "Computation Check");
+        case xpum_diag_task_type_t::XPUM_DIAG_LIGHT_COMPUTATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_LIGHT_COMPUTATION" : "Computation Check");
             break;
         case xpum_diag_task_type_t::XPUM_DIAG_LIGHT_CODEC:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_LIGHT_CODEC" : "Media Codec Check");

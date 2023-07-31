@@ -146,7 +146,7 @@ std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATI
                                                 {4, XPUM_DIAG_MEDIA_CODEC}, 
                                                 {5, XPUM_DIAG_INTEGRATION_PCIE}, 
                                                 {6, XPUM_DIAG_PERFORMANCE_POWER},
-                                                {7, XPUM_DIAG_COMPUTATION},
+                                                {7, XPUM_DIAG_LIGHT_COMPUTATION},
                                                 {8, XPUM_DIAG_LIGHT_CODEC},
                                                 {9, XPUM_DIAG_XE_LINK_THROUGHPUT}};
 
