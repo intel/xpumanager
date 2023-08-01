@@ -261,7 +261,6 @@ xpum_result_t FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_tas
     p_amc_manager->getAMCFirmwareFlashResult(param);
 
     flashFwErrMsg = param.errMsg;
-    credentialCheckIfFail(credential, flashFwErrMsg);
 
     if (param.errCode != XPUM_OK) {
         return param.errCode;
