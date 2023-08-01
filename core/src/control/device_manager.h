@@ -108,7 +108,7 @@ class DeviceManager : public DeviceManagerInterface,
 
     std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf);
 
-    void discoverFabricLinks();
+    bool discoverFabricLinks();
 
     std::string getDeviceIDByFabricID(uint64_t fabric_id);
 
@@ -139,6 +139,10 @@ class DeviceManager : public DeviceManagerInterface,
     std::vector<std::shared_ptr<Device>> devices;
 
     std::map<uint32_t, std::string> fabric_ids;
+
+    std::mutex fabric_mutex;
+
+    bool fabric_ids_has_built;
 
     std::mutex mutex;
 
