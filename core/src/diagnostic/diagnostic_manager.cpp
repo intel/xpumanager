@@ -2635,38 +2635,40 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
         return 0;
     }
 
-    for (uint32_t i = 0; i < 10; i++) {
+    // Consistent with ze_peak
+    uint32_t warmup_iterations = 5;
+    uint32_t iters = 20;
+    for (uint32_t i = 0; i < warmup_iterations; i++) {
         ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
             throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
         }
-    }
-    waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
-
-    std::chrono::high_resolution_clock::time_point time_start, time_end;
-    time_start = std::chrono::high_resolution_clock::now();
-    for (uint32_t i = 0; i < 50; i++) {
-        ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
-        }
-    }
-
-    if (type == XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH) {
         ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
         if (ret != ZE_RESULT_SUCCESS) {
             throw BaseException("zeCommandQueueSynchronize()[" + zeResultErrorCodeStr(ret) + "]");
         }
-    } else {
-        waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
+    }
+
+    std::chrono::high_resolution_clock::time_point time_start, time_end;
+    time_start = std::chrono::high_resolution_clock::now();
+    for (uint32_t i = 0; i < iters; i++) {
+        ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
+        }
+        ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeCommandQueueSynchronize()[" + zeResultErrorCodeStr(ret) + "]");
+        }
     }
     time_end = std::chrono::high_resolution_clock::now();
     timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
+    XPUM_LOG_DEBUG("runKernel - type: {}, iters: {}, total time: {}", type, iters, timed);
     ret = zeCommandListReset(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zeCommandListReset()[" + zeResultErrorCodeStr(ret) + "]");
     }
-    return (timed / static_cast<long double>(50));
+    return (timed / static_cast<long double>(iters));
 }
 
 long double DiagnosticManager::calculateGbps(long double period, long double total_gbps) {
