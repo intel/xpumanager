@@ -66,9 +66,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       securityContext:
         privileged: false
       tty: false
@@ -91,9 +94,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-focal"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       securityContext:
         privileged: false
       tty: false
@@ -116,9 +122,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-jammy"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       securityContext:
         privileged: false
       tty: false
@@ -141,9 +150,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-debian"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       securityContext:
         privileged: false
       tty: false
@@ -166,9 +178,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7-6"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -189,9 +204,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-centos8"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -212,9 +230,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-centos-stream9"
       resources:
+        requests:
+          memory: "2Gi"
+          cpu: "0.5"
         limits: 
           memory: "6Gi"
-          cpu: "1"
+          cpu: "2"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -234,6 +255,9 @@ spec:
       - /busybox/cat
       tty: true
       resources:
+        requests:
+          memory: "1Gi"
+          cpu: "0.5"
         limits: 
           memory: "2Gi"
           cpu: "1"
@@ -253,6 +277,9 @@ spec:
       - /busybox/cat
       tty: true
       resources:
+        requests:
+          memory: "1Gi"
+          cpu: "0.5"
         limits: 
           memory: "2Gi"
           cpu: "1"
@@ -289,6 +316,9 @@ spec:
       image: "jenkins/inbound-agent:4.11-1"
       name: "jnlp"
       resources:
+        requests:
+          memory: "1Gi"
+          cpu: "0.5"
         limits: 
           memory: "2Gi"
           cpu: "1"
