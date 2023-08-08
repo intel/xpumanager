@@ -1425,6 +1425,7 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         return XPUM_OK;
     }
     if (*count < _dataList.size()) {
+        *count = _dataList.size();
         return XPUM_BUFFER_TOO_SMALL;
     }
     *count = _dataList.size();

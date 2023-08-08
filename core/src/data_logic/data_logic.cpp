@@ -511,15 +511,30 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         return XPUM_OK;
     }
 
-    uint32_t index = 0;
+    uint32_t total = 0;
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_FABRIC_THROUGHPUT, device_id, session_id);
+    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
+    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
+        FabricThroughputInfo info;
+        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
+            ++total;
+        }
+        ++fabric_datas_iter;
+    }
+    if(total > *count){
+        *count = total;
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    uint32_t index = 0;
     *begin = getFabricStatsTimestamp(session_id, deviceId);
     *end = Utility::getCurrentTime();
     if (p_data == nullptr || p_data->getTimestamp() < *begin) {
         *count = 0;
         return XPUM_OK;
     }
-    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
+
+    fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
@@ -547,9 +562,6 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
                 stats.scale = p_data->getScale();
             }
             stats.deviceId = deviceId;
-            if (index >= *count) {
-                return XPUM_BUFFER_TOO_SMALL;
-            }
             dataList[index] = stats;
             ++index;
         }
