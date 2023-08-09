@@ -274,10 +274,10 @@ bool SMCRedfishAmcManager::preInit(){
 
 bool SMCRedfishAmcManager::init(InitParam& param) {
     if (initialized) {
-        XPUM_LOG_INFO("SMCRedfishAmcManager already initialized");
+        XPUM_LOG_TRACE("SMCRedfishAmcManager already initialized");
         return true;
     }
-    XPUM_LOG_INFO("SMCRedfishAmcManager init");
+    XPUM_LOG_TRACE("SMCRedfishAmcManager init");
     initErrMsg.clear();
 
     auto systemInfo = Core::instance().getDeviceManager()->getSystemInfo();
@@ -299,13 +299,13 @@ bool SMCRedfishAmcManager::init(InitParam& param) {
     server_model = _model;
 
     if (!preInit()) {
-        XPUM_LOG_INFO("SMCRedfishAmcManager fail to preInit");
+        XPUM_LOG_ERROR("SMCRedfishAmcManager fail to preInit");
         param.errMsg = initErrMsg;
         return false;
     }
     // bind ip to interface
     if (!bindIpToInterface()) {
-        XPUM_LOG_INFO("SMCRedfishAmcManager fail to bind ip to interface");
+        XPUM_LOG_ERROR("SMCRedfishAmcManager fail to bind ip to interface");
         std::stringstream ss;
         ss << "Fail to configure address ";
         ss << hostInterface.ipv4_addr + "/" + std::to_string(toCidr(hostInterface.ipv4_mask.c_str()));
@@ -315,7 +315,7 @@ bool SMCRedfishAmcManager::init(InitParam& param) {
     }
     // try to get /redfish/v1
     if (!getBasePage(hostInterface)) {
-        XPUM_LOG_INFO("SMCRedfishAmcManager fail to get base url");
+        XPUM_LOG_ERROR("SMCRedfishAmcManager fail to get base url");
         // param.errMsg = "Fail to access /redfish/v1";
         // return false;
     }
@@ -598,7 +598,7 @@ static xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
         return XPUM_GENERIC_ERROR;
     }
     pushUri = updateServiceJson["MultipartHttpPushUri"].get<std::string>();
-    if (server_model != SMC_4U_SYS_420GP_TNR) {
+    if (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) {
         if (!updateServiceJson.contains("Actions") ||
             !updateServiceJson["Actions"].contains("#UpdateService.StartUpdate") ||
             !updateServiceJson["Actions"]["#UpdateService.StartUpdate"].contains("target")) {
@@ -653,7 +653,7 @@ static bool uploadImage(RedfishHostInterface interface,
         //     updateParams["Targets"].push_back(link);
         // }
         updateParams["Targets"].push_back(targetLink);
-        updateParams["@Redfish.OperationApplyTime"] = server_model != SMC_4U_SYS_420GP_TNR ? "OnStartUpdateRequest" : "Immediate";
+        updateParams["@Redfish.OperationApplyTime"] = (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) ? "OnStartUpdateRequest" : "Immediate";
         auto updateParamsStr = updateParams.dump();
 
         XPUM_LOG_INFO("UpdateParameters json: {}", updateParamsStr);
@@ -1121,7 +1121,7 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
-    if (server_model != SMC_4U_SYS_420GP_TNR) {
+    if (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) {
         XPUM_LOG_INFO("Get pushUri: {} and triggerUri: {}", pushUri, triggerUri);
         if (!pushUri.length() || !triggerUri.length()) {
             param.errCode = XPUM_GENERIC_ERROR;
@@ -1176,8 +1176,11 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
 
     task = std::async(std::launch::async, [this, targetUriList, pushUri, triggerUri, param] {
         FlashAmcFirmwareParam parameters = param;
-        int gpuIndex = 0;
-        for (auto targetLink : targetUriList) {
+        std::size_t gpuIndex = 0;
+        int waitTime = 30;
+        int retry = 3;
+        for (; gpuIndex < targetUriList.size();) {
+            auto targetLink = targetUriList.at(gpuIndex);
             // upload image
             std::string verifyTaskLink;
             if (!uploadImage(hostInterface,
@@ -1185,13 +1188,19 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                              pushUri,
                              targetLink,
                              verifyTaskLink)) {
+                if (retry--) {
+                    XPUM_LOG_DEBUG("Sleep for {}s", waitTime);
+                    std::this_thread::sleep_for(std::chrono::seconds(waitTime));
+                    continue;
+                }
                 XPUM_LOG_ERROR("Fail to upload image");
                 flashFwErrMsg = parameters.errMsg;
                 param.callback();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
+            retry = 3;
             std::vector<std::string> taskUriList;
-            if (server_model != SMC_4U_SYS_420GP_TNR) {
+            if (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) {
                 // check image verify result
                 while (true) {
                     bool finished = false;
@@ -1238,7 +1247,6 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                 // get task result
                 bool success;
                 bool finished;
-                // std::string errMsg;
                 int percent;
                 auto querySuccessfully = getOneTaskUpdateResult(hostInterface,
                                                                 taskUri,
@@ -1256,17 +1264,17 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                 }
                 if (finished) {
                     if (!success) {
-                        XPUM_LOG_INFO("Task {} failed", taskUri);
+                        XPUM_LOG_ERROR("Task {} failed", taskUri);
                         param.callback();
                         return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
                     } else {
-                        XPUM_LOG_INFO("Task {} succeeded", taskUri);
+                        XPUM_LOG_DEBUG("Task {} succeeded", taskUri);
                         break;
                     }
                 }
                 this->percent.store((percent + gpuIndex * 100) / targetUriList.size());
                 // task ongoing, wait 2 sec
-                XPUM_LOG_INFO("Task {} on going", taskUri);
+                XPUM_LOG_DEBUG("Task {} on going: {}", taskUri, percent);
                 std::this_thread::sleep_for(std::chrono::seconds(2));
             }
             gpuIndex++;
