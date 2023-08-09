@@ -1281,9 +1281,13 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     Utility::parallel_in_batches(p_devices->size(), p_devices->size(), [&](int start, int end) {
         for (int i = start; i < end; ++i) {
             auto p_device = p_devices->at(i);
-            std::string value = pchProdStateToSkuType(getDevicePchProdStateType(p_device->getMeiDevicePath()));
-            p_device->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, value));
-            XPUM_LOG_TRACE("Get device {} skuType {}", p_device->getId(), value);
+            Property p;
+            p_device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, p);
+            if (p.getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
+                std::string value = pchProdStateToSkuType(getDevicePchProdStateType(p_device->getMeiDevicePath()));
+                p_device->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, value));
+                XPUM_LOG_TRACE("Get device {} skuType {}", p_device->getId(), value);
+            }
         }
     });
 
