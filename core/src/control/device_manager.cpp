@@ -401,10 +401,10 @@ bool DeviceManager::discoverFabricLinks() {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, fabric_ports.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& fp : fabric_ports) {
-                    zes_fabric_port_properties_t props;
+                    zes_fabric_port_properties_t props = {};
                     XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetProperties(fp, &props));
                     if (res == ZE_RESULT_SUCCESS) {
-                        zes_fabric_port_state_t state;
+                        zes_fabric_port_state_t state = {};
                         XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetState(fp, &state));
                         if (state.status == ZES_FABRIC_PORT_STATUS_HEALTHY || state.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
                             XPUM_LOG_INFO("Success to call zesFabricPortGetState with port state is healthy or degraded");

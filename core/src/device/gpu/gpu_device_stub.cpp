@@ -1212,7 +1212,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, fps.data()));
                     if (res == ZE_RESULT_SUCCESS) {
                         for (auto& fp : fps) {
-                            zes_fabric_port_properties_t props;
+                            zes_fabric_port_properties_t props = {};
                             XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED, props.maxRxSpeed.bitRate));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED, props.maxTxSpeed.bitRate));
@@ -3789,13 +3789,13 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             std::vector<std::string> failed_fabric_ports, degraded_fabric_ports, disabled_fabric_ports;
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data()));
             for (auto& fabric_port : fabric_ports) {
-                zes_fabric_port_properties_t fabric_port_properties;
+                zes_fabric_port_properties_t fabric_port_properties = {};
                 fabric_port_properties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetProperties(fabric_port, &fabric_port_properties));
                 if (res != ZE_RESULT_SUCCESS) {
                     continue;
                 }
-                zes_fabric_port_state_t fabric_port_state;
+                zes_fabric_port_state_t fabric_port_state = {};
                 fabric_port_state.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
                 XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetState(fabric_port, &fabric_port_state));
                 if (res != ZE_RESULT_SUCCESS) {
@@ -4253,13 +4253,13 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, fabric_ports.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& fp : fabric_ports) {
-                zes_fabric_port_properties_t props;
+                zes_fabric_port_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    zes_fabric_port_state_t state;
+                    zes_fabric_port_state_t state = {};
                     XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetState(fp, &state));
                     if (res == ZE_RESULT_SUCCESS) {
-                        zes_fabric_port_throughput_t throughput;
+                        zes_fabric_port_throughput_t throughput = {};
                         XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetThroughput(fp, &throughput));
                         if (res == ZE_RESULT_SUCCESS) {
                             ret->addRawData(uint64_t(fp), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
