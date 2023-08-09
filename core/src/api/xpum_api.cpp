@@ -144,6 +144,8 @@ const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
             return "GFX_FIRMWARE_STATUS";
         case XPUM_DEVICE_PROPERTY_SKU_TYPE:
             return "SKU_TYPE";
+        case XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE:
+            return "XE_LINK_CALIBRATION_DATE";
         default:
             return "";
     }
@@ -683,7 +685,7 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
-            return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath);
+            return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath, force);
         } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
@@ -856,6 +858,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION;
         case XPUM_DEVICE_PROPERTY_SKU_TYPE:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE;
+        case XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }

@@ -672,7 +672,7 @@ xpum_result_t FirmwareManager::getAMCSerialNumbersByRiserSlot(uint8_t baseboardS
 
 }
 
-xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const char* filePath) {
+xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const char* filePath, bool force) {
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -683,6 +683,7 @@ xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const ch
     flashFwErrMsg.clear();
     FlashPscFwParam param;
     param.filePath = filePath;
+    param.force = force;
     auto res = pDevice->getPscMgmt()->flashPscFw(param);
     flashFwErrMsg = param.errMsg;
     return res;

@@ -43,6 +43,8 @@
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/utility.h"
 #include "firmware/system_cmd.h"
+#include "api/psc.h"
+#include "firmware/psc_txcal_blob.h"
 
 #define MAX_SUB_DEVICE 256
 
@@ -1258,6 +1260,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     std::string sku_type = "";
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
+
+                auto meiDeviceName = getMeiDeviceNameFromPath(p_gpu->getMeiDevicePath());
+                auto txCalDate = getTxCalDateByMeiDevice(meiDeviceName);
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE, txCalDate));
 
                 std::lock_guard<std::mutex> lock(devices_mtx);
                 p_devices->push_back(p_gpu);

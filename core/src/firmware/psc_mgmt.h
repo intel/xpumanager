@@ -15,8 +15,9 @@
 
 namespace xpum {
 
-struct FlashPscFwParam{
+struct FlashPscFwParam {
     std::string filePath;
+    bool force;
     std::string errMsg;
 };
 
