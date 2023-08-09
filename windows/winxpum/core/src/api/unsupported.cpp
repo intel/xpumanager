@@ -284,7 +284,7 @@ xpum_result_t xpumGenerateDebugLog(const char* fileName) {
     return XPUM_API_UNSUPPORTED;
 }
 
-xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime){
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
     return XPUM_API_UNSUPPORTED;
 }
 

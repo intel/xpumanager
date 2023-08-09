@@ -138,7 +138,7 @@ namespace xpum {
     }
 
     static void updateErrorLogLine(std::string line, ErrorPattern error_pattern) {
-        std::regex regTime("\\d{2}:\\d{2}:\\d{2}");
+        std::regex regTime("T\\d{2}:\\d{2}:\\d{2}.*\\+\\d{2}:?\\d{2}");
         std::smatch match;
         std::string time;
         if(std::regex_search(line, match, regTime)) {
@@ -147,7 +147,19 @@ namespace xpum {
             line = match.suffix();
             line = line.substr(1);
         }
-
+        // Keep dmesg's time format consistent with journalctl's time format
+        // YYYY-MM-DDThh:mm:ss,000000+00:00 -> YYYY-MM-DDThh:mm:ss+0000
+        auto time_pos = time.find(',');
+        if (time_pos != std::string::npos) {
+            std::string str = time.substr(time_pos + 1);
+            time = time.substr(0, time_pos);
+            auto zone_pos = str.find('+');
+            if (zone_pos != std::string::npos) {
+                str = str.substr(zone_pos);
+                str.erase(str.find(':'), 1);
+                time += str;
+            }
+        }
         std::string bdf;
         for (auto& component_gpu : PrecheckManager::component_gpus) {
             if (line.find(extractLastNChars(component_gpu.bdf, 7)) != std::string::npos) {
@@ -186,6 +198,7 @@ namespace xpum {
                 c_line[--len] = '\0';
             }
             std::string line(c_line);
+            XPUM_LOG_DEBUG("precheck scans log line: {}", line);
             std::string target_found;
             for (auto tw : targeted_words)
                 if (findCaseInsensitive(line, tw, 0) != std::string::npos) {
@@ -206,7 +219,7 @@ namespace xpum {
         pclose(f);
     }
 
-    static void scanErrorLogLines(std::vector<ErrorPattern> error_patterns, std::string since_time) {
+    static void scanErrorLogLines(xpum_precheck_log_source logSource, std::vector<ErrorPattern> error_patterns, std::string since_time) {
         std::unordered_map<std::string, std::vector<ErrorPattern>> key_to_error_patterns;
         for (auto& key : targeted_words) {
             std::vector<ErrorPattern> patterns;
@@ -218,9 +231,15 @@ namespace xpum {
             key_to_error_patterns[key] = patterns;
         }
 
-        std::string print_log_cmd = "journalctl -q -b 0 --dmesg";
-        if (!since_time.empty())
-            print_log_cmd += " --since \"" + since_time + "\"";
+        std::string print_log_cmd;
+        if (logSource == XPUM_PRECHECK_LOG_SOURCE_DMESG) {
+            print_log_cmd = "dmesg --time-format iso";
+        } else {
+            print_log_cmd = "journalctl -q -b 0 --dmesg -o short-iso";
+            if (!since_time.empty())
+                print_log_cmd += " --since \"" + since_time + "\"";
+        }
+        XPUM_LOG_DEBUG("precheck log command: {}", print_log_cmd);
         scanErrorLogLinesByFile(print_log_cmd, key_to_error_patterns);
     }
 
@@ -283,18 +302,31 @@ namespace xpum {
             std::string line;
             snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/gt0/uc/guc_info", gpu_id.c_str());
             bool is_guc_running = false;
+            bool is_guc_missing = false;
             std::ifstream guc_info_file(path);
             if (guc_info_file.good()) {
+                std::string error_details; // Example: GuC firmware: i915/dg2_guc_70.6.5.bin. status: MISSING. version: wanted 70.6.0, found 0.0.0.
                 while(std::getline(guc_info_file, line)) {
-                    if (!line.empty() && line.find("status: ") != std::string::npos) {
+                    if (line.empty())
+                        continue;
+                    if (line.find("GuC firmware") != std::string::npos || line.find("status: ") != std::string::npos || line.find("version: ") != std::string::npos) {
+                        line.erase(0, line.find_first_not_of(" \n\r\t"));
+                        line.erase(line.find_last_not_of(" \n\r\t") + 1);
+                        if (!error_details.empty())
+                            error_details += " ";
+                        error_details += line + ".";
+                    }
+                    if (line.find("status: ") != std::string::npos) {
                         if (line.find("RUNNING") != std::string::npos) {
                             is_guc_running = true;
                             break;
                         }
+                        if (line.find("MISSING") != std::string::npos)
+                            is_guc_missing = true;
                     }
                 }
                 if (!is_guc_running) {
-                    updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "GuC is not running", XPUM_GUC_NOT_RUNNING);
+                    updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, error_details, is_guc_missing ?  XPUM_GUC_INITIALIZATION_FAILED : XPUM_GUC_NOT_RUNNING);
                 }
             }
             guc_info_file.close();
@@ -304,23 +336,32 @@ namespace xpum {
                 bool is_huc_disabled = false;
                 std::ifstream huc_info_file(path);
                 if (huc_info_file.good()) {
+                    std::string error_details; // Example: HuC firmware: i915/dg2_huc_7.10.3_gsc.bin. status: ERROR. version: wanted 7.10.0, found 0.0.0. HuC status: 0x00164000.
                     while(std::getline(huc_info_file, line)) {
-                        if (!line.empty() && line.find("HuC disabled") != std::string::npos) {
+                        if (line.empty())
+                            continue;
+                        if (line.find("HuC firmware") != std::string::npos || line.find("status: ") != std::string::npos || line.find("version: ") != std::string::npos) {
+                            line.erase(0, line.find_first_not_of(" \n\r\t"));
+                            line.erase(line.find_last_not_of(" \n\r\t") + 1);
+                            if (!error_details.empty())
+                                error_details += " ";
+                            error_details += line + ".";
+                        }
+                        if (line.find("HuC disabled") != std::string::npos) {
+                            error_details = "HuC is disabled.";
                             is_huc_disabled = true;
                             break;
                         }
-                        if (!line.empty() && line.find("status: ") != std::string::npos) {
-                            if (line.find("RUNNING") != std::string::npos) {
-                                is_huc_running = true;
-                                break;
-                            }
+                        if (line.find("status: ") != std::string::npos && line.find("RUNNING") != std::string::npos) {
+                            is_huc_running = true;
+                            break;
                         }
                     }
                     if (!is_huc_running) {
                         if (is_huc_disabled)
-                            updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "HuC is disabled", XPUM_HUC_DISABLED);
+                            updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, error_details, XPUM_HUC_DISABLED);
                         else
-                            updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "HuC is not running", XPUM_HUC_NOT_RUNNING);
+                            updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, error_details, XPUM_HUC_NOT_RUNNING);
                     }
                 }
                 huc_info_file.close();
@@ -402,7 +443,7 @@ namespace xpum {
         return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
     }
 
-    static void toCheck(bool onlyGPU, std::string sinceTime, bool getComponentCount = false) {
+    static void toCheck(xpum_precheck_log_source logSource, bool onlyGPU, std::string sinceTime, bool getComponentCount = false) {
         // reset precheck info
         PrecheckManager::component_driver.componentType = XPUM_PRECHECK_COMPONENT_TYPE_DRIVER;
         PrecheckManager::component_driver.status = XPUM_PRECHECK_COMPONENT_STATUS_PASS;
@@ -574,11 +615,14 @@ namespace xpum {
         }
 
         doPreCheckGuCHuCWedgedPCIe(gpu_ids, gpu_bdfs, is_atsm_platform);
-        scanErrorLogLines(error_patterns, sinceTime);
+        scanErrorLogLines(logSource, error_patterns, sinceTime);
     }
 
-    xpum_result_t PrecheckManager::precheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime) {
-        if (sinceTime != nullptr) {
+    xpum_result_t PrecheckManager::precheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
+        xpum_precheck_log_source logSource = options.logSource;
+        bool onlyGPU = options.onlyGPU;
+        const char* sinceTime = options.sinceTime;
+        if (logSource == XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL && sinceTime != nullptr) {
             std::string sinceTimeStr = std::string(sinceTime);
             if (sinceTimeStr.size() > 0) {
                 std::string test_cmd = "journalctl --since \"" + sinceTimeStr + "\" -n 1 >/dev/null 2>&1";
@@ -589,7 +633,7 @@ namespace xpum {
         }
 
         if (resultList == nullptr) {
-            toCheck(false, "", true);
+            toCheck(logSource, false, "", true);
             int val = PrecheckManager::component_gpus.size() + 1;
             if (!onlyGPU)
                 val += PrecheckManager::component_cpus.size();
@@ -597,7 +641,7 @@ namespace xpum {
             return XPUM_OK;
         }
         readConfigFile(); 
-        toCheck(onlyGPU, sinceTime);
+        toCheck(logSource, onlyGPU, sinceTime);
         int val = PrecheckManager::component_gpus.size() + 1;
         if (!onlyGPU)
             val += PrecheckManager::component_cpus.size();

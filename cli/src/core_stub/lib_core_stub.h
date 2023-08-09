@@ -59,7 +59,7 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
     std::unique_ptr<nlohmann::json> checkStress(int deviceId);
 
-    std::unique_ptr<nlohmann::json> precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> precheck(xpum_precheck_options options, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getPrecheckErrorTypes();
     
     std::unique_ptr<nlohmann::json> getAllHealth();

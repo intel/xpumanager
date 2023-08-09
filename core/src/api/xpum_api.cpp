@@ -3679,11 +3679,15 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
 }
 
 
-xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime) {
-    return PrecheckManager::precheck(resultList, count, onlyGPU, sinceTime);
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
+    if (!Core::instance().isInitialized())
+        Logger::init();
+    return PrecheckManager::precheck(resultList, count, options);
 }
 
 xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count) {
+    if (!Core::instance().isInitialized())
+        Logger::init();
     return PrecheckManager::getPrecheckErrorList(resultList, count);
 }
 

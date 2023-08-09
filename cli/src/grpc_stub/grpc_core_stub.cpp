@@ -2233,7 +2233,7 @@ std::string errorTypeToStr(PrecheckErrorType type) {
     {
         case GUC_NOT_RUNNING: ret = "GuC Not Running"; break;
         case GUC_ERROR: ret = "GuC Error"; break;
-        case GUC_INITIALIZATION_FAILED: ret = "mGuC Initialization Failed"; break;
+        case GUC_INITIALIZATION_FAILED: ret = "GuC Initialization Failed"; break;
         case IOMMU_CATASTROPHIC_ERROR: ret = "IOMMU Catastrophic Error"; break;
         case LMEM_NOT_INITIALIZED_BY_FIRMWARE: ret = "LMEM Not Initialized By Firmware"; break;
         case PCIE_ERROR: ret = "PCIe Error"; break;
@@ -2298,13 +2298,14 @@ std::string componentStatusToStr(PrecheckComponentStatus status) {
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::precheck(xpum_precheck_options options, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
-    PrecheckRequest request;
-    request.set_onlygpu(onlyGPU);
-    request.set_sincetime(sinceTime);
+    PrecheckOptionsRequest request;
+    request.set_logsource(static_cast<PrecheckLogSourceType>(options.logSource));
+    request.set_onlygpu(options.onlyGPU);
+    request.set_sincetime(options.sinceTime);
     PrecheckComponentInfoListResponse response;
     grpc::Status status = stub->precheck(&context, request, &response);
     if (status.ok()) {

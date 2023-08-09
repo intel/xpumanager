@@ -79,7 +79,7 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
                                                        ::DiagnosticsGroupTaskInfo* response) override;
     virtual ::grpc::Status checkStress(::grpc::ServerContext* context, const ::CheckStressRequest* request,
                                      ::CheckStressResponse* response) override;
-    virtual ::grpc::Status precheck(::grpc::ServerContext* context, const ::PrecheckRequest* request,
+    virtual ::grpc::Status precheck(::grpc::ServerContext* context, const ::PrecheckOptionsRequest* request,
                                      ::PrecheckComponentInfoListResponse* response) override;
     virtual ::grpc::Status getPrecheckErrorList(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                      ::PrecheckErrorListResponse* response) override; 
