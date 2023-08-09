@@ -910,14 +910,6 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
             }
 
             {
-                //sku type
-                if (prop_map[
-                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
-                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
-                    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-                    std::string value = pchProdStateToSkuType(getDevicePchProdStateType(device->getMeiDevicePath()));
-                    prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE].setValue(std::string(value));
-                }
                 //amc version for pvc
                 if(prop_map[
                         XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].

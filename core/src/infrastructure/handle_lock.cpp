@@ -13,5 +13,4 @@
 namespace xpum {
 std::mutex HandleLock::handle_mutexes_mutex;
 std::unordered_map<void*, std::shared_ptr<std::mutex>> HandleLock::handle_mutexes;
-std::mutex metee_mutex;
 } // namespace xpum

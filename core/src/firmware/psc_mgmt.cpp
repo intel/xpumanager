@@ -114,7 +114,6 @@ xpum_result_t PscMgmt::flashPscFw(FlashPscFwParam &param) {
             struct igsc_psc_version dev_version {};
 
             {
-                std::lock_guard<std::mutex> metee_lock(metee_mutex);
                 ret = libIgsc.igsc_device_psc_version(&handle, &dev_version);
             }
             if (ret != IGSC_SUCCESS) {
@@ -177,7 +176,6 @@ void PscMgmt::getPscFwVersion() {
     }
     struct igsc_psc_version dev_version {};
     {
-        std::lock_guard<std::mutex> metee_lock(metee_mutex);
         ret = libIgsc.igsc_device_psc_version(&handle, &dev_version);
     }
     if (ret != IGSC_SUCCESS) {
