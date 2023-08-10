@@ -256,6 +256,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE = 44,               ///< The memory ECC state of device
     XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS = 45,            ///< The GFX firmware status
     XPUM_DEVICE_PROPERTY_SKU_TYPE = 46,                       ///< The type of SKU
+    XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE = 47,        ///< Xe Link Calibration Date
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -417,7 +418,7 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_SOFTWARE_LIBRARY = 1,
     XPUM_DIAG_SOFTWARE_PERMISSION = 2,
     XPUM_DIAG_SOFTWARE_EXCLUSIVE = 3,
-    XPUM_DIAG_COMPUTATION = 4,
+    XPUM_DIAG_LIGHT_COMPUTATION = 4,
     // level 2
     XPUM_DIAG_HARDWARE_SYSMAN = 5,
     XPUM_DIAG_INTEGRATION_PCIE = 6,
@@ -1147,6 +1148,17 @@ typedef struct xpum_vgpu_function_info_t {
 } xpum_vgpu_function_info_t;
 
 #define XPUM_MAX_VF_NUM 128
+
+typedef enum xpum_precheck_log_source {
+    XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL = 0,
+    XPUM_PRECHECK_LOG_SOURCE_DMESG = 1
+} xpum_precheck_log_source;
+
+typedef struct xpum_precheck_options {
+    xpum_precheck_log_source logSource;        ///< The log source for precheck
+    bool onlyGPU;                               ///< Check GPU-related error and ignore CPU error or not
+    const char* sinceTime;                      ///< Start time for log scanning. Only works when the logSource is JOURNALCTL. Scanning would start from the latest boot if it is NULL. The generic format is "YYYY-MM-DD HH:MM:SS". Alternatively the strings "yesterday", "today" are also understood. Relative times also may be specified, prefixed with "-" referring to times before the current time.
+} xpum_precheck_options;
 
 typedef enum xpum_precheck_error_category_t {
     XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE = 0,

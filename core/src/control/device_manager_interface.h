@@ -121,7 +121,7 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf) = 0;
 
-    virtual void discoverFabricLinks() = 0;
+    virtual bool discoverFabricLinks() = 0;
 
     virtual std::string getDeviceIDByFabricID(uint64_t fabric_id) = 0;
 

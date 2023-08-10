@@ -17,6 +17,9 @@
 #include "infrastructure/logger.h"
 #include "load_igsc.h"
 #include "igsc_err_msg.h"
+#include "api/psc.h"
+#include "psc_txcal_blob.h"
+#include "handle_lock.h"
 
 namespace xpum {
 
@@ -61,6 +64,22 @@ xpum_result_t PscMgmt::flashPscFw(FlashPscFwParam &param) {
     } else {
         auto buffer = readImageContent(filePath.c_str());
 
+        // validate psc image
+        std::vector<uint8_t> _buffer(buffer.begin(), buffer.end());
+        auto _res = getPSCData(_buffer);
+        if (_res.size() == 0) {
+            return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+        }
+
+        if (!param.force) {
+            auto meiDeviceName = getMeiDeviceNameFromPath(devicePath);
+            auto txCalBlobBuffer = getTxCalBlobByMeiDevice(meiDeviceName);
+            if (txCalBlobBuffer.size() > 0) {
+                XPUM_LOG_INFO("Xe Link Calibration Blob found");
+                buffer.insert(buffer.end(), txCalBlobBuffer.begin(), txCalBlobBuffer.end());
+            }
+        }
+
         // init fw-data update progress
         percent.store(0);
 
@@ -94,7 +113,9 @@ xpum_result_t PscMgmt::flashPscFw(FlashPscFwParam &param) {
 
             struct igsc_psc_version dev_version {};
 
-            ret = libIgsc.igsc_device_psc_version(&handle, &dev_version);
+            {
+                ret = libIgsc.igsc_device_psc_version(&handle, &dev_version);
+            }
             if (ret != IGSC_SUCCESS) {
                 XPUM_LOG_ERROR("Failed to get GFX_PSCBIN firmware version after update from device {}", devicePath);
             } else {
@@ -104,6 +125,11 @@ xpum_result_t PscMgmt::flashPscFw(FlashPscFwParam &param) {
             }
 
             igsc_device_close(&handle);
+
+            auto meiDeviceName = getMeiDeviceNameFromPath(pDevice->getMeiDevicePath());
+            auto txCalDate = getTxCalDateByMeiDevice(meiDeviceName);
+            pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE, txCalDate));
+
             pDevice->unlock();
             return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
         });
@@ -149,7 +175,9 @@ void PscMgmt::getPscFwVersion() {
         return;
     }
     struct igsc_psc_version dev_version {};
-    ret = libIgsc.igsc_device_psc_version(&handle, &dev_version);
+    {
+        ret = libIgsc.igsc_device_psc_version(&handle, &dev_version);
+    }
     if (ret != IGSC_SUCCESS) {
         XPUM_LOG_ERROR("Failed to get GFX_PSCBIN firmware version from device {}", devicePath);
     } else {

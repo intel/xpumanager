@@ -43,6 +43,8 @@
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/utility.h"
 #include "firmware/system_cmd.h"
+#include "api/psc.h"
+#include "firmware/psc_txcal_blob.h"
 
 #define MAX_SUB_DEVICE 256
 
@@ -1210,7 +1212,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, fps.data()));
                     if (res == ZE_RESULT_SUCCESS) {
                         for (auto& fp : fps) {
-                            zes_fabric_port_properties_t props;
+                            zes_fabric_port_properties_t props = {};
                             XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED, props.maxRxSpeed.bitRate));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED, props.maxTxSpeed.bitRate));
@@ -1259,6 +1261,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
 
+                auto meiDeviceName = getMeiDeviceNameFromPath(p_gpu->getMeiDevicePath());
+                auto txCalDate = getTxCalDateByMeiDevice(meiDeviceName);
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE, txCalDate));
+
                 std::lock_guard<std::mutex> lock(devices_mtx);
                 p_devices->push_back(p_gpu);
             }
@@ -1270,6 +1276,19 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         [](const std::shared_ptr<Device> & a, const std::shared_ptr<Device> & b) -> bool
     {
         return std::stoi(a->getId()) < std::stoi(b->getId());
+    });
+
+    Utility::parallel_in_batches(p_devices->size(), p_devices->size(), [&](int start, int end) {
+        for (int i = start; i < end; ++i) {
+            auto p_device = p_devices->at(i);
+            Property p;
+            p_device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, p);
+            if (p.getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
+                std::string value = pchProdStateToSkuType(getDevicePchProdStateType(p_device->getMeiDevicePath()));
+                p_device->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, value));
+                XPUM_LOG_TRACE("Get device {} skuType {}", p_device->getId(), value);
+            }
+        }
     });
 
     return p_devices;
@@ -1840,48 +1859,6 @@ void GPUDeviceStub::getMemoryBandwidth(const zes_device_handle_t& device, Callba
     invokeTask(callback, toGetMemoryBandwidth, device);
 }
 
-bool GPUDeviceStub::getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc) {
-    uint32_t driver_count = 0;
-    ze_result_t ret = zeDriverGet(&driver_count, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        return false;
-    }
-    std::vector<ze_driver_handle_t> drivers(driver_count);
-    ret = zeDriverGet(&driver_count, drivers.data());
-    if (ret != ZE_RESULT_SUCCESS) {
-        return false;
-    }
-    uint32_t device_count = 0;
-    XPUM_ZE_HANDLE_LOCK(drivers[0], 
-            ret = zeDeviceGet(drivers[0], &device_count, nullptr));
-    if (ret != ZE_RESULT_SUCCESS) {
-        return false;
-    }
-    std::vector<ze_device_handle_t> devices(device_count);
-    XPUM_ZE_HANDLE_LOCK(drivers[0], 
-            ret = zeDeviceGet(drivers[0], &device_count, devices.data()));
-    if (ret != ZE_RESULT_SUCCESS) {
-        return false;
-    }
-    for (auto device : devices) {
-        bool isATSM = false;
-        XPUM_ZE_HANDLE_LOCK(device, isATSM = Utility::isATSMPlatform(device));
-        if (isATSM == true) {
-            //zexSysmanMemoryGetBandwidth returns 0x78000003 on ATSM 
-            return false;
-        }
-    }
-    XPUM_ZE_HANDLE_LOCK(drivers[0], ret = zeDriverGetExtensionFunctionAddress(
-                drivers[0], "zexSysmanMemoryGetBandwidth", 
-                reinterpret_cast<void **>(pFunc)));
-    if (ret != ZE_RESULT_SUCCESS) { 
-        XPUM_LOG_DEBUG("Failed to get zexMemoryGetBandwidth's address by zeDriverGetExtensionFunctionAddress");
-        return false;
-    }
-    return true;
-}
-
-
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_device_handle_t& device) {
     if (device == nullptr) {
         throw BaseException("toGetMemoryBandwidth error");
@@ -1889,8 +1866,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
     uint32_t mem_module_count = 0;
-    pFnzexMemoryGetBandwidth pFunc = nullptr;
-    bool zexFunc = getZexGetMemoryBandwidth(&pFunc);
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
@@ -1906,38 +1881,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                     continue;
                 }
                 uint64_t val = 0;
-                if (zexFunc == true ) {
-                    uint64_t readCounters = 0;
-                    uint64_t writeCounters = 0;
-                    uint64_t maxBandwidth = 0;
-                    XPUM_ZE_HANDLE_LOCK(mem, res =  pFunc(mem, &readCounters, 
-                                &writeCounters, &maxBandwidth, 
-                                Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
-                    if (res == ZE_RESULT_SUCCESS && maxBandwidth > 0) {
-                        val = 100 * (readCounters + writeCounters) * 1000 / 
-                            Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD / maxBandwidth;
+                zes_mem_bandwidth_t s1, s2;
+                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s1));
+                if (res == ZE_RESULT_SUCCESS) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
+                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s2));
+                    if (res == ZE_RESULT_SUCCESS && (s2.maxBandwidth * (s2.timestamp - s1.timestamp)) != 0) {
+                        val = 100 * 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
                         data_acquired = true;
                     } else {
-                        XPUM_LOG_DEBUG("zexMemoryGetBandwidth return {}", res);
-                        exception_msgs["zexMemoryGetBandwidth"] = res;
+                        XPUM_LOG_DEBUG("zesMemoryGetBandwidth return s1 timestamp: {}, s2 timestamp: {}, s2.maxBandwidth: {}", s1.timestamp, s2.timestamp, s2.maxBandwidth);
+                        exception_msgs["zesMemoryGetBandwidth-2"] = res;
                     }
-                    
                 } else {
-                    zes_mem_bandwidth_t s1, s2;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s1));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
-                        XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s2));
-                        if (res == ZE_RESULT_SUCCESS && (s2.maxBandwidth * (s2.timestamp - s1.timestamp)) != 0) {
-                            val = 100 * 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
-                            data_acquired = true;
-                        } else {
-                            XPUM_LOG_DEBUG("zesMemoryGetBandwidth return s1 timestamp: {}, s2 timestamp: {}, s2.maxBandwidth: {}", s1.timestamp, s2.timestamp, s2.maxBandwidth);
-                            exception_msgs["zesMemoryGetBandwidth-2"] = res;
-                        }
-                    } else {
-                        exception_msgs["zesMemoryGetBandwidth-1"] = res;
-                    }
+                    exception_msgs["zesMemoryGetBandwidth-1"] = res;
                 }
                 if (data_acquired == true) {
                     if (val > 100) {
@@ -2005,25 +1962,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadWrite(const zes_d
                         ret->setCurrent(mem_bandwidth.readCounter);
                     }
                     ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE, mem_bandwidth.writeCounter);
-                    pFnzexMemoryGetBandwidth pFunc = nullptr;
-                    bool zexFunc = getZexGetMemoryBandwidth(&pFunc);
-                    if (zexFunc == true) {
-                        uint64_t readCounters = 0;
-                        uint64_t writeCounters = 0;
-                        uint64_t maxBandwidth = 0;
-                        XPUM_ZE_HANDLE_LOCK(mem, res =  pFunc(mem, &readCounters, 
-                                &writeCounters, &maxBandwidth, 
-                                Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
-                        if (res == ZE_RESULT_SUCCESS) {
-                            ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, readCounters / 1024 * 1000 / Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD);
-                            ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, writeCounters / 1024 * 1000 / Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD);
-                        } else {
-                            XPUM_LOG_DEBUG("Failed to get readCounters/writeCounters with pFnzexMemoryGetBandwidth");
-                        }
-                    } else {
-                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, mem_bandwidth.readCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
-                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
-                    }
+                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, mem_bandwidth.readCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
+                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
@@ -3862,13 +3802,13 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             std::vector<std::string> failed_fabric_ports, degraded_fabric_ports, disabled_fabric_ports;
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data()));
             for (auto& fabric_port : fabric_ports) {
-                zes_fabric_port_properties_t fabric_port_properties;
+                zes_fabric_port_properties_t fabric_port_properties = {};
                 fabric_port_properties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetProperties(fabric_port, &fabric_port_properties));
                 if (res != ZE_RESULT_SUCCESS) {
                     continue;
                 }
-                zes_fabric_port_state_t fabric_port_state;
+                zes_fabric_port_state_t fabric_port_state = {};
                 fabric_port_state.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
                 XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetState(fabric_port, &fabric_port_state));
                 if (res != ZE_RESULT_SUCCESS) {
@@ -4326,13 +4266,13 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, fabric_ports.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& fp : fabric_ports) {
-                zes_fabric_port_properties_t props;
+                zes_fabric_port_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    zes_fabric_port_state_t state;
+                    zes_fabric_port_state_t state = {};
                     XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetState(fp, &state));
                     if (res == ZE_RESULT_SUCCESS) {
-                        zes_fabric_port_throughput_t throughput;
+                        zes_fabric_port_throughput_t throughput = {};
                         XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetThroughput(fp, &throughput));
                         if (res == ZE_RESULT_SUCCESS) {
                             ret->addRawData(uint64_t(fp), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);

@@ -50,7 +50,7 @@ const std::vector<ErrorPattern> error_patterns = {
     
         // i915/drm error
         {".*i915.*drm.*ERROR.*", "", XPUM_PRECHECK_COMPONENT_TYPE_DRIVER, XPUM_I915_ERROR},
-        {".*drm.*ERROR.*", "i915", XPUM_PRECHECK_COMPONENT_TYPE_DRIVER, XPUM_I915_ERROR},
+        {".*drm.*ERROR.*", "i915", XPUM_PRECHECK_COMPONENT_TYPE_DRIVER, XPUM_DRM_ERROR},
         // cpu error
         {".*(mce|mca).*err.*", "", XPUM_PRECHECK_COMPONENT_TYPE_CPU, -1,  XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
         {".*caterr.*", "", XPUM_PRECHECK_COMPONENT_TYPE_CPU, -1, XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL}
@@ -61,7 +61,7 @@ const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem",
 
 class PrecheckManager {
    public:
-    static xpum_result_t precheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime);
+    static xpum_result_t precheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options);
 
     static xpum_result_t getPrecheckErrorList(xpum_precheck_error_t resultList[], int *count);
 

@@ -973,27 +973,24 @@ XPUM_API xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressT
 XPUM_API xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count);
 
 /**
- * @brief Run precheck on the machine
+ * @brief Run precheck on the machine. It works even if XPUM is not initialized.
  * 
  * @param resultList       OUT: The component list result of precheck
  * @param count         IN/OUT: The number of entries that \a resultList array can store, 
  *                              count should equal to or larger than component count;
  *                              when return, the \a count will store real number of entries returned by
  *                              \a resultList
- * @param onlyGPU          IN:  Check GPU-related error and ignore CPU error or not
- * @param sinceTime        IN:  Start time for log scanning. Scanning would start from the latest boot if it is NULL. The generic format is "YYYY-MM-DD HH:MM:SS".
- *                              Alternatively the strings "yesterday", "today" are also understood.
-*                               Relative times also may be specified, prefixed with "-" referring to times before the current time.
+ * @param options           IN: The options for precheck that can be used to set log source, time range, etc.
  * 
  * @return
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than component count
  * @note Support Platform: Linux
  */
-XPUM_API xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime);
+XPUM_API xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options);
 
 /**
- * @brief Get precheck error type list
+ * @brief Get precheck error type list. It works even if XPUM is not initialized.
  * 
  * @param resultList       OUT: The supported precheck error list
  * @param count         IN/OUT: The number of entries that \a resultList array can store, 

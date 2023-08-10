@@ -261,7 +261,6 @@ xpum_result_t FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_tas
     p_amc_manager->getAMCFirmwareFlashResult(param);
 
     flashFwErrMsg = param.errMsg;
-    credentialCheckIfFail(credential, flashFwErrMsg);
 
     if (param.errCode != XPUM_OK) {
         return param.errCode;
@@ -673,7 +672,7 @@ xpum_result_t FirmwareManager::getAMCSerialNumbersByRiserSlot(uint8_t baseboardS
 
 }
 
-xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const char* filePath) {
+xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const char* filePath, bool force) {
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -684,7 +683,12 @@ xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const ch
     flashFwErrMsg.clear();
     FlashPscFwParam param;
     param.filePath = filePath;
-    auto res = pDevice->getPscMgmt()->flashPscFw(param);
+    param.force = force;
+    auto pPscMgmt = pDevice->getPscMgmt();
+    if (!pPscMgmt) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC;
+    }
+    auto res = pPscMgmt->flashPscFw(param);
     flashFwErrMsg = param.errMsg;
     return res;
 }
@@ -699,10 +703,15 @@ void FirmwareManager::getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmwa
         result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
         return;
     }
-    result->percentage = pDevice->getPscMgmt()->percent.load();
+    auto pPscMgmt = pDevice->getPscMgmt();
+    if (!pPscMgmt) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+        return;
+    }
+    result->percentage = pPscMgmt->percent.load();
     
     GetFlashPscFwResultParam param;
-    auto res = pDevice->getPscMgmt()->getFlashPscFwResult(param);
+    auto res = pPscMgmt->getFlashPscFwResult(param);
 
     flashFwErrMsg = param.errMsg;
 

@@ -35,8 +35,6 @@ class HandleLock {
     static std::unordered_map<void*, std::shared_ptr<std::mutex>> handle_mutexes;
 };
 
-extern std::mutex metee_mutex;
-
 } // namespace xpum
 
 #ifdef XPUM_ZE_HANDLE_LOCK_LOG
@@ -56,7 +54,6 @@ extern std::mutex metee_mutex;
 #define XPUM_ZE_HANDLE_LOCK(handle, zefunc)                                      \
     {                                                                            \
         std::lock_guard<std::mutex> lock(*HandleLock::getHandleMutex((handle))); \
-        std::lock_guard<std::mutex> metee_lock(metee_mutex);                     \
         zefunc;                                                                  \
     }
 #endif

@@ -54,6 +54,7 @@ class ComletFirmware : public ComletBase {
     bool checkImageValid();
     bool validateFwDataImage();
     std::string getFwDataImageFwVersion();
+    std::string getPSCImageFwVersion();
     nlohmann::json getDeviceProperties(int deviceId);
 
     void readImageContent(const char* filePath);

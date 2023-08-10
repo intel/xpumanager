@@ -81,6 +81,7 @@
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
@@ -384,6 +385,8 @@
 </li>
         <li><a href="smidoc/rst/enum_xpum_precheck_error_type_t.html#index-0">xpum_precheck_error_type_t</a>, <a href="xpumdoc/rst/enum_xpum_precheck_error_type_t.html#index-0">[1]</a>
 </li>
+        <li><a href="smidoc/rst/enum_xpum_precheck_log_source.html#index-0">xpum_precheck_log_source</a>, <a href="xpumdoc/rst/enum_xpum_precheck_log_source.html#index-0">[1]</a>
+</li>
         <li><a href="smidoc/rst/enum_xpum_ras_type_enum.html#index-0">xpum_ras_type_enum</a>, <a href="xpumdoc/rst/enum_xpum_ras_type_enum.html#index-0">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_result_enum.html#index-0">xpum_result_enum</a>, <a href="xpumdoc/rst/enum_xpum_result_enum.html#index-0">[1]</a>
@@ -520,6 +523,8 @@
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-4">XPUM_DEVICE_PROPERTY_UUID</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-4">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-3">XPUM_DEVICE_PROPERTY_VENDOR_NAME</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-3">[1]</a>
+</li>
+        <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-48">XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-48">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_result_enum.html#index-16">XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH</a>, <a href="xpumdoc/rst/enum_xpum_result_enum.html#index-16">[1]</a>
 </li>
@@ -1029,8 +1034,6 @@
         <li><a href="smidoc/rst/struct_xpum_vgpu_function_info_t.html#index-3">variable</a>, <a href="xpumdoc/rst/struct_xpum_vgpu_function_info_t.html#index-3">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     localCPUList
 
@@ -1038,11 +1041,20 @@
         <li><a href="smidoc/rst/struct_xpum_topology_t.html#index-2">variable</a>, <a href="xpumdoc/rst/struct_xpum_topology_t.html#index-2">[1]</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     localCPUs
 
       <ul>
         <li><a href="smidoc/rst/struct_xpum_topology_t.html#index-3">variable</a>, <a href="xpumdoc/rst/struct_xpum_topology_t.html#index-3">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    logSource
+
+      <ul>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-1">variable</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-1">[1]</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1101,6 +1113,19 @@
 
       <ul>
         <li><a href="smidoc/rst/struct_xpum_vgpu_config_t.html#index-1">variable</a>, <a href="xpumdoc/rst/struct_xpum_vgpu_config_t.html#index-1">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    onlyGPU
+
+      <ul>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-2">variable</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-2">[1]</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1231,6 +1256,13 @@
 </li>
       </ul></li>
       <li>
+    sinceTime
+
+      <ul>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-3">variable</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-3">[1]</a>
+</li>
+      </ul></li>
+      <li>
     sriovMessage
 
       <ul>
@@ -1340,6 +1372,8 @@
         <li><a href="smidoc/rst/struct_xpum_precheck_component_info_t.html#index-0">xpum_precheck_component_info_t</a>, <a href="xpumdoc/rst/struct_xpum_precheck_component_info_t.html#index-0">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_precheck_error_t.html#index-0">xpum_precheck_error_t</a>, <a href="xpumdoc/rst/struct_xpum_precheck_error_t.html#index-0">[1]</a>
+</li>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-0">xpum_precheck_options</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-0">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_scheduler_data_t.html#index-0">xpum_scheduler_data_t</a>, <a href="xpumdoc/rst/struct_xpum_scheduler_data_t.html#index-0">[1]</a>
 </li>
@@ -1610,6 +1644,8 @@
 </li>
         <li><a href="smidoc/rst/struct_xpum_topology_t.html#index-3">localCPUs</a>, <a href="xpumdoc/rst/struct_xpum_topology_t.html#index-3">[1]</a>
 </li>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-1">logSource</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-1">[1]</a>
+</li>
         <li><a href="smidoc/rst/struct_xpum_device_engine_stats_t.html#index-8">max</a>, <a href="smidoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#index-9">[1]</a>, <a href="smidoc/rst/struct_xpum_device_stats_data_t.html#index-7">[2]</a>, <a href="xpumdoc/rst/struct_xpum_device_engine_stats_t.html#index-8">[3]</a>, <a href="xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#index-9">[4]</a>, <a href="xpumdoc/rst/struct_xpum_device_stats_data_t.html#index-7">[5]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_device_metric_data_t.html#index-1">metricsType</a>, <a href="smidoc/rst/struct_xpum_device_realtime_metric_t.html#index-1">[1]</a>, <a href="smidoc/rst/struct_xpum_device_stats_data_t.html#index-1">[2]</a>, <a href="smidoc/rst/struct_xpum_metrics_raw_data_t.html#index-5">[3]</a>, <a href="xpumdoc/rst/struct_xpum_device_metric_data_t.html#index-1">[4]</a>, <a href="xpumdoc/rst/struct_xpum_device_realtime_metric_t.html#index-1">[5]</a>, <a href="xpumdoc/rst/struct_xpum_device_stats_data_t.html#index-1">[6]</a>, <a href="xpumdoc/rst/struct_xpum_metrics_raw_data_t.html#index-5">[7]</a>
@@ -1619,6 +1655,8 @@
         <li><a href="smidoc/rst/struct_xpum_device_property_t.html#index-1">name</a>, <a href="xpumdoc/rst/struct_xpum_device_property_t.html#index-1">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_vgpu_config_t.html#index-1">numVfs</a>, <a href="xpumdoc/rst/struct_xpum_vgpu_config_t.html#index-1">[1]</a>
+</li>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-2">onlyGPU</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-2">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_device_basic_info.html#index-7">PCIBDFAddress</a>, <a href="xpumdoc/rst/struct_xpum_device_basic_info.html#index-7">[1]</a>
 </li>
@@ -1643,6 +1681,8 @@
         <li><a href="smidoc/rst/struct_xpum_sensor_reading_t.html#index-6">sensorUnit</a>, <a href="xpumdoc/rst/struct_xpum_sensor_reading_t.html#index-6">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_health_data_t.html#index-6">shutdownThreshold</a>, <a href="xpumdoc/rst/struct_xpum_health_data_t.html#index-6">[1]</a>
+</li>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-3">sinceTime</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-3">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_vgpu_precheck_result_t.html#index-6">sriovMessage</a>, <a href="xpumdoc/rst/struct_xpum_vgpu_precheck_result_t.html#index-6">[1]</a>
 </li>
@@ -2330,6 +2370,13 @@
 </li>
       </ul></li>
       <li>
+    XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE
+
+      <ul>
+        <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-48">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-48">[1]</a>
+</li>
+      </ul></li>
+      <li>
     xpum_device_realtime_metric_t
 
       <ul>
@@ -2942,8 +2989,6 @@
         <li><a href="smidoc/rst/struct_xpum_precheck_component_info_t.html#index-0">struct</a>, <a href="xpumdoc/rst/struct_xpum_precheck_component_info_t.html#index-0">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     xpum_precheck_component_status_t
 
@@ -2951,6 +2996,8 @@
         <li><a href="smidoc/rst/enum_xpum_precheck_component_status_t.html#index-0">enum</a>, <a href="xpumdoc/rst/enum_xpum_precheck_component_status_t.html#index-0">[1]</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     xpum_precheck_component_type_t
 
@@ -2984,6 +3031,20 @@
 
       <ul>
         <li><a href="smidoc/rst/enum_xpum_precheck_error_type_t.html#index-0">enum</a>, <a href="xpumdoc/rst/enum_xpum_precheck_error_type_t.html#index-0">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    xpum_precheck_log_source
+
+      <ul>
+        <li><a href="smidoc/rst/enum_xpum_precheck_log_source.html#index-0">enum</a>, <a href="xpumdoc/rst/enum_xpum_precheck_log_source.html#index-0">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    xpum_precheck_options
+
+      <ul>
+        <li><a href="smidoc/rst/struct_xpum_precheck_options.html#index-0">struct</a>, <a href="xpumdoc/rst/struct_xpum_precheck_options.html#index-0">[1]</a>
 </li>
       </ul></li>
       <li>

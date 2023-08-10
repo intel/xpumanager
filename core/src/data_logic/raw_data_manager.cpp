@@ -77,26 +77,13 @@ void RawDataManager::init() {
         std::make_shared<MemoryDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
 
-    pFnzexMemoryGetBandwidth pFunc = nullptr;
-    bool zexFunc = GPUDeviceStub::getZexGetMemoryBandwidth(&pFunc);
-    if (zexFunc == true) {
-        data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT] =
-            std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, p_persistency);
-        data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT]->init();
+    data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT] =
+        std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, p_persistency);
+    data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT]->init();
 
-        data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT] =
-            std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, p_persistency);
-        data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT]->init();
-    } else {
-        data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT] =
-            std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, p_persistency);
-        data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT]->init();
-
-        data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT] =
-            std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, p_persistency);
-        data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT]->init();
-    }
-
+    data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT] =
+        std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, p_persistency);
+    data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_UTILIZATION] =
         std::make_shared<EngineUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_UTILIZATION, p_persistency);

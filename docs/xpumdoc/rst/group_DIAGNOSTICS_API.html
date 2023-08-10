@@ -169,8 +169,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumPrecheck<span></span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#xpum-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
-    <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
-    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
+    <a class="reference internal" href="struct_xpum_precheck_options.html#xpum-doxid-structxpum-precheck-options"><span class="std std-ref">xpum_precheck_options</span></a><span></span> <span class="n">options</span>
     <span class="p">);</span>
 
 XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPrecheckErrorList<span></span><span class="p">(</span>
@@ -446,13 +445,12 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga41465e570c7a3d7d65b6efafa4ec1c58"><span id="index-11"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumPrecheck</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga9ead7b16882434cc406d5e51e9f0c93f"><span id="index-11"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumPrecheck</span><span class="p">(</span>
     <a class="reference internal" href="struct_xpum_precheck_component_info_t.html#xpum-doxid-structxpum-precheck-component-info-t"><span class="std std-ref">xpum_precheck_component_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
-    <span class="kt">bool</span> <span class="n">onlyGPU</span><span class="p">,</span>
-    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span>
+    <a class="reference internal" href="struct_xpum_precheck_options.html#xpum-doxid-structxpum-precheck-options"><span class="std std-ref">xpum_precheck_options</span></a><span></span> <span class="n">options</span>
     <span class="p">)</span></pre>
-<p>Run precheck on the machine.</p>
+<p>Run precheck on the machine. It works even if XPUM is not initialized.</p>
 <p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
@@ -467,11 +465,8 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 <tr class="row-even"><td><p>count</p></td>
 <td><p>IN/OUT: The number of entries that <em>resultList</em> array can store, count should equal to or larger than component count; when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>onlyGPU</p></td>
-<td><p>IN: Check GPU-related error and ignore CPU error or not</p></td>
-</tr>
-<tr class="row-even"><td><p>sinceTime</p></td>
-<td><p>IN: Start time for log scanning. Scanning would start from the latest boot if it is NULL. The generic format is “YYYY-MM-DD HH:MM:SS”. Alternatively the strings “yesterday”, “today” are also understood. Relative times also may be specified, prefixed with “-” referring to times before the current time.</p></td>
+<tr class="row-odd"><td><p>options</p></td>
+<td><p>IN: The options for precheck that can be used to set log source, time range, etc.</p></td>
 </tr>
 </tbody>
 </table>
@@ -484,7 +479,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
     <a class="reference internal" href="struct_xpum_precheck_error_t.html#xpum-doxid-structxpum-precheck-error-t"><span class="std std-ref">xpum_precheck_error_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
-<p>Get precheck error type list.</p>
+<p>Get precheck error type list. It works even if XPUM is not initialized.</p>
 <p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">

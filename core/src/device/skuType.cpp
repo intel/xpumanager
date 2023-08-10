@@ -124,7 +124,6 @@ static TEESTATUS validMkhiGetPchInfoMsg(mkhi_get_pch_info_res *resp, size_t rece
 
 uint32_t getDevicePchProdStateType(std::string meiPath)
 {
-    std::lock_guard<std::mutex> lock(metee_mutex);
     uint32_t pchProdState = 0;
     TEEHANDLE cl;
     TEESTATUS status;

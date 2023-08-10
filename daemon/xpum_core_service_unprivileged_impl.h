@@ -103,7 +103,7 @@ public:
         return PD;
     }
 
-    virtual ::grpc::Status precheck(::grpc::ServerContext* context, const ::PrecheckRequest* request, ::PrecheckComponentInfoListResponse* response) override {
+    virtual ::grpc::Status precheck(::grpc::ServerContext* context, const ::PrecheckOptionsRequest* request, ::PrecheckComponentInfoListResponse* response) override {
         return PD;
     }
 

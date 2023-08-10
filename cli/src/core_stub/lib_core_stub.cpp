@@ -249,8 +249,8 @@ static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool r
         case xpum_diag_task_type_t::XPUM_DIAG_HARDWARE_SYSMAN:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
             break;
-        case xpum_diag_task_type_t::XPUM_DIAG_COMPUTATION:
-            ret = (rawComponentTypeStr ? "XPUM_DIAG_COMPUTATION" : "Computation Check");
+        case xpum_diag_task_type_t::XPUM_DIAG_LIGHT_COMPUTATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_LIGHT_COMPUTATION" : "Computation Check");
             break;
         case xpum_diag_task_type_t::XPUM_DIAG_LIGHT_CODEC:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_LIGHT_CODEC" : "Media Codec Check");
@@ -1901,7 +1901,7 @@ std::string errorTypeToStr(xpum_precheck_error_type_t error_type) {
     {
         case XPUM_GUC_NOT_RUNNING: ret = "GuC Not Running"; break;
         case XPUM_GUC_ERROR: ret = "GuC Error"; break;
-        case XPUM_GUC_INITIALIZATION_FAILED: ret = "mGuC Initialization Failed"; break;
+        case XPUM_GUC_INITIALIZATION_FAILED: ret = "GuC Initialization Failed"; break;
         case XPUM_IOMMU_CATASTROPHIC_ERROR: ret = "IOMMU Catastrophic Error"; break;
         case XPUM_LMEM_NOT_INITIALIZED_BY_FIRMWARE: ret = "LMEM Not Initialized By Firmware"; break;
         case XPUM_PCIE_ERROR: ret = "PCIe Error"; break;
@@ -1966,11 +1966,11 @@ std::string componentStatusToStr(xpum_precheck_component_status_t status) {
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> LibCoreStub::precheck(xpum_precheck_options options, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     int count = 32;
     xpum_precheck_component_info_t resultList[count]; 
-    xpum_result_t res = xpumPrecheck(resultList, &count, onlyGPU, sinceTime.c_str());
+    xpum_result_t res = xpumPrecheck(resultList, &count, options);
     if (res != XPUM_OK) {
         if (res == XPUM_PRECHECK_INVALID_SINCETIME) {
             (*json)["error"] = "invalid since time";

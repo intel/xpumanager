@@ -19,6 +19,7 @@
 #include "utility.h"
 #include "exit_code.h"
 #include "xpum_api.h"
+#include "psc.h"
 
 namespace xpum::cli {
 
@@ -129,7 +130,7 @@ nlohmann::json ComletFirmware::validateArguments() {
         return result;
     }
 
-    if (opts->forceUpdate && opts->firmwareType.compare("GFX") != 0) {
+    if (opts->forceUpdate && opts->firmwareType.compare("GFX") != 0 && opts->firmwareType.compare("GFX_PSCBIN") != 0) {
         result["error"] = "Force flag only works for GFX firmware";
         result["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return result;
@@ -325,6 +326,15 @@ std::string ComletFirmware::getFwDataImageFwVersion() {
         version = print_fwdata_version(&fwdata_version);
     }
     return version;
+}
+
+std::string ComletFirmware::getPSCImageFwVersion() {
+    psc_data *hdr = (psc_data *)imgBuffer.data();
+    std::string version = getPscVersion(hdr->cfg_version, hdr->date);
+    if (version.length()) {
+        return version;
+    }
+    return "unknown";
 }
 
 bool ComletFirmware::checkImageValid() {
@@ -716,6 +726,8 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << "Image FW version: " << getImageFwVersion() << std::endl;
         } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
             out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
+        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
+            out << "Image FW version: " << getPSCImageFwVersion() << std::endl;
         }
         out << "Do you want to continue? (y/n) ";
         if (!opts->assumeyes) {

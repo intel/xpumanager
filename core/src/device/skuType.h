@@ -3,7 +3,7 @@
  *  SPDX-License-Identifier: MIT
  *  @file skuType.h
  */
-
+#pragma once
 #include <metee.h>
 #include <igsc_lib.h>
 #include "gpu/gpu_device.h"

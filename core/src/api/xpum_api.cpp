@@ -144,6 +144,8 @@ const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
             return "GFX_FIRMWARE_STATUS";
         case XPUM_DEVICE_PROPERTY_SKU_TYPE:
             return "SKU_TYPE";
+        case XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE:
+            return "XE_LINK_CALIBRATION_DATE";
         default:
             return "";
     }
@@ -683,7 +685,7 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
-            return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath);
+            return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath, force);
         } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
@@ -856,6 +858,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION;
         case XPUM_DEVICE_PROPERTY_SKU_TYPE:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE;
+        case XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }
@@ -906,14 +910,6 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
             }
 
             {
-                //sku type
-                if (prop_map[
-                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
-                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
-                    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-                    std::string value = pchProdStateToSkuType(getDevicePchProdStateType(device->getMeiDevicePath()));
-                    prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE].setValue(std::string(value));
-                }
                 //amc version for pvc
                 if(prop_map[
                         XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
@@ -1425,6 +1421,7 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         return XPUM_OK;
     }
     if (*count < _dataList.size()) {
+        *count = _dataList.size();
         return XPUM_BUFFER_TOO_SMALL;
     }
     *count = _dataList.size();
@@ -3674,11 +3671,15 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
 }
 
 
-xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, bool onlyGPU, const char *sinceTime) {
-    return PrecheckManager::precheck(resultList, count, onlyGPU, sinceTime);
+xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
+    if (!Core::instance().isInitialized())
+        Logger::init();
+    return PrecheckManager::precheck(resultList, count, options);
 }
 
 xpum_result_t xpumGetPrecheckErrorList(xpum_precheck_error_t resultList[], int *count) {
+    if (!Core::instance().isInitialized())
+        Logger::init();
     return PrecheckManager::getPrecheckErrorList(resultList, count);
 }
 

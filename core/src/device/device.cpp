@@ -234,6 +234,7 @@ void Device::addFabricPortHandle(uint32_t attach_id, uint32_t remote_fabric_id, 
     std::unique_lock<std::mutex> lock(this->mutex);
     connected_fabric_port_handles[attach_id][remote_fabric_id][remote_attach_id].push_back(handle);
 
+    fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].reserve(4);
     fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].push_back(FabricThroughputType::RECEIVED);
     FabricThroughputInfo rx_info;
     rx_info.attach_id = attach_id;

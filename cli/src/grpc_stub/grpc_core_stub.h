@@ -57,7 +57,7 @@ class GrpcCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
 
-    std::unique_ptr<nlohmann::json> precheck(bool onlyGPU, std::string sinceTime, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> precheck(xpum_precheck_options options, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getPrecheckErrorTypes();
 
     std::unique_ptr<nlohmann::json> getAllHealth();

@@ -14,6 +14,7 @@
 #include <regex>
 
 #include "device/gpu/gpu_device_stub.h"
+#include "infrastructure/configuration.h"
 #include "infrastructure/device_process.h"
 #include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
@@ -27,6 +28,7 @@ namespace xpum {
 
 DeviceManager::DeviceManager(std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_data_logic(p_data_logic) {
+    fabric_ids_has_built = false;
     XPUM_LOG_TRACE("DeviceManager()");
 }
 
@@ -92,6 +94,18 @@ void DeviceManager::init() {
     }
 
     discoverFabricLinks();
+
+    if (Configuration::XPUM_MODE != "xpu-smi"){
+        std::thread rediscoveryFabricLinks([=](){
+            for(int i = 0; i < 30; i++){
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                if(this->discoverFabricLinks()){
+                    break;
+                }
+            }
+        });
+        rediscoveryFabricLinks.detach();
+    }
 }
 
 void DeviceManager::close() {
@@ -363,6 +377,7 @@ bool DeviceManager::setEccState(const std::string& id, ecc_state_t& newState, Me
 }
 
 std::string DeviceManager::getDeviceIDByFabricID(uint64_t fabric_id) {
+    std::lock_guard<std::mutex> lock(this->fabric_mutex);
     std::string ret;
     if (fabric_ids.find(fabric_id) != fabric_ids.end()) {
         ret = fabric_ids[fabric_id];
@@ -370,7 +385,11 @@ std::string DeviceManager::getDeviceIDByFabricID(uint64_t fabric_id) {
     return ret;
 }
 
-void DeviceManager::discoverFabricLinks() {
+bool DeviceManager::discoverFabricLinks() {
+    std::lock_guard<std::mutex> lock(this->fabric_mutex);
+    if(fabric_ids_has_built)
+        return true;
+    fabric_ids_has_built = true;
     for (auto& p_device : this->devices) {
         zes_device_handle_t device = p_device->getDeviceHandle();
         uint32_t fabric_port_count = 0;
@@ -382,21 +401,35 @@ void DeviceManager::discoverFabricLinks() {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, fabric_ports.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& fp : fabric_ports) {
-                    zes_fabric_port_properties_t props;
+                    zes_fabric_port_properties_t props = {};
                     XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetProperties(fp, &props));
                     if (res == ZE_RESULT_SUCCESS) {
-                        zes_fabric_port_state_t state;
+                        zes_fabric_port_state_t state = {};
                         XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetState(fp, &state));
                         if (state.status == ZES_FABRIC_PORT_STATUS_HEALTHY || state.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
+                            XPUM_LOG_INFO("Success to call zesFabricPortGetState with port state is healthy or degraded");
                             fabric_ids[props.portId.fabricId] = p_device->getId();
                             p_device->setFabricID(props.portId.fabricId);
                             p_device->addFabricPortHandle(props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId, fp);
+                        } else {
+                            XPUM_LOG_WARN("Port state is neither healthy nor degraded when call zesFabricPortGetState");
+                            fabric_ids_has_built = false;
                         }
+                    } else {
+                        XPUM_LOG_WARN("Failed to call zesFabricPortGetProperties");
+                        fabric_ids_has_built = false;
                     }
                 }
+            } else {
+                XPUM_LOG_WARN("Failed to call zesDeviceEnumFabricPorts");
+                fabric_ids_has_built = false;
             }
+        } else {
+            XPUM_LOG_WARN("Failed to call zesDeviceEnumFabricPorts");
+            fabric_ids_has_built = false;
         }
     }
+    return fabric_ids_has_built;
 }
 
 bool DeviceManager::tryLockDevices(const std::vector<std::string>& deviceList) {

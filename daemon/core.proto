@@ -154,7 +154,7 @@ message DiagnosticsComponentInfo{
     DIAG_SOFTWARE_LIBRARY = 1;
     DIAG_SOFTWARE_PERMISSION = 2;
     DIAG_SOFTWARE_EXCLUSIVE = 3;
-    DIAG_COMPUTATION = 4;
+    DIAG_LIGHT_COMPUTATION = 4;
     DIAG_HARDWARE_SYSMAN = 5;
     DIAG_INTEGRATION_PCIE = 6;
     DIAG_MEDIA_CODEC = 7;
@@ -286,9 +286,15 @@ enum PrecheckComponentStatus {
     PRECHECK_COMPONENT_STATUS_FAIL = 2;
 }
 
-message PrecheckRequest {
-    bool onlyGPU = 1;
-    string sinceTime = 2;
+enum PrecheckLogSourceType {
+    PRECHECK_LOG_SOURCE_JOURNALCTL = 0;
+    PRECHECK_LOG_SOURCE_DMESG = 1;
+}
+
+message PrecheckOptionsRequest {
+    PrecheckLogSourceType logSource = 1;
+    bool onlyGPU = 2;
+    string sinceTime = 3;
 }
 
 message PrecheckComponentInfo {
@@ -1141,7 +1147,7 @@ service XpumCoreService {
     rpc getDiagnosticsXeLinkThroughputResult ( DeviceId ) returns ( DiagnosticsXeLinkThroughputInfoArray );
     rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
     rpc checkStress( CheckStressRequest ) returns ( CheckStressResponse );
-    rpc precheck ( PrecheckRequest ) returns ( PrecheckComponentInfoListResponse );
+    rpc precheck ( PrecheckOptionsRequest ) returns ( PrecheckComponentInfoListResponse );
     rpc getPrecheckErrorList( google.protobuf.Empty ) returns ( PrecheckErrorListResponse );
     rpc getHealth( HealthDataRequest ) returns ( HealthData );
     rpc getHealthByGroup( HealthDataByGroupRequest ) returns ( HealthDataByGroup );
