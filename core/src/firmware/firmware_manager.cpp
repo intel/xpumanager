@@ -684,7 +684,11 @@ xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const ch
     FlashPscFwParam param;
     param.filePath = filePath;
     param.force = force;
-    auto res = pDevice->getPscMgmt()->flashPscFw(param);
+    auto pPscMgmt = pDevice->getPscMgmt();
+    if (!pPscMgmt) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC;
+    }
+    auto res = pPscMgmt->flashPscFw(param);
     flashFwErrMsg = param.errMsg;
     return res;
 }
@@ -699,10 +703,15 @@ void FirmwareManager::getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmwa
         result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
         return;
     }
-    result->percentage = pDevice->getPscMgmt()->percent.load();
+    auto pPscMgmt = pDevice->getPscMgmt();
+    if (!pPscMgmt) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+        return;
+    }
+    result->percentage = pPscMgmt->percent.load();
     
     GetFlashPscFwResultParam param;
-    auto res = pDevice->getPscMgmt()->getFlashPscFwResult(param);
+    auto res = pPscMgmt->getFlashPscFwResult(param);
 
     flashFwErrMsg = param.errMsg;
 
