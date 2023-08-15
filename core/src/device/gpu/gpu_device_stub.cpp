@@ -1239,7 +1239,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             if (res == ZE_RESULT_SUCCESS) {
                                 if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
-                                    XPUM_LOG_DEBUG("toDiscover addEngine {} type {}", (uint64_t)engine, props.type);
                                 }
                                 if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
                                     media_engine_count += 1;
