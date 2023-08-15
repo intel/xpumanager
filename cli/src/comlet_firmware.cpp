@@ -23,6 +23,22 @@
 
 namespace xpum::cli {
 
+static std::string getSysVendor() {
+    std::string sysVendorPath = "/sys/class/dmi/id/sys_vendor";
+    std::string vendor = "";
+    std::ifstream f(sysVendorPath);
+    int N = 1024;
+    char buf[N]{0};
+    if (f) {
+        f.getline(buf, N);
+        if (f) {
+            vendor = std::string(buf);
+        }
+        f.close();
+    }
+    return vendor;
+}
+
 static void printProgress(int percentage, std::ostream &out) {
     int barWidth = 60;
 
@@ -780,6 +796,11 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             printProgress(100, out);
             out << std::endl;
             out << "Update firmware successfully." << std::endl;
+            if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
+                out << "Please reboot OS to take effect." << std::endl;
+            } else if (type == XPUM_DEVICE_FIRMWARE_AMC && getSysVendor() == "Supermicro") {
+                out << "Please reboot OS to take effect." << std::endl;
+            }
             return;
         } else if (flashStatus.compare("FAILED") == 0) {
             std::string errormsg;

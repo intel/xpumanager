@@ -448,6 +448,9 @@ namespace xpum::cli {
                 printProgress(100, out);
                 out << std::endl;
                 out << "Update firmware successfully." << std::endl;
+                if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
+                    out << "Please reboot OS to take effect." << std::endl;
+                }
                 return;
             } else if (flashStatus.compare("FAILED") == 0) {
                 std::string errormsg;
