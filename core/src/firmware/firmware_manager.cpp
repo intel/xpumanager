@@ -14,6 +14,8 @@
 #include "amc/ipmi_amc_manager.h"
 #include "amc/redfish_amc_manager.h"
 #include "igsc_err_msg.h"
+#include "infrastructure/utility.h"
+#include "infrastructure/logger.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -52,12 +54,6 @@ SystemCommandResult execCommand(const std::string& command) {
     return SystemCommandResult(result, exitcode);
 }
 
-struct GscFwVersion {
-    std::string devicePath;
-    pci_address_t bdfAddr;
-    std::string fwVersion;
-};
-
 static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
     std::stringstream ss;
     ss << fw_version->project[0];
@@ -71,94 +67,25 @@ static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
     return ss.str();
 }
 
-static std::vector<GscFwVersion> getGscFwVersions() {
-    std::vector<GscFwVersion> res;
-    struct igsc_device_iterator* iter;
-    struct igsc_device_info info;
+static std::string getGfxVersionByMeiDevice(std::string meiDevicePath) {
     int ret;
     struct igsc_device_handle handle;
     struct igsc_fw_version fw_version;
-    unsigned int ndevices = 0;
-
-    // XPUM_LOG_INFO("Start iterate GSC fw");
-    memset(&handle, 0, sizeof(handle));
-    memset(&fw_version, 0, sizeof(fw_version));
-    ret = igsc_device_iterator_create(&iter);
+    std::string res = "unknown";
+    ret = igsc_device_init_by_device(&handle, meiDevicePath.c_str());
     if (ret != IGSC_SUCCESS) {
-        XPUM_LOG_ERROR("Cannot create device iterator {}", ret);
         return res;
     }
-    info.name[0] = '\0';
-    while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
-        // XPUM_LOG_INFO("Find one");
-        GscFwVersion fw;
-        ret = igsc_device_init_by_device_info(&handle, &info);
-        if (ret != IGSC_SUCCESS) {
-            /* make sure we have a printable name */
-            info.name[0] = '\0';
-            continue;
-        }
-        // XPUM_LOG_INFO("Get info");
 
-        // igsc_device_update_device_info(&handle, &info);
-
-        // XPUM_LOG_INFO("Update info");
-
-        ndevices++;
-
-        fw.devicePath = info.name;
-        fw.bdfAddr.domain = info.domain;
-        fw.bdfAddr.bus = info.bus;
-        fw.bdfAddr.device = info.dev;
-        fw.bdfAddr.function = info.func;
-
-        ret = igsc_device_fw_version(&handle, &fw_version);
-        // XPUM_LOG_INFO("Get fw version");
-        if (ret == IGSC_SUCCESS) {
-            fw.fwVersion = print_fw_version(&fw_version);
-        } else {
-            XPUM_LOG_ERROR("Fail to get SoC fw version from device: {}", fw.devicePath);
-            fw.fwVersion = "unknown";
-        }
-        /* make sure we have a printable name */
-        info.name[0] = '\0';
-        (void)igsc_device_close(&handle);
-
-        res.push_back(fw);
+    ret = igsc_device_fw_version(&handle, &fw_version);
+    if (ret == IGSC_SUCCESS) {
+        res = print_fw_version(&fw_version);
+    } else {
+        XPUM_LOG_ERROR("Fail to get SoC fw version from device: {}", meiDevicePath);
     }
-    igsc_device_iterator_destroy(iter);
+    /* make sure we have a printable name */
+    (void)igsc_device_close(&handle);
     return res;
-}
-
-void FirmwareManager::detectGscFw() {
-    std::vector<std::shared_ptr<Device>> devices;
-    Core::instance().getDeviceManager()->getDeviceList(devices);
-    auto fwList = getGscFwVersions();
-    for (auto& pDevice : devices) {
-        auto address = pDevice->getPciAddress();
-        for (auto fw : fwList) {
-            if (fw.bdfAddr == address) {
-                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, fw.fwVersion));
-                pDevice->setMeiDevicePath(fw.devicePath);
-            }
-        }
-    }
-}
-
-void FirmwareManager::initFwDataMgmt(){
-    std::vector<std::shared_ptr<Device>> devices;
-    Core::instance().getDeviceManager()->getDeviceList(devices);
-    for (auto pDevice : devices) {
-        if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
-            pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
-            pDevice->getFwDataMgmt()->getFwDataVersion();
-            pDevice->setFwCodeDataMgmt(std::make_shared<FwCodeDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
-        }
-        if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-            pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
-            pDevice->getPscMgmt()->getPscFwVersion();
-        }
-    }
 }
 
 void FirmwareManager::init() {
@@ -167,19 +94,44 @@ void FirmwareManager::init() {
     if (xpum_init_skip_module_list.find("FIRMWARE") != xpum_init_skip_module_list.npos) {
         return;
     }
-    // get gsc fw versions
-    detectGscFw();
-    // init fw-data management
-    initFwDataMgmt();
+    std::vector<std::shared_ptr<Device>> devices;
+    Core::instance().getDeviceManager()->getDeviceList(devices);
+
+    Utility::parallel_in_batches(devices.size(), devices.size(), [&](int start, int end) {
+        for (int i = start; i < end; ++i) {
+            auto pDevice = devices.at(i);
+            // GFX fw version
+            auto gfxFwVersion = getGfxVersionByMeiDevice(pDevice->getMeiDevicePath());
+            pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, gfxFwVersion));
+            XPUM_LOG_DEBUG("Device {} get GFX fw version: {}", i, gfxFwVersion);
+            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
+                // fwDataMgmt
+                pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
+                pDevice->getFwDataMgmt()->getFwDataVersion();
+                XPUM_LOG_DEBUG("Device {} get GFX_DATA fw version", i);
+                // fwCodeAndDataMgmt
+                pDevice->setFwCodeDataMgmt(std::make_shared<FwCodeDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
+            }
+            // pscMgmt
+            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
+                pDevice->getPscMgmt()->getPscFwVersion();
+                XPUM_LOG_DEBUG("Device {} get PSC fw version", i);
+            }
+        }
+    });
+
     if (xpum_init_skip_module_list.find("AMC") == xpum_init_skip_module_list.npos) {
         // init amc manager
         preInitAmcManager();
+        XPUM_LOG_DEBUG("AMC Manager pre-initialized");
     }
 };
 
 void FirmwareManager::preInitAmcManager() {
     p_amc_manager = std::make_shared<IpmiAmcManager>();
     auto ipmi_enabled = p_amc_manager->preInit();
+    XPUM_LOG_DEBUG("Finish IPMI scan AMC");
     if (!ipmi_enabled) {
         p_amc_manager = RedfishAmcManager::instance();
         p_amc_manager->preInit();
