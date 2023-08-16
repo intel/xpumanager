@@ -1260,9 +1260,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
 
-                auto meiDeviceName = getMeiDeviceNameFromPath(p_gpu->getMeiDevicePath());
-                auto txCalDate = getTxCalDateByMeiDevice(meiDeviceName);
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE, txCalDate));
+                if (getDeviceModelByPciDeviceId(props.core.deviceId) == XPUM_DEVICE_MODEL_PVC) {
+                    auto meiDeviceName = getMeiDeviceNameFromPath(p_gpu->getMeiDevicePath());
+                    auto txCalDate = getTxCalDateByMeiDevice(meiDeviceName);
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE, txCalDate));
+                }
 
                 std::lock_guard<std::mutex> lock(devices_mtx);
                 p_devices->push_back(p_gpu);
