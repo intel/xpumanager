@@ -1400,6 +1400,21 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         }
     }
 
+    uint32_t totalCount = 0;
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+        uint32_t __count = 0;
+        res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, nullptr, &__count, begin, end, sessionId);
+        if (res != XPUM_OK)
+            return res;
+        totalCount += __count;
+    }
+
+    if (*count < totalCount) {
+        *count = totalCount;
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
     std::vector<xpum_device_fabric_throughput_stats_t> _dataList;
     for (uint32_t i = 0; i < deviceCount; i++) {
         xpum_device_id_t deviceId = deviceIdList[i];
@@ -1420,10 +1435,7 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         *count = _dataList.size();
         return XPUM_OK;
     }
-    if (*count < _dataList.size()) {
-        *count = _dataList.size();
-        return XPUM_BUFFER_TOO_SMALL;
-    }
+
     *count = _dataList.size();
     for (uint32_t i = 0; i < _dataList.size(); i++) {
         dataList[i] = _dataList[i];
