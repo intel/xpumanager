@@ -1996,8 +1996,13 @@ std::map<ze_device_handle_t, zet_metric_group_handle_t> GPUDeviceStub::target_me
 std::map<ze_device_handle_t, ze_context_handle_t> GPUDeviceStub::target_metric_contexts;
 void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
     ze_result_t res;
-    std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
     zet_metric_group_handle_t hMetricGroup = nullptr;
+    ze_context_handle_t hContext = nullptr;
+    zet_metric_streamer_handle_t hMetricStreamer = nullptr;
+    zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
+    {
+
+    std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
     if (GPUDeviceStub::target_metric_groups.find(device) != GPUDeviceStub::target_metric_groups.end()) {
         hMetricGroup = GPUDeviceStub::target_metric_groups.at(device);
     } else {
@@ -2026,7 +2031,7 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     if (hMetricGroup == nullptr) {
         throw BaseException("toGetEuActiveStallIdleCore");
     }
-    ze_context_handle_t hContext = nullptr;
+
     if (GPUDeviceStub::target_metric_contexts.find(device) != GPUDeviceStub::target_metric_contexts.end()) {
         hContext = GPUDeviceStub::target_metric_contexts.at(device);
     } else {
@@ -2042,11 +2047,10 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         GPUDeviceStub::target_metric_contexts[device] = hContext;
     }
 
-    zet_metric_streamer_handle_t hMetricStreamer = nullptr;
-    zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
     XPUM_ZE_HANDLE_LOCK(device, res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup));
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("toGetEuActiveStallIdleCore - zetContextActivateMetricGroups");
+    }
     }
 
     metricStreamerDesc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
@@ -2070,9 +2074,12 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("zetMetricStreamerClose");
     }
+    {
+    std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
     res = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("zetContextActivateMetricGroups");
+    }
     }
     uint32_t numMetricValues = 0;
     zet_metric_group_calculation_type_t calculationType = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;
