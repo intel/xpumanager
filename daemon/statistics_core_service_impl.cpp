@@ -61,7 +61,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
-    if (res != XPUM_OK || count < 0) {
+    if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
@@ -155,7 +155,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
     response->set_errorno(res);
-    if (res != XPUM_OK || count < 0) {
+    if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
