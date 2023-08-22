@@ -7,7 +7,7 @@ ARG AUTOMAKE_URL=https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz
 ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz
 ARG ZLIB_VERSION=v1.2.13
-ARG GRPC_VERSION=v1.56.0
+ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_19_1
 
 RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm https://repo.ius.io/ius-release-el7.rpm && \
