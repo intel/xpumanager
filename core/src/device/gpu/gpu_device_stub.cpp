@@ -2155,6 +2155,9 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         totalEuActive += currentGPUElapsedTime * currentEuActive;
         totalGPUElapsedTime += currentGPUElapsedTime;
     }
+    if (totalGPUElapsedTime == 0) {
+        throw BaseException("toGetEuActiveStallIdleCore - zero GPU elapsed time");
+    }
     uint64_t euActive = totalEuActive / totalGPUElapsedTime;
     uint64_t euStall = totalEuStall / totalGPUElapsedTime;
     uint64_t euIdle = 100 - euActive - euStall;

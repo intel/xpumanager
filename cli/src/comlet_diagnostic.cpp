@@ -213,7 +213,7 @@ Scanning would start from the latest boot if it is not specified.");
     sinceTimeOpt->needs(preCheckOpt);
 
     deviceIdOpt->excludes(preCheckOpt);
-    if (stressFlag == nullptr) {
+    if (this->opts->stress == false) {
         deviceIdOpt->needs(level);
     }
     stressTimeOpt->needs(stressFlag);

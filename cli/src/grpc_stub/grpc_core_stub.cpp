@@ -469,7 +469,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int l
         request.set_deviceid(deviceId);
         request.set_level(level);
         stub->runDiagnostics(&context, request, &response);
-    } else if (targetTypes.size() >= 0) {
+    } else if (targetTypes.size() > 0) {
         RunMultipleSpecificDiagnosticsRequest request;
         request.set_deviceid(deviceId);
         for (auto& type : targetTypes)
@@ -686,7 +686,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnosticsByGroup(uint32_t gro
         request.set_groupid(groupId);
         request.set_level(level);
         status = stub->runDiagnosticsByGroup(&context, request, &response);
-    } else if (targetTypes.size() >= 0) {
+    } else if (targetTypes.size() > 0) {
         RunMultipleSpecificDiagnosticsByGroupRequest request;
         request.set_groupid(groupId);
         for (auto& type : targetTypes)

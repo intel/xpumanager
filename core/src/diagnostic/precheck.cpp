@@ -641,7 +641,10 @@ namespace xpum {
             return XPUM_OK;
         }
         readConfigFile(); 
-        toCheck(logSource, onlyGPU, sinceTime);
+        std::string sinceTimeStr;
+        if (sinceTime != nullptr)
+            std::string sinceTimeStr = std::string(sinceTime);
+        toCheck(logSource, onlyGPU, sinceTimeStr);
         int val = PrecheckManager::component_gpus.size() + 1;
         if (!onlyGPU)
             val += PrecheckManager::component_cpus.size();

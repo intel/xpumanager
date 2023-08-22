@@ -673,9 +673,6 @@ void DiagnosticManager::doDeviceDiagnosticLibraries(std::shared_ptr<xpum_diag_ta
 
     bool find_libs = true;
     for (auto it = libs.begin(); it != libs.end(); it++) {
-        if (!find_libs) {
-            break;
-        }
         void *handle;
         handle = dlopen((*it).c_str(), RTLD_NOW);
         if (!handle) {
@@ -2023,7 +2020,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
                 }
-                uint64_t max_work_items = device_properties.numSlices *
+                uint64_t max_work_items = (uint64_t)device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
                                           device_properties.numEUsPerSubslice *
                                           device_compute_properties.maxGroupCountX * 2048;
@@ -2388,7 +2385,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformancePower(const ze_device_handle
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
                 }
-                uint64_t max_work_items = device_properties.numSlices *
+                uint64_t max_work_items = (uint64_t)device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
                                           device_properties.numEUsPerSubslice *
                                           device_compute_properties.maxGroupCountX * 2048;
@@ -2789,7 +2786,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 }
                 uint64_t max_items = device_properties.maxMemAllocSize / sizeof(float) / 2;
                 uint64_t num_items = std::min(max_items, (uint64_t)(1 << 29));
-                uint64_t base = device_compute_properties.maxGroupSizeX * 16 * 16;
+                uint64_t base = (uint64_t)device_compute_properties.maxGroupSizeX * 16 * 16;
                 num_items = (num_items / base) * base;
 
                 std::vector<float> arr(static_cast<uint32_t>(num_items));
@@ -3576,7 +3573,7 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
                 }
-                uint64_t max_work_items = device_properties.numSlices *
+                uint64_t max_work_items = (uint64_t)device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
                                           device_properties.numEUsPerSubslice *
                                           device_compute_properties.maxGroupCountX * 2048;

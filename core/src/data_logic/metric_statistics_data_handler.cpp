@@ -75,11 +75,11 @@ void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& 
                         iter_subdevice_statistics->second.avg = (iter_subdevice_statistics->second.avg * (iter_subdevice_statistics->second.count - 1) + iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first)) * 1.0 / iter_subdevice_statistics->second.count;
                     }
                 } else {
-                    if (iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first) != std::numeric_limits<uint64_t>::max()) {
+                    if (iter->second->getSubdeviceDataCurrent(iter_subdevice->first) != std::numeric_limits<uint64_t>::max()) {
                         if (statistics_datas[session].find(iter->first) == statistics_datas[session].end()) {
-                            statistics_datas[session].insert(std::make_pair(iter->first, Statistics_data(iter_subdevice->first, iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first), p_data->getTime())));
+                            statistics_datas[session].insert(std::make_pair(iter->first, Statistics_data(iter_subdevice->first, iter->second->getSubdeviceDataCurrent(iter_subdevice->first), p_data->getTime())));
                         } else {
-                            statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first))));
+                            statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second->getSubdeviceDataCurrent(iter_subdevice->first))));
                         }
                     }
                 }
