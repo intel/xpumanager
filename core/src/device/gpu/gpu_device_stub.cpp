@@ -1340,7 +1340,7 @@ std::string GPUDeviceStub::getDRMDevice(const zes_pci_properties_t& pci_props) {
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent, buf) != NULL) {
             ret = "/dev/dri/";
             ret += pdirent->d_name;
             break;
@@ -2931,7 +2931,7 @@ static bool getCardIdx(uint32_t &card_idx, const zes_device_handle_t& device) {
         len = snprintf(buf, BUF_SIZE, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent, buf) != NULL) {
             sscanf(pdirent->d_name, "card%d", &card_idx);
             ret = true;
             break;

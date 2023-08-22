@@ -541,11 +541,7 @@ bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address,
             bFound = true;
             break;
         }
-
-        if (bFound) {
-            break;
-        }
-    }
+   }
 
     return bFound;
 }

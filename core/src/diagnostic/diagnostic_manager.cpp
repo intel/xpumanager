@@ -886,7 +886,7 @@ static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent, buf) != NULL) {
             ret = "/dev/dri/";
             ret += pdirent->d_name;
             break;
