@@ -84,7 +84,6 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
             XPUM_LOG_WARN("this_weak_ptr is nullptr for monitor data");
-            p_this->exe_counter++;
             return;
         }
 
