@@ -3248,7 +3248,7 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
     error = dlerror();
     if (error || igsc_device_init == NULL) {
         XPUM_LOG_WARN("XPUM can't load find igsc_device_init_by_device.");
-        //goto out;
+        goto out;
     }
 
     igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());

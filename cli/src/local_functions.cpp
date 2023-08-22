@@ -210,7 +210,10 @@ bool getPciDeviceData(PciDeviceData &data, const std::string &bdf) {
     std::string cmd = "lspci -D -s " + bdf + " 2>&1|cut -d ':' -f 4";
     char buf[BUF_SIZE];
     FILE *pf = popen(cmd.c_str(), "r");
-    if (pf != NULL && fgets(buf, BUF_SIZE, pf) != NULL) {
+    if (pf == NULL) {
+        return false;
+    }
+    if (fgets(buf, BUF_SIZE, pf) != NULL) {
         if (strnlen(buf, BUF_SIZE) > 0) {
             std::string line(buf+1);
             if (line.length() > 0) {
