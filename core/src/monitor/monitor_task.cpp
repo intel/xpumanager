@@ -115,6 +115,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 if (p_this == nullptr) {
                     return;
                 }
+                std::lock_guard<std::mutex> lock(p_this->callback_mutex);
                 if (e == nullptr && ret != nullptr) {
                     std::string id = p_device->getId();
                     auto p_mdata = std::static_pointer_cast<MeasurementData>(ret);

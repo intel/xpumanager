@@ -1813,7 +1813,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUsedUtilization(const
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& mem : mems) {
-                zes_mem_properties_t props;
+                zes_mem_properties_t props = {};
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                 if (res == ZE_RESULT_SUCCESS) {
