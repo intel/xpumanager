@@ -35,7 +35,6 @@ Core::Core()
 
 Core::~Core() {
     XPUM_LOG_TRACE("~core()");
-    close();
 }
 
 Core& Core::instance() {
