@@ -1100,7 +1100,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             zes_device_handle_t zes_device = (zes_device_handle_t)device;
             zes_device_properties_t props = {};
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            XPUM_ZE_HANDLE_LOCK(zes_device, zesDeviceGetProperties(zes_device, &props));
+            XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceGetProperties(zes_device, &props));
+            if(res != ZE_RESULT_SUCCESS){
+                continue;
+            }
             if (props.core.type == ZE_DEVICE_TYPE_GPU) {
                 addCapabilities(device, props, capabilities);
                 addEngineCapabilities(device, props, capabilities);

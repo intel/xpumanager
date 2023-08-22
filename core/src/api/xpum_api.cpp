@@ -2628,7 +2628,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
         if (res != ZE_RESULT_SUCCESS)
             return XPUM_RESULT_DEVICE_NOT_FOUND;
         std::vector<ze_device_handle_t> devices(device_count);
-        zeDeviceGet(p_driver, &device_count, devices.data());
+        res = zeDeviceGet(p_driver, &device_count, devices.data());
         if (res != ZE_RESULT_SUCCESS)
             return XPUM_RESULT_DEVICE_NOT_FOUND;
         for (auto device : devices) {

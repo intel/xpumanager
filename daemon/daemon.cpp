@@ -166,14 +166,20 @@ void runRPCServers() {
         return;
     }
 
-    chmod(privSock.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+    if(chmod(privSock.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) < 0){
+        XPUM_LOG_ERROR("XPUM: chmod privSock failed");
+        return;
+    }
 
     //non-privileged socket
     XpumCoreServiceUnprivilegedImpl upriService;
     unique_ptr<grpc::Server> upriServer = buildAndStartRPCServer("unix://" + upriSock, upriService);
 
     chown(upriSock.c_str(), pwd->pw_uid, pwd->pw_gid);
-    chmod(upriSock.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH );
+    if(chmod(upriSock.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH ) < 0){
+        XPUM_LOG_ERROR("XPUM: chmod upriSock failed");
+        return;
+    }
 
     // start a background thread for the server.
     std::thread grpc_server_thread(
