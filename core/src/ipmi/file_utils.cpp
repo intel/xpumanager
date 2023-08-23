@@ -46,7 +46,7 @@ uint8_t *read_file(const char *path, size_t *read_size) {
         }
 
         buffer_size = ftell(fd);
-        if (buffer_size <= 0) {
+        if (buffer_size == 0) {
             XPUM_LOG_ERROR("File {} does not have any content\n", path);
             goto error;
         }
