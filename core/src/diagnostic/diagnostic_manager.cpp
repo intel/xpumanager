@@ -915,6 +915,8 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
 
     ze_result_t ret;
     zes_pci_properties_t pci_props;
+    pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+    pci_props.pNext = nullptr;
     XPUM_ZE_HANDLE_LOCK(device, ret = zesDevicePciGetProperties(device, &pci_props));
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDevicePciGetProperties()[" + zeResultErrorCodeStr(ret) + "]");
