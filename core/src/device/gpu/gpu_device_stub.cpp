@@ -2016,11 +2016,12 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
             XPUM_ZE_HANDLE_LOCK(device, res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& metric_group : metricGroups) {
-                    zet_metric_group_properties_t metric_group_properties;
+                    zet_metric_group_properties_t metric_group_properties = {};
                     metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+                    metric_group_properties.pNext = nullptr;
                     res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
                     if (res == ZE_RESULT_SUCCESS) {
-                        if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 && metric_group_properties.samplingType == ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
+                        if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 && (metric_group_properties.samplingType & ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) != 0) {
                             GPUDeviceStub::target_metric_groups[device] = metric_group;
                             hMetricGroup = metric_group;
                             break;
