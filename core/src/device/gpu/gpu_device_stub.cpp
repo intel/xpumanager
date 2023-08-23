@@ -642,7 +642,7 @@ std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
             }
             char full_path[PATH_MAX];
             char card_path[PATH_MAX];
-            char socketId_buf[16];
+            char socketId_buf[BUF_SIZE];
 
             ssize_t full_len = ::readlink(link_path, full_path, sizeof(full_path));
             if (full_len < 0) {
@@ -660,10 +660,10 @@ std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
                 if (readStrSysFsFile(socketId_buf, card_path) == false) {
                     return ret;
                 } else {
+                    socketId_buf[strcspn(socketId_buf, "\n")] = '\0';
                     if(!strncmp(socketId_buf, "0x1f", 4)) {
                         return ret;
                     }
-                    socketId_buf[strlen(socketId_buf)-1] = '\0';
                     return socketId_buf;
                 }
                 break;
