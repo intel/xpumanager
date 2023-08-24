@@ -5,6 +5,7 @@
 # @file enable_restful.sh
 #
 
+set -e
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 umask 022
