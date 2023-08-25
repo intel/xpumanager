@@ -12,11 +12,16 @@ It supports local command line interface and local library call interface.
 * Support K8s and can export GPU telemetries to Prometheus
 
 ## Suppored Devices
-* Intel Data Center GPU
+* Intel(R) Data Center Flex Series GPU
+* Intel(R) Data Center Max Series GPU
 
 ## Supported OS
-* Ubuntu 20.0.4
-* CentOS Stream 8
+* Ubuntu 20.04.3/22.04
+* RHEL 8.5/8.6
+* CentOS 8/9 Stream
+* CentOS 7.4/7.9
+* SLES 15 SP3/SP4
+* Debian 10.13
   
 
 
