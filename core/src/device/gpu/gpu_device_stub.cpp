@@ -361,6 +361,7 @@ void GPUDeviceStub::checkInitDependency() {
             details = (*it);
             break;
         }
+        dlclose(handle);
     }
 
     if (findLibs) {
