@@ -28,12 +28,12 @@ std::unique_ptr<nlohmann::json> ComletVersion::run() {
 void ComletVersion::getTableResult(std::ostream &out) {
     auto res = run();
     out << "CLI:" << std::endl;
-    out << "    Version: " << res->value("cli_version", "") << std::endl;
-    out << "    Build ID: " << res->value("cli_version_git", "") << std::endl;
+    out << "    Version: " << (res->contains("cli_version") ? (*res)["cli_version"].get<std::string>() : "") << std::endl;
+    out << "    Build ID: " << (res->contains("cli_version_git") ? (*res)["cli_version_git"].get<std::string>() : "") << std::endl;
     out << std::endl;
     out << "Service:" << std::endl;
-    out << "    Version: " << res->value("xpum_version", "") << std::endl;
-    out << "    Build ID: " << res->value("xpum_version_git", "") << std::endl;
-    out << "    Level Zero Version: " << res->value("level_zero_version", "") << std::endl;
+    out << "    Version: " << (res->contains("xpum_version") ? (*res)["xpum_version"].get<std::string>() : "") << std::endl;
+    out << "    Build ID: " << (res->contains("xpum_version_git") ? (*res)["xpum_version_git"].get<std::string>() : "") << std::endl;
+    out << "    Level Zero Version: " << (res->contains("level_zero_version") ? (*res)["level_zero_version"].get<std::string>() : "") << std::endl;
 }
 } // end namespace xpum::cli

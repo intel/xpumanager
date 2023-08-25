@@ -1121,11 +1121,6 @@ typedef struct {
 } xpum_sensor_reading_t;
 
 typedef struct xpum_vgpu_precheck_result_t {
-    xpum_vgpu_precheck_result_t(): vmxFlag(false), iommuStatus(false), sriovStatus(false) {
-        vmxMessage[0] = 0;
-        iommuMessage[0] = 0;
-        sriovMessage[0] = 0;
-    }
     bool vmxFlag;                           ///< VMX flag
     bool iommuStatus;                       ///< IOMMU status flag
     bool sriovStatus;                       ///< SR-IOV status flag

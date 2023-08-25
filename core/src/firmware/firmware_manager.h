@@ -54,8 +54,6 @@ class FirmwareManager {
 
     std::shared_ptr<AmcManager> p_amc_manager;
 
-    void initFwDataMgmt();
-
     void preInitAmcManager();
 
     bool initAmcManager();

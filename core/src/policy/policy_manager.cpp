@@ -610,13 +610,6 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
         }
     }
 
-    //XPUM_RESULT_POLICY_INVALID_THRESHOLD
-    if (policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER || policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS) {
-        if (policy.condition.threshold < 0) {
-            return XPUM_RESULT_POLICY_INVALID_THRESHOLD;
-        }
-    }
-
     return XPUM_OK;
 }
 

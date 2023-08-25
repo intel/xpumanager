@@ -673,9 +673,6 @@ void DiagnosticManager::doDeviceDiagnosticLibraries(std::shared_ptr<xpum_diag_ta
 
     bool find_libs = true;
     for (auto it = libs.begin(); it != libs.end(); it++) {
-        if (!find_libs) {
-            break;
-        }
         void *handle;
         handle = dlopen((*it).c_str(), RTLD_NOW);
         if (!handle) {
@@ -889,7 +886,7 @@ static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent, buf) != NULL) {
             ret = "/dev/dri/";
             ret += pdirent->d_name;
             break;
@@ -918,6 +915,8 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
 
     ze_result_t ret;
     zes_pci_properties_t pci_props;
+    pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+    pci_props.pNext = nullptr;
     XPUM_ZE_HANDLE_LOCK(device, ret = zesDevicePciGetProperties(device, &pci_props));
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDevicePciGetProperties()[" + zeResultErrorCodeStr(ret) + "]");
@@ -2023,7 +2022,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
                 }
-                uint64_t max_work_items = device_properties.numSlices *
+                uint64_t max_work_items = (uint64_t)device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
                                           device_properties.numEUsPerSubslice *
                                           device_compute_properties.maxGroupCountX * 2048;
@@ -2388,7 +2387,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformancePower(const ze_device_handle
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
                 }
-                uint64_t max_work_items = device_properties.numSlices *
+                uint64_t max_work_items = (uint64_t)device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
                                           device_properties.numEUsPerSubslice *
                                           device_compute_properties.maxGroupCountX * 2048;
@@ -2789,7 +2788,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 }
                 uint64_t max_items = device_properties.maxMemAllocSize / sizeof(float) / 2;
                 uint64_t num_items = std::min(max_items, (uint64_t)(1 << 29));
-                uint64_t base = device_compute_properties.maxGroupSizeX * 16 * 16;
+                uint64_t base = (uint64_t)device_compute_properties.maxGroupSizeX * 16 * 16;
                 num_items = (num_items / base) * base;
 
                 std::vector<float> arr(static_cast<uint32_t>(num_items));
@@ -3576,7 +3575,7 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
                 }
-                uint64_t max_work_items = device_properties.numSlices *
+                uint64_t max_work_items = (uint64_t)device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
                                           device_properties.numEUsPerSubslice *
                                           device_compute_properties.maxGroupCountX * 2048;

@@ -71,8 +71,7 @@ xpum_result_t DumpRawDataManager::
 
     // create task
     std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath), pThreadPool);
-    if (!p_task)
-        return XPUM_GENERIC_ERROR;
+
     for (int i = 0; i < count; i++) {
         // p_task->metricsTypeList.push_back(dumpTypeList[i]);
         p_task->dumpTypeList.push_back(dumpTypeList[i]);

@@ -33,6 +33,11 @@ class LibIgsc {
             return;
         igsc_device_psc_version = reinterpret_cast<igsc_device_psc_version_t>(dlsym(handle, "igsc_device_psc_version"));
     }
+    ~LibIgsc(){
+        if (handle) {
+            dlclose(handle);
+        }
+    }
 
     bool ok() {
         return handle != NULL && igsc_device_psc_version != NULL;

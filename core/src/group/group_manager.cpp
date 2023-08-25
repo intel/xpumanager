@@ -31,7 +31,6 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
     xpum_result_t ret = XPUM_GENERIC_ERROR;
     xpum_group_id_t groupId;
     std::shared_ptr<GroupUnit> pGroupInfo;
-    std::string name = std::string(pGroupName);
     std::size_t buildInCount = internalSequence - 1;
 
     XPUM_LOG_TRACE("GroupManager::createGroup");
@@ -40,6 +39,7 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
         XPUM_LOG_DEBUG("GroupManager::createGroup-groupName is nullptr.");
         return ret;
     }
+    std::string name = std::string(pGroupName);
 
     if (pGroupId == nullptr) {
         XPUM_LOG_DEBUG("GroupManager::createGroup-pGroupId is nullptr.");
@@ -154,11 +154,6 @@ xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[], int* coun
     } else if (*count < nCount) {
         *count = nCount;
         return XPUM_BUFFER_TOO_SMALL;
-    }
-
-    if (groupIds == nullptr) {
-        *count = nCount;
-        return ret;
     }
 
     int index = 0;

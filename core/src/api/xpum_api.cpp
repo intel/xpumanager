@@ -1400,6 +1400,21 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         }
     }
 
+    uint32_t totalCount = 0;
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+        uint32_t __count = 0;
+        res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, nullptr, &__count, begin, end, sessionId);
+        if (res != XPUM_OK)
+            return res;
+        totalCount += __count;
+    }
+
+    if (*count < totalCount) {
+        *count = totalCount;
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
     std::vector<xpum_device_fabric_throughput_stats_t> _dataList;
     for (uint32_t i = 0; i < deviceCount; i++) {
         xpum_device_id_t deviceId = deviceIdList[i];
@@ -1420,10 +1435,7 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         *count = _dataList.size();
         return XPUM_OK;
     }
-    if (*count < _dataList.size()) {
-        *count = _dataList.size();
-        return XPUM_BUFFER_TOO_SMALL;
-    }
+
     *count = _dataList.size();
     for (uint32_t i = 0; i < _dataList.size(); i++) {
         dataList[i] = _dataList[i];
@@ -2616,7 +2628,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
         if (res != ZE_RESULT_SUCCESS)
             return XPUM_RESULT_DEVICE_NOT_FOUND;
         std::vector<ze_device_handle_t> devices(device_count);
-        zeDeviceGet(p_driver, &device_count, devices.data());
+        res = zeDeviceGet(p_driver, &device_count, devices.data());
         if (res != ZE_RESULT_SUCCESS)
             return XPUM_RESULT_DEVICE_NOT_FOUND;
         for (auto device : devices) {
@@ -2777,7 +2789,8 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
             scale = engineUtilRawData.scale;
         }
     }
-    engineUsage = std::max(engineCompute / countComputeEngine, engineRender / countRenderEngine);
+    if (countComputeEngine != 0 && countRenderEngine != 0)
+        engineUsage = std::max(engineCompute / countComputeEngine, engineRender / countRenderEngine);
     engineUsage /= scale;
 
     auto p_perf_datas = p_measurement_data->getDatas();
@@ -3235,7 +3248,7 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
     error = dlerror();
     if (error || igsc_device_init == NULL) {
         XPUM_LOG_WARN("XPUM can't load find igsc_device_init_by_device.");
-        //goto out;
+        goto out;
     }
 
     igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());

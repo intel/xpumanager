@@ -66,7 +66,11 @@ std::shared_ptr<MeasurementData> DataHandler::getLatestData(std::string& device_
     }
 
     auto datas = p_latestData->getData();
-    return datas[device_id];
+    if (datas.find(device_id) != datas.end()) {
+        return datas[device_id];
+    } else {
+        return nullptr;
+    }
 }
 
 std::shared_ptr<MeasurementData> DataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
@@ -76,7 +80,11 @@ std::shared_ptr<MeasurementData> DataHandler::getLatestStatistics(std::string& d
     }
 
     auto datas = p_latestData->getData();
-    return datas[device_id];
+    if (datas.find(device_id) != datas.end()) {
+        return datas[device_id];
+    } else {
+        return nullptr;
+    }
 }
 
 void DataHandler::getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {

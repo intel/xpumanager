@@ -84,7 +84,6 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
             XPUM_LOG_WARN("this_weak_ptr is nullptr for monitor data");
-            p_this->exe_counter++;
             return;
         }
 
@@ -100,7 +99,14 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
 
         auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
 
-        for (auto& p_device : devices) {
+        bool use_multithreading = false;
+        if(p_this->getCapability() == DeviceCapability::METRIC_MEMORY_USED_UTILIZATION){
+            use_multithreading = true;
+        }
+
+        Utility::parallel_in_batches(devices.size(), devices.size(), [&](int start, int end){
+        for (int i = start; i < end; ++i) {
+            auto& p_device = devices[i];
             DeviceCapability capability = p_this->capability;
             auto method = Device::getDeviceMethod(capability, p_device.get());
             method([p_device, this_weak_ptr, datas, capability](
@@ -109,6 +115,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 if (p_this == nullptr) {
                     return;
                 }
+                std::lock_guard<std::mutex> lock(p_this->callback_mutex);
                 if (e == nullptr && ret != nullptr) {
                     std::string id = p_device->getId();
                     auto p_mdata = std::static_pointer_cast<MeasurementData>(ret);
@@ -132,6 +139,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 }
             });
         }
+        }, use_multithreading);
 
         bool hasSubdeviceAdditionalData = false;
         std::set<MeasurementType> subdeviceAdditionalDataTypes;

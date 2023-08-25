@@ -58,6 +58,7 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
     std::map<std::string, bool> monitor_task_log_status;
     std::shared_ptr<ScheduledThreadPoolTask> p_scheduled_task;
     std::atomic<int> exe_counter;
+    std::mutex callback_mutex;
 };
 
 } // end namespace xpum

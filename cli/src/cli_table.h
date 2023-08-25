@@ -544,7 +544,7 @@ class CharTableRow : public CharTableRowBase {
 
     inline const bool isNewRow(const unsigned int index, const int colIndex = -1) const {
         const int ci = (colIndex < 0) ? cells.size() - 1 : colIndex;
-        return index >= 0 && index < cells[ci]->length() && cells[ci]->at(index) == '\n';
+        return index < cells[ci]->length() && cells[ci]->at(index) == '\n';
     }
 
     inline std::string cutCellContentAt(const int len, const bool newRow, int colIndex = -1) {

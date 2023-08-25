@@ -305,12 +305,14 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
             int countGPU = 0;
             pci target_pci_device;
             pci target_pci_device_buddy;
+            // This function returns no data if multiple GPUs (except one ATS-M3[2 GPUs]) are under same iio stack
+            std::set<uint16_t> intel_gpu_device_ids = {0x020A, 0x0205, 0x56C0, 0x56C1, 
+                                                0x0bd0, 0x0bd5, 0x0bd6, 0x0bd7, 0x0bd8, 
+                                                0x0bd9, 0x0bda, 0x0bdb, 0x0b69, 0x0be5};
             for (const auto& part : stack->parts) {
                 for (const auto& pci_device : part.child_pci_devs) {
                     if (pci_device.vendor_id == 0x8086) {
-                        if (pci_device.device_id == 0x020A || pci_device.device_id == 0x0205
-                            || pci_device.device_id == 0x56C0 || pci_device.device_id == 0x56C1 
-                            || (pci_device.device_id/0x10 == 0x0bd) || pci_device.device_id == 0x0be5) {
+                        if (intel_gpu_device_ids.count(pci_device.device_id) > 0) {
                             countGPU += 1;
                             if (countGPU == 2 && pci_device.device_id == 0x56C1) {
                                 target_pci_device_buddy = pci_device;
@@ -321,8 +323,11 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
                     }
                 }
             }
-            if (countGPU == 0)
+            if (countGPU == 0 || countGPU > 2)
                 continue;
+            if (countGPU == 2 && target_pci_device_buddy.device_id != 0x56C1) {
+                continue;
+            }
             cachedSocketIdToStackId[socket->socket_id].insert(stack->iio_unit_id);
             auto stack_id = stack->iio_unit_id;
             headers = combine_stack_name_and_counter_names(stack->stack_name, nameMap);

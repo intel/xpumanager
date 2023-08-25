@@ -61,17 +61,21 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
 }
 
 int CLIWrapper::printResult(std::ostream &out) {
-    auto versionOpt = this->cliApp.get_option("-v");
-    if (!versionOpt->empty()) {
-        ComletVersion comlet;
+    try {
+        auto versionOpt = this->cliApp.get_option("-v");
+        if (!versionOpt->empty()) {
+            ComletVersion comlet;
 #ifdef DAEMONLESS
-        putenv(const_cast<char *>("XPUM_DISABLE_PERIODIC_METRIC_MONITOR=1"));
-        putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
-        this->coreStub = std::make_shared<LibCoreStub>();
+            putenv(const_cast<char *>("XPUM_DISABLE_PERIODIC_METRIC_MONITOR=1"));
+            putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
+            this->coreStub = std::make_shared<LibCoreStub>();
 #endif
-        comlet.coreStub = this->coreStub;
-        comlet.getTableResult(out);
-        return comlet.exit_code;
+            comlet.coreStub = this->coreStub;
+            comlet.getTableResult(out);
+            return comlet.exit_code;
+        }
+    } catch (std::exception &e) {
+        // do nothing
     }
 
     for (auto comlet : comlets) {
