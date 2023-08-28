@@ -656,15 +656,19 @@ std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
             if (strstr(full_path, bdf_address.c_str()) != NULL) {
                 int cardLen = snprintf(card_path, PATH_MAX,"%s/iaf_socket_id",link_path);
                 if (cardLen <= 0 || cardLen >= PATH_MAX) {
+                    closedir(pdir);
                     return ret;
                 }
                 if (readStrSysFsFile(socketId_buf, card_path) == false) {
+                    closedir(pdir);
                     return ret;
                 } else {
                     socketId_buf[strcspn(socketId_buf, "\n")] = '\0';
                     if(!strncmp(socketId_buf, "0x1f", 4)) {
+                        closedir(pdir);
                         return ret;
                     }
+                    closedir(pdir);
                     return socketId_buf;
                 }
                 break;

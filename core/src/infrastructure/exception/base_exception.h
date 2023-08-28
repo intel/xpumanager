@@ -36,6 +36,7 @@ class BaseException : public std::exception {
 
     BaseException(const BaseException& e) {
         this->msg = e.msg;
+        this->error_code = e.error_code;
     }
 
     ~BaseException() {
