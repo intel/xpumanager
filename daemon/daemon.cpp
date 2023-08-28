@@ -120,6 +120,7 @@ void print_help(const char* app_name) {
     printf("        36      ENGINE_UTILIZATION                                  on\n");
     printf("        37      FABRIC_THROUGHPUT                                   on\n");
     printf("        38      FREQUENCY_THROTTLE_REASON_GPU                       on\n");
+    printf("        39      MEDIA_ENGINE_FREQUENCY                              on\n");
     printf("\n");
 }
 

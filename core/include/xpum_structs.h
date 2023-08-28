@@ -567,6 +567,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_ENGINE_UTILIZATION = 36,            ///< Engine Utilization, unit %
     XPUM_STATS_FABRIC_THROUGHPUT = 37,             ///< Fabric throughput, unit kB/s
     XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU = 38, ///< Frequency Throttle reason, refer to the document of zes_freq_throttle_reason_flags_t
+    XPUM_STATS_MEDIA_ENGINE_FREQUENCY = 39,        ///< Media engine frequency, unit MHz
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -1094,6 +1095,7 @@ typedef enum xpum_dump_type_enum {
     XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION = 33,
     XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION = 34,
     XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU = 35,
+    XPUM_DUMP_MEDIA_ENGINE_FREQUENCY = 36,
     XPUM_DUMP_MAX
 } xpum_dump_type_t;
 

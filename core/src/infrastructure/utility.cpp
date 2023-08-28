@@ -125,6 +125,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
             return DeviceCapability::METRIC_FREQUENCY;
         case MeasurementType::METRIC_REQUEST_FREQUENCY:
             return DeviceCapability::METRIC_FREQUENCY;
+        case MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY:
+            return DeviceCapability::METRIC_FREQUENCY;
         case MeasurementType::METRIC_POWER:
             return DeviceCapability::METRIC_POWER;
         case MeasurementType::METRIC_MEMORY_USED:
@@ -267,6 +269,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_PCIE_READ);
     metric_types.push_back(MeasurementType::METRIC_PCIE_WRITE);
     metric_types.push_back(MeasurementType::METRIC_FABRIC_THROUGHPUT);
+    metric_types.push_back(MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY);
 }
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
@@ -349,6 +352,8 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_PCIE_WRITE;
         case xpum_stats_type_enum::XPUM_STATS_FABRIC_THROUGHPUT:
             return MeasurementType::METRIC_FABRIC_THROUGHPUT;
+        case xpum_stats_type_enum::XPUM_STATS_MEDIA_ENGINE_FREQUENCY:
+            return MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY;
         default:
             return MeasurementType::METRIC_MAX;
     }
@@ -434,6 +439,8 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE;
         case MeasurementType::METRIC_FABRIC_THROUGHPUT:
             return xpum_stats_type_enum::XPUM_STATS_FABRIC_THROUGHPUT;
+        case MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY:
+            return xpum_stats_type_enum::XPUM_STATS_MEDIA_ENGINE_FREQUENCY;
         default:
             return xpum_stats_type_enum::XPUM_STATS_MAX;
     }
@@ -519,6 +526,8 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
             return std::string("engine utilization");
         case MeasurementType::METRIC_FABRIC_THROUGHPUT:
             return std::string("fabric throughput");
+        case MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY:
+            return std::string("media engine frequency");
         default:
             return std::string("");
     }

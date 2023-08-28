@@ -108,6 +108,8 @@ static xpum_stats_type_enum statsTypeFromDumpType(xpum_dump_type_t dumpType){
         return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
     case xpum_dump_type_t::XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU:
         return xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU;
+    case xpum_dump_type_t::XPUM_DUMP_MEDIA_ENGINE_FREQUENCY:
+        return xpum_stats_type_enum::XPUM_STATS_MEDIA_ENGINE_FREQUENCY;
 
     default:
         return xpum_stats_type_enum::XPUM_STATS_MAX;
