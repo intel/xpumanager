@@ -876,7 +876,7 @@ namespace xpum {
                 return false;
             }
             uint32_t deviceId = ze_device_properties.deviceId;
-            zes_pci_properties_t pci_props;
+            zes_pci_properties_t pci_props = {};
             status = zesDevicePciGetProperties(zes_device_handles[deviceIdx], &pci_props);
             if (status != ZE_RESULT_SUCCESS) {
                 return false;
@@ -891,7 +891,7 @@ namespace xpum {
                     return false;
                 }
                 uint32_t preDeviceId = ze_pre_device_properties.deviceId;
-                zes_pci_properties_t pre_pci_props;
+                zes_pci_properties_t pre_pci_props = {};
                 status = zesDevicePciGetProperties(zes_device_handles[deviceIdx - 1], &pre_pci_props);
                 if (status != ZE_RESULT_SUCCESS) {
                     return false;
