@@ -63,26 +63,26 @@ namespace xpum::cli {
                     std::shared_ptr<ComletStatistics> stats_comlet = std::dynamic_pointer_cast<ComletStatistics>(comlet);
                     if (stats_comlet->hasEUMetrics()) {
                         if (stats_comlet->hasRASMetrics())
-                            _putenv(const_cast<char*>("XPUM_METRICS=0-31,36-38"));
+                            _putenv(const_cast<char*>("XPUM_METRICS=0-31,36-39"));
                         else
-                            _putenv(const_cast<char*>("XPUM_METRICS=0-19,29-31,36-38"));
+                            _putenv(const_cast<char*>("XPUM_METRICS=0-19,29-31,36-39"));
                     } else {
                         if (stats_comlet->hasRASMetrics())
-                            _putenv(const_cast<char*>("XPUM_METRICS=0,4-31,36-38"));
+                            _putenv(const_cast<char*>("XPUM_METRICS=0,4-31,36-39"));
                         else
-                            _putenv(const_cast<char*>("XPUM_METRICS=0,4-19,29-31,36-38"));
+                            _putenv(const_cast<char*>("XPUM_METRICS=0,4-19,29-31,36-39"));
                     }
                 }
                 if (comlet->getCommand().compare("dump") == 0) {
                     std::shared_ptr<ComletDump> dump_comlet = std::dynamic_pointer_cast<ComletDump>(comlet);
                     if (dump_comlet->dumpEUMetrics() && dump_comlet->dumpRASMetrics())
-                        _putenv(const_cast<char*>("XPUM_METRICS=0-38"));
+                        _putenv(const_cast<char*>("XPUM_METRICS=0-39"));
                     else if (dump_comlet->dumpEUMetrics())
-                        _putenv(const_cast<char*>("XPUM_METRICS=0-19,29-38"));
+                        _putenv(const_cast<char*>("XPUM_METRICS=0-19,29-39"));
                     else if (dump_comlet->dumpRASMetrics())
-                        _putenv(const_cast<char*>("XPUM_METRICS=0,4-38"));
+                        _putenv(const_cast<char*>("XPUM_METRICS=0,4-39"));
                     else
-                        _putenv(const_cast<char*>("XPUM_METRICS=0,4-19,29-38"));
+                        _putenv(const_cast<char*>("XPUM_METRICS=0,4-19,29-39"));
                 }
                 this->coreStub = std::make_shared<DllCoreStub>();
                 comlet->coreStub = this->coreStub;

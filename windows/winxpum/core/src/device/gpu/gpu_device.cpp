@@ -173,6 +173,7 @@ namespace xpum {
                     break;
                 case xpum::METRIC_FREQUENCY:
                 case xpum::METRIC_REQUEST_FREQUENCY:
+                case xpum::METRIC_MEDIA_ENGINE_FREQUENCY:
                     getActuralRequestFrequency(data, type);
                     break;
                 case xpum::METRIC_TEMPERATURE:

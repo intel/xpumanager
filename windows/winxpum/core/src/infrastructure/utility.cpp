@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "utility.h"
+#include "api/device_model.h"
 
 #include <chrono>
 
@@ -103,6 +104,8 @@ namespace xpum {
             return MeasurementType::METRIC_PCIE_WRITE;
         case xpum_stats_type_enum::XPUM_STATS_FABRIC_THROUGHPUT:
             return MeasurementType::METRIC_FABRIC_THROUGHPUT;
+        case xpum_stats_type_enum::XPUM_STATS_MEDIA_ENGINE_FREQUENCY:
+            return MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY;
         default:
             return MeasurementType::METRIC_MAX;
         }
@@ -188,6 +191,8 @@ namespace xpum {
             return xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE;
         case MeasurementType::METRIC_FABRIC_THROUGHPUT:
             return xpum_stats_type_enum::XPUM_STATS_FABRIC_THROUGHPUT;
+        case MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY:
+            return xpum_stats_type_enum::XPUM_STATS_MEDIA_ENGINE_FREQUENCY;
         default:
             return xpum_stats_type_enum::XPUM_STATS_MAX;
         }
@@ -208,5 +213,17 @@ namespace xpum {
                 type == MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE ||
                 type == MeasurementType::METRIC_PCIE_READ ||
                 type == MeasurementType::METRIC_PCIE_WRITE;
+    }
+
+    bool Utility::isATSMPlatform(const zes_device_handle_t& device) {
+        zes_device_properties_t props;
+        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        props.pNext = nullptr;
+        bool is_atsm = false;
+        if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        int device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
+        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3);
+        }
+        return is_atsm;
     }
 }

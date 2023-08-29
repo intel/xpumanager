@@ -566,6 +566,40 @@ namespace xpum {
         return ret;
     }
 
+    void GPUDeviceStub::getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf) {
+        if (device == nullptr) {
+            return;
+        }
+        uint32_t pfCount = 0;
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount, nullptr));
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_perf_handle_t> hPerf(pfCount);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount, hPerf.data()));
+            if (res == ZE_RESULT_SUCCESS) {
+                for (auto perf : hPerf) {
+                    zes_perf_properties_t prop = {};
+                    double factor;
+                    XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetProperties(perf, &prop));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            pf.push_back(*(new PerformanceFactor(prop.onSubdevice, prop.subdeviceId, prop.engines, factor)));
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+                return;
+            } else {
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(const zes_device_handle_t& device, MeasurementType type) noexcept {
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
         if (device == nullptr) {
@@ -594,6 +628,18 @@ namespace xpum {
                             ret->setCurrent(freq_state.actual);
                         else if (type == MeasurementType::METRIC_REQUEST_FREQUENCY)
                             ret->setCurrent(freq_state.request);
+                        else if (type == MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY) {
+                            if (Utility::isATSMPlatform(device) == true) {
+                                std::vector<PerformanceFactor> pfs;
+                                getPerformanceFactor(device, pfs);
+                                for (auto& pf : pfs) {
+                                    if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
+                                        ret->setCurrent(freq_state.actual * pf.getFactor() / 100);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         exception_msgs["zesFrequencyGetState"] = res;
                     }
