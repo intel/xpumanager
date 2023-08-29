@@ -115,7 +115,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
         "cells": [[
             { "rowTitle": "GPU Power (W) " },
             { "rowTitle": "GPU Frequency (MHz) " },
-            { "rowTitle": "Media Engine Frequency (MHz) " },
+            { "rowTitle": "Media Engine Freq (MHz) " },
             { "rowTitle": "GPU Core Temperature (C) " },
             { "rowTitle": "GPU Memory Temperature (C) " },
             { "rowTitle": "GPU Memory Read (kB/s) " },
@@ -248,7 +248,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
         "cells": [[
             { "rowTitle": "GPU Power (W) " },
             { "rowTitle": "GPU Frequency (MHz) " },
-            { "rowTitle": "Media Engine Frequency (MHz) " },
+            { "rowTitle": "Media Engine Freq (MHz) " },
             { "rowTitle": "GPU Core Temperature (C) " },
             { "rowTitle": "GPU Memory Temperature (C) " },
             { "rowTitle": "GPU Memory Read (kB/s) " },
