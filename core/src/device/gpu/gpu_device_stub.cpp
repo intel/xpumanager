@@ -1145,7 +1145,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE, std::to_string(props.numSubdevices)));
                 uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
-                uint32_t euCount = tileCount * props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
+                uint32_t euCount = props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
                 zes_pci_properties_t pci_props = {};
 
