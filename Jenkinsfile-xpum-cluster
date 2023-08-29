@@ -350,13 +350,13 @@ spec:
         secretName: sign-secret
         items:
           - key: password
-            path: password.sys_dcm
+            path: password.sys_xpum
 '''
         defaultContainer 'shell'
       }
     }
     environment {
-      ARCHIVE_FILES = 'build-deb-*/*.deb,build-centos*/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem,build-centos7/amcmcli*'
+      ARCHIVE_FILES = 'build-deb-*/*.deb,build-centos*/*.rpm,build-sles/*.rpm,intel_graphics_linux_pgp_2021.pem,build-centos7/amcmcli*'
       PUBLISH_DOCKER_REGISTRY = "${params.PUBLISH_DOCKER_REGISTRY}"
     }
     stages {
@@ -683,7 +683,7 @@ spec:
                           "props": "retention.days=720;mytest=true"
                         },
                         {
-                          "pattern": "XPUM_PGP_KEY.pem",
+                          "pattern": "intel_graphics_linux_pgp_2021.pem",
                           "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                           "props": "retention.days=720;mytest=true"
                         },

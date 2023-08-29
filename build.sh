@@ -51,10 +51,10 @@ make -j4
 echo "---------Create installation package-----------"
 cpack   
 
-if [ -f ~/password.sys_dcm ]; then
+if [ -f ~/password.sys_xpum ]; then
     PackageName=$(cat package_file_name)
-    CSUser="ccr\\sys_dcm"
-    CSPwd=$(cat ~/password.sys_dcm)
+    CSUser="ccr\\sys_xpum"
+    CSPwd=$(cat ~/password.sys_xpum)
     echo "SignFile:${PackageName}" 
     pushd "${WORK_DIR}"/install/tools/signfile
     ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" "${WORK_DIR}"/build/${PackageName}
