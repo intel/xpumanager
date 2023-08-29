@@ -103,8 +103,6 @@ class Core : public InitCloseInterface {
 
     bool ze_initialized;
 
-    bool user_permission_allowed;
-
     std::mutex mutex;
 };
 

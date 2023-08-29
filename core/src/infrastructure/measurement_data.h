@@ -74,7 +74,10 @@ class MeasurementData {
                         bHasDataOnDevice(false),
                         bHasRawDataOnDevice(false),
                         raw_timestamp(0),
-                        timestamp(0) {
+                        timestamp(0),
+                        start_time(0),
+                        latest_time(0),
+                        num_subdevice(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
@@ -89,7 +92,10 @@ class MeasurementData {
                                       bHasDataOnDevice(true),
                                       bHasRawDataOnDevice(false),
                                       raw_timestamp(0),
-                                      timestamp(0) {
+                                      timestamp(0),
+                                      start_time(0),
+                                      latest_time(0),
+                                      num_subdevice(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
