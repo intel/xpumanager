@@ -2750,12 +2750,10 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
                     val1 = -1;
                     val2 = -1;
                 }
-                schedulers.push_back(*(new Scheduler(props.onSubdevice,
-                                                     props.subdeviceId,
-                                                     props.canControl,
-                                                     props.engines,
-                                                     props.supportedModes,
-                                                     mode, val1, val2)));
+                Scheduler s(props.onSubdevice, props.subdeviceId, 
+                    props.canControl, props.engines, props.supportedModes, 
+                    mode, val1, val2);
+                schedulers.push_back(s);
             }
         }
     }
@@ -2786,7 +2784,9 @@ void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
         for (auto& proc : procs) {
             std::string pn = getProcessName(proc.processId);
-            processes.push_back(*(new device_process(proc.processId, proc.memSize, proc.sharedSize, proc.engines, pn)));
+            device_process dp(proc.processId, proc.memSize, proc.sharedSize, 
+                proc.engines, pn);
+            processes.push_back(dp);
         }
     } else {
         return;
@@ -3111,7 +3111,9 @@ void GPUDeviceStub::getPerformanceFactor(const zes_device_handle_t& device, std:
                 if (res == ZE_RESULT_SUCCESS) {
                     XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
                     if (res == ZE_RESULT_SUCCESS) {
-                        pf.push_back(*(new PerformanceFactor(prop.onSubdevice, prop.subdeviceId, prop.engines, factor)));
+                        PerformanceFactor p(prop.onSubdevice, prop.subdeviceId, 
+                            prop.engines, factor);
+                        pf.push_back(p);
                         continue;
                     }
                 } else {
@@ -3143,7 +3145,9 @@ void GPUDeviceStub::getStandbys(const zes_device_handle_t& device, std::vector<S
             if (res == ZE_RESULT_SUCCESS) {
                 zes_standby_promo_mode_t mode;
                 XPUM_ZE_HANDLE_LOCK(stan, res = zesStandbyGetMode(stan, &mode));
-                standbys.push_back(*(new Standby(props.type, (bool)props.onSubdevice, props.subdeviceId, mode)));
+                Standby s(props.type, (bool)props.onSubdevice, 
+                    props.subdeviceId, mode);
+                standbys.push_back(s);
             }
         }
     }
@@ -3163,13 +3167,11 @@ void GPUDeviceStub::getPowerProps(const zes_device_handle_t& device, std::vector
             zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                powers.push_back(*(new Power(props.onSubdevice,
-                                             props.subdeviceId,
-                                             props.canControl,
+                Power p(props.onSubdevice, props.subdeviceId, props.canControl,
                                              props.isEnergyThresholdSupported,
-                                             props.defaultLimit,
-                                             props.minLimit,
-                                             props.maxLimit)));
+                                             props.defaultLimit, props.minLimit,
+                                             props.maxLimit);
+                powers.push_back(p);
             }
         }
     }
@@ -3366,13 +3368,10 @@ void GPUDeviceStub::getFrequencyRanges(const zes_device_handle_t& device, std::v
                 zes_freq_range_t range;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetRange(ph_freq, &range));
                 if (res == ZE_RESULT_SUCCESS) {
-                    frequencies.push_back(*(new Frequency(prop.type,
-                                                          prop.onSubdevice,
-                                                          prop.subdeviceId,
-                                                          prop.canControl,
-                                                          prop.isThrottleEventSupported,
-                                                          range.min,
-                                                          range.max)));
+                    Frequency f(prop.type, prop.onSubdevice, prop.subdeviceId,
+                                prop.canControl, prop.isThrottleEventSupported,
+                                range.min, range.max);
+                    frequencies.push_back(f);
                 }
             }
         }
