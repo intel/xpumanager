@@ -680,6 +680,7 @@ void DiagnosticManager::doDeviceDiagnosticLibraries(std::shared_ptr<xpum_diag_ta
             details = (*it);
             break;
         }
+        dlclose(handle);
     }
 
     if (find_libs) {

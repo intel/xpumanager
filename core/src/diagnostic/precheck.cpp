@@ -562,6 +562,7 @@ namespace xpum {
                     }
                     int cnt = read(fd, thermal_type, 1024);
                     if (cnt < 0 || cnt >= 1024) {
+                        close(fd);
                         continue;
                     }
                     close(fd);
@@ -575,6 +576,7 @@ namespace xpum {
                         }
                         int cnt = read(fd, thermal_value, 1024);
                         if (cnt < 0 || cnt >= 1024) {
+                            close(fd);
                             continue;
                         }
                         thermal_value[cnt] = 0;

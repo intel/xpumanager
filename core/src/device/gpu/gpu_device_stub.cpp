@@ -4643,7 +4643,7 @@ void GPUDeviceStub::readPerfMetricsData(std::shared_ptr<std::map<uint32_t, std::
                         }
 
                         if (!found) {
-                            PerfMetricData_t perf_metric_data;
+                            PerfMetricData_t perf_metric_data {};
                             perf_metric_data.name = it_metric->second->name; 
                             perf_metric_data.average = 0;
                             perf_metric_data.total = 0;

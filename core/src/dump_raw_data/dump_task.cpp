@@ -34,6 +34,7 @@ DumpRawDataTask::DumpRawDataTask(xpum_dump_task_id_t taskId,
       dumpFilePath(dumpFilePath),
       pThreadPool(pThreadPool) {
     p_data_logic = xpum::Core::instance().getDataLogic();
+    begin = 0;
 }
 
 DumpRawDataTask::~DumpRawDataTask() {

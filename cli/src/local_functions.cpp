@@ -74,6 +74,7 @@ uint32_t access_device_memory(std::string hex_base, std::string hex_val = "") {
 	}
 	
     if (munmap(map_base, MAP_SIZE) == -1) {
+        close(fd);
         return -1;
     }
 
@@ -95,8 +96,10 @@ bool getFirmwareVersion(FirmwareVersion& fw_version, std::string bdf) {
 
         if (line.find("disabled") != std::string::npos) {
             std::string enable_commad = "setpci -s " + bdf + " COMMAND=0x02";
-            if (!system(enable_commad.c_str()))
-                return false;
+            if (!system(enable_commad.c_str())) {
+                pclose(f);
+                return false;   
+            }
         }
 
         std::regex reg("[0-9a-fA-F]{12,16}");

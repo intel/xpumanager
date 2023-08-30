@@ -30,6 +30,9 @@ Frequency::Frequency(zes_freq_domain_t type,
     this->subdevice_id = subdevice_id;
     this->min = min;
     this->max = max;
+    this->on_subdevice = false;
+    this->can_control = false;
+    this->is_throttle_event_supported = false; 
 }
 
 Frequency::~Frequency() {

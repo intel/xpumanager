@@ -1461,7 +1461,7 @@ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
         std::string bdf = bdfs[index];
         auto p_data = GPUDeviceStub::loadPVCIdlePowers(bdf);
 
-        xpum_device_stats_t device_stats;
+        xpum_device_stats_t device_stats {};
         device_stats.deviceId = std::stoi(p_data->getDeviceId());
         device_stats.isTileData = false;
         device_stats.count = 0;
@@ -1491,7 +1491,7 @@ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
             device_stats.isTileData = true;
             device_stats.tileId = tileId;
             device_stats.count = 0;
-            xpum_device_stats_data_t stats_data;
+            xpum_device_stats_data_t stats_data {};
             MeasurementType type = MeasurementType::METRIC_POWER;
             stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
             stats_data.scale = p_data->getScale();

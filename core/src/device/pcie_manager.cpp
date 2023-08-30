@@ -14,6 +14,9 @@
 namespace xpum {
 
 PCIeManager::PCIeManager() {
+    this->initialized.store(false);
+    this->interrupted.store(false);
+    this->stopped.store(false);
     XPUM_LOG_DEBUG("PCIeManager()");
 }
 
