@@ -219,6 +219,7 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
                     }
                 }
             } catch(std::ios::failure &e) {
+                closedir(dir);
                 return XPUM_VGPU_REMOVE_VF_FAILED;
             }
         }
@@ -226,6 +227,7 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
         XPUM_LOG_ERROR("Failed to open directory {}", iovPath.str());
         return XPUM_VGPU_REMOVE_VF_FAILED;
     }
+    closedir(dir);
     return XPUM_OK;
 }
 
