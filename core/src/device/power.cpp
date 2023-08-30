@@ -18,6 +18,9 @@ Power::Power(bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is
     this->default_limit = default_limit;
     this->min_limit = min_limit;
     this->max_limit = max_limit;
+    this->sustained_limit = {};
+    this->burst_limit = {};
+    this->peak_limit = {};
 }
 
 Power::~Power() {

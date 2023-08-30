@@ -21,6 +21,7 @@
 namespace xpum {
 
 PciDatabase::PciDatabase() {
+    bInitialized = false;
     XPUM_LOG_TRACE("PciDatabase()");
 }
 

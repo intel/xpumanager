@@ -466,6 +466,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
                 portPair.localPortProp.model[0]='\0';
                 portPair.enabled = false;
                 portPair.remotePortId.fabricId = (uint32_t)-1;
+                portPair.remotePortId.attachId = 0;
                 portPair.fabric_existing = false;
                 fabricPorts.push_back(portPair);
             }
@@ -485,6 +486,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
                 portPair.enabled = portInfo[i].portConf.enabled;
 
                 portPair.remotePortId.fabricId = (uint32_t)-1;
+                portPair.remotePortId.attachId = 0;
 
                 if (portInfo[i].portConf.enabled) {
                     switch (portInfo[i].portState.status) {
