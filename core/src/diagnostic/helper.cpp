@@ -68,6 +68,12 @@ namespace xpum {
                     DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = value;
                 } else if (name == "MEDIA_CODER_TOOLS_4K_FILE") {
                     DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = value;
+                } else if (name == "KERNEL_MESSAGES_SOURCE") {
+                    std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+                    PrecheckManager::KERNEL_MESSAGES_SOURCE = value;
+                } else if (name == "KERNEL_MESSAGES_FILE") {
+                    std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+                    PrecheckManager::KERNEL_MESSAGES_FILE = value;
                 } else if (name == "ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT") {
                     try {
                         int val = std::stoi(value);

@@ -2599,7 +2599,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                                     ::PrecheckComponentInfoListResponse* response) {
     int count = 32;
     xpum_precheck_component_info_t resultList[count];
-    xpum_precheck_options options = {static_cast<xpum_precheck_log_source>(request->logsource()), request->onlygpu(), request->sincetime().c_str()};
+    xpum_precheck_options options = {request->onlygpu(), request->sincetime().c_str()};
     xpum_result_t res = xpumPrecheck(resultList, &count, options);
     if (res != XPUM_OK) {
         if (res == XPUM_PRECHECK_INVALID_SINCETIME)

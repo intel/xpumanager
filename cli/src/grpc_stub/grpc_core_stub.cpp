@@ -2303,7 +2303,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::precheck(xpum_precheck_options opt
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     PrecheckOptionsRequest request;
-    request.set_logsource(static_cast<PrecheckLogSourceType>(options.logSource));
     request.set_onlygpu(options.onlyGPU);
     request.set_sincetime(options.sinceTime);
     PrecheckComponentInfoListResponse response;

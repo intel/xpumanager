@@ -1146,13 +1146,7 @@ typedef struct xpum_vgpu_function_info_t {
 
 #define XPUM_MAX_VF_NUM 128
 
-typedef enum xpum_precheck_log_source {
-    XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL = 0,
-    XPUM_PRECHECK_LOG_SOURCE_DMESG = 1
-} xpum_precheck_log_source;
-
 typedef struct xpum_precheck_options {
-    xpum_precheck_log_source logSource;        ///< The log source for precheck
     bool onlyGPU;                               ///< Check GPU-related error and ignore CPU error or not
     const char* sinceTime;                      ///< Start time for log scanning. Only works when the logSource is JOURNALCTL. Scanning would start from the latest boot if it is NULL. The generic format is "YYYY-MM-DD HH:MM:SS". Alternatively the strings "yesterday", "today" are also understood. Relative times also may be specified, prefixed with "-" referring to times before the current time.
 } xpum_precheck_options;

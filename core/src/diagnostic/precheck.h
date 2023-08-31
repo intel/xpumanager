@@ -41,6 +41,12 @@ struct ErrorPattern {
     xpum_precheck_error_severity_t error_severity;         
 };
 
+typedef enum xpum_precheck_log_source {
+    XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL = 0,
+    XPUM_PRECHECK_LOG_SOURCE_DMESG = 1,
+    XPUM_PRECHECK_LOG_SOURCE_FILE = 2
+} xpum_precheck_log_source;
+
 const std::vector<ErrorPattern> error_patterns = {
         {".*(GPU HANG).*", "", XPUM_PRECHECK_COMPONENT_TYPE_GPU, XPUM_GPU_HANG},
         {".*(GuC initialization failed).*", "", XPUM_PRECHECK_COMPONENT_TYPE_GPU, XPUM_GUC_INITIALIZATION_FAILED},
@@ -66,6 +72,10 @@ class PrecheckManager {
     static xpum_result_t getPrecheckErrorList(xpum_precheck_error_t resultList[], int *count);
 
     static int cpu_temperature_threshold;
+
+    static std::string KERNEL_MESSAGES_SOURCE;
+
+    static std::string KERNEL_MESSAGES_FILE;
 
     static xpum_precheck_component_info_t component_driver;
 
