@@ -19,7 +19,6 @@ install(
   PATTERN "*.md"
   PATTERN "*.pem" EXCLUDE
   PATTERN "__pycache__" EXCLUDE
-  PATTERN "conf/rest.conf" EXCLUDE
   PATTERN "xpum_rest.service.template" EXCLUDE
   PATTERN "xpum_rest.service.template.in" EXCLUDE
   # PATTERN ".gitignore" EXCLUDE
@@ -27,3 +26,5 @@ install(
   # PATTERN "ifwi_fake" EXCLUDE PATTERN "gen_grpc_py_files.sh" EXCLUDE PATTERN
   # "rest.conf" EXCLUDE
 )
+
+install(DIRECTORY DESTINATION lib/xpum/rest/conf)
