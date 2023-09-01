@@ -461,6 +461,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
                 portPair.deviceId = stoi(info->getId());
                 portPair.numaIdx = numa_os_idx;
                 portPair.cpuAffinity = cpuAffinity;
+                portPair.localPortProp = {};
                 portPair.localPortProp.onSubdevice = true;
                 portPair.localPortProp.subdeviceId = tileId;
                 portPair.localPortProp.model[0]='\0';
