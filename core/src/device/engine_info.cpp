@@ -11,6 +11,10 @@
 namespace xpum {
 
 EngineInfo::EngineInfo() {
+    this->type = {};
+    this->on_subdevice = false;
+    this->subdevice_id = 0;
+    this->index = 0;
 }
 
 EngineInfo::EngineInfo(zes_engine_group_t type, bool on_subdevice, uint32_t subdevice_id) {
