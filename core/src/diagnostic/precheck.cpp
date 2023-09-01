@@ -540,6 +540,7 @@ namespace xpum {
                 }
                 int cnt = read(fd, uevent, 1024);
                 if (cnt < 0 || cnt >= 1024) {
+                    close(fd);
                     continue;
                 }
                 close(fd);

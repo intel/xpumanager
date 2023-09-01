@@ -1466,7 +1466,7 @@ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
         device_stats.isTileData = false;
         device_stats.count = 0;
         if (p_data->hasDataOnDevice()) {
-            xpum_device_stats_data_t stats_data;
+            xpum_device_stats_data_t stats_data {};
             MeasurementType type = MeasurementType::METRIC_POWER;
             stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
             stats_data.scale = p_data->getScale();
