@@ -29,7 +29,8 @@ Core::Core()
       p_diagnostic_manager(nullptr),
       p_policy_manager(nullptr),
       p_dump_raw_data_manager(nullptr),
-      initialized(false) {
+      initialized(false),
+      ze_initialized(false) {
     XPUM_LOG_TRACE("core()");
 }
 

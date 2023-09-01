@@ -152,7 +152,7 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     if (hasDataOnDevice) {
         while (datas_iter != m_datas.end()) {
             if (datas_iter->second->hasDataOnDevice()) {
-                xpum_device_stats_data_t stats_data;
+                xpum_device_stats_data_t stats_data{};
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 stats_data.scale = datas_iter->second->getScale();
