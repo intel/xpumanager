@@ -329,7 +329,7 @@ Options:
   --since                     Start time for log scanning. It only works with the journalctl option. The generic format is "YYYY-MM-DD HH:MM:SS".
                               Alternatively the strings "yesterday", "today" are also understood.
                               Relative times also may be specified, prefixed with "-" referring to times before the current time.
-                              Scanning would start from the latest boot if it is not specified.
+                              Scanning would start from the latest boot if it was not specified.
 
   --singletest                Selectively run some particular tests. Separated by the comma.
                                     1. Computation
