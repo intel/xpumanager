@@ -256,7 +256,7 @@ def read_config(path):
         sys.exit(1)
 
 
-if not env_exporter_no_auth or not env_exporter_only:
+if not env_exporter_no_auth:
     user, salt, pwHash, disableAuth = read_config(
         os.path.dirname(os.path.realpath(__file__)))
     login_failure_count = 0
