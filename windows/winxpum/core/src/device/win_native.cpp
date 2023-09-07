@@ -71,6 +71,7 @@ static std::vector<std::string> expandWildCardPath(LPCSTR WildCardPath) {
     Status = PdhExpandWildCardPathA(NULL, WildCardPath, ExpandedPathList, &PathListLength, 0);
     if (Status != ERROR_SUCCESS) {
         //wprintf(L"PdhExpandWildCardPathA failed with 0x%x.\n", Status);
+        free(ExpandedPathList);
         return pathList;
     }
     for (int i = 0; i < PathListLength;) {
@@ -83,6 +84,7 @@ static std::vector<std::string> expandWildCardPath(LPCSTR WildCardPath) {
             break;
         }
     }
+    free(ExpandedPathList);
     return pathList;
 }
 
@@ -253,6 +255,7 @@ double getMemSizeByNativeAPI() {
     if (SUCCEEDED(hr)) {
         if (pDXGIFactory == 0) {
             XPUM_LOG_DEBUG("pDXGIFactory == 0");
+            FreeLibrary(hDXGI);
             return 0;
         }
 

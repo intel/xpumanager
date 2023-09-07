@@ -802,11 +802,13 @@ namespace xpum {
         struct img* img = NULL;
         img = image_read_from_file(image_file.c_str());
         if (img == NULL) {
+            igsc_device_close(&handle);
             return false;
         }
 
         bool match = firmware_check_hw_config(&handle, img) == IGSC_SUCCESS;
         igsc_device_close(&handle);
+        free(img);
         return match;
     }
 
