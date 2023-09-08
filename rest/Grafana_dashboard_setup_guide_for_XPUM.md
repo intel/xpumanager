@@ -42,7 +42,7 @@ scrape_configs:
     # scheme defaults to 'http'.
 
     static_configs:
-            - targets: ["<device ip>:30000"]
+            - targets: ["<device1 ip>:30000", "<device2 ip>:30000"]
 
  ``` 
 3. Start Prometheus by command as follows.
@@ -57,6 +57,6 @@ sudo ./prometheus --config.file=./prometheus.yml
  ```
  ./grafana server
  ```
- 3. Login URL: http://\<Grafana server ip>:3000/ and create the "Connection" to Prometheus as shown below. Then you can create Grafana dashboard. Please refer to https://grafana.com/docs/grafana/latest/getting-started/get-started-grafana-prometheus/.
+ 3. Login URL: http://\<Grafana server ip>:3000/ and create the "Connection" to Prometheus as shown below. The default user and password are 'admin'. Then you can create Grafana dashboard. Please refer to https://grafana.com/docs/grafana/latest/getting-started/get-started-grafana-prometheus/.
  4. You can use this [json file](grafana-dashboard.json) when you create Grafana dashboard. Please set a variable "Node".
 ![Grafana configuration](../doc/img/Grafana_config.PNG) 
