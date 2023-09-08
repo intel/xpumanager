@@ -28,6 +28,22 @@ static bool is_path_exist(const std::string &s) {
   return (stat(s.c_str(), &buffer) == 0);
 }
 
+static uint32_t getVFMaxNumberByPciDeviceId(int deviceId) {
+    switch (deviceId) {
+        case 0x56c0:
+        case 0x56c1:
+            return 31;
+        case 0x0bd5:
+        case 0x0bd6:
+            return 62;
+        case 0x0bda:
+        case 0x0bdb:
+            return 63;
+        default:
+            return 0;
+    }
+}
+
 xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_t* param) {
     XPUM_LOG_DEBUG("vgpuCreateVf, {}, {}, {}", deviceId, param->numVfs, param->lmemPerVf);
     auto res = vgpuValidateDevice(deviceId);
@@ -52,6 +68,18 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
     }
     if (std::stoi(numVfsString) > 0) {
         return XPUM_VGPU_DIRTY_PF;
+    }
+
+    Property prop;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
+    int pciDeviceId = std::stoi(prop.getValue().substr(2), nullptr, 16);
+    if (param->numVfs == 0 || param->numVfs > getVFMaxNumberByPciDeviceId(pciDeviceId)){
+        XPUM_LOG_ERROR("Configuration item for {} VFs out of range", param->numVfs);
+        return XPUM_VGPU_INVALID_NUMVFS;
+    }
+    if (deviceInfo.numTiles > 1 && param->numVfs > 1 && param->numVfs % 2 != 0) {
+        XPUM_LOG_ERROR("Configuration item for {} VFs invalid for two-tiles cards", param->numVfs);
+        return XPUM_VGPU_INVALID_NUMVFS;
     }
 
     AttrFromConfigFile attrs = {};
@@ -219,6 +247,7 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
                     }
                 }
             } catch(std::ios::failure &e) {
+                closedir(dir);
                 return XPUM_VGPU_REMOVE_VF_FAILED;
             }
         }
@@ -226,6 +255,7 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
         XPUM_LOG_ERROR("Failed to open directory {}", iovPath.str());
         return XPUM_VGPU_REMOVE_VF_FAILED;
     }
+    closedir(dir);
     return XPUM_OK;
 }
 
@@ -327,6 +357,43 @@ void VgpuManager::writeFile(const std::string path, const std::string& content) 
     XPUM_LOG_DEBUG("write: {} {}", path, content);
 }
 
+static AttrFromConfigFile combineAttrConfig(std::map<uint32_t, AttrFromConfigFile> data, uint32_t numVfs, int pciDeviceId) {
+    if (data.size() == 1 && data.find(numVfs) != data.end())
+        return data.begin()->second;
+    if (data.find(numVfs) == data.end()) {
+        data[numVfs].driversAutoprobe = data[XPUM_MAX_VF_NUM].driversAutoprobe;
+        data[numVfs].schedIfIdle = data[XPUM_MAX_VF_NUM].schedIfIdle;
+    }
+    if (data[numVfs].vfLmem == 0 && data[XPUM_MAX_VF_NUM].vfLmem != 0)
+        data[numVfs].vfLmem = data[XPUM_MAX_VF_NUM].vfLmem / static_cast<uint64_t>(numVfs);
+    if (data[numVfs].vfLmemEcc == 0 && data[XPUM_MAX_VF_NUM].vfLmemEcc != 0)
+        data[numVfs].vfLmemEcc = data[XPUM_MAX_VF_NUM].vfLmemEcc / static_cast<uint64_t>(numVfs);
+    if (data[numVfs].vfContexts == 0)
+        data[numVfs].vfContexts = data[XPUM_MAX_VF_NUM].vfContexts;
+    if (data[numVfs].vfDoorbells == 0 && data[XPUM_MAX_VF_NUM].vfDoorbells != 0)
+        data[numVfs].vfDoorbells = data[XPUM_MAX_VF_NUM].vfDoorbells / static_cast<uint64_t>(numVfs);
+    if (data[numVfs].vfGgtt == 0 && data[XPUM_MAX_VF_NUM].vfGgtt != 0)
+        data[numVfs].vfGgtt = data[XPUM_MAX_VF_NUM].vfGgtt / static_cast<uint64_t>(numVfs);
+    if (data[numVfs].vfExec == 0 && data[XPUM_MAX_VF_NUM].vfExec != 0)
+        data[numVfs].vfExec = data[XPUM_MAX_VF_NUM].vfExec / static_cast<uint64_t>(numVfs);
+    if (data[numVfs].vfPreempt == 0 && data[XPUM_MAX_VF_NUM].vfPreempt != 0)
+        data[numVfs].vfPreempt = data[XPUM_MAX_VF_NUM].vfPreempt / static_cast<uint64_t>(numVfs);
+    if (pciDeviceId == 0x56c0 || pciDeviceId == 0x56c1) {
+        if (data[numVfs].pfExec == 0 && data[XPUM_MAX_VF_NUM].pfExec != 0)
+            data[numVfs].pfExec = data[XPUM_MAX_VF_NUM].pfExec;
+        if (data[numVfs].pfPreempt == 0 && data[XPUM_MAX_VF_NUM].pfPreempt != 0)
+            data[numVfs].pfPreempt = data[XPUM_MAX_VF_NUM].pfPreempt;
+    } else {
+        if (data[numVfs].pfExec == 0 && data[XPUM_MAX_VF_NUM].pfExec != 0) {
+            data[numVfs].pfExec = data[XPUM_MAX_VF_NUM].pfExec / static_cast<uint64_t>(numVfs);
+        }
+        if (data[numVfs].pfPreempt == 0 && data[XPUM_MAX_VF_NUM].pfPreempt != 0) {
+            data[numVfs].pfPreempt = data[XPUM_MAX_VF_NUM].pfPreempt / static_cast<uint64_t>(numVfs);
+        }
+    }
+    return data[numVfs];
+}
+
 bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs) {
     std::string fileName = std::string(XPUM_CONFIG_DIR) + std::string("vgpu.conf");
     if (!is_path_exist(fileName)) {
@@ -353,7 +420,8 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
         return false;
     }
     std::string line;
-    bool target = false;
+    std::map<uint32_t, AttrFromConfigFile> data;
+    uint32_t currentNameId = 0;
     while (std::getline(ifs, line)) {
         line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
         if (line[0] == '#' || line.empty()) {
@@ -367,39 +435,52 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
                 uint32_t i;
                 auto nameList = Utility::split(value, ',');
                 for (auto nameItem: nameList) {
-                    sscanf(nameItem.c_str(), "%4sN%d", s, &i);
-                    if (strcmp(s, devicePciId.c_str()) == 0 && i == numVfs) {
-                        target = true;
-                        break;
+                    if (nameItem.find("DEF") != std::string::npos) {
+                        sscanf(nameItem.c_str(), "%4sDEF", s);
+                        if (strcmp(s, devicePciId.c_str()) == 0) {
+                            currentNameId = XPUM_MAX_VF_NUM;
+                            break;
+                        } else {
+                            currentNameId = 0;
+                        }
                     } else {
-                        target = false;
+                        sscanf(nameItem.c_str(), "%4sN%d", s, &i);
+                        if (strcmp(s, devicePciId.c_str()) == 0 && i == numVfs) {
+                            currentNameId = i;
+                            break;
+                        } else {
+                            currentNameId = 0;
+                        }
                     }
                 }
-            } else if (strcmp(key.c_str(), "VF_LMEM") == 0 && target) {
-                attrs.vfLmem = std::stoul(value);
-            } else if (strcmp(key.c_str(), "VF_LMEM_ECC") == 0 && target) {
-                attrs.vfLmemEcc = std::stoul(value);
-            } else if (strcmp(key.c_str(), "VF_CONTEXTS") == 0 && target) {
-                attrs.vfContexts = std::stoi(value);
-            } else if (strcmp(key.c_str(), "VF_DOORBELLS") == 0 && target) {
-                attrs.vfDoorbells = std::stoi(value);
-            } else if (strcmp(key.c_str(), "VF_GGTT") == 0 && target) {
-                attrs.vfGgtt = std::stoul(value);
-            } else if (strcmp(key.c_str(), "VF_EXEC_QUANT_MS") == 0 && target) {
-                attrs.vfExec = std::stoul(value);
-            } else if (strcmp(key.c_str(), "VF_PREEMPT_TIMEOUT_US") == 0 && target) {
-                attrs.vfPreempt = std::stoul(value);
-            } else if (strcmp(key.c_str(), "PF_EXEC_QUANT_MS") == 0 && target) {
-                attrs.pfExec = std::stoul(value);
-            } else if (strcmp(key.c_str(), "PF_PREEMPT_TIMEOUT") == 0 && target) {
-                attrs.pfPreempt = std::stoul(value);
-            } else if (strcmp(key.c_str(), "SCHED_IF_IDLE") == 0 && target) {
-                attrs.schedIfIdle = (bool)std::stoi(value);
-            } else if (strcmp(key.c_str(), "DRIVERS_AUTOPROBE") == 0 && target) {
-                attrs.driversAutoprobe = (bool)std::stoi(value);
+            } else if (strcmp(key.c_str(), "VF_LMEM") == 0 && currentNameId) {
+                data[currentNameId].vfLmem = std::stoul(value);
+            } else if (strcmp(key.c_str(), "VF_LMEM_ECC") == 0 && currentNameId) {
+                data[currentNameId].vfLmemEcc = std::stoul(value);
+            } else if (strcmp(key.c_str(), "VF_CONTEXTS") == 0 && currentNameId) {
+                data[currentNameId].vfContexts = std::stoi(value);
+            } else if (strcmp(key.c_str(), "VF_DOORBELLS") == 0 && currentNameId) {
+                data[currentNameId].vfDoorbells = std::stoi(value);
+            } else if (strcmp(key.c_str(), "VF_GGTT") == 0 && currentNameId) {
+                data[currentNameId].vfGgtt = std::stoul(value);
+            } else if (strcmp(key.c_str(), "VF_EXEC_QUANT_MS") == 0 && currentNameId) {
+                data[currentNameId].vfExec = std::stoul(value);
+            } else if (strcmp(key.c_str(), "VF_PREEMPT_TIMEOUT_US") == 0 && currentNameId) {
+                data[currentNameId].vfPreempt = std::stoul(value);
+            } else if (strcmp(key.c_str(), "PF_EXEC_QUANT_MS") == 0 && currentNameId) {
+                data[currentNameId].pfExec = std::stoul(value);
+            } else if (strcmp(key.c_str(), "PF_PREEMPT_TIMEOUT") == 0 && currentNameId) {
+                data[currentNameId].pfPreempt = std::stoul(value);
+            } else if (strcmp(key.c_str(), "SCHED_IF_IDLE") == 0 && currentNameId) {
+                data[currentNameId].schedIfIdle = (bool)std::stoi(value);
+            } else if (strcmp(key.c_str(), "DRIVERS_AUTOPROBE") == 0 && currentNameId) {
+                data[currentNameId].driversAutoprobe = (bool)std::stoi(value);
             }
         }
     }
+    int pciDeviceId = std::stoi(prop.getValue().substr(2), nullptr, 16);
+    if (data.size())
+        attrs = combineAttrConfig(data, numVfs, pciDeviceId);
     return true;
 }
 

@@ -204,9 +204,6 @@ def set_powerlimit(deviceId):
         return jsonify("Invalid Parameter power_limit"), 500
     power = power * 1000
 
-    if power < 0 :
-        return jsonify("invalid power_limit or power_average_window value"), 500
-
     # if type(tileId) != int:
     #    return jsonify("Invalid Parameter tileId"), 500
 

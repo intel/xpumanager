@@ -145,6 +145,18 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
+            { "rowTitle": "Media Engine Freq (MHz) " }
+        ], [
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEDIA_ENGINE_FREQUENCY].avg" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEDIA_ENGINE_FREQUENCY].min" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEDIA_ENGINE_FREQUENCY].max" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEDIA_ENGINE_FREQUENCY].value" }
+            ]}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
             { "rowTitle": "GPU Core Temperature\n(Celsius Degree) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
@@ -402,6 +414,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
         "cells": [[
             { "rowTitle": "GPU Power (W) " },
             { "rowTitle": "GPU Frequency (MHz) " },
+            { "rowTitle": "Media Engine Freq (MHz) " },
             { "rowTitle": "GPU Core Temperature (C) " },
             { "rowTitle": "GPU Memory Temperature (C) " },
             { "rowTitle": "GPU Memory Read (kB/s) " },
@@ -415,6 +428,8 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_POWER].value", "fixer": "round" }
             ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_FREQUENCY].value" }
+            ]}, {"label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_MEDIA_ENGINE_FREQUENCY].value" }
             ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_CORE_TEMPERATURE].value", "fixer": "round" }
             ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
@@ -526,6 +541,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
         "cells": [[
             { "rowTitle": "GPU Power (W) " },
             { "rowTitle": "GPU Frequency (MHz) " },
+            { "rowTitle": "Media Engine Freq (MHz) " },
             { "rowTitle": "GPU Core Temperature (C) " },
             { "rowTitle": "GPU Memory Temperature (C) " },
             { "rowTitle": "GPU Memory Read (kB/s) " },
@@ -539,6 +555,8 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_POWER].value", "fixer": "round" }
             ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_FREQUENCY].value" }
+            ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_MEDIA_ENGINE_FREQUENCY].value" }
             ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_CORE_TEMPERATURE].value", "fixer": "round" }
             ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [

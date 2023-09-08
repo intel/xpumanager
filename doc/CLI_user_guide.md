@@ -342,101 +342,80 @@ Options:
 
   -d,--device                 The device ID to query
   -g,--group                  The group ID to query
+  --xelink                    Show the all the Xe Link throughput (GB/s) matrix
+  --utils                     Show the Xe Link throughput utilization
 ```
  
-List the GPU device aggregated statistics that are collected by XPU Manager
+List the GPU device aggregated statistics that are collected by XPU Manager. 'Media Engine Freq' is inferred with 'GPU Frequency'. 
 ```
 ./xpumcli stats -d 0
-+------------------------------+-------------------------------------------------------------------+
-| Device ID                    | 0                                                                 |
-+------------------------------+-------------------------------------------------------------------+
-| Start Time                   | 2021-11-02 14:44:25.000                                           |
-| End Time                     | 2021-11-02 14:47:49.021                                           |
-| Elapsed Time (Second)        | 204                                                               |
-| Energy Consumed (J)          | Tile 0: 18264.05, Tile 1: 18264.06                                |
-| GPU Utilization (%)          | Tile 0: 0, Tile 1: 0                                              |
-| Compute Engines Util(%)      | Tile 0: 0, Tile 1: 0                                              |
-| Render Engines Util(%)       | Tile 0: 0, Tile 1: 0                                              |
-| Media Engines Util (%)       | Tile 0: 0, Tile 1: 0                                              |
-| Copy Engines Util(%)         | Tile 0: 0, Tile 1: 0                                              |
-| EU Array Active (%)          | Tile 0: 0, Tile 1: 0                                              |
-| EU Array Stall (%)           | Tile 0: 0, Tile 1: 0                                              |
-| EU Array Idle (%)            | Tile 0: 0, Tile 1: 0                                              |
-+------------------------------+-------------------------------------------------------------------+
-| Reset                        | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-| Programming Errors           | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-| Driver Errors                | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-| Cache Errors Correctable     | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-| Cache Errors Uncorrectable   | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-| Mem Errors Correctable       | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-| Mem Errors Uncorrectable     | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Power (W)                | Tile 0: avg: 88, min: 88, max: 90, current: 89                    |
-|                              | Tile 1: avg: 88, min: 88, max: 90, current: 89                    |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Frequency (MHz)          | Tile 0: avg: 1400, min: 1400, max: 1400, current: 1400            |
-|                              | Tile 1: avg: 300, min: 300, max: 300, current: 300                |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Core Temperature         | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
-| (Celsius Degree)             | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory Temperature       | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
-| (Celsius Degree)             | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory Read (kB/s)       | Tile 0: avg: 100, min: 90, max: 240, current: 100                 |
-|                              | Tile 1: avg: 100, min: 90, max: 240, current: 100                 |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory Write (kB/s)      | Tile 0: avg: 100, min: 90, max: 240, current: 100                 |
-|                              | Tile 1: avg: 100, min: 90, max: 240, current: 100                 |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory Bandwidth (%)     | Tile 0: avg: 10, min: 9, max: 15, current: 10                     |
-|                              | Tile 1: avg: 10, min: 9, max: 15, current: 10                     |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
-|                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
-+------------------------------+-------------------------------------------------------------------+
-| Compute Engine Util (%)      | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              |   Engine 4: 0, Engne 5: 100, Engine 6: 0, Engine 7: 50            |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              |   Engine 4: 0, Engine 5: 100, Engine 6: 0, Engine 7: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| Render Engine Util (%)       | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| Decoder Engine Util (%)      | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| Encoder Engine Util (%)      | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| Copy Engine Util (%)         | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| Media EM Engine Util (%)     | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| 3D Engine Util (%)           | Tile 0:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-|                              | Tile 1:                                                           |
-|                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
-+------------------------------+-------------------------------------------------------------------+
-| Xe Link Throughput (kB/s)    | 0/0 -> 1/1: avg: 500, min: 100, max: 700, current: 400            |
-|                              | 0/1 -> 1/0: avg: 500, min: 100, max: 700, current: 400            |
-|                              | 1/1 -> 0/0: avg: 500, min: 100, max: 700, current: 400            |
-|                              | 1/0 -> 0/1: avg: 500, min: 100, max: 700, current: 400            |
-+------------------------------+-------------------------------------------------------------------+
++----------------------------+---------------------------------------------------------------------+
+| Device ID                  | 0                                                                   |
++----------------------------+---------------------------------------------------------------------+
+| Start Time                 | 2023-09-04T13:20:13.364                                             |
+| End Time                   | 2023-09-04T13:22:13.982                                             |
+| Elapsed Time (Second)      | 120                                                                 |
+| Energy Consumed (J)        | Tile 0: 5245.05                                                     |
+| GPU Utilization (%)        | Tile 0: 0                                                           |
+| Compute Engines Util (%)   | Tile 0: 0                                                           |
+| Render Engines Util (%)    | Tile 0: 0                                                           |
+| Media Engines Util (%)     | Tile 0: 0                                                           |
+| Copy Engines Util (%)      | Tile 0: 0                                                           |
+| EU Array Active (%)        | Tile 0:                                                             |
+| EU Array Stall (%)         | Tile 0:                                                             |
+| EU Array Idle (%)          | Tile 0:                                                             |
++----------------------------+---------------------------------------------------------------------+
+| Reset                      | Tile 0: 0, total: 0                                                 |
+| Programming Errors         | Tile 0: 0, total: 0                                                 |
+| Driver Errors              | Tile 0: 0, total: 0                                                 |
+| Cache Errors Correctable   | Tile 0: 0, total: 0                                                 |
+| Cache Errors Uncorrectable | Tile 0: 0, total: 0                                                 |
+| Mem Errors Correctable     | Tile 0: 0, total: 0                                                 |
+| Mem Errors Uncorrectable   | Tile 0: 0, total: 0                                                 |
++----------------------------+---------------------------------------------------------------------+
+| GPU Power (W)              | Tile 0: avg: 44, min: 44, max: 44, current: 44                      |
++----------------------------+---------------------------------------------------------------------+
+| GPU Frequency (MHz)        | Tile 0: avg: 2050, min: 2050, max: 2050, current: 2050              |
++----------------------------+---------------------------------------------------------------------+
+| Media Engine Freq (MHz)    | Tile 0: avg: 1025, min: 1025, max: 1025, current: 1025              |
++----------------------------+---------------------------------------------------------------------+
+| GPU Core Temperature       | Tile 0: avg: 45, min: 45, max: 45, current: 45                      |
+| (Celsius Degree)           |                                                                     |
++----------------------------+---------------------------------------------------------------------+
+| GPU Memory Temperature     | Tile 0: avg: , min: , max: , current:                               |
+| (Celsius Degree)           |                                                                     |
++----------------------------+---------------------------------------------------------------------+
+| GPU Memory Read (kB/s)     | Tile 0: avg: 636, min: 0, max: 1384, current: 1214                  |
++----------------------------+---------------------------------------------------------------------+
+| GPU Memory Write (kB/s)    | Tile 0: avg: 88, min: 47, max: 240, current: 216                    |
++----------------------------+---------------------------------------------------------------------+
+| GPU Memory Bandwidth (%)   | Tile 0: avg: 0, min: 0, max: 0, current: 0                          |
++----------------------------+---------------------------------------------------------------------+
+| GPU Memory Used (MiB)      | Tile 0: avg: 26, min: 26, max: 26, current: 26                      |
++----------------------------+---------------------------------------------------------------------+
+| GPU Memory Util (%)        | Tile 0: avg: 0, min: 0, max: 0, current: 0                          |
++----------------------------+---------------------------------------------------------------------+
+| PCIe Read (kB/s)           | avg: , min: , max: , current:                                       |
++----------------------------+---------------------------------------------------------------------+
+| PCIe Write (kB/s)          | avg: , min: , max: , current:                                       |
++----------------------------+---------------------------------------------------------------------+
+| Compute Engine Util (%)    | Engine 0: 0, Engine 1: 0, Engine 2: 0, Engine 3: 0                  |
++----------------------------+---------------------------------------------------------------------+
+| Render Engine Util (%)     | Engine 0: 0                                                         |
++----------------------------+---------------------------------------------------------------------+
+| Decoder Engine Util (%)    | Engine 0: 0, Engine 1: 0                                            |
++----------------------------+---------------------------------------------------------------------+
+| Encoder Engine Util (%)    | Engine 0: 0, Engine 1: 0                                            |
++----------------------------+---------------------------------------------------------------------+
+| Copy Engine Util (%)       | Engine 0: 0                                                         |
++----------------------------+---------------------------------------------------------------------+
+| Media EM Engine Util (%)   | Engine 0: 0, Engine 1: 0                                            |
++----------------------------+---------------------------------------------------------------------+
+| 3D Engine Util (%)         |                                                                     |
++----------------------------+---------------------------------------------------------------------+
+| Xe Link Throughput (kB/s)  |                                                                     |
++----------------------------+---------------------------------------------------------------------+
+
 ```
  
 ## Get the device health status
@@ -537,7 +516,7 @@ Change the component custom temperature threshold
   * GPU throttle reason
   * GPU reset count and GPU memory error number
     
-Help info of the device statistics dump. Please note that the metrics 'GPU Energy Consumed', 'Reset Counter', 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 
+Help info of the device statistics dump. Please note that the metrics 'GPU Energy Consumed', 'Reset Counter', 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 'Media Engine Frequency' is inferred with 'GPU Frequency'.
 ```
 ./xpumcli dump
 
@@ -592,6 +571,7 @@ optional arguments:
                                 33. Media engine group utilization (%), per tile
                                 34. Copy engine group utilization (%), per tile
                                 35. Throttle reason, per tile
+                                36. Media Engine Frequency (MHz), per tile
 
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
@@ -1020,11 +1000,17 @@ Options:
                                 1. quick test
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
                                 3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
+
   -s,--stress                 Stress the GPU(s) for the specified time
   --stresstime                Stress time (in minutes)
+
   --precheck                  Do the precheck on the GPU and GPU driver.
   --listtypes                 List all supported GPU error types
   --gpu                       Show the GPU status only
+  --since                     Start time for log scanning. It only works with the journalctl option. The generic format is "YYYY-MM-DD HH:MM:SS".
+                              Alternatively the strings "yesterday", "today" are also understood.
+                              Relative times also may be specified, prefixed with "-" referring to times before the current time.
+                              Scanning would start from the latest boot if it was not specified.
   
   --singletest                Selectively run some particular tests. Separated by the comma.
                                     1. Computation
@@ -1035,8 +1021,7 @@ Options:
                                     6. Power
                                     7. Computation functional test
                                     8. Media Codec functional test
-
-
+                                    9. Xe Link Throughput
 ```
 
 Run test to diagnose GPU
@@ -1070,14 +1055,21 @@ Device Type: GPU
 Pre-check the GPU and GPU driver status
 ```
 xpumcli diag --precheck
-+------------------------+-------------------------------------------------------------------------+
-| Component              | Status                                                                  |
-+------------------------+-------------------------------------------------------------------------+
-| GPU                    | 2 (0x56c1), 1 (0x5bc0)                                                  |
-| Driver                 | Pass                                                                    |
-| GPU Status             | Pass                                                                    |
-| CPU Status             | Pass                                                                    |
-+------------------------+-------------------------------------------------------------------------+
++------------------+-------------------------------------------------------------------------------+
+| Component        | Details                                                                       |
++------------------+-------------------------------------------------------------------------------+
+| Driver           | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+| CPU              | CPU ID: 0                                                                     |
+|                  | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+| CPU              | CPU ID: 1                                                                     |
+|                  | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+| GPU              | BDF: 0000:3a:00.0                                                             |
+|                  | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+
 ```
 
 Stress the GPUs
@@ -1099,7 +1091,7 @@ xpumcli diag -d 0 --singletest 1,4
 +-------------------------+------------------------------------------------------------------------+
 | Performance Computation | Result: Pass                                                           |
 |                         | Message: Pass to check computation performance. Its single-precision   |
-|                         |   GFLOPS is 10938.459.                                                 |
+|                         |   GFLOPS is 11120.225.                                                 |
 +-------------------------+------------------------------------------------------------------------+
 | Media Codec             | Result: Pass                                                           |
 |                         | Message: Pass to check Media transcode performance.                    |
@@ -1167,7 +1159,7 @@ Done
 ```
 
 ## Set up GPU SR-IOV configuration
-This GPU SR-IOV feature only works for Intel Flex series GPUs. Only Ubuntu and CentOS 7 are validated. 
+Only Ubuntu and CentOS 7 are validated. 
  
 ### BIOS settings for GPU SR-IOV
 #### Intel M50CYP
@@ -1255,7 +1247,7 @@ Options:
 
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
-  -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
+  -n                          The number of virtual GPUs to create.
   --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500. This parameter is optional. 
 
   -l,--list                   List all virtual GPUs on the specified physical GPU

@@ -10,9 +10,7 @@
 #include <mutex>
 
 #include "device/device.h"
-#include "level_zero/ze_api.h"
-#include "level_zero/zes_api.h"
-#include "level_zero/zet_api.h"
+#include "device/performancefactor.h"
 
 namespace xpum {
 
@@ -31,6 +29,7 @@ namespace xpum {
         bool toSetDeviceFrequencyRange(const zes_device_handle_t& device, int32_t tileId, double min, double max) noexcept;
 
         static void toGetDeviceMediaEngineCount(const zes_device_handle_t& device, uint32_t& media_engine_count, uint32_t& meida_enhancement_engine_count, int32_t deviceId) noexcept;
+        static void getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf);
 
         void toGetSimpleEccState(uint8_t& current, uint8_t& pending) noexcept;
         uint32_t toGetDeviceId(const zes_device_handle_t& device) noexcept;

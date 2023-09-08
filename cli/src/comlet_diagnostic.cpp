@@ -178,11 +178,11 @@ void ComletDiagnostic::setupOptions() {
     
     auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
-    auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver. By default, journalctl will be used to scan error log.");
-    auto scanDmesgOpt = addFlag("--dmesg", this->opts->scanDmesg, "Scan error log through dmesg instead of journalctl.");
+    auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver. By default, precheck scans kernel messages by journalctl.\n\
+It could be configured to scan dmesg or log file through diagnostics.conf.");
     auto listErrorTypeOpt = addFlag("--listtypes", this->opts->listErrorType, "List all supported GPU error types");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
-    auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. It does not work with the --dmesg option. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
+    auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. It only works with the journalctl option. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
 Alternatively the strings \"yesterday\", \"today\" are also understood.\n\
 Relative times also may be specified, prefixed with \"-\" referring to times before the current time.\n\
 Scanning would start from the latest boot if it is not specified.");
@@ -216,7 +216,6 @@ Scanning would start from the latest boot if it is not specified.");
     stressTimeOpt->needs(stressFlag);
 
     onlyGPUOpt->needs(preCheckOpt);
-    scanDmesgOpt->needs(preCheckOpt);
 
     listErrorTypeOpt->needs(preCheckOpt);
 #ifndef DAEMONLESS
@@ -317,8 +316,7 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         if (this->opts->listErrorType) {
             json = this->coreStub->getPrecheckErrorTypes();
         } else {
-            xpum_precheck_options options = { this->opts->scanDmesg ? XPUM_PRECHECK_LOG_SOURCE_DMESG : XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL,
-                                              this->opts->onlyGPU, this->opts->sinceTime.c_str()};
+            xpum_precheck_options options = { this->opts->onlyGPU, this->opts->sinceTime.c_str()};
             json = this->coreStub->precheck(options, this->opts->rawJson);
         }
         return json;

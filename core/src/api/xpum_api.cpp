@@ -1461,12 +1461,12 @@ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
         std::string bdf = bdfs[index];
         auto p_data = GPUDeviceStub::loadPVCIdlePowers(bdf);
 
-        xpum_device_stats_t device_stats;
+        xpum_device_stats_t device_stats {};
         device_stats.deviceId = std::stoi(p_data->getDeviceId());
         device_stats.isTileData = false;
         device_stats.count = 0;
         if (p_data->hasDataOnDevice()) {
-            xpum_device_stats_data_t stats_data;
+            xpum_device_stats_data_t stats_data {};
             MeasurementType type = MeasurementType::METRIC_POWER;
             stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
             stats_data.scale = p_data->getScale();
@@ -1491,7 +1491,7 @@ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
             device_stats.isTileData = true;
             device_stats.tileId = tileId;
             device_stats.count = 0;
-            xpum_device_stats_data_t stats_data;
+            xpum_device_stats_data_t stats_data {};
             MeasurementType type = MeasurementType::METRIC_POWER;
             stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
             stats_data.scale = p_data->getScale();
@@ -2424,7 +2424,7 @@ xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
         return res;
     }
 
-    SchedulerTimeoutMode mode;
+    SchedulerTimeoutMode mode = {};
     mode.subdevice_Id = sched_timeout.subdevice_Id;
     mode.mode_setting.watchdogTimeout = sched_timeout.watchdog_timeout;
 
@@ -2450,7 +2450,7 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
         return res;
     }
 
-    SchedulerTimesliceMode mode;
+    SchedulerTimesliceMode mode = {};
     mode.subdevice_Id = sched_timeslice.subdevice_Id;
     mode.mode_setting.interval = sched_timeslice.interval;
     mode.mode_setting.yieldTimeout = sched_timeslice.yield_timeout;
@@ -2505,7 +2505,7 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                 std::vector<zes_sched_handle_t> scheds(scheduler_count);
                 result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
                 for (auto& sched : scheds) {
-                    zes_sched_properties_t props;
+                    zes_sched_properties_t props = {};
                     result = zesSchedulerGetProperties(sched, &props);
                     if (result == ZE_RESULT_SUCCESS) {
                         if (props.subdeviceId != sched_exclusive.subdevice_Id) {
@@ -2574,7 +2574,7 @@ xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
                 std::vector<zes_sched_handle_t> scheds(scheduler_count);
                 result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
                 for (auto& sched : scheds) {
-                    zes_sched_properties_t props;
+                    zes_sched_properties_t props = {};
                     result = zesSchedulerGetProperties(sched, &props);
                     if (result == ZE_RESULT_SUCCESS) {
                         if (props.subdeviceId != sched_debug.subdevice_Id) {

@@ -14,7 +14,7 @@ namespace xpum {
 
 class Property {
    public:
-    Property() {}
+    Property() : name(XPUM_DEVICE_PROPERTY_INTERNAL_MAX) {}
 
     Property(xpum_device_internal_property_name_t name, const std::string& value) : name(name), value(value) {
     }

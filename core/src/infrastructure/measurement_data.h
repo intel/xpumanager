@@ -65,7 +65,9 @@ class MeasurementData {
     ~MeasurementData() {
     }
 
-    MeasurementData() : avg(std::numeric_limits<uint64_t>::max()),
+    MeasurementData() : start_time(0),
+                        latest_time(0),
+                        avg(std::numeric_limits<uint64_t>::max()),
                         min(std::numeric_limits<uint64_t>::max()),
                         max(std::numeric_limits<uint64_t>::max()),
                         current(std::numeric_limits<uint64_t>::max()),
@@ -74,13 +76,16 @@ class MeasurementData {
                         bHasDataOnDevice(false),
                         bHasRawDataOnDevice(false),
                         raw_timestamp(0),
-                        timestamp(0) {
+                        timestamp(0),
+                        num_subdevice(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
-    MeasurementData(uint64_t value) : avg(value),
+    MeasurementData(uint64_t value) : start_time(0),
+                                      latest_time(0),
+                                      avg(value),
                                       min(value),
                                       max(value),
                                       current(value),
@@ -89,7 +94,8 @@ class MeasurementData {
                                       bHasDataOnDevice(true),
                                       bHasRawDataOnDevice(false),
                                       raw_timestamp(0),
-                                      timestamp(0) {
+                                      timestamp(0),
+                                      num_subdevice(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();

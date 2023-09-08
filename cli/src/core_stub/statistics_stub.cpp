@@ -59,6 +59,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         // XPUM_STATS_PCIE_READ,
         // XPUM_STATS_PCIE_WRITE,
         XPUM_STATS_ENGINE_UTILIZATION,
+        XPUM_STATS_MEDIA_ENGINE_FREQUENCY,
     };
     return std::find(allowList.begin(), allowList.end(), metricsType) != allowList.end();
 }

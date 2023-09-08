@@ -1244,7 +1244,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 ::grpc::Status XpumCoreServiceImpl::setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) {
     bool isDevcie = request->isdevcie();
     XpumPolicyData policyInput = request->policy();
-    xpum_policy_t policy;
+    xpum_policy_t policy{};
     //XPUM_LOG_INFO("---Gang--xpum_cor_service_impl--0----xpumSetPolicy--isDevcie={}",isDevcie);
 
     //
@@ -1583,7 +1583,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     }
     xpum_device_id_t deviceId = request->deviceid();
     uint32_t subdevice_Id = request->tileid();
-    uint32_t count;
+    uint32_t count = 0;
 
     res = xpumGetPerformanceFactor(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
@@ -1662,7 +1662,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->id();
 
-    uint32_t count;
+    uint32_t count = 0;
 
     res = xpumGetDeviceProcessState(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
@@ -1950,7 +1950,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     }
     xpum_device_id_t deviceId = request->deviceid();
     uint32_t subdevice_Id = request->tileid();
-    xpum_fabric_port_config_t portConfig;
+    xpum_fabric_port_config_t portConfig{};
 
     portConfig.onSubdevice = request->istiledata();
     portConfig.subdeviceId = subdevice_Id;
@@ -1989,7 +1989,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     }
     xpum_device_id_t deviceId = request->deviceid();
     uint32_t subdevice_Id = request->tileid();
-    xpum_fabric_port_config_t portConfig;
+    xpum_fabric_port_config_t portConfig{};
 
     portConfig.onSubdevice = request->istiledata();
     portConfig.subdeviceId = subdevice_Id;
@@ -2599,7 +2599,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                                     ::PrecheckComponentInfoListResponse* response) {
     int count = 32;
     xpum_precheck_component_info_t resultList[count];
-    xpum_precheck_options options = {static_cast<xpum_precheck_log_source>(request->logsource()), request->onlygpu(), request->sincetime().c_str()};
+    xpum_precheck_options options = {request->onlygpu(), request->sincetime().c_str()};
     xpum_result_t res = xpumPrecheck(resultList, &count, options);
     if (res != XPUM_OK) {
         if (res == XPUM_PRECHECK_INVALID_SINCETIME)

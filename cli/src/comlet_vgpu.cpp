@@ -291,7 +291,10 @@ void ComletVgpu::getTableResult(std::ostream &out) {
         }
         out << "All virtual GPUs on the device " << this->opts->deviceId << " are removed." << std::endl;
     } else if (this->opts->kern) {
-        out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
+        if (isATSMPlatformFromSysFile())
+            out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
+        else
+            out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on iommu=pt i915.force_probe=* i915.max_vfs=63 i915.enable_iaf=0\". Please reboot OS to take effect." << std::endl;
     }
 }
 

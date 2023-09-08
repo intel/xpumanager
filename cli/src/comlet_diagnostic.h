@@ -26,7 +26,6 @@ struct ComletDiagnosticOptions {
     bool preCheck = false;
     bool listErrorType = false;
     bool onlyGPU = false;
-    bool scanDmesg = false;
     uint32_t stressTime = 0;
     bool stress = false;
     std::string sinceTime;

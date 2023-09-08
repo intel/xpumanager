@@ -1,5 +1,5 @@
 # Intel(R) XPU Manager - AMC Manager Command Line Interface User Guide
-This guide describes how to use amcmcli to manage Intel data center GPU AMC firmware. amcmcli is a portable CLI tool to manage Intel data center GPU AMC (Add-in-card management controller) firmware in Linux OS. It is independent of the GPU driver and need not installed. This tool can work on Intel M50CYP server (BMC firmware version is 2.82 or newer). 
+This guide describes how to use amcmcli to manage Intel data center GPU AMC firmware. amcmcli is a portable CLI tool to manage Intel data center GPU AMC (Add-in-card management controller) firmware in Linux OS. It is independent of the GPU driver and need not installed. This tool can work on Intel M50CYP server (BMC firmware version is 2.82 or newer), H3C R5300 G5, Inspur NF5280M6 and other servers which enable AMC through IPMI protocol. 
 
 ## Main features
 * Show all AMC firmware versions

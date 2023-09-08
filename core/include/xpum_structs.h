@@ -567,6 +567,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_ENGINE_UTILIZATION = 36,            ///< Engine Utilization, unit %
     XPUM_STATS_FABRIC_THROUGHPUT = 37,             ///< Fabric throughput, unit kB/s
     XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU = 38, ///< Frequency Throttle reason, refer to the document of zes_freq_throttle_reason_flags_t
+    XPUM_STATS_MEDIA_ENGINE_FREQUENCY = 39,        ///< Media engine frequency, unit MHz
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -1094,6 +1095,7 @@ typedef enum xpum_dump_type_enum {
     XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION = 33,
     XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION = 34,
     XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU = 35,
+    XPUM_DUMP_MEDIA_ENGINE_FREQUENCY = 36,
     XPUM_DUMP_MAX
 } xpum_dump_type_t;
 
@@ -1144,13 +1146,7 @@ typedef struct xpum_vgpu_function_info_t {
 
 #define XPUM_MAX_VF_NUM 128
 
-typedef enum xpum_precheck_log_source {
-    XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL = 0,
-    XPUM_PRECHECK_LOG_SOURCE_DMESG = 1
-} xpum_precheck_log_source;
-
 typedef struct xpum_precheck_options {
-    xpum_precheck_log_source logSource;        ///< The log source for precheck
     bool onlyGPU;                               ///< Check GPU-related error and ignore CPU error or not
     const char* sinceTime;                      ///< Start time for log scanning. Only works when the logSource is JOURNALCTL. Scanning would start from the latest boot if it is NULL. The generic format is "YYYY-MM-DD HH:MM:SS". Alternatively the strings "yesterday", "today" are also understood. Relative times also may be specified, prefixed with "-" referring to times before the current time.
 } xpum_precheck_options;

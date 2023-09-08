@@ -12,6 +12,7 @@ namespace xpum {
         this->processId = processId;
         this->memSize = 0;
         this->sharedMemSize = 0;
+        this->deviceId = 0;
    }
 
     void device_util_by_proc::setval(device_util_by_proc *putil) {

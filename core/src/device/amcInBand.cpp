@@ -48,6 +48,7 @@ uint64_t access_device_memory(std::string hex_base, uint64_t width) {
     }
     
     if (munmap(map_base, map_size) == -1) {
+        close(fd);
         return 0;
     }
 
@@ -68,8 +69,10 @@ bool getDeviceRegion(std::string bdf, std::string& region_base){
 
         if (line.find("disabled") != std::string::npos) {
             std::string enable_commad = "setpci -s " + bdf + " COMMAND=0x02";
-            if (!system(enable_commad.c_str()))
+            if (!system(enable_commad.c_str())) {
+                pclose(f);
                 return false;
+            }
         }
 
         std::regex reg("[0-9a-fA-F]{11,16}");

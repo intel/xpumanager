@@ -87,6 +87,11 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
     Core::instance().getDeviceManager()->getDeviceList(devices);
     for (auto& device: devices) {
         Property prop;
+        device->getProperty(xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
+        if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
+            continue;
+        }
+
         device->getProperty(
             xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS,
             prop

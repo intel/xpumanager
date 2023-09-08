@@ -117,15 +117,15 @@ int CLIWrapper::printResult(std::ostream &out) {
                 std::shared_ptr<ComletStatistics> stats_comlet = std::dynamic_pointer_cast<ComletStatistics>(comlet);
                 if (stats_comlet->hasEUMetrics()){
                     if(stats_comlet->hasRASMetrics())
-                        setenv("XPUM_METRICS", "0-31,36-38", 1);
+                        setenv("XPUM_METRICS", "0-31,36-39", 1);
                     else
-                        setenv("XPUM_METRICS", "0-19,29-31,36-38", 1);
+                        setenv("XPUM_METRICS", "0-19,29-31,36-39", 1);
                 }
                 else{
                     if(stats_comlet->hasRASMetrics())
-                        setenv("XPUM_METRICS", "0,4-31,36-38", 1);
+                        setenv("XPUM_METRICS", "0,4-31,36-39", 1);
                     else
-                        setenv("XPUM_METRICS", "0,4-19,29-31,36-38", 1);
+                        setenv("XPUM_METRICS", "0,4-19,29-31,36-39", 1);
                 }
             }
             if (comlet->getCommand().compare("dump") == 0) {

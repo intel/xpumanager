@@ -180,6 +180,7 @@ copy /Y "$(ProjectDir)..\..\..\core\include\xpum_api.h" "$(TargetDir)"</Command>
     <ClInclude Include="src\device\device.h" />
     <ClInclude Include="src\device\gpu\gpu_device.h" />
     <ClInclude Include="src\device\gpu\gpu_device_stub.h" />
+    <ClInclude Include="src\device\performancefactor.h" />
     <ClInclude Include="src\device\win_native.h" />
     <ClInclude Include="src\firmware\amc\amc_manager.h" />
     <ClInclude Include="src\firmware\amc\ipmi_amc_manager.h" />
@@ -227,6 +228,7 @@ copy /Y "$(ProjectDir)..\..\..\core\include\xpum_api.h" "$(TargetDir)"</Command>
     <ClCompile Include="src\device\device.cpp" />
     <ClCompile Include="src\device\gpu\gpu_device.cpp" />
     <ClCompile Include="src\device\gpu\gpu_device_stub.cpp" />
+    <ClCompile Include="src\device\performancefactor.cpp" />
     <ClCompile Include="src\device\win_native.cpp" />
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\firmware\amc\ipmi_amc_manager.cpp" />

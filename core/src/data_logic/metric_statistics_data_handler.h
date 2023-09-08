@@ -43,8 +43,13 @@ struct Statistics_data {
     }
     Statistics_data(uint32_t subdevice_id, uint64_t data, long long time) {
         subdevice_datas.insert(std::make_pair(subdevice_id, Statistics_subdevice_data(data)));
+        min = 0;
+        max = 0;
+        avg = 0;
+        count = 0;
         start_time = time;
         latest_time = time;
+        hasDataOnDevice = false;
     }
 };
 

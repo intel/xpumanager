@@ -91,7 +91,6 @@
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_error_category_t.html">enum xpum_precheck_error_category_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_error_severity_t.html">enum xpum_precheck_error_severity_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_error_type_t.html">enum xpum_precheck_error_type_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="enum_xpum_precheck_log_source.html">enum xpum_precheck_log_source</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_ras_type_enum.html">enum xpum_ras_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_result_enum.html">enum xpum_result_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_scheduler_mode_t.html">enum xpum_scheduler_mode_t</a></li>
@@ -206,7 +205,6 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="enum_xpum_precheck_log_source.html#smi-doxid-xpum-structs-8h-1ab23fb7de4ad249e06c1c9b4596d47042"><span class="std std-ref">xpum_precheck_log_source</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-precheck-options-1af0d1574bcadf8b79d5495b6c9027e221"><span class="std std-ref">logSource</span></a><span></span><span class="p">;</span>
     <span class="kt">bool</span> <a class="reference internal" href="#smi-doxid-structxpum-precheck-options-1a5092f0c59cb5b9aa0df2a34f3a3aed95"><span class="std std-ref">onlyGPU</span></a><span></span><span class="p">;</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <a class="reference internal" href="#smi-doxid-structxpum-precheck-options-1a0bd387d79aa39252cfe0ddaf6642d856"><span class="std std-ref">sinceTime</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
@@ -215,11 +213,9 @@
 <span id="details-structxpum-precheck-options"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-precheck-options-1af0d1574bcadf8b79d5495b6c9027e221"><span id="index-1"></span><a class="reference internal" href="enum_xpum_precheck_log_source.html#smi-doxid-xpum-structs-8h-1ab23fb7de4ad249e06c1c9b4596d47042"><span class="std std-ref">xpum_precheck_log_source</span></a><span></span> <span class="n">logSource</span></pre>
-<p>The log source for precheck.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-precheck-options-1a5092f0c59cb5b9aa0df2a34f3a3aed95"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">onlyGPU</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-precheck-options-1a5092f0c59cb5b9aa0df2a34f3a3aed95"><span id="index-1"></span><span></span><span class="kt">bool</span> <span class="n">onlyGPU</span></pre>
 <p>Check GPU-related error and ignore CPU error or not.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-precheck-options-1a0bd387d79aa39252cfe0ddaf6642d856"><span id="index-3"></span><span></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-precheck-options-1a0bd387d79aa39252cfe0ddaf6642d856"><span id="index-2"></span><span></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">sinceTime</span></pre>
 <p>Start time for log scanning. Only works when the logSource is JOURNALCTL. Scanning would start from the latest boot if it is NULL. The generic format is “YYYY-MM-DD HH:MM:SS”. Alternatively the strings “yesterday”, “today” are also understood. Relative times also may be specified, prefixed with “-” referring to times before the current time.</p>
 </section>
 </section>

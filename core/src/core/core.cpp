@@ -29,7 +29,8 @@ Core::Core()
       p_diagnostic_manager(nullptr),
       p_policy_manager(nullptr),
       p_dump_raw_data_manager(nullptr),
-      initialized(false) {
+      initialized(false),
+      ze_initialized(false) {
     XPUM_LOG_TRACE("core()");
 }
 
@@ -191,16 +192,6 @@ bool Core::isZeInitialized() {
 void Core::setZeInitialized(bool val) {
     std::unique_lock<std::mutex> lock(mutex);
     this->ze_initialized = val;
-}
-
-bool Core::userPermissionAllowed() {
-    std::unique_lock<std::mutex> lock(mutex);
-    return this->user_permission_allowed;
-}
-
-void Core::setUserPermissionAllowed(bool val) {
-    std::unique_lock<std::mutex> lock(mutex);
-    this->user_permission_allowed = val;
 }
 
 xpum_result_t Core::apiAccessPreCheck() {

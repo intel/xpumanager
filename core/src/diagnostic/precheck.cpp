@@ -24,6 +24,10 @@ namespace xpum {
 
     int PrecheckManager::cpu_temperature_threshold = 85;
 
+    std::string PrecheckManager::KERNEL_MESSAGES_SOURCE = "journalctl";
+
+    std::string PrecheckManager::KERNEL_MESSAGES_FILE;
+
     xpum_precheck_component_info_t PrecheckManager::component_driver;
 
     std::vector<xpum_precheck_component_info_t> PrecheckManager::component_cpus;
@@ -35,6 +39,22 @@ namespace xpum {
      * some helper functions for precheck
      * 
      */
+
+    static std::string logSourceToString(xpum_precheck_log_source log_source) {
+        std::string ret;
+        switch (log_source)
+        {
+        case XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL:
+            ret = "journalctl"; break;
+        case XPUM_PRECHECK_LOG_SOURCE_DMESG:
+            ret = "dmesg"; break;
+        case XPUM_PRECHECK_LOG_SOURCE_FILE:
+            ret = "file"; break;
+        default:
+            break;
+        }
+        return ret;
+    }
 
     static std::string extractLastNChars(std::string const &str, int n) {
         if ((int)str.size() < n) {
@@ -189,8 +209,30 @@ namespace xpum {
     }
 
     static void scanErrorLogLinesByFile(std::string print_log_cmd, std::unordered_map<std::string, std::vector<ErrorPattern>>& key_to_error_patterns) {
-        FILE* f = popen(print_log_cmd.c_str(), "r");
+        // detect current boot line
+        std::string currentBootLine;
+        std::string detect_cmd = print_log_cmd + " | grep -i \"Command line: \" | grep -i boot | tail -n 1";
+        FILE* f = popen(detect_cmd.c_str(), "r");
+        if (f == nullptr) {
+            XPUM_LOG_ERROR("Failed to detect current boot line with command: {}", detect_cmd);
+            return;
+        } 
         char c_line[1024];
+        while (fgets(c_line, 1024, f) != NULL) {
+            size_t len = strnlen(c_line, 1024);
+            if (len > 0 && c_line[len-1] == '\n') {
+                c_line[--len] = '\0';
+            }
+            currentBootLine = std::string(c_line);
+        }
+        pclose(f);
+
+        bool findCurrentBootLine = false;
+        f = popen(print_log_cmd.c_str(), "r");
+        if (f == nullptr) {
+            XPUM_LOG_ERROR("Failed to check log with command: {}", print_log_cmd);
+            return;
+        }
         std::smatch match;
         while (fgets(c_line, 1024, f) != NULL) {
             size_t len = strnlen(c_line, 1024);
@@ -198,6 +240,17 @@ namespace xpum {
                 c_line[--len] = '\0';
             }
             std::string line(c_line);
+            // if currentBootLine is empty, scan all content in the log file.
+            if (!currentBootLine.empty()) {
+                if (findCurrentBootLine == false && line == currentBootLine) {
+                    findCurrentBootLine = true;
+                    XPUM_LOG_DEBUG("precheck find current kernel boot log: {}", line);
+                }
+
+                if (!findCurrentBootLine) {
+                    continue;
+                }
+            }
             XPUM_LOG_DEBUG("precheck scans log line: {}", line);
             std::string target_found;
             for (auto tw : targeted_words)
@@ -234,12 +287,14 @@ namespace xpum {
         std::string print_log_cmd;
         if (logSource == XPUM_PRECHECK_LOG_SOURCE_DMESG) {
             print_log_cmd = "dmesg --time-format iso";
-        } else {
+        } else if (logSource == XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL) {
             print_log_cmd = "journalctl -q -b 0 --dmesg -o short-iso";
             if (!since_time.empty())
                 print_log_cmd += " --since \"" + since_time + "\"";
+        } else if (logSource == XPUM_PRECHECK_LOG_SOURCE_FILE) {
+            print_log_cmd = "cat " + PrecheckManager::KERNEL_MESSAGES_FILE;
         }
-        XPUM_LOG_DEBUG("precheck log command: {}", print_log_cmd);
+        XPUM_LOG_INFO("precheck log command: {}", print_log_cmd);
         scanErrorLogLinesByFile(print_log_cmd, key_to_error_patterns);
     }
 
@@ -485,6 +540,7 @@ namespace xpum {
                 }
                 int cnt = read(fd, uevent, 1024);
                 if (cnt < 0 || cnt >= 1024) {
+                    close(fd);
                     continue;
                 }
                 close(fd);
@@ -562,6 +618,7 @@ namespace xpum {
                     }
                     int cnt = read(fd, thermal_type, 1024);
                     if (cnt < 0 || cnt >= 1024) {
+                        close(fd);
                         continue;
                     }
                     close(fd);
@@ -575,6 +632,7 @@ namespace xpum {
                         }
                         int cnt = read(fd, thermal_value, 1024);
                         if (cnt < 0 || cnt >= 1024) {
+                            close(fd);
                             continue;
                         }
                         thermal_value[cnt] = 0;
@@ -619,7 +677,17 @@ namespace xpum {
     }
 
     xpum_result_t PrecheckManager::precheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
-        xpum_precheck_log_source logSource = options.logSource;
+        xpum_precheck_log_source logSource = XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL;
+        readConfigFile();
+        XPUM_LOG_INFO("log source: {}, log file: {}", PrecheckManager::KERNEL_MESSAGES_SOURCE, PrecheckManager::KERNEL_MESSAGES_FILE);
+        if (PrecheckManager::KERNEL_MESSAGES_SOURCE == "file")  {
+            if (!isPathExist(PrecheckManager::KERNEL_MESSAGES_FILE))
+                logSource = XPUM_PRECHECK_LOG_SOURCE_DMESG;
+            else
+                logSource = XPUM_PRECHECK_LOG_SOURCE_FILE;
+        } else if (PrecheckManager::KERNEL_MESSAGES_SOURCE == "dmesg")
+            logSource = XPUM_PRECHECK_LOG_SOURCE_DMESG;
+        XPUM_LOG_INFO("final log source: {}", logSourceToString(logSource));
         bool onlyGPU = options.onlyGPU;
         const char* sinceTime = options.sinceTime;
         if (logSource == XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL && sinceTime != nullptr) {
@@ -640,7 +708,6 @@ namespace xpum {
             *count = val;
             return XPUM_OK;
         }
-        readConfigFile(); 
         std::string sinceTimeStr;
         if (sinceTime != nullptr)
             std::string sinceTimeStr = std::string(sinceTime);

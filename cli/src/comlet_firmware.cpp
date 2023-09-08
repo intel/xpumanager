@@ -395,6 +395,7 @@ static bool findFileInDir(std::string dirPath, std::regex pattern, std::string &
         while ((ent = readdir(dir)) != nullptr) {
             if(std::regex_search(ent->d_name, pattern)){
                 filePath = dirPath + "/" + ent->d_name;
+                closedir(dir);
                 return true;
             }
         }

@@ -361,6 +361,7 @@ void GPUDeviceStub::checkInitDependency() {
             details = (*it);
             break;
         }
+        dlclose(handle);
     }
 
     if (findLibs) {
@@ -655,15 +656,19 @@ std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
             if (strstr(full_path, bdf_address.c_str()) != NULL) {
                 int cardLen = snprintf(card_path, PATH_MAX,"%s/iaf_socket_id",link_path);
                 if (cardLen <= 0 || cardLen >= PATH_MAX) {
+                    closedir(pdir);
                     return ret;
                 }
                 if (readStrSysFsFile(socketId_buf, card_path) == false) {
+                    closedir(pdir);
                     return ret;
                 } else {
                     socketId_buf[strcspn(socketId_buf, "\n")] = '\0';
                     if(!strncmp(socketId_buf, "0x1f", 4)) {
+                        closedir(pdir);
                         return ret;
                     }
+                    closedir(pdir);
                     return socketId_buf;
                 }
                 break;
@@ -1144,7 +1149,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE, std::to_string(props.numSubdevices)));
                 uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
-                uint32_t euCount = tileCount * props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
+                uint32_t euCount = props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
                 zes_pci_properties_t pci_props = {};
 
@@ -1581,6 +1586,18 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(con
                     }
                     if (freq_state.request >= 0) {
                         ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_REQUEST_FREQUENCY, freq_state.request);
+                    }
+                    if (Utility::isATSMPlatform(device) == true) {
+                        std::vector<PerformanceFactor> pfs;
+                        getPerformanceFactor(device, pfs);
+                        for (auto &pf : pfs) {
+                            if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
+                                ret->setSubdeviceAdditionalData(subdeviceId, 
+                                    MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY, 
+                                    freq_state.actual * pf.getFactor() / 100);
+                                break;
+                            }
+                        }
                     }
                     data_acquired = true;
                 } else {
@@ -2733,12 +2750,10 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
                     val1 = -1;
                     val2 = -1;
                 }
-                schedulers.push_back(*(new Scheduler(props.onSubdevice,
-                                                     props.subdeviceId,
-                                                     props.canControl,
-                                                     props.engines,
-                                                     props.supportedModes,
-                                                     mode, val1, val2)));
+                Scheduler s(props.onSubdevice, props.subdeviceId, 
+                    props.canControl, props.engines, props.supportedModes, 
+                    mode, val1, val2);
+                schedulers.push_back(s);
             }
         }
     }
@@ -2769,7 +2784,9 @@ void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
         for (auto& proc : procs) {
             std::string pn = getProcessName(proc.processId);
-            processes.push_back(*(new device_process(proc.processId, proc.memSize, proc.sharedSize, proc.engines, pn)));
+            device_process dp(proc.processId, proc.memSize, proc.sharedSize, 
+                proc.engines, pn);
+            processes.push_back(dp);
         }
     } else {
         return;
@@ -3094,7 +3111,9 @@ void GPUDeviceStub::getPerformanceFactor(const zes_device_handle_t& device, std:
                 if (res == ZE_RESULT_SUCCESS) {
                     XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
                     if (res == ZE_RESULT_SUCCESS) {
-                        pf.push_back(*(new PerformanceFactor(prop.onSubdevice, prop.subdeviceId, prop.engines, factor)));
+                        PerformanceFactor p(prop.onSubdevice, prop.subdeviceId, 
+                            prop.engines, factor);
+                        pf.push_back(p);
                         continue;
                     }
                 } else {
@@ -3126,7 +3145,9 @@ void GPUDeviceStub::getStandbys(const zes_device_handle_t& device, std::vector<S
             if (res == ZE_RESULT_SUCCESS) {
                 zes_standby_promo_mode_t mode;
                 XPUM_ZE_HANDLE_LOCK(stan, res = zesStandbyGetMode(stan, &mode));
-                standbys.push_back(*(new Standby(props.type, (bool)props.onSubdevice, props.subdeviceId, mode)));
+                Standby s(props.type, (bool)props.onSubdevice, 
+                    props.subdeviceId, mode);
+                standbys.push_back(s);
             }
         }
     }
@@ -3146,13 +3167,11 @@ void GPUDeviceStub::getPowerProps(const zes_device_handle_t& device, std::vector
             zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                powers.push_back(*(new Power(props.onSubdevice,
-                                             props.subdeviceId,
-                                             props.canControl,
+                Power p(props.onSubdevice, props.subdeviceId, props.canControl,
                                              props.isEnergyThresholdSupported,
-                                             props.defaultLimit,
-                                             props.minLimit,
-                                             props.maxLimit)));
+                                             props.defaultLimit, props.minLimit,
+                                             props.maxLimit);
+                powers.push_back(p);
             }
         }
     }
@@ -3349,13 +3368,10 @@ void GPUDeviceStub::getFrequencyRanges(const zes_device_handle_t& device, std::v
                 zes_freq_range_t range;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetRange(ph_freq, &range));
                 if (res == ZE_RESULT_SUCCESS) {
-                    frequencies.push_back(*(new Frequency(prop.type,
-                                                          prop.onSubdevice,
-                                                          prop.subdeviceId,
-                                                          prop.canControl,
-                                                          prop.isThrottleEventSupported,
-                                                          range.min,
-                                                          range.max)));
+                    Frequency f(prop.type, prop.onSubdevice, prop.subdeviceId,
+                                prop.canControl, prop.isThrottleEventSupported,
+                                range.min, range.max);
+                    frequencies.push_back(f);
                 }
             }
         }
@@ -4627,7 +4643,7 @@ void GPUDeviceStub::readPerfMetricsData(std::shared_ptr<std::map<uint32_t, std::
                         }
 
                         if (!found) {
-                            PerfMetricData_t perf_metric_data;
+                            PerfMetricData_t perf_metric_data {};
                             perf_metric_data.name = it_metric->second->name; 
                             perf_metric_data.average = 0;
                             perf_metric_data.total = 0;

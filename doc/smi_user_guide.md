@@ -319,10 +319,17 @@ Options:
                                 1. quick test
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
                                 3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
-  --stress                    Stress the GPU(s) for the specified time
+
+  -s --stress                 Stress the GPU(s) for the specified time
   --stresstime                Stress time (in minutes). It is an optional parameter. If not specified, CLI does the stress until manually stopped.
+
   --precheck                  Do the precheck on the GPU and GPU driver
   --listtypes                 List all supported GPU error types
+  --gpu                       Show the GPU status only
+  --since                     Start time for log scanning. It only works with the journalctl option. The generic format is "YYYY-MM-DD HH:MM:SS".
+                              Alternatively the strings "yesterday", "today" are also understood.
+                              Relative times also may be specified, prefixed with "-" referring to times before the current time.
+                              Scanning would start from the latest boot if it was not specified.
 
   --singletest                Selectively run some particular tests. Separated by the comma.
                                     1. Computation
@@ -333,6 +340,7 @@ Options:
                                     6. Power
                                     7. Computation functional test
                                     8. Media Codec functional test
+                                    9. Xe Link Throughput
 
 ```
 
@@ -368,13 +376,20 @@ Check the GPU status
 ```
 xpu-smi diag --precheck
 +------------------+-------------------------------------------------------------------------------+
-| Component        | Status                                                                        |
+| Component        | Details                                                                       |
 +------------------+-------------------------------------------------------------------------------+
-| GPU              | 2 (0x56c1)                                                                    |
-| Driver           | Pass                                                                          |
-| GPU Status       | Pass                                                                          |
-| CPU Status       | Pass                                                                          |
+| Driver           | Status: Pass                                                                  |
 +------------------+-------------------------------------------------------------------------------+
+| CPU              | CPU ID: 0                                                                     |
+|                  | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+| CPU              | CPU ID: 1                                                                     |
+|                  | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+| GPU              | BDF: 0000:3a:00.0                                                             |
+|                  | Status: Pass                                                                  |
++------------------+-------------------------------------------------------------------------------+
+
 ```
 
 Stress the GPU
@@ -396,7 +411,7 @@ xpu-smi diag -d 0 --singletest 1,4
 +-------------------------+------------------------------------------------------------------------+
 | Performance Computation | Result: Pass                                                           |
 |                         | Message: Pass to check computation performance. Its single-precision   |
-|                         |   GFLOPS is 10938.459.                                                 |
+|                         |   GFLOPS is 11120.225.                                                 |
 +-------------------------+------------------------------------------------------------------------+
 | Media Codec             | Result: Pass                                                           |
 |                         | Message: Pass to check Media transcode performance.                    |
@@ -580,10 +595,12 @@ Usage: xpu-smi stats [Options]
 Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
-  --debug                     Print debug info
 
   -d,--device                 The device ID or PCI BDF address to query
   -e,--eu                     Show the EU metrics
+  -r,--ras                    Show RAS error metrics
+  --xelink                    Show the all the Xe Link throughput (GB/s) matrix
+  --utils                     Show the Xe Link throughput utilization
 ```
  
 List the GPU device real-time statistics that are collected by xpu-smi
@@ -615,17 +632,19 @@ xpu-smi stats -d 0
 | Mem Errors Uncorrectable    | 0                                                                  |
 +-----------------------------+--------------------------------------------------------------------+
 | GPU Power (W)               | 15                                                                 |
-| GPU Frequency (MHz)         | 0                                                                  |
+| GPU Frequency (MHz)         | 2050                                                               |
+| Media Engine Freq (MHz)     | 1025                                                               |
 | GPU Core Temperature (C)    | 41                                                                 |
 | GPU Memory Temperature (C)  |                                                                    |
 | GPU Memory Read (kB/s)      |                                                                    |
 | GPU Memory Write (kB/s)     |                                                                    |
 | GPU Memory Bandwidth (%)    |                                                                    |
 | GPU Memory Used (MiB)       | 24                                                                 |
+| GPU Memory Util (%)         | 0                                                                  |
 | Xe Link Throughput (kB/s)   |                                                                    |
 +-----------------------------+--------------------------------------------------------------------+
 ```
-Some GPU telemetries are not available for non-root users by default, such as GPU temperature. If you want to retrieve the GPU temperature with non-root privilege user, please add read permission in sysfs: /sys/class/intel_pmt/telem?/telem. Please refer to the example below. After that, you may read GPU temperature with non-root user.  
+The media engine frequency is inferred with GPU frequency. Some GPU telemetries are not available for non-root users by default, such as GPU temperature. If you want to retrieve the GPU temperature with non-root privilege user, please add read permission in sysfs: /sys/class/intel_pmt/telem?/telem. Please refer to the example below. After that, you may read GPU temperature with non-root user.  
 ```
 cd /sys/class/intel_pmt/telem1
 sudo chmod o+r telem
@@ -715,7 +734,7 @@ xpu-smi health -l
   * GPU reset count and GPU memory error number
   
   
-Help info of the device statistics dump. Please note that the metrics 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 
+Help info of the device statistics dump. Please note that the metrics 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 'Media Engine Frequency' is inferred with 'GPU Frequency'. 
 ```
 xpu-smi dump -h
 Dump device statistics data.
@@ -770,6 +789,7 @@ Options:
                               33. Media engine group utilization (%), per tile
                               34. Copy engine group utilization (%), per tile
                               35. Throttle reason, per tile
+                              36. Media Engine Frequency (MHz), per tile
 
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.
@@ -810,7 +830,7 @@ Done
 ```
  
 ## Set up GPU SR-IOV configuration
-This GPU SR-IOV feature only works for Intel Flex series GPUs. Only Ubuntu and CentOS 7 are validated. 
+Only Ubuntu and CentOS 7 are validated. 
  
 ### BIOS settings for GPU SR-IOV
 #### Intel M50CYP
@@ -899,7 +919,7 @@ Options:
 
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
-  -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
+  -n                          The number of virtual GPUs to create. 
   --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500. This parameter is optional. 
 
   -l,--list                   List all virtual GPUs on the specified physical GPU

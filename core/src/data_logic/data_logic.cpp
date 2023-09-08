@@ -145,14 +145,14 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     *end = Utility::getCurrentTime();
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
-    xpum_device_stats_t device_stats;
+    xpum_device_stats_t device_stats{};
     device_stats.deviceId = deviceId;
     device_stats.isTileData = false;
     device_stats.count = 0;
     if (hasDataOnDevice) {
         while (datas_iter != m_datas.end()) {
             if (datas_iter->second->hasDataOnDevice()) {
-                xpum_device_stats_data_t stats_data;
+                xpum_device_stats_data_t stats_data{};
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 stats_data.scale = datas_iter->second->getScale();
@@ -187,7 +187,7 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
             if (datas_iter->second->hasSubdeviceData() && datas_iter->second->getSubdeviceDatas()->find(i) != datas_iter->second->getSubdeviceDatas()->end() && datas_iter->second->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
-                xpum_device_stats_data_t stats_data;
+                xpum_device_stats_data_t stats_data{};
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 stats_data.scale = datas_iter->second->getScale();
@@ -265,7 +265,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     }
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
-    xpum_device_metrics_t device_metrics;
+    xpum_device_metrics_t device_metrics{};
     device_metrics.deviceId = deviceId;
     device_metrics.isTileData = false;
     device_metrics.count = 0;
@@ -544,7 +544,7 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
-            xpum_device_fabric_throughput_stats_t stats;
+            xpum_device_fabric_throughput_stats_t stats{};
             stats.tile_id = info.attach_id;
             std::string did = 
                 Core::instance().getDeviceManager()->getDeviceIDByFabricID(

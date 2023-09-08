@@ -26,6 +26,8 @@ namespace xpum {
         static MeasurementType measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type);
         
         static bool isCounterMetric(MeasurementType type);
+
+        static bool isATSMPlatform(const zes_device_handle_t &device);
     };
 
 } // end namespace xpum

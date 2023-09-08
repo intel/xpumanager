@@ -11,6 +11,9 @@ from flask import Flask
 from marshmallow import Schema, fields
 import json
 
+import os
+os.environ["XPUM_EXPORTER_NO_AUTH"] = "1"
+
 from xpum_rest_main import main
 
 app = main()

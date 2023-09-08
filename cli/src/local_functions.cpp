@@ -74,6 +74,7 @@ uint32_t access_device_memory(std::string hex_base, std::string hex_val = "") {
 	}
 	
     if (munmap(map_base, MAP_SIZE) == -1) {
+        close(fd);
         return -1;
     }
 
@@ -95,8 +96,10 @@ bool getFirmwareVersion(FirmwareVersion& fw_version, std::string bdf) {
 
         if (line.find("disabled") != std::string::npos) {
             std::string enable_commad = "setpci -s " + bdf + " COMMAND=0x02";
-            if (!system(enable_commad.c_str()))
-                return false;
+            if (!system(enable_commad.c_str())) {
+                pclose(f);
+                return false;   
+            }
         }
 
         std::regex reg("[0-9a-fA-F]{12,16}");
@@ -371,6 +374,52 @@ static int execCommand(const std::string& command, std::string &result) {
     return exitcode;
 }
 
+bool isATSMPlatformFromSysFile() {
+    char path[PATH_MAX];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+
+    bool is_atsm_platform = true;
+    pdir = opendir("/sys/class/drm");
+    if (pdir != NULL) {
+        char uevent[1024];
+        while ((pdirent = readdir(pdir)) != NULL) {
+            if (pdirent->d_name[0] == '.') {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "render", 6) == 0) {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "card", 4) != 0) {
+                continue;
+            }
+            if (strstr(pdirent->d_name, "-") != NULL) {
+                continue;
+            }
+            snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent", pdirent->d_name);
+            int fd = open(path, O_RDONLY);
+            if (fd < 0) {
+                continue;
+            }
+            int cnt = read(fd, uevent, 1024);
+            if (cnt < 0 || cnt >= 1024) {
+                continue;
+            }
+            close(fd);
+            uevent[cnt] = 0;
+            std::string str(uevent);
+            std::string key = "PCI_ID=8086:";
+            auto pos = str.find(key); 
+            if (pos != std::string::npos) {
+                std::string device_id = str.substr(pos + key.length(), 4);
+                is_atsm_platform = isATSMPlatform(device_id);
+            }
+        }
+        closedir(pdir);
+    }
+    return is_atsm_platform;
+}
+
 std::unique_ptr<nlohmann::json> addKernelParam() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     std::string grubPath = "/etc/default/grub";
@@ -420,7 +469,10 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
         (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
-    targetLine->insert(pos, " intel_iommu=on i915.max_vfs=31");
+    if (isATSMPlatformFromSysFile())
+        targetLine->insert(pos, " intel_iommu=on i915.max_vfs=31");
+    else
+        targetLine->insert(pos, " intel_iommu=on iommu=pt i915.force_probe=* i915.max_vfs=63 i915.enable_iaf=0");
     std::ofstream ofs("/etc/default/grub", std::ios::out | std::ios::trunc);
     if (!ofs.is_open()) {
         (*json)["error"] = "Fail to open grub file.";

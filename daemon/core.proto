@@ -286,15 +286,9 @@ enum PrecheckComponentStatus {
     PRECHECK_COMPONENT_STATUS_FAIL = 2;
 }
 
-enum PrecheckLogSourceType {
-    PRECHECK_LOG_SOURCE_JOURNALCTL = 0;
-    PRECHECK_LOG_SOURCE_DMESG = 1;
-}
-
 message PrecheckOptionsRequest {
-    PrecheckLogSourceType logSource = 1;
-    bool onlyGPU = 2;
-    string sinceTime = 3;
+    bool onlyGPU = 1;
+    string sinceTime = 2;
 }
 
 message PrecheckComponentInfo {

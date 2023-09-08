@@ -106,7 +106,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(p_driver, zeDeviceGet(p_driver, &device_count, nullptr));
             std::vector<ze_device_handle_t> devices(device_count);
             XPUM_ZE_HANDLE_LOCK(p_driver, zeDeviceGet(p_driver, &device_count, devices.data()));
-            ze_driver_properties_t driver_prop;
+            ze_driver_properties_t driver_prop = {};
             XPUM_ZE_HANDLE_LOCK(p_driver, zeDriverGetProperties(p_driver, &driver_prop));
 
             for (auto& device : devices) {
@@ -157,7 +157,7 @@ namespace xpum {
                     p_gpu->zes_sub_device_handle[p_gpu->zes_sub_device_handle_num];
                     XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &p_gpu->zes_sub_device_handle_num, p_gpu->zes_sub_device_handle));
 
-                    zes_pci_properties_t pci_props;
+                    zes_pci_properties_t pci_props = {};
 
                     XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                     if (res == ZE_RESULT_SUCCESS) {
@@ -185,7 +185,7 @@ namespace xpum {
                     if (res == ZE_RESULT_SUCCESS) {
                         for (auto& mem : mems) {
                             uint64_t mem_module_physical_size = 0;
-                            zes_mem_properties_t props;
+                            zes_mem_properties_t props = {};
                             props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                             XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                             if (res == ZE_RESULT_SUCCESS) {
@@ -247,7 +247,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& engine : engines) {
-                    zes_engine_properties_t props;
+                    zes_engine_properties_t props = {};
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
                     props.pNext = nullptr;
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
@@ -286,7 +286,7 @@ namespace xpum {
         status = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
         if (status == ZE_RESULT_SUCCESS) {
             for (auto& power : power_handles) {
-                zes_power_properties_t props;
+                zes_power_properties_t props = {};
                 props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
                 props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
@@ -307,7 +307,7 @@ namespace xpum {
 
     uint32_t GPUDeviceStub::toGetDeviceId(const zes_device_handle_t& device) noexcept {
         ze_result_t status;
-        ze_device_properties_t ze_device_properties;
+        ze_device_properties_t ze_device_properties = {};
         ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
         ze_device_properties.pNext = nullptr;
         status = zeDeviceGetProperties(device, &ze_device_properties);
@@ -353,7 +353,7 @@ namespace xpum {
         status = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
         if (status == ZE_RESULT_SUCCESS) {
             for (auto& power : power_handles) {
-                zes_power_properties_t props;
+                zes_power_properties_t props = {};
                 props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
                 props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
@@ -400,7 +400,7 @@ namespace xpum {
             }
             if (status == ZE_RESULT_SUCCESS) {
                 for (auto& freq : freq_handles) {
-                    zes_freq_properties_t prop;
+                    zes_freq_properties_t prop = {};
                     prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
                     prop.pNext = nullptr;
                     status = zesFrequencyGetProperties(freq, &prop);
@@ -458,7 +458,7 @@ namespace xpum {
         } else {
             if (status == ZE_RESULT_SUCCESS) {
                 for (auto& freq : freq_handles) {
-                    zes_freq_properties_t prop;
+                    zes_freq_properties_t prop = {};
                     prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
                     prop.pNext = nullptr;
                     status = zesFrequencyGetProperties(freq, &prop);
@@ -566,6 +566,40 @@ namespace xpum {
         return ret;
     }
 
+    void GPUDeviceStub::getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf) {
+        if (device == nullptr) {
+            return;
+        }
+        uint32_t pfCount = 0;
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount, nullptr));
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_perf_handle_t> hPerf(pfCount);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount, hPerf.data()));
+            if (res == ZE_RESULT_SUCCESS) {
+                for (auto perf : hPerf) {
+                    zes_perf_properties_t prop = {};
+                    double factor;
+                    XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetProperties(perf, &prop));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            pf.push_back(*(new PerformanceFactor(prop.onSubdevice, prop.subdeviceId, prop.engines, factor)));
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+                return;
+            } else {
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(const zes_device_handle_t& device, MeasurementType type) noexcept {
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
         if (device == nullptr) {
@@ -581,7 +615,7 @@ namespace xpum {
         if (res == ZE_RESULT_SUCCESS && freq_count > 0) {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
             for (auto& ph_freq : freq_handles) {
-                zes_freq_properties_t props;
+                zes_freq_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (props.type != ZES_FREQ_DOMAIN_GPU) {
@@ -594,6 +628,18 @@ namespace xpum {
                             ret->setCurrent(freq_state.actual);
                         else if (type == MeasurementType::METRIC_REQUEST_FREQUENCY)
                             ret->setCurrent(freq_state.request);
+                        else if (type == MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY) {
+                            if (Utility::isATSMPlatform(device) == true) {
+                                std::vector<PerformanceFactor> pfs;
+                                getPerformanceFactor(device, pfs);
+                                for (auto& pf : pfs) {
+                                    if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
+                                        ret->setCurrent(freq_state.actual * pf.getFactor() / 100);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         exception_msgs["zesFrequencyGetState"] = res;
                     }
@@ -625,7 +671,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& temp : temp_sensors) {
-                    zes_temp_properties_t props;
+                    zes_temp_properties_t props = {};
                     XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         switch (props.type) {
@@ -698,7 +744,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
-                    zes_mem_properties_t props;
+                    zes_mem_properties_t props = {};
                     props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                     if (res == ZE_RESULT_SUCCESS) {
@@ -768,7 +814,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
-                    zes_mem_properties_t props;
+                    zes_mem_properties_t props = {};
                     props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                     if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
@@ -822,7 +868,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
-                    zes_mem_properties_t props;
+                    zes_mem_properties_t props = {};
                     props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                     if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
@@ -915,7 +961,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& engine : engines) {
-                    zes_engine_properties_t props;
+                    zes_engine_properties_t props = {};
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
                     props.pNext = nullptr;
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
@@ -1067,7 +1113,7 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& metric_group : metricGroups) {
-                    zet_metric_group_properties_t metric_group_properties;
+                    zet_metric_group_properties_t metric_group_properties = {};
                     metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
                     res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
                     if (res == ZE_RESULT_SUCCESS) {
@@ -1194,7 +1240,7 @@ namespace xpum {
             uint64_t currentGPUElapsedTime = 0;
             for (uint32_t metric = 0; metric < metricCount; metric++) {
                 zet_typed_value_t data = metricValues[report * metricCount + metric];
-                zet_metric_properties_t metricProperties;
+                zet_metric_properties_t metricProperties = {};
                 res = zetMetricGetProperties(phMetrics[metric], &metricProperties);
                 if (res != ZE_RESULT_SUCCESS) {
                     ret->setErrors("toGetEuActiveStallIdle error");
@@ -1295,7 +1341,7 @@ namespace xpum {
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freqDomainCount, freqDomainList.data()));
         if (res == ZE_RESULT_SUCCESS && freqDomainCount > 0) {
             for (auto& hFreq : freqDomainList) {
-                zes_freq_properties_t freqProps;
+                zes_freq_properties_t freqProps = {};
                 XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetProperties(hFreq, &freqProps));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
