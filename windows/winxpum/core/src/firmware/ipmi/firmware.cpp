@@ -603,40 +603,9 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
         }
     }
 
-#if 0
-	/* CSMC firmware update */
-	if (spi_update_count > 0) {
-		err = csmc_spi_update(csmc_data, csmc_size, spi_update_cards, spi_update_count);
-		if (err)
-			goto exit;
-	}
-#endif
-
-    /*if (rediscover_pci_addr) { // Re-validate PCI address list
-            if (discover_pci_address_list(&cards, pci_address, &pci_address_count)) {
-                    err = get_pci_device_list(pci_address, sizeof(pci_address),
-                            &pci_address_count);
-                    if (err)
-                            pci_address_count = 0;
-            }
-    }
-
-    if (pci_address_count == 0) {
-            log_verbose("Mismatch between number of PCI devices and IPMI devices!\n");
-            err = fw_update_ipmi_reset(cards);
-            do_sleep(WAIT_1_S); // Wait for BSMC to complete reset
-            if (err)
-                    reset_failed = true;
-    }*/
-
     if (!err) {
         XPUM_LOG_INFO("fw_update is successful");
-    } else {
-        /* PCI reset on all known cards */
-        err = pci_reset_devices(pci_address, pci_address_count);
-        if (err)
-            goto exit;
-    }
+    } 
 
     /* Firmware update completion check */
     //TODO for all cards:

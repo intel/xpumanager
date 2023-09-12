@@ -124,42 +124,6 @@ namespace xpum::cli {
             if (this->opts->tileId >= 0 && !this->opts->scheduler.empty()) {
                 (*json)["return"] = "unsupported feature";
                 return json;
-                std::vector<std::string> paralist = split(this->opts->scheduler, ",");
-                int val1, val2;
-                std::string command = paralist.at(0);
-                std::for_each(command.begin(), command.end(), [](char& c) {
-                    c = ::tolower(c);
-                });
-                if (command.compare("timeout") == 0) {
-                    if (paralist.size() != 2 || paralist.at(1).empty()) {
-                        (*json)["return"] = "invalid parameter: timeout";
-                        return json;
-                    }
-                    val1 = std::stoi(paralist.at(1));
-                    //json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMEOUT, val1, 0);
-                } else if (command.compare("timeslice") == 0) {
-                    if (paralist.size() != 3 || paralist.at(1).empty() || paralist.at(2).empty()) {
-                        (*json)["return"] = "invalid parameter: timeslice";
-                        return json;
-                    }
-                    val1 = std::stoi(paralist.at(1));
-                    val2 = std::stoi(paralist.at(2));
-                    //json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
-                } else if (command.compare("exclusive") == 0) {
-                    if (paralist.size() != 1) {
-                        (*json)["return"] = "invalid parameter: exclusive";
-                        return json;
-                    }
-                    //json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_EXCLUSIVE, 0, 0);
-                } else {
-                    (*json)["return"] = "invalid scheduler mode";
-                    return json;
-                }
-                if ((*json)["status"] == "OK") {
-                    (*json)["return"] = "Succeed to change the scheduler mode on GPU " + std::to_string(this->opts->deviceId) +
-                                        " tile " + std::to_string(this->opts->tileId) + ".";
-                }
-                return json;
             } else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
                 std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
                 if (paralist.size() >= 1 && !paralist.at(0).empty()) {

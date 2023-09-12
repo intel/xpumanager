@@ -357,7 +357,7 @@ namespace xpum::cli {
         uint32_t count = 5;
         xpum_device_realtime_metrics_t dataList[5];
         xpum_result_t res = xpumGetRealtimeMetrics(xpum_device_id, dataList, &count);
-        if (res != XPUM_OK || count < 0) {
+        if (res != XPUM_OK || count == 0) {
             switch (res) {
                 case XPUM_RESULT_DEVICE_NOT_FOUND:
                     (*json)["error"] = "device not found";
