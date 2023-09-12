@@ -303,6 +303,8 @@ private:
                 res += procValue;
                 res += suffix;
             }
+        } else {
+            res += "N/A";
         }
         return ret;
     }
@@ -319,9 +321,13 @@ private:
         }
         const nlohmann::json propValue = value.apply(obj);
         if (propValue.is_array()) {
-            bool notFirst = false;
-            for (auto sVal : propValue) {
-                notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+            if (propValue.size() > 0) {
+                bool notFirst = false;
+                for (auto sVal : propValue) {
+                    notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+                }
+            } else {
+                res += "N/A";
             }
         }
         else {

@@ -440,9 +440,9 @@ static void dumpAllDeviceInfo(std::ostream &out, std::shared_ptr<nlohmann::json>
             if (value == nullptr) {
                 // No need to fill "" for the Device ID (number) column
                 if (prop->dumpId == 1) {
-                    out << "";
+                    out << "N/A";
                 } else {
-                    out << "\"\"";
+                    out << "\"N/A\"";
                 }
             } else {
                 if (prop->scale > 0) {

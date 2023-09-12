@@ -295,6 +295,8 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
                 res += procValue;
                 res += suffix;
             }
+        } else if (empty) {
+            res += "N/A";
         }
         return ret;
     }
@@ -311,9 +313,13 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
         }
         const nlohmann::json propValue = value.apply(obj);
         if (propValue.is_array()) {
-            bool notFirst = false;
-            for (auto sVal : propValue) {
-                notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+            if (propValue.size() > 0) {
+                bool notFirst = false;
+                for (auto sVal : propValue) {
+                    notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+                }
+            } else if (empty) {
+                res += "N/A";
             }
         } else {
             append_value(res, get_json_value_string(propValue));

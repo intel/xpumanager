@@ -350,6 +350,8 @@ void DumpRawDataTask::start() {
         for (std::size_t i = 0; i < p_this->columnList.size(); i++) {
             auto& dc = p_this->columnList[i];
             auto value = dc.getValue();
+            if (value.empty())
+                value = "N/A";
             ss << value;
             if (i < p_this->columnList.size() - 1) {
                 ss << ",";

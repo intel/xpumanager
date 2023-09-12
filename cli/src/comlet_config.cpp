@@ -32,7 +32,7 @@ static CharTableConfig ComletDeviceConfiguration(R"({
                 { "label": "Power Limit (w) ", "value": "power_limit" },
                 { "label": "  Valid Range", "value": "power_vaild_range" },
                 {"rowTitle": " " },
-                { "label": "Memory ECC", "value": " " },
+                { "rowTitle": "Memory ECC:" },
                 { "label": "  Current", "value": "memory_ecc_current_state" },
                 { "label": "  Pending", "value": "memory_ecc_pending_state" }
             ]
@@ -71,7 +71,7 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "Engine Type", "value": "media_engine" },
                 { "label": "  Performance Factor", "value": "media_performance_factor" },
                 {"rowTitle": " " },
-                { "label": "Xe Link ports", "value": " " },
+                { "rowTitle": "Xe Link ports:" },
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
