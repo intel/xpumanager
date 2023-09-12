@@ -92,7 +92,7 @@ namespace xpum::cli {
     private:
         const std::string command;
         const std::string description;
-        CLI::App* subCLIApp;
+        CLI::App* subCLIApp = nullptr;
 
     public:
         bool printHelpWhenNoArgs = 0;

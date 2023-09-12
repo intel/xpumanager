@@ -152,10 +152,6 @@ namespace xpum {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
                     uint32_t euCount = tileCount * props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
-                    p_gpu->zes_sub_device_handle_num = 0;
-                    XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &p_gpu->zes_sub_device_handle_num, nullptr));
-                    p_gpu->zes_sub_device_handle[p_gpu->zes_sub_device_handle_num];
-                    XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &p_gpu->zes_sub_device_handle_num, p_gpu->zes_sub_device_handle));
 
                     zes_pci_properties_t pci_props = {};
 

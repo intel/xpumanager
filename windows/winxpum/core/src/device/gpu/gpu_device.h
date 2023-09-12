@@ -22,10 +22,6 @@ namespace xpum {
 
 		GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, const ze_driver_handle_t& driver, std::vector<DeviceCapability>& capabilities);
 
-		zes_device_handle_t zes_sub_device_handle[8];
-
-        uint32_t zes_sub_device_handle_num =8 ;
-
 		void getPower(std::shared_ptr<MeasurementData>& data) noexcept override;
 
 		void getActuralRequestFrequency(std::shared_ptr<MeasurementData>& data, MeasurementType type) noexcept override;
@@ -77,8 +73,6 @@ namespace xpum {
 		void getDeviceFrequencyRange(int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) noexcept override;
 
 		bool setDeviceFrequencyRange(int32_t tileId, double min, double max) noexcept override;
-
-		void getsubDeviceList(std::vector<int32_t>& subDeviceList) noexcept override;
 
         void getFreqAvailableClocks(int32_t tileId, std::vector<double>& clocksList) noexcept override;
 
