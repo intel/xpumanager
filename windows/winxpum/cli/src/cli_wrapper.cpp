@@ -43,8 +43,13 @@ namespace xpum::cli {
     }
 
     int CLIWrapper::printResult(std::ostream& out) {
-        auto versionOpt = this->cliApp.get_option("-v");
-        if (!versionOpt->empty()) {
+        CLI::Option *opt = nullptr;
+        try {
+            opt = cliApp.get_option("-v");
+        } catch (...) {
+            return XPUM_CLI_ERROR_GENERIC_ERROR;
+        }
+        if (!opt->empty()) {
             ComletVersion comlet;
             this->coreStub = std::make_shared<DllCoreStub>();
             comlet.coreStub = this->coreStub;
