@@ -3688,11 +3688,14 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             std::vector<zes_mem_handle_t> mems(mem_module_count);
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
+                bool meet_zes_mem_health_unkown = false;
                 for (auto& mem : mems) {
                     zes_mem_state_t memory_state = {};
                     memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &memory_state));
                     if (res == ZE_RESULT_SUCCESS) {
+                        if (memory_state.health == ZES_MEM_HEALTH_UNKNOWN)
+                            meet_zes_mem_health_unkown = true;
                         if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
                             status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
                             description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_OK);
@@ -3710,6 +3713,10 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                             description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_REPLACE);
                         }
                     }
+                }
+                if (meet_zes_mem_health_unkown == true && status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+                    status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
+                    description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN);
                 }
             }
         }
