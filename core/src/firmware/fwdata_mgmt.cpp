@@ -34,17 +34,25 @@ static bool validateImageFormat(std::vector<char>& buffer){
     return type == IGSC_IMAGE_TYPE_FW_DATA;
 }
 
-static bool isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::string devicePath) {
+bool isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::string devicePath) {
     struct igsc_fwdata_image* oimg = NULL;
     int ret;
     // image
+    struct igsc_fwdata_version img_version;
     ret = igsc_image_fwdata_init(&oimg, (const uint8_t*)buffer.data(), buffer.size());
     if (ret != IGSC_SUCCESS) {
         igsc_image_fwdata_release(oimg);
         return false;
     }
+    ret = igsc_image_fwdata_version(oimg, &img_version);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("Failed to get GFX_DATA version from image");
+        igsc_image_fwdata_release(oimg);
+        return false;
+    }
     // device
     struct igsc_device_info dev_info;
+    struct igsc_fwdata_version dev_version;
     struct igsc_device_handle handle;
     ret = igsc_device_init_by_device(&handle, devicePath.c_str());
     if (ret != IGSC_SUCCESS) {
@@ -60,9 +68,46 @@ static bool isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::str
     }
 
     ret = igsc_image_fwdata_match_device(oimg, &dev_info);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("The image is not compatible with the device\nDevice info doesn't match image device Id extension\n");
+        igsc_image_fwdata_release(oimg);
+        igsc_device_close(&handle);
+        return false;
+    }
+
+    ret = igsc_device_fwdata_version(&handle, &dev_version);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("Fail to get GFX_DATA version from dev {}", devicePath);
+        igsc_image_fwdata_release(oimg);
+        igsc_device_close(&handle);
+        return false;
+    }
+
+    bool update = false;
+    uint8_t cmp = igsc_fwdata_version_compare(&img_version, &dev_version);
+    switch (cmp) {
+        case IGSC_FWDATA_VERSION_ACCEPT:
+            update = true;
+            break;
+        case IGSC_FWDATA_VERSION_OLDER_VCN:
+            XPUM_LOG_INFO("Installed VCN version is newer");
+            update = true;
+            break;
+        case IGSC_FWDATA_VERSION_REJECT_DIFFERENT_PROJECT:
+            XPUM_LOG_ERROR("firmware data version is not compatible with the installed one (project version)");
+            break;
+        case IGSC_FWDATA_VERSION_REJECT_VCN:
+            XPUM_LOG_ERROR("firmware data version is not compatible with the installed one (VCN version)");
+            break;
+        case IGSC_FWDATA_VERSION_REJECT_OEM_MANUF_DATA_VERSION:
+            XPUM_LOG_ERROR("firmware data version is not compatible with the installed one (OEM version)");
+            break;
+        default:
+            XPUM_LOG_ERROR("firmware data version error in comparison\n");
+    }
     igsc_image_fwdata_release(oimg);
     igsc_device_close(&handle);
-    return ret == IGSC_SUCCESS;
+    return update;
 }
 
 static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
