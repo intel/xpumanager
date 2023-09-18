@@ -1913,6 +1913,7 @@ std::string errorTypeToStr(xpum_precheck_error_type_t error_type) {
         case XPUM_HUC_DISABLED: ret = "HuC Disabled"; break;
         case XPUM_HUC_NOT_RUNNING: ret = "HuC Not Running"; break;
         case XPUM_LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
+        case XPUM_MEMORY_ERROR: ret = "Memory Error"; break;
         default: break;
     }
     return ret;

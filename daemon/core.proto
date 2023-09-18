@@ -259,6 +259,7 @@ enum PrecheckErrorType {
     HUC_DISABLED = 11;
     HUC_NOT_RUNNING = 12;
     LEVEL_ZERO_METRICS_INIT_ERROR = 13;
+    MEMORY_ERROR = 14;
 }
 
 enum PrecheckErrorCategory {

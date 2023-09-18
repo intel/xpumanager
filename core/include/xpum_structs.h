@@ -1179,6 +1179,7 @@ typedef enum xpum_precheck_error_type_t {
     XPUM_HUC_DISABLED = 12,
     XPUM_HUC_NOT_RUNNING = 13,
     XPUM_LEVEL_ZERO_METRICS_INIT_ERROR = 14,
+    XPUM_MEMORY_ERROR = 15
 } xpum_precheck_error_type_t;
 
 typedef struct xpum_precheck_error_t {

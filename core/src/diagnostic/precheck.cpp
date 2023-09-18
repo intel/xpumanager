@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "helper.h"
+#include "device/gpu/gpu_device_stub.h"
 
 namespace xpum {
 
@@ -498,6 +499,15 @@ namespace xpum {
         return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
     }
 
+    void checkMemoryMRCStatus(std::vector<std::string>& gpu_bdfs) {
+        for(auto gpu_bdf : gpu_bdfs) {
+            auto memoryFailedMRCInfo = GPUDeviceStub::parseMemoryFailedMRCInfo(GPUDeviceStub::getRegisterValueFromSys(gpu_bdf, 0x4F104));
+            if (memoryFailedMRCInfo.size() > 0)  {
+                updateErrorComponentInfoList(gpu_bdf, -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, memoryFailedMRCInfo, XPUM_MEMORY_ERROR);
+            }
+        }
+    }
+
     static void toCheck(xpum_precheck_log_source logSource, bool onlyGPU, std::string sinceTime, bool getComponentCount = false) {
         // reset precheck info
         PrecheckManager::component_driver.componentType = XPUM_PRECHECK_COMPONENT_TYPE_DRIVER;
@@ -673,6 +683,11 @@ namespace xpum {
         }
 
         doPreCheckGuCHuCWedgedPCIe(gpu_ids, gpu_bdfs, is_atsm_platform);
+
+        if (is_atsm_platform) {
+            checkMemoryMRCStatus(gpu_bdfs); 
+        }
+
         scanErrorLogLines(logSource, error_patterns, sinceTime);
     }
 
