@@ -538,7 +538,7 @@ namespace xpum {
             if (isPhysicalFunctionDevice(bdf)) {
                 gpu_ids.push_back(std::to_string(gpu_id));
                 gpu_bdfs.push_back(bdf);
-                xpum_precheck_component_info_t gpu_component;
+                xpum_precheck_component_info_t gpu_component {};
                 gpu_component.componentType = XPUM_PRECHECK_COMPONENT_TYPE_GPU;
                 gpu_component.status = has_privilege ? XPUM_PRECHECK_COMPONENT_STATUS_PASS : XPUM_PRECHECK_COMPONENT_STATUS_UNKNOWN;
                 gpu_component.errorDetail[0] = '\0';
@@ -593,7 +593,7 @@ namespace xpum {
                             if (isPhysicalFunctionDevice(bdf)) {
                                 gpu_ids.push_back(std::string(pdirent->d_name).substr(4));
                                 gpu_bdfs.push_back(bdf);
-                                xpum_precheck_component_info_t gpu_component;
+                                xpum_precheck_component_info_t gpu_component {};
                                 gpu_component.componentType = XPUM_PRECHECK_COMPONENT_TYPE_GPU;
                                 gpu_component.status = has_privilege ? XPUM_PRECHECK_COMPONENT_STATUS_PASS : XPUM_PRECHECK_COMPONENT_STATUS_UNKNOWN;
                                 gpu_component.errorDetail[0] = '\0';
@@ -649,7 +649,7 @@ namespace xpum {
                         thermal_value[cnt] = 0;
                         close(fd);
                         int val = std::stoi(thermal_value)/1000;
-                        xpum_precheck_component_info_t cpu_component;
+                        xpum_precheck_component_info_t cpu_component {};
                         cpu_component.componentType = XPUM_PRECHECK_COMPONENT_TYPE_CPU;
                         cpu_component.status = has_privilege ? XPUM_PRECHECK_COMPONENT_STATUS_PASS : XPUM_PRECHECK_COMPONENT_STATUS_UNKNOWN;
                         cpu_component.errorId = -1;

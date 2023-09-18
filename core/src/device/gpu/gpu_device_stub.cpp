@@ -1744,6 +1744,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
         } else {
             throw BaseException("Failed to read register value from sys");        
         }
+    } else if (temp_sensor_count == 0) {
         throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
