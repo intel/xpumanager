@@ -359,7 +359,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
         uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
-        if (engine_index != std::numeric_limits<uint32_t>::max()) {
+        if (engine_index != std::numeric_limits<uint32_t>::max() && engine_datas_iter->second.current != std::numeric_limits<uint64_t>::max()) {
             xpum_device_engine_stats_t data;
             data.isTileData = engine_datas_iter->second.on_subdevice;
             data.tileId = engine_datas_iter->second.subdevice_id;
