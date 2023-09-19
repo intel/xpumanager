@@ -21,8 +21,6 @@
 
 namespace xpum {
 
-#define NVMEM_SIZE_LIMIT (16777216) // 16M, the size of PVC ifwi
-
 static const std::string DEV_TOP = "/sys/devices";
 
 static std::string getParentDirectory(const std::string& path) {
@@ -168,42 +166,28 @@ static uint32_t crc32c(const std::vector<uint8_t>& byte_data, uint32_t crc = 0) 
     return crc;
 }
 
+#define NVMEM_HEADER_SIZE 8192
+#define NVMEM_BLOB_SIZE_LIMIT ((1024 * 1024) * 2 + NVMEM_HEADER_SIZE)
 static std::vector<uint8_t> getNvmemData(const std::string& nvmem) {
     if (nvmem.length() == 0) {
         return std::vector<uint8_t>();
     }
-    std::ifstream file(nvmem, std::ios::binary);
-    if (!file) {
-        XPUM_LOG_TRACE("Fail to open file: {}", nvmem);
+
+    std::vector<uint8_t> buf(NVMEM_BLOB_SIZE_LIMIT);
+    FILE* fp = fopen(nvmem.c_str(), "rb");
+    if (!fp) {
         return std::vector<uint8_t>();
     }
+    size_t ret = fread(reinterpret_cast<char*>(buf.data()), sizeof(char), NVMEM_BLOB_SIZE_LIMIT, fp);
 
-    file.seekg(0, std::ios::end);
-    std::streamsize size = file.tellg();
-
-    if (size <= 8192) {
+    if (ret <= NVMEM_HEADER_SIZE) {
         XPUM_LOG_TRACE("{} size <= 8192", nvmem);
-        file.close();
+        fclose(fp);
         return std::vector<uint8_t>();
     }
 
-    if (size > NVMEM_SIZE_LIMIT) {
-        XPUM_LOG_TRACE("{} size > {}", nvmem, NVMEM_SIZE_LIMIT);
-        size = NVMEM_SIZE_LIMIT;
-    }
-
-    // skip nvmem header
-    file.seekg(8192, std::ios::beg);
-
-    std::vector<uint8_t> blob_data(size - 8192);
-
-    file.read(reinterpret_cast<char*>(blob_data.data()), size - 8192);
-
-    if (!file) {
-        XPUM_LOG_TRACE("Fail to read from {}", nvmem);
-        blob_data.clear();
-    }
-    file.close();
+    std::vector<uint8_t> blob_data(buf.begin() + NVMEM_HEADER_SIZE, buf.end());
+    fclose(fp);
 
     return blob_data;
 }
