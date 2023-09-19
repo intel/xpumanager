@@ -57,10 +57,6 @@ uint8_t *read_file(const char *path, size_t *read_size) {
         }
     }
 
-    if (buffer_size <= 0) {
-        goto error;
-    }
-
     buffer = (uint8_t *)malloc(buffer_size);
     if (!buffer) {
         goto error;
