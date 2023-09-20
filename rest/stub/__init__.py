@@ -14,7 +14,7 @@ from .firmwares import runFirmwareFlash, getFirmwareFlashResult
 from .ps import getDeviceUtilByProc, getAllDeviceUtilByProc
 from .topology import getTopology, exportTopology, getTopoXelink
 from .policy import getPolicy, setPolicy, readPolicyNotifyData
-from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, runReset, getConfig, setPortEnabled, setPortBeaconing, setPerformanceFactor, setMemoryecc, runReset
+from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, runReset, getConfig, setPortEnabled, setPortBeaconing, setPerformanceFactor, setMemoryecc, runPpr
 from .dump_raw_data import startDumpRawDataTask, stopDumpRawDataTask, listDumpRawDataTasks
 from .agent_settings import getAllAgentConfig, setAgentConfig
 from .xpum_enums import XpumStatsType, XpumResult, XpumEngineType, XpumDumpType

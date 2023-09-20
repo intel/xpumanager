@@ -88,6 +88,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     bool resetDevice(const std::string& id, bool force);
 
+    bool getPPRDiagHandle(const std::string& id, zes_diag_handle_t& diaghandle);
+
     void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);
 
     void getDeviceUtilByProcess(const std::string& id, uint32_t utilInterval,

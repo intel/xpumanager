@@ -161,6 +161,8 @@ class GPUDeviceStub {
                                 int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit);
 
     static bool resetDevice(const zes_device_handle_t& device, ze_bool_t force);
+    
+    static bool getPPRDiagHandle(const zes_device_handle_t& device, zes_diag_handle_t& diagHandle);
 
     void getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes);
 

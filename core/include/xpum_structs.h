@@ -160,7 +160,8 @@ typedef enum xpum_result_enum {
     XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL = 59,
     XPUM_RESULT_RESET_FAIL = 60, ///< Fail to reset device
     XPUM_API_UNSUPPORTED = 61,
-    XPUM_PRECHECK_INVALID_SINCETIME = 62
+    XPUM_PRECHECK_INVALID_SINCETIME = 62,
+    XPUM_PPR_NOT_FOUND = 63
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -354,6 +355,17 @@ typedef enum xpum_device_config_type_enum {
     XPUM_DEVICE_CONFIG_CORE_FREQ_MAX = 5,
     XPUM_DEVICE_CONFIG_RESET = 6,
 } xpum_device_config_type_t;
+
+typedef enum xpum_diag_result_type_enum
+{
+    XPUM_DIAG_RESULT_NO_ERRORS = 0,                                          ///< Diagnostic completed without finding errors to repair
+    XPUM_DIAG_RESULT_ABORT = 1,                                              ///< Diagnostic had problems running tests
+    XPUM_DIAG_RESULT_FAIL_CANT_REPAIR = 2,                                   ///< Diagnostic had problems setting up repairs
+    XPUM_DIAG_RESULT_REBOOT_FOR_REPAIR = 3,                                  ///< Diagnostics found errors, setup for repair and reboot is required to
+                                                                             ///< complete the process
+    XPUM_DIAG_RESULT_FORCE_UINT32 = 0x7fffffff
+
+} xpum_diag_result_t;
 
 /**************************************************************************/
 /**

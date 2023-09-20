@@ -761,6 +761,7 @@ Options:
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
   --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
                                 BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
+  --ppr                       Apply PPR to the device.
 
 ```
 

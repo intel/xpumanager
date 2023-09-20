@@ -97,6 +97,8 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual bool resetDevice(const std::string& id, bool force) = 0;
 
+    virtual bool getPPRDiagHandle(const std::string& id, zes_diag_handle_t& diagHandle) = 0;
+
     virtual void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) = 0;
 
     virtual void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) = 0;

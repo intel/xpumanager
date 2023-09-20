@@ -356,6 +356,11 @@ bool DeviceManager::resetDevice(const std::string& id, bool force) {
     return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id), (ze_bool_t)force);
 }
 
+bool DeviceManager::getPPRDiagHandle(const std::string& id, zes_diag_handle_t& diagHandle) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().getPPRDiagHandle(getDeviceHandle(id), diagHandle);
+}
+
 bool DeviceManager::getFabricPorts(const std::string& id, std::vector<port_info>& portInfo) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().getFabricPorts(getDeviceHandle(id), portInfo);

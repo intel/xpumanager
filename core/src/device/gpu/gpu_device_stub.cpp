@@ -2774,6 +2774,42 @@ bool GPUDeviceStub::resetDevice(const zes_device_handle_t& device, ze_bool_t for
     }
 }
 
+bool GPUDeviceStub::getPPRDiagHandle(const zes_device_handle_t& device, zes_diag_handle_t& diagHandle) {
+    if (device == nullptr) {
+        return false;
+    }
+    ze_result_t res;
+    uint32_t count = 0;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumDiagnosticTestSuites(device, &count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_diag_handle_t> diagHandles{count};
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumDiagnosticTestSuites(device, &count, diagHandles.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            for(auto diag : diagHandles){
+                zes_diag_properties_t pro{};
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDiagnosticsGetProperties(diag, &pro));
+                if(res == ZE_RESULT_SUCCESS){
+                    std::string ppr_name = "MEMORY_PPR";
+                    if(ppr_name.compare(pro.name) == 0){
+                        diagHandle = diag;
+                        return true;
+                    }
+                } else {
+                    XPUM_LOG_WARN("Failed to call zesDiagnosticsGetProperties");
+                    return false;
+                }
+            }
+        } else {
+            XPUM_LOG_WARN("Failed to call zesDeviceEnumDiagnosticTestSuites");
+            return false;
+        }
+    } else {
+        XPUM_LOG_WARN("Failed to call zesDeviceEnumDiagnosticTestSuites");
+        return false;
+    }
+    return false;
+}
+
 void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes) {
     if (device == nullptr) {
         return;
