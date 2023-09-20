@@ -98,25 +98,25 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 ## Supported OSes
 * XPU Manager
 	* Ubuntu 20.04.3/22.04
-	* RHEL 8.5/8.6
+	* RHEL 8.5/8.6/8.8/9.2
 	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9
 	* SLES 15 SP3/SP4
-	* Windows Server 2019/2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
 * XPU-SMI
 	* Ubuntu 20.04.3/22.04
-	* RHEL 8.5/8.6
+	* RHEL 8.5/8.6/8.8/9.2
 	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9
 	* SLES 15 SP3/SP4
 	* Debian 10.13
+	* Windows Server 2019/2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
   
 ## Documentation
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) and for how to install/uninstall XPU Manager.
 * Refer to the [XPU-SMI Installation Guide](doc/smi_install_guide.md) and for how to install/uninstall XPU-SMI.
 * Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start to use XPU Manager.
 * Refer to the [XPU-SMI CLI User Guide](doc/smi_user_guide.md) to start to use XPU-SMI.
-* Refer to the [XPU Manager Windows CLI User Guide](doc/xpum_win_user_guide.md) to start to use XPU Manager Windows CLI.
+* Refer to the [XPU-SMI Windows CLI User Guide](doc/xpum_win_user_guide.md) to start to use XPU-SMI Windows CLI.
 * Refer to the [XPU Manager amcmcli User Guide](doc/amcmcli_user_guide.md) to start to use XPU Manager amcmcli.
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
 * Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
