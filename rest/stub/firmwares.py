@@ -68,6 +68,8 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="",
         return err_code, "Installed igsc doesn't support PSCBIN firmware update", None
     elif err_code == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA'].value:
         return err_code, "The device doesn't support GFX_CODE_DATA firmware update", None
+    elif err_code == XpumResult['XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE'].value:
+        return err_code, "The GFX_DATA version of image is less than or equal to device", None
     else:
         if len(err_msg):
             return 1, err_msg, None

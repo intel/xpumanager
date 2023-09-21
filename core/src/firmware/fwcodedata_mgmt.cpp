@@ -166,10 +166,11 @@ xpum_result_t FwCodeDataMgmt::flashFwCodeData(FlashFwCodeDataParam &param) {
             return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
         }
 
-        if (isFwDataImageAndDeviceCompatible(dataImg, devicePath)) {
+        auto res = isFwDataImageAndDeviceCompatible(dataImg, devicePath);
+        if (res == XPUM_OK) {
             XPUM_LOG_DEBUG("isNeedUpdateData");
             isNeedUpdateData = true;
-        } else{
+        } else {
             XPUM_LOG_DEBUG("not NeedUpdateData");
         }
 

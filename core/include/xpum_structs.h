@@ -161,7 +161,8 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_RESET_FAIL = 60, ///< Fail to reset device
     XPUM_API_UNSUPPORTED = 61,
     XPUM_PRECHECK_INVALID_SINCETIME = 62,
-    XPUM_PPR_NOT_FOUND = 63
+    XPUM_PPR_NOT_FOUND = 63,
+    XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE = 64
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
