@@ -90,8 +90,6 @@ namespace xpum {
 
         virtual std::map<MeasurementType, std::shared_ptr<MeasurementData>> getRealtimeMetrics() noexcept = 0;
 
-        virtual void getsubDeviceList(std::vector<int32_t>& subDeviceList) noexcept = 0;
-
         virtual void getFreqAvailableClocks(int32_t tileId, std::vector<double>& clocksList) noexcept = 0;
         virtual ~Device() {}
 

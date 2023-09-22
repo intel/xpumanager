@@ -845,6 +845,70 @@ std::string eccActionToString(xpum_ecc_action_t action) {
     return "none";
 }
 
+std::string get_diag_test_result(xpum::xpum_diag_result_type_enum val) {
+    switch (val) {
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_NO_ERRORS:
+            return std::string("No error");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_ABORT:
+            return std::string("Abort");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FAIL_CANT_REPAIR:
+            return std::string("Fail cant repair ");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_REBOOT_FOR_REPAIR:
+            return std::string("reboot for repair");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FORCE_UINT32:
+            return std::string("Force uint32");
+        default:
+            return std::string("Unknown");
+    }
+}
+
+std::string get_diag_test_result_string(xpum::xpum_diag_result_type_enum val) {
+    switch (val) {
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_NO_ERRORS:
+            return std::string("Diagnostic completed without finding errors to repair.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_ABORT:
+            return std::string("Diagnostic had problems running tests.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FAIL_CANT_REPAIR:
+            return std::string("Diagnostic had problems setting up repairs.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_REBOOT_FOR_REPAIR:
+            return std::string("Diagnostics found errors, setup for repair and reboot is required to complete the process.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FORCE_UINT32:
+            return std::string("");
+        default:
+            return std::string("Unknown");
+    }
+}
+
+std::string get_health_state(xpum::xpum_health_status_t val) {
+    switch (val) {
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN:
+            return std::string("Unknown");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_OK:
+            return std::string("OK");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING:
+            return std::string("Warning");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL:
+            return std::string("Critical");
+        default:
+            return std::string("Unknown");
+    }
+}
+
+std::string get_health_state_string(xpum::xpum_health_status_t val) {
+    switch (val) {
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN:
+            return std::string("The memory health cannot be determined.");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_OK:
+            return std::string("All memory channels are healthy.");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING:
+            return std::string("Excessive correctable errors have been detected on one or more channels. Please run \"config --ppr\" to recover this device memory.");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL:
+            return std::string("Operating with reduced memory to cover banks with too many uncorrectable errors.\nDevice should be replaced due to excessive uncorrectable errors.");
+        default:
+            return std::string("The memory health cannot be determined.");
+    }
+}
+
 std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int tileId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
@@ -1366,6 +1430,67 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceFrequencyRange(int deviceI
 
 LOG_ERR:
     XPUM_LOG_AUDIT("Fail to set frequency range %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
+    return json;
+}
+
+
+std::unique_ptr<nlohmann::json> LibCoreStub::applyPPR(int deviceId, bool force) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res;
+    xpum::xpum_health_data_t healthData{};
+    xpum::xpum_health_status_t memoryHealthState{};
+    xpum::xpum_diag_result_t diagResult{};
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        (*json)["error"] = "device Id or tile Id is invalid";
+        (*json)["errno"] = errorNumTranslate(res);
+        goto LOG_ERR;
+    }
+
+    if(!force){
+        res = xpumGetHealth(deviceId, xpum::xpum_health_type_t::XPUM_HEALTH_MEMORY, &healthData);
+        if (res != XPUM_OK) {
+            (*json)["error"] = "get health failed";
+            (*json)["errno"] = errorNumTranslate(res);
+            goto LOG_ERR;
+        }
+    }
+
+    if(force || healthData.status == xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING){
+        // run PPR
+        res = xpumApplyPPR(deviceId, &diagResult, &memoryHealthState);
+
+        if (res != XPUM_OK) {
+            if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+                (*json)["error"] = "device Id or tile Id is invalid";
+            } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
+                (*json)["error"] = "device is updating firmware";
+            } else if (res == XPUM_PPR_NOT_FOUND) {
+                (*json)["error"] = "PPR diag handle is not found";
+            } else {
+                (*json)["error"] = "Error";
+            }
+            (*json)["errno"] = errorNumTranslate(res);
+            goto LOG_ERR;
+        } else {
+            (*json)["status"] = "OK";
+            (*json)["memory_health_result"] = get_health_state(memoryHealthState);
+            (*json)["memory_health_result_string"] = get_health_state_string(memoryHealthState);
+            (*json)["ppr_diag_result"] = get_diag_test_result(diagResult);
+            (*json)["ppr_diag_result_string"] = get_diag_test_result_string(diagResult);
+            return json;
+        }
+    } else {
+        (*json)["status"] = "OK";
+        (*json)["memory_health_result"] = get_health_state(healthData.status);
+        (*json)["memory_health_result_string"] = get_health_state_string(healthData.status);
+        // not contain ppr_diag_result indicate that the ppr is not applied.
+        //(*json)["ppr_diag_result"] = "";
+        return json;
+    }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to apply PPR with force == %d, %s", force, (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
@@ -1913,6 +2038,7 @@ std::string errorTypeToStr(xpum_precheck_error_type_t error_type) {
         case XPUM_HUC_DISABLED: ret = "HuC Disabled"; break;
         case XPUM_HUC_NOT_RUNNING: ret = "HuC Not Running"; break;
         case XPUM_LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
+        case XPUM_MEMORY_ERROR: ret = "Memory Error"; break;
         default: break;
     }
     return ret;

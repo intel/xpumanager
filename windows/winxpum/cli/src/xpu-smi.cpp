@@ -100,6 +100,9 @@ int main(int argc, char** argv) {
             auto err = app.exit(e);
             return err != 0 ? XPUM_CLI_ERROR_BAD_ARGUMENT : 0;
         }
+        catch (...) {
+            return XPUM_CLI_ERROR_GENERIC_ERROR;
+        }
     }
 
     return wrapper.printResult(std::cout);

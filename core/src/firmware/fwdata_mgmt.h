@@ -51,4 +51,6 @@ class FwDataMgmt {
     std::string flashFwErrMsg;
 };
 
+xpum_result_t isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::string devicePath);
+
 } // namespace xpum

@@ -29,8 +29,6 @@ namespace xpum {
 
         void getDeviceList(std::vector<std::shared_ptr<Device>>& devices) override;
 
-        void getsubDeviceList(const std::string& id, std::vector<int32_t>& subDeviceList) override;
-
         std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf) override;
 
         std::shared_ptr<Device> getDevice(const std::string& id) override;

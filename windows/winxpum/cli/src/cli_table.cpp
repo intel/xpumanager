@@ -93,7 +93,11 @@ const bool CharTableConfigCellSingleSubItems::append_value(std::string& res, con
         if (itNF) {
             res += ", ";
         }
-        res += it->apply(obj);
+        auto str = it->apply(obj);
+        if (str.empty())
+            res += "N/A";
+        else
+            res += str;
         itNF = true;
     }
     return true;

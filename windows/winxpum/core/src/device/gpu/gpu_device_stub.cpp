@@ -152,10 +152,6 @@ namespace xpum {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
                     uint32_t euCount = tileCount * props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
-                    p_gpu->zes_sub_device_handle_num = 0;
-                    XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &p_gpu->zes_sub_device_handle_num, nullptr));
-                    p_gpu->zes_sub_device_handle[p_gpu->zes_sub_device_handle_num];
-                    XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &p_gpu->zes_sub_device_handle_num, p_gpu->zes_sub_device_handle));
 
                     zes_pci_properties_t pci_props = {};
 
@@ -509,10 +505,12 @@ namespace xpum {
                     uint32_t pCount = 0;
                     res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, nullptr);
                     double clockArray[255];
-                    if (res == ZE_RESULT_SUCCESS) {
+                    if (res == ZE_RESULT_SUCCESS && pCount <= 255) {
                         res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, clockArray);
-                        for (uint32_t i = 0; i < pCount; i++) {
-                            clocksList.push_back(clockArray[i]);
+                        if (res == ZE_RESULT_SUCCESS) {
+                            for (uint32_t i = 0; i < pCount; i++) {
+                                clocksList.push_back(clockArray[i]);
+                            }
                         }
                     }
                 }
@@ -584,7 +582,8 @@ namespace xpum {
                     if (res == ZE_RESULT_SUCCESS) {
                         XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
                         if (res == ZE_RESULT_SUCCESS) {
-                            pf.push_back(*(new PerformanceFactor(prop.onSubdevice, prop.subdeviceId, prop.engines, factor)));
+                            PerformanceFactor p(prop.onSubdevice, prop.subdeviceId, prop.engines, factor);
+                            pf.push_back(p);
                             continue;
                         }
                     } else {
@@ -1346,7 +1345,7 @@ namespace xpum {
                 if (res == ZE_RESULT_SUCCESS) {
                     if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
                         zes_freq_state_t freqState;
-                        XPUM_ZE_HANDLE_LOCK(hFreq, zesFrequencyGetState(hFreq, &freqState));
+                        XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetState(hFreq, &freqState));
                         if (res == ZE_RESULT_SUCCESS) {
                             ret->setCurrent(freqState.throttleReasons);
                         } else {

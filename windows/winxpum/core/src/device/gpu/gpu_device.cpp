@@ -65,12 +65,6 @@ namespace xpum {
         return;
     }
 
-    void GPUDevice::getsubDeviceList(std::vector<int32_t>& subDeviceList) noexcept {
-        subDeviceList.clear();
-        for (int i = 0; i < this->zes_sub_device_handle_num; i++) {
-            subDeviceList.emplace_back(i);
-        }
-    }
     /* void* GPUDevice::getZesDeviceHandle() noexcept {
         return zes_device_handle;
     }*/

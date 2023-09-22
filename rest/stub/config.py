@@ -217,3 +217,11 @@ def runReset(deviceId, force):
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}
+
+
+def runPpr(deviceId, force):
+    resp = stub.applyPPR(core_pb2.ApplyPprRequest(
+        deviceId=deviceId, force=force))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK", "diagResult": resp.diagResult, "currentMemoryState": resp.memoryState}

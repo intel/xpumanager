@@ -2599,6 +2599,80 @@ xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
     return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
+xpum_result_t xpumApplyPPR(xpum_device_id_t deviceId, xpum_diag_result_t* diagResult, xpum_health_status_t* healthState) {
+    std::shared_ptr<Device> p_device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (p_device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    if (p_device->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+
+    if (Core::instance().getFirmwareManager() && Core::instance().getFirmwareManager()->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+
+    zes_diag_handle_t diagHandle{};
+    if(!Core::instance().getDeviceManager()->getPPRDiagHandle(std::to_string(deviceId), diagHandle)){
+        return XPUM_PPR_NOT_FOUND;
+    }
+
+    xpumShutdown();
+    zes_diag_result_t diagRes{};
+    auto res = zesDiagnosticsRunTests(diagHandle, 0, 0, &diagRes);
+    *diagResult = (xpum_diag_result_t)res;
+    XPUM_LOG_TRACE("The result of API zesDiagnosticsRunTests for PPR is {}", res);
+
+    // check the memory state again
+    xpum_health_status_t status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
+    uint32_t mem_module_count = 0;
+    auto result = zesDeviceEnumMemoryModules(p_device->getDeviceHandle(), &mem_module_count, nullptr);
+    if (result == ZE_RESULT_SUCCESS) {
+        std::vector<zes_mem_handle_t> mems(mem_module_count);
+        result = zesDeviceEnumMemoryModules(p_device->getDeviceHandle(), &mem_module_count, mems.data());
+        if (result == ZE_RESULT_SUCCESS) {
+            bool meet_zes_mem_health_unkown = false;
+            for (auto& mem : mems) {
+                zes_mem_state_t memory_state = {};
+                memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                result = zesMemoryGetState(mem, &memory_state);
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (memory_state.health == ZES_MEM_HEALTH_UNKNOWN)
+                            meet_zes_mem_health_unkown = true;
+
+                    if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
+                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+                    }
+                    if (memory_state.health == ZES_MEM_HEALTH_DEGRADED && (int)status < ZES_MEM_HEALTH_DEGRADED) {
+                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+                    }
+                    if (memory_state.health == ZES_MEM_HEALTH_CRITICAL && (int)status < ZES_MEM_HEALTH_CRITICAL) {
+                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
+                        break;
+                    }
+                    if (memory_state.health == ZES_MEM_HEALTH_REPLACE && (int)status < ZES_MEM_HEALTH_REPLACE) {
+                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
+                        break;
+                    }
+                } else {
+                    XPUM_LOG_WARN("Failed to call zesMemoryGetState");
+                }
+            }
+
+            if (meet_zes_mem_health_unkown && status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
+            }
+
+        } else {
+            XPUM_LOG_WARN("Failed to call zesDeviceEnumMemoryModules");
+        }
+    } else {
+        XPUM_LOG_WARN("Failed to call zesDeviceEnumMemoryModules");
+    }
+    *healthState = status;
+    return XPUM_OK;
+}
+
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {

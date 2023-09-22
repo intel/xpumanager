@@ -1674,46 +1674,54 @@ void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t
     invokeTask(callback, toGetTemperature, device, type);
 }
 
-int GPUDeviceStub::get_register_value_from_sys(const zes_device_handle_t& device, uint64_t offset) {
-    int val = -1;
+uint32_t GPUDeviceStub::getRegisterValueFromSys(zes_device_handle_t device, uint64_t offset) {
+    if (device == nullptr)
+        return (uint32_t)-1;
     ze_result_t res;
     zes_pci_properties_t pci_props = {};
     pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+    pci_props.pNext = nullptr;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
     if (res == ZE_RESULT_SUCCESS) {
-        std::string bdf_address;
-        bdf_address = to_string(pci_props.address);
-        std::string resource_file = "/sys/bus/pci/devices/" + bdf_address + "/resource0";
-        int fd;
-        void *map_base, *virt_addr;
-        uint64_t read_result;
-        char *filename;
-        off_t target, target_base;
-        int type_width = 4;
-        int map_size = 4096UL;
-
-        filename = const_cast<char*>(resource_file.c_str());
-        target = offset;
-        if ((fd = open(filename, O_RDONLY | O_SYNC)) == -1) {
-            return -1;
-        }
-        target_base = target & ~(sysconf(_SC_PAGE_SIZE)-1);
-        if (target + type_width - target_base > map_size)
-            map_size = target + type_width - target_base;
-        
-        map_base = mmap(0, map_size, PROT_READ, MAP_SHARED, fd, target_base);
-
-        if (map_base == (void *) -1) {
-            close(fd);
-            return -1;
-        }
-        virt_addr = (uint8_t *)map_base + target - target_base;
-        read_result = *((uint32_t *) virt_addr);
-        val = read_result;
-
-        munmap(map_base, map_size);
-        close(fd);
+        return getRegisterValueFromSys(to_string(pci_props.address), offset);
     }
+    
+    return (uint32_t)-1;
+}
+
+uint32_t GPUDeviceStub::getRegisterValueFromSys(std::string bdfAddress, uint64_t offset) {
+    if (bdfAddress.empty())
+        return (uint32_t)-1;
+    std::string resource_file = "/sys/bus/pci/devices/" + bdfAddress + "/resource0";
+    int fd;
+    void *map_base, *virt_addr;
+    uint64_t read_result;
+    char *filename;
+    off_t target, target_base;
+    int type_width = 4;
+    int map_size = 4096UL;
+
+    filename = const_cast<char*>(resource_file.c_str());
+    target = offset;
+    if ((fd = open(filename, O_RDONLY | O_SYNC)) == -1) {
+        return (uint32_t)-1;
+    }
+    target_base = target & ~(sysconf(_SC_PAGE_SIZE)-1);
+    if (target + type_width - target_base > map_size)
+        map_size = target + type_width - target_base;
+    
+    map_base = mmap(0, map_size, PROT_READ, MAP_SHARED, fd, target_base);
+
+    if (map_base == (void *) -1) {
+        close(fd);
+        return (uint32_t)-1;
+    }
+    virt_addr = (uint8_t *)map_base + target - target_base;
+    read_result = *((uint32_t *) virt_addr);
+    uint32_t val = read_result;
+
+    munmap(map_base, map_size);
+    close(fd);
     return val;
 }
 
@@ -1727,22 +1735,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-    if (temp_sensor_count == 0) {
-        zes_device_properties_t props = {};
-        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
-        if (type == ZES_TEMP_SENSORS_GPU && res == ZE_RESULT_SUCCESS 
-            && (to_hex_string(props.core.deviceId).find("56c0") != std::string::npos 
-                || to_hex_string(props.core.deviceId).find("56c1") != std::string::npos)) {
-            int val = get_register_value_from_sys(device, 0x145978);
-            if (val > 0) {
-                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                return ret;
-            } else {
-                throw BaseException("Failed to read register value from sys");        
-            }
+    if (temp_sensor_count == 0 && type == ZES_TEMP_SENSORS_GPU && Utility::isATSMPlatform(device)) {
+        int val = (int)getRegisterValueFromSys(device, 0x145978);
+        if (val > 0) {
+            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+            ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+            return ret;
+        } else {
+            throw BaseException("Failed to read register value from sys");        
         }
+    } else if (temp_sensor_count == 0) {
         throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
@@ -2772,6 +2774,42 @@ bool GPUDeviceStub::resetDevice(const zes_device_handle_t& device, ze_bool_t for
     }
 }
 
+bool GPUDeviceStub::getPPRDiagHandle(const zes_device_handle_t& device, zes_diag_handle_t& diagHandle) {
+    if (device == nullptr) {
+        return false;
+    }
+    ze_result_t res;
+    uint32_t count = 0;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumDiagnosticTestSuites(device, &count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_diag_handle_t> diagHandles{count};
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumDiagnosticTestSuites(device, &count, diagHandles.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            for(auto diag : diagHandles){
+                zes_diag_properties_t pro{};
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDiagnosticsGetProperties(diag, &pro));
+                if(res == ZE_RESULT_SUCCESS){
+                    std::string ppr_name = "MEMORY_PPR";
+                    if(ppr_name.compare(pro.name) == 0){
+                        diagHandle = diag;
+                        return true;
+                    }
+                } else {
+                    XPUM_LOG_WARN("Failed to call zesDiagnosticsGetProperties");
+                    return false;
+                }
+            }
+        } else {
+            XPUM_LOG_WARN("Failed to call zesDeviceEnumDiagnosticTestSuites");
+            return false;
+        }
+    } else {
+        XPUM_LOG_WARN("Failed to call zesDeviceEnumDiagnosticTestSuites");
+        return false;
+    }
+    return false;
+}
+
 void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes) {
     if (device == nullptr) {
         return;
@@ -3670,6 +3708,55 @@ bool GPUDeviceStub::getFrequencyState(const zes_device_handle_t& device, std::st
     return ret;
 }
 
+std::string GPUDeviceStub::parseMemoryFailedMRCInfo(uint32_t registerValue) {
+    if (registerValue == 0xFFFFFFFF || registerValue == 0) {
+        XPUM_LOG_WARN("Failed to parse memory MRC info: {0:x}", registerValue);
+        return "";
+    }
+    XPUM_LOG_DEBUG("Start to parse memory MRC info: {0:x}", registerValue);
+    /**
+     * scratch register (0x4F104) for memory mrc status
+     * 0x1 in any error status indicates an error
+     * [31:16] – Memtest status, per msu
+     * [15:11] – reserved
+     * [10] – Overall uncorrectable error status, 1 indicates any failure
+     * [9] – Overall memtest error status, 1 indicates any failure
+     * [8] – Overall training error status, 1 indicates any failure
+     * [7:0] – 0x1 indicates MSU is present, not an error, per msu
+    */
+   std::string res;
+   uint8_t msuPresentIndicator = registerValue & 0xFF;
+   uint8_t mrcStatus = (registerValue & 0xFF00) >> 8;
+   uint16_t memTestStatusData = (registerValue & 0xFFFF0000) >> 16;
+   if ((mrcStatus & 1) == 1)
+       res += " MRC Training: Fail;";
+    
+    mrcStatus >>= 1;
+    if ((mrcStatus & 1) == 1)
+        res += " MRC Memory Test: Fail;";
+
+    for (int i = 0; i < 8; i++) {
+        if ((msuPresentIndicator & 1) == 1) {
+            if ((memTestStatusData & 1) == 1) 
+                res += " MSU" + std::to_string(i) + " Channel 0: Fail;";
+            memTestStatusData >>= 1;
+
+            if ((memTestStatusData & 1) == 1)
+                res += " MSU" + std::to_string(i) + " Channel 1: Fail;";
+            memTestStatusData >>= 1;
+
+        } else {
+            memTestStatusData >>= 2;
+        }
+        msuPresentIndicator = msuPresentIndicator >> 1;
+    }
+    // remove leading space
+    if (res.size() > 0 && res[0] == ' ')
+        res = res.substr(1);
+    XPUM_LOG_DEBUG("memory MRC info: {}", res);
+    return res;
+}
+
 void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t* data,
                                     int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit) {
     if (device == nullptr) {
@@ -3688,11 +3775,14 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             std::vector<zes_mem_handle_t> mems(mem_module_count);
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
+                bool meet_zes_mem_health_unkown = false;
                 for (auto& mem : mems) {
                     zes_mem_state_t memory_state = {};
                     memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &memory_state));
                     if (res == ZE_RESULT_SUCCESS) {
+                        if (memory_state.health == ZES_MEM_HEALTH_UNKNOWN)
+                            meet_zes_mem_health_unkown = true;
                         if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
                             status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
                             description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_OK);
@@ -3711,6 +3801,17 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                         }
                     }
                 }
+                if (meet_zes_mem_health_unkown == true && status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+                    status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
+                    description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN);
+                }
+            }
+        }
+        if (Utility::isATSMPlatform(device) && (status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK || status == xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN)) {
+            auto memoryFailedMRCInfo = parseMemoryFailedMRCInfo(getRegisterValueFromSys(device, 0x4F104));
+            if (memoryFailedMRCInfo.size() > 0)  {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
+                description = memoryFailedMRCInfo;   
             }
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
@@ -3777,16 +3878,10 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
         uint32_t temp_sensor_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-        if (temp_sensor_count == 0 && type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
-            zes_device_properties_t props = {};
-            props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
-            if (res == ZE_RESULT_SUCCESS && (to_hex_string(props.core.deviceId).find("56c0") != std::string::npos 
-                    || to_hex_string(props.core.deviceId).find("56c1") != std::string::npos)) {
-                int val = get_register_value_from_sys(device, 0x145978);
-                if (val > 0) {
-                    temp_val = val;
-                }
+        if (temp_sensor_count == 0 && type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && Utility::isATSMPlatform(device)) {
+            int val = (int)getRegisterValueFromSys(device, 0x145978);
+            if (val > 0) {
+                temp_val = val;
             }
         } else if (temp_sensor_count > 0) {
             std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);

@@ -185,7 +185,8 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info.</p>
+<p>Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info.
+On Windows VM with the virtual GPU(s), very limited device info can be provided. The virtual GPU memory size is retrieved with Microsoft DirectX Graphics Infrastructure API. The value may be a little different from what is shown in Windows task manager.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span><span class="o">.</span><span class="n">exe</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                   <span class="o">|</span>

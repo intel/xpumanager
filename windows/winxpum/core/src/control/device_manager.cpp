@@ -40,15 +40,6 @@ namespace xpum {
         }
     }
 
-    void DeviceManager::getsubDeviceList(const std::string& id, std::vector<int32_t>&subDeviceList) {
-        std::unique_lock<std::mutex> lock(this->mutex);
-        for (auto& p_device : this->devices) {
-            if (p_device->getId() == id) {
-                p_device->getsubDeviceList(subDeviceList);
-            }
-        }
-    }
-
     void DeviceManager::getDeviceSusPower(const std::string& id, int32_t& Sus_power, bool& Sus_supported) {
         std::unique_lock<std::mutex> lock(this->mutex);
         for (auto& p_device : this->devices) {

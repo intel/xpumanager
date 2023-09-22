@@ -43,11 +43,13 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t* topolo
             topology->deviceId = deviceId;
             topology->switchCount = 0;
             std::string cpus = Topology::getLocalCpus(bdfAddress);
-            size_t len = cpus.copy(topology->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
+            size_t len = cpus.copy(topology->cpuAffinity.localCPUs, 
+                    XPUM_MAX_CPU_S_LEN - 1);
             topology->cpuAffinity.localCPUs[len] = '\0';
 
             std::string cpulist = Topology::getLocalCpusList(bdfAddress);
-            len = cpulist.copy(topology->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
+            len = cpulist.copy(topology->cpuAffinity.localCPUList, 
+                    XPUM_MAX_CPU_LIST_LEN - 1);
             topology->cpuAffinity.localCPUList[len] = '\0';
         }
     }

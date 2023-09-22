@@ -637,17 +637,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId, xpum_frequ
     if (res != XPUM_OK) {
         return res;
     }
-    /*
-    std::vector<int32_t> subdevices;
-    Core::instance().getDeviceManager()->getsubDeviceList(std::to_string(deviceId), subdevices);
-    if (*count < subdevices.size()) {
-        return XPUM_BUFFER_TOO_SMALL;
-    }
-    *count = subdevices.size();
-    if (dataArray == nullptr) {
-        return XPUM_OK;
-    }
-    */
+
     double min, max;
     std::string clocks;
     bool freq_supported;
@@ -945,7 +935,7 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, const xpum_
 
         std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas = pDevice->getRealtimeMetrics();
         auto datas_iter = m_datas.begin();
-        xpum_device_realtime_metrics_t device_realtime_metrics;
+        xpum_device_realtime_metrics_t device_realtime_metrics {};
         device_realtime_metrics.deviceId = deviceId;
         device_realtime_metrics.isTileData = false;
         device_realtime_metrics.count = 0;
@@ -975,7 +965,7 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, const xpum_
         dataList[index++] = device_realtime_metrics;
 
         for (uint32_t i = 0; i < num_subdevice; i++) {
-            xpum_device_realtime_metrics_t subdevice_realtime_metrics;
+            xpum_device_realtime_metrics_t subdevice_realtime_metrics {};
             subdevice_realtime_metrics.deviceId = deviceId;
             subdevice_realtime_metrics.tileId = i;
             subdevice_realtime_metrics.isTileData = true;

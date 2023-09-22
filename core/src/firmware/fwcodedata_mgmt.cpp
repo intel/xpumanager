@@ -18,6 +18,7 @@
 #include "firmware_manager.h"
 #include "igsc_err_msg.h"
 #include "core/core.h"
+#include "fwdata_mgmt.h"
 
 namespace xpum {
 
@@ -126,115 +127,6 @@ static bool validateImageFormat(std::vector<char>& buffer){
     return type == IGSC_IMAGE_TYPE_FW_DATA;
 }
 
-static bool isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::string devicePath) {
-    struct igsc_fwdata_image* oimg = NULL;
-    int ret;
-    // image
-    ret = igsc_image_fwdata_init(&oimg, (const uint8_t*)buffer.data(), buffer.size());
-    if (ret != IGSC_SUCCESS) {
-        igsc_image_fwdata_release(oimg);
-        return false;
-    }
-    // device
-    struct igsc_device_info dev_info;
-    struct igsc_device_handle handle;
-    ret = igsc_device_init_by_device(&handle, devicePath.c_str());
-    if (ret != IGSC_SUCCESS) {
-        igsc_image_fwdata_release(oimg);
-        igsc_device_close(&handle);
-        return false;
-    }
-    ret = igsc_device_get_device_info(&handle, &dev_info);
-    if (ret != IGSC_SUCCESS) {
-        igsc_image_fwdata_release(oimg);
-        igsc_device_close(&handle);
-        return false;
-    }
-
-    ret = igsc_image_fwdata_match_device(oimg, &dev_info);
-    igsc_image_fwdata_release(oimg);
-    igsc_device_close(&handle);
-    return ret == IGSC_SUCCESS;
-}
-
-static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version) {
-    std::stringstream ss;
-    ss << "0x" << std::hex << fwdata_version->oem_manuf_data_version;
-    return ss.str();
-}
-
-static std::string fwdata_device_version(const char *device_path)
-{
-    struct igsc_fwdata_version fwdata_version;
-    struct igsc_device_handle handle;
-    int ret;
-
-    memset(&handle, 0, sizeof(handle));
-    ret = igsc_device_init_by_device(&handle, device_path);
-    if (ret != IGSC_SUCCESS) {
-        XPUM_LOG_ERROR("Failed to initialize device: {}", device_path);
-        igsc_device_close(&handle);
-        return "";
-    }
-
-    memset(&fwdata_version, 0, sizeof(fwdata_version));
-    ret = igsc_device_fwdata_version(&handle, &fwdata_version);
-    if (ret != IGSC_SUCCESS)
-    {
-        if (ret == IGSC_ERROR_PERMISSION_DENIED)
-        {
-            XPUM_LOG_ERROR("Permission denied: missing required credentials to access the device {}", device_path);
-        }
-        else
-        {
-            XPUM_LOG_ERROR("Fail to get fwdata version from device: {}", device_path);
-            // print_device_fw_status(&handle);
-        }
-        igsc_device_close(&handle);
-        return "";
-    }
-
-    auto version = print_fwdata_version(&fwdata_version);
-
-    igsc_device_close(&handle);
-    
-    return version;
-
-}
-
-static std::string getFwDataImageFwVersion(std::vector<char>& buffer) {
-    std::string version = "";
-    if (buffer.size() == 0) return version;
-
-    struct igsc_fwdata_image *oimg = NULL;
-    struct igsc_fwdata_version fwdata_version;
-    int ret;
-
-    ret = igsc_image_fwdata_init(&oimg, (const uint8_t *)buffer.data(), buffer.size());
-    if (ret != IGSC_SUCCESS) {
-        igsc_image_fwdata_release(oimg);
-        return version;
-    }
-
-    ret = igsc_image_fwdata_version(oimg, &fwdata_version);
-    if (ret == IGSC_SUCCESS) {
-        version = print_fwdata_version(&fwdata_version);
-    }
-    return version;
-}
-
-static bool isFwDataImageNewer(std::vector<char>& buffer, std::string devicePath){
-    auto deviceVersion = fwdata_device_version(devicePath.c_str());
-    auto imgVersion = getFwDataImageFwVersion(buffer);
-    if (deviceVersion.empty()||imgVersion.empty()) {
-        return false;
-    }
-    if (std::stoi(imgVersion, nullptr, 16) > std::stoi(deviceVersion, nullptr, 16))
-        return true;
-    else
-        return false;
-}
-
 static bool isGscFwImage(std::vector<char>& buffer) {
     uint8_t type;
     int ret;
@@ -273,14 +165,12 @@ xpum_result_t FwCodeDataMgmt::flashFwCodeData(FlashFwCodeDataParam &param) {
         if (!validateImageFormat(dataImg)) {
             return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
         }
-        if (!isFwDataImageAndDeviceCompatible(dataImg, devicePath)) {
-            return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
-        }
 
-        if (isFwDataImageNewer(dataImg, devicePath)) {
+        auto res = isFwDataImageAndDeviceCompatible(dataImg, devicePath);
+        if (res == XPUM_OK) {
             XPUM_LOG_DEBUG("isNeedUpdateData");
             isNeedUpdateData = true;
-        } else{
+        } else {
             XPUM_LOG_DEBUG("not NeedUpdateData");
         }
 

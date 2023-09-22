@@ -364,7 +364,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value", "scale": 1 }
             ]},
-            { "value": " "},
+            { "rowTitle": " " },
             { "value": "compute_engine_util"},
             { "value": "render_engine_util"},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
@@ -491,7 +491,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
             { "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value", "scale": 1 }
             ]},
-            { "value": " "},
+            { "rowTitle": " " },
             { "value": "compute_engine_util"},
             { "value": "render_engine_util"},
             { "label_tag": "tile_id", "value": "tile_level[]", "subs": [

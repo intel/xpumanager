@@ -864,6 +864,58 @@ static std::string healthStatusEnumToString(HealthStatusType status) {
     return ret;
 }
 
+
+
+std::string get_diag_test_result(xpum::xpum_diag_result_type_enum val) {
+    switch (val) {
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_NO_ERRORS:
+            return std::string("No error");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_ABORT:
+            return std::string("Abort");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FAIL_CANT_REPAIR:
+            return std::string("Fail cant repair ");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_REBOOT_FOR_REPAIR:
+            return std::string("reboot for repair");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FORCE_UINT32:
+            return std::string("Force uint32");
+        default:
+            return std::string("Unknown");
+    }
+}
+
+std::string get_diag_test_result_string(xpum::xpum_diag_result_type_enum val) {
+    switch (val) {
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_NO_ERRORS:
+            return std::string("Diagnostic completed without finding errors to repair.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_ABORT:
+            return std::string("Diagnostic had problems running tests.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FAIL_CANT_REPAIR:
+            return std::string("Diagnostic had problems setting up repairs.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_REBOOT_FOR_REPAIR:
+            return std::string("Diagnostics found errors, setup for repair and reboot is required to complete the process.");
+        case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_FORCE_UINT32:
+            return std::string("");
+        default:
+            return std::string("Unknown");
+    }
+}
+
+std::string get_health_state_string(xpum::xpum_health_status_t val) {
+    switch (val) {
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN:
+            return std::string("The memory health cannot be determined.");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_OK:
+            return std::string("All memory channels are healthy.");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING:
+            return std::string("Excessive correctable errors have been detected on one or more channels. Please run \"config --ppr\" to recover this device memory.");
+        case xpum::xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL:
+            return std::string("Operating with reduced memory to cover banks with too many uncorrectable errors.\nDevice should be replaced due to excessive uncorrectable errors.");
+        default:
+            return std::string("The memory health cannot be determined.");
+    }
+}
+
+
 static std::string healthTypeEnumToString(HealthType type) {
     std::string ret;
     switch (type) {
@@ -1726,6 +1778,69 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceFrequencyRange(int device
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::applyPPR(int deviceId, bool force){
+
+    assert(this->stub != nullptr);
+    auto healthJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext healthContext;
+    HealthDataRequest healthRequest;
+    healthRequest.set_deviceid(deviceId);
+    healthRequest.set_type(HealthType::HEALTH_MEMORY);
+    HealthData healthResponse{};
+    if(!force){
+        grpc::Status status = stub->getHealth(&healthContext, healthRequest, &healthResponse);
+        if (status.ok()) {
+            if (healthResponse.errormsg().length() == 0) {
+                HealthStatusType type = healthResponse.statustype();
+
+                if(type != HealthStatusType::HEALTH_STATUS_WARNING){
+                    (*healthJson)["status"] = "OK";
+                    (*healthJson)["memory_health_result"] = healthStatusEnumToString(healthResponse.statustype());
+                    (*healthJson)["memory_health_result_string"] = healthResponse.description();
+                    return healthJson;
+                }
+            } else {
+                (*healthJson)["error"] = healthResponse.errormsg();
+                (*healthJson)["errno"] = errorNumTranslate(healthResponse.errorno());
+                return healthJson;
+            }
+        } else {
+            (*healthJson)["error"] = status.error_message();
+            (*healthJson)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+            return healthJson;
+        }
+    }
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    ApplyPprRequest request;
+    ApplyPprResponse response;
+
+    request.set_deviceid(deviceId);
+    request.set_force(force);
+    grpc::Status status = stub->applyPPR(&context, request, &response);
+
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+            (*json)["memory_health_result"] = healthStatusEnumToString((HealthStatusType)response.memorystate());
+            (*json)["memory_health_result_string"] = get_health_state_string((xpum::xpum_health_status_t)response.memorystate());
+            (*json)["ppr_diag_result"] = get_diag_test_result((xpum_diag_result_type_enum)response.diagresult());
+            (*json)["ppr_diag_result_string"] = get_diag_test_result_string((xpum_diag_result_type_enum)response.diagresult());
+        } else {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            XPUM_LOG_AUDIT("Fail to apply PPR to device with force == %d, errorMessage: %s", force, response.errormsg().c_str());
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+        XPUM_LOG_AUDIT("Fail to apply PPR to device with force == %d, %s", force, status.error_message().c_str());
+    }
+
+    return json;
+}
+
 std::unique_ptr<nlohmann::json> GrpcCoreStub::resetDevice(int deviceId, bool force) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -2245,6 +2360,7 @@ std::string errorTypeToStr(PrecheckErrorType type) {
         case HUC_DISABLED: ret = "HuC Disabled"; break;
         case HUC_NOT_RUNNING: ret = "HuC Not Running"; break;
         case LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
+        case MEMORY_ERROR: ret = "Memory Error"; break;
         default: break;
     }
     return ret;

@@ -22,8 +22,6 @@ namespace xpum {
 
         virtual void getDeviceList(std::vector<std::shared_ptr<Device>>& devices) = 0;
 
-        virtual void getsubDeviceList(const std::string& id, std::vector<int32_t>& subDeviceList) = 0;
-
         virtual std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf) = 0;
 
         virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;

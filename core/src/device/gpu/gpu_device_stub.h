@@ -161,6 +161,8 @@ class GPUDeviceStub {
                                 int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit);
 
     static bool resetDevice(const zes_device_handle_t& device, ze_bool_t force);
+    
+    static bool getPPRDiagHandle(const zes_device_handle_t& device, zes_diag_handle_t& diagHandle);
 
     void getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes);
 
@@ -186,6 +188,12 @@ class GPUDeviceStub {
     static std::string getPciSlotByPath(std::vector<std::string> pciPath); 
 
     static bool isOamPlatform(zes_device_handle_t device);
+
+    static uint32_t getRegisterValueFromSys(zes_device_handle_t device, uint64_t offset);
+
+    static uint32_t getRegisterValueFromSys(std::string bdfAddress, uint64_t offset);
+
+    static std::string parseMemoryFailedMRCInfo(uint32_t registerValue);
 private: 
     GPUDeviceStub(); 
     ~GPUDeviceStub();
@@ -250,8 +258,6 @@ private:
     static std::string to_string(zes_pci_address_t address);
 
     static std::string to_regex_string(zes_pci_address_t address);
-
-    static int get_register_value_from_sys(const zes_device_handle_t& device, uint64_t offset);
 
     static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
 

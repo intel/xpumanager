@@ -31,6 +31,10 @@ class MemoryEccStateSchema(Schema):
 
 class ResetSchema(Schema):
     None
+
+class PPRSchema(Schema):
+    None
+
 class PortBeaconingSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
@@ -582,6 +586,42 @@ def run_reset(deviceId):
 
     req = request.get_json()
     code, message, data = stub.runReset(deviceId, True)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+def run_ppr(deviceId):
+    """
+    Apply PPR to the device
+    ---
+    put:
+        tags:
+            - "Config"
+        description: Apply PPR to the device
+        parameters:
+            -
+                name: run_ppr
+                in: body
+                description: Apply PPR to the device
+                schema: PPRSchema
+            -
+                name: deviceId
+                in: path
+                description: Device id
+                type: integer
+        responses:
+            200:
+                description: OK
+            500:
+                description: Error
+    """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
+
+    req = request.get_json()
+
+    code, message, data = stub.runPpr(deviceId, True)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

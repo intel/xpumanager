@@ -113,6 +113,9 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA:
             (*json)["error"] = "The device doesn't support GFX_CODE_DATA firmware update";
             return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE:
+            (*json)["error"] = "The GFX_DATA version of image is less than or equal to device";
+            return json;
         default:
             (*json)["error"] = "Unknown error.";
             return json;

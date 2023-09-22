@@ -303,6 +303,8 @@ private:
                 res += procValue;
                 res += suffix;
             }
+        } else {
+            res += "N/A";
         }
         return ret;
     }
@@ -319,9 +321,13 @@ private:
         }
         const nlohmann::json propValue = value.apply(obj);
         if (propValue.is_array()) {
-            bool notFirst = false;
-            for (auto sVal : propValue) {
-                notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+            if (propValue.size() > 0) {
+                bool notFirst = false;
+                for (auto sVal : propValue) {
+                    notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+                }
+            } else {
+                res += "N/A";
             }
         }
         else {
@@ -548,7 +554,7 @@ public:
 
     inline const bool isNewRow(const unsigned int index, const int colIndex = -1) const {
         const int ci = (colIndex < 0) ? cells.size() - 1 : colIndex;
-        return index >= 0 && index < cells[ci]->length() && cells[ci]->at(index) == '\n';
+        return index < cells[ci]->length() && cells[ci]->at(index) == '\n';
     }
 
     inline std::string cutCellContentAt(const int len, const bool newRow, int colIndex = -1) {

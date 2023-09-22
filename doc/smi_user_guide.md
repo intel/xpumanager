@@ -440,6 +440,7 @@ Usage: xpu-smi config [Options]
   xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]
   xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
   xpu-smi config -d [deviceId] --reset
+  xpu-smi config -d [deviceId] --ppr
   
   
 Options:
@@ -461,6 +462,7 @@ Options:
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
   --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
                                 BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
+  --ppr                         Apply PPR to the device.
 
 ```
 

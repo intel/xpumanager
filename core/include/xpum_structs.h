@@ -160,7 +160,9 @@ typedef enum xpum_result_enum {
     XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL = 59,
     XPUM_RESULT_RESET_FAIL = 60, ///< Fail to reset device
     XPUM_API_UNSUPPORTED = 61,
-    XPUM_PRECHECK_INVALID_SINCETIME = 62
+    XPUM_PRECHECK_INVALID_SINCETIME = 62,
+    XPUM_PPR_NOT_FOUND = 63,
+    XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE = 64
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -354,6 +356,17 @@ typedef enum xpum_device_config_type_enum {
     XPUM_DEVICE_CONFIG_CORE_FREQ_MAX = 5,
     XPUM_DEVICE_CONFIG_RESET = 6,
 } xpum_device_config_type_t;
+
+typedef enum xpum_diag_result_type_enum
+{
+    XPUM_DIAG_RESULT_NO_ERRORS = 0,                                          ///< Diagnostic completed without finding errors to repair
+    XPUM_DIAG_RESULT_ABORT = 1,                                              ///< Diagnostic had problems running tests
+    XPUM_DIAG_RESULT_FAIL_CANT_REPAIR = 2,                                   ///< Diagnostic had problems setting up repairs
+    XPUM_DIAG_RESULT_REBOOT_FOR_REPAIR = 3,                                  ///< Diagnostics found errors, setup for repair and reboot is required to
+                                                                             ///< complete the process
+    XPUM_DIAG_RESULT_FORCE_UINT32 = 0x7fffffff
+
+} xpum_diag_result_t;
 
 /**************************************************************************/
 /**
@@ -937,7 +950,7 @@ typedef struct xpum_scheduler_debug_t {
     uint32_t subdevice_Id;
 } xpum_scheduler_debug_t;
 
-#define XPUM_MAX_CPU_LIST_LEN 128
+#define XPUM_MAX_CPU_LIST_LEN 512
 #define XPUM_MAX_CPU_S_LEN 128
 #define XPUM_MAX_PATH_LEN 256
 #define XPUM_MAX_XELINK_PORT 8
@@ -1179,6 +1192,7 @@ typedef enum xpum_precheck_error_type_t {
     XPUM_HUC_DISABLED = 12,
     XPUM_HUC_NOT_RUNNING = 13,
     XPUM_LEVEL_ZERO_METRICS_INIT_ERROR = 14,
+    XPUM_MEMORY_ERROR = 15
 } xpum_precheck_error_type_t;
 
 typedef struct xpum_precheck_error_t {

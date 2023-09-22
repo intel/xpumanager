@@ -99,7 +99,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_engine_ratio{node=\"$Node\"}",
+          "expr": "xpum_engine_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -157,7 +157,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_engine_ratio{node=\"$Node\"}",
+          "expr": "xpum_engine_ratio{instance=\"$Node\"}",
           "instant": false,
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
@@ -241,7 +241,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_frequency_mhz{node=\"$Node\"}*1000000",
+          "expr": "xpum_frequency_mhz{instance=\"$Node\"}*1000000",
           "hide": false,
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}",
@@ -300,7 +300,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_frequency_mhz{node=\"$Node\"}*1000000",
+          "expr": "xpum_frequency_mhz{instance=\"$Node\"}*1000000",
           "hide": false,
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}",
@@ -384,14 +384,14 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_temperature_celsius{node=\"$Node\", location=\"gpu\"}",
+          "expr": "xpum_temperature_celsius{instance=\"$Node\", location=\"gpu\"}",
           "interval": "",
           "legendFormat": "avg: {{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "xpum_max_temperature_celsius{node=\"$Node\", location=\"gpu\"}",
+          "expr": "xpum_max_temperature_celsius{instance=\"$Node\", location=\"gpu\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "max: {{pci_bdf}}/{{sub_dev}}",
@@ -450,14 +450,14 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_temperature_celsius{node=\"$Node\", location=\"gpu\"}",
+          "expr": "xpum_temperature_celsius{instance=\"$Node\", location=\"gpu\"}",
           "interval": "",
           "legendFormat": "avg: {{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "xpum_max_temperature_celsius{node=\"$Node\", location=\"gpu\"}",
+          "expr": "xpum_max_temperature_celsius{instance=\"$Node\", location=\"gpu\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "max: {{pci_bdf}}/{{sub_dev}}",
@@ -541,14 +541,14 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_temperature_celsius{node=\"$Node\", location=\"mem\"}",
+          "expr": "xpum_temperature_celsius{instance=\"$Node\", location=\"mem\"}",
           "interval": "",
           "legendFormat": "avg: {{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "xpum_max_temperature_celsius{node=\"$Node\", location=\"mem\"}",
+          "expr": "xpum_max_temperature_celsius{instance=\"$Node\", location=\"mem\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "max: {{pci_bdf}}/{{sub_dev}}",
@@ -607,14 +607,14 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_temperature_celsius{node=\"$Node\", location=\"mem\"}",
+          "expr": "xpum_temperature_celsius{instance=\"$Node\", location=\"mem\"}",
           "interval": "",
           "legendFormat": "avg: {{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "xpum_max_temperature_celsius{node=\"$Node\", location=\"mem\"}",
+          "expr": "xpum_max_temperature_celsius{instance=\"$Node\", location=\"mem\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "max: {{pci_bdf}}/{{sub_dev}}",
@@ -698,7 +698,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_power_watts{node=\"$Node\"}",
+          "expr": "xpum_power_watts{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -756,7 +756,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_power_watts{node=\"$Node\"}",
+          "expr": "xpum_power_watts{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -839,7 +839,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_energy_joules_total{node=\"$Node\"}",
+          "expr": "xpum_energy_joules_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -900,7 +900,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_energy_joules_total{node=\"$Node\"}",
+          "expr": "xpum_energy_joules_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -983,7 +983,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_used_bytes{node=\"$Node\"}",
+          "expr": "xpum_memory_used_bytes{instance=\"$Node\"}",
           "instant": false,
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
@@ -1067,7 +1067,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_read_bytes_total{node=\"$Node\"}",
+          "expr": "xpum_memory_read_bytes_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1128,7 +1128,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(xpum_memory_read_bytes_total{node=\"$Node\"}[10s])",
+          "expr": "rate(xpum_memory_read_bytes_total{instance=\"$Node\"}[10s])",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1211,7 +1211,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_write_bytes_total{node=\"$Node\"}",
+          "expr": "xpum_memory_write_bytes_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1272,7 +1272,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(xpum_memory_write_bytes_total{node=\"$Node\"}[10s])",
+          "expr": "rate(xpum_memory_write_bytes_total{instance=\"$Node\"}[10s])",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1355,7 +1355,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_ratio{node=\"$Node\"}",
+          "expr": "xpum_memory_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1438,7 +1438,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_bandwidth_ratio{node=\"$Node\"}",
+          "expr": "xpum_memory_bandwidth_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1521,7 +1521,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_engine_group_ratio{node=\"$Node\"}",
+          "expr": "xpum_engine_group_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}",
           "refId": "A"
@@ -1606,7 +1606,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_eu_active_ratio{node=\"$Node\"}",
+          "expr": "xpum_eu_active_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1689,7 +1689,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_pcie_read_bytes_total{node=\"$Node\"}",
+          "expr": "xpum_pcie_read_bytes_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1750,7 +1750,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(xpum_pcie_read_bytes_total{node=\"$Node\"}[10s])",
+          "expr": "rate(xpum_pcie_read_bytes_total{instance=\"$Node\"}[10s])",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1833,7 +1833,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_pcie_write_bytes_total{node=\"$Node\"}",
+          "expr": "xpum_pcie_write_bytes_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1894,7 +1894,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(xpum_pcie_write_bytes_total{node=\"$Node\"}[10s])",
+          "expr": "rate(xpum_pcie_write_bytes_total{instance=\"$Node\"}[10s])",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -1979,7 +1979,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_eu_idle_ratio{node=\"$Node\"}",
+          "expr": "xpum_eu_idle_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -2061,7 +2061,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_programming_errors_total{node=\"$Node\"}",
+          "expr": "xpum_programming_errors_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -2144,7 +2144,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_cache_errors_total{node=\"$Node\"}",
+          "expr": "xpum_cache_errors_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}",
           "refId": "A"
@@ -2227,7 +2227,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_driver_errors_total{node=\"$Node\"}",
+          "expr": "xpum_driver_errors_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}",
           "refId": "A"
@@ -2312,7 +2312,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_eu_stall_ratio{node=\"$Node\"}",
+          "expr": "xpum_eu_stall_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -2394,7 +2394,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_resets_total{node=\"$Node\"}",
+          "expr": "xpum_resets_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}",
           "refId": "A"
@@ -2476,7 +2476,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_non_compute_errors_total{node=\"$Node\"}",
+          "expr": "xpum_non_compute_errors_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}",
           "refId": "A"
@@ -2559,7 +2559,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_per_engine_ratio{node=\"$Node\"}",
+          "expr": "xpum_per_engine_ratio{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}}: {{type}}-{{engine_id}}",
           "refId": "A"
@@ -2642,7 +2642,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_fabric_tx_bytes_total{node=\"$Node\"}",
+          "expr": "xpum_fabric_tx_bytes_total{instance=\"$Node\"}",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}} -> {{dst_pci_bdf}}/{{dst_sub_dev}}",
           "refId": "A"
@@ -2703,7 +2703,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(xpum_fabric_tx_bytes_total{node=\"$Node\"}[10s])",
+          "expr": "rate(xpum_fabric_tx_bytes_total{instance=\"$Node\"}[10s])",
           "interval": "",
           "legendFormat": "{{pci_bdf}}/{{sub_dev}} -> {{dst_pci_bdf}}/{{dst_sub_dev}}",
           "refId": "A"

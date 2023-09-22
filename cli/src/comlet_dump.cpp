@@ -690,6 +690,8 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
                 for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
                     auto dc = columnSchemaList[i];
                     auto value = dc.getValue();
+                    if (value.empty())
+                        value = "N/A";
                     if (value.size() < 4) {
                         out << std::string(4 - value.size(), ' ');
                     }
@@ -1132,6 +1134,8 @@ void ComletDump::printByLine(std::ostream &out) {
                 for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
                     auto dc = columnSchemaList[i];
                     auto value = dc.getValue();
+                    if (value.empty())
+                        value = "N/A";
                     if (value.size() < 4) {
                         out << std::string(4 - value.size(), ' ');
                     }

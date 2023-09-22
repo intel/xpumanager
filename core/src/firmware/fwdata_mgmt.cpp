@@ -34,35 +34,81 @@ static bool validateImageFormat(std::vector<char>& buffer){
     return type == IGSC_IMAGE_TYPE_FW_DATA;
 }
 
-static bool isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::string devicePath) {
+xpum_result_t isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::string devicePath) {
     struct igsc_fwdata_image* oimg = NULL;
     int ret;
     // image
+    struct igsc_fwdata_version img_version;
     ret = igsc_image_fwdata_init(&oimg, (const uint8_t*)buffer.data(), buffer.size());
     if (ret != IGSC_SUCCESS) {
         igsc_image_fwdata_release(oimg);
-        return false;
+        return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+    }
+    ret = igsc_image_fwdata_version(oimg, &img_version);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("Failed to get GFX_DATA version from image");
+        igsc_image_fwdata_release(oimg);
+        return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
     }
     // device
     struct igsc_device_info dev_info;
+    struct igsc_fwdata_version dev_version;
     struct igsc_device_handle handle;
     ret = igsc_device_init_by_device(&handle, devicePath.c_str());
     if (ret != IGSC_SUCCESS) {
         igsc_image_fwdata_release(oimg);
         igsc_device_close(&handle);
-        return false;
+        return XPUM_GENERIC_ERROR;
     }
     ret = igsc_device_get_device_info(&handle, &dev_info);
     if (ret != IGSC_SUCCESS) {
         igsc_image_fwdata_release(oimg);
         igsc_device_close(&handle);
-        return false;
+        return XPUM_GENERIC_ERROR;
     }
 
     ret = igsc_image_fwdata_match_device(oimg, &dev_info);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("The image is not compatible with the device\nDevice info doesn't match image device Id extension\n");
+        igsc_image_fwdata_release(oimg);
+        igsc_device_close(&handle);
+        return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+    }
+
+    ret = igsc_device_fwdata_version(&handle, &dev_version);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("Fail to get GFX_DATA version from dev {}", devicePath);
+        igsc_image_fwdata_release(oimg);
+        igsc_device_close(&handle);
+        return XPUM_GENERIC_ERROR;
+    }
+
+    xpum_result_t result = XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+    uint8_t cmp = igsc_fwdata_version_compare(&img_version, &dev_version);
+    switch (cmp) {
+        case IGSC_FWDATA_VERSION_ACCEPT:
+            result = XPUM_OK;
+            break;
+        case IGSC_FWDATA_VERSION_OLDER_VCN:
+            result = XPUM_OK;
+            XPUM_LOG_INFO("Installed VCN version is newer");
+            break;
+        case IGSC_FWDATA_VERSION_REJECT_DIFFERENT_PROJECT:
+            XPUM_LOG_ERROR("firmware data version is not compatible with the installed one (project version)");
+            break;
+        case IGSC_FWDATA_VERSION_REJECT_VCN:
+            XPUM_LOG_ERROR("firmware data version is not compatible with the installed one (VCN version)");
+            break;
+        case IGSC_FWDATA_VERSION_REJECT_OEM_MANUF_DATA_VERSION:
+            result = XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE;
+            XPUM_LOG_ERROR("firmware data version is not compatible with the installed one (OEM version)");
+            break;
+        default:
+            XPUM_LOG_ERROR("firmware data version error in comparison\n");
+    }
     igsc_image_fwdata_release(oimg);
     igsc_device_close(&handle);
-    return ret == IGSC_SUCCESS;
+    return result;
 }
 
 static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
@@ -85,9 +131,9 @@ xpum_result_t FwDataMgmt::flashFwData(FlashFwDataParam &param) {
         if (!validateImageFormat(buffer)) {
             return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
         }
-
-        if (!isFwDataImageAndDeviceCompatible(buffer, devicePath)) {
-            return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+        auto res = isFwDataImageAndDeviceCompatible(buffer, devicePath);
+        if (res != XPUM_OK) {
+            return res;
         }
 
         // init fw-data update progress

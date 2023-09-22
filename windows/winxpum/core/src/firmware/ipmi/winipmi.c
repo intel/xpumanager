@@ -156,6 +156,15 @@ void ipmi_clean_win()
 int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct ipmi_recv *res)
 {
 	int retval;
+	if (!ipmiOpen)
+	{
+		retval = ipmi_open_win();
+		if (retval != 0)
+		{
+			return retval;
+		}
+	}
+
 	HRESULT hres;
 	IWbemClassObject *pInReq = NULL;
 	IWbemClassObject *pOutRecv = NULL;
@@ -175,15 +184,6 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 	uchar *pRespData = NULL;
 	SAFEARRAY *psa = NULL;
 
-	if (!ipmiOpen)
-	{
-		retval = ipmi_open_win();
-		if (retval != 0)
-		{
-			return retval;
-		}
-	}
-
 	retval = -1;
     
     char ss[1023];
@@ -199,7 +199,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		if (FAILED(hres))
 		{
 			XPUM_LOG_WARN("GetMethod Failure: %d\n", hres);
-			return retval;
+			break;
 		}
 
 		handle_variant(&varCmd);

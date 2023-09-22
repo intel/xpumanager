@@ -12,7 +12,7 @@
 
 namespace xpum {
 
-const int XPUM_MAX_PRECHECK_ERROR_TYPE_INFO_LIST_SIZE = 14;
+const int XPUM_MAX_PRECHECK_ERROR_TYPE_INFO_LIST_SIZE = 15;
 
 const int PROCESSOR_COUNT = std::thread::hardware_concurrency();
 
@@ -30,7 +30,8 @@ const xpum_precheck_error_t PRECHECK_ERROR_TYPE_INFO_LIST[XPUM_MAX_PRECHECK_ERRO
     {errorId : 11, errorType : XPUM_LEVEL_ZERO_INIT_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_KMD, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
     {errorId : 12, errorType : XPUM_HUC_DISABLED, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
     {errorId : 13, errorType : XPUM_HUC_NOT_RUNNING, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
-    {errorId : 14, errorType : XPUM_LEVEL_ZERO_METRICS_INIT_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_UMD, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH}};
+    {errorId : 14, errorType : XPUM_LEVEL_ZERO_METRICS_INIT_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_UMD, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
+    {errorId : 15, errorType : XPUM_MEMORY_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL}};
 
 struct ErrorPattern {
     std::string pattern;

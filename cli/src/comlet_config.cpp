@@ -7,6 +7,7 @@
 #include "comlet_config.h"
 
 #include <nlohmann/json.hpp>
+#include <future>
 
 #include "cli_table.h"
 #include "core_stub.h"
@@ -32,7 +33,7 @@ static CharTableConfig ComletDeviceConfiguration(R"({
                 { "label": "Power Limit (w) ", "value": "power_limit" },
                 { "label": "  Valid Range", "value": "power_vaild_range" },
                 {"rowTitle": " " },
-                { "label": "Memory ECC", "value": " " },
+                { "rowTitle": "Memory ECC:" },
                 { "label": "  Current", "value": "memory_ecc_current_state" },
                 { "label": "  Pending", "value": "memory_ecc_pending_state" }
             ]
@@ -71,7 +72,7 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "Engine Type", "value": "media_engine" },
                 { "label": "  Performance Factor", "value": "media_performance_factor" },
                 {"rowTitle": " " },
-                { "label": "Xe Link ports", "value": " " },
+                { "rowTitle": "Xe Link ports:" },
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
@@ -85,6 +86,21 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "  Configurable", "value": "memory_ecc_configurable" },
                 { "label": "  Action", "value": "memory_ecc_pending_action" },
 */
+
+static void printProgress(std::future<std::unique_ptr<nlohmann::json>>& future) {
+    int i = 0;
+    while(future.wait_for(std::chrono::seconds(3)) != std::future_status::ready) {
+        std::cout << ".";
+        std::cout.flush();
+        if(++i % 80 == 0){
+            std::cout << std::endl;
+        }
+    }
+    if(i % 80 != 0){
+        std::cout << std::endl;
+    }
+}
+
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->device, "The device ID or PCI BDF address to query");
@@ -103,6 +119,10 @@ void ComletConfig::setupOptions() {
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\";\"debug\".The valid range of all time values (us) is from 5000 to 100,000,000.");
     addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset). For Intel(R) Max Series GPU, when SR-IOV is enabled, please add \"pci=realloc=off\" into Linux kernel command line parameters. When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters.");
+    auto ppr = addFlag("--ppr", this->opts->applyPPR, "Apply ppr to the device.");
+    auto forceFlag = addFlag("--force", opts->forcePPR, "Force PPR to run.");
+    forceFlag->needs(ppr);
+
 
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
@@ -446,6 +466,34 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 (*json)["return"] = "Succeed to reset the GPU "+ std::to_string(this->opts->deviceId);
             }
             return json;
+        } else if (this->opts->tileId == -1 && this->opts->applyPPR) {
+
+            auto futureRes = std::async(std::launch::async, &CoreStub::applyPPR, this->coreStub, this->opts->deviceId, this->opts->forcePPR);
+            printProgress(futureRes);
+            json = futureRes.get();
+
+            if ((*json)["status"] == "OK") {
+                if (json->contains("ppr_diag_result")) {
+                    (*json)["return"] = "PPR has been successfully applied to the GPU "+ std::to_string(this->opts->deviceId) + "." +
+                    "\nPPR diag result: " + (*json)["ppr_diag_result"].get<std::string>() +
+                    "\nPPR diag result description: " + (*json)["ppr_diag_result_string"].get<std::string>() +
+                    "\nGPU " + std::to_string(this->opts->deviceId) + " memory status: " + (*json)["memory_health_result"].get<std::string>() +
+                    "\nDescription: " + (*json)["memory_health_result_string"].get<std::string>();
+                } else {
+                    std::string memoryState = (*json)["memory_health_result"].get<std::string>();
+                    std::string explainStr = "";
+                    if(memoryState.find("OK") != std::string::npos) {
+                        explainStr = " PPR doesn't need to be run. If you must run PPR, please add the parameter --force.";
+                    } else if(memoryState.find("Critical") != std::string::npos) {
+                        explainStr = " PPR can't be Applied to this device. The card should be replaced. If you must run PPR, please add the parameter --force.";
+                    } else if(memoryState.find("Unknown") != std::string::npos) {
+                        explainStr = " Not sure if PPR can be applied. If you must run PPR, please add the parameter --force.";
+                    }
+
+                    (*json)["return"] = "The memory status of GPU " + std::to_string(this->opts->deviceId) + " is " + memoryState + "." + explainStr;
+                }
+            }
+            return json;
         }
         (*json)["return"] = "unknown or invalid command, parameter or device/tile Id";
         return json;
@@ -468,7 +516,7 @@ void ComletConfig::getTableResult(std::ostream &out) {
 #ifndef DAEMONLESS
     bool needRestart = false;
 #endif
-    if (this->opts->resetDevice) {
+    if (this->opts->resetDevice || this->opts->applyPPR) {
         if (this->opts->device != "") {
             if (isNumber(this->opts->device)) {
                 this->opts->deviceId = std::stoi(this->opts->device);
@@ -482,8 +530,10 @@ void ComletConfig::getTableResult(std::ostream &out) {
                 }
             }
         }
-        if (this->opts->deviceId >= 0 && this->opts->tileId == -1) {
+        if (this->opts->resetDevice && this->opts->deviceId >= 0 && this->opts->tileId == -1) {
             out << "It may take one minute to reset GPU " << this->opts->deviceId << ". Please wait ..." << std::endl;
+        } else if (this->opts->applyPPR && this->opts->deviceId >= 0 && this->opts->tileId == -1){
+            out << "It may take ten minutes to apply PPR to GPU " << this->opts->deviceId << ". Please wait ..." << std::endl;
         }
     }
     else if (!this->opts->scheduler.empty()) {
@@ -521,6 +571,12 @@ void ComletConfig::getTableResult(std::ostream &out) {
         out << "Setting GPU scheduler exclusive/debug mode will make XPUM daemon not work." << std::endl;
         out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
     }
+
+    if (this->opts->deviceId >= 0 && this->opts->tileId == -1 && this->opts->applyPPR && res->contains("ppr_diag_result")) {
+        out << "Apply PPR will make XPUM daemon not work." << std::endl;
+        out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
+    }
+
 #endif
     if (res->contains("return")) {
         out << "Return: " << (*res)["return"].get<std::string>() << std::endl;

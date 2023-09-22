@@ -80,6 +80,9 @@ public:
     virtual ::grpc::Status resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) override {
         return PD;
     }
+    virtual ::grpc::Status applyPPR(::grpc::ServerContext* context, const ::ApplyPprRequest* request, ::ApplyPprResponse* response) override {
+        return PD;
+    }
     virtual ::grpc::Status setPerformanceFactor(::grpc::ServerContext* context, const ::PerformanceFactor* request, ::DevicePerformanceFactorSettingResponse* response) override {
         return PD;
     }

@@ -259,6 +259,7 @@ enum PrecheckErrorType {
     HUC_DISABLED = 11;
     HUC_NOT_RUNNING = 12;
     LEVEL_ZERO_METRICS_INIT_ERROR = 13;
+    MEMORY_ERROR = 14;
 }
 
 enum PrecheckErrorCategory {
@@ -532,6 +533,20 @@ message ResetDeviceResponse{
     uint32 retCode = 2;
     string errorMsg = 3;
     int32 errorNo = 4;
+}
+
+message ApplyPprRequest{
+    uint32 deviceId = 1;
+    bool force = 2;
+}
+
+message ApplyPprResponse{
+    uint32 deviceId = 1;
+    uint32 retCode = 2;
+    uint32 diagResult = 3;
+    uint32 memoryState = 4;
+    string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message DeviceProcessState{
@@ -1170,6 +1185,7 @@ service XpumCoreService {
     rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );
     rpc setPerformanceFactor( PerformanceFactor ) returns ( DevicePerformanceFactorSettingResponse );
     rpc resetDevice( ResetDeviceRequest ) returns ( ResetDeviceResponse );
+    rpc applyPPR( ApplyPprRequest ) returns ( ApplyPprResponse );
     rpc setDeviceSchedulerMode( ConfigDeviceSchdeulerModeRequest ) returns ( ConfigDeviceResultData );
     rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFrequencyRange( ConfigDeviceFrequencyRangeRequest ) returns ( ConfigDeviceResultData );

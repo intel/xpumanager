@@ -57,6 +57,7 @@ sudo ./prometheus --config.file=./prometheus.yml
  ```
  ./grafana server
  ```
- 3. Login URL: http://\<Grafana server ip>:3000/ and create the "Connection" to Prometheus as shown below. The default user and password are 'admin'. Then you can create Grafana dashboard. Please refer to https://grafana.com/docs/grafana/latest/getting-started/get-started-grafana-prometheus/.
- 4. You can use this [json file](grafana-dashboard.json) when you create Grafana dashboard. Please set a variable "Node".
-![Grafana configuration](../doc/img/Grafana_config.PNG) 
+ 3. Login URL: http://\<Grafana server ip>:3000/ and create the "Connection" to Prometheus as shown below. The default user and password are 'admin'.
+![Grafana configuration](../doc/img/Grafana_config.PNG)
+ 4. Create Grafana dashboard. Please refer to https://grafana.com/docs/grafana/latest/getting-started/get-started-grafana-prometheus/. You can import this [json file](grafana-dashboard.json) when you create Grafana dashboard. Please set a variable "Node" as shown below.
+![Setting variable](../doc/img/Grafana_set_variables.PNG)

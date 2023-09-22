@@ -102,6 +102,7 @@ xpu-smi.exe discovery -j
 ```
 
 Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info. 
+On Windows VM with the virtual GPU(s), very limited device info can be provided. The virtual GPU memory size is retrieved with Microsoft DirectX Graphics Infrastructure API. The value may be a little different from what is shown in Windows task manager. 
 ```
 xpu-smi.exe discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
