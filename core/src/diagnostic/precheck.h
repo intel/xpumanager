@@ -12,7 +12,7 @@
 
 namespace xpum {
 
-const int XPUM_MAX_PRECHECK_ERROR_TYPE_INFO_LIST_SIZE = 15;
+const int XPUM_MAX_PRECHECK_ERROR_TYPE_INFO_LIST_SIZE = 16;
 
 const int PROCESSOR_COUNT = std::thread::hardware_concurrency();
 
@@ -31,7 +31,8 @@ const xpum_precheck_error_t PRECHECK_ERROR_TYPE_INFO_LIST[XPUM_MAX_PRECHECK_ERRO
     {errorId : 12, errorType : XPUM_HUC_DISABLED, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
     {errorId : 13, errorType : XPUM_HUC_NOT_RUNNING, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
     {errorId : 14, errorType : XPUM_LEVEL_ZERO_METRICS_INIT_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_UMD, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
-    {errorId : 15, errorType : XPUM_MEMORY_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL}};
+    {errorId : 15, errorType : XPUM_MEMORY_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
+    {errorId : 16, errorType : XPUM_GPU_INITIALIZATION_FAILED, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL}};
 
 struct ErrorPattern {
     std::string pattern;
@@ -54,6 +55,7 @@ const std::vector<ErrorPattern> error_patterns = {
         {".*ERROR.*GUC.*", "", XPUM_PRECHECK_COMPONENT_TYPE_GPU, XPUM_GUC_ERROR},
         {".*(IO: IOMMU catastrophic error).*", "", XPUM_PRECHECK_COMPONENT_TYPE_GPU, XPUM_IOMMU_CATASTROPHIC_ERROR},
         {".*(LMEM not initialized by firmware).*", "", XPUM_PRECHECK_COMPONENT_TYPE_GPU, XPUM_LMEM_NOT_INITIALIZED_BY_FIRMWARE},
+        {".*(timed out waiting for forcewake ack request).*", "", XPUM_PRECHECK_COMPONENT_TYPE_GPU, XPUM_GPU_INITIALIZATION_FAILED},
     
         // i915/drm error
         {".*i915.*drm.*ERROR.*", "", XPUM_PRECHECK_COMPONENT_TYPE_DRIVER, XPUM_I915_ERROR},
@@ -64,7 +66,7 @@ const std::vector<ErrorPattern> error_patterns = {
 };
 
 // The order of the vector impacts how error patterns are matched. It starts from special patterns to general patterns.
-const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", "i915", "drm",  "mce", "mca", "caterr"};
+const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", "forcewake", "i915", "drm",  "mce", "mca", "caterr"};
 
 class PrecheckManager {
    public:
