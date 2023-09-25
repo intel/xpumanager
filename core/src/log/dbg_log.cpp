@@ -82,13 +82,13 @@ int getUUID(std::string &uuid) {
 
 int createTmpDir(const string &uuid) {
     string dirName = "/var/tmp/xpum-" + uuid;
-    return mkdir(dirName.c_str(), S_IRUSR | S_IWUSR);
+    return mkdir(dirName.c_str(), 0777);
 }
 
 int copyFiles(const string &uuid) {
     int ret = 0;
     string dirName = "/var/tmp/xpum-" + uuid + "/proc";
-    ret = mkdir(dirName.c_str(), S_IRUSR | S_IWUSR);
+    ret = mkdir(dirName.c_str(), 0777);
     if (ret != 0) {
         return ret;
     }
