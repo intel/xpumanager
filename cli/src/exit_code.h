@@ -71,6 +71,6 @@
 #define XPUM_CLI_ERROR_VGPU_NO_VMX_FLAG                                     62
 #define XPUM_CLI_ERROR_VGPU_IOMMU_DISABLED                                  63
 #define XPUM_CLI_ERROR_VGPU_SRIOV_DISABLED                                  64
-#define XPUM_CLI_ERROR_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE      65 // The GFX_DATA version of image is less than or equal to device
+#define XPUM_CLI_ERROR_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE      65 // The GFX_DATA version of the image is less than or equal to the device
 
 int errorNumTranslate(int coreErrNo);
