@@ -629,6 +629,16 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
         return res;
     }
 
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES && job->type == 
+        xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
+    }
+
+    if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC &&
+        deviceId != XPUM_DEVICE_ID_ALL_DEVICES) {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
+    }
+
     if (Core::instance().getFirmwareManager() == nullptr) {
         return XPUM_RESULT_FW_MGMT_NOT_INIT;
     }
@@ -637,68 +647,59 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
     if (res != XPUM_OK)
         return res;
 
-    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
-        xpum_result_t rc;
-
-        if (job->type != xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
-            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
-            return rc;
+    if (deviceId != XPUM_DEVICE_ID_ALL_DEVICES) {
+        res = validateDeviceId(deviceId);
+        if (res != XPUM_OK) {
+            return res;
         }
+    }
 
-        // check if same model
-        std::vector<std::shared_ptr<Device>> devices;
-        Core::instance().getDeviceManager()->getDeviceList(devices);
+    switch (job->type) {
+        case XPUM_DEVICE_FIRMWARE_AMC:
+        {
+            // check if same model
+            std::vector<std::shared_ptr<Device>> devices;
+            Core::instance().getDeviceManager()->getDeviceList(devices);
 
-        std::string previousModel;
-        for (std::shared_ptr<Device> device : devices) {
-            // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
-            Property model;
-            device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, model);
-            if (previousModel.empty()) {
-                previousModel = model.getValue();
-            } else {
-                if (previousModel != model.getValue()) {
-                    XPUM_LOG_ERROR("Upgrade all AMC fail, inconsistent model:{}, {}", previousModel, model.getValue());
-                    return XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE;
+            std::string previousModel;
+            for (std::shared_ptr<Device> device : devices) {
+                Property model;
+                device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, model);
+                if (previousModel.empty()) {
+                    previousModel = model.getValue();
                 } else {
-                    // nothing yet
+                    if (previousModel != model.getValue()) {
+                        XPUM_LOG_ERROR("Upgrade all AMC fail, inconsistent model:{}, {}", previousModel, model.getValue());
+                        return XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE;
+                    }
                 }
             }
+            AmcCredential credential;
+            credential.username = username ? std::string(username) : "";
+            credential.password = password ? std::string(password) : "";
+            res = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
+            break;
         }
-        AmcCredential credential;
-        credential.username = username ? std::string(username) : "";
-        credential.password = password ? std::string(password) : "";
-        rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
-        return rc;
-    } else {
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
-            res = validateDeviceId(deviceId);
-            if (res != XPUM_OK)
-                return res;
-            return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath, force);
-        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_DATA) {
-            res = validateDeviceId(deviceId);
-            if (res != XPUM_OK)
-                return res;
-            return Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath);
-        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
-            res = validateDeviceId(deviceId);
-            if (res != XPUM_OK)
-                return res;
-            return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath, force);
-        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
-            res = validateDeviceId(deviceId);
-            if (res != XPUM_OK)
-                return res;
+        case XPUM_DEVICE_FIRMWARE_GFX:
+            res = Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath, force);
+            break;
+        case XPUM_DEVICE_FIRMWARE_GFX_DATA:
+            res = Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath);
+            break;
+        case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
+            res = Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath, force);
+            break;
+        case XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA:
             int eccState;
             res = getEccStateForFwCodeAndData(deviceId, eccState);
             if (res != XPUM_OK)
                 return res;
-            return Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState);
-        } else {
-            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
-        }
+            res = Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState);
+            break;
+        default:
+            break;
     }
+    return res;
 }
 
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
@@ -708,37 +709,49 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (ret != XPUM_OK) {
         return ret;
     }
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES && firmwareType == 
+        XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
+    }
+
+    if (firmwareType == XPUM_DEVICE_FIRMWARE_AMC &&
+        deviceId != XPUM_DEVICE_ID_ALL_DEVICES) {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
+    }
+
     if (Core::instance().getFirmwareManager() == nullptr) {
         return XPUM_RESULT_FW_MGMT_NOT_INIT;
     }
 
-    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
-        if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
-            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
-        AmcCredential credential;
-        return Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
+    if (deviceId != XPUM_DEVICE_ID_ALL_DEVICES) {
+        xpum_result_t res = validateDeviceId(deviceId);
+        if (res != XPUM_OK)
+            return res;
     }
 
-    if(firmwareType == XPUM_DEVICE_FIRMWARE_AMC){
-        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
+    switch (firmwareType) {
+        case XPUM_DEVICE_FIRMWARE_AMC: 
+        {
+            AmcCredential credential;
+            ret = Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
+            break;
+        }
+        case XPUM_DEVICE_FIRMWARE_GFX:
+            Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
+            break;
+        case XPUM_DEVICE_FIRMWARE_GFX_DATA:
+            Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
+            break;
+        case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
+            Core::instance().getFirmwareManager()->getPscFwFlashResult(deviceId, result);
+            break;
+        case XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA:
+            Core::instance().getFirmwareManager()->getFwCodeDataFlashResult(deviceId, result);
+            break;
+        default:
+            break;
     }
-
-    xpum_result_t res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
-        return res;
-
-    if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX)
-        Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
-    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA)
-        Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
-    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN)
-        Core::instance().getFirmwareManager()->getPscFwFlashResult(deviceId, result);
-    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA)
-        Core::instance().getFirmwareManager()->getFwCodeDataFlashResult(deviceId, result);
-    else
-        return XPUM_GENERIC_ERROR;
-
-    return XPUM_OK;
+    return ret;
 }
 
 xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
