@@ -563,6 +563,28 @@ spec:
         }
       }
 
+      stage('Sign check') {
+        steps {
+          script{
+            def log = currentBuild.rawBuild.getLog(Integer.MAX_VALUE)
+            def successMatches = log =~ /Signed with success: 1/
+            if (successMatches) {
+              echo successMatches.size().toString()
+              if (!successMatches.size().equals(14L)) {
+                currentBuild.result = 'FAILURE'
+                error("Success signature doesn't match. Stopping early!")
+              }
+            }
+            def failMatches = log =~ /Failed to sign: 1/
+            if (failMatches) {
+              echo failMatches.size().toString()
+              currentBuild.result = 'FAILURE'
+              error("Fail signature matches. Stopping early!")
+            }
+          }
+        }
+      }
+      
       stage('Build Docker Image') {
         parallel {
           stage('Create ATS Docker Image') {

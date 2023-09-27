@@ -57,9 +57,9 @@ if [ -f ~/password.sys_xpum ]; then
     CSPwd=$(cat ~/password.sys_xpum)
     echo "SignFile:${PackageName}" 
     pushd "${WORK_DIR}"/install/tools/signfile
-    ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" "${WORK_DIR}"/build/${PackageName}
+    ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" -conf SignFile.config.xml "${WORK_DIR}"/build/${PackageName}
     if [ -f "${WORK_DIR}"/build/amcmcli/amcmcli ]; then
-        ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" -s cl -cf "${WORK_DIR}"/build/amcmcli/amcmcli.sig "${WORK_DIR}"/build/amcmcli/amcmcli
+        ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" -conf SignFile.config.xml -s cl -cf "${WORK_DIR}"/build/amcmcli/amcmcli.sig "${WORK_DIR}"/build/amcmcli/amcmcli
     fi
     popd
 fi

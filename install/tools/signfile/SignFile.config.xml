@@ -29,8 +29,8 @@
 		<add key="AuthenticationServer" value="https://iamws-i.intel.com/api/v1"/>
 		<!--<add key="UserName" value="amr\swfactory"/>
 		<add key="Password" value=""/>-->
-		<add key="SoapRequestAttempts" value="3"/>
-		<add key="DelayBetweenRequestAttempts" value="30"/>
+		<add key="SoapRequestAttempts" value="5"/>
+		<add key="DelayBetweenRequestAttempts" value="60"/>
 		<add key="SoapRequestTimeout" value="180"/>
 		<add key="SkipSignedFiles" value="False"/>
 		<add key="WorkingThreads" value="Auto"/>
