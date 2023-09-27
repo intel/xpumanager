@@ -41,7 +41,7 @@ static nlohmann::json discoveryBasicJson = R"({
             "device_id", [
                 { "label": "Device Name", "value": "device_name" },
                 { "label": "Vendor Name", "value": "vendor_name" },
-                { "label": "UUID", "value": "uuid" },
+                { "label": "SOC UUID", "value": "uuid" },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address" },
                 { "label": "DRM Device", "value": "drm_device" },
                 { "label": "Function Type", "value": "device_function_type" }
@@ -67,7 +67,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "Device Name", "value": "device_name", "dumpId": 2 },
                 { "label": "PCI Device ID", "value": "pci_device_id", "dumpId": 24},
                 { "label": "Vendor Name", "value": "vendor_name", "dumpId": 3 },
-                { "label": "UUID", "value": "uuid", "dumpId": 4 },
+                { "label": "SOC UUID", "value": "uuid", "dumpId": 4 },
                 { "label": "Serial Number", "value": "serial_number", "dumpId": 5 },
                 { "label": "Core Clock Rate", "value": "core_clock_rate_mhz", "suffix": " MHz", "dumpId": 6 },
                 { "label": "Stepping", "value": "device_stepping", "dumpId": 7 },
