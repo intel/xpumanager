@@ -2617,6 +2617,11 @@ xpum_result_t xpumApplyPPR(xpum_device_id_t deviceId, xpum_diag_result_t* diagRe
     if (p_device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+
+    if (p_device->getDeviceModel() != XPUM_DEVICE_MODEL_PVC) {
+        return XPUM_RESULT_UNSUPPORTED_DEVICE;
+    }
+
     if (p_device->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
