@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2022 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -22,6 +22,9 @@
 #endif
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+#ifdef HAVE_DIRENT_H
+#include <dirent.h>
 #endif
 #include <assert.h>
 
@@ -83,7 +86,8 @@ enum hwloc_utils_input_format {
   HWLOC_UTILS_INPUT_FSROOT,
   HWLOC_UTILS_INPUT_SYNTHETIC,
   HWLOC_UTILS_INPUT_CPUID,
-  HWLOC_UTILS_INPUT_SHMEM
+  HWLOC_UTILS_INPUT_SHMEM,
+  HWLOC_UTILS_INPUT_ARCHIVE
 };
 
 static __hwloc_inline enum hwloc_utils_input_format
@@ -101,6 +105,8 @@ hwloc_utils_parse_input_format(const char *name, const char *callname)
     return HWLOC_UTILS_INPUT_SYNTHETIC;
   else if (!hwloc_strncasecmp(name, "cpuid", 1))
     return HWLOC_UTILS_INPUT_CPUID;
+  else if (!hwloc_strncasecmp(name, "archive", 1))
+    return HWLOC_UTILS_INPUT_ARCHIVE;
 
   fprintf(stderr, "input format `%s' not supported\n", name);
   usage(callname, stderr);
@@ -186,6 +192,12 @@ hwloc_utils_autodetect_input_format(const char *input, int verbose)
       if (verbose > 0)
 	printf("assuming `%s' is a shmem topology file\n", input);
       return HWLOC_UTILS_INPUT_SHMEM;
+    }
+    if ((len >= 7 && !strcmp(input+len-7, ".tar.gz"))
+        || (len >= 8 && !strcmp(input+len-8, ".tar.bz2"))) {
+      if (verbose > 0)
+	printf("assuming `%s' is an archive topology file\n", input);
+      return HWLOC_UTILS_INPUT_ARCHIVE;
     }
     if (verbose > 0)
       printf("assuming `%s' is a XML file\n", input);
@@ -292,6 +304,64 @@ hwloc_utils_enable_input_format(struct hwloc_topology *topology, unsigned long f
     exit(EXIT_FAILURE);
 #endif
     break;
+  }
+
+  case HWLOC_UTILS_INPUT_ARCHIVE: {
+#ifdef HWLOC_ARCHIVEMOUNT_PATH
+    char mntpath[] = "/tmp/tmpdir.hwloc.archivemount.XXXXXX";
+    char mntcmd[512];
+    char umntcmd[512];
+    DIR *dir;
+    struct dirent *dirent;
+    enum hwloc_utils_input_format sub_input_format;
+    char *subdir = NULL;
+    int err;
+
+    if (!mkdtemp(mntpath)) {
+      perror("Creating archivemount directory");
+      return EXIT_FAILURE;
+    }
+    snprintf(mntcmd, sizeof(mntcmd), "%s -o ro %s %s", HWLOC_ARCHIVEMOUNT_PATH, input, mntpath);
+    err = system(mntcmd);
+    if (err) {
+      perror("Archivemount'ing the archive");
+      rmdir(mntpath);
+      return EXIT_FAILURE;
+    }
+    snprintf(umntcmd, sizeof(umntcmd), "umount -l %s", mntpath);
+
+    /* enter the mount point and stay there so that we can umount+rmdir immediately but still use it later */
+    chdir(mntpath);
+    system(umntcmd);
+    rmdir(mntpath);
+
+    /* there should be a single subdirectory in the archive */
+    dir = opendir(".");
+    while ((dirent = readdir(dir)) != NULL) {
+      if (strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {
+        subdir = dirent->d_name;
+        break;
+      }
+    }
+    closedir(dir);
+
+    if (!subdir) {
+      perror("No subdirectory in archivemount directory");
+      return EXIT_FAILURE;
+    }
+
+    /* call ourself recursively on subdir, it should be either a fsroot or a cpuid directory */
+    sub_input_format = HWLOC_UTILS_INPUT_DEFAULT;
+    err = hwloc_utils_enable_input_format(topology, flags, subdir, &sub_input_format, verbose, callname);
+    if (!err)
+      *input_format = sub_input_format;
+    else
+      return err;
+    break;
+#else
+    fprintf(stderr, "This installation of hwloc does not support loading from an archive, sorry.\n");
+    exit(EXIT_FAILURE);
+#endif
   }
 
   case HWLOC_UTILS_INPUT_SYNTHETIC:
@@ -839,7 +909,10 @@ hwloc_utils_parse_topology_flags(char * str) {
     HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT),
     HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_RESTRICT_TO_CPUBINDING),
     HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_RESTRICT_TO_MEMBINDING),
-    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_DONT_CHANGE_BINDING)
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_DONT_CHANGE_BINDING),
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_NO_DISTANCES),
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_NO_MEMATTRS),
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_NO_CPUKINDS)
   };
 
   return hwloc_utils_parse_flags(str, possible_flags, (int) sizeof(possible_flags) / sizeof(possible_flags[0]), "topology");

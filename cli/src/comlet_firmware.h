@@ -14,8 +14,7 @@
 
 namespace xpum::cli {
 struct FlashFirmwareOptions {
-    int deviceId;
-    std::string deviceIdStr;
+    std::string deviceId = "";
     std::string firmwareType;
     std::string firmwarePath;
 
@@ -56,6 +55,7 @@ class ComletFirmware : public ComletBase {
     std::string getFwDataImageFwVersion();
     std::string getPSCImageFwVersion();
     nlohmann::json getDeviceProperties(int deviceId);
+    int deviceIdStrToInt(std::string deviceId);
 
     void readImageContent(const char* filePath);
 };

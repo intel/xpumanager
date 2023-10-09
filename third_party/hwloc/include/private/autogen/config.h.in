@@ -4,6 +4,7 @@
  *
  * Copyright © 2009, 2011, 2012 CNRS, inria., Université Bordeaux  All rights reserved.
  * Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
+ * Copyright © 2022 IBM Corporation.  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -221,6 +222,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `isatty' function. */
+#undef HAVE_ISATTY
+
 /* Define to 1 if the system has the type `KAFFINITY'. */
 #undef HAVE_KAFFINITY
 
@@ -415,6 +419,9 @@
 /* Define to 1 if you have the <sys/utsname.h> header file. */
 #undef HAVE_SYS_UTSNAME_H
 
+/* Define to 1 if you have the `tcgetpgrp' function. */
+#undef HAVE_TCGETPGRP
+
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
 
@@ -454,8 +461,14 @@
 /* Define to 1 on AIX */
 #undef HWLOC_AIX_SYS
 
+/* Define to the location of the archivemount program */
+#undef HWLOC_ARCHIVEMOUNT_PATH
+
 /* Define to 1 on BlueGene/Q */
 #undef HWLOC_BGQ_SYS
+
+/* Define if the CUDA component is built statically inside libhwloc */
+#undef HWLOC_CUDA_COMPONENT_BUILTIN
 
 /* Whether C compiler supports symbol visibility or not */
 #undef HWLOC_C_HAVE_VISIBILITY
@@ -468,6 +481,9 @@
 
 /* Define to 1 on *FREEBSD */
 #undef HWLOC_FREEBSD_SYS
+
+/* Define if the GL component is built statically inside libhwloc */
+#undef HWLOC_GL_COMPONENT_BUILTIN
 
 /* Define to 1 if --enable-32bits-pci-domain is called. */
 #undef HWLOC_HAVE_32BITS_PCI_DOMAIN
@@ -671,17 +687,35 @@
 /* Define to 1 if you have x86 cpuid */
 #undef HWLOC_HAVE_X86_CPUID
 
+/* Define to 1 if zeDevicePciGetPropertiesExt is available */
+#undef HWLOC_HAVE_ZEDEVICEPCIGETPROPERTIESEXT
+
 /* Define to 1 on HP-UX */
 #undef HWLOC_HPUX_SYS
 
 /* Define to 1 on Irix */
 #undef HWLOC_IRIX_SYS
 
+/* Define if the LevelZero component is built statically inside libhwloc */
+#undef HWLOC_LEVELZERO_COMPONENT_BUILTIN
+
 /* Define to 1 on Linux */
 #undef HWLOC_LINUX_SYS
 
 /* Define to 1 on *NETBSD */
 #undef HWLOC_NETBSD_SYS
+
+/* Define if the NVML component is built statically inside libhwloc */
+#undef HWLOC_NVML_COMPONENT_BUILTIN
+
+/* Define if the OpenCL component is built statically inside libhwloc */
+#undef HWLOC_OPENCL_COMPONENT_BUILTIN
+
+/* Define if the PCI component is built statically inside libhwloc */
+#undef HWLOC_PCI_COMPONENT_BUILTIN
+
+/* Define if the RSMI component is built statically inside libhwloc */
+#undef HWLOC_RSMI_COMPONENT_BUILTIN
 
 /* The size of `unsigned int', as computed by sizeof */
 #undef HWLOC_SIZEOF_UNSIGNED_INT
@@ -731,6 +765,9 @@
 
 /* Define to 1 on x86_64 */
 #undef HWLOC_X86_64_ARCH
+
+/* Define if the libxml XML component is built statically inside libhwloc */
+#undef HWLOC_XML_LIBXML_COMPONENT_BUILTIN
 
 /* Define if lstopo Cairo/X11 interactive graphical output is supported */
 #undef LSTOPO_HAVE_X11

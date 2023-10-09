@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2021 Inria.  All rights reserved.
+# Copyright © 2009-2023 Inria.  All rights reserved.
 # Copyright © 2009, 2011-2012, 2020 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -376,6 +376,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARCHIVEMOUNT = @ARCHIVEMOUNT@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -413,6 +414,7 @@ ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
+FILECMD = @FILECMD@
 GREP = @GREP@
 GS = @GS@
 HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
@@ -439,9 +441,11 @@ HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
 HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LEVELZERO = @HWLOC_HAVE_LEVELZERO@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
+HWLOC_HAVE_LINUX = @HWLOC_HAVE_LINUX@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
 HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
+HWLOC_HAVE_X86_CPUID = @HWLOC_HAVE_X86_CPUID@
 HWLOC_IBVERBS_LIBS = @HWLOC_IBVERBS_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LEVELZERO_CFLAGS = @HWLOC_LEVELZERO_CFLAGS@
@@ -666,7 +670,8 @@ nodist_libhwloc_port_darwin_la_SOURCES = topology-darwin.c
 libhwloc_port_darwin_la_SOURCES = \
         include/darwin/sys/sysctl.h \
         include/darwin/IOKit/IOKitLib.h \
-        include/darwin/CoreFoundation/CoreFoundation.h
+        include/darwin/CoreFoundation/CoreFoundation.h \
+        include/darwin/Availability.h
 
 libhwloc_port_darwin_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/darwin \
@@ -779,7 +784,8 @@ libhwloc_port_nvml_la_SOURCES = \
         include/nvml/nvml.h
 
 libhwloc_port_nvml_la_CPPFLAGS = $(common_CPPFLAGS) \
-        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/nvml
+        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/nvml \
+        -DHAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION=1
 
 nodist_libhwloc_port_rsmi_la_SOURCES = topology-rsmi.c
 libhwloc_port_rsmi_la_SOURCES = \
@@ -794,7 +800,8 @@ libhwloc_port_levelzero_la_SOURCES = \
         include/levelzero/level_zero/zes_api.h
 
 libhwloc_port_levelzero_la_CPPFLAGS = $(common_CPPFLAGS) \
-        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/levelzero
+        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/levelzero \
+        -DHWLOC_HAVE_ZEDEVICEPCIGETPROPERTIESEXT=1
 
 nodist_libhwloc_port_gl_la_SOURCES = topology-gl.c
 libhwloc_port_gl_la_SOURCES = \

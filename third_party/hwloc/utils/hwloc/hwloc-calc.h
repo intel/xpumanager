@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2023 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -86,9 +86,9 @@ hwloc_calc_get_nbobjs_inside_sets_by_depth(struct hwloc_calc_location_context_s 
   hwloc_obj_t obj = NULL;
   unsigned n = 0;
   while ((obj = hwloc_get_next_obj_by_depth(topology, depth, obj)) != NULL) {
-    if (!hwloc_bitmap_isincluded(obj->cpuset, cpuset))
+    if (!hwloc_bitmap_iszero(obj->cpuset) && !hwloc_bitmap_intersects(obj->cpuset, cpuset))
       continue;
-    if (!hwloc_bitmap_isincluded(obj->nodeset, nodeset))
+    if (!hwloc_bitmap_iszero(obj->nodeset) && !hwloc_bitmap_intersects(obj->nodeset, nodeset))
       continue;
     if (hwloc_bitmap_iszero(obj->cpuset) && hwloc_bitmap_iszero(obj->nodeset))
       /* ignore objects with empty sets (both can be empty when outside of cgroup) */
@@ -115,9 +115,9 @@ hwloc_calc_get_obj_inside_sets_by_depth(struct hwloc_calc_location_context_s *lc
   hwloc_obj_t obj = NULL;
   unsigned i = 0;
   while ((obj = hwloc_get_next_obj_by_depth(topology, depth, obj)) != NULL) {
-    if (!hwloc_bitmap_isincluded(obj->cpuset, cpuset))
+    if (!hwloc_bitmap_iszero(obj->cpuset) && !hwloc_bitmap_intersects(obj->cpuset, cpuset))
       continue;
-    if (!hwloc_bitmap_isincluded(obj->nodeset, nodeset))
+    if (!hwloc_bitmap_iszero(obj->nodeset) && !hwloc_bitmap_intersects(obj->nodeset, nodeset))
       continue;
     if (hwloc_bitmap_iszero(obj->cpuset) && hwloc_bitmap_iszero(obj->nodeset))
       /* ignore objects with empty sets (both can be empty when outside of cgroup) */

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(hwloc
     LANGUAGES C
-    VERSION 2.7.0)
+    VERSION 2.9.3)
 
 enable_testing()
 
@@ -235,6 +235,14 @@ if(NOT HWLOC_SKIP_INCLUDES)
     install(DIRECTORY ${TOPDIR}/include/hwloc TYPE INCLUDE FILES_MATCHING PATTERN "*.h")
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/hwloc/autogen/config.h DESTINATION include/hwloc/autogen)
 endif()
+
+if(MSVC AND BUILD_SHARED_LIBS)
+  install(FILES $<TARGET_PDB_FILE:hwloc>
+    TYPE BIN
+    OPTIONAL)
+endif()
+
+# Testing
 
 if(HWLOC_ENABLE_TESTING)
     add_subdirectory(${TOPDIR}/tests/hwloc ${CMAKE_CURRENT_BINARY_DIR}/tests/hwloc)

@@ -1,4 +1,4 @@
-.TH "hwloc_intro" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwloc_intro" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -22,7 +22,7 @@ hwloc supports the following operating systems:
 .PP
 .PD 0
 .IP "\(bu" 2
-Linux (including old kernels not having sysfs topology information, with knowledge of cpusets, ScaleMP vSMP support, etc\&.) on all supported hardware, including Intel Xeon Phi and NumaScale NumaConnect\&. 
+Linux (with knowledge of cgroups and cpusets, memory targets/initiators, etc\&.) on all supported hardware, including Intel Xeon Phi, ScaleMP vSMP, and NumaScale NumaConnect\&. 
 .IP "\(bu" 2
 Solaris (with support for processor sets and logical domains) 
 .IP "\(bu" 2
@@ -60,16 +60,7 @@ hwloc can display the topology in a human-readable format, either in graphical m
 .PP
 hwloc offers a programming interface for manipulating topologies and objects\&. It also brings a powerful CPU bitmap API that is used to describe topology objects location on physical/logical processors\&. See the \fBProgramming Interface\fP below\&. It may also be used to binding applications onto certain cores or memory nodes\&. Several utility programs are also provided to ease command-line manipulation of topology objects, binding of processes, and so on\&.
 .PP
-Perl bindings are available from Bernd Kallies on \fCCPAN\fP\&.
-.PP
-Python bindings are available from Guy Streeter: 
-.PD 0
-
-.IP "\(bu" 2
-\fCFedora RPM and tarball\fP\&. 
-.IP "\(bu" 2
-\fCgit tree\fP (\fChtml\fP)\&. 
-.PP
+Bindings for several other languages are available from the \fCproject website\fP\&.
 .PP
  
 .SH "hwloc Installation"
@@ -439,8 +430,8 @@ hwloc provides a \fCpkg-config\fP executable to obtain relevant compiler and lin
 CFLAGS += $(shell pkg-config --cflags hwloc)
 LDLIBS += $(shell pkg-config --libs hwloc)
 
-hwloc-hello: hwloc-hello.c
-        $(CC) hwloc-hello.c $(CFLAGS) -o hwloc-hello $(LDLIBS)
+hwloc-hello: hwloc-hello\&.c
+        $(CC) hwloc-hello\&.c $(CFLAGS) -o hwloc-hello $(LDLIBS)
 .fi
 .PP
 .PP
@@ -448,7 +439,7 @@ On a machine 2 processor packages -- each package of which has two processing co
 .PP
 .PP
 .nf
-shell$ ./hwloc-hello
+shell$ \&./hwloc-hello
 *** Objects at level 0
 Index 0: Machine
 *** Objects at level 1

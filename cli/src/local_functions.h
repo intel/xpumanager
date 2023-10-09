@@ -35,6 +35,8 @@ bool getPciDeviceData(PciDeviceData &data, const std::string &bdf);
 bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
 
 bool isATSMPlatform(std::string str);
+bool isATSM3(std::string &pciId);
+bool isATSM1(std::string &pciId);
 
 bool isATSMPlatformFromSysFile();
 

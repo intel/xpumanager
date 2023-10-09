@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2021 Inria.  All rights reserved.
+ * Copyright © 2010-2022 Inria.  All rights reserved.
  * Copyright © 2010-2013 Université Bordeaux
  * Copyright © 2010-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -80,7 +80,7 @@ cpuiddump_read(const char *dirpath, unsigned idx)
 
   cpuiddump = malloc(sizeof(*cpuiddump));
   if (!cpuiddump) {
-    fprintf(stderr, "Failed to allocate cpuiddump for PU #%u, ignoring cpuiddump.\n", idx);
+    fprintf(stderr, "hwloc/x86: Failed to allocate cpuiddump for PU #%u, ignoring cpuiddump.\n", idx);
     goto out;
   }
 
@@ -91,7 +91,7 @@ cpuiddump_read(const char *dirpath, unsigned idx)
   snprintf(filename, filenamelen, "%s/pu%u", dirpath, idx);
   file = fopen(filename, "r");
   if (!file) {
-    fprintf(stderr, "Could not read dumped cpuid file %s, ignoring cpuiddump.\n", filename);
+    fprintf(stderr, "hwloc/x86: Could not read dumped cpuid file %s, ignoring cpuiddump.\n", filename);
     goto out_with_filename;
   }
 
@@ -100,7 +100,7 @@ cpuiddump_read(const char *dirpath, unsigned idx)
     nr++;
   cpuiddump->entries = malloc(nr * sizeof(struct cpuiddump_entry));
   if (!cpuiddump->entries) {
-    fprintf(stderr, "Failed to allocate %u cpuiddump entries for PU #%u, ignoring cpuiddump.\n", nr, idx);
+    fprintf(stderr, "hwloc/x86: Failed to allocate %u cpuiddump entries for PU #%u, ignoring cpuiddump.\n", nr, idx);
     goto out_with_file;
   }
 
@@ -156,7 +156,7 @@ cpuiddump_find_by_input(unsigned *eax, unsigned *ebx, unsigned *ecx, unsigned *e
     return;
   }
 
-  fprintf(stderr, "Couldn't find %x,%x,%x,%x in dumped cpuid, returning 0s.\n",
+  fprintf(stderr, "hwloc/x86: Couldn't find %x,%x,%x,%x in dumped cpuid, returning 0s.\n",
 	  *eax, *ebx, *ecx, *edx);
   *eax = 0;
   *ebx = 0;
@@ -614,10 +614,13 @@ static void look_proc(struct hwloc_backend *backend, struct procinfo *infos, uns
   eax = 0x01;
   cpuid_or_from_dump(&eax, &ebx, &ecx, &edx, src_cpuiddump);
   infos->apicid = ebx >> 24;
-  if (edx & (1 << 28))
+  if (edx & (1 << 28)) {
     legacy_max_log_proc = 1 << hwloc_flsl(((ebx >> 16) & 0xff) - 1);
-  else
+  } else {
+    hwloc_debug("HTT bit not set in CPUID 0x01.edx, assuming legacy_max_log_proc = 1\n");
     legacy_max_log_proc = 1;
+  }
+
   hwloc_debug("APIC ID 0x%02x legacy_max_log_proc %u\n", infos->apicid, legacy_max_log_proc);
   infos->ids[PKG] = infos->apicid / legacy_max_log_proc;
   legacy_log_proc_id = infos->apicid % legacy_max_log_proc;
@@ -680,12 +683,23 @@ static void look_proc(struct hwloc_backend *backend, struct procinfo *infos, uns
       unsigned max_nbcores;
       unsigned max_nbthreads;
       unsigned threadid __hwloc_attribute_unused;
+      hwloc_debug("Trying to get core/thread IDs from 0x04...\n");
       max_nbcores = ((eax >> 26) & 0x3f) + 1;
-      max_nbthreads = legacy_max_log_proc / max_nbcores;
-      hwloc_debug("thus %u threads\n", max_nbthreads);
-      threadid = legacy_log_proc_id % max_nbthreads;
-      infos->ids[CORE] = legacy_log_proc_id / max_nbthreads;
-      hwloc_debug("this is thread %u of core %u\n", threadid, infos->ids[CORE]);
+      hwloc_debug("found %u cores max\n", max_nbcores);
+      /* some VMs (e.g. issue#525) don't report valid information, check things before dividing by 0. */
+      if (!max_nbcores) {
+        hwloc_debug("cannot detect core/thread IDs from 0x04 without a valid max of cores\n");
+      } else {
+        max_nbthreads = legacy_max_log_proc / max_nbcores;
+        hwloc_debug("found %u threads max\n", max_nbthreads);
+        if (!max_nbthreads) {
+          hwloc_debug("cannot detect core/thread IDs from 0x04 without a valid max of threads\n");
+        } else {
+          threadid = legacy_log_proc_id % max_nbthreads;
+          infos->ids[CORE] = legacy_log_proc_id / max_nbthreads;
+          hwloc_debug("this is thread %u of core %u\n", threadid, infos->ids[CORE]);
+        }
+      }
     }
   }
 
@@ -1335,7 +1349,7 @@ look_procs(struct hwloc_backend *backend, struct procinfo *infos, unsigned long 
   if (data->apicid_unique) {
     summarize(backend, infos, flags);
 
-    if (has_hybrid(features)) {
+    if (has_hybrid(features) && !(topology->flags & HWLOC_TOPOLOGY_FLAG_NO_CPUKINDS)) {
       /* use hybrid info for cpukinds */
       hwloc_bitmap_t atomset = hwloc_bitmap_alloc();
       hwloc_bitmap_t coreset = hwloc_bitmap_alloc();
@@ -1366,9 +1380,10 @@ look_procs(struct hwloc_backend *backend, struct procinfo *infos, unsigned long 
         hwloc_bitmap_free(coreset);
       }
     }
+  } else {
+    hwloc_debug("x86 APIC IDs aren't unique, x86 discovery ignored.\n");
+    /* do nothing and return success, so that the caller does nothing either */
   }
-  /* if !data->apicid_unique, do nothing and return success, so that the caller does nothing either */
-
   return 0;
 }
 
@@ -1716,17 +1731,17 @@ hwloc_x86_check_cpuiddump_input(const char *src_cpuiddump_path, hwloc_bitmap_t s
   sprintf(path, "%s/hwloc-cpuid-info", src_cpuiddump_path);
   file = fopen(path, "r");
   if (!file) {
-    fprintf(stderr, "Couldn't open dumped cpuid summary %s\n", path);
+    fprintf(stderr, "hwloc/x86: Couldn't open dumped cpuid summary %s\n", path);
     goto out_with_path;
   }
   if (!fgets(line, sizeof(line), file)) {
-    fprintf(stderr, "Found read dumped cpuid summary in %s\n", path);
+    fprintf(stderr, "hwloc/x86: Found read dumped cpuid summary in %s\n", path);
     fclose(file);
     goto out_with_path;
   }
   fclose(file);
   if (strcmp(line, "Architecture: x86\n")) {
-    fprintf(stderr, "Found non-x86 dumped cpuid summary in %s: %s\n", path, line);
+    fprintf(stderr, "hwloc/x86: Found non-x86 dumped cpuid summary in %s: %s\n", path, line);
     goto out_with_path;
   }
   free(path);
@@ -1738,19 +1753,19 @@ hwloc_x86_check_cpuiddump_input(const char *src_cpuiddump_path, hwloc_bitmap_t s
       if (!*end)
 	hwloc_bitmap_set(set, idx);
       else
-	fprintf(stderr, "Ignoring invalid dirent `%s' in dumped cpuid directory `%s'\n",
+	fprintf(stderr, "hwloc/x86: Ignoring invalid dirent `%s' in dumped cpuid directory `%s'\n",
 		dirent->d_name, src_cpuiddump_path);
     }
   }
   closedir(dir);
 
   if (hwloc_bitmap_iszero(set)) {
-    fprintf(stderr, "Did not find any valid pu%%u entry in dumped cpuid directory `%s'\n",
+    fprintf(stderr, "hwloc/x86: Did not find any valid pu%%u entry in dumped cpuid directory `%s'\n",
 	    src_cpuiddump_path);
     return -1;
   } else if (hwloc_bitmap_last(set) != hwloc_bitmap_weight(set) - 1) {
     /* The x86 backends enforces contigous set of PUs starting at 0 so far */
-    fprintf(stderr, "Found non-contigous pu%%u range in dumped cpuid directory `%s'\n",
+    fprintf(stderr, "hwloc/x86: Found non-contigous pu%%u range in dumped cpuid directory `%s'\n",
 	    src_cpuiddump_path);
     return -1;
   }
@@ -1815,7 +1830,7 @@ hwloc_x86_component_instantiate(struct hwloc_topology *topology,
       assert(!hwloc_bitmap_iszero(set)); /* enforced by hwloc_x86_check_cpuiddump_input() */
       data->nbprocs = hwloc_bitmap_weight(set);
     } else {
-      fprintf(stderr, "Ignoring dumped cpuid directory.\n");
+      fprintf(stderr, "hwloc/x86: Ignoring dumped cpuid directory.\n");
     }
     hwloc_bitmap_free(set);
   }

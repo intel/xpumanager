@@ -1,5 +1,5 @@
 #
-# Copyright © 2018-2021 Inria.  All rights reserved.
+# Copyright © 2018-2022 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 #
 
@@ -12,12 +12,14 @@
 
 _lstopo() {
     local INPUT_FORMAT=(xml synthetic fsroot cpuid)
-    local OUTPUT_FORMAT=(console ascii tikz fig pdf ps png svg xml synthetic)
+    local OUTPUT_FORMAT=(default window console ascii tikz tex fig pdf nativesvg cairosvg ps png svg xml shmem synthetic)
     local TYPES=("Machine" "Misc" "Group" "NUMANode" "MemCache" "Package" "Die" "L1" "L2" "L3" "L4" "L5" "L1i" "L2i" "L3i" "Core" "Bridge" "PCIDev" "OSDev" "PU")
     local FILTERKINDS=("none" "all" "structure" "important")
     local OPTIONS=(-l --logical
 		   -p --physical
-		   --output-format --of
+                   --logical-index-prefix
+                   --os-index-prefix
+                   --output-format --of
 		   -f --force
 		   --only
 		   -v --verbose
@@ -109,6 +111,9 @@ _lstopo() {
 		;;
 	    --restrict)
 		COMPREPLY=( `compgen -W "binding <cpuset>" -- "$cur"` )
+		;;
+            --logical-index-prefix | --os-index-prefix)
+	        COMPREPLY=( "<string>" "" )
 		;;
 	    -i | --input)
 		_filedir xml
@@ -385,6 +390,7 @@ _hwloc_diff(){
 	case "$prev" in
 	    --refname)
 		COMPREPLY=( "<reference topology identifier>" "")
+		return
 		;;
 	esac
     fi

@@ -331,13 +331,7 @@ std::vector<char> readImageContent(const char* filePath) {
 
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force) {
     flashFwErrMsg.clear();
-    // check GFX fw_status
-    auto fw_status = getGfxFwStatus(deviceId);
-    if (!force && fw_status != gfx_fw_status::GfxFwStatus::NORMAL) {
-        flashFwErrMsg = "Fail to flash, GFX firmware status is " + transGfxFwStatusToString(fw_status);
-        return XPUM_GENERIC_ERROR;
-    }
-
+   
     // read image file
     auto buffer = readImageContent(filePath);
 
@@ -347,29 +341,47 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     }
 
     // check device exists
-    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr) {
-        return XPUM_GENERIC_ERROR;
-    }
-
-    // validate the image is compatible with the device
-    if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
-        if (!force) {
-            auto res = atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer);
-            if (res != XPUM_OK)
-                return res;
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            return XPUM_GENERIC_ERROR;
         }
     } else {
-        auto res = isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer);
-        if (res != XPUM_OK) {
-            return res;
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        // check for ats-m3
+        deviceList = getSiblingDevices(pDevice);
+    }
+
+    for (auto device : deviceList) {
+        // check GFX fw_status
+        auto fw_status = getGfxFwStatus(std::stoi(device->getId()));
+        if (!force && fw_status != gfx_fw_status::GfxFwStatus::NORMAL) {
+            flashFwErrMsg = "Fail to flash, GFX firmware status is " + transGfxFwStatusToString(fw_status);
+            return XPUM_GENERIC_ERROR;
+        }
+
+        // validate the image is compatible with the device
+        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
+            if (!force) {
+                auto res = atsmHwConfigCompatibleCheck(device->getMeiDevicePath(), buffer);
+                if (res != XPUM_OK)
+                    return res;
+            }
+        } else {
+            auto res = isPVCFwImageAndDeviceCompatible(device->getMeiDevicePath(), buffer);
+            if (res != XPUM_OK) {
+                return res;
+            }
         }
     }
 
     xpum_result_t res = XPUM_GENERIC_ERROR;
 
-    // check for ats-m3
-    auto deviceList = getSiblingDevices(pDevice);
     bool locked = Core::instance().getDeviceManager()->tryLockDevices(deviceList);
     if (!locked)
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
@@ -391,6 +403,9 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
             res = pd->runFirmwareFlash(param);
             if (res != XPUM_OK) {
                 flashFwErrMsg = param.errMsg;
+                if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                    flashFwErrMsg += " Device ID: " + pd->getId();
+                }
                 stop = true;
                 toUnlock.push_back(pd);
             }
@@ -407,14 +422,25 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
 
 void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t *result) {
     xpum_firmware_flash_result_t res;
-    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-
-    // res = device->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GSC);
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+        deviceList = getSiblingDevices(pDevice);
+    }
 
     result->deviceId = deviceId;
     result->type = XPUM_DEVICE_FIRMWARE_GFX;
-    // result->result = res;
-    auto deviceList = getSiblingDevices(device);
 
     int totalPercent = 0;
     bool ongoing = false;
@@ -439,6 +465,10 @@ void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_
         flashFwErrMsg = param.errMsg;
         if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
             result->result = res;
+            if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                flashFwErrMsg += " Device ID: " + pd->getId();
+                break;
+            }
         }
     }
 }
@@ -451,6 +481,10 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
     xpum::Core& core = xpum::Core::instance();
     auto groupManager = core.getGroupManager();
     std::vector<std::shared_ptr<Device>> result;
+
+    if (pDevice == nullptr) {
+        return result;
+    }
 
     int count = 0;
     groupManager->getAllGroupIds(nullptr, &count);
@@ -485,19 +519,32 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
 
 xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath) {
     flashFwErrMsg.clear();
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            return XPUM_GENERIC_ERROR;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        // check for ats-m3
+        deviceList = getSiblingDevices(pDevice);
+    }
 
-    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr) {
-        return XPUM_GENERIC_ERROR;
+    for (auto device : deviceList) {
+        auto deviceModel = device->getDeviceModel();
+        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3)) {
+            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA;
+        }
     }
-    auto deviceModel = pDevice->getDeviceModel();
-    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3)) {
-        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA;
-    }
+
     xpum_result_t res = XPUM_GENERIC_ERROR;
-    // check for ats-m3
+
     // check device is busy or not
-    auto deviceList = getSiblingDevices(pDevice);
     bool locked = Core::instance().getDeviceManager()->tryLockDevices(deviceList);
     if (!locked)
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
@@ -518,6 +565,9 @@ xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const c
             res = pd->getFwDataMgmt()->flashFwData(param);
             if (res != XPUM_OK) {
                 flashFwErrMsg = param.errMsg;
+                if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                    flashFwErrMsg += " Device ID: " + pd->getId();
+                }
                 stop = true;
                 toUnlock.push_back(pd);
             }
@@ -535,18 +585,33 @@ xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const c
 void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result) {
     std::lock_guard<std::mutex> lck(mtx);
     xpum_firmware_flash_result_t res;
-    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+        deviceList = getSiblingDevices(pDevice);
+    }
 
     result->deviceId = deviceId;
     result->type = XPUM_DEVICE_FIRMWARE_GFX_DATA;
 
-    auto deviceModel = pDevice->getDeviceModel();
-    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3)) {
-        result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
-        return;
+    for (auto device : deviceList) {
+        auto deviceModel = device->getDeviceModel();
+        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3)) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+            return;
+        }
     }
-
-    auto deviceList = getSiblingDevices(pDevice);
 
     bool ongoing = false;
     int totalPercent = 0;
@@ -571,6 +636,9 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
         res = pd->getFwDataMgmt()->getFlashFwDataResult(param);
         if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
             flashFwErrMsg = param.errMsg;
+            if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                flashFwErrMsg += " Device ID: " + pd->getId();
+            }
             result->result = res;
         }
     }
@@ -625,49 +693,88 @@ xpum_result_t FirmwareManager::getAMCSerialNumbersByRiserSlot(uint8_t baseboardS
 }
 
 xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const char* filePath, bool force) {
-    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr) {
-        return XPUM_GENERIC_ERROR;
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            return XPUM_GENERIC_ERROR;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        deviceList.push_back(pDevice);
     }
-    bool locked = pDevice->try_lock();
-    if (!locked)
-        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-    flashFwErrMsg.clear();
-    FlashPscFwParam param;
-    param.filePath = filePath;
-    param.force = force;
-    auto pPscMgmt = pDevice->getPscMgmt();
-    if (!pPscMgmt) {
-        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC;
+    xpum_result_t ret;
+    for (auto device : deviceList) {
+        bool locked = device->try_lock();
+        if (!locked)
+            return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        flashFwErrMsg.clear();
+        FlashPscFwParam param;
+        param.filePath = filePath;
+        param.force = force;
+        auto pPscMgmt = device->getPscMgmt();
+        if (!pPscMgmt) {
+            return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC;
+        }
+        ret = pPscMgmt->flashPscFw(param);
+        flashFwErrMsg = param.errMsg;
+        if (ret != XPUM_OK) {
+            if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                flashFwErrMsg += " Device ID: " + device->getId();
+            }
+            break;
+        }
     }
-    auto res = pPscMgmt->flashPscFw(param);
-    flashFwErrMsg = param.errMsg;
-    return res;
+    return ret;
 }
 
 void FirmwareManager::getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result) {
-    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+        deviceList.push_back(pDevice);
+    }
 
     result->deviceId = deviceId;
     result->type = XPUM_DEVICE_FIRMWARE_GFX_PSCBIN;
 
-    if (pDevice == nullptr) {
-        result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
-        return;
+    int totalPercent = 0;
+    for (auto pd : deviceList) {
+        auto pPscMgmt = pd->getPscMgmt();
+        if (pPscMgmt == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+            return;
+        }
+        totalPercent += pPscMgmt->percent.load();
+        GetFlashPscFwResultParam param;
+        auto res = pPscMgmt->getFlashPscFwResult(param);
+        flashFwErrMsg = param.errMsg;
+        result->result = res;
+        if (res != XPUM_DEVICE_FIRMWARE_FLASH_OK &&
+            res != XPUM_DEVICE_FIRMWARE_FLASH_ONGOING) {
+            if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                flashFwErrMsg += " Device ID: " + pd->getId();
+            }
+            break;
+        }
     }
-    auto pPscMgmt = pDevice->getPscMgmt();
-    if (!pPscMgmt) {
-        result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
-        return;
-    }
-    result->percentage = pPscMgmt->percent.load();
-    
-    GetFlashPscFwResultParam param;
-    auto res = pPscMgmt->getFlashPscFwResult(param);
-
-    flashFwErrMsg = param.errMsg;
-
-    result->result = res;
+    result->percentage = totalPercent / deviceList.size();
+    return;
 }
 
 using namespace gfx_fw_status;

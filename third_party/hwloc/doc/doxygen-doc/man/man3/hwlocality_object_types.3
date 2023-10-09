@@ -1,4 +1,4 @@
-.TH "hwlocality_object_types" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwlocality_object_types" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -227,10 +227,23 @@ Die within a physical package\&. A subpart of the physical package, that contain
 .SS "int hwloc_compare_types (\fBhwloc_obj_type_t\fP type1, \fBhwloc_obj_type_t\fP type2)"
 
 .PP
-Compare the depth of two object types\&. Types shouldn't be compared as they are, since newer ones may be added in the future\&. This function returns less than, equal to, or greater than zero respectively if \fCtype1\fP objects usually include \fCtype2\fP objects, are the same as \fCtype2\fP objects, or are included in \fCtype2\fP objects\&. If the types can not be compared (because neither is usually contained in the other), \fBHWLOC_TYPE_UNORDERED\fP is returned\&. Object types containing CPUs can always be compared (usually, a system contains machines which contain nodes which contain packages which contain caches, which contain cores, which contain processors)\&.
+Compare the depth of two object types\&. Types shouldn't be compared as they are, since newer ones may be added in the future\&.
+.PP
+\fBReturns\fP
+.RS 4
+A negative integer if \fCtype1\fP objects usually include \fCtype2\fP objects\&. 
+.PP
+A positive integer if \fCtype1\fP objects are usually included in \fCtype2\fP objects\&. 
+.PP
+0 if \fCtype1\fP and \fCtype2\fP objects are the same\&. 
+.PP
+\fBHWLOC_TYPE_UNORDERED\fP if objects cannot be compared (because neither is usually contained in the other)\&.
+.RE
 .PP
 \fBNote\fP
 .RS 4
+Object types containing CPUs can always be compared (usually, a machine contains packages, which contain caches, which contain cores, which contain PUs)\&.
+.PP
 \fBHWLOC_OBJ_PU\fP will always be the deepest, while \fBHWLOC_OBJ_MACHINE\fP is always the highest\&.
 .PP
 This does not mean that the actual topology will respect that order: e\&.g\&. as of today cores may also contain caches, and packages may also contain nodes\&. This is thus just to be seen as a fallback comparison method\&. 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2020 Inria.  All rights reserved.
+ * Copyright © 2012-2023 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -14,6 +14,14 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+
+#if defined(HWLOC_WIN_SYS) && !defined(__CYGWIN__)
+#include <io.h>
+#define open _open
+#define read _read
+#define close _close
+#define mktemp _mktemp
+#endif
 
 #ifndef HAVE_MKSTEMP
 #include <fcntl.h>
@@ -38,10 +46,14 @@ static const char *get_backend_name(hwloc_topology_t topo)
 static void assert_backend_name(hwloc_topology_t topo, const char *wanted)
 {
   const char *found = get_backend_name(topo);
-  int diff;
-  assert(found);
-  diff = strcmp(found, wanted);
-  assert(!diff);
+  if (!wanted) {
+    assert(!found);
+  } else {
+    int diff;
+    assert(found);
+    diff = strcmp(found, wanted);
+    assert(!diff);
+  }
 }
 
 static void assert_foo_bar(hwloc_topology_t topo, int setornot)

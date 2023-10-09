@@ -1,4 +1,4 @@
-.TH "hwlocality_object_strings" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwlocality_object_strings" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -41,7 +41,7 @@ If \fCsize\fP is 0, \fCstring\fP may safely be \fCNULL\fP\&.
 .PP
 \fBReturns\fP
 .RS 4
-the number of character that were actually written if not truncating, or that would have been written (not including the ending \\0)\&. 
+the number of characters that were actually written if not truncating, or that would have been written (not including the ending \\0)\&. 
 .RE
 .PP
 
@@ -60,16 +60,23 @@ If \fCsize\fP is 0, \fCstring\fP may safely be \fCNULL\fP\&.
 .PP
 \fBReturns\fP
 .RS 4
-the number of character that were actually written if not truncating, or that would have been written (not including the ending \\0)\&. 
+the number of characters that were actually written if not truncating, or that would have been written (not including the ending \\0)\&. 
 .RE
 .PP
 
-.SS "const char* hwloc_obj_type_string (\fBhwloc_obj_type_t\fP type)"
+.SS "const char * hwloc_obj_type_string (\fBhwloc_obj_type_t\fP type)"
 
 .PP
 Return a constant stringified object type\&. This function is the basic way to convert a generic type into a string\&. The output string may be parsed back by \fBhwloc_type_sscanf()\fP\&.
 .PP
-\fBhwloc_obj_type_snprintf()\fP may return a more precise output for a specific object, but it requires the caller to provide the output buffer\&. 
+\fBhwloc_obj_type_snprintf()\fP may return a more precise output for a specific object, but it requires the caller to provide the output buffer\&.
+.PP
+\fBReturns\fP
+.RS 4
+A constant string containing the object type name or \fC'Unknown'\fP\&. 
+.RE
+.PP
+
 .SS "int hwloc_type_sscanf (const char * string, \fBhwloc_obj_type_t\fP * typep, union \fBhwloc_obj_attr_u\fP * attrp, size_t attrsize)"
 
 .PP

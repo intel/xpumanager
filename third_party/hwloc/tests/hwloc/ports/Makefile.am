@@ -1,4 +1,4 @@
-# Copyright © 2009-2021 Inria.  All rights reserved.
+# Copyright © 2009-2023 Inria.  All rights reserved.
 # Copyright © 2009, 2011-2012, 2020 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -68,7 +68,8 @@ nodist_libhwloc_port_darwin_la_SOURCES = topology-darwin.c
 libhwloc_port_darwin_la_SOURCES = \
         include/darwin/sys/sysctl.h \
         include/darwin/IOKit/IOKitLib.h \
-        include/darwin/CoreFoundation/CoreFoundation.h
+        include/darwin/CoreFoundation/CoreFoundation.h \
+        include/darwin/Availability.h
 libhwloc_port_darwin_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/darwin \
         -DHWLOC_DARWIN_SYS \
@@ -171,7 +172,8 @@ nodist_libhwloc_port_nvml_la_SOURCES = topology-nvml.c
 libhwloc_port_nvml_la_SOURCES = \
         include/nvml/nvml.h
 libhwloc_port_nvml_la_CPPFLAGS = $(common_CPPFLAGS) \
-        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/nvml
+        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/nvml \
+        -DHAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION=1
 
 nodist_libhwloc_port_rsmi_la_SOURCES = topology-rsmi.c
 libhwloc_port_rsmi_la_SOURCES = \
@@ -184,7 +186,8 @@ libhwloc_port_levelzero_la_SOURCES = \
         include/levelzero/level_zero/ze_api.h \
         include/levelzero/level_zero/zes_api.h
 libhwloc_port_levelzero_la_CPPFLAGS = $(common_CPPFLAGS) \
-        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/levelzero
+        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/levelzero \
+        -DHWLOC_HAVE_ZEDEVICEPCIGETPROPERTIESEXT=1
 
 nodist_libhwloc_port_gl_la_SOURCES = topology-gl.c
 libhwloc_port_gl_la_SOURCES = \

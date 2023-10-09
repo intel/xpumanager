@@ -260,6 +260,7 @@ enum PrecheckErrorType {
     HUC_NOT_RUNNING = 12;
     LEVEL_ZERO_METRICS_INIT_ERROR = 13;
     MEMORY_ERROR = 14;
+    GPU_INITIALIZATION_FAILED = 15;
 }
 
 enum PrecheckErrorCategory {

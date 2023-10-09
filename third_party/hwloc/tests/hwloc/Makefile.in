@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2021 Inria.  All rights reserved.
+# Copyright © 2009-2022 Inria.  All rights reserved.
 # Copyright © 2009-2012 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -122,11 +122,11 @@ check_PROGRAMS = hwloc_api_version$(EXEEXT) \
 	hwloc_topology_dup$(EXEEXT) hwloc_topology_diff$(EXEEXT) \
 	hwloc_topology_abi$(EXEEXT) hwloc_obj_infos$(EXEEXT) \
 	hwloc_iodevs$(EXEEXT) cpuset_nodeset$(EXEEXT) \
-	memattrs$(EXEEXT) cpukinds$(EXEEXT) xmlbuffer$(EXEEXT) \
-	gl$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
-	$(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9) \
-	$(am__EXEEXT_10) $(am__EXEEXT_11)
+	memattrs$(EXEEXT) memtiers$(EXEEXT) cpukinds$(EXEEXT) \
+	xmlbuffer$(EXEEXT) gl$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5) \
+	$(am__EXEEXT_6) $(am__EXEEXT_7) $(am__EXEEXT_8) \
+	$(am__EXEEXT_9) $(am__EXEEXT_10) $(am__EXEEXT_11)
 @HWLOC_HAVE_WINDOWS_TRUE@am__append_4 = windows_processor_groups
 @HWLOC_HAVE_DARWIN_FALSE@@HWLOC_HAVE_WINDOWS_FALSE@am__append_5 = shmem
 @HWLOC_HAVE_LINUX_LIBNUMA_TRUE@am__append_6 = linux-libnuma
@@ -423,6 +423,10 @@ memattrs_SOURCES = memattrs.c
 memattrs_OBJECTS = memattrs.$(OBJEXT)
 memattrs_LDADD = $(LDADD)
 memattrs_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
+memtiers_SOURCES = memtiers.c
+memtiers_OBJECTS = memtiers.$(OBJEXT)
+memtiers_LDADD = $(LDADD)
+memtiers_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 nvml_SOURCES = nvml.c
 nvml_OBJECTS = nvml-nvml.$(OBJEXT)
 nvml_DEPENDENCIES = $(LDADD) $(am__DEPENDENCIES_1) \
@@ -518,8 +522,8 @@ am__depfiles_remade = ./$(DEPDIR)/cpukinds.Po \
 	./$(DEPDIR)/hwloc_type_sscanf.Po \
 	./$(DEPDIR)/levelzero-levelzero.Po \
 	./$(DEPDIR)/linux_libnuma-linux-libnuma.Po \
-	./$(DEPDIR)/memattrs.Po ./$(DEPDIR)/nvml-nvml.Po \
-	./$(DEPDIR)/opencl-opencl.Po \
+	./$(DEPDIR)/memattrs.Po ./$(DEPDIR)/memtiers.Po \
+	./$(DEPDIR)/nvml-nvml.Po ./$(DEPDIR)/opencl-opencl.Po \
 	./$(DEPDIR)/openfabrics_verbs-openfabrics-verbs.Po \
 	./$(DEPDIR)/rsmi-rsmi.Po ./$(DEPDIR)/shmem.Po \
 	./$(DEPDIR)/windows_processor_groups.Po \
@@ -564,7 +568,7 @@ SOURCES = cpukinds.c cpuset_nodeset.c cuda.c cudart.c gl.c \
 	hwloc_topology_diff.c hwloc_topology_dup.c \
 	hwloc_topology_restrict.c hwloc_type_depth.c \
 	hwloc_type_sscanf.c levelzero.c linux-libnuma.c memattrs.c \
-	nvml.c opencl.c openfabrics-verbs.c rsmi.c shmem.c \
+	memtiers.c nvml.c opencl.c openfabrics-verbs.c rsmi.c shmem.c \
 	windows_processor_groups.c xmlbuffer.c
 DIST_SOURCES = cpukinds.c cpuset_nodeset.c cuda.c cudart.c gl.c \
 	glibc-sched.c hwloc_api_version.c hwloc_backends.c \
@@ -587,7 +591,7 @@ DIST_SOURCES = cpukinds.c cpuset_nodeset.c cuda.c cudart.c gl.c \
 	hwloc_topology_diff.c hwloc_topology_dup.c \
 	hwloc_topology_restrict.c hwloc_type_depth.c \
 	hwloc_type_sscanf.c levelzero.c linux-libnuma.c memattrs.c \
-	nvml.c opencl.c openfabrics-verbs.c rsmi.c shmem.c \
+	memtiers.c nvml.c opencl.c openfabrics-verbs.c rsmi.c shmem.c \
 	windows_processor_groups.c xmlbuffer.c
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
@@ -864,6 +868,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARCHIVEMOUNT = @ARCHIVEMOUNT@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -901,6 +906,7 @@ ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
+FILECMD = @FILECMD@
 GREP = @GREP@
 GS = @GS@
 HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
@@ -927,9 +933,11 @@ HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
 HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LEVELZERO = @HWLOC_HAVE_LEVELZERO@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
+HWLOC_HAVE_LINUX = @HWLOC_HAVE_LINUX@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
 HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
+HWLOC_HAVE_X86_CPUID = @HWLOC_HAVE_X86_CPUID@
 HWLOC_IBVERBS_LIBS = @HWLOC_IBVERBS_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LEVELZERO_CFLAGS = @HWLOC_LEVELZERO_CFLAGS@
@@ -1358,6 +1366,10 @@ memattrs$(EXEEXT): $(memattrs_OBJECTS) $(memattrs_DEPENDENCIES) $(EXTRA_memattrs
 	@rm -f memattrs$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(memattrs_OBJECTS) $(memattrs_LDADD) $(LIBS)
 
+memtiers$(EXEEXT): $(memtiers_OBJECTS) $(memtiers_DEPENDENCIES) $(EXTRA_memtiers_DEPENDENCIES) 
+	@rm -f memtiers$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(memtiers_OBJECTS) $(memtiers_LDADD) $(LIBS)
+
 nvml$(EXEEXT): $(nvml_OBJECTS) $(nvml_DEPENDENCIES) $(EXTRA_nvml_DEPENDENCIES) 
 	@rm -f nvml$(EXEEXT)
 	$(AM_V_CCLD)$(nvml_LINK) $(nvml_OBJECTS) $(nvml_LDADD) $(LIBS)
@@ -1437,6 +1449,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/levelzero-levelzero.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux_libnuma-linux-libnuma.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memattrs.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memtiers.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nvml-nvml.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opencl-opencl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/openfabrics_verbs-openfabrics-verbs.Po@am__quote@ # am--include-marker
@@ -2099,6 +2112,13 @@ memattrs.log: memattrs$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+memtiers.log: memtiers$(EXEEXT)
+	@p='memtiers$(EXEEXT)'; \
+	b='memtiers'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 cpukinds.log: cpukinds$(EXEEXT)
 	@p='cpukinds$(EXEEXT)'; \
 	b='cpukinds'; \
@@ -2360,6 +2380,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/levelzero-levelzero.Po
 	-rm -f ./$(DEPDIR)/linux_libnuma-linux-libnuma.Po
 	-rm -f ./$(DEPDIR)/memattrs.Po
+	-rm -f ./$(DEPDIR)/memtiers.Po
 	-rm -f ./$(DEPDIR)/nvml-nvml.Po
 	-rm -f ./$(DEPDIR)/opencl-opencl.Po
 	-rm -f ./$(DEPDIR)/openfabrics_verbs-openfabrics-verbs.Po
@@ -2457,6 +2478,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/levelzero-levelzero.Po
 	-rm -f ./$(DEPDIR)/linux_libnuma-linux-libnuma.Po
 	-rm -f ./$(DEPDIR)/memattrs.Po
+	-rm -f ./$(DEPDIR)/memtiers.Po
 	-rm -f ./$(DEPDIR)/nvml-nvml.Po
 	-rm -f ./$(DEPDIR)/opencl-opencl.Po
 	-rm -f ./$(DEPDIR)/openfabrics_verbs-openfabrics-verbs.Po

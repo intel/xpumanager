@@ -1,4 +1,4 @@
-.TH "hwlocality_memattrs_manage" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwlocality_memattrs_manage" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -29,7 +29,7 @@ hwlocality_memattrs_manage \- Managing memory attributes
 .RI "int \fBhwloc_memattr_set_value\fP (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, \fBhwloc_obj_t\fP target_node, struct \fBhwloc_location\fP *initiator, unsigned long flags, hwloc_uint64_t value)"
 .br
 .ti -1c
-.RI "int \fBhwloc_memattr_get_targets\fP (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, struct \fBhwloc_location\fP *initiator, unsigned long flags, unsigned *nrp, \fBhwloc_obj_t\fP *targets, hwloc_uint64_t *values)"
+.RI "int \fBhwloc_memattr_get_targets\fP (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, struct \fBhwloc_location\fP *initiator, unsigned long flags, unsigned *nr, \fBhwloc_obj_t\fP *targets, hwloc_uint64_t *values)"
 .br
 .ti -1c
 .RI "int \fBhwloc_memattr_get_initiators\fP (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, \fBhwloc_obj_t\fP target_node, unsigned long flags, unsigned *nr, struct \fBhwloc_location\fP *initiators, hwloc_uint64_t *values)"
@@ -61,7 +61,16 @@ The value returned for this memory attribute depends on the given initiator\&. F
 .SS "int hwloc_memattr_get_flags (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, unsigned long * flags)"
 
 .PP
-Return the flags of the given attribute\&. Flags are a OR'ed set of \fBhwloc_memattr_flag_e\fP\&. 
+Return the flags of the given attribute\&. Flags are a OR'ed set of \fBhwloc_memattr_flag_e\fP\&.
+.PP
+\fBReturns\fP
+.RS 4
+0 on success\&. 
+.PP
+-1 with errno set to \fCEINVAL\fP if the attribute does not exist\&. 
+.RE
+.PP
+
 .SS "int hwloc_memattr_get_initiators (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, \fBhwloc_obj_t\fP target_node, unsigned long flags, unsigned * nr, struct \fBhwloc_location\fP * initiators, hwloc_uint64_t * values)"
 
 .PP
@@ -75,6 +84,11 @@ The returned initiators should not be modified or freed, they belong to the topo
 .PP
 If the attribute does not relate to a specific initiator (it does not have the flag \fBHWLOC_MEMATTR_FLAG_NEED_INITIATOR\fP), no initiator is returned\&.
 .PP
+\fBReturns\fP
+.RS 4
+0 on success or -1 on error\&.
+.RE
+.PP
 \fBNote\fP
 .RS 4
 This function is meant for tools and debugging (listing internal information) rather than for application queries\&. Applications should rather select useful NUMA nodes with \fBhwloc_get_local_numanode_objs()\fP and then look at their attribute values for some relevant initiators\&. 
@@ -85,7 +99,16 @@ This function is meant for tools and debugging (listing internal information) ra
 
 .PP
 Return the name of a memory attribute\&. 
-.SS "int hwloc_memattr_get_targets (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, struct \fBhwloc_location\fP * initiator, unsigned long flags, unsigned * nrp, \fBhwloc_obj_t\fP * targets, hwloc_uint64_t * values)"
+.PP
+\fBReturns\fP
+.RS 4
+0 on success\&. 
+.PP
+-1 with errno set to \fCEINVAL\fP if the attribute does not exist\&. 
+.RE
+.PP
+
+.SS "int hwloc_memattr_get_targets (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, struct \fBhwloc_location\fP * initiator, unsigned long flags, unsigned * nr, \fBhwloc_obj_t\fP * targets, hwloc_uint64_t * values)"
 
 .PP
 Return the target NUMA nodes that have some values for a given attribute\&. Return targets for the given attribute in the \fCtargets\fP array (for the given initiator if any)\&. If \fCvalues\fP is not \fCNULL\fP, the corresponding attribute values are stored in the array it points to\&.
@@ -101,15 +124,32 @@ Argument \fCinitiator\fP is ignored if the attribute does not relate to a specif
 \fBNote\fP
 .RS 4
 This function is meant for tools and debugging (listing internal information) rather than for application queries\&. Applications should rather select useful NUMA nodes with \fBhwloc_get_local_numanode_objs()\fP and then look at their attribute values\&.
+.RE
 .PP
-The initiator \fCinitiator\fP should be of type \fBHWLOC_LOCATION_TYPE_CPUSET\fP when refering to accesses performed by CPU cores\&. \fBHWLOC_LOCATION_TYPE_OBJECT\fP is currently unused internally by hwloc, but users may for instance use it to provide custom information about host memory accesses performed by GPUs\&. 
+\fBReturns\fP
+.RS 4
+0 on success or -1 on error\&.
+.RE
+.PP
+\fBNote\fP
+.RS 4
+The initiator \fCinitiator\fP should be of type \fBHWLOC_LOCATION_TYPE_CPUSET\fP when referring to accesses performed by CPU cores\&. \fBHWLOC_LOCATION_TYPE_OBJECT\fP is currently unused internally by hwloc, but users may for instance use it to provide custom information about host memory accesses performed by GPUs\&. 
 .RE
 .PP
 
 .SS "int hwloc_memattr_register (\fBhwloc_topology_t\fP topology, const char * name, unsigned long flags, \fBhwloc_memattr_id_t\fP * id)"
 
 .PP
-Register a new memory attribute\&. Add a specific memory attribute that is not defined in \fBhwloc_memattr_id_e\fP\&. Flags are a OR'ed set of \fBhwloc_memattr_flag_e\fP\&. It must contain at least one of \fBHWLOC_MEMATTR_FLAG_HIGHER_FIRST\fP or \fBHWLOC_MEMATTR_FLAG_LOWER_FIRST\fP\&. 
+Register a new memory attribute\&. Add a specific memory attribute that is not defined in \fBhwloc_memattr_id_e\fP\&. Flags are a OR'ed set of \fBhwloc_memattr_flag_e\fP\&. It must contain at least one of \fBHWLOC_MEMATTR_FLAG_HIGHER_FIRST\fP or \fBHWLOC_MEMATTR_FLAG_LOWER_FIRST\fP\&.
+.PP
+\fBReturns\fP
+.RS 4
+0 on success\&. 
+.PP
+-1 with errno set to \fCEBUSY\fP if another attribute already uses this name\&. 
+.RE
+.PP
+
 .SS "int hwloc_memattr_set_value (\fBhwloc_topology_t\fP topology, \fBhwloc_memattr_id_t\fP attribute, \fBhwloc_obj_t\fP target_node, struct \fBhwloc_location\fP * initiator, unsigned long flags, hwloc_uint64_t value)"
 
 .PP
@@ -121,7 +161,12 @@ The initiator will be copied into the topology, the caller should free anything 
 .PP
 \fBNote\fP
 .RS 4
-The initiator \fCinitiator\fP should be of type \fBHWLOC_LOCATION_TYPE_CPUSET\fP when refering to accesses performed by CPU cores\&. \fBHWLOC_LOCATION_TYPE_OBJECT\fP is currently unused internally by hwloc, but users may for instance use it to provide custom information about host memory accesses performed by GPUs\&. 
+The initiator \fCinitiator\fP should be of type \fBHWLOC_LOCATION_TYPE_CPUSET\fP when referring to accesses performed by CPU cores\&. \fBHWLOC_LOCATION_TYPE_OBJECT\fP is currently unused internally by hwloc, but users may for instance use it to provide custom information about host memory accesses performed by GPUs\&.
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+0 on success or -1 on error\&. 
 .RE
 .PP
 

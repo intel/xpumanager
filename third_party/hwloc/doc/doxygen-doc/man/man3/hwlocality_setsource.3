@@ -1,4 +1,4 @@
-.TH "hwlocality_setsource" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwlocality_setsource" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -34,6 +34,8 @@ hwlocality_setsource \- Changing the Source of Topology Discovery
 .in -1c
 .SH "Detailed Description"
 .PP 
+These functions must be called between \fBhwloc_topology_init()\fP and \fBhwloc_topology_load()\fP\&. Otherwise, they will return -1 with errno set to \fCEBUSY\fP\&.
+.PP
 If none of the functions below is called, the default is to detect all the objects of the machine that the caller is allowed to access\&.
 .PP
 This default behavior may also be modified through environment variables if the application did not modify it already\&. Setting HWLOC_XMLFILE in the environment enforces the discovery from a XML file as if \fBhwloc_topology_set_xml()\fP had been called\&. Setting HWLOC_SYNTHETIC enforces a synthetic topology as if \fBhwloc_topology_set_synthetic()\fP had been called\&.
@@ -62,7 +64,16 @@ For components with multiple phases, it may also be suffixed with the name of a 
 .PP
 \fCflags\fP should be \fBHWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST\fP\&.
 .PP
-This may be used to avoid expensive parts of the discovery process\&. For instance, CUDA-specific discovery may be expensive and unneeded while generic I/O discovery could still be useful\&. 
+This may be used to avoid expensive parts of the discovery process\&. For instance, CUDA-specific discovery may be expensive and unneeded while generic I/O discovery could still be useful\&.
+.PP
+\fBReturns\fP
+.RS 4
+0 on success\&. 
+.PP
+-1 on error, for instance if flags are invalid\&. 
+.RE
+.PP
+
 .SS "int hwloc_topology_set_pid (\fBhwloc_topology_t\fP restrict topology, hwloc_pid_t pid)"
 
 .PP
@@ -72,7 +83,12 @@ Change which process the topology is viewed from\&. On some systems, processes m
 .RS 4
 \fChwloc_pid_t\fP is \fCpid_t\fP on Unix platforms, and \fCHANDLE\fP on native Windows platforms\&.
 .PP
--1 is returned and errno is set to ENOSYS on platforms that do not support this feature\&. 
+-1 is returned and errno is set to \fCENOSYS\fP on platforms that do not support this feature\&.
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+0 on success, -1 on error\&. 
 .RE
 .PP
 
@@ -83,9 +99,16 @@ Enable synthetic topology\&. Gather topology information from the given \fCdescr
 .PP
 Setting the environment variable HWLOC_SYNTHETIC may also result in this behavior\&.
 .PP
-If \fCdescription\fP was properly parsed and describes a valid topology configuration, this function returns 0\&. Otherwise -1 is returned and errno is set to EINVAL\&.
+If \fCdescription\fP was properly parsed and describes a valid topology configuration, this function returns 0\&. Otherwise -1 is returned and errno is set to \fCEINVAL\fP\&.
 .PP
 Note that this function does not actually load topology information; it just tells hwloc where to load it from\&. You'll still need to invoke \fBhwloc_topology_load()\fP to actually load the topology information\&.
+.PP
+\fBReturns\fP
+.RS 4
+0 on success\&. 
+.PP
+-1 with errno set to \fCEINVAL\fP if the description was invalid\&.
+.RE
 .PP
 \fBNote\fP
 .RS 4
@@ -104,7 +127,9 @@ Note that this function does not actually load topology information; it just tel
 .PP
 \fBReturns\fP
 .RS 4
--1 with errno set to EINVAL on failure to read the XML file\&.
+0 on success\&. 
+.PP
+-1 with errno set to \fCEINVAL\fP on failure to read the XML file\&.
 .RE
 .PP
 \fBNote\fP
@@ -126,7 +151,9 @@ Note that this function does not actually load topology information; it just tel
 .PP
 \fBReturns\fP
 .RS 4
--1 with errno set to EINVAL on failure to read the XML buffer\&.
+0 on success\&. 
+.PP
+-1 with errno set to \fCEINVAL\fP on failure to read the XML buffer\&.
 .RE
 .PP
 \fBNote\fP

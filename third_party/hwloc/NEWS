@@ -1,5 +1,5 @@
 Copyright © 2009 CNRS
-Copyright © 2009-2021 Inria.  All rights reserved.
+Copyright © 2009-2023 Inria.  All rights reserved.
 Copyright © 2009-2013 Université Bordeaux
 Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
 Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -15,6 +15,113 @@ $HEADER$
 This file contains the main features as well as overviews of specific
 bug fixes (and other actions) for each version of hwloc since version
 0.9.
+
+
+Version 2.9.3
+-------------
+* Handle Linux glibc allocation errors in binding routines (CVE-2022-47022).
+* Fix hwloc-calc when searching objects on heterogeneous memory platforms,
+  thanks to Antoine Morvan for the report.
+* Fix hwloc_get_next_child() when there are some memory-side caches.
+* Don't crash if the topology is empty because Linux cgroups are wrong.
+* Improve some hwloc-bind warnings in case of command-line parsing errors.
+* Many documentation improvements all over the place, including:
+  + hwloc_topology_restrict() and hwloc_topology_insert_group() may reorder
+    children, causing the logical indexes of objects to change.
+
+
+Version 2.9.2
+-------------
+* Don't forget L3i when defining filters for multiple levels of caches
+  with hwloc_topology_set_cache/icache_types_filter().
+* Fix object total_memory after hwloc_topology_insert_group_object().
+* Fix the (non-yet) exporting in synthetic description for complex memory
+  hierarchies with memory-side caches, etc.
+* Fix some default size attributes when building synthetic topologies.
+* Fix size units in hwloc-annotate.
+* Improve bitmap reallocation error management in many functions.
+* Documentation improvements:
+  + Better document return values of functions.
+  + Add "Error reporting" section (in hwloc.h and in the doxygen doc).
+  + Add FAQ entry "What may I disable to make hwloc faster?"
+  + Improve FAQ entries "Why is lstopo slow?" and
+    "I only need ..., why should I use hwloc?"
+  + Clarify how to deal with cpukinds in hwloc-calc and hwloc-bind
+    manpages.
+
+
+Version 2.9.1
+-------------
+* Don't forget to apply object type filters to "perflevel" caches detected
+  on recent Mac OS X releases, thanks to Michel Lesoinne for the report.
+* Fix a failed assertion in hwloc_topology_restrict() when some NUMA nodes
+  are removed because of HWLOC_RESTRICT_FLAG_REMOVE_CPULESS but no PUs are.
+  Thanks to Mark Grondona for reporting the issue.
+* Mark HPE Cray Slingshot NICs with subtype "Slingshot".
+
+
+Version 2.9.0
+-------------
+* Backends
+  + Expose the memory size of CXL memory devices (Type 3) on Linux.
+  + The LevelZero backend now reports the "XeLinkBandwidth" distance
+    matrix between L0 devices (and subdevices) when available.
+  + Add support for CUDA compute capability up to 9.0.
+* Tools
+  + lstopo now switches to console mode when its output is redirected.
+    Graphical window mode may be forced back with --of window.
+  + hwloc-calc now accepts "numa" in -H, and I/O subtypes such as "gpu"
+    in -I and -N.
+
+
+Version 2.8.0
+-------------
+* API
+  + Add HWLOC_TOPOLOGY_FLAG_NO_DISTANCES, _NO_MEMATTRS and _NO_CPUKINDS
+    to reduce the overhead when unneeded.
+  + Add separate Read/Write Bandwidth/Latency memory attributes and
+    implement them on Linux.
+* Backends
+  + NUMA nodes may now have a subtype such as DRAM, HBM, SPM, or NVM
+    on heterogeneous memory platforms on Linux.
+    - Add DAXType and DAXParent attributes on Linux to tell where a
+      DAX device or its corresponding NUMA node come from (SPM for
+      Specific-Purpose or NVM for Non-Volatile Memory).
+  + Detect heterogeneous caches in hybrid CPUs on MacOS X,
+    thanks to Paul Bone for the help.
+  + Max frequencies are not ignored in Linux cpukinds anymore (they were
+    ignored in hwloc 2.7.0), but they may be slightly adjusted to avoid
+    reporting hybrid CPUs because Intel Turbo Boost Max 3.0.
+    - See the documentation of environment variable HWLOC_CPUKINDS_MAXFREQ.
+  + Hardwire the PCI locality of HPE Cray EX235a nodes.
+* Tools
+  + lstopo and other tools may now load Linux and x86 cpuid topology files
+    from a tarball.
+  + lstopo may now replace the P# and L# index prefixes with custom strings
+    thanks to --os-index-prefix and --logical-index-prefix options.
+* Misc
+  + Add --disable-readme to avoid regenerating the top-level hwloc README
+    file from the documentation.
+
+
+Version 2.7.2
+-------------
+* Fix a crash when LevelZero devices have multiple subdevices,
+  e.g. on PonteVecchio GPUs, thanks to Jonathan Peyton.
+* Fix a leak when importing cpukinds from XML,
+  thanks to Hui Zhou.
+
+
+Version 2.7.1
+-------------
+* Workaround crashes when virtual machines report incoherent x86 CPUID
+  information about numbers of cores and threads.
+  Thanks to Peter Bense for the report.
+* Use setenv() instead of putenv() when trying to force enable oneAPI L0
+  support, to avoid issues with applications that touch the environment,
+  thanks to Josh Hursey for the patch.
+* Add some warnings at the end of configure when GPU libraries are
+  missing on the system or their path is missing in the environment.
 
 
 Version 2.7.0

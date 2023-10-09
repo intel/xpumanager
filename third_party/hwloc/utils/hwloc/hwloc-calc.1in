@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2010-2021 Inria.  All rights reserved.
+.\" Copyright © 2010-2023 Inria.  All rights reserved.
 .\" Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
 .TH HWLOC-CALC "1" "%HWLOC_DATE%" "%PACKAGE_VERSION%" "%PACKAGE_NAME%"
@@ -31,23 +31,52 @@ All topology options must be given before all other options.
 Only keep the first PU per core in the input locations.
 If \fI<N>\fR is specified, keep the <N>-th instead, if any.
 PUs are ordered by physical index during this filtering.
+
+Note that this option is applied after searching locations.
+Hence \fB\-\-no\-smt pu:2-5\fR will first select the PUs #2
+to #5 in the machine before keeping one of them per core.
+To rather get PUs #2 to #5 after filtering one per core,
+you should combine invocations:
+
+  hwloc-calc --restrict $(hwloc-calc --no-smt all) pu:2-5
+
 .TP
-\fB\-\-cpukind\fR <n>
-\fB\-\-cpukind\fR <infoname>=<infovalue>
+\fB\-\-cpukind\fR <n>, \fB\-\-cpukind\fR <infoname>=<infovalue>
 Only keep PUs whose CPU kind match.
 Either a single CPU kind is specified as an index,
-or the info name/value keypair will select matching kinds.
+or the info attribute name-value will select matching kinds.
 
 When specified by index, it corresponds to hwloc ranking of CPU kinds
 which returns energy-efficient cores first, and high-performance
 power-hungry cores last.
 The full list of CPU kinds may be seen with \fIlstopo --cpukinds\fR.
+
+Note that this option is applied after searching locations.
+Hence \fB\-\-cpukind 0 core:1\fR will return the second core of
+the machine if it is of kind 0, and nothing otherwise.
+To rather get the second core among those of kind 0, you should
+combine invocations:
+
+  hwloc-calc --restrict $(hwloc-calc --cpukind 0 all) core:1
+
 .TP
 \fB\-\-restrict\fR <cpuset>
 Restrict the topology to the given cpuset.
+This removes some PUs and their now-child-less parents.
+
+This is useful when combining invocations to filter some objects
+before selecting among them.
+
+Beware that restricting the PUs in a topology may change the
+logical indexes of many objects, including NUMA nodes.
 .TP
 \fB\-\-restrict\fR nodeset=<nodeset>
-Restrict the topology to the given nodeset, unless \fB\-\-restrict\-flags\fR specifies something different.
+Restrict the topology to the given nodeset
+(unless \fB\-\-restrict\-flags\fR specifies something different).
+This removes some NUMA nodes and their now-child-less parents.
+
+Beware that restricting the NUMA nodes in a topology may change the
+logical indexes of many objects, including PUs.
 .TP
 \fB\-\-restrict\-flags\fR <flags>
 Enforce flags when restricting the topology.
@@ -60,19 +89,21 @@ The default is \fB0\fR (or \fBnone\fR).
 \fB\-\-disallowed\fR
 Include objects disallowed by administrative limitations.
 .TP
-\fB\-i\fR <file>, \fB\-\-input\fR <file>
-Read topology from XML file <file> (instead of discovering the
-topology on the local machine).  If <file> is "\-", the standard input
-is used.  XML support must have been compiled in to hwloc for this
-option to be usable.
-.TP
-\fB\-i\fR <directory>, \fB\-\-input\fR <directory>
-Read topology from <directory> instead of discovering the topology
-of the local machine.
-On Linux, the directory may contain the topology files
+\fB\-i\fR <path>, \fB\-\-input\fR <path>
+Read the topology from <path> instead of discovering the topology of the local machine.
+
+If <path> is a file,
+it may be a XML file exported by a previous hwloc program.
+If <path> is "\-", the standard input may be used as a XML file.
+
+On Linux, <path> may be a directory containing the topology files
 gathered from another machine topology with hwloc-gather-topology.
-On x86, the directory may contain a cpuid dump gathered
+
+On x86, <path> may be a directory containing a cpuid dump gathered
 with hwloc-gather-cpuid.
+
+When the archivemount program is available, <path> may also be a tarball
+containing such Linux or x86 topology files.
 .TP
 \fB\-i\fR <specification>, \fB\-\-input\fR <specification>
 Simulate a fake hierarchy (instead of discovering the topology on the
@@ -128,6 +159,9 @@ in a machine.
 When combined with \fB\-\-nodeset\fR or \fB\-\-nodeset-output\fR,
 the nodeset is considered instead of the CPU set for finding matching objects.
 This is useful when reporting the output as a number or set of NUMA nodes.
+
+If an OS device subtype such as \fIgpu\fR  is given instead of \fIosdev\fR,
+only the os devices of that subtype will be counted.
 .TP
 \fB\-I \-\-intersect <type|depth>\fR
 Find the list of objects of the given type or depth that intersect the CPU set and
@@ -143,6 +177,9 @@ objects are strictly included inside the input objects.
 When combined with \fB\-\-nodeset\fR or \fB\-\-nodeset-output\fR,
 the nodeset is considered instead of the CPU set for finding matching objects.
 This is useful when reporting the output as a number or set of NUMA nodes.
+
+If an OS device subtype such as \fIgpu\fR is given instead of \fIosdev\fR,
+only the os devices of that subtype will be returned.
 .TP
 \fB\-H \-\-hierarchical <type1>.<type2>...\fR
 Find the list of objects of type <type2> that intersect the CPU set and
@@ -152,13 +189,20 @@ For instance, if \fIpackage.core\fR is given, the output would be
 \fIPackage:1.Core:2 Package:2.Core:3\fR if the input contains the third
 core of the second package and the fourth core of the third package.
 
-Only normal CPU-side object types may be used. NUMA nodes cannot.
+Only normal CPU-side object types should be used.
+
+NUMA nodes may be used but they may cause redundancy in the output
+on heterogeneous memory platform. For instance, on a platform with both
+DRAM and HBM memory on a package, the first core will be considered both
+as first core of first NUMA node (DRAM) and
+as first core of second NUMA node (HBM).
 .TP
 \fB\-\-largest\fR
 Report (in a human readable format) the list of largest objects which exactly
 include all input objects (by looking at their CPU sets).
 None of these output objects intersect each other, and the sum of them is
-exactly equivalent to the input. No largest object is included in the input
+exactly equivalent to the input. No larger object is included in the input.
+
 This is different from \-\-intersect where reported objects may not be
 strictly included in the input.
 .TP
@@ -418,6 +462,17 @@ To export bitmask in a format that is acceptable by the resctrl Linux subsystem
     # echo 00000380,0,00000380 > /sys/fs/resctrl/test/cpus
     # cat /sys/fs/resctrl/test/cpus
     00000000,00000380,00000000,00000380   <the modified bitmask was corrected parsed by resctrl>
+
+OS devices may also be filtered by subtype. In this example, there are
+8 OS devices in the system, 4 of them are near NUMA node #1, and only
+2 of these are CoProcessors:
+
+    $ utils/hwloc/hwloc-calc -I osdev all
+    0,1,2,3,4,5,6,7,8
+    $ utils/hwloc/hwloc-calc -I osdev node:1
+    5,6,7,8
+    $ utils/hwloc/hwloc-calc -I coproc node:1
+    7,8
 
 .
 .\" **************************

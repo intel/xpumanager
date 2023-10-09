@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2023 Inria.  All rights reserved.
  * Copyright © 2009-2012, 2015, 2017 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -19,6 +19,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
@@ -440,14 +443,10 @@ void usage(const char *name, FILE *where)
   fprintf (where, "See lstopo(1) for more details.\n");
 
   fprintf (where, "\nDefault output is "
-#ifdef LSTOPO_HAVE_GRAPHICS
-#ifdef HWLOC_WIN_SYS
-		  "graphical"
-#elif (defined LSTOPO_HAVE_X11)
-		  "graphical (X11) if DISPLAY is set, console otherwise"
-#else
-		  "console"
-#endif
+#if (defined LSTOPO_HAVE_GRAPHICS) && (defined HWLOC_WIN_SYS)
+		  "graphical window"
+#elif (defined LSTOPO_HAVE_GRAPHICS) && (defined LSTOPO_HAVE_X11)
+		  "graphical window (X11) if DISPLAY is set, console otherwise"
 #else
 		  "console"
 #endif
@@ -560,6 +559,8 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --top-color <none|#xxyyzz>\n"
                   "                        Disable or change task background color for --top\n");
   fprintf (where, "Miscellaneous options:\n");
+  fprintf (where, "  --logical-index-prefix <s> --os-index-prefix <s>\n");
+  fprintf (where, "                        Use <s> as a prefix for logical or physical/OS indexes\n");
   fprintf (where, "  --export-xml-flags <n>\n"
 		  "                        Set flags during the XML topology export\n");
   fprintf (where, "  --export-synthetic-flags <n>\n"
@@ -572,6 +573,12 @@ void usage(const char *name, FILE *where)
 
 void lstopo_show_interactive_help(void)
 {
+#ifdef HAVE_ISATTY
+  if (!isatty(STDOUT_FILENO))
+    /* don't send the interactive help when not a terminal */
+    return;
+#endif
+
   printf("\n");
   printf("Keyboard shortcuts:\n");
   printf(" Zooming, scrolling and closing:\n");
@@ -650,6 +657,7 @@ void lstopo_show_interactive_cli_options(const struct lstopo_output *loutput)
 
 enum output_format {
   LSTOPO_OUTPUT_DEFAULT,
+  LSTOPO_OUTPUT_WINDOW,
   LSTOPO_OUTPUT_CONSOLE,
   LSTOPO_OUTPUT_SYNTHETIC,
   LSTOPO_OUTPUT_ASCII,
@@ -671,6 +679,8 @@ parse_output_format(const char *name, char *callname __hwloc_attribute_unused)
 {
   if (!hwloc_strncasecmp(name, "default", 3))
     return LSTOPO_OUTPUT_DEFAULT;
+  else if (!hwloc_strncasecmp(name, "window", 3))
+    return LSTOPO_OUTPUT_WINDOW;
   else if (!hwloc_strncasecmp(name, "console", 3))
     return LSTOPO_OUTPUT_CONSOLE;
   else if (!strcasecmp(name, "synthetic"))
@@ -740,15 +750,15 @@ struct lstopo_type_filter { enum hwloc_type_filter_e filter; int changed; };
 /* must operate on same types as hwloc_topology_set_cache_types_filter() */
 #define set_cache_types_filter(_filter) do { \
   unsigned _i; \
-  for(_i=HWLOC_OBJ_L1CACHE; _i<HWLOC_OBJ_L3ICACHE; _i++) \
-    set_type_filter(_i, _filter);                        \
+  for(_i=HWLOC_OBJ_L1CACHE; _i<=HWLOC_OBJ_L3ICACHE; _i++) \
+    set_type_filter(_i, _filter);                         \
 } while (0)
 
 /* must operate on same types as hwloc_topology_set_icache_types_filter() */
 #define set_icache_types_filter(_filter) do { \
   unsigned _i; \
-  for(_i=HWLOC_OBJ_L1ICACHE; _i<HWLOC_OBJ_L3ICACHE; _i++) \
-    set_type_filter(_i, _filter);                         \
+  for(_i=HWLOC_OBJ_L1ICACHE; _i<=HWLOC_OBJ_L3ICACHE; _i++) \
+    set_type_filter(_i, _filter);                          \
 } while (0)
 
 #define apply_type_filters(_topo) do { \
@@ -872,6 +882,8 @@ main (int argc, char *argv[])
   }
   loutput.show_attrs_enabled = 1;
   loutput.show_text_enabled = 1;
+  loutput.os_index_prefix = (char *) " P#";
+  loutput.logical_index_prefix = (char *) " L#";
 
   loutput.show_binding = 1;
   loutput.show_disallowed = 1;
@@ -1269,6 +1281,18 @@ main (int argc, char *argv[])
 	  fprintf(stderr, "Unsupported color `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
         opt = 1;
       }
+      else if (!strcmp(argv[0], "--os-index-prefix")) {
+	if (argc < 2)
+	  goto out_usagefailure;
+        loutput.os_index_prefix = argv[1];
+        opt = 1;
+      }
+      else if (!strcmp(argv[0], "--logical-index-prefix")) {
+	if (argc < 2)
+	  goto out_usagefailure;
+        loutput.logical_index_prefix = argv[1];
+        opt = 1;
+      }
       else if (!strncmp (argv[0], "--no-text", 9)
 	       || !strncmp (argv[0], "--text", 6)
 	       || !strncmp (argv[0], "--no-index", 10)
@@ -1409,7 +1433,8 @@ main (int argc, char *argv[])
         opt = 1;
       } else {
 	if (filename) {
-	  fprintf (stderr, "Unrecognized option: %s\n", argv[0]);
+	  fprintf (stderr, "Unrecognized option `%s', cannot be used as output filename (`%s' already given).\n",
+                   argv[0], filename);
 	  goto out_usagefailure;
 	} else
 	  filename = argv[0];
@@ -1459,10 +1484,21 @@ main (int argc, char *argv[])
   }
 
   switch (output_format) {
-  case LSTOPO_OUTPUT_DEFAULT:
+  case LSTOPO_OUTPUT_DEFAULT: {
 #ifdef LSTOPO_HAVE_GRAPHICS
 #if (defined LSTOPO_HAVE_X11)
-    if (getenv("DISPLAY")) {
+    int want_console = 0;
+#if (defined HAVE_ISATTY) && (defined HAVE_TCGETPGRP)
+    /* If stdout isn't a tty, we're likely redirecting stdout, use console mode.
+     * However, if launched from the window manager, we still want graphical mode.
+     * tcgetpgrp(STDIN) should fail with ENOTTY in this case.
+     * We don't specifically check for errno==ENOTTY: if tcgetpgrp() ever fails
+     * for another reason, don't assume we're redirected, keep the graphical mode too.
+     */
+    if (!isatty(STDOUT_FILENO) && tcgetpgrp(STDIN_FILENO) != -1)
+      want_console = 1;
+#endif
+    if (getenv("DISPLAY") && !want_console) {
       output_func = output_x11;
     } else
 #endif /* LSTOPO_HAVE_X11 */
@@ -1480,6 +1516,23 @@ main (int argc, char *argv[])
 #ifdef ANDROID
     setJNIEnv();
     output_func = output_android;
+#endif
+    }
+    break;
+
+  case LSTOPO_OUTPUT_WINDOW:
+#if (defined LSTOPO_HAVE_GRAPHICS) && (defined LSTOPO_HAVE_X11)
+    if (getenv("DISPLAY")) {
+      output_func = output_x11;
+    } else {
+      fprintf(stderr, "X11 graphical window output requires a DISPLAY environment variable.\n");
+      goto out;
+    }
+#elif (defined LSTOPO_HAVE_GRAPHICS) && (defined HWLOC_WIN_SYS)
+    output_func = output_windows;
+#else
+    fprintf(stderr, "Graphical window output not supported.\n");
+    goto out;
 #endif
     break;
 

@@ -1,4 +1,4 @@
-.TH "hwlocality_helper_distribute" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwlocality_helper_distribute" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -50,11 +50,14 @@ The caller may typically want to also call \fBhwloc_bitmap_singlify()\fP before 
 .PP
 \fCflags\fP should be 0 or a OR'ed set of \fBhwloc_distrib_flags_e\fP\&.
 .PP
+\fBReturns\fP
+.RS 4
+0 on success, -1 on error\&.
+.RE
+.PP
 \fBNote\fP
 .RS 4
-This function requires the \fCroots\fP objects to have a CPU set\&.
-.PP
-This function replaces the now deprecated hwloc_distribute() and hwloc_distributev() functions\&. 
+This function requires the \fCroots\fP objects to have a CPU set\&. 
 .RE
 .PP
 

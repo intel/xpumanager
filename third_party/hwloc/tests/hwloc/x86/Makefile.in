@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2015-2020 Inria.  All rights reserved.
+# Copyright © 2015-2022 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 VPATH = @srcdir@
 am__is_gnu_make = { \
@@ -346,6 +346,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARCHIVEMOUNT = @ARCHIVEMOUNT@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -383,6 +384,7 @@ ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
+FILECMD = @FILECMD@
 GREP = @GREP@
 GS = @GS@
 HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
@@ -409,9 +411,11 @@ HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
 HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LEVELZERO = @HWLOC_HAVE_LEVELZERO@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
+HWLOC_HAVE_LINUX = @HWLOC_HAVE_LINUX@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
 HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
+HWLOC_HAVE_X86_CPUID = @HWLOC_HAVE_X86_CPUID@
 HWLOC_IBVERBS_LIBS = @HWLOC_IBVERBS_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LEVELZERO_CFLAGS = @HWLOC_LEVELZERO_CFLAGS@
@@ -596,6 +600,7 @@ cpuid_outputs = \
 	Intel-Core-2xXeon-E5345.output \
 	Intel-KnightsLanding-XeonPhi-7210.output \
 	Intel-KnightsCorner-XeonPhi-SE10P.output \
+	AMD-19h-Zen3-2xEpyc-7763.output \
 	AMD-17h-Zen-2xEpyc-7451.output \
 	AMD-15h-Piledriver-4xOpteron-6348.output \
 	AMD-15h-Bulldozer-4xOpteron-6272.output \
@@ -627,6 +632,7 @@ cpuid_tarballs = \
 	Intel-Core-2xXeon-E5345.tar.bz2 \
 	Intel-KnightsLanding-XeonPhi-7210.tar.bz2 \
 	Intel-KnightsCorner-XeonPhi-SE10P.tar.bz2 \
+	AMD-19h-Zen3-2xEpyc-7763.tar.bz2 \
 	AMD-17h-Zen-2xEpyc-7451.tar.bz2 \
 	AMD-15h-Piledriver-4xOpteron-6348.tar.bz2 \
 	AMD-15h-Bulldozer-4xOpteron-6272.tar.bz2 \
@@ -932,6 +938,13 @@ Intel-KnightsLanding-XeonPhi-7210.output.log: Intel-KnightsLanding-XeonPhi-7210.
 Intel-KnightsCorner-XeonPhi-SE10P.output.log: Intel-KnightsCorner-XeonPhi-SE10P.output
 	@p='Intel-KnightsCorner-XeonPhi-SE10P.output'; \
 	b='Intel-KnightsCorner-XeonPhi-SE10P.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+AMD-19h-Zen3-2xEpyc-7763.output.log: AMD-19h-Zen3-2xEpyc-7763.output
+	@p='AMD-19h-Zen3-2xEpyc-7763.output'; \
+	b='AMD-19h-Zen3-2xEpyc-7763.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

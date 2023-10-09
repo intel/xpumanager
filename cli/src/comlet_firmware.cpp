@@ -68,12 +68,10 @@ ComletFirmware::~ComletFirmware() {
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>(new FlashFirmwareOptions());
 
-    auto deviceIdOpt = addOption("-d, --device", opts->deviceIdStr, "The device ID or PCI BDF address");
+    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID or PCI BDF address.");
     deviceIdOpt->check([](const std::string &str) {
-        std::string errStr = "Device id should be a non-negative integer or a BDF string";
-        if (isValidDeviceId(str)) {
-            return std::string();
-        } else if (isBDF(str)) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string.";
+        if (str == "" || isValidDeviceId(str) || isBDF(str)) {
             return std::string();
         }
         return errStr;
@@ -110,8 +108,6 @@ void ComletFirmware::setupOptions() {
     deviceIdOpt->needs(fwTypeOpt);
     deviceIdOpt->needs(fwPathOpt);
 
-    opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
-
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
 
@@ -123,57 +119,38 @@ void ComletFirmware::setupOptions() {
 
 }
 
+int ComletFirmware::deviceIdStrToInt(std::string deviceId) {
+    int ret = -1;
+    if (deviceId == "") {
+        return XPUM_DEVICE_ID_ALL_DEVICES;
+    }
+    if (isBDF(deviceId)) {
+        auto json = coreStub->getDeivceIdByBDF(deviceId.c_str(), &ret);
+        return ret;
+    }
+    ret = std::stoi(deviceId);
+    return ret;
+}
+
+
 nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
-
-    if (opts->deviceIdStr.empty()) {
-        // do nothing
-    } else if (isBDF(opts->deviceIdStr)) {
-        int deviceId;
-        auto json = coreStub->getDeivceIdByBDF(opts->deviceIdStr.c_str(), &deviceId);
-        if (json->contains("error")) {
-            return *json;
-        } else{
-            opts->deviceId = deviceId;
-        }
-    } else {
-        opts->deviceId = std::stoi(opts->deviceIdStr);
-    }
     // GFX
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX") == 0) {
-        result["error"] = "Updating GFX firmware on all devices is not supported";
-        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
-        return result;
-    }
-
     if (opts->forceUpdate && opts->firmwareType.compare("GFX") != 0 && opts->firmwareType.compare("GFX_PSCBIN") != 0) {
         result["error"] = "Force flag only works for GFX firmware";
         result["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return result;
     }
-
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_DATA") == 0) {
-        result["error"] = "Updating GFX_DATA firmware on all devices is not supported";
-        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
-        return result;
-    }
-
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_PSCBIN") == 0) {
-        result["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
-        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
-        return result;
-    }
-
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_CODE_DATA") == 0) {
+    if (opts->deviceId == "" && opts->firmwareType.compare("GFX_CODE_DATA") == 0) {
         result["error"] = "Updating GFX_CODE_DATA firmware on all devices is not supported";
         result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
         return result;
     }
 
     // AMC
-    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
+    if (opts->deviceId != "" && opts->firmwareType.compare("AMC") == 0) {
         result["error"] = "Updating AMC firmware on single device is not supported";
-         result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
+        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         return result;
     }
     return result;
@@ -218,7 +195,15 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 
     int type = getIntFirmwareType(opts->firmwareType);
-    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password, opts->forceUpdate);
+    int deviceId = deviceIdStrToInt(opts->deviceId);
+    if (deviceId == -1) {
+        nlohmann::json tmp;
+        tmp["error"] = "device not found";
+        printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
+        exit_code = XPUM_CLI_ERROR_DEVICE_NOT_FOUND;
+        return;
+    }
+    auto uniqueJson = coreStub->runFirmwareFlash(deviceId, type, opts->firmwarePath, opts->username, opts->password, opts->forceUpdate);
     std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
     if (json->contains("error")) {
         printJson(json, out, raw);
@@ -228,7 +213,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
 
-        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
+        json = coreStub->getFirmwareFlashResult(deviceId, type);
         if (json->contains("error")) {
             printJson(json, out, raw);
             setExitCodeByJson(*json);
@@ -505,7 +490,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         setExitCodeByJson(validateResultJson);
         return;
     }
-
+    int deviceId = deviceIdStrToInt(opts->deviceId);
+    if (deviceId == -1) {
+        out << "Error: device not found" << std::endl;
+        exit_code = XPUM_CLI_ERROR_DEVICE_NOT_FOUND;
+        return;
+    }
     // read file
     readImageContent(opts->firmwarePath.c_str());
     // warn user
@@ -547,7 +537,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
 
         //check ecc state
-        auto json = coreStub->getDeviceConfig(opts->deviceId, -1);
+        auto json = coreStub->getDeviceConfig(deviceId, -1);
         if (json->contains("error")) {
             out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
             setExitCodeByJson(*json);
@@ -611,7 +601,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 if (groupId & 0x80000000) {
                     auto deviceIdList = groupJson["device_id_list"];
                     for (auto deviceIdInGroup : deviceIdList) {
-                        if (deviceIdInGroup.get<int>() == opts->deviceId) {
+                        if (deviceIdInGroup.get<int>() == deviceId) {
                             std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) ";
                             if (!opts->assumeyes) {
                                 std::string confirm;
@@ -636,7 +626,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             }
         }
         if(deviceIdsToFlashFirmware.size()==0){
-            deviceIdsToFlashFirmware.push_back(opts->deviceId);
+            deviceIdsToFlashFirmware.push_back(deviceId);
         }
         // version confirmation
         for (int deviceId : deviceIdsToFlashFirmware) {
@@ -694,40 +684,48 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 return;
             }
         }
-        // for ats-m3
-        auto allGroups = coreStub->groupListAll();
         std::vector<int> deviceIdsToFlashFirmware;
-        if (allGroups != nullptr && allGroups->contains("group_list")) {
-            for (auto groupJson : (*allGroups)["group_list"]) {
-                int groupId = groupJson["group_id"].get<int>();
-                if (groupId & 0x80000000) {
-                    auto deviceIdList = groupJson["device_id_list"];
-                    for (auto deviceIdInGroup : deviceIdList) {
-                        if (deviceIdInGroup.get<int>() == opts->deviceId) {
-                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) ";
-                            if (!opts->assumeyes) {
-                                std::string confirm;
-                                std::cin >> confirm;
-                                if (confirm != "Y" && confirm != "y") {
-                                    out << "update aborted" << std::endl;
-                                    return;
+        if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+            auto deviceListJson = coreStub->getDeviceList();
+            auto deviceList = (*deviceListJson)["device_list"];
+            for (auto &device : deviceList) {
+                deviceIdsToFlashFirmware.push_back(device["device_id"]);
+            }
+        } else {
+            // for ats-m3
+            auto allGroups = coreStub->groupListAll();
+            if (allGroups != nullptr && allGroups->contains("group_list")) {
+                for (auto groupJson : (*allGroups)["group_list"]) {
+                    int groupId = groupJson["group_id"].get<int>();
+                    if (groupId & 0x80000000) {
+                        auto deviceIdList = groupJson["device_id_list"];
+                        for (auto deviceIdInGroup : deviceIdList) {
+                            if (deviceIdInGroup.get<int>() == deviceId) {
+                                std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) ";
+                                if (!opts->assumeyes) {
+                                    std::string confirm;
+                                    std::cin >> confirm;
+                                    if (confirm != "Y" && confirm != "y") {
+                                        out << "update aborted" << std::endl;
+                                        return;
+                                    }
+                                } else {
+                                    out << std::endl;
                                 }
-                            } else {
-                                out << std::endl;
+                                for (auto tmpId : deviceIdList) {
+                                    deviceIdsToFlashFirmware.push_back(tmpId.get<int>());
+                                }
+                                break;
                             }
-                            for (auto tmpId : deviceIdList) {
-                                deviceIdsToFlashFirmware.push_back(tmpId.get<int>());
-                            }
-                            break;
                         }
+                        if (deviceIdsToFlashFirmware.size() > 0)
+                            break;
                     }
-                    if (deviceIdsToFlashFirmware.size() > 0)
-                        break;
                 }
             }
-        }
-        if(deviceIdsToFlashFirmware.size()==0){
-            deviceIdsToFlashFirmware.push_back(opts->deviceId);
+            if (deviceIdsToFlashFirmware.size() == 0) {
+                deviceIdsToFlashFirmware.push_back(deviceId);
+            }
         }
         // version confirmation
         for (int deviceId : deviceIdsToFlashFirmware) {
@@ -760,7 +758,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     }
 
     // start run
-    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password, opts->forceUpdate);
+    auto json = coreStub->runFirmwareFlash(deviceId, type, opts->firmwarePath, opts->username, opts->password, opts->forceUpdate);
 
     auto status = (*json)["error"];
     if (!status.is_null()) {
@@ -777,7 +775,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         // out << "." << std::flush;
 
-        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
+        json = coreStub->getFirmwareFlashResult(deviceId, type);
         if (json->contains("error")) {
             out << std::endl;
             out << "Error: " << (*json)["error"] << std::endl;

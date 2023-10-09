@@ -71,7 +71,7 @@ without some help.  You may need to specify additional CPPFLAGS,
 LDFLAGS, or PKG_CONFIG_PATH values on the configure command line.
 
 For example, if libpciaccess was installed into /opt/pciaccess,
-hwloc's configure script may not find it be default.  Try adding
+hwloc's configure script may not find it by default.  Try adding
 PKG_CONFIG_PATH to the ./configure command line, like this:
 
 \verbatim
@@ -114,7 +114,7 @@ how to debug and report issues.
 Questions may be sent to the users or developers mailing lists
 (https://www.open-mpi.org/community/lists/hwloc.php).
 
-There is also a <tt>\#hwloc</tt> IRC channel on Freenode (<tt>irc.freenode.net</tt>).
+There is also a <tt>\#hwloc</tt> IRC channel on Libera Chat (<tt>irc.libera.chat</tt>).
 
 
 */

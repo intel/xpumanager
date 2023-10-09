@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2022 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -40,10 +40,10 @@ output_console_obj (struct lstopo_output *loutput, hwloc_obj_t l, int collapse)
 
   if (collapse > 1 && l->type == HWLOC_OBJ_PCI_DEVICE) {
     strcpy(pidxstr, "P#[collapsed]"); /* shouldn't be used, os_index should be -1 except if importing old XMLs */
-    snprintf(lidxstr, sizeof(lidxstr), "L#%u-%u", l->logical_index, l->logical_index+collapse-1);
+    snprintf(lidxstr, sizeof(lidxstr), "%s%u-%u", loutput->logical_index_prefix, l->logical_index, l->logical_index+collapse-1);
   } else {
-    snprintf(pidxstr, sizeof(pidxstr), "P#%u", l->os_index);
-    snprintf(lidxstr, sizeof(lidxstr), "L#%u", l->logical_index);
+    snprintf(pidxstr, sizeof(pidxstr), "%s%u", loutput->os_index_prefix, l->os_index);
+    snprintf(lidxstr, sizeof(lidxstr), "%s%u", loutput->logical_index_prefix, l->logical_index);
   }
   if (l->type == HWLOC_OBJ_PCI_DEVICE)
     lstopo_busid_snprintf(loutput, busidstr, sizeof(busidstr), l, collapse, loutput->need_pci_domain);
@@ -59,10 +59,10 @@ output_console_obj (struct lstopo_output *loutput, hwloc_obj_t l, int collapse)
     if (l->depth != 0 && (verbose_mode >= 2 || (hwloc_obj_type_is_normal(l->type) || hwloc_obj_type_is_memory(l->type)))) {
       if (index_type != LSTOPO_INDEX_TYPE_PHYSICAL)
 	/* print logical index in logical and default case */
-	fprintf(output, " %s", lidxstr);
+	fprintf(output, "%s", lidxstr);
       else if (index_type == LSTOPO_INDEX_TYPE_PHYSICAL && l->os_index != HWLOC_UNKNOWN_INDEX)
 	/* print physical index in physical case */
-	fprintf(output, " %s", pidxstr);
+	fprintf(output, "%s", pidxstr);
     }
     if (l->name && (l->type == HWLOC_OBJ_MISC || l->type == HWLOC_OBJ_GROUP))
       fprintf(output, " %s", l->name);
@@ -70,7 +70,10 @@ output_console_obj (struct lstopo_output *loutput, hwloc_obj_t l, int collapse)
 	&& l->os_index != HWLOC_UNKNOWN_INDEX
 	&& (verbose_mode >= 2 || l->type == HWLOC_OBJ_PU || l->type == HWLOC_OBJ_NUMANODE))
       /* print physical index too if default index */
-      snprintf(phys, sizeof(phys), "%s", pidxstr);
+      snprintf(phys, sizeof(phys),
+               "%s",
+               pidxstr[0] == ' ' ? pidxstr+1 : pidxstr /* skip the starting space if any */
+        );
     if (l->type == HWLOC_OBJ_PCI_DEVICE && verbose_mode <= 1)
       fprintf(output, " %s (%s)",
 	      busidstr, hwloc_pci_class_string(l->attr->pcidev.class_id));
@@ -310,85 +313,101 @@ static void output_memattr_initiator(struct lstopo_output *loutput,
 
 }
 
-static void output_memattrs(struct lstopo_output *loutput)
+static int output_memattr(struct lstopo_output *loutput, unsigned id)
 {
   hwloc_topology_t topology = loutput->topology;
   int verbose_mode = loutput->verbose_mode;
   int show_all = (loutput->show_memattrs_only || (verbose_mode >= 3));
-  unsigned id;
+  const char *name;
+  unsigned long flags;
+  unsigned nr_targets;
+  hwloc_obj_t *targets;
+  unsigned i;
+  int err;
 
-  for(id=0; ; id++) {
-    const char *name;
-    unsigned long flags;
-    unsigned nr_targets;
-    hwloc_obj_t *targets;
-    unsigned i;
-    int err;
+  if (!show_all
+      && (id == HWLOC_MEMATTR_ID_CAPACITY || id == HWLOC_MEMATTR_ID_LOCALITY))
+    return 0;
 
-    if (!show_all
-        && (id == HWLOC_MEMATTR_ID_CAPACITY || id == HWLOC_MEMATTR_ID_LOCALITY))
-      continue;
+  err = hwloc_memattr_get_name(topology, id, &name);
+  if (err < 0)
+    return -1;
+  err = hwloc_memattr_get_flags(topology, id, &flags);
+  assert(!err);
 
-    err = hwloc_memattr_get_name(topology, id, &name);
-    if (err < 0)
-      break;
-    err = hwloc_memattr_get_flags(topology, id, &flags);
-    assert(!err);
+  nr_targets = 0;
+  err = hwloc_memattr_get_targets(topology, id, NULL, 0, &nr_targets, NULL, NULL);
+  assert(!err);
 
-    nr_targets = 0;
-    err = hwloc_memattr_get_targets(topology, id, NULL, 0, &nr_targets, NULL, NULL);
-    assert(!err);
+  if (!show_all && !nr_targets)
+    return 0;
 
-    if (!show_all && !nr_targets)
-      continue;
+  printf("Memory attribute #%u name `%s' flags %lu\n", id, name, flags);
 
-    printf("Memory attribute #%u name `%s' flags %lu\n", id, name, flags);
+  targets = malloc(nr_targets * sizeof(*targets));
+  if (!targets)
+    return 0;
 
-    targets = malloc(nr_targets * sizeof(*targets));
-    if (!targets)
-      continue;
+  err = hwloc_memattr_get_targets(topology, id, NULL, 0, &nr_targets, targets, NULL);
+  assert(!err);
 
-    err = hwloc_memattr_get_targets(topology, id, NULL, 0, &nr_targets, targets, NULL);
-    assert(!err);
+  for(i=0; i<nr_targets; i++) {
 
-    for(i=0; i<nr_targets; i++) {
+    if (!(flags & HWLOC_MEMATTR_FLAG_NEED_INITIATOR)) {
+      hwloc_uint64_t value;
+      err = hwloc_memattr_get_value(topology, id, targets[i], NULL, 0, &value);
+      if (!err) {
+        printf("  ");
+        output_memattr_obj(loutput, targets[i]);
+        printf(" = %llu\n", (unsigned long long) value);
+      }
 
-      if (!(flags & HWLOC_MEMATTR_FLAG_NEED_INITIATOR)) {
-        hwloc_uint64_t value;
-        err = hwloc_memattr_get_value(topology, id, targets[i], NULL, 0, &value);
-        if (!err) {
-          printf("  ");
-          output_memattr_obj(loutput, targets[i]);
-          printf(" = %llu\n", (unsigned long long) value);
-        }
-
-      } else {
-        unsigned nr_initiators = 0;
-        err = hwloc_memattr_get_initiators(topology, id, targets[i], 0, &nr_initiators, NULL, NULL);
-        if (!err) {
-          struct hwloc_location *initiators = malloc(nr_initiators * sizeof(*initiators));
-          hwloc_uint64_t *values = malloc(nr_initiators * sizeof(*values));
-          if (initiators && values) {
-            err = hwloc_memattr_get_initiators(topology, id, targets[i], 0, &nr_initiators, initiators, values);
-            if (!err) {
-              unsigned j;
-              for(j=0; j<nr_initiators; j++) {
-                printf("  ");
-                output_memattr_obj(loutput, targets[i]);
-                printf(" = %llu",
-                       (unsigned long long) values[j]);
-                output_memattr_initiator(loutput, &initiators[j]);
-                printf("\n");
-              }
+    } else {
+      unsigned nr_initiators = 0;
+      err = hwloc_memattr_get_initiators(topology, id, targets[i], 0, &nr_initiators, NULL, NULL);
+      if (!err) {
+        struct hwloc_location *initiators = malloc(nr_initiators * sizeof(*initiators));
+        hwloc_uint64_t *values = malloc(nr_initiators * sizeof(*values));
+        if (initiators && values) {
+          err = hwloc_memattr_get_initiators(topology, id, targets[i], 0, &nr_initiators, initiators, values);
+          if (!err) {
+            unsigned j;
+            for(j=0; j<nr_initiators; j++) {
+              printf("  ");
+              output_memattr_obj(loutput, targets[i]);
+              printf(" = %llu",
+                     (unsigned long long) values[j]);
+              output_memattr_initiator(loutput, &initiators[j]);
+              printf("\n");
             }
           }
-          free(initiators);
-          free(values);
         }
+        free(initiators);
+        free(values);
       }
     }
-    free(targets);
   }
+  free(targets);
+
+  return 0;
+}
+
+static void output_memattrs(struct lstopo_output *loutput)
+{
+  unsigned id;
+  /* output in a convenient instead of the native ID order */
+  output_memattr(loutput, HWLOC_MEMATTR_ID_CAPACITY);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_LOCALITY);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_BANDWIDTH);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_READ_BANDWIDTH);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_WRITE_BANDWIDTH);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_LATENCY);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_READ_LATENCY);
+  output_memattr(loutput, HWLOC_MEMATTR_ID_WRITE_LATENCY);
+  /* output others */
+  for(id=HWLOC_MEMATTR_ID_WRITE_LATENCY+1; ; id++)
+    if (output_memattr(loutput, id) < 0)
+      break;
 }
 
 

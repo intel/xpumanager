@@ -1,4 +1,4 @@
-# Copyright © 2009-2021 Inria.  All rights reserved.
+# Copyright © 2009-2022 Inria.  All rights reserved.
 # Copyright © 2009-2011 Université Bordeaux
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -58,13 +58,13 @@ sysfs_outputs = \
 		256ia64-64n2s2c.output \
 		2s390-2c.output \
 		20s390-2g6s4c.output \
-		1alpha.output \
 		2arm-2c.output \
 		nvidiagpunumanodes.output \
 		nvidiagpunumanodes.kept.output \
 		fakememinitiators-1np2c+1npp+gi.output \
 		fakecpuid1f-64intel64-2p4d2n2c2t.output \
 		fakeheterocpunuma.output \
+		fakeheteromemtiers.output \
 		offline-cpu0-node0.output
 
 if HWLOC_HAVE_32BITS_PCI_DOMAIN
@@ -128,7 +128,6 @@ sysfs_tarballs = \
 		256ia64-64n2s2c.tar.bz2 \
 		2s390-2c.tar.bz2 \
 		20s390-2g6s4c.tar.bz2 \
-		1alpha.tar.bz2 \
 		2arm-2c.tar.bz2 \
 		2pa-pcidomain32bits.tar.bz2 \
 		2pa-pcidomain32bits-disabled.source \
@@ -137,6 +136,7 @@ sysfs_tarballs = \
 		fakememinitiators-1np2c+1npp+gi.tar.bz2 \
 		fakecpuid1f-64intel64-2p4d2n2c2t.tar.bz2 \
 		fakeheterocpunuma.tar.bz2 \
+		fakeheteromemtiers.tar.bz2 \
 		offline-cpu0-node0.tar.bz2
 
 # Each output `xyz.output' may have a corresponding exclude `xyz.exclude'

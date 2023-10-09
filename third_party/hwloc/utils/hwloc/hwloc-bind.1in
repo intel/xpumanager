@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2021 Inria.  All rights reserved.
+.\" Copyright © 2009-2023 Inria.  All rights reserved.
 .\" Copyright © 2010 Université of Bordeaux
 .\" Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
@@ -32,12 +32,30 @@ All topology options must be given before all other options.
 Only keep the first PU per core before binding.
 If \fI<N>\fR is specified, keep the <N>-th instead, if any.
 PUs are ordered by physical index during this filtering.
+
+Note that this option is applied after searching locations.
+Hence \fB\-\-no\-smt pu:2-5\fR will first select the PUs #2
+to #5 in the machine before binding on one of them per core.
+To rather bind on PUs #2 to #5 after filtering one per core,
+you should combine with hwloc-calc:
+
+  hwloc-bind $(hwloc-calc --restrict $(hwloc-calc --no-smt all) pu:2-5) -- echo hello
+
 .TP
 \fB\-\-restrict\fR <cpuset>
 Restrict the topology to the given cpuset.
+This removes some PUs and their now-child-less parents.
+
+Beware that restricting the PUs in a topology may change the
+logical indexes of many objects, including NUMA nodes.
 .TP
 \fB\-\-restrict\fR nodeset=<nodeset>
-Restrict the topology to the given nodeset, unless \fB\-\-restrict\-flags\fR specifies something different.
+Restrict the topology to the given nodeset
+(unless \fB\-\-restrict\-flags\fR specifies something different).
+This removes some NUMA nodes and their now-child-less parents.
+
+Beware that restricting the NUMA nodes in a topology may change the
+logical indexes of many objects, including PUs.
 .TP
 \fB\-\-restrict\-flags\fR <flags>
 Enforce flags when restricting the topology.
@@ -91,12 +109,21 @@ the default policy is bind.
 .TP
 \fB\-\-mempolicy\fR <policy>
 Change the memory binding policy.
-The available policies are default, firsttouch, bind, interleave
-and nexttouch.
+
 This option is only meaningful when an actual binding is also given
 with \fB\-\-membind\fR.
 If \fB\-\-membind\fR is given without \fB\-\-mempolicy\fR,
 the default policy is bind.
+
+The available policies are \fBdefault\fR, \fBfirsttouch\fR,
+\fBbind\fR, \fBinterleave\fR and \fBnexttouch\fR.
+See hwloc.h for details about these policies.
+
+Note that hwloc's memory binding policies may be slightly different
+from operating system policies.
+For instance, the hwloc \fBbind\fR policy uses Linux \fIMPOL_PREFERRED_MANY\fR
+(or \fIMPOL_PREFERRED\fR) by default, but it switches to Linux \fIMPOL_BIND\fR
+if the hwloc strict option or flag is also given.
 
 .TP
 \fB\-\-get\fR
@@ -319,6 +346,12 @@ To run on a core near the PCI device whose bus ID is 0000:01:02.0:
 To bind memory on second memory node and run on first node (when supported by the OS):
 
     $ hwloc-bind --cpubind node:1 --membind node:0 -- echo hello
+
+hwloc-bind does not have an option to select a kind of CPU core but it may
+be combined with hwloc-calc to do so. For instance, to bind on the first two
+cores whose kind matches CoreType=IntelAtom:
+
+    $ hwloc-bind $(hwloc-calc --restrict $(hwloc-calc --cpukind CoreType=IntelAtom all) core:0-1) -- echo hello
 
 The --get option can report current bindings.  This example shows
 nesting hwloc-bind invocations to set a binding and then report it:

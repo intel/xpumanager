@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2023 Inria.  All rights reserved.
  * Copyright © 2009-2010, 2012 Université Bordeaux
  * Copyright © 2009-2018 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -184,6 +184,10 @@ int main(int argc, char *argv[])
   hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
   hwloc_topology_set_flags(topology, flags);
   ret = hwloc_topology_load(topology);
+  if (ret < 0) {
+    perror("Couldn't load the topology");
+    return EXIT_FAILURE;
+  }
   if (restrictstring) {
     hwloc_bitmap_t restrictset = hwloc_bitmap_alloc();
     hwloc_bitmap_sscanf(restrictset, restrictstring);
@@ -194,8 +198,6 @@ int main(int argc, char *argv[])
     hwloc_bitmap_free(restrictset);
     free(restrictstring);
   }
-  if (ret < 0)
-    return EXIT_FAILURE;
   depth = hwloc_topology_get_depth(topology);
 
   while (argc >= 1) {
@@ -372,6 +374,11 @@ int main(int argc, char *argv[])
     /* doesn't work because get_binding/get_last_cpu_location overwrites cpubind_set */
     fprintf(stderr, "Cannot display and set binding at the same time.\n");
     return EXIT_FAILURE;
+  }
+
+  if (!got_cpubind && !got_membind && !get_binding && !get_last_cpu_location) {
+    if (verbose >= 0)
+      fprintf(stderr, "got neither CPU nor memory binding locations.\n");
   }
 
   if (get_binding || get_last_cpu_location) {

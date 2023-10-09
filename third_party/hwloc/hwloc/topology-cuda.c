@@ -1,6 +1,6 @@
 /*
  * Copyright © 2011 Université Bordeaux
- * Copyright © 2012-2021 Inria.  All rights reserved.
+ * Copyright © 2012-2022 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -47,7 +47,15 @@ static unsigned hwloc_cuda_cores_per_MP(int major, int minor)
       break;
     case 7:
     case 8:
-      return 64;
+      switch (minor) {
+        case 0: return 64;
+        case 6:
+        case 7:
+        case 9: return 128;
+      }
+      break;
+    case 9:
+      return 128;
   }
   hwloc_debug("unknown compute capability %d.%d, disabling core display.\n", major, minor);
   return 0;
@@ -75,7 +83,7 @@ hwloc_cuda_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
 
   cures = cudaGetDeviceCount(&nb);
   if (cures) {
-    if (cures != cudaErrorNoDevice && !hwloc_hide_errors()) {
+    if (cures != cudaErrorNoDevice && HWLOC_SHOW_ALL_ERRORS()) {
       const char *error = cudaGetErrorString(cures);
       fprintf(stderr, "hwloc/cuda: Failed to get number of devices with cudaGetDeviceCount(): %s\n", error);
     }

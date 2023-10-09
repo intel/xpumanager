@@ -77,6 +77,15 @@ The `check_xpu_smi.conf` is an example of icinga configuration, you can write yo
 
 Make sure the `{{SSH_USERNAME}}` user is in sudoer list of the remote OS. The check_xpu_smi call xpu-smi in sudo style.
 
+## ssh config
+`check_xpu_smi.py` plugin run xpu-smi on managed hosts through ssh. So you have to make sure you can ssh to these managed hosts from icinga master node.
+
+These are some tips might help you:
+
+- First you need to create a pair of ssh keys by ssh-keygen, used for remote ssh access without password. And copy the public key into target OS's authorized_keys. And the private key will be used as ssh identity file.
+- According to [icinga doc](https://icinga.com/docs/icinga-2/latest/doc/05-service-monitoring/#ensure-it-works), icinga services and plugins are run by a dedicated user, called `"icinga"` on RHEL/CentOS/Fedora, and `"nagios"` on Debian/Ubuntu. So the ssh identity file should be owned by the dedicated user `icinga/nagios`, and the permission of identity file should be 600. Otherwise it may fail to read identify file or can't pass the privilege check.
+- `check_xpu_smi.py` plugin set ssh parameter `"StrictHostKeyChecking=accept-new"` by default. So there may be a warning when fist time connect to remote OS.
+
 ## check_xpu_smi.py plugin help
 
 ```

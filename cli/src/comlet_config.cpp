@@ -13,6 +13,7 @@
 #include "core_stub.h"
 #include "utility.h"
 #include "exit_code.h"
+#include "local_functions.h"
 
 namespace xpum::cli {
 
@@ -594,6 +595,21 @@ void ComletConfig::getTableResult(std::ostream &out) {
     *json = *res;
 
     if (isQuery()) {
+        // Hard code default power limit (0) for ATS-M1 and ATS-M3 per
+        // a customer request
+        if ((*json)["power_limit"] == 0) {
+            auto props = this->coreStub->getDeviceProperties(
+                this->opts->deviceId);
+            if (props->contains("error") == false) {
+                std::string pciId = (*props)["pci_device_id"];
+                if (isATSM1(pciId) == true) {
+                    (*json)["power_limit"] = 120;
+                }
+                if (isATSM3(pciId) == true) {
+                    (*json)["power_limit"] = 25;
+                }
+            }
+        }
         showConfigurations(out, json);
     } else {
         showPureCommandOutput(out, json);

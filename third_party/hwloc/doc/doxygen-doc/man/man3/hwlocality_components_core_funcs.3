@@ -1,4 +1,4 @@
-.TH "hwlocality_components_core_funcs" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.TH "hwlocality_components_core_funcs" 3 "Thu Sep 7 2023" "Version 2.9.3" "Hardware Locality (hwloc)" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -6,6 +6,16 @@ hwlocality_components_core_funcs \- Components and Plugins: Core functions to be
 .SH SYNOPSIS
 .br
 .PP
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBHWLOC_SHOW_CRITICAL_ERRORS\fP()   (\fBhwloc_hide_errors\fP() < 2)"
+.br
+.ti -1c
+.RI "#define \fBHWLOC_SHOW_ALL_ERRORS\fP()   (\fBhwloc_hide_errors\fP() == 0)"
+.br
+.in -1c
 .SS "Functions"
 
 .in +1c
@@ -41,6 +51,12 @@ These structures and functions may change when \fBHWLOC_COMPONENT_ABI\fP is modi
 .RE
 .PP
 
+.SH "Macro Definition Documentation"
+.PP 
+.SS "#define HWLOC_SHOW_ALL_ERRORS()   (\fBhwloc_hide_errors\fP() == 0)"
+
+.SS "#define HWLOC_SHOW_CRITICAL_ERRORS()   (\fBhwloc_hide_errors\fP() < 2)"
+
 .SH "Function Documentation"
 .PP 
 .SS "\fBhwloc_obj_t\fP hwloc__insert_object_by_cpuset (struct hwloc_topology * topology, \fBhwloc_obj_t\fP root, \fBhwloc_obj_t\fP obj, const char * reason)"
@@ -74,7 +90,9 @@ Check whether error messages are hidden\&. Callers should print critical error m
 .PP
 Callers should print non-critical error messages (e\&.g\&. failure to initialize CUDA) if this function returns 0\&.
 .PP
-This function return 1 by default (show critical only), 0 in lstopo (show all), or anything set in HWLOC_HIDE_ERRORS in the environment\&. 
+This function return 1 by default (show critical only), 0 in lstopo (show all), or anything set in HWLOC_HIDE_ERRORS in the environment\&.
+.PP
+Use macros \fBHWLOC_SHOW_CRITICAL_ERRORS()\fP and \fBHWLOC_SHOW_ALL_ERRORS()\fP for clarity\&. 
 .SS "void hwloc_insert_object_by_parent (struct hwloc_topology * topology, \fBhwloc_obj_t\fP parent, \fBhwloc_obj_t\fP obj)"
 
 .PP

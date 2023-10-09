@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2018 Inria.  All rights reserved.
+# Copyright © 2009-2022 Inria.  All rights reserved.
 # Copyright © 2009-2013, 2017 Université Bordeaux
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -101,7 +101,7 @@ TESTS = hwloc-hello$(EXEEXT) $(am__EXEEXT_1)
 @HWLOC_HAVE_CXX_TRUE@am__append_1 = hwloc-hello-cpp
 check_PROGRAMS = $(am__EXEEXT_2) cpuset+bitmap+cpubind$(EXEEXT) \
 	nodeset+membind+policy$(EXEEXT) get-knl-modes$(EXEEXT) \
-	gpu$(EXEEXT) $(am__EXEEXT_3)
+	gpu$(EXEEXT) memory-attributes$(EXEEXT) $(am__EXEEXT_3)
 @HWLOC_HAVE_WINDOWS_FALSE@am__append_2 = sharedcaches
 subdir = doc/examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -155,6 +155,11 @@ hwloc_hello_cpp_OBJECTS = $(am_hwloc_hello_cpp_OBJECTS)
 hwloc_hello_cpp_LDADD = $(LDADD)
 hwloc_hello_cpp_DEPENDENCIES =  \
 	$(HWLOC_top_builddir)/hwloc/libhwloc.la
+memory_attributes_SOURCES = memory-attributes.c
+memory_attributes_OBJECTS = memory-attributes.$(OBJEXT)
+memory_attributes_LDADD = $(LDADD)
+memory_attributes_DEPENDENCIES =  \
+	$(HWLOC_top_builddir)/hwloc/libhwloc.la
 nodeset_membind_policy_SOURCES = nodeset+membind+policy.c
 nodeset_membind_policy_OBJECTS = nodeset+membind+policy.$(OBJEXT)
 nodeset_membind_policy_LDADD = $(LDADD)
@@ -182,6 +187,7 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/cpuset+bitmap+cpubind.Po \
 	./$(DEPDIR)/get-knl-modes.Po ./$(DEPDIR)/gpu.Po \
 	./$(DEPDIR)/hwloc-hello-cpp.Po ./$(DEPDIR)/hwloc-hello.Po \
+	./$(DEPDIR)/memory-attributes.Po \
 	./$(DEPDIR)/nodeset+membind+policy.Po \
 	./$(DEPDIR)/sharedcaches.Po
 am__mv = mv -f
@@ -222,10 +228,10 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = cpuset+bitmap+cpubind.c get-knl-modes.c gpu.c hwloc-hello.c \
-	$(hwloc_hello_cpp_SOURCES) nodeset+membind+policy.c \
-	sharedcaches.c
+	$(hwloc_hello_cpp_SOURCES) memory-attributes.c \
+	nodeset+membind+policy.c sharedcaches.c
 DIST_SOURCES = cpuset+bitmap+cpubind.c get-knl-modes.c gpu.c \
-	hwloc-hello.c $(hwloc_hello_cpp_SOURCES) \
+	hwloc-hello.c $(hwloc_hello_cpp_SOURCES) memory-attributes.c \
 	nodeset+membind+policy.c sharedcaches.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -461,6 +467,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARCHIVEMOUNT = @ARCHIVEMOUNT@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -498,6 +505,7 @@ ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
+FILECMD = @FILECMD@
 GREP = @GREP@
 GS = @GS@
 HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
@@ -524,9 +532,11 @@ HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
 HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LEVELZERO = @HWLOC_HAVE_LEVELZERO@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
+HWLOC_HAVE_LINUX = @HWLOC_HAVE_LINUX@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
 HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
+HWLOC_HAVE_X86_CPUID = @HWLOC_HAVE_X86_CPUID@
 HWLOC_IBVERBS_LIBS = @HWLOC_IBVERBS_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LEVELZERO_CFLAGS = @HWLOC_LEVELZERO_CFLAGS@
@@ -756,6 +766,10 @@ hwloc-hello-cpp$(EXEEXT): $(hwloc_hello_cpp_OBJECTS) $(hwloc_hello_cpp_DEPENDENC
 	@rm -f hwloc-hello-cpp$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(hwloc_hello_cpp_OBJECTS) $(hwloc_hello_cpp_LDADD) $(LIBS)
 
+memory-attributes$(EXEEXT): $(memory_attributes_OBJECTS) $(memory_attributes_DEPENDENCIES) $(EXTRA_memory_attributes_DEPENDENCIES) 
+	@rm -f memory-attributes$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(memory_attributes_OBJECTS) $(memory_attributes_LDADD) $(LIBS)
+
 nodeset+membind+policy$(EXEEXT): $(nodeset_membind_policy_OBJECTS) $(nodeset_membind_policy_DEPENDENCIES) $(EXTRA_nodeset_membind_policy_DEPENDENCIES) 
 	@rm -f nodeset+membind+policy$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nodeset_membind_policy_OBJECTS) $(nodeset_membind_policy_LDADD) $(LIBS)
@@ -775,6 +789,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpu.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-hello-cpp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-hello.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory-attributes.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nodeset+membind+policy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sharedcaches.Po@am__quote@ # am--include-marker
 
@@ -1142,6 +1157,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/gpu.Po
 	-rm -f ./$(DEPDIR)/hwloc-hello-cpp.Po
 	-rm -f ./$(DEPDIR)/hwloc-hello.Po
+	-rm -f ./$(DEPDIR)/memory-attributes.Po
 	-rm -f ./$(DEPDIR)/nodeset+membind+policy.Po
 	-rm -f ./$(DEPDIR)/sharedcaches.Po
 	-rm -f Makefile
@@ -1194,6 +1210,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/gpu.Po
 	-rm -f ./$(DEPDIR)/hwloc-hello-cpp.Po
 	-rm -f ./$(DEPDIR)/hwloc-hello.Po
+	-rm -f ./$(DEPDIR)/memory-attributes.Po
 	-rm -f ./$(DEPDIR)/nodeset+membind+policy.Po
 	-rm -f ./$(DEPDIR)/sharedcaches.Po
 	-rm -f Makefile

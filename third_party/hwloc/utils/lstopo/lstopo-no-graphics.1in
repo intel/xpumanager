@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2021 Inria.  All rights reserved.
+.\" Copyright © 2009-2023 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Université of Bordeaux
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -38,19 +38,21 @@ should be read before reading this man page
 Enforce the output in the given format.
 See the OUTPUT FORMATS section below.
 .TP
-\fB\-i\fR <file>, \fB\-\-input\fR <file>
-Read topology from XML file <file> (instead of discovering the
-topology on the local machine).  If <file> is "\-", the standard input
-is used.  XML support must have been compiled in to hwloc for this
-option to be usable.
-.TP
-\fB\-i\fR <directory>, \fB\-\-input\fR <directory>
-Read topology from <directory> instead of discovering the topology
-of the local machine.
-On Linux, the directory may contain the topology files
+\fB\-i\fR <path>, \fB\-\-input\fR <path>
+Read the topology from <path> instead of discovering the topology of the local machine.
+
+If <path> is a file,
+it may be a XML file exported by a previous hwloc program.
+If <path> is "\-", the standard input may be used as a XML file.
+
+On Linux, <path> may be a directory containing the topology files
 gathered from another machine topology with hwloc-gather-topology.
-On x86, the directory may contain a cpuid dump gathered
+
+On x86, <path> may be a directory containing a cpuid dump gathered
 with hwloc-gather-cpuid.
+
+When the archivemount program is available, <path> may also be a tarball
+containing such Linux or x86 topology files.
 .TP
 \fB\-i\fR <specification>, \fB\-\-input\fR <specification>
 Simulate a fake hierarchy (instead of discovering the topology on the
@@ -126,6 +128,12 @@ Display OS/physical indexes of all objects, with prefix "P#".
 By default, both logical and physical/OS indexes are displayed for PUs and NUMA nodes,
 logical only for cores, dies and packages, and no index for other types.
 .TP
+\fB\-\-logical\-index\-prefix\fR <prefix>
+Replace " L#" with the given prefix for logical indexes.
+.TP
+\fB\-\-os\-index\-prefix\fR <prefix>
+Replace " P#" with the given prefix for physical/OS indexes.
+.TP
 \fB\-c\fR \fB\-\-cpuset\fR
 Display the cpuset of each object.
 .TP
@@ -177,7 +185,8 @@ This is identical to \fB-\-filter cache:structure\fR.
 This is identical to \fB-\-filter icache:none\fR.
 .TP
 \fB\-\-disallowed\fR
-Include objects disallowed by administrative limitations.
+Include objects disallowed by administrative limitations (e.g Cgroups on Linux).
+Offline PUs and NUMA nodes are still ignored.
 .TP
 \fB\-\-allow\fR <all|local|0xff|nodeset=0xf0>
 Include objects disallowed by administrative limitations (implies \fB\-\-disallowed\fR)
@@ -238,15 +247,27 @@ and bold font may be used to display PU boxes of different kinds.
 .TP
 \fB\-\-restrict\fR <cpuset>
 Restrict the topology to the given cpuset.
+This removes some PUs and their now-child-less parents.
+
+Beware that restricting the PUs in a topology may change the
+logical indexes of many objects, including NUMA nodes.
 .TP
 \fB\-\-restrict\fR nodeset=<nodeset>
-Restrict the topology to the given nodeset, unless --restrict-flags specifies something different.
+Restrict the topology to the given nodeset.
+(unless \fB\-\-restrict\-flags\fR specifies something different).
+This removes some NUMA nodes and their now-child-less parents.
+
+Beware that restricting the NUMA nodes in a topology may change the
+logical indexes of many objects, including PUs.
 .TP
 \fB\-\-restrict\fR binding
 Restrict the topology to the current process binding.
 This option requires the use of the actual current machine topology
 (or any other topology with \fB\-\-thissystem\fR or with
 HWLOC_THISSYSTEM set to 1 in the environment).
+
+Beware that restricting the topology may change the
+logical indexes of many objects, including PUs and NUMA nodes.
 .TP
 \fB\-\-restrict\-flags\fR <flags>
 Enforce flags when restricting the topology.
@@ -490,10 +511,14 @@ CPUs by their color; see the COLORS section, below.
 .SH OUTPUT FORMATS
 .
 .PP
-By default, if no output filename is specific, the output is sent
+By default, if no output filename is specified, the output is sent
 to a graphical window if possible in the current environment
 (DISPLAY environment variable set on Unix, etc.).
 Otherwise, a text summary is displayed in the console.
+The console is also used when the program runs from a terminal
+and the output is redirected to a pipe or file.
+These default behaviors may be changed by passing \fB\-\-of console\fR
+to force console mode or \fB\-\-of window\fR for graphical window.
 .
 .PP
 The filename on the command line usually determines the format of the output.
@@ -512,6 +537,10 @@ be used with "\-\-of" or as a filename suffix.
 .TP
 .B default
 Send the output to a window or to the console depending on the environment.
+.
+.TP
+.B window
+Send the output to a graphical window.
 .
 .TP
 .B console
@@ -581,8 +610,7 @@ Note that Misc and I/O devices are ignored during this export.
 .
 .TP
 .B xml
-If lstopo was compiled with the proper
-support, lstopo outputs an XML representation of the map.
+lstopo outputs an XML representation of the map.
 It may be reused later, even on another machine, with lstopo \-\-input,
 the HWLOC_XMLFILE environment variable, or the hwloc_topology_set_xml()
 function.
@@ -656,18 +684,19 @@ their PCI bus ID (such as 00:02.3).
 They may also contain sub-boxes for OS device objects
 such as a network interface \fIeth0\fR or a CUDA GPU \fIcuda0\fR.
 
-The datarate of a PCI link may be written (in GB/s) right below
-its drawn line (if the operating system and/or libraries are able
-to report that information).
-This datarate is the currently configured PCI datarate.
-It may change during execution since some devices are able to
-slow their PCI links down when idle.
-
 When there is a single link (horizontal line) on the right of a
 PCI bridge, it means that a single device or bridge is connected
 on the secondary PCI bus behind that bridge.
 When there is a vertical line, it means that multiple devices
 and/or bridges are connected to the same secondary PCI bus.
+
+The datarate of a PCI link may be written (in GB/s) right below
+its drawn line (if the operating system and/or libraries are able
+to report that information).
+This datarate is the currently configured speed of the entire PCI link
+(sum of the bandwidth of all PCI lanes in that link).
+It may change during execution since some devices are able to
+slow their PCI links down when idle.
 .
 .\" **************************
 .\"    Layout Section
@@ -835,7 +864,17 @@ To count the number of logical processors in the system
 To append the kernel release and version to the graphical legend:
 
    lstopo --append-legend "Kernel release: $(uname -r)" --append-legend "Kernel version: $(uname -v)"
-
+.
+.\" **************************
+.\"    Notes Section
+.\" **************************
+.SH NOTES
+.
+lstopo displays memory and cache sizes with units such as
+\fBkB\fR (1 kilobyte = 1000 bytes) or \fBGB\fR (1 gigabyte = 1000*1000*1000 bytes)
+while it actually means
+\fBKiB\fR (1 kibibyte = 1024 bytes) or \fBGiB\fR (1 gibibytes = 1024*1024*1024 bytes) .
+.
 .\" **************************
 .\"    See also section
 .\" **************************

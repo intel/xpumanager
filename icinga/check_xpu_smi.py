@@ -47,17 +47,18 @@ telemetry_type_dict = dict(telemetry_type_list)
 
 
 def ssh_query(cmd):
-    by_ssh_cmd = "ssh {} -l {}".format(host, username)
+    by_ssh_cmd = "ssh -oStrictHostKeyChecking=accept-new {} -l {}".format(host, username)
     if identity_file:
         by_ssh_cmd += " -i {}".format(identity_file)
     if port:
         by_ssh_cmd += " -p {}".format(port)
-    full_cmd ="{} {}".format(by_ssh_cmd,cmd).split(" ")
-    res = subprocess.run(full_cmd,capture_output=True)
+    full_cmd = "{} {}".format(by_ssh_cmd, cmd).split(" ")
+    res = subprocess.run(full_cmd, capture_output=True)
     if res.returncode != 0:
-        print("Critical: {}".format(res.stdout.decode()))
+        print("Critical: {}".format(res.stderr.decode()))
         exit(2)
     return json.loads(res.stdout.decode())
+
 
 def checkTelemetry():
 
@@ -234,7 +235,8 @@ def checkHealth():
 
 
 def arg():
-    parser = argparse.ArgumentParser(description='Use Intel XPU-SMI to check GPU telemetries and status for a remote host through ssh.')
+    parser = argparse.ArgumentParser(
+        description='Use Intel XPU-SMI to check GPU telemetries and status for a remote host through ssh.')
     parser.add_argument('-V', '--version', action='version',
                         version='%(prog)s v' + sys.modules[__name__].__version__)
     parser.add_argument(

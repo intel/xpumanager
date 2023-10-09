@@ -2361,6 +2361,7 @@ std::string errorTypeToStr(PrecheckErrorType type) {
         case HUC_NOT_RUNNING: ret = "HuC Not Running"; break;
         case LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
         case MEMORY_ERROR: ret = "Memory Error"; break;
+        case GPU_INITIALIZATION_FAILED: ret = "GPU Initialization Failed"; break;
         default: break;
     }
     return ret;
