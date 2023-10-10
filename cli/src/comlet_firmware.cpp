@@ -68,7 +68,7 @@ ComletFirmware::~ComletFirmware() {
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>(new FlashFirmwareOptions());
 
-    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID or PCI BDF address.");
+    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID or PCI BDF address. If it is not specified, all devices will be updated.");
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be a non-negative integer or a BDF string.";
         if (str == "" || isValidDeviceId(str) || isBDF(str)) {

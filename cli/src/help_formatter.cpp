@@ -214,7 +214,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
 #else
         return "\nUsage: " + appName + " updatefw [Options]\n"
                "  " + appName + " updatefw -d [deviceId] -t GFX -f [imageFilePath]\n"
-               "  " + appName + " updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]\n";
+               "  " + appName + " updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]\n"
+               "  " + appName + " updatefw -t AMC -f [imageFilePath]\n";
 #endif
     } else if (app->get_name().compare("config") == 0) {
         return "\nUsage: " + appName + " config [Options]\n"
