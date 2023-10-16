@@ -51,6 +51,8 @@ class FirmwareManager {
     std::mutex mtx;
 
     std::future<xpum_firmware_flash_result_t> taskAMC;
+    std::future<xpum_firmware_flash_result_t> taskGSC;
+    std::future<xpum_firmware_flash_result_t> taskGSCData;
 
     std::shared_ptr<AmcManager> p_amc_manager;
 
@@ -62,8 +64,14 @@ class FirmwareManager {
 
     xpum_result_t isPVCFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer);
 
+    xpum_result_t runGscOnlyFwFlash(const char* filePath, bool force);
+    void getGscOnlyFwFlashResult(xpum_firmware_flash_task_result_t* result);
+    xpum_result_t runGscOnlyFwDataFlash(const char* filePath);
+    void getGscOnlyFwDataFlashResult(xpum_firmware_flash_task_result_t* result);
+
     std::string amcFwErrMsg;
     std::string flashFwErrMsg;
+
 
    public:
     void init();
@@ -76,11 +84,11 @@ class FirmwareManager {
     std::string getAmcWarnMsg();
     xpum_result_t getAMCSensorReading(xpum_sensor_reading_t data[], int *count);
 
-    xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force = false);
-    void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
+    xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force = false, bool igscOnly = false);
+    void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result, bool igscOnly = false);
 
-    xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath);
-    void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
+    xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath, bool igscOnly = false);
+    void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result, bool igscOnly = false);
 
     xpum_result_t runPscFwFlash(xpum_device_id_t deviceId, const char* filePath, bool force = false);
     void getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
@@ -105,6 +113,12 @@ class FirmwareManager {
     xpum_result_t getAMCSerialNumbersByRiserSlot(uint8_t riser, uint8_t slot, std::string &serialNumber);
 
     void credentialCheckIfFail(AmcCredential credential, std::string& errMsg);
+
+    std::mutex mtxPct;
+    std::atomic<int> gscFwFlashPercent;
+    std::atomic<int> gscFwFlashTotalPercent;
+    std::atomic<int> gscFwDataFlashPercent;
+    std::atomic<int> gscFwDataFlashTotalPercent;
 };
 
 std::vector<char> readImageContent(const char* filePath);
