@@ -53,8 +53,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
         return json;
     }
 
-    if (response.errormsg().length() > 0) {
-        (*json)["error"] = response.errormsg();
+    std::string errMsg = response.errormsg();
+    if (errMsg.size() > 0 && 
+        // If the error message starts with " Device ID", it means no
+        // acutall error message is retruend, "Device ID:" should be append to 
+        // the error message translated from error code
+        errMsg.rfind(" Device ID:", 0) == std::string::npos) {
+        (*json)["error"] = errMsg;
         (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
@@ -63,63 +68,70 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
 
     (*json)["errno"] = errorNumTranslate(response.errorno());
 
-    switch (code) {
-        case xpum_result_t::XPUM_OK:
-            (*json)["result"] = "OK";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE:
-            (*json)["error"] = "Device models are inconsistent, failed to upgrade all.";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND:
-            (*json)["error"] = "Firmware image not found.";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND:
-            (*json)["error"] = "Igsc tool doesn't exit";
-            return json;
-        case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
-            (*json)["error"] = "Device not found.";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL:
-            if (type == XPUM_DEVICE_FIRMWARE_GFX)
-                (*json)["error"] = "Updating GFX firmware on all devices is not supported";
-            else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
-                (*json)["error"] = "Updating GFX_DATA firmware on all devices is not supported";
-            else if (type == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA)
-                (*json)["error"] = "Updating GFX_CODE_DATA firmware on all devices is not supported";
-            else
-                (*json)["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
-            (*json)["error"] = "Updating AMC firmware on single device is not supported";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING:
-            (*json)["error"] = "Firmware update task already running.";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE:
-            (*json)["error"] = "The image file is not a right FW image file.";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
-            (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA:
-            (*json)["error"] = "The device doesn't support GFX_DATA firmware update";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC:
-            (*json)["error"] = "The device doesn't support PSCBIN firmware update";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC:
-            (*json)["error"] = "Installed igsc doesn't support PSCBIN firmware update";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA:
-            (*json)["error"] = "The device doesn't support GFX_CODE_DATA firmware update";
-            return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE:
-            (*json)["error"] = "The GFX_DATA version of the image is less than or equal to the device";
-            return json;
-        default:
-            (*json)["error"] = "Unknown error.";
-            return json;
+    if (code == XPUM_OK) {
+        (*json)["result"] = "OK";
+    } else {
+        switch (code) {
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE:
+                (*json)["error"] = "Device models are inconsistent, failed to upgrade all.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND:
+                (*json)["error"] = "Firmware image not found.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND:
+                (*json)["error"] = "Igsc tool doesn't exit";
+                break;
+            case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "Device not found.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL:
+                if (type == XPUM_DEVICE_FIRMWARE_GFX)
+                    (*json)["error"] = "Updating GFX firmware on all devices is not supported";
+                else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
+                    (*json)["error"] = "Updating GFX_DATA firmware on all devices is not supported";
+                else if (type == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA)
+                    (*json)["error"] = "Updating GFX_CODE_DATA firmware on all devices is not supported";
+                else
+                    (*json)["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
+                (*json)["error"] = "Updating AMC firmware on single device is not supported";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING:
+                (*json)["error"] = "Firmware update task already running.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE:
+                (*json)["error"] = "The image file is not a right FW image file.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
+                (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA:
+                (*json)["error"] = "The device doesn't support GFX_DATA firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC:
+                (*json)["error"] = "The device doesn't support PSCBIN firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC:
+                (*json)["error"] = "Installed igsc doesn't support PSCBIN firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA:
+                (*json)["error"] = "The device doesn't support GFX_CODE_DATA firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE:
+                (*json)["error"] = "The GFX_DATA version of the image is less than or equal to the device";
+                break;
+            default:
+                (*json)["error"] = "Unknown error.";
+                break;
+        }
+        if (errMsg.size() > 0) {
+            std::string str = (*json)["error"];
+            str += errMsg;
+            (*json)["error"] = str;
+        }
     }
+    return json;
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceId,
