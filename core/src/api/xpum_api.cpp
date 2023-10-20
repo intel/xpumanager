@@ -625,8 +625,19 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
 
 xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password, bool force) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
+    bool igscOnly = false;
     if (res != XPUM_OK) {
-        return res;
+        if (res != XPUM_LEVEL_ZERO_INITIALIZATION_ERROR)
+            return res;
+        // Would try to update GFX and GFX_DATA (igscOnly) 
+        // even L0 is not initialized (DeviceManager is not involved)
+        if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES &&
+            (job->type == XPUM_DEVICE_FIRMWARE_GFX ||
+             job->type == XPUM_DEVICE_FIRMWARE_GFX_DATA)) {
+            igscOnly = true;
+        } else {
+            return res;
+        }
     }
 
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES && job->type == 
@@ -681,10 +692,10 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             break;
         }
         case XPUM_DEVICE_FIRMWARE_GFX:
-            res = Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath, force);
+            res = Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath, force, igscOnly);
             break;
         case XPUM_DEVICE_FIRMWARE_GFX_DATA:
-            res = Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath);
+            res = Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath, igscOnly);
             break;
         case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
             res = Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath, force);
@@ -706,9 +717,22 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType,
                                          xpum_firmware_flash_task_result_t *result) {
     xpum_result_t ret = Core::instance().apiAccessPreCheck();
+    bool igscOnly = false;
     if (ret != XPUM_OK) {
-        return ret;
-    }
+        if (ret != XPUM_LEVEL_ZERO_INITIALIZATION_ERROR)
+            return ret;
+        // Would try to update GFX and GFX_DATA (igscOnly) 
+        // even L0 is not initialized (DeviceManager is not involved)
+        if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES &&
+            (firmwareType == XPUM_DEVICE_FIRMWARE_GFX ||
+             firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA)) {
+            igscOnly = true;
+            ret = XPUM_OK;
+        } else {
+            return ret;
+        }
+   }
+
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES && firmwareType == 
         XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
         return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
@@ -737,10 +761,10 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
             break;
         }
         case XPUM_DEVICE_FIRMWARE_GFX:
-            Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
+            Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result, igscOnly);
             break;
         case XPUM_DEVICE_FIRMWARE_GFX_DATA:
-            Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
+            Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result, igscOnly);
             break;
         case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
             Core::instance().getFirmwareManager()->getPscFwFlashResult(deviceId, result);
@@ -756,8 +780,8 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
 
 xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
-    if (res != XPUM_OK) {
-        return res;
+    if (res != XPUM_OK && res != XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
+       return res;
     }
     if (Core::instance().getFirmwareManager() == nullptr) {
         return XPUM_RESULT_FW_MGMT_NOT_INIT;
@@ -2617,6 +2641,11 @@ xpum_result_t xpumApplyPPR(xpum_device_id_t deviceId, xpum_diag_result_t* diagRe
     if (p_device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+
+    if (p_device->getDeviceModel() != XPUM_DEVICE_MODEL_PVC) {
+        return XPUM_RESULT_UNSUPPORTED_DEVICE;
+    }
+
     if (p_device->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }

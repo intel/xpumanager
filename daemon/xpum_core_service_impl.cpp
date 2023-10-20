@@ -1554,12 +1554,14 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     res = xpumApplyPPR(deviceId, &diagResult, &memoryHealthState);
 
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+            response->set_errormsg("device Id is invalid");
         } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING) {
             response->set_errormsg("device is updating firmware");
         } else if (res == XPUM_PPR_NOT_FOUND) {
             response->set_errormsg("PPR diag handle is not found");
+        } else if (res == XPUM_RESULT_UNSUPPORTED_DEVICE) {
+            response->set_errormsg("PPR is not supported on this device");
         } else {
             response->set_errormsg("Error");
         }
@@ -1569,11 +1571,13 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     response->set_deviceid(deviceId);
     response->set_errorno(res);
 
-    std::thread([] {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        // Send SIGKILL signal to make daemon exit after apply PPR
-        std::raise(SIGKILL);
-    }).detach();
+    if (res == XPUM_OK) {
+        std::thread([] {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            // Send SIGKILL signal to make daemon exit after apply PPR
+            std::raise(SIGKILL);
+        }).detach();
+    }
 
     return grpc::Status::OK;
 }

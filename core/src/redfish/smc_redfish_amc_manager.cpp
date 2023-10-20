@@ -281,7 +281,15 @@ bool SMCRedfishAmcManager::init(InitParam& param) {
     initErrMsg.clear();
 
     auto systemInfo = Core::instance().getDeviceManager()->getSystemInfo();
+    
     std::string pciSlot;
+    std::vector<std::shared_ptr<Device>> devices;
+    Core::instance().getDeviceManager()->getDeviceList(devices);
+    if (!devices.empty()) {
+        Property prop_pciSlot;
+        devices[0]->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, prop_pciSlot);
+        pciSlot = prop_pciSlot.getValue();
+    }
 
     if (systemInfo.productName.compare("SYS-420GP-TNR") == 0) {
         _model = SMC_4U_SYS_420GP_TNR;
@@ -758,6 +766,36 @@ static bool uploadImage(RedfishHostInterface interface,
         flashAmcParam.errCode = XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         flashAmcParam.errMsg = "The GPU firmware update was already in update mode.";
         return false;
+    }
+    /* 
+    {
+    "@odata.type": "#Task.v1_5_0.Task",
+    "@odata.id": "/redfish/v1/TaskService/Tasks/11",
+    "Id": "11",
+    "Name": "GPU Update",
+    "TaskState": "Running",
+    "StartTime": "2023-10-09T07:30:15+00:00",
+    "EndTime": "0000-00-00T00:00:00+00:00",
+    "PercentComplete": 0,
+    "HidePayload": true,
+    "TaskMonitor": "/redfish/v1/TaskMonitor/i9r6YKVZmgIIaj8ECLfncKQh5TLkvPPcYEg5ZBeJpubNdiZq3CbeW2JcTeKP4j1",
+    "TaskStatus": "OK",
+    "Oem": {
+        "Supermicro": {
+        "@odata.type": "#SmcTaskExtensions.v1_0_0.Task",
+        "UploadedFWVersion": "",
+        "RunningFWVersion": ""
+        }
+    },
+    "@odata.etag": "31f50652b34712b9247e3f8336a98a79"
+    }
+    */
+    if (uploadJson.contains("TaskStatus") &&
+        uploadJson["TaskStatus"].get<std::string>().compare("OK") == 0 &&
+        uploadJson.contains("@odata.id")) {
+        XPUM_LOG_INFO("upload image successfully");
+        verifyTaskLink = uploadJson["@odata.id"].get<std::string>();
+        return true;
     }
     XPUM_LOG_ERROR("Unknown error happens when upload image, json: {}", uploadJson.dump(2));
     flashAmcParam.errCode = XPUM_GENERIC_ERROR;

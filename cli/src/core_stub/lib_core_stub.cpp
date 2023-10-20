@@ -1461,12 +1461,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::applyPPR(int deviceId, bool force) 
         res = xpumApplyPPR(deviceId, &diagResult, &memoryHealthState);
 
         if (res != XPUM_OK) {
-            if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-                (*json)["error"] = "device Id or tile Id is invalid";
+            if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+                (*json)["error"] = "device Id is invalid";
             } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
                 (*json)["error"] = "device is updating firmware";
             } else if (res == XPUM_PPR_NOT_FOUND) {
                 (*json)["error"] = "PPR diag handle is not found";
+            } else if (res == XPUM_RESULT_UNSUPPORTED_DEVICE) {
+                (*json)["error"] = "PPR is not supported on this device";
             } else {
                 (*json)["error"] = "Error";
             }

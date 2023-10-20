@@ -16,6 +16,7 @@
 #include "igsc_err_msg.h"
 #include "infrastructure/utility.h"
 #include "infrastructure/logger.h"
+#include "device/skuType.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -28,7 +29,7 @@
 #include <array>
 
 namespace xpum {
-
+using namespace std::chrono_literals;
 
 static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<Device> pDevice);
 
@@ -329,9 +330,131 @@ std::vector<char> readImageContent(const char* filePath) {
     return buffer;
 }
 
-xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force) {
+static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
+    uint32_t percent = (done * 100) / total;
+    FirmwareManager *pFM = (FirmwareManager*) ctx;
+    pFM->gscFwFlashPercent.store(percent);
+}
+
+static void data_progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
+    uint32_t percent = (done * 100) / total;
+    FirmwareManager *pFM = (FirmwareManager*) ctx;
+    pFM->gscFwDataFlashPercent.store(percent);
+}
+
+
+xpum_result_t FirmwareManager::runGscOnlyFwFlash(const char* filePath, bool force) {
+    // read image file
+    auto img = readImageContent(filePath);
+
+    // validate the image file
+    if (!isGscFwImage(img)) {
+        return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+    }
+
+    auto devices = getPCIAddrAndMeiDevices();
+    if (devices.size() == 0) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskGSC.valid() || taskGSCData.valid()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
     flashFwErrMsg.clear();
-   
+    gscFwFlashPercent.store(0);
+    gscFwFlashTotalPercent.store(0);
+    taskGSC = std::async(std::launch::async, [this, img, devices, force] {
+        for (auto &device : devices) {
+            XPUM_LOG_INFO("Start update GSC fw on device {}", 
+                device.meiDevicePath);
+            struct igsc_device_handle handle;
+            struct igsc_fw_version device_fw_version;
+            igsc_progress_func_t progress_func = progress_percentage_func;
+            int ret = 0;
+            struct igsc_fw_update_flags flags = {0};
+            flags.force_update = force;
+
+            memset(&handle, 0, sizeof(handle));
+            ret = igsc_device_init_by_device(&handle, 
+                device.meiDevicePath.c_str()); 
+
+            if (ret) {
+                flashFwErrMsg = "Cannot initialize device: " + 
+                    device.meiDevicePath + ", error code: " + 
+                    std::to_string(ret) + " error message: " + 
+                    transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", device.meiDevicePath, ret, transIgscErrCodeToMsg(ret));
+                (void)igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            ret = igsc_device_fw_update_ex(&handle, (const uint8_t*)img.data(), 
+                img.size(), progress_func, this, flags);
+            if (ret) {
+                flashFwErrMsg = "Update process failed, error code: " + 
+                    std::to_string(ret) + " error message: " + 
+                    transIgscErrCodeToMsg(ret) + " device: " +
+                    device.meiDevicePath;
+                XPUM_LOG_ERROR("Update process failed, error code: {}, error message: {}", ret, transIgscErrCodeToMsg(ret));
+                (void)igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            // get new fw version
+            ret = igsc_device_fw_version(&handle, &device_fw_version);
+            if (ret != IGSC_SUCCESS) {
+                XPUM_LOG_ERROR("Cannot retrieve firmware version from device: {}", device.meiDevicePath);
+            } else{
+                std::string version = print_fw_version(&device_fw_version);
+                XPUM_LOG_INFO("Device {} GSC fw flashed successfully to {}",
+                    device.meiDevicePath, version);
+            }
+
+            (void)igsc_device_close(&handle);
+            uint32_t totalPercent = this->gscFwFlashPercent.load() +
+                                this->gscFwFlashTotalPercent.load();
+            {
+                std::lock_guard<std::mutex> lock(this->mtxPct);
+                this->gscFwFlashPercent.store(0);
+                this->gscFwFlashTotalPercent.store(totalPercent);
+            }
+        }
+        
+        return XPUM_DEVICE_FIRMWARE_FLASH_OK;
+    });
+
+    return XPUM_OK;
+}
+
+void FirmwareManager::getGscOnlyFwFlashResult(xpum_firmware_flash_task_result_t* result) {
+    result->percentage = 0;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX;
+    auto devices = getPCIAddrAndMeiDevices();
+    std::size_t deviceNum = devices.size();
+    if (deviceNum == 0) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(mtxPct);
+        result->percentage = (gscFwFlashTotalPercent.load() + 
+            gscFwFlashPercent.load()) / deviceNum;
+    }
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskGSC.valid() && taskGSC.wait_for(0ms) != std::future_status::ready) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+    } else {
+        result->result = taskGSC.get();
+    }
+}
+
+xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force, bool igscOnly) {
+    if (igscOnly == true) {
+        return runGscOnlyFwFlash(filePath, force);
+    }
+
+    flashFwErrMsg.clear();
     // read image file
     auto buffer = readImageContent(filePath);
 
@@ -420,7 +543,11 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     return res;
 }
 
-void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t *result) {
+void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t *result, bool igscOnly) {
+    if (igscOnly == true) {
+        getGscOnlyFwFlashResult(result);
+        return;
+    }
     xpum_firmware_flash_result_t res;
     std::shared_ptr<Device> pDevice = nullptr;
     std::vector<std::shared_ptr<Device>> deviceList;
@@ -517,7 +644,116 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
     return result;
 }
 
-xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath) {
+xpum_result_t FirmwareManager::runGscOnlyFwDataFlash(const char* filePath) {
+    auto devices = getPCIAddrAndMeiDevices();
+    if (devices.size() == 0) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    // read image file
+    auto buffer = readImageContent(filePath);
+    int ret = 0;
+    uint8_t type = 0;
+    ret = igsc_image_get_type((const uint8_t*)buffer.data(), buffer.size(), 
+        &type);
+    if (ret != IGSC_SUCCESS || type != IGSC_IMAGE_TYPE_FW_DATA) {
+        return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+    }
+
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskGSCData.valid() || taskGSC.valid()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+    flashFwErrMsg.clear();
+    gscFwDataFlashPercent.store(0);
+    gscFwDataFlashTotalPercent.store(0);
+    taskGSCData = std::async(std::launch::async, 
+        [this, buffer, filePath, devices] {
+        for (auto &device : devices) {
+             XPUM_LOG_INFO("Start update GSC FW-DATA on device {}", 
+                device.meiDevicePath);
+
+            struct igsc_device_handle handle;
+            int ret = 0;
+
+            struct igsc_fwdata_image* oimg = NULL;
+            igsc_progress_func_t progress_func = data_progress_percentage_func;
+
+            memset(&handle, 0, sizeof(handle));
+
+            ret = igsc_device_init_by_device(&handle, device.meiDevicePath.c_str());
+            if (ret != IGSC_SUCCESS) {
+                flashFwErrMsg = "Cannot initialize device: " + 
+                device.meiDevicePath + ", error code: " + std::to_string(ret) + 
+                " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", device.meiDevicePath, ret, transIgscErrCodeToMsg(ret));
+                igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            ret = igsc_image_fwdata_init(&oimg, (const uint8_t*)buffer.data(), buffer.size());
+            if (ret == IGSC_ERROR_BAD_IMAGE) {
+                flashFwErrMsg = "Invalid image format: " + std::string(filePath);
+                XPUM_LOG_ERROR("Invalid image format: {}", std::string(filePath));
+                igsc_image_fwdata_release(oimg);
+                igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            ret = igsc_device_fwdata_image_update(&handle, oimg, progress_func, this);
+
+            if (ret) {
+                flashFwErrMsg = "GFX_DATA update failed, error code: " + 
+                    std::to_string(ret) + " error message: " + 
+                    transIgscErrCodeToMsg(ret) + " device: " + 
+                    device.meiDevicePath;
+                XPUM_LOG_ERROR("GFX_DATA update failed on device {}, error code: {}, error message: {}", device.meiDevicePath, ret, transIgscErrCodeToMsg(ret));
+                igsc_image_fwdata_release(oimg);
+                igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+            igsc_image_fwdata_release(oimg);
+            igsc_device_close(&handle);
+            uint32_t totalPercent = this->gscFwDataFlashPercent.load() +
+                                    this->gscFwDataFlashTotalPercent.load();
+            {
+                std::lock_guard<std::mutex> lock(this->mtxPct);
+                this->gscFwDataFlashPercent.store(0);
+                this->gscFwDataFlashTotalPercent.store(totalPercent);
+            }
+        }
+        return XPUM_DEVICE_FIRMWARE_FLASH_OK;
+    });
+    return XPUM_OK;
+}
+
+void FirmwareManager::getGscOnlyFwDataFlashResult(xpum_firmware_flash_task_result_t* result) {
+    result->percentage = 0;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX_DATA;
+    auto devices = getPCIAddrAndMeiDevices();
+    std::size_t deviceNum = devices.size();
+    if (deviceNum == 0) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(mtxPct);
+        result->percentage = (gscFwDataFlashTotalPercent.load() + 
+            gscFwDataFlashPercent.load()) / deviceNum;
+    }
+
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskGSCData.valid() && taskGSCData.wait_for(0ms) != std::future_status::ready) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+    } else {
+        result->result = taskGSCData.get();
+    }
+}
+
+
+xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath, bool igscOnly) {
+    if (igscOnly == true) {
+        return runGscOnlyFwDataFlash(filePath);
+    }
     flashFwErrMsg.clear();
     std::shared_ptr<Device> pDevice = nullptr;
     std::vector<std::shared_ptr<Device>> deviceList;
@@ -582,7 +818,11 @@ xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const c
     return res;
 }
 
-void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result) {
+void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result, bool igscOnly) {
+    if (igscOnly == true) {
+        getGscOnlyFwDataFlashResult(result);
+        return;
+    }
     std::lock_guard<std::mutex> lck(mtx);
     xpum_firmware_flash_result_t res;
     std::shared_ptr<Device> pDevice = nullptr;

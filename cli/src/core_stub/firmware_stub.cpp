@@ -52,7 +52,11 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
 
     std::string errorMsg = getFlashFwErrMsg();
 
-    if (errorMsg.size()) {
+    if (errorMsg.size() > 0 &&
+        // If the error message starts with " Device ID", it means no
+        // acutall error message is retruend, "Device ID:" should be append to 
+        // the error message translated from error code
+        errorMsg.rfind(" Device ID:", 0) == std::string::npos) {
         (*json)["error"] = errorMsg;
         (*json)["errno"] = errorNumTranslate(res);
         return json;
@@ -118,9 +122,13 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
                 (*json)["error"] = "Unknown error.";
                 break;
         }
+        if (errorMsg.size() > 0) {
+            std::string str = (*json)["error"];
+            str += errorMsg;
+            (*json)["error"] = str;
+        }
         (*json)["errno"] = errorNumTranslate(res);
     }
-
     return json;
 }
 
@@ -149,8 +157,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
         return json;
     }
 
-    if (errorMsg.size()) {
-        (*json)["error"] = errorMsg;
+    if (errorMsg.size() > 0) {
+        if (errorMsg.rfind(" Device ID:", 0) == std::string::npos) {
+            (*json)["error"] = errorMsg;
+        } else {
+            std::string str = (*json)["error"];
+            str += errorMsg;
+            (*json)["error"] = str;
+        }
         (*json)["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FAIL;
         return json;
     }

@@ -152,7 +152,7 @@ static std::string getPscNvmemPath(const std::string& node) {
         }
     }
 
-    return psc + "/" + getFilename(psc) + "/nvmem";
+    return "/dev/" + getFilename(psc);
 }
 
 static uint32_t crc32c(const std::vector<uint8_t>& byte_data, uint32_t crc = 0) {

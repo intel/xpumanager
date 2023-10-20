@@ -527,7 +527,7 @@ namespace xpum {
         bool is_atsm_platform = true;
         std::vector<std::string> gpu_ids;
         std::vector<std::string> gpu_bdfs;
-        std::string cmd = "lspci -D|grep -i Display|grep -i Intel";
+        std::string cmd = "lspci -D -nn|grep -i Display|grep -i Intel"; // -nn Show both textual and numeric ID's (names & numbers)
         FILE* f = popen(cmd.c_str(), "r");
         char c_line[1024];
         int gpu_id = 0;

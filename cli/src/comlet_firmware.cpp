@@ -68,7 +68,7 @@ ComletFirmware::~ComletFirmware() {
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>(new FlashFirmwareOptions());
 
-    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID or PCI BDF address.");
+    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID or PCI BDF address. If it is not specified, all devices will be updated.");
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be a non-negative integer or a BDF string.";
         if (str == "" || isValidDeviceId(str) || isBDF(str)) {
@@ -304,6 +304,50 @@ std::string ComletFirmware::getImageFwVersion() {
 static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version) {
     std::stringstream ss;
     ss << "0x" << std::hex << fwdata_version->oem_manuf_data_version;
+    return ss.str();
+}
+
+// It actually gets versions of all devices from igsc
+// The Device ID is replaced with mei path 
+// It should be used when L0 is not initialized
+static std::string print_devices_fw_versions(int type) {
+    std::stringstream ss;
+    struct igsc_device_iterator *iter;
+    struct igsc_device_info info;
+    int ret;
+    struct igsc_device_handle handle;
+
+    memset(&handle, 0, sizeof(handle));
+    ret = igsc_device_iterator_create(&iter);
+    if (ret != IGSC_SUCCESS) {
+        return "";
+    }
+    info.name[0] = '\0';
+    while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
+        ret = igsc_device_init_by_device_info(&handle, &info);
+        if (ret != IGSC_SUCCESS) {
+            info.name[0] = '\0';
+            continue;
+        }
+        ss << "Device " << info.name;
+        std::string version = "unknown";
+        if (type == XPUM_DEVICE_FIRMWARE_GFX) {
+            struct igsc_fw_version device_fw_version;
+            ret = igsc_device_fw_version(&handle, &device_fw_version);
+            if (ret == IGSC_SUCCESS) {
+                version = print_fw_version(&device_fw_version);
+            }
+        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
+            struct igsc_fwdata_version dev_version;
+            ret = igsc_device_fwdata_version(&handle, &dev_version);
+            if (ret == IGSC_SUCCESS) {
+                version = print_fwdata_version(&dev_version);
+            }
+        }
+        ss << " FW version: " << version << std::endl;
+        (void)igsc_device_close(&handle);
+    }
+    igsc_device_iterator_destroy(iter);
     return ss.str();
 }
 
@@ -685,11 +729,20 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             }
         }
         std::vector<int> deviceIdsToFlashFirmware;
+        bool igscOnly = false;
         if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
             auto deviceListJson = coreStub->getDeviceList();
             auto deviceList = (*deviceListJson)["device_list"];
             for (auto &device : deviceList) {
                 deviceIdsToFlashFirmware.push_back(device["device_id"]);
+            }
+            if (deviceList.size() == 0) {
+                auto errNo = (*deviceListJson)["errno"];
+                if (errNo == XPUM_CLI_ERROR_LEVEL_ZERO_INITIALIZATION_ERROR) {
+                    if (type == XPUM_DEVICE_FIRMWARE_GFX ||
+                        type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
+                    igscOnly = true;
+                }
             }
         } else {
             // for ats-m3
@@ -736,6 +789,9 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 return;
             }
             out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
+        }
+        if (igscOnly == true) {
+            out << print_devices_fw_versions(type);
         }
         if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             out << "Image FW version: " << getImageFwVersion() << std::endl;

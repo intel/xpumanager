@@ -98,6 +98,10 @@ void Core::init() {
     p_data_logic = std::make_shared<DataLogic>();
     p_data_logic->init();
 
+    // Create the instance of FirmwareManger earlier then it may work 
+    // even L0 init got failed and FirmwareManager::init was not called
+    p_firmware_manager = std::make_shared<FirmwareManager>();
+
     XPUM_LOG_INFO("initialize device manager");
     p_device_manager = std::make_shared<DeviceManager>(p_data_logic);
     p_device_manager->init();
@@ -122,7 +126,6 @@ void Core::init() {
     p_dump_raw_data_manager = std::make_shared<DumpRawDataManager>();
 
     XPUM_LOG_INFO("initialize firmware manager");
-    p_firmware_manager = std::make_shared<FirmwareManager>();
     p_firmware_manager->init();
 
     XPUM_LOG_INFO("initialize monitor manager");
