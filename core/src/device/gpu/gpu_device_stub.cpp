@@ -309,6 +309,7 @@ void GPUDeviceStub::init() {
     loadPVCIdlePowers();
 
     initialized = true;
+    putenv(const_cast<char*>("ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE"));
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
     if (std::getenv("ZET_ENABLE_METRICS") == NULL && std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
