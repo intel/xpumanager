@@ -231,6 +231,123 @@ bool ComletDiagnostic::isPreCheck() {
     return this->opts->preCheck;
 }
 
+std::unordered_map<std::string, std::string> rawComponentTypeToString = {
+    {"XPUM_DIAG_SOFTWARE_ENV_VARIABLES", "Software Env Variables"},
+    {"XPUM_DIAG_SOFTWARE_LIBRARY", "Software Library"},
+    {"XPUM_DIAG_SOFTWARE_PERMISSION", "Software Permission"},
+    {"XPUM_DIAG_SOFTWARE_EXCLUSIVE", "Software Exclusive"},
+    {"XPUM_DIAG_HARDWARE_SYSMAN", "Hardware Sysman"},
+    {"XPUM_DIAG_LIGHT_COMPUTATION", "Computation Check"},
+    {"XPUM_DIAG_LIGHT_CODEC",  "Media Codec Check"},
+    {"XPUM_DIAG_INTEGRATION_PCIE", "Integration PCIe"},
+    {"XPUM_DIAG_MEDIA_CODEC", "Media Codec"},
+    {"XPUM_DIAG_PERFORMANCE_COMPUTATION", "Performance Computation"},
+    {"XPUM_DIAG_PERFORMANCE_POWER", "Performance Power"},
+    {"XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION", "Performance Memory Allocation"},
+    {"XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH",  "Performance Memory Bandwidth"},
+    {"XPUM_DIAG_MEMORY_ERROR", "Memory Error"},
+    {"XPUM_DIAG_XE_LINK_THROUGHPUT", "Xe Link Throughput"}
+};
+
+// combine multiple devices' diagnostic result
+std::unique_ptr<nlohmann::json> ComletDiagnostic::combineDeviceData(CombinedDiagResult& cr, std::shared_ptr<nlohmann::json> one) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (cr.combined_device_ids.empty()) {
+        cr.combined_device_ids = to_string((*one)["device_id"]);
+        cr.combined_start_time = (*one)["start_time"];
+        cr.combined_result = (*one)["result"];
+    }  else {
+        cr.combined_device_ids = cr.combined_device_ids + ", " + to_string((*one)["device_id"]);
+        if ((*one)["result"] != "Pass") {
+            cr.combined_result = (*one)["result"];
+        }
+    }
+    (*json)["device_id"] = cr.combined_device_ids;
+    (*json)["start_time"] = cr.combined_start_time;
+    (*json)["result"] = cr.combined_result;
+
+    if ((*json)["result"] != "Pass")
+        (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED;
+    (*json)["end_time"] = (*one)["end_time"];
+    (*json)["finished"] = (*one)["finished"];
+    if (one->contains("level")) {
+        (*json)["level"] = (*one)["level"];
+    }
+    (*json)["message"] = (*one)["message"];
+    (*json)["component_count"] = (*one)["component_count"];
+    std::vector<nlohmann::json> componentJsonList;
+    for (auto& component : (*one)["component_list"]) {
+        std::string ctype = component["component_type"];
+        auto componentJson = nlohmann::json();
+        componentJson["component_type"] = this->opts->rawJson ? ctype : rawComponentTypeToString[ctype];
+        componentJson["finished"] = component["finished"];
+        if (component["result"] != "Pass") {
+            cr.combinedComponentTypeResultMessages[ctype].result = "Fail";
+        }
+        componentJson["result"] = cr.combinedComponentTypeResultMessages[ctype].result;
+
+        std::string message = component["message"];
+        // combine exclusive result
+        if (ctype == "XPUM_DIAG_SOFTWARE_EXCLUSIVE") {
+            if (component.contains("process_list")) {
+                cr.combinedComponentTypeResultMessages[ctype].message += "\n GPU " +  to_string((*one)["device_id"]) + ": " + message;
+                for (auto process : component["process_list"]) {
+                    std::string command_name = process["process_name"];
+                    cr.combinedComponentTypeResultMessages[ctype].message += "\n  PID: " +  to_string(process["process_id"]) + " Command: " + command_name;
+                }
+            }
+            if (cr.combinedComponentTypeResultMessages[ctype].message.find("PID") == std::string::npos)
+                componentJson["message"] = componentJson["message"] = cr.combinedComponentTypeResultMessages[ctype].result + cr.combinedComponentTypeResultMessages[ctype].message;
+            else
+                componentJson["message"] = "Warnning when" + cr.combinedComponentTypeResultMessages[ctype].message.substr(3);
+        }
+        if (component["result"] != "Pass") {
+            if (ctype == "XPUM_DIAG_LIGHT_COMPUTATION"
+                || ctype == "XPUM_DIAG_LIGHT_CODEC"
+                || ctype == "XPUM_DIAG_MEDIA_CODEC"
+                || ctype == "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION") {
+                cr.combinedComponentTypeResultMessages[ctype].message += "\n GPU " +  to_string((*one)["device_id"]) + ": " + message;
+            }
+
+            // combine performance data
+            if (ctype == "XPUM_DIAG_INTEGRATION_PCIE"
+                || ctype == "XPUM_DIAG_PERFORMANCE_COMPUTATION"
+                || ctype == "XPUM_DIAG_PERFORMANCE_POWER"
+                || ctype == "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH") {
+                message = message.substr(message.find("Its"));
+                cr.combinedComponentTypeResultMessages[ctype].message += "\n GPU " +  to_string((*one)["device_id"]) + ": " + message;
+            }
+
+            // combine memory error info
+            if (ctype == "XPUM_DIAG_MEMORY_ERROR") {
+                std::string head = "Fail to check memory error. ";
+                message = message.substr(head.size());
+                cr.combinedComponentTypeResultMessages[ctype].message += "\n GPU " +  to_string((*one)["device_id"]) + ": " + message;
+            }
+
+            // combine failed xe link throughput
+            if (ctype == "XPUM_DIAG_XE_LINK_THROUGHPUT" && component.contains("xe_link_throughput_list")) {
+                cr.combinedComponentTypeResultMessages[ctype].message += "\n GPU " +  to_string((*one)["device_id"]) + ": " + message;
+                for (auto xeLinkThroughput : component["xe_link_throughput_list"]) {
+                    std::string line = "  GPU " + to_string(xeLinkThroughput["src_device_id"]) + "/" 
+                                    + to_string(xeLinkThroughput["src_tile_id"]) + " port " + to_string(xeLinkThroughput["src_port_id"]) 
+                                    + " to GPU " + to_string(xeLinkThroughput["dst_device_id"]) + "/" 
+                                    + to_string(xeLinkThroughput["dst_tile_id"]) + " port " + to_string(xeLinkThroughput["dst_port_id"]) 
+                                    + ": " + roundDouble(xeLinkThroughput["current_speed"], 3) + " GBPS. Threshold: " + roundDouble(xeLinkThroughput["threshold"], 3) + " GBPS.";                            
+                    cr.combinedComponentTypeResultMessages[ctype].message += "\n" + line;
+                }
+            }
+        }
+        // exception for exclusive because its result is "Pass" by design
+        if (ctype != "XPUM_DIAG_SOFTWARE_EXCLUSIVE")
+            componentJson["message"] = cr.combinedComponentTypeResultMessages[ctype].result + cr.combinedComponentTypeResultMessages[ctype].message;
+        componentJsonList.push_back(componentJson);
+          
+    }
+    (*json)["component_list"] = componentJsonList;
+    return json;  
+}
+
 std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 #ifndef DAEMONLESS
@@ -266,6 +383,12 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
 
     if (this->opts->level >= 1 && this->opts->level <= 3) {
+#ifndef DAEMONLESS
+        if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, {}, this->opts->rawJson);
+            return json;
+        }
+#endif
         if (this->opts->deviceIds[0] != "-1") {
             int targetId = -1;
             if (isNumber(this->opts->deviceIds[0])) {
@@ -278,19 +401,35 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
             }
             json = this->coreStub->runDiagnostics(targetId, this->opts->level, {}, this->opts->rawJson);
             return json;
-        } 
-#ifndef DAEMONLESS
-        else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, {}, this->opts->rawJson);
+        } else {
+            auto deviceListJson = this->coreStub->getDeviceList();
+            auto deviceList = (*deviceListJson)["device_list"];
+            std::vector<std::string> ids;
+            CombinedDiagResult cr;
+            // run level diagnostics on all GPUs
+            for (auto device : deviceList) {
+                ids.push_back(to_string(device["device_id"]));
+                auto jsonTmp = this->coreStub->runDiagnostics(device["device_id"], this->opts->level, {}, true);
+                if (jsonTmp->contains("error") && (*jsonTmp)["errno"] != XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED) {
+                    return jsonTmp;
+                }
+                json = combineDeviceData(cr, std::make_shared<nlohmann::json>(*jsonTmp));
+            }
+            this->opts->deviceIds = ids;
             return json;
         }
-#endif
     }
 
     if (this->opts->singleTestIdList.size() > 0) {
         std::vector<int> targetTypes;
         for (auto testId : this->opts->singleTestIdList)
             targetTypes.push_back(testIdToType[testId]);
+#ifndef DAEMONLESS
+        if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, -1, targetTypes, this->opts->rawJson);
+            return json;
+        }
+#endif
         if (this->opts->deviceIds[0] != "-1") {
             int targetId = -1;
             if (isNumber(this->opts->deviceIds[0])) {
@@ -303,13 +442,23 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
             }
             json = this->coreStub->runDiagnostics(targetId, -1, targetTypes, this->opts->rawJson);
             return json;
-        } 
-#ifndef DAEMONLESS
-        else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, -1, targetTypes, this->opts->rawJson);
+        } else {
+            auto deviceListJson = this->coreStub->getDeviceList();
+            auto deviceList = (*deviceListJson)["device_list"];
+            std::vector<std::string> ids;
+            // run singletest diagnostics on all GPUs 
+            CombinedDiagResult cr;       
+            for (auto device : deviceList) {
+                ids.push_back(to_string(device["device_id"]));
+                auto jsonTmp = this->coreStub->runDiagnostics(device["device_id"], -1, targetTypes, true);
+                 if (jsonTmp->contains("error") && (*jsonTmp)["errno"] != XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED) {
+                    return jsonTmp;
+                }
+                json = combineDeviceData(cr, std::make_shared<nlohmann::json>(*jsonTmp));
+            }
+            this->opts->deviceIds = ids;
             return json;
         }
-#endif
     }
 
     if (this->opts->preCheck) {
