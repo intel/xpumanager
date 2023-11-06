@@ -152,7 +152,8 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
     if (info.localDevice == info.remoteDevice) {
         //XPUM_LOG_INFO("info.localDevice == info.remoteDevice");
         info.linkType = XPUM_LINK_SELF;
-    } else if ((localPort.fabricId == remotePort.fabricId) && x_fabric_existing && y_fabric_existing) {
+    } else if ((localPort.fabricId == remotePort.fabricId) && 
+        (info.localDevice.deviceId == info.remoteDevice.deviceId)) {
         //XPUM_LOG_INFO("localPort.fabricId == remotePort.fabricId");
         info.linkType = XPUM_LINK_MDF;
     } else if ((info.localDevice.numaIdx == info.remoteDevice.numaIdx) && !x_fabric_existing && !y_fabric_existing){
