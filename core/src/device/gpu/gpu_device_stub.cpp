@@ -1732,20 +1732,21 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     }
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
-    uint32_t temp_sensor_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-    if (temp_sensor_count == 0 && type == ZES_TEMP_SENSORS_GPU && Utility::isATSMPlatform(device)) {
+    if (Utility::isATSMPlatform(device) && type == ZES_TEMP_SENSORS_GPU) {
         int val = (int)getRegisterValueFromSys(device, 0x145978);
         if (val > 0) {
             ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
             ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
             return ret;
         } else {
-            throw BaseException("Failed to read register value from sys");        
+            throw BaseException("Failed to read register value from sys");
         }
-    } else if (temp_sensor_count == 0) {
+    } 
+    uint32_t temp_sensor_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
+    if (temp_sensor_count == 0) {
         throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
