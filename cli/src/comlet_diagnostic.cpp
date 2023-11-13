@@ -326,15 +326,17 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::combineDeviceData(CombinedDiag
             }
 
             // combine failed xe link throughput
-            if (ctype == "XPUM_DIAG_XE_LINK_THROUGHPUT" && component.contains("xe_link_throughput_list")) {
+            if (ctype == "XPUM_DIAG_XE_LINK_THROUGHPUT") {
                 cr.combinedComponentTypeResultMessages[ctype].message += "\n GPU " +  to_string((*one)["device_id"]) + ": " + message;
-                for (auto xeLinkThroughput : component["xe_link_throughput_list"]) {
-                    std::string line = "  GPU " + to_string(xeLinkThroughput["src_device_id"]) + "/" 
-                                    + to_string(xeLinkThroughput["src_tile_id"]) + " port " + to_string(xeLinkThroughput["src_port_id"]) 
-                                    + " to GPU " + to_string(xeLinkThroughput["dst_device_id"]) + "/" 
-                                    + to_string(xeLinkThroughput["dst_tile_id"]) + " port " + to_string(xeLinkThroughput["dst_port_id"]) 
-                                    + ": " + roundDouble(xeLinkThroughput["current_speed"], 3) + " GBPS. Threshold: " + roundDouble(xeLinkThroughput["threshold"], 3) + " GBPS.";                            
-                    cr.combinedComponentTypeResultMessages[ctype].message += "\n" + line;
+                if (component.contains("xe_link_throughput_list")) {
+                    for (auto xeLinkThroughput : component["xe_link_throughput_list"]) {
+                        std::string line = "  GPU " + to_string(xeLinkThroughput["src_device_id"]) + "/" 
+                                        + to_string(xeLinkThroughput["src_tile_id"]) + " port " + to_string(xeLinkThroughput["src_port_id"]) 
+                                        + " to GPU " + to_string(xeLinkThroughput["dst_device_id"]) + "/" 
+                                        + to_string(xeLinkThroughput["dst_tile_id"]) + " port " + to_string(xeLinkThroughput["dst_port_id"]) 
+                                        + ": " + roundDouble(xeLinkThroughput["current_speed"], 3) + " GBPS. Threshold: " + roundDouble(xeLinkThroughput["threshold"], 3) + " GBPS.";                            
+                        cr.combinedComponentTypeResultMessages[ctype].message += "\n" + line;
+                    }
                 }
             }
         }
