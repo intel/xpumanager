@@ -264,6 +264,10 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
+            case XPUM_GROUP_LIMIT_REACHED:
+                response->set_errormsg(
+                    "Number of groups exceeded maximum limit");
+                break;
             default:
                 response->set_errormsg("Error");
                 break;
