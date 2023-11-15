@@ -304,6 +304,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
     }
 }
 
+int GPUDeviceStub::zeInitReturnCode = -1; // -1 means zeInit has never been called
+
 void GPUDeviceStub::init() {
     // Add a temporary workaround for PVC idle powers
     loadPVCIdlePowers();
@@ -318,6 +320,7 @@ void GPUDeviceStub::init() {
     }
 
     ze_result_t ret = zeInit(0);
+    GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
     if (ret != ZE_RESULT_SUCCESS) {
         XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
         checkInitDependency();
