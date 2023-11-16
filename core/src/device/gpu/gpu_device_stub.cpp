@@ -1106,7 +1106,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             auto enabled_GPU_ids = Configuration::getEnabledGPUIds();
             if(enabled_GPU_ids != nullptr){
                 if(enabled_GPU_ids->find(i) == enabled_GPU_ids->end()){
-                    break;
+                    continue;
                 }
             }
 
