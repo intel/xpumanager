@@ -22,6 +22,7 @@
 #include "comlet_discovery.h"
 #include "comlet_firmware.h"
 #include "comlet_vgpu.h"
+#include "utility.h"
 #ifndef DAEMONLESS
 #include "grpc_core_stub.h"
 #else
@@ -95,6 +96,10 @@ int CLIWrapper::printResult(std::ostream &out) {
                     if (cd != nullptr && !cd->isDeviceList()) {
                         putenv(const_cast<char *>("XPUM_INIT_GET_PHY_MEMORY=TRUE"));
                         putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
+
+                        if(isNumber(cd->getDeviceId())){
+                            setenv("XPUM_ENABLED_GPU_IDS", cd->getDeviceId().c_str(), 1);
+                        }
                     }
 
                     if (cd != nullptr && cd->isDumping()) {
@@ -115,17 +120,24 @@ int CLIWrapper::printResult(std::ostream &out) {
 
             if (comlet->getCommand().compare("stats") == 0) {
                 std::shared_ptr<ComletStatistics> stats_comlet = std::dynamic_pointer_cast<ComletStatistics>(comlet);
-                if (stats_comlet->hasEUMetrics()){
-                    if(stats_comlet->hasRASMetrics())
-                        setenv("XPUM_METRICS", "0-31,36-39", 1);
-                    else
-                        setenv("XPUM_METRICS", "0-19,29-31,36-39", 1);
+                std::string base_metics = "0,4-19,29-31,36,38-39";
+
+                if(stats_comlet != nullptr && stats_comlet->hasEUMetrics()){
+                    base_metics += ",1-3";
                 }
-                else{
-                    if(stats_comlet->hasRASMetrics())
-                        setenv("XPUM_METRICS", "0,4-31,36-39", 1);
-                    else
-                        setenv("XPUM_METRICS", "0,4-19,29-31,36-39", 1);
+                if(stats_comlet != nullptr && stats_comlet->hasRASMetrics()){
+                    base_metics += ",20-28";
+                }
+                if(stats_comlet != nullptr && stats_comlet->hasXelinkMetrics()){
+                    base_metics += ",37";
+                }
+
+                setenv("XPUM_METRICS", base_metics.c_str(), 1);
+
+                if(stats_comlet != nullptr && stats_comlet->isDeviceOp() && !stats_comlet->hasXelinkMetrics()){
+                    if(isNumber(stats_comlet->getDeviceId())){
+                        setenv("XPUM_ENABLED_GPU_IDS", stats_comlet->getDeviceId().c_str(), 1);
+                    }
                 }
             }
             if (comlet->getCommand().compare("dump") == 0) {
@@ -134,6 +146,29 @@ int CLIWrapper::printResult(std::ostream &out) {
 
                 std::string env = dump_comlet->getEnv();
                 setenv("XPUM_METRICS", env.c_str(), 1);
+
+                if(env.find("37") == std::string::npos){
+                    auto deviceIds = dump_comlet->getDeviceIds();
+                    if(!(deviceIds.size() == 1 && deviceIds[0] == "-1")){
+                        bool is_all_ids = true;
+                        for (auto id : deviceIds) {
+                            if (!isValidDeviceId(id)) {
+                                is_all_ids = false;
+                                break;
+                            }
+                        }
+                        if(is_all_ids){
+                            std::string ids = "";
+                            for (auto id : deviceIds) {
+                                if(!ids.empty()){
+                                    ids += ",";
+                                }
+                                ids += id;
+                            }
+                            setenv("XPUM_ENABLED_GPU_IDS", ids.c_str(), 1);
+                        }
+                    }
+                }
             }
             if (comlet->getCommand().compare("dump") == 0 && std::dynamic_pointer_cast<ComletDump>(comlet)->dumpIdlePowerOnly()) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);

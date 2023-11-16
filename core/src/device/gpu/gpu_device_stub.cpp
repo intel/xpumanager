@@ -1102,6 +1102,14 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
         Utility::parallel_in_batches(devices.size(), devices.size(), [&](int start, int end) {
         for (int i = start; i < end; ++i) {
+
+            auto enabled_GPU_ids = Configuration::getEnabledGPUIds();
+            if(enabled_GPU_ids != nullptr){
+                if(enabled_GPU_ids->find(i) == enabled_GPU_ids->end()){
+                    break;
+                }
+            }
+
             auto& device =  devices[i];
             ze_result_t res;
             xpum_device_function_type_t func_type = DEVICE_FUNCTION_TYPE_PHYSICAL;

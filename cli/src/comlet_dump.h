@@ -82,6 +82,10 @@ class ComletDump : public ComletBase {
 
     std::string getEnv();
 
+    inline std::vector<std::string>  getDeviceIds(){
+        return opts->deviceIds;
+    }
+
     std::unique_ptr<nlohmann::json> combineTileAndDeviceLevel(nlohmann::json rawJson);
 };
 } // end namespace xpum::cli

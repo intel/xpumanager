@@ -81,6 +81,7 @@ extern "C" {
  *      - 37      FABRIC_THROUGHPUT
  *      - 38      FREQUENCY_THROTTLE_REASON_GPU
  *      - 39      MEDIA_ENGINE_FREQUENCY
+ * - XPUM_ENABLED_GPU_IDS: enabled GPU Ids, if this environment variable is not set that means all GPU Ids enabled, if this environment variable is set then just enabled GPU Ids will be discovered. Enabled GPU ids which are separated by comma, use hyphen to indicate a range (e.g., 0,1,4-7).
  *                              
  * @return \ref xpum_result_t 
  * @note Support Platform: Linux, Windows
