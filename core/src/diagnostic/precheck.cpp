@@ -328,7 +328,7 @@ namespace xpum {
                 if (exit_code != 0) {
                     std::unordered_map<int, int> exit_code_map = {{2, 0x78000001}, {3, 0x70020000}};
                     level0_driver_error_info = "Failed to init level zero: " + 
-                        exit_code_map.count(exit_code) ? zeInitResultToString(exit_code_map[exit_code]) : zeInitResultToString(exit_code);
+                        (exit_code_map.count(exit_code) ? zeInitResultToString(exit_code_map[exit_code]) : zeInitResultToString(exit_code));
                     if (exit_code == 3)
                         dependency_issue = true;
                 } 
