@@ -75,6 +75,7 @@ docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 --publish 29999:29999 \
 --device /dev/dri:/dev/dri \
 --device /dev/cpu:/dev/cpu \
+--device /dev/mem:/dev/mem \
 -v /sys/firmware/acpi/tables/MCFG:/pcm/sys/firmware/acpi/tables/MCFG:ro \
 -v /proc/bus/pci/:/pcm/proc/bus/pci/ \
 -v /proc/sys/kernel/nmi_watchdog:/pcm/proc/sys/kernel/nmi_watchdog \

@@ -503,7 +503,7 @@ PciHandleM::PciHandleM(uint32 bus_, uint32 device_, uint32 function_) :
         throw std::exception();
     }
 
-    // std::cout << "PCI config base addr: "<< std::hex << base_addr<< "\n";
+    // std::cout << "PCI config base addr: "<< std::hex << base_addr<< "\n" << std::dec;
 
     base_addr += (bus * 1024ULL * 1024ULL + device * 32ULL * 1024ULL + function * 4ULL * 1024ULL);
 }
@@ -580,8 +580,10 @@ void PciHandleMM::readMCFG()
     if (read_bytes == 0)
     {
         ::close(mcfg_handle);
-        std::cerr << "PCM Error: Cannot read MCFG-table\n";
-        throw std::exception();
+        const auto msg = "PCM Error: Cannot read MCFG-table";
+        std::cerr << msg;
+        std::cerr << "\n";
+        throw std::runtime_error(msg);
     }
 
     const unsigned segments = mcfgHeader.nrecords();
@@ -597,8 +599,10 @@ void PciHandleMM::readMCFG()
         if (read_bytes == 0)
         {
             ::close(mcfg_handle);
-            std::cerr << "PCM Error: Cannot read MCFG-table (2)\n";
-            throw std::exception();
+            const auto msg = "PCM Error: Cannot read MCFG-table (2)";
+            std::cerr << msg;
+            std::cerr << "\n";
+            throw std::runtime_error(msg);
         }
 #ifdef PCM_DEBUG
         std::cout << "PCM Debug: segment " << std::dec << i << " ";

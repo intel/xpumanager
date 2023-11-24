@@ -54,6 +54,8 @@ class GPUDeviceStub {
 
     static PCIeManager pcie_manager;
 
+    static int zeInitReturnCode;
+    
    public:
     void discoverDevices(Callback_t callback);
 

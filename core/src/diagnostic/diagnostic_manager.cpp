@@ -216,6 +216,7 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
                 continue;
 
             if (strncmp(diagnostic_task_infos.at(deviceId)->componentList[index].message, COMPONENT_TYPE_NOT_SUPPORTED.c_str(), COMPONENT_TYPE_NOT_SUPPORTED.size()) == 0) {
+                result->count -= 1;
                 continue;
             }
             xpum_diag_component_info_t &component = result->componentList[pos];
@@ -904,6 +905,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         xpum_diag_task_type_t::XPUM_DIAG_LIGHT_CODEC :
         xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC
     ];
+    p_task_info->count += 1;
     if (!Utility::isATSMPlatform(device)) {
         component.result = XPUM_DIAG_RESULT_FAIL;
         component.finished = true;
@@ -912,7 +914,6 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
     }
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-    p_task_info->count += 1;
 
     ze_result_t ret;
     zes_pci_properties_t pci_props;
@@ -3409,7 +3410,7 @@ void DiagnosticManager::doDeviceDiagnosticXeLinkThroughput(const ze_device_handl
                                                     std::vector<std::shared_ptr<Device>> devices,
                                                     std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas) {
     xpum_diag_component_info_t &xe_link_throughput_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_XE_LINK_THROUGHPUT];
-
+    p_task_info->count += 1;
     if (!Utility::isPVCPlatform(ze_device) || devices.size() < 2) {
         xe_link_throughput_component.result = XPUM_DIAG_RESULT_FAIL;
         xe_link_throughput_component.finished = true;
@@ -3480,7 +3481,6 @@ void DiagnosticManager::doDeviceDiagnosticXeLinkThroughput(const ze_device_handl
     }
     updateMessage(xe_link_throughput_component.message, std::string("Running"));
     xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-    p_task_info->count += 1;
 
     copyMemoryDataAndCalculateXeLinkThroughput(ze_driver, test_pairs, xe_link_throughput_datas);
     

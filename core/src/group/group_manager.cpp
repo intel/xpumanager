@@ -49,7 +49,7 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
     if (groupMap.size() - buildInCount >= XPUM_MAX_NUM_GROUPS) {
         XPUM_LOG_DEBUG("GroupManager::createGroup-group number exceed XPUM_MAX_NUM_GROUPS. all_groups[{}] build_in_groups[{}]",
                        groupMap.size(), buildInCount);
-        return ret;
+        return XPUM_GROUP_LIMIT_REACHED;
     }
     if (buildIn) {
         groupId = internalSequence++;

@@ -115,7 +115,11 @@ def getDiagnosticsResult(deviceId):
                     new_process["process_name"] = process.processName
                     if process.processName != "":
                         processList.append(new_process)
-                new_component['process_list'] = processList
+                if len(processList) > 1:
+                    new_component['process_list'] = processList
+                    new_component['message'] = "Warning: " + str(len(processList)) + " processses are using the device.";
+                else:
+                    new_component['message'] = "Pass to check the software exclusive."
         if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC and component.result == core_pb2.DIAG_RESULT_PASS:
             media_codec_list_resp = stub.getDiagnosticsMediaCodecResult(
                 core_pb2.DeviceId(id=deviceId))
@@ -200,7 +204,11 @@ def getDiagnosticsResultByGroup(groupId):
                         new_process["process_name"] = process.processName
                         if process.processName != "":
                             processList.append(new_process)
-                    new_component['process_list'] = processList
+                    if len(processList) > 1:
+                        new_component['process_list'] = processList
+                        new_component['message'] = "Warning: " + str(len(processList)) + " processses are using the device.";
+                    else:
+                        new_component['message'] = "Pass to check the software exclusive."
             if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC and component.result == core_pb2.DIAG_RESULT_PASS:
                 media_codec_list_resp = stub.getDiagnosticsMediaCodecResult(
                     core_pb2.DeviceId(id=diagTaskInfo.deviceId))

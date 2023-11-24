@@ -7,6 +7,10 @@
 #include <climits>
 #include <algorithm>
 #ifdef _MSC_VER
+#include <windows.h>
+#include <accctrl.h>
+#include <aclapi.h>
+#include <sddl.h>
 #include <process.h>
 #include <comdef.h>
 #else
@@ -32,7 +36,7 @@ void exit_cleanup(void)
     restore_signal_handlers();
 
     // this replaces same call in cleanup() from util.h
-    PCM::getInstance()->cleanup(); // this replaces same call in cleanup() from util.h
+    if (PCM::isInitialized()) PCM::getInstance()->cleanup(); // this replaces same call in cleanup() from util.h
 
 //TODO: delete other shared objects.... if any.
 
@@ -50,7 +54,7 @@ void print_cpu_details()
     const auto ucode_level = m->getCPUMicrocodeLevel();
     if (ucode_level >= 0)
     {
-        std::cerr << " microcode level 0x" << std::hex << ucode_level;
+        std::cerr << " microcode level 0x" << std::hex << ucode_level << std::dec;
     }
     std::cerr << "\n";
 }
@@ -141,7 +145,7 @@ BOOL sigINT_handler(DWORD fdwCtrlType)
 
     // in case PCM is blocked just return and summary will be dumped in
     // calling function, if needed
-    if (PCM::getInstance()->isBlocked()) {
+    if (PCM::isInitialized() && PCM::getInstance()->isBlocked()) {
         return FALSE;
     } else {
         exit_cleanup();
@@ -177,7 +181,7 @@ void sigINT_handler(int signum)
 
     // in case PCM is blocked just return and summary will be dumped in
     // calling function, if needed
-    if (PCM::getInstance()->isBlocked()) {
+    if (PCM::isInitialized() && PCM::getInstance()->isBlocked()) {
         return;
     } else {
         exit_cleanup();
@@ -525,13 +529,13 @@ void MySystem(char * sysCmd, char ** sysArgv)
         if (PCM::getInstance()->isBlocked()) {
             int res;
             waitpid(child_pid, &res, 0);
-            std::cerr << "Program " << sysCmd << " launched with PID: " << child_pid << "\n";
+            std::cerr << "Program " << sysCmd << " launched with PID: " << std::dec << child_pid << "\n";
 
             if (WIFEXITED(res)) {
                 std::cerr << "Program exited with status " << WEXITSTATUS(res) << "\n";
             }
             else if (WIFSIGNALED(res)) {
-                std::cerr << "Process " << child_pid << " was terminated with status " << WTERMSIG(res);
+                std::cerr << "Process " << child_pid << " was terminated with status " << WTERMSIG(res) << "\n";
             }
         }
     }
@@ -838,6 +842,18 @@ std::string dos2unix(std::string in)
     return in;
 }
 
+bool isRegisterEvent(const std::string & pmu)
+{
+    if (pmu == "mmio"
+       || pmu == "pcicfg"
+       || pmu == "package_msr"
+       || pmu == "thread_msr")
+    {
+        return true;
+    }
+    return false;
+}
+
 std::string a_title(const std::string &init, const std::string &name) {
     char begin = init[0];
     std::string row = init;
@@ -950,7 +966,7 @@ int load_events(const std::string &fn, std::map<std::string, uint32_t> &ofm,
         if (!in.is_open())
         {
             in.close();
-            const auto err_msg = std::string("event file ") + fn + " or " + alt_fn + " is not available. Copy it from PCM build directory.";
+            const auto err_msg = std::string("event config file ") + fn + " or " + alt_fn + " is not available, you can try to manually copy it from PCM source package.";
             throw std::invalid_argument(err_msg);
         }
     }
@@ -958,7 +974,7 @@ int load_events(const std::string &fn, std::map<std::string, uint32_t> &ofm,
     while (std::getline(in, line))
     {
         //TODO: substring until #, if len == 0, skip, else parse normally
-        //Set default value if the item is NOT availalbe in cfg file.
+        //Set default value if the item is NOT available in cfg file.
         ctr.h_event_name = "INVALID";
         ctr.v_event_name = "INVALID";
         ctr.ccr = 0;
@@ -1085,7 +1101,8 @@ bool get_cpu_bus(uint32 msmDomain, uint32 msmBus, uint32 msmDev, uint32 msmFunc,
     uint32 sadControlCfg = 0x0;
     uint32 busNo = 0x0;
 
-    //std::cout << "get_cpu_bus: d=" << std::hex << msmDomain << ",b=" << msmBus << ",d=" << msmDev << ",f=" << msmFunc <<" \n";
+    //std::cout << "get_cpu_bus: d=" << std::hex << msmDomain << ",b=" << msmBus << ",d=" << msmDev << ",f=" << msmFunc << std::dec << " \n";
+    try {
     PciHandleType h(msmDomain, msmBus, msmDev, msmFunc);
 
     h.read32(SPR_MSM_REG_CPUBUSNO_VALID_OFFSET, &cpuBusValid);
@@ -1111,7 +1128,7 @@ bool get_cpu_bus(uint32 msmDomain, uint32 msmBus, uint32 msmDev, uint32 msmFunc,
             return false;
         }
         cpuBusNo.push_back(busNo);
-        //std::cout << std::hex << "get_cpu_bus: busNo=0x" << busNo << "\n";
+        //std::cout << std::hex << "get_cpu_bus: busNo=0x" << busNo << std::dec <<  "\n";
     }
 
     cpuBusNo0 = cpuBusNo[0] & 0xff;
@@ -1126,6 +1143,29 @@ bool get_cpu_bus(uint32 msmDomain, uint32 msmBus, uint32 msmDev, uint32 msmFunc,
     cpuPackageId = sadControlCfg & 0xf;
 
     return true;
+    } catch (...)
+    {
+        std::cerr << "Warning: unable to enumerate CPU Buses" << std::endl;
+        return false;
+    }
+}
+
+std::pair<int64,int64> parseBitsParameter(const char * param)
+{
+    std::pair<int64,int64> bits{-1, -1};
+    const auto bitsArray = pcm::split(std::string(param),':');
+    assert(bitsArray.size() == 2);
+    bits.first = (int64)read_number(bitsArray[0].c_str());
+    bits.second = (int64)read_number(bitsArray[1].c_str());
+    assert(bits.first >= 0);
+    assert(bits.second >= 0);
+    assert(bits.first < 64);
+    assert(bits.second < 64);
+    if (bits.first > bits.second)
+    {
+        std::swap(bits.first, bits.second);
+    }
+    return bits;
 }
 
 #ifdef __linux__
@@ -1217,6 +1257,36 @@ bool readMapFromSysFS(const char * path, std::unordered_map<std::string, uint32>
 
     fclose(f);
     return true;
+}
+#endif
+
+#ifdef _MSC_VER
+
+//! restrict usage of driver to system (SY) and builtin admins (BA)
+void restrictDriverAccessNative(LPCTSTR path)
+{
+    PSECURITY_DESCRIPTOR pSD = nullptr;
+
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
+        _T("O:BAG:SYD:(A;;FA;;;SY)(A;;FA;;;BA)"),
+        SDDL_REVISION_1,
+        &pSD,
+        nullptr))
+    {
+        _tprintf(TEXT("Error in ConvertStringSecurityDescriptorToSecurityDescriptor: %d\n"), GetLastError());
+        return;
+    }
+
+    if (SetFileSecurity(path, DACL_SECURITY_INFORMATION, pSD))
+    {
+        // _tprintf(TEXT("Successfully restricted access for %s\n"), path);
+    }
+    else
+    {
+        _tprintf(TEXT("Error in SetFileSecurity for %s. Error %d\n"), path, GetLastError());
+    }
+
+    LocalFree(pSD);
 }
 #endif
 

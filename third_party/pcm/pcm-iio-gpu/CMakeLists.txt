@@ -30,7 +30,8 @@ set(SRCS pcm-iio-gpu.cpp
   ${CMAKE_CURRENT_LIST_DIR}/../src/threadpool.cpp 
   ${CMAKE_CURRENT_LIST_DIR}/../src/topology.cpp
   ${CMAKE_CURRENT_LIST_DIR}/../src/uncore_pmu_discovery.cpp  
-  ${CMAKE_CURRENT_LIST_DIR}/../src/utils.cpp)
+  ${CMAKE_CURRENT_LIST_DIR}/../src/utils.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/../src/pcm-accel-common.cpp)
 
 add_library(pcm-iio-gpu STATIC
     ${SRCS}

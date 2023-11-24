@@ -5,11 +5,14 @@
 // https://github.com/prometheus/prometheus/wiki/Default-port-allocations
 constexpr unsigned int DEFAULT_HTTP_PORT = 9738;
 constexpr unsigned int DEFAULT_HTTPS_PORT = DEFAULT_HTTP_PORT;
+#include "pcm-accel-common.h"
 
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include<string>
+
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -338,6 +341,12 @@ public:
         endObject( JSONPrinter::LineEndAction::DelimiterAndNewLine, END_LIST );
         SystemCounterState before = getSystemCounter( aggPair_.first );
         SystemCounterState after  = getSystemCounter( aggPair_.second  );
+        PCM * pcm = PCM::getInstance();
+        if (pcm->getAccel()!=ACCEL_NOCONFIG){
+            startObject ("Accelerators",BEGIN_OBJECT);
+            printAccelCounterState(before,after);
+            endObject( JSONPrinter::LineEndAction::DelimiterAndNewLine, END_OBJECT );
+        }
         startObject( "QPI/UPI Links", BEGIN_OBJECT );
         printSystemCounterState( before, after );
         endObject( JSONPrinter::LineEndAction::DelimiterAndNewLine, END_OBJECT );
@@ -347,6 +356,7 @@ public:
         startObject( "Uncore Aggregate", BEGIN_OBJECT );
         printUncoreCounterState( before, after );
         endObject( JSONPrinter::LineEndAction::NewLineOnly, END_OBJECT );
+
         endObject( JSONPrinter::LineEndAction::NewLineOnly, END_OBJECT );
     }
 
@@ -433,12 +443,32 @@ private:
         endObject( JSONPrinter::NewLineOnly, END_OBJECT );
     }
 
+    void printAccelCounterState( SystemCounterState const& before, SystemCounterState const& after ) {
+        AcceleratorCounterState* accs_ = AcceleratorCounterState::getInstance();
+        uint32 devs = accs_->getNumOfAccelDevs();
+        for ( uint32 i=0; i < devs; ++i ) {
+            startObject( std::string( accs_->getAccelCounterName() + " Counters Device " ) + std::to_string( i ), BEGIN_OBJECT );
+            for(int j=0;j<accs_->getNumberOfCounters();j++){
+                printCounter( accs_->getAccelIndexCounterName(j), accs_->getAccelIndexCounter(i,  before, after,j) );
+            }
+            // debug prints 
+            //for(uint32 j=0;j<accs_->getNumberOfCounters();j++){
+            //     std::cout<<accs_->getAccelIndexCounterName(j) << " "<<accs_->getAccelIndexCounter(i,  before, after,j)<<std::endl;
+            // }
+            // std::cout <<i << " Influxdb "<<accs_->getAccelIndexCounterName()<< accs_->getAccelInboundBW   (i,  before, after ) << " "<< accs_->getAccelOutboundBW   (i,  before, after ) << " "<<accs_->getAccelShareWQ_ReqNb   (i,  before, after ) << " "<<accs_->getAccelDedicateWQ_ReqNb   (i,  before, after ) << std::endl;
+            endObject( JSONPrinter::DelimiterAndNewLine, END_OBJECT );
+        }
+    }
+
     void printSystemCounterState( SystemCounterState const& before, SystemCounterState const& after ) {
         PCM* pcm = PCM::getInstance();
         uint32 sockets = pcm->getNumSockets();
         uint32 links   = pcm->getQPILinksPerSocket();
         for ( uint32 i=0; i < sockets; ++i ) {
             startObject( std::string( "QPI Counters Socket " ) + std::to_string( i ), BEGIN_OBJECT );
+            printCounter( std::string( "CXL Write Cache" ), getCXLWriteCacheBytes   (i,  before, after ) );
+            printCounter( std::string( "CXL Write Mem"   ), getCXLWriteMemBytes     (i,  before, after ) );
+
             for ( uint32 j=0; j < links; ++j ) {
                 printCounter( std::string( "Incoming Data Traffic On Link " ) + std::to_string( j ), getIncomingQPILinkBytes      ( i, j, before, after ) );
                 printCounter( std::string( "Outgoing Data And Non-Data Traffic On Link " ) + std::to_string( j ), getOutgoingQPILinkBytes      ( i, j, before, after ) );
@@ -593,6 +623,10 @@ public:
         SystemCounterState after  = getSystemCounter( aggPair_.second );
         addToHierarchy( "aggregate=\"system\"" );
         PCM* pcm = PCM::getInstance();
+        if (pcm->getAccel()!=ACCEL_NOCONFIG){
+            printComment( "Accelerator Counters" );
+            printAccelCounterState(before,after);
+        }
         if ( pcm->isServerCPU() && pcm->getNumSockets() >= 2 ) {
             printComment( "UPI/QPI Counters" );
             printSystemCounterState( before, after );
@@ -683,6 +717,23 @@ private:
         removeFromHierarchy();
     }
 
+    void printAccelCounterState( SystemCounterState const& before, SystemCounterState const& after )
+    {
+        addToHierarchy( "source=\"accel\"" );
+        AcceleratorCounterState* accs_ = AcceleratorCounterState::getInstance();
+        uint32 devs = accs_->getNumOfAccelDevs();
+        
+        for ( uint32 i=0; i < devs; ++i ) 
+        {
+            addToHierarchy( std::string( accs_->getAccelCounterName() + "device=\"" ) + std::to_string( i ) + "\"" );
+            for(int j=0;j<accs_->getNumberOfCounters();j++)
+            {        
+                printCounter( accs_->remove_string_inside_use(accs_->getAccelIndexCounterName(j)), accs_->getAccelIndexCounter(i,  before, after,j) );
+            }
+            removeFromHierarchy();
+        }
+        removeFromHierarchy();
+    }
     void printSystemCounterState( SystemCounterState const& before, SystemCounterState const& after ) {
         addToHierarchy( "source=\"uncore\"" );
         PCM* pcm = PCM::getInstance();
@@ -690,6 +741,8 @@ private:
         uint32 links   = pcm->getQPILinksPerSocket();
         for ( uint32 i=0; i < sockets; ++i ) {
             addToHierarchy( std::string( "socket=\"" ) + std::to_string( i ) + "\"" );
+            printCounter( std::string( "CXL Write Cache" ), getCXLWriteCacheBytes   (i,  before, after ) );
+            printCounter( std::string( "CXL Write Mem"   ), getCXLWriteMemBytes     (i,  before, after ) );
             for ( uint32 j=0; j < links; ++j ) {
                 printCounter( std::string( "Incoming Data Traffic On Link " ) + std::to_string( j ),                          getIncomingQPILinkBytes      ( i, j, before, after ) );
                 printCounter( std::string( "Outgoing Data And Non-Data Traffic On Link " ) + std::to_string( j ),             getOutgoingQPILinkBytes      ( i, j, before, after ) );
@@ -799,7 +852,7 @@ public:
 
     void setSocket( int socketFD ) {
         socketFD_ = socketFD;
-        if( 0 != socketFD )  // avoid work with 0 socket after closure socket and set value to 0
+        if( 0 == socketFD )  // avoid work with 0 socket after closure socket and set value to 0
             return;
         // When receiving the socket descriptor, set the timeout
         const auto res = setsockopt( socketFD_, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout_, sizeof(struct timeval) );
@@ -982,7 +1035,13 @@ public:
 #else
     basic_socketstream( int socketFD ) : stream_type( &socketBuffer_ ) {
 #endif
+        DBG( 3,"socketFD = ", socketFD );
+        if ( 0 == socketFD ) {
+            DBG( 3,"Trying to set socketFD to 0 which is not allowed!" );
+            throw std::runtime_error( "Trying to set socketFD to 0 on basic_socketstream level which is not allowed." );
+        }
         socketBuffer_.setSocket( socketFD );
+
 #if defined (USE_SSL)
         if ( nullptr != ssl )
             socketBuffer_.setSSL( ssl );
@@ -1547,7 +1606,7 @@ public:
         } else {
             // If first character is not a / then the first colon is end of scheme
             size_t schemeColonPos = fullURL.find( ':' );
-            if ( std::string::npos != schemeColonPos ) {
+            if ( std::string::npos != schemeColonPos && 0 != schemeColonPos ) {
                 std::string scheme;
                 scheme = fullURL.substr( 0, schemeColonPos );
                 std::string validSchemeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-.";
@@ -1596,11 +1655,16 @@ public:
                     DBG( 3, "3 userEndPos '", userEndPos, "'" );
                     std::string user = authority.substr( 0, userEndPos );
                     DBG( 3, "user: '", user, "'" );
-                    // user is possibly percent encoded FIXME
-                    url.user_ = url.percentDecode( user );
-                    url.hasUser_ = true;
-                    // delete user/pass including the at
-                    authority.erase( 0, atPos+1 );
+                    if ( !user.empty() ) {
+                        // user is possibly percent encoded FIXME
+                        url.user_ = url.percentDecode( user );
+                        url.hasUser_ = true;
+                        // delete user/pass including the at
+                        authority.erase( 0, atPos+1 );
+                    }
+                    else {
+                        throw std::runtime_error( "User not found before @ sign" );
+                    }
                 }
 
                 // Instead of all the logic it is easier to work on substrings
@@ -1664,37 +1728,50 @@ public:
                     }
                 } else if ( !url.hasHost_ )
                     throw std::runtime_error( "No hostname found" );
+            } else {
+                throw std::runtime_error( "// not found" );
             }
         }
 
         pathEndPos = std::min( {questionMarkPos, numberPos} );
-        url.path_ = fullURL.substr( pathBeginPos, pathEndPos - pathBeginPos );
+        if ( std::string::npos != pathBeginPos ) {
+            url.path_ = fullURL.substr( pathBeginPos, pathEndPos - pathBeginPos );
+        } else {
+            url.path_ = "";
+        }
         DBG( 3, "path: '", url.path_, "'" );
 
         if ( std::string::npos != questionMarkPos ) {
-            url.hasQuery_ = true;
-	    // Why am i not checking numberPos for validity?
+            // Why am i not checking numberPos for validity?
             std::string queryString = fullURL.substr( questionMarkPos+1, numberPos-(questionMarkPos+1) );
             DBG( 3, "queryString: '", queryString, "'" );
-            size_t ampPos = 0;
-            while ( !queryString.empty() ) {
-                ampPos = queryString.find( '&' );
-                std::string query = queryString.substr( 0, ampPos );
-                DBG( 3, "query: '", query, "'" );
-                size_t equalsPos = query.find( '=' );
-                if ( std::string::npos == equalsPos )
-                    throw std::runtime_error( "Did not find a '=' in the query" );
-                std::string one, two;
-                one = url.percentDecode( query.substr( 0, equalsPos ) );
-                DBG( 3, "one: '", one, "'" );
-                two = url.percentDecode( query.substr( equalsPos+1 ) );
-                DBG( 3, "two: '", two, "'" );
-                url.arguments_.push_back( std::make_pair( one ,two ) );
-                // npos + 1 == 0... ouch
-                if ( std::string::npos == ampPos )
-                    queryString.erase( 0, ampPos );
-                else
-                    queryString.erase( 0, ampPos+1 );
+
+            if ( queryString.empty() ) {
+                url.hasQuery_ = false;
+                throw std::runtime_error( "Invalid URL: query not found after question mark" );
+            }
+            else {
+                url.hasQuery_ = true;
+                size_t ampPos = 0;
+                while ( !queryString.empty() ) {
+                    ampPos = queryString.find( '&' );
+                    std::string query = queryString.substr( 0, ampPos );
+                    DBG( 3, "query: '", query, "'" );
+                    size_t equalsPos = query.find( '=' );
+                    if ( std::string::npos == equalsPos )
+                        throw std::runtime_error( "Did not find a '=' in the query" );
+                    std::string one, two;
+                    one = url.percentDecode( query.substr( 0, equalsPos ) );
+                    DBG( 3, "one: '", one, "'" );
+                    two = url.percentDecode( query.substr( equalsPos+1 ) );
+                    DBG( 3, "two: '", two, "'" );
+                    url.arguments_.push_back( std::make_pair( one ,two ) );
+                    // npos + 1 == 0... ouch
+                    if ( std::string::npos == ampPos )
+                        queryString.erase( 0, ampPos );
+                    else
+                        queryString.erase( 0, ampPos+1 );
+                }
             }
         }
 
@@ -2239,13 +2316,14 @@ private:
     };
 };
 
+// Compress linear white space and remove carriage return, not new line, this one is gone already
 std::string& compressLWSAndRemoveCR( std::string& line ) {
     std::string::size_type pos = 0, end = line.size(), start = 0;
 
     for ( pos = 0; pos < end; ++pos ) {
         start = pos;
         if ( ::isspace( line[pos] ) ) {
-            while ( pos < line.size() && ::isspace( line[++pos] ) ) {
+            while ( (pos+1) < line.size() && ::isspace( line[++pos] ) ) {
             }
             if ( (pos - start) > 1 ) {
                 line.erase( start+1,  pos-start-1 );
@@ -3137,9 +3215,16 @@ int mainThrows(int argc, char * argv[]) {
     unsigned short debug_level = 0;
     std::string certificateFile;
     std::string privateKeyFile;
-
+    AcceleratorCounterState *accs_;
+    accs_ = AcceleratorCounterState::getInstance();
     null_stream nullStream;
     check_and_set_silent(argc, argv, nullStream);
+    ACCEL_IP accel=ACCEL_NOCONFIG; //default is IAA
+    bool evtfile = false;
+    std::string specify_evtfile;
+    // ACCEL_DEV_LOC_MAPPING loc_map = SOCKET_MAP; //default is socket mapping
+    MainLoop mainLoop;
+    std::string ev_file_name;
 
     if ( argc > 1 ) {
         std::string arg_value;
@@ -3198,11 +3283,69 @@ int mainThrows(int argc, char * argv[]) {
             {
                 forceRTMAbortMode = true;
             }
+            else if (check_argument_equals(argv[i], {"-iaa", "/iaa"}))
+            {
+                accel = ACCEL_IAA;  
+            }
+            else if (check_argument_equals(argv[i], {"-dsa", "/dsa"}))
+            {
+                accel = ACCEL_DSA;
+                std::cout << "Aggregator firstest : " << accs_->getAccelCounterName() << accel; 
+            }
+#ifdef __linux__
+            else if (check_argument_equals(argv[i], {"-qat", "/qat"}))
+            {
+                accel = ACCEL_QAT;
+            }
+            // else if (check_argument_equals(argv[i], {"-numa", "/numa"}))
+            // {
+            //     loc_map = NUMA_MAP;
+            // }
+#endif
+            else if (extract_argument_value(argv[i], {"-evt", "/evt"}, arg_value))
+            {
+                evtfile = true;
+                specify_evtfile = std::move(arg_value);
+            }
             else if ( check_argument_equals( argv[i], {"-silent", "/silent"} ) )
             {
                 // handled in check_and_set_silent
                 continue;
             }
+
+#ifdef __linux__
+            // check kernel version for driver dependency.
+            if (accel != ACCEL_NOCONFIG)
+            {
+                std::cout << "Info: IDX - Please ensure the required driver(e.g idxd driver for iaa/dsa, qat driver and etc) correct enabled with this system, else the tool may fail to run.\n";
+                struct utsname sys_info;
+                if (!uname(&sys_info))
+                {
+                    std::string krel_str;
+                    uint32 krel_major_ver=0, krel_minor_ver=0;
+                    krel_str = sys_info.release;
+                    std::vector<std::string> krel_info = split(krel_str, '.');
+                    std::istringstream iss_krel_major(krel_info[0]);
+                    std::istringstream iss_krel_minor(krel_info[1]);
+                    iss_krel_major >> std::setbase(0) >> krel_major_ver;
+                    iss_krel_minor >> std::setbase(0) >> krel_minor_ver;
+
+                    switch (accel)
+                    {
+                        case ACCEL_IAA:
+                        case ACCEL_DSA:
+                            if ((krel_major_ver < 5) || (krel_major_ver == 5 && krel_minor_ver < 11))
+                            {
+                                std::cout<< "Warning: IDX - current linux kernel version(" << krel_str << ") is too old, please upgrade it to the latest due to required idxd driver integrated to kernel since 5.11.\n";
+                            }
+                            break;
+                        default:
+                            std::cout<< "Info: Chosen "<< accel<<" IDX - current linux kernel version(" << krel_str << ")";
+
+                    }
+                }
+            }
+#endif
 #if defined (USE_SSL)
             else if ( check_argument_equals( argv[i], {"-C", "--certificateFile"} ) ) {
 
@@ -3285,6 +3428,7 @@ int mainThrows(int argc, char * argv[]) {
         // A HTTP interface to change the programming is planned
         PCM::ErrorCode status;
         PCM * pcmInstance = PCM::getInstance();
+        pcmInstance->setAccel(accel);
         assert(pcmInstance);
         if (forceRTMAbortMode)
         {
@@ -3292,10 +3436,12 @@ int mainThrows(int argc, char * argv[]) {
         }
         do {
             status = pcmInstance->program();
+
             switch ( status ) {
                 case PCM::PMUBusy:
                 {
-                    if ( forcedProgramming == false ) {
+                    if ( forcedProgramming == false ) 
+                    {
                         std::cout << "Warning: PMU appears to be busy, do you want to reset it? (y/n)\n";
                         char answer;
                         std::cin >> answer;
@@ -3323,6 +3469,20 @@ int mainThrows(int argc, char * argv[]) {
             DBG( 1, "Programmed Partial Writes instead of PMEM R/W BW" );
         }
 
+        //TODO: check return value when its implemented  
+        pcmInstance->programCXLCM();
+        if (pcmInstance->getAccel()!=ACCEL_NOCONFIG)
+        {
+            if (pcmInstance->supportIDXAccelDev() == false)
+            {
+                std::cerr << "Error: IDX accelerator is NOT supported with this platform! Program aborted\n";
+                exit(EXIT_FAILURE);
+            }
+
+            accs_->setEvents(pcmInstance,accel,specify_evtfile,evtfile);
+
+            accs_->programAccelCounters();
+        }
 #if defined (USE_SSL)
         if ( useSSL ) {
             if ( port == 0 )

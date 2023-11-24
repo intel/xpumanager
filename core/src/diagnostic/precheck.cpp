@@ -99,9 +99,9 @@ namespace xpum {
             return "ZE_RESULT_SUCCESS";
         } else if (result == 1) {
             return "ZE_RESULT_NOT_READY";
-        } else if (result == 2) {
+        } else if (result == 0x78000001) {
             return "[0x78000001] ZE_RESULT_ERROR_UNINITIALIZED. Please check if you have root privileges.";
-        } else if (result == 3) {
+        } else if (result == 0x70020000) {
             return "[0x70020000] ZE_RESULT_ERROR_DEPENDENCY_UNAVAILABLE. Maybe the metrics libraries aren't ready.";
         } else {
             return "Generic error with ze_result_t value: " + std::to_string(static_cast<int>(result));
@@ -303,34 +303,53 @@ namespace xpum {
         // GPU level-zero driver
         std::string level0_driver_error_info;
         bool dependency_issue = false;
-        pid_t pid = fork();
-        if (pid == 0) {
-            execlp("echo", "echo", "-n", NULL);
-            putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
-            putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
-            int init_status = zeInit(0);
-            if (init_status == 0 || init_status == 1)
-                exit(init_status);
-            else if (init_status == 0x78000001)
-                exit(2);
-            else if (init_status == 0x70020000)
-                exit(3);
-            else
-                exit(255);
-        }
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status)) {
-            int init_res = WEXITSTATUS(status);
-            if (init_res != 0) {
-                level0_driver_error_info = "Failed to init level zero: " + zeInitResultToString(init_res);
-                if (init_res == 3)
+        if (Configuration::XPUM_MODE.empty())
+            Configuration::init();
+        // avoid xpu-smi crash if gpu driver crash
+        if (Configuration::XPUM_MODE == "xpu-smi") {
+            pid_t pid = fork();
+            if (pid == 0) {
+                putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
+                putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
+                int init_status = zeInit(0);
+                if (init_status == 0 || init_status == 1)
+                    exit(init_status);
+                else if (init_status == 0x78000001)
+                    exit(2);
+                else if (init_status == 0x70020000)
+                    exit(3);
+                else
+                    exit(255);
+            }
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status)) {
+                int exit_code = WEXITSTATUS(status);
+                if (exit_code != 0) {
+                    std::unordered_map<int, int> exit_code_map = {{2, 0x78000001}, {3, 0x70020000}};
+                    level0_driver_error_info = "Failed to init level zero: " + 
+                        (exit_code_map.count(exit_code) ? zeInitResultToString(exit_code_map[exit_code]) : zeInitResultToString(exit_code));
+                    if (exit_code == 3)
+                        dependency_issue = true;
+                } 
+            } else {
+                level0_driver_error_info = "Failed to init level zero due to GPU driver";
+            }
+        } else { // xpumanager and other library users
+            int init_status = 0;
+            if (GPUDeviceStub::zeInitReturnCode != -1) {
+                init_status = GPUDeviceStub::zeInitReturnCode;
+            } else {
+                putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
+                putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
+                init_status = zeInit(0);
+            }
+            if (init_status != 0) {
+                level0_driver_error_info = "Failed to init level zero: " + zeInitResultToString(init_status);
+                if (init_status == 0x70020000)
                     dependency_issue = true;
-            } 
-        } else {
-            level0_driver_error_info = "Failed to init level zero due to GPU driver";
+            }
         }
-
         // GPU i915 driver
         bool is_i915_loaded = false;
         FILE* f = popen("modinfo -n i915 2>/dev/null", "r");
@@ -679,9 +698,7 @@ namespace xpum {
             return;
         }
         
-        if (Configuration::XPUM_MODE != "xpum") {
-            doPreCheckDriver();
-        }
+        doPreCheckDriver();
 
         doPreCheckGuCHuCWedgedPCIe(gpu_ids, gpu_bdfs, is_atsm_platform);
 

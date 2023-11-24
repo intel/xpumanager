@@ -39,6 +39,7 @@ uint32_t Configuration::MAX_STATISTICS_SESSION_NUM = 2;
 bool Configuration::INITIALIZE_PERF_METRIC = false;
 
 std::set<MeasurementType> Configuration::enabled_metrics;
+std::shared_ptr<std::set<int>> Configuration::enabled_gpu_ids;
 std::vector<PerfMetric_t> Configuration::perf_metrics;
 std::string Configuration::XPUM_MODE;
 
@@ -114,6 +115,38 @@ void Configuration::initEnabledMetrics() {
                 enabled_metrics.emplace((MeasurementType)metric);
             }
         }
+    }
+}
+
+void Configuration::initEnabledGPUIds() {
+    char* xpum_gpu_ids_env;
+    xpum_gpu_ids_env = std::getenv("XPUM_ENABLED_GPU_IDS");
+
+    if (xpum_gpu_ids_env != NULL) {
+        enabled_gpu_ids = std::make_shared<std::set<int>>();
+        std::string env_str(xpum_gpu_ids_env);
+        XPUM_LOG_INFO("The environment variable XPUM_ENABLED_GPU_IDS is detected: {}", env_str);
+        std::stringstream env_ss(env_str);
+        while (env_ss.good()) {
+            std::string substr;
+            getline(env_ss, substr, ',');
+            auto pos_s = substr.find('-');
+            if (pos_s != 0 && pos_s != std::string::npos && pos_s + 1 < substr.length()) {
+                // support range in form of "a-b"
+                int start_type_id = std::stoi(substr.substr(0, pos_s));
+                int end_type_id = std::stoi(substr.substr(pos_s + 1));
+                while (start_type_id <= end_type_id) {
+                    enabled_gpu_ids->emplace(start_type_id);
+                    start_type_id++;
+                }
+            } else {
+                int id = std::stoi(substr);
+                enabled_gpu_ids->emplace(id);
+            }
+        }
+    } else {
+        // means enabled all gpu ids
+        enabled_gpu_ids = nullptr;
     }
 }
 

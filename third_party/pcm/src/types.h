@@ -778,6 +778,15 @@ constexpr auto ICX_M3UPI_PORT0_REGISTER_FUNC_ADDR = (1);
 constexpr auto ICX_M3UPI_PORT1_REGISTER_FUNC_ADDR = (1);
 constexpr auto ICX_M3UPI_PORT2_REGISTER_FUNC_ADDR = (1);
 
+constexpr auto SPR_M3UPI_PORT0_REGISTER_DEV_ADDR = 5;
+constexpr auto SPR_M3UPI_PORT1_REGISTER_DEV_ADDR = 6;
+constexpr auto SPR_M3UPI_PORT2_REGISTER_DEV_ADDR = 7;
+constexpr auto SPR_M3UPI_PORT3_REGISTER_DEV_ADDR = 8;
+constexpr auto SPR_M3UPI_PORT0_REGISTER_FUNC_ADDR = 1;
+constexpr auto SPR_M3UPI_PORT1_REGISTER_FUNC_ADDR = 1;
+constexpr auto SPR_M3UPI_PORT2_REGISTER_FUNC_ADDR = 1;
+constexpr auto SPR_M3UPI_PORT3_REGISTER_FUNC_ADDR = 1;
+
 #define SKX_M2M_0_REGISTER_DEV_ADDR  (8)
 #define SKX_M2M_0_REGISTER_FUNC_ADDR (0)
 #define SKX_M2M_1_REGISTER_DEV_ADDR  (9)
@@ -1117,6 +1126,8 @@ constexpr auto SPR_CHA_MSR_STEP = 0x10;
 #define CBO_MSR_PMON_CTL_INVERT (1 << 23)
 #define CBO_MSR_PMON_CTL_THRESH(x) (x << 24UL)
 #define UNC_PMON_CTL_UMASK_EXT(x) (uint64(x) << 32ULL)
+#define UNC_PMON_CTL_EVENT(x) (x << 0)
+#define UNC_PMON_CTL_UMASK(x) (x << 8)
 
 #define JKT_CBO_MSR_PMON_BOX_FILTER_OPC(x) (x << 23UL)
 #define IVTHSX_CBO_MSR_PMON_BOX_FILTER1_OPC(x) (x << 20UL)
@@ -1231,6 +1242,8 @@ constexpr auto SPR_M2IOSF_IIO_CTR0     = 0x3008;
 constexpr auto SPR_M2IOSF_IIO_CTL0     = 0x3002;
 constexpr auto SPR_M2IOSF_REG_STEP = 0x10;
 constexpr auto SPR_M2IOSF_NUM      = 12;
+
+constexpr auto CXL_PMON_SIZE = 0x1000;
 
 #define IIO_MSR_PMON_CTL_EVENT(x)   ((x) << 0)
 #define IIO_MSR_PMON_CTL_UMASK(x)   ((x) << 8)
@@ -1389,7 +1402,7 @@ struct MCFGRecord
     void print()
     {
         std::cout << "BaseAddress=" << (std::hex) << "0x" << baseAddress << " PCISegmentGroupNumber=0x" << PCISegmentGroupNumber <<
-            " startBusNumber=0x" << (unsigned)startBusNumber << " endBusNumber=0x" << (unsigned)endBusNumber << "\n";
+            " startBusNumber=0x" << (unsigned)startBusNumber << " endBusNumber=0x" << (unsigned)endBusNumber << "\n" << std::dec;
     }
 };
 
@@ -1439,6 +1452,7 @@ struct MCFGHeader
 #define SPR_IDX_ACCEL_PMON_BASE_OFFSET     (0x68)
 #define SPR_IDX_ACCEL_PMON_BASE_MASK       (0xFFFF)
 #define SPR_IDX_ACCEL_PMON_BASE_RATIO      (0x100)
+#define SPR_IDX_ACCEL_PMCSR_OFFSET         (0x94)
 
 #define SPR_IDX_PMON_RESET_CTL_OFFSET              (0x10)
 #define SPR_IDX_PMON_FREEZE_CTL_OFFSET             (0x20)

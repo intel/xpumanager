@@ -567,7 +567,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(int deviceId,
                             if (process["process_name"] != "")
                                 processList.push_back(process);
                         }
-                        componentJson["process_list"] = processList;
+                        // For consistency, it is needed to determine the number of processes again and update message
+                        // Will refactor the code in the future as xpumGetDiagnosticsExclusiveResult
+                        if (processList.size() > 1) {
+                            componentJson["process_list"] = processList;
+                            componentJson["message"] = "Warning: " + std::to_string(processList.size()) + " processses are using the device.";
+                        } else {
+                            componentJson["message"] = "Pass to check the software exclusive.";
+                        }
                     }
                 }
                 if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
@@ -791,7 +798,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResultByGroup(uint32
                                 if (process["process_name"] != "")
                                     processList.push_back(process);
                             }
-                            componentJson["process_list"] = processList;
+                            // For consistency, it is needed to determine the number of processes again and update message
+                            // Will refactor the code in the future as xpumGetDiagnosticsExclusiveResult
+                            if (processList.size() > 1) {
+                                componentJson["process_list"] = processList;
+                                componentJson["message"] = "Warning: " + std::to_string(processList.size()) + " processses are using the device.";
+                            } else {
+                                componentJson["message"] = "Pass to check the software exclusive.";
+                            }
                         }
                     }
                     if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 

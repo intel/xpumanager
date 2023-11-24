@@ -428,7 +428,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
                                 if (proc["process_name"] != "")
                                     processList.push_back(proc);
                             }
-                            componentJson["process_list"] = processList;
+                            // For consistency, it is needed to determine the number of processes again and update message
+                            // Will refactor the code in the future as xpumGetDiagnosticsExclusiveResult
+                            if (processList.size() > 1) {
+                                componentJson["process_list"] = processList;
+                                componentJson["message"] = "Warning: " + std::to_string(processList.size()) + " processses are using the device.";
+                            } else {
+                                componentJson["message"] = "Pass to check the software exclusive.";
+                            }
                         }
                     }
                 } else {

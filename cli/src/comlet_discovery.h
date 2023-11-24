@@ -43,6 +43,10 @@ class ComletDiscovery : public ComletBase {
         return opts->deviceId == "-1";
     }
 
+    inline std::string getDeviceId() {
+        return opts->deviceId;
+    }
+
     inline bool isDumping() {
         return opts->propIdList.size() > 0;
     }

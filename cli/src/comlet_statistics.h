@@ -18,6 +18,7 @@ struct ComletStatisticsOptions {
     std::string deviceId = "-1";
     bool showEuMetrics = false;
     bool showRASMetrics = false;
+    bool showXelinkMetrics = false;
     uint32_t groupId = 0;
     bool xelinkThroughputMatrix = false;
     bool xelinkUtilMatrix = false;
@@ -55,6 +56,7 @@ class ComletStatistics : public ComletBase {
 
     bool hasEUMetrics();
     bool hasRASMetrics();
+    bool hasXelinkMetrics();
 
    private:
     std::unique_ptr<ComletStatisticsOptions> opts;

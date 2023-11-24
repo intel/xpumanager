@@ -61,16 +61,22 @@ class Configuration {
         XPUM_LOG_INFO("xpum mode: {}", XPUM_MODE);
 
         initEnabledMetrics();
+        initEnabledGPUIds();
         initPerfMetrics();
     }
 
     static void initEnabledMetrics();
+    static void initEnabledGPUIds();
     static void initPerfMetrics();
 
     static std::set<MeasurementType>& getEnabledMetrics() {
         return enabled_metrics;
     }
-    
+
+    static std::shared_ptr<std::set<int>> getEnabledGPUIds() {
+        return enabled_gpu_ids;
+    }
+
     static std::vector<PerfMetric_t>& getPerfMetrics() {
         return perf_metrics;
     }
@@ -82,6 +88,7 @@ class Configuration {
    private:
     static std::set<MeasurementType> enabled_metrics;
     static std::vector<PerfMetric_t> perf_metrics;
+    static std::shared_ptr<std::set<int>> enabled_gpu_ids;
 };
 
 } // end namespace xpum
