@@ -906,7 +906,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC
     ];
     p_task_info->count += 1;
-    if (!Utility::isATSMPlatform(device)) {
+    if (Utility::isPVCPlatform(device)) {
         component.result = XPUM_DIAG_RESULT_FAIL;
         component.finished = true;
         updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED);

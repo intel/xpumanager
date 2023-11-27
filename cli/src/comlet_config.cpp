@@ -608,6 +608,9 @@ void ComletConfig::getTableResult(std::ostream &out) {
                 if (isATSM3(pciId) == true) {
                     (*json)["power_limit"] = 25;
                 }
+                if (isSG1(pciId) == true) {
+                    (*json)["power_limit"] = 25;
+                }
             }
         }
         showConfigurations(out, json);

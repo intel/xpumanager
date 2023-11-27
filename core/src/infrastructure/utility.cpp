@@ -614,6 +614,18 @@ bool Utility::isPVCPlatform(const zes_device_handle_t &device) {
     return is_pvc;
 }
 
+bool Utility::isSG1Platform(const zes_device_handle_t &device) {
+    zes_device_properties_t props;
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    props.pNext = nullptr;
+    bool is_sg1 = false;
+    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        int device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
+        is_sg1 = (device_model == XPUM_DEVICE_MODEL_SG1);
+    }
+    return is_sg1;
+}
+
 void Utility::parallel_in_batches(unsigned num_elements, unsigned num_threads,
                   std::function<void (int start, int end)> functor,
                   bool use_multithreading)

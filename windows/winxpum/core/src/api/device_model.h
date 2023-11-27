@@ -9,5 +9,6 @@
 #define XPUM_DEVICE_MODEL_ATS_M_1       2
 #define XPUM_DEVICE_MODEL_ATS_M_3       3
 #define XPUM_DEVICE_MODEL_PVC           4
+#define XPUM_DEVICE_MODEL_SG1           5   // not supported yet
 
 int getDeviceModelByPciDeviceId(int deviceId);

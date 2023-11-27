@@ -385,7 +385,7 @@ static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> 
     if (ver.length() != 0 && !isOamPlatform(ver)) {
         js["oam_socket_id"] = XPUM_TABLE_HIDE_TAG;
     }
-    if (ver.length() != 0 && isATSMPlatform(ver)) {
+    if (ver.length() != 0 && (isATSMPlatform(ver) || isSG1(ver))) {
         js["serial_number"] = XPUM_TABLE_HIDE_TAG;
         js["number_of_fabric_ports"] = XPUM_TABLE_HIDE_TAG;
         js["max_fabric_port_speed"] = XPUM_TABLE_HIDE_TAG;

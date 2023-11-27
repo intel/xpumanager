@@ -2374,6 +2374,10 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
     Core::instance().getDeviceManager()->getDevice(id)->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop_drm);
     std::string region_base;
     if (!getDeviceRegion(prop_drm.getValue(), region_base)){
+        // SG1 failed to get base region when read power limit registers.
+        int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
+        if (model_type == XPUM_DEVICE_MODEL_SG1)
+            max_power = 25 * 1000;
         return;
     }
     uint32_t power_limit_offset = 0x281080;
@@ -2401,6 +2405,8 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
             if (model_type == XPUM_DEVICE_MODEL_ATS_M_1)
                 max_power = 120 * 1000;
             else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
+                max_power = 25 * 1000;
+            else if (model_type == XPUM_DEVICE_MODEL_SG1)
                 max_power = 25 * 1000;
         }
     }
