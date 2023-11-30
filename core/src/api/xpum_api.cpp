@@ -2531,6 +2531,7 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     int idx = 0;
+    bool found = false;
     for (auto &p_driver : drivers) {
         uint32_t device_count = 0;
         result = zeDeviceGet(p_driver, &device_count, nullptr);
@@ -2554,23 +2555,28 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                         if (props.subdeviceId != sched_exclusive.subdevice_Id) {
                             continue;
                         }
-                        xpumShutdown();
-                        ze_bool_t needReload;
-                        result = zesSchedulerSetExclusiveMode(sched, &needReload);
-                        if (result == ZE_RESULT_SUCCESS) {
-                            return XPUM_OK;
-                        } else {
-                            return XPUM_RESULT_RESET_FAIL;
-                        }
+                        ze_bool_t needReload = false;
+                        result = zesSchedulerSetExclusiveMode(sched, 
+                                &needReload);
+                        // per XM7-644 needReload would alwasys be false
+                        if (result != ZE_RESULT_SUCCESS || needReload == true) {
+                            XPUM_LOG_DEBUG("zesSchedulerSetExclusiveMode returns result = {}  needReload = {}", result, needReload);
+                            return XPUM_GENERIC_ERROR;
+                        } 
+                        found = true;
                     }
                 }
-                return XPUM_GENERIC_ERROR;
+                break;
             }
             idx++;
         }
     }
-    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
-    return XPUM_RESULT_DEVICE_NOT_FOUND;
+    if (found == true) {
+        return XPUM_OK;
+    } else {
+        XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
 }
 
 xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,

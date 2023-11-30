@@ -1374,7 +1374,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         }
     }
     response->set_errorno(res);
-    if (scheduler == SCHEDULER_DEBUG || scheduler == SCHEDULER_EXCLUSIVE) {
+    if (scheduler == SCHEDULER_DEBUG) {
         std::thread([] {
             std::this_thread::sleep_for(std::chrono::seconds(3));
             // Send SIGKILL signal to make daemon exit after scheduler exclusive/debug mode setting

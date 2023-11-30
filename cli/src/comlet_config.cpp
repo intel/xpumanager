@@ -540,7 +540,7 @@ void ComletConfig::getTableResult(std::ostream &out) {
     else if (!this->opts->scheduler.empty()) {
         std::vector<std::string> paralist = split(this->opts->scheduler, ",");
         std::string command = paralist.at(0);
-        if (command.compare("debug") == 0 ||command.compare("exclusive") == 0 ) {
+        if (command.compare("debug") == 0) {
 #ifndef DAEMONLESS
             needRestart = true;
 #endif
@@ -569,7 +569,7 @@ void ComletConfig::getTableResult(std::ostream &out) {
         out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
     }
     if (needRestart) {
-        out << "Setting GPU scheduler exclusive/debug mode will make XPUM daemon not work." << std::endl;
+        out << "Setting GPU scheduler debug mode will make XPUM daemon not work." << std::endl;
         out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
     }
 
