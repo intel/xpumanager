@@ -554,7 +554,7 @@ XPUM_API xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t devi
                                                   const xpum_scheduler_exclusive_t sched_exclusive);
 /**
  * @brief Set device the scheduler(debug) mode
- * @details This function is used to set the scheduler (debug) mode.Caution: It calls xpumShutdown internally.Please make sure other API calls are finished before calling the API, the behaviour of calling other APIs during setting is undefined. And it is recommended to stop current process and use a new process to initialize XPUM after setting.
+ * @details This function is used to set the scheduler (debug) mode. It is not supported since 1.2.25
  *
  * @param deviceId          IN: The device Id
  * @param sched_debug     IN: The scheduler debug mode need to be set
