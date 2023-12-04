@@ -6,7 +6,7 @@ ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.
 ARG AUTOMAKE_URL=https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz
 ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz
-ARG ZLIB_VERSION=v1.2.13
+ARG ZLIB_VERSION=v1.3
 ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_19_1
 
@@ -48,6 +48,8 @@ ENV PATH="/cmake/bin:${PATH}".
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
     git pull https://github.com/madler/zlib $ZLIB_VERSION && \
+    # fix CVE-2023-45853 by removing minizip code
+    rm -rf contrib/minizip && \
     cd /grpc/third_party/cares/cares/ && \
     git pull https://github.com/c-ares/c-ares.git $CARES_VERSION && \
     cd /grpc && \
