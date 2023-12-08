@@ -1586,7 +1586,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(con
                 if (props.type != ZES_FREQ_DOMAIN_GPU) {
                     continue;
                 }
-                zes_freq_state_t freq_state;
+                zes_freq_state_t freq_state = {};
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
                     uint32_t subdeviceId = UINT32_MAX;
@@ -3697,7 +3697,7 @@ bool GPUDeviceStub::getFrequencyState(const zes_device_handle_t& device, std::st
             props.pNext = nullptr;
             XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_freq_state_t freq_state;
+                zes_freq_state_t freq_state = {};
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (freq_state.throttleReasons == 0) {   
@@ -4256,7 +4256,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottleReason(con
             throw BaseException(err.str());
         }
         if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
-            zes_freq_state_t freqState;
+            zes_freq_state_t freqState = {};
             XPUM_ZE_HANDLE_LOCK(hFreq, zesFrequencyGetState(hFreq, &freqState));
             if (res != ZE_RESULT_SUCCESS) {
                 std::stringstream err;
