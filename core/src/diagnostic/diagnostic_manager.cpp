@@ -906,7 +906,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC
     ];
     p_task_info->count += 1;
-    if (!Utility::isATSMPlatform(device)) {
+    if (Utility::isPVCPlatform(device)) {
         component.result = XPUM_DIAG_RESULT_FAIL;
         component.finished = true;
         updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED);
@@ -3411,15 +3411,46 @@ void DiagnosticManager::doDeviceDiagnosticXeLinkThroughput(const ze_device_handl
                                                     std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas) {
     xpum_diag_component_info_t &xe_link_throughput_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_XE_LINK_THROUGHPUT];
     p_task_info->count += 1;
-    if (!Utility::isPVCPlatform(ze_device) || devices.size() < 2) {
+    int device_id = p_task_info->deviceId;
+    ze_result_t ret;
+    uint32_t fabric_port_count = 0;
+    zes_device_handle_t zes_device = (zes_device_handle_t)ze_device;
+    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumFabricPorts(zes_device, &fabric_port_count, nullptr));
+    if (fabric_port_count == 0) {
+        XPUM_LOG_DEBUG("Target device GPU {} xe link port not found", device_id);
+    }
+    if (!Utility::isPVCPlatform(ze_device) || devices.size() < 2 || fabric_port_count == 0) {
         xe_link_throughput_component.result = XPUM_DIAG_RESULT_FAIL;
         xe_link_throughput_component.finished = true;
         updateMessage(xe_link_throughput_component.message, COMPONENT_TYPE_NOT_SUPPORTED);
         return;
     }
-        
+    std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_port_count);
+    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumFabricPorts(zes_device, &fabric_port_count, fabric_ports.data()));
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zesDeviceEnumFabricPorts()[" + zeResultErrorCodeStr(ret) + "]");
+    }
+    std::string failed_port_status_message;
+    for (auto& fabric_port: fabric_ports) {
+        zes_fabric_port_state_t state;
+        state.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
+        state.pNext = nullptr;
+        XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesFabricPortGetState(fabric_port, &state));
+        if (ret == ZE_RESULT_SUCCESS) {
+            XPUM_LOG_DEBUG("GPU {} fabric port status {}", device_id, state.status);
+            if (state.status != ZES_FABRIC_PORT_STATUS_HEALTHY && state.status != ZES_FABRIC_PORT_STATUS_DEGRADED) {
+                failed_port_status_message = "GPU " + std::to_string(device_id) + " port status is probably failed, disabled or unknown."; 
+                break;
+            }
+        }
+    }
+    if (!failed_port_status_message.empty()) {
+        xe_link_throughput_component.result = XPUM_DIAG_RESULT_FAIL;
+        xe_link_throughput_component.finished = true;
+        updateMessage(xe_link_throughput_component.message, failed_port_status_message);
+        return;
+    }
     xe_link_throughput_datas.clear();
-    int device_id = p_task_info->deviceId;
     // src_device_handle, src_device_id, dst_device_hanle, dst_device_id
     std::vector<std::tuple<ze_device_handle_t, int32_t, ze_device_handle_t, int32_t>> test_pairs;
     for (auto device : devices) {
@@ -3438,6 +3469,7 @@ void DiagnosticManager::doDeviceDiagnosticXeLinkThroughput(const ze_device_handl
             continue;
         }
         if (fabric_ports.size() == 0) {
+            XPUM_LOG_DEBUG("Peer device GPU {} xe link port not found", peer_device_id);
             continue;
         }
         for (auto& fabric_port: fabric_ports) {
@@ -3465,6 +3497,26 @@ void DiagnosticManager::doDeviceDiagnosticXeLinkThroughput(const ze_device_handl
                 test_pairs.push_back(std::make_tuple(peer_ze_device, peer_device_id, ze_device, device_id));
                 device_id_link_to_device_ids[peer_device_id].insert(device_id);
                 XPUM_LOG_DEBUG("GPU {} <-> GPU {} : Reachable", device_id, peer_device_id);
+                std::string failed_port_status_message;
+                for (auto& fabric_port: fabric_ports) {
+                    zes_fabric_port_state_t state;
+                    state.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
+                    state.pNext = nullptr;
+                    XPUM_ZE_HANDLE_LOCK(peer_ze_device, ret = zesFabricPortGetState(fabric_port, &state));
+                    if (ret == ZE_RESULT_SUCCESS) {
+                        XPUM_LOG_DEBUG("Peer GPU {} fabric port status {}", peer_device_id, state.status);
+                        if (state.status != ZES_FABRIC_PORT_STATUS_HEALTHY && state.status != ZES_FABRIC_PORT_STATUS_DEGRADED) {
+                            failed_port_status_message = "Peer GPU " + std::to_string(peer_device_id) + " port status is probably failed, disabled or unknown.";
+                            break;
+                        }
+                    }
+                }
+                if (!failed_port_status_message.empty()) {
+                    xe_link_throughput_component.result = XPUM_DIAG_RESULT_FAIL;
+                    xe_link_throughput_component.finished = true;
+                    updateMessage(xe_link_throughput_component.message, failed_port_status_message);
+                    return;
+                }
             }
             else
                 XPUM_LOG_DEBUG("GPU {} <-> GPU {} : Unreachable", device_id, peer_device_id);

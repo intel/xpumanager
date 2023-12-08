@@ -586,7 +586,7 @@ bool ComletStatistics::hasRASMetrics() {
 }
 
 bool ComletStatistics::hasXelinkMetrics() {
-    return this->opts->showXelinkMetrics;
+    return this->opts->showXelinkMetrics || this->opts->xelinkThroughputMatrix;
 }
 
 void ComletStatistics::setupOptions() {

@@ -595,7 +595,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#smi-doxid-
     <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_debug_t.html#smi-doxid-structxpum-scheduler-debug-t"><span class="std std-ref">xpum_scheduler_debug_t</span></a><span></span> <span class="n">sched_debug</span>
     <span class="p">)</span></pre>
 <p>Set device the scheduler(debug) mode.</p>
-<p>This function is used to set the scheduler (debug) mode.Caution: It calls xpumShutdown internally.Please make sure other API calls are finished before calling the API, the behaviour of calling other APIs during setting is undefined. And it is recommended to stop current process and use a new process to initialize XPUM after setting.</p>
+<p>This function is used to set the scheduler (debug) mode. It is not supported since 1.2.25</p>
 <p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">

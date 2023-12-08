@@ -118,7 +118,7 @@ void ComletConfig::setupOptions() {
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
-    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\";\"debug\".The valid range of all time values (us) is from 5000 to 100,000,000.");
+    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\". The valid range of all time values (us) is from 5000 to 100,000,000.");
     addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset). For Intel(R) Max Series GPU, when SR-IOV is enabled, please add \"pci=realloc=off\" into Linux kernel command line parameters. When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters.");
     auto ppr = addFlag("--ppr", this->opts->applyPPR, "Apply ppr to the device.");
     auto forceFlag = addFlag("--force", opts->forcePPR, "Force PPR to run.");
@@ -514,9 +514,6 @@ static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::j
 }
 
 void ComletConfig::getTableResult(std::ostream &out) {
-#ifndef DAEMONLESS
-    bool needRestart = false;
-#endif
     if (this->opts->resetDevice || this->opts->applyPPR) {
         if (this->opts->device != "") {
             if (isNumber(this->opts->device)) {
@@ -537,42 +534,12 @@ void ComletConfig::getTableResult(std::ostream &out) {
             out << "It may take ten minutes to apply PPR to GPU " << this->opts->deviceId << ". Please wait ..." << std::endl;
         }
     }
-    else if (!this->opts->scheduler.empty()) {
-        std::vector<std::string> paralist = split(this->opts->scheduler, ",");
-        std::string command = paralist.at(0);
-        if (command.compare("debug") == 0 ||command.compare("exclusive") == 0 ) {
-#ifndef DAEMONLESS
-            needRestart = true;
-#endif
-            if (this->opts->device != "") {
-                if (isNumber(this->opts->device)) {
-                    this->opts->deviceId = std::stoi(this->opts->device);
-                } else {
-                    auto json = this->coreStub->getDeivceIdByBDF(
-                        this->opts->device.c_str(), &this->opts->deviceId);
-                    if (json->contains("error")) {
-                        out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
-                        setExitCodeByJson(*json);
-                        return;
-                    }
-                }
-            }
-            if (this->opts->deviceId >= 0 && this->opts->tileId == -1) {
-                out << "It may take a few seconds to set scheduler debug mode" << this->opts->deviceId << ". Please wait ..." << std::endl;
-            }
-        }
-    }
     auto res = run();
 #ifndef DAEMONLESS
     if (this->opts->deviceId >= 0 && this->opts->tileId == -1 && this->opts->resetDevice) {
         out << "Resetting GPU will make XPUM daemon not work." << std::endl;
         out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
     }
-    if (needRestart) {
-        out << "Setting GPU scheduler exclusive/debug mode will make XPUM daemon not work." << std::endl;
-        out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
-    }
-
     if (this->opts->deviceId >= 0 && this->opts->tileId == -1 && this->opts->applyPPR && res->contains("ppr_diag_result")) {
         out << "Apply PPR will make XPUM daemon not work." << std::endl;
         out << "Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
@@ -606,6 +573,9 @@ void ComletConfig::getTableResult(std::ostream &out) {
                     (*json)["power_limit"] = 120;
                 }
                 if (isATSM3(pciId) == true) {
+                    (*json)["power_limit"] = 25;
+                }
+                if (isSG1(pciId) == true) {
                     (*json)["power_limit"] = 25;
                 }
             }

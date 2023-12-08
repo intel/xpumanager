@@ -338,6 +338,11 @@ bool isATSM1(std::string &pciId) {
     return pciId.find("56c0") != std::string::npos;
 }
 
+bool isSG1(std::string &pciId) {
+    std::transform(pciId.begin(), pciId.end(), pciId.begin(), ::tolower);
+    return pciId.find("4907") != std::string::npos;
+}
+
 bool isATSMPlatform(std::string str) {
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;

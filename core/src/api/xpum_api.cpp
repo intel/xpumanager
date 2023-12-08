@@ -2374,6 +2374,10 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
     Core::instance().getDeviceManager()->getDevice(id)->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop_drm);
     std::string region_base;
     if (!getDeviceRegion(prop_drm.getValue(), region_base)){
+        // SG1 failed to get base region when read power limit registers.
+        int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
+        if (model_type == XPUM_DEVICE_MODEL_SG1)
+            max_power = 25 * 1000;
         return;
     }
     uint32_t power_limit_offset = 0x281080;
@@ -2401,6 +2405,8 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
             if (model_type == XPUM_DEVICE_MODEL_ATS_M_1)
                 max_power = 120 * 1000;
             else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
+                max_power = 25 * 1000;
+            else if (model_type == XPUM_DEVICE_MODEL_SG1)
                 max_power = 25 * 1000;
         }
     }
@@ -2525,6 +2531,7 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     int idx = 0;
+    bool found = false;
     for (auto &p_driver : drivers) {
         uint32_t device_count = 0;
         result = zeDeviceGet(p_driver, &device_count, nullptr);
@@ -2548,92 +2555,33 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                         if (props.subdeviceId != sched_exclusive.subdevice_Id) {
                             continue;
                         }
-                        xpumShutdown();
-                        ze_bool_t needReload;
-                        result = zesSchedulerSetExclusiveMode(sched, &needReload);
-                        if (result == ZE_RESULT_SUCCESS) {
-                            return XPUM_OK;
-                        } else {
-                            return XPUM_RESULT_RESET_FAIL;
-                        }
+                        ze_bool_t needReload = false;
+                        result = zesSchedulerSetExclusiveMode(sched, 
+                                &needReload);
+                        // per XM7-644 needReload would alwasys be false
+                        if (result != ZE_RESULT_SUCCESS || needReload == true) {
+                            XPUM_LOG_DEBUG("zesSchedulerSetExclusiveMode returns result = {}  needReload = {}", result, needReload);
+                            return XPUM_GENERIC_ERROR;
+                        } 
+                        found = true;
                     }
                 }
-                return XPUM_GENERIC_ERROR;
+                break;
             }
             idx++;
         }
     }
-    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
-    return XPUM_RESULT_DEVICE_NOT_FOUND;
+    if (found == true) {
+        return XPUM_OK;
+    } else {
+        XPUM_LOG_INFO("Can't find device id: {}", deviceId);
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
 }
 
 xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
-                                                  const xpum_scheduler_debug_t sched_debug) {
-    xpum_result_t res = Core::instance().apiAccessPreCheck();
-    if (res != XPUM_OK) {
-        return res;
-    }
-
-    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-    res = validateDeviceIdAndTileId(deviceId, sched_debug.subdevice_Id);
-    if (res != XPUM_OK) {
-        return res;
-    }
-
-    uint32_t driver_count = 0;
-    auto result = zeDriverGet(&driver_count, nullptr);
-    if (result != ZE_RESULT_SUCCESS) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-    std::vector<ze_driver_handle_t> drivers(driver_count);
-    result = zeDriverGet(&driver_count, drivers.data());
-    if (result != ZE_RESULT_SUCCESS) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-    int idx = 0;
-    for (auto &p_driver : drivers) {
-        uint32_t device_count = 0;
-        result = zeDeviceGet(p_driver, &device_count, nullptr);
-        if (result != ZE_RESULT_SUCCESS)
-            return XPUM_RESULT_DEVICE_NOT_FOUND;
-        std::vector<ze_device_handle_t> devices(device_count);
-
-        result = zeDeviceGet(p_driver, &device_count, devices.data());
-        if (result != ZE_RESULT_SUCCESS)
-            return XPUM_RESULT_DEVICE_NOT_FOUND;
-        for (auto device : devices) {
-            if (idx == deviceId) {
-                uint32_t scheduler_count = 0;
-                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, nullptr);
-                std::vector<zes_sched_handle_t> scheds(scheduler_count);
-                result = zesDeviceEnumSchedulers((zes_device_handle_t)device, &scheduler_count, scheds.data());
-                for (auto& sched : scheds) {
-                    zes_sched_properties_t props = {};
-                    result = zesSchedulerGetProperties(sched, &props);
-                    if (result == ZE_RESULT_SUCCESS) {
-                        if (props.subdeviceId != sched_debug.subdevice_Id) {
-                            continue;
-                        }
-                        xpumShutdown();
-                        ze_bool_t needReload;
-                        result = zesSchedulerSetComputeUnitDebugMode(sched, &needReload);
-                        if (result == ZE_RESULT_SUCCESS) {
-                            return XPUM_OK;
-                        } else {
-                            return XPUM_RESULT_RESET_FAIL;
-                        }
-                    }
-                }
-                return XPUM_GENERIC_ERROR;
-            }
-            idx++;
-        }
-    }
-    XPUM_LOG_INFO("Can't find device id: {}", deviceId);
-    return XPUM_RESULT_DEVICE_NOT_FOUND;
+        const xpum_scheduler_debug_t sched_debug) {
+    return XPUM_API_UNSUPPORTED;
 }
 
 xpum_result_t xpumApplyPPR(xpum_device_id_t deviceId, xpum_diag_result_t* diagResult, xpum_health_status_t* healthState) {

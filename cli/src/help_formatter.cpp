@@ -130,8 +130,6 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag --precheck --listtypes -j\n"
                "  " + appName + " diag --precheck\n"
                "  " + appName + " diag --precheck -j\n"
-               "  " + appName + " diag --precheck --dmesg\n"
-               "  " + appName + " diag --precheck --dmesg -j\n"
                "  " + appName + " diag --precheck --gpu\n"
                "  " + appName + " diag --precheck --gpu -j\n"
                "  " + appName + " diag --precheck --since [startTime]\n"

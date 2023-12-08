@@ -4,7 +4,7 @@
 # @file daemonset-smarter-device-manager.yaml
 #
 
-https://gitlab.com/arm-research/smarter/smarter-device-manager/-/blob/master/smarter-device-manager-ds.yaml
+# https://gitlab.com/arm-research/smarter/smarter-device-manager/-/blob/master/smarter-device-manager-ds.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
