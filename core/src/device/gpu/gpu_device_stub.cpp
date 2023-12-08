@@ -1039,8 +1039,10 @@ void static addMemUtilizationCapAndMemProperty(ze_device_handle_t& device, std::
                         mem_module_physical_size = props.physicalSize;
                         int32_t mem_bus_width = props.busWidth;
                         int32_t mem_channel_num = props.numChannels;
-                        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH, std::to_string(mem_bus_width)));
-                        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
+                        if (mem_bus_width > 0)
+                            gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH, std::to_string(mem_bus_width)));
+                        if (mem_channel_num > 0)
+                            gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
                     } else {
                         mem_utilization_cap = false;
                         break;
