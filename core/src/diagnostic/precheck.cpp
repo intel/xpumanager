@@ -199,10 +199,14 @@ namespace xpum {
         } else if (error_pattern.target_type == XPUM_PRECHECK_COMPONENT_TYPE_CPU) {
             auto pos = line.find("CPU ");
             if (pos != std::string::npos) {
-                std::string temp_str = line.substr(pos + 1);
-                int cpu_id = std::stoi(temp_str);
-                if (!PrecheckManager::component_cpus.empty())
-                    updateErrorComponentInfoList("", cpu_id / (PROCESSOR_COUNT / PrecheckManager::component_cpus.size()), XPUM_PRECHECK_COMPONENT_STATUS_FAIL, line, -1, time, error_pattern.error_category, error_pattern.error_severity);
+                std::string temp_str = line.substr(pos + 4);  // example: "mce: [Hardware Error]: CPU XX: Machine Check: 0 Bank XX: 0000000000000000"
+                try {
+                    int cpu_id = std::stoi(temp_str);
+                    if (!PrecheckManager::component_cpus.empty())
+                        updateErrorComponentInfoList("", cpu_id / (PROCESSOR_COUNT / PrecheckManager::component_cpus.size()), XPUM_PRECHECK_COMPONENT_STATUS_FAIL, line, -1, time, error_pattern.error_category, error_pattern.error_severity);
+                } catch (...) {
+                    XPUM_LOG_ERROR("Failed to parse CPU id from log: {}", line);
+                }
             }
         } else if (bdf != "") {
             updateErrorComponentInfoList(bdf, -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, line, error_pattern.error_id, time);
@@ -447,9 +451,13 @@ namespace xpum {
             std::ifstream i915_wedged_file(path);
             if (i915_wedged_file.good()) {
                 while(std::getline(i915_wedged_file, line)) {
-                    if (!line.empty() && std::stoi(line) != 0) {
-                        is_i915_wedged = true;
-                        break;
+                    try {
+                        if (!line.empty() && std::stoi(line) != 0) {
+                            is_i915_wedged = true;
+                            break;
+                        }
+                    } catch (...) {
+                        XPUM_LOG_ERROR("Failed to get i915 wedged status: {}", path);
                     }
                 }
                 if (is_i915_wedged) {
@@ -667,7 +675,12 @@ namespace xpum {
                         }
                         thermal_value[cnt] = 0;
                         close(fd);
-                        int val = std::stoi(thermal_value)/1000;
+                        int val = 0;
+                        try {
+                            val = std::stoi(thermal_value)/1000;
+                        } catch (...) {
+                            XPUM_LOG_ERROR("Failed to calculate thermal value: {}", path);
+                        }
                         xpum_precheck_component_info_t cpu_component {};
                         cpu_component.componentType = XPUM_PRECHECK_COMPONENT_TYPE_CPU;
                         cpu_component.status = has_privilege ? XPUM_PRECHECK_COMPONENT_STATUS_PASS : XPUM_PRECHECK_COMPONENT_STATUS_UNKNOWN;
