@@ -954,6 +954,7 @@ namespace xpum {
             exception_msgs["zesDeviceGetProperties"] = res;
         }
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
+        XPUM_LOG_DEBUG("res = {}, engine_count = {}", res, engine_count);
         if (res == ZE_RESULT_SUCCESS && engine_count > 0) {
             std::vector<zes_engine_handle_t> engines(engine_count);
             std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
@@ -1005,14 +1006,20 @@ namespace xpum {
                             std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::ENGINE_GPU_UTILIZATION_INTERNAL_PERIOD));
                             zes_engine_stats_t snap2 = {};
                             XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap2));
-                            double val = (snap2.activeTime - snap1.activeTime) * 100.0 / (snap2.timestamp - snap1.timestamp);
-                            if (val > 100.0)
-                                val = 100.0;
-                            if (res == ZE_RESULT_SUCCESS) {
+                            double val = 0;
+                            bool valid = false;
+                            if (snap2.timestamp > snap1.timestamp) {
+                                val = (snap2.activeTime - snap1.activeTime) * 100.0 / (snap2.timestamp - snap1.timestamp);
+                                if (val <= 100.0 && val >= 0) {
+                                    valid = true;
+                                }
+                            }
+                            if (res == ZE_RESULT_SUCCESS && valid == true) {
                                 ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                 ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                             } else {
                                 exception_msgs["zesEngineGetActivity"] = res;
+                                XPUM_LOG_DEBUG("s1.activeTime = {}, s1.timestamp = {}, s2.activeTime = {}, s2.timestamp = {}", snap1.activeTime, snap1.timestamp, snap2.activeTime, snap2.timestamp);                            
                             }
                         } else {
                             exception_msgs["zesEngineGetActivity"] = res;
