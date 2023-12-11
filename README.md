@@ -121,6 +121,7 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
 * Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
 * Refer to [XPU Manager/XPU-SMI API documents](https://intel.github.io/xpumanager/smi_index.html) to integrate the library or RESTFul interface. 
+* A simple introduction video on [Youtube](https://www.youtube.com/watch?v=1bKeqlriDX0).
  
 ## Architecture
 ![XPU Manager Architecture](doc/img/architecture.PNG)
