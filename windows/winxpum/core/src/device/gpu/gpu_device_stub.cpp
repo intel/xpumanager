@@ -287,7 +287,7 @@ namespace xpum {
                 props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
-                    zes_power_sustained_limit_t sustained;
+                    zes_power_sustained_limit_t sustained = {};
                     status = zesPowerGetLimits(power, &sustained, nullptr, nullptr);
                     if (status == ZE_RESULT_SUCCESS) {
                         susPower = sustained.power / 1000;
@@ -354,7 +354,7 @@ namespace xpum {
                 props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
-                    zes_power_sustained_limit_t sustained;
+                    zes_power_sustained_limit_t sustained = {};
                     sustained.enabled = true;
                     sustained.power = powerLimit;
                     status = zesPowerSetLimits(power, &sustained, nullptr, nullptr);
@@ -408,7 +408,7 @@ namespace xpum {
                             continue;
                         } 
                     }
-                    zes_freq_range_t range;
+                    zes_freq_range_t range = {};
                     status = zesFrequencyGetRange(freq, &range);
                     if (status == ZE_RESULT_SUCCESS) {
                         min = range.min;
@@ -466,7 +466,7 @@ namespace xpum {
                             continue;
                         }
                     }
-                    zes_freq_range_t range;
+                    zes_freq_range_t range = {};
                     range.min = min;
                     range.max = max;
                     status = zesFrequencySetRange(freq, &range);
@@ -536,7 +536,8 @@ namespace xpum {
                 zes_power_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    zes_power_energy_counter_t snap1, snap2;
+                    zes_power_energy_counter_t snap1 = {};
+                    zes_power_energy_counter_t snap2 = {};
                     XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t time1 = Utility::getCurrentMicrosecond();
@@ -577,7 +578,7 @@ namespace xpum {
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto perf : hPerf) {
                     zes_perf_properties_t prop = {};
-                    double factor;
+                    double factor = 0;
                     XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetProperties(perf, &prop));
                     if (res == ZE_RESULT_SUCCESS) {
                         XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
@@ -620,7 +621,7 @@ namespace xpum {
                     if (props.type != ZES_FREQ_DOMAIN_GPU) {
                         continue;
                     }
-                    zes_freq_state_t freq_state;
+                    zes_freq_state_t freq_state = {};
                     XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                     if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
                         if (type == MeasurementType::METRIC_FREQUENCY)
@@ -820,7 +821,8 @@ namespace xpum {
                         continue;
                     }
 
-                    zes_mem_bandwidth_t s1, s2;
+                    zes_mem_bandwidth_t s1 = {};
+                    zes_mem_bandwidth_t s2 = {};
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s1));
                     if (res == ZE_RESULT_SUCCESS) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
@@ -874,7 +876,7 @@ namespace xpum {
                         continue;
                     }
 
-                    zes_mem_bandwidth_t mem_bandwidth1;
+                    zes_mem_bandwidth_t mem_bandwidth1 = {};
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth1));
                     if (res == ZE_RESULT_SUCCESS) {
                         if (type == MeasurementType::METRIC_MEMORY_READ) {
@@ -884,7 +886,7 @@ namespace xpum {
                         } else {
                             int sampling_interval = Configuration::MEMORY_READ_WRITE_INTERNAL_PERIOD;
                             std::this_thread::sleep_for(std::chrono::milliseconds(sampling_interval));
-                            zes_mem_bandwidth_t mem_bandwidth2;
+                            zes_mem_bandwidth_t mem_bandwidth2 = {};
                             XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 double read_val = -1;
@@ -1081,7 +1083,7 @@ namespace xpum {
                 zes_power_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    zes_power_energy_counter_t snap;
+                    zes_power_energy_counter_t snap = {};
                     XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap));
                     if (res == ZE_RESULT_SUCCESS) {
                         ret->setCurrent(snap.energy * 1.0 / 1000);
@@ -1351,7 +1353,7 @@ namespace xpum {
                 XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetProperties(hFreq, &freqProps));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
-                        zes_freq_state_t freqState;
+                        zes_freq_state_t freqState = {};
                         XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetState(hFreq, &freqState));
                         if (res == ZE_RESULT_SUCCESS) {
                             ret->setCurrent(freqState.throttleReasons);
