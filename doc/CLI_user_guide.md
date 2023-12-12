@@ -1039,9 +1039,6 @@ Options:
                                     7. Computation functional test
                                     8. Media Codec functional test
                                     9. Xe Link Throughput
-                              Note that in a multi NUMA node server, it may need to use numactl to specify which node the PCIe bandwidth test runs on.
-                              Usage: numactl [ --membind nodes ] [ --cpunodebind nodes ] xpu-smi diag -d [deviceId] --singletest 5
-                              It also applies to diag level tests.
 ```
 
 Run test to diagnose GPU
