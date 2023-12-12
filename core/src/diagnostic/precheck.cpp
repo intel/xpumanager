@@ -356,18 +356,18 @@ namespace xpum {
         }
         // GPU i915 driver
         bool is_i915_loaded = false;
-        FILE* f = popen("modinfo -n i915 2>/dev/null", "r");
+        FILE* f = popen("cat /proc/modules | grep \"^i915 \" 2>/dev/null", "r");
         char c_line[1024];
         while (fgets(c_line, 1024, f) != NULL) {
             std::string line(c_line);
-            if (line.find("i915.ko") != std::string::npos) {
+            if (line.find("i915") != std::string::npos) {
                 is_i915_loaded = true;
             }
         }
         pclose(f);
 
         if (!is_i915_loaded) {
-            updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "i915 not loaded", XPUM_I915_NOT_LOADED);
+            updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "Failed to find i915 in /proc/modules.", XPUM_I915_NOT_LOADED);
         } else if (!level0_driver_error_info.empty()) {
             updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, level0_driver_error_info, dependency_issue? XPUM_LEVEL_ZERO_METRICS_INIT_ERROR : XPUM_LEVEL_ZERO_INIT_ERROR);
         }
