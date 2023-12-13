@@ -242,27 +242,29 @@ static bool isGscFwImage(std::vector<char>& buffer) {
 xpum_result_t FirmwareManager::atsmHwConfigCompatibleCheck(std::string meiPath, std::vector<char>& buffer) {
     struct igsc_hw_config img_hw_config, dev_hw_config;
     int ret;
-    // image hw config
-    ret = igsc_image_hw_config((const uint8_t*)buffer.data(), buffer.size(), &img_hw_config);
-    if (ret != IGSC_SUCCESS) {
-        flashFwErrMsg = "Fail to parse image hardware config, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
-        return XPUM_GENERIC_ERROR;
-    }
 
-    // device hw config
     struct igsc_device_handle handle;
 
     memset(&handle, 0, sizeof(handle));
     ret = igsc_device_init_by_device(&handle, meiPath.c_str());
     if (ret != IGSC_SUCCESS) {
-        flashFwErrMsg = "Fail to init device, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+        flashFwErrMsg = "Fail to init device: " + meiPath;
         (void)igsc_device_close(&handle);
         return XPUM_GENERIC_ERROR;
     }
 
+    // image hw config
+    ret = igsc_image_hw_config((const uint8_t*)buffer.data(), buffer.size(), &img_hw_config);
+    if (ret != IGSC_SUCCESS) {
+        flashFwErrMsg = "Fail to parse image hardware config. " + print_device_fw_status(&handle);
+        (void)igsc_device_close(&handle);
+        return XPUM_GENERIC_ERROR;
+    }
+
+    // device hw config
     ret = igsc_device_hw_config(&handle, &dev_hw_config);
     if (ret != IGSC_SUCCESS) {
-        flashFwErrMsg = "Fail to get device hardware config, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+        flashFwErrMsg = "Fail to get device hardware config. " + print_device_fw_status(&handle);
         (void)igsc_device_close(&handle);
         return XPUM_GENERIC_ERROR;
     }
@@ -276,27 +278,29 @@ xpum_result_t FirmwareManager::atsmHwConfigCompatibleCheck(std::string meiPath, 
 xpum_result_t FirmwareManager::isPVCFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer) {
     struct igsc_fw_version img_fw_version, dev_fw_version;
     int ret;
-    // image fw version
-    ret = igsc_image_fw_version((const uint8_t*)buffer.data(), buffer.size(), &img_fw_version);
-    if (ret != IGSC_SUCCESS) {
-        flashFwErrMsg = "Fail to parse image firmware version, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
-        return XPUM_GENERIC_ERROR;
-    }
-    // device fw version
+
     struct igsc_device_handle handle;
 
     memset(&handle, 0, sizeof(handle));
     ret = igsc_device_init_by_device(&handle, meiPath.c_str());
     if (ret != IGSC_SUCCESS) {
-        flashFwErrMsg = "Fail to init device, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+        flashFwErrMsg = "Fail to init device: " + meiPath;
         (void)igsc_device_close(&handle);
         return XPUM_GENERIC_ERROR;
     }
 
+    // image fw version
+    ret = igsc_image_fw_version((const uint8_t*)buffer.data(), buffer.size(), &img_fw_version);
+    if (ret != IGSC_SUCCESS) {
+        flashFwErrMsg = "Fail to parse image firmware version. " + print_device_fw_status(&handle);
+        (void)igsc_device_close(&handle);
+        return XPUM_GENERIC_ERROR;
+    }
+    // device fw version
     memset(&dev_fw_version, 0, sizeof(dev_fw_version));
     ret = igsc_device_fw_version(&handle, &dev_fw_version);
     if (ret != IGSC_SUCCESS) {
-        flashFwErrMsg = "Fail to get device firmware version, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+        flashFwErrMsg = "Fail to get device firmware version. " + print_device_fw_status(&handle);
         (void)igsc_device_close(&handle);
         return XPUM_GENERIC_ERROR;
     }
@@ -380,11 +384,8 @@ xpum_result_t FirmwareManager::runGscOnlyFwFlash(const char* filePath, bool forc
                 device.meiDevicePath.c_str()); 
 
             if (ret) {
-                flashFwErrMsg = "Cannot initialize device: " + 
-                    device.meiDevicePath + ", error code: " + 
-                    std::to_string(ret) + " error message: " + 
-                    transIgscErrCodeToMsg(ret);
-                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", device.meiDevicePath, ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "Cannot initialize device: " + device.meiDevicePath;
+                XPUM_LOG_ERROR("Cannot initialize device: {}", device.meiDevicePath);
                 (void)igsc_device_close(&handle);
                 return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
@@ -392,11 +393,8 @@ xpum_result_t FirmwareManager::runGscOnlyFwFlash(const char* filePath, bool forc
             ret = igsc_device_fw_update_ex(&handle, (const uint8_t*)img.data(), 
                 img.size(), progress_func, this, flags);
             if (ret) {
-                flashFwErrMsg = "Update process failed, error code: " + 
-                    std::to_string(ret) + " error message: " + 
-                    transIgscErrCodeToMsg(ret) + " device: " +
-                    device.meiDevicePath;
-                XPUM_LOG_ERROR("Update process failed, error code: {}, error message: {}", ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "Update process failed. " + print_device_fw_status(&handle);
+                XPUM_LOG_ERROR("Update process failed. {}", print_device_fw_status(&handle));
                 (void)igsc_device_close(&handle);
                 return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
@@ -682,10 +680,8 @@ xpum_result_t FirmwareManager::runGscOnlyFwDataFlash(const char* filePath) {
 
             ret = igsc_device_init_by_device(&handle, device.meiDevicePath.c_str());
             if (ret != IGSC_SUCCESS) {
-                flashFwErrMsg = "Cannot initialize device: " + 
-                device.meiDevicePath + ", error code: " + std::to_string(ret) + 
-                " error message: " + transIgscErrCodeToMsg(ret);
-                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", device.meiDevicePath, ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "Cannot initialize device: " + device.meiDevicePath;
+                XPUM_LOG_ERROR("Cannot initialize device: {}", device.meiDevicePath);
                 igsc_device_close(&handle);
                 return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
@@ -702,11 +698,8 @@ xpum_result_t FirmwareManager::runGscOnlyFwDataFlash(const char* filePath) {
             ret = igsc_device_fwdata_image_update(&handle, oimg, progress_func, this);
 
             if (ret) {
-                flashFwErrMsg = "GFX_DATA update failed, error code: " + 
-                    std::to_string(ret) + " error message: " + 
-                    transIgscErrCodeToMsg(ret) + " device: " + 
-                    device.meiDevicePath;
-                XPUM_LOG_ERROR("GFX_DATA update failed on device {}, error code: {}, error message: {}", device.meiDevicePath, ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "GFX_DATA update failed. " + print_device_fw_status(&handle);
+                XPUM_LOG_ERROR("GFX_DATA update failed on device {}. {}", device.meiDevicePath, print_device_fw_status(&handle));
                 igsc_image_fwdata_release(oimg);
                 igsc_device_close(&handle);
                 return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;

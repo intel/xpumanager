@@ -153,8 +153,8 @@ xpum_result_t FwDataMgmt::flashFwData(FlashFwDataParam &param) {
 
             ret = igsc_device_init_by_device(&handle, devicePath.c_str());
             if (ret != IGSC_SUCCESS) {
-                flashFwErrMsg = "Cannot initialize device: " + devicePath + ", error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
-                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", devicePath, ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "Cannot initialize device: " + devicePath;
+                XPUM_LOG_ERROR("Cannot initialize device: {}", devicePath);
                 igsc_device_close(&handle);
                 pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -173,8 +173,8 @@ xpum_result_t FwDataMgmt::flashFwData(FlashFwDataParam &param) {
             ret = igsc_device_fwdata_image_update(&handle, oimg, progress_func, this);
 
             if (ret) {
-                flashFwErrMsg = "GFX_DATA update failed, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
-                XPUM_LOG_ERROR("GFX_DATA update failed on device {}, error code: {}, error message: {}", devicePath, ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "GFX_DATA update failed. " + print_device_fw_status(&handle);
+                XPUM_LOG_ERROR("GFX_DATA update failed on device {}. {}", devicePath, print_device_fw_status(&handle));
                 igsc_image_fwdata_release(oimg);
                 igsc_device_close(&handle);
                 pDevice->unlock();

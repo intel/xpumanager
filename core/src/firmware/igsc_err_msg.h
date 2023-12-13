@@ -8,4 +8,4 @@
 
 #include <string>
 
-std::string transIgscErrCodeToMsg(int code);
+std::string print_device_fw_status(struct igsc_device_handle *handle);
