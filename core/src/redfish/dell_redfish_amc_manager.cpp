@@ -16,7 +16,6 @@
 #include "detect_usb_interface.h"
 #include "util.h"
 
-#define XPUM_CURL_TIMEOUT 10L
 
 using namespace nlohmann;
 
@@ -239,6 +238,7 @@ bool DELLRedfishAmcManager::init(InitParam& param){
 }
 
 void DELLRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
+    readConfigFile();
     // get gpu fw versions
     std::string url = interfaceHost + "/redfish/v1/UpdateService/FirmwareInventory?$expand=.";
 
@@ -604,6 +604,7 @@ static bool getUpdateResult(std::string interface_host,
 
 void DELLRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     std::lock_guard<std::mutex> lck(mtx);
+    readConfigFile();
     if (task.valid()) {
         param.errCode =  xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         param.callback();

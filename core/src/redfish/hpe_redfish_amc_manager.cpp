@@ -16,7 +16,6 @@
 #include "detect_usb_interface.h"
 #include "util.h"
 
-#define XPUM_CURL_TIMEOUT 10L
 
 #define HPE_REDFISH_HOST_INTERFACE_HOST "https://16.1.15.1"
 
@@ -281,6 +280,7 @@ bool HEPRedfishAmcManager::init(InitParam& param) {
 }
 
 void HEPRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
+    readConfigFile();
     // get gpu fw versions
     std::string url = HPE_REDFISH_HOST_INTERFACE_HOST "/redfish/v1/UpdateService/FirmwareInventory?$expand=.";
 
@@ -542,6 +542,7 @@ static bool uploadImage(FlashAmcFirmwareParam& flashAmcParam, std::string pushUr
 
 void HEPRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     std::lock_guard<std::mutex> lck(mtx);
+    readConfigFile();
     if (task.valid()) {
         param.errCode =  xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         param.callback();

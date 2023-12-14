@@ -12,13 +12,19 @@
 
 namespace xpum {
 
+extern int XPUM_CURL_TIMEOUT;
 class RedfishAmcManager : public AmcManager {
    public:
+    RedfishAmcManager() {
+        readConfigFile();
+    };
     virtual std::string getProtocol() override {
         return "redfish";
     }
 
     static std::shared_ptr<AmcManager> instance();
+
+    void readConfigFile();
 };
 
 std::string getRedfishAmcWarn();

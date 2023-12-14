@@ -16,7 +16,6 @@
 #include "libcurl.h"
 #include "util.h"
 
-#define XPUM_CURL_TIMEOUT 10L
 
 using namespace nlohmann;
 
@@ -431,6 +430,7 @@ static bool getAmcFwVersionByOdataId(DNPRedfishHostInterface interface,
 }
 
 void DenaliPassRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
+    readConfigFile();
     std::vector<std::string> gpuOdataIdList;
     auto errCode = getGPUFwInventoryList(hostInterface, param.username, param.password, gpuOdataIdList, param.errMsg);
     if (errCode != XPUM_OK) {
@@ -621,6 +621,7 @@ static bool getTaskResult(DNPRedfishHostInterface interface,
 
 void DenaliPassRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     std::lock_guard<std::mutex> lck(mtx);
+    readConfigFile();
     if (task.valid()) {
         param.errCode = xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         param.callback();

@@ -16,7 +16,6 @@
 #include "libcurl.h"
 #include "util.h"
 
-#define XPUM_CURL_TIMEOUT 20L
 
 using namespace nlohmann;
 
@@ -276,6 +275,7 @@ bool FlorenceRedfishAmcManager::init(InitParam& param) {
 }
 
 void FlorenceRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
+    readConfigFile();
     // get gpu fw versions
     std::string path = "/redfish/v1/Systems/1/Processors?$expand=.";
     std::stringstream url;
@@ -675,6 +675,7 @@ static bool getJobResult(FlorenceRedfishHostInterface interface,
 
 void FlorenceRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     std::lock_guard<std::mutex> lck(mtx);
+    readConfigFile();
     if (task.valid()) {
         param.errCode = xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         param.callback();
