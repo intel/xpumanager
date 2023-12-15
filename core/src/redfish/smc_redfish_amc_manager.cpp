@@ -15,7 +15,6 @@
 #include "libcurl.h"
 #include "util.h"
 
-#define XPUM_CURL_TIMEOUT 20L
 
 using namespace nlohmann;
 
@@ -332,6 +331,7 @@ bool SMCRedfishAmcManager::init(InitParam& param) {
 }
 
 void SMCRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
+    readConfigFile();
     std::vector<std::string> gpuOdataIdList;
     auto errCode = getGPUFwInventoryList(hostInterface, param.username, param.password, gpuOdataIdList, param.errMsg);
     if (errCode != XPUM_OK) {
@@ -1137,6 +1137,7 @@ static bool getOneTaskUpdateResult(RedfishHostInterface interface,
 
 void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     std::lock_guard<std::mutex> lck(mtx);
+    readConfigFile();
     if (task.valid()) {
         param.errCode =  xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         param.callback();
@@ -1580,6 +1581,7 @@ static xpum_result_t getSlotIdAndSerialNumber(RedfishHostInterface interface,
 }
 
 void SMCRedfishAmcManager::getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) {
+    readConfigFile();
     std::vector<std::string> gpuOdataIdList;
     auto res = getGPUPCIeSlots(hostInterface, param.username, param.password, gpuOdataIdList, param.errMsg);
     if (res)
