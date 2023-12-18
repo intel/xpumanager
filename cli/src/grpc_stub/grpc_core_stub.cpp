@@ -7,6 +7,7 @@
 #include "core_stub.h"
 
 #include <grpc++/grpc++.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include <cassert>
 #include <chrono>
@@ -35,7 +36,9 @@ GrpcCoreStub::GrpcCoreStub(bool priv) {
     }
     std::string unixSockName{unixSockDir + (priv ? "xpum_p.sock" : "xpum_up.sock")};
     std::string serverAddr{"unix://" + unixSockName};
-    this->channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
+    grpc::ChannelArguments args;
+    args.SetInt(GRPC_ARG_ENABLE_HTTP_PROXY, 0);
+    this->channel = grpc::CreateCustomChannel(serverAddr, grpc::InsecureChannelCredentials(), args);
     this->stub = XpumCoreService::NewStub(this->channel);
 }
 
