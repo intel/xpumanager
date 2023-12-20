@@ -3845,7 +3845,8 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                     XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
-                    if (res == ZE_RESULT_SUCCESS) {
+                    if (res == ZE_RESULT_SUCCESS && 
+                            snap2.timestamp != snap1.timestamp) {
                         int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         if (!props.onSubdevice) {
                             current_device_value = value;

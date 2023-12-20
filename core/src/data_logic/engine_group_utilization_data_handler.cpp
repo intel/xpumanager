@@ -50,6 +50,11 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
                 auto pre_extended = pre_data->second->getExtendedDatas()->find(extended_data->first);
                 if (pre_extended != pre_data->second->getExtendedDatas()->end()) {
                     if (extended_data->second.type == ZES_ENGINE_GROUP_COMPUTE_ALL || extended_data->second.type == ZES_ENGINE_GROUP_RENDER_ALL || extended_data->second.type == ZES_ENGINE_GROUP_MEDIA_ALL || extended_data->second.type == ZES_ENGINE_GROUP_COPY_ALL || extended_data->second.type == ZES_ENGINE_GROUP_3D_ALL) {
+                        if (extended_data->second.timestamp == 
+                                pre_extended->second.timestamp) {
+                            ++extended_data;
+                            continue;
+                        }
                         uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
                         if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
                             val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
