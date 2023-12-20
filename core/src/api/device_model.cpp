@@ -25,6 +25,7 @@ int getDeviceModelByPciDeviceId(int deviceId) {
         case 0x0bda:
         case 0x0bdb:
         case 0x0be5:
+        case 0x0b6e:
             return XPUM_DEVICE_MODEL_PVC;
         case 0x4907:
             return XPUM_DEVICE_MODEL_SG1;

@@ -164,7 +164,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
                     auto bdf_pos = uevent.find(bdf_key); 
                     if (bdf_pos != std::string::npos) {
                         auto device_id = uevent.substr(pos + key.length(), 4);
-                        if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0)
+                        if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0 || device_id.compare(0, 3, "0B6") == 0)
                             pvc_gpu_bdfs.insert(uevent.substr(bdf_pos + bdf_key.length(), 12));
                     }
                 }
