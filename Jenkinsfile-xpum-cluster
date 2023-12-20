@@ -249,29 +249,7 @@ spec:
           readOnly: false
       workingDir: "/home/jenkins/agent"
     - name: "kaniko-1"
-      image: "gcr.io/kaniko-project/executor:debug"
-      imagePullPolicy: Always
-      command:
-      - /busybox/cat
-      tty: true
-      resources:
-        requests:
-          memory: "1Gi"
-          cpu: "0.5"
-        limits: 
-          memory: "2Gi"
-          cpu: "1"
-      securityContext:
-        privileged: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - name: docker-config
-          mountPath: /kaniko/.docker
-      workingDir: "/home/jenkins/agent"
-    - name: "kaniko-2"
-      image: "gcr.io/kaniko-project/executor:debug"
+      image: "gcr.io/kaniko-project/executor:v1.9.2-debug"
       imagePullPolicy: Always
       command:
       - /busybox/cat
@@ -586,76 +564,36 @@ spec:
       }
       
       stage('Build Docker Image') {
-        parallel {
-          stage('Create ATS Docker Image') {
-            steps {
-              catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                container(name: 'kaniko-1') {
-                  script {
-                    loadEnvironmentVariables()
-                  }
-                  sh '''pwd && env
-                    cp -rp deployment/docker deployment/docker_ats
-                    cp rest/requirements.txt deployment/docker_ats
-                    cp third-party-programs.txt deployment/docker_ats
-                    mkdir deployment/docker_ats/build-deb && cp build-deb-jammy/xpum*.deb deployment/docker_ats/build-deb
-                    export http_proxy=http://proxy-dmz.intel.com:911
-                    export HTTP_PROXY=http://proxy-dmz.intel.com:911
-                    export https_proxy=http://proxy-dmz.intel.com:912
-                    export HTTPS_PROXY=http://proxy-dmz.intel.com:912
-                    export no_proxy=.intel.com
-                    export NO_PROXY=.intel.com
-                    /kaniko/executor \
-                      --cache=true \
-                      --build-arg http_proxy=http://proxy-dmz.intel.com:911 \
-                      --build-arg HTTP_PROXY=http://proxy-dmz.intel.com:911 \
-                      --build-arg https_proxy=http://proxy-dmz.intel.com:912 \
-                      --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
-                      --build-arg no_proxy=.intel.com \
-                      --build-arg NO_PROXY=.intel.com \
-                      --dockerfile `pwd`/deployment/docker_ats/Dockerfile.ubuntu.22.04 \
-                      --context `pwd`/deployment/docker_ats \
-                      --skip-tls-verify \
-                      --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager-ats:$DOCKER_IMG_TAG
-                  '''
-                }
+        steps {
+          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            container(name: 'kaniko-1') {
+              script {
+                loadEnvironmentVariables()
               }
-            }
-          }
-
-          stage('Create PVC Docker Image') {
-            steps {
-              catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                container(name: 'kaniko-2') {
-                  script {
-                    loadEnvironmentVariables()
-                  }
-                  sh '''pwd && env
-                    cp -rp deployment/docker deployment/docker_pvc
-                    cp rest/requirements.txt deployment/docker_pvc
-                    cp third-party-programs.txt deployment/docker_pvc
-                    mkdir deployment/docker_pvc/build-deb && cp build-deb-jammy/xpum*.deb deployment/docker_pvc/build-deb
-                    export http_proxy=http://proxy-dmz.intel.com:911
-                    export HTTP_PROXY=http://proxy-dmz.intel.com:911
-                    export https_proxy=http://proxy-dmz.intel.com:912
-                    export HTTPS_PROXY=http://proxy-dmz.intel.com:912
-                    export no_proxy=.intel.com
-                    export NO_PROXY=.intel.com
-                    /kaniko/executor \
-                      --cache=true \
-                      --build-arg http_proxy=http://proxy-dmz.intel.com:911 \
-                      --build-arg HTTP_PROXY=http://proxy-dmz.intel.com:911 \
-                      --build-arg https_proxy=http://proxy-dmz.intel.com:912 \
-                      --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
-                      --build-arg no_proxy=.intel.com \
-                      --build-arg NO_PROXY=.intel.com \
-                      --dockerfile `pwd`/deployment/docker_pvc/Dockerfile.ubuntu.22.04.max \
-                      --context `pwd`/deployment/docker_pvc \
-                      --skip-tls-verify \
-                      --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager-pvc:$DOCKER_IMG_TAG
-                  '''
-                }
-              }
+              sh '''pwd && env
+                cp -rp deployment/docker deployment/docker_jammy
+                cp rest/requirements.txt deployment/docker_jammy
+                cp third-party-programs.txt deployment/docker_jammy
+                mkdir deployment/docker_jammy/build-deb && cp build-deb-jammy/xpum*.deb deployment/docker_jammy/build-deb
+                export http_proxy=http://proxy-dmz.intel.com:911
+                export HTTP_PROXY=http://proxy-dmz.intel.com:911
+                export https_proxy=http://proxy-dmz.intel.com:912
+                export HTTPS_PROXY=http://proxy-dmz.intel.com:912
+                export no_proxy=.intel.com
+                export NO_PROXY=.intel.com
+                /kaniko/executor \
+                  --cache=true \
+                  --build-arg http_proxy=http://proxy-dmz.intel.com:911 \
+                  --build-arg HTTP_PROXY=http://proxy-dmz.intel.com:911 \
+                  --build-arg https_proxy=http://proxy-dmz.intel.com:912 \
+                  --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
+                  --build-arg no_proxy=.intel.com \
+                  --build-arg NO_PROXY=.intel.com \
+                  --dockerfile `pwd`/deployment/docker_jammy/Dockerfile.ubuntu.22.04 \
+                  --context `pwd`/deployment/docker_jammy \
+                  --skip-tls-verify \
+                  --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager-jammy:$DOCKER_IMG_TAG
+              '''
             }
           }
         }
