@@ -604,6 +604,7 @@ bool GPUDeviceStub::isOamPlatform(zes_device_handle_t device){
     bool is_OAM = false;
     if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
         switch (props.core.deviceId) {
+            case 0x0bd4:
             case 0x0bd5:
             case 0x0bd6:
             case 0x0bd7:

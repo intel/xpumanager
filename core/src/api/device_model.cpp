@@ -17,6 +17,7 @@ int getDeviceModelByPciDeviceId(int deviceId) {
             return XPUM_DEVICE_MODEL_ATS_M_3;
         case 0x0b69:
         case 0x0bd0:
+        case 0x0bd4:
         case 0x0bd5:
         case 0x0bd6:
         case 0x0bd7:
