@@ -744,29 +744,20 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
-                    zes_mem_properties_t props = {};
-                    props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        zes_mem_state_t sysman_memory_state = {};
-                        sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                        XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
-                        if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
-                            uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                            uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * used * 100 / (props.physicalSize == 0 ? sysman_memory_state.size : props.physicalSize);
-
-                            if (type == MeasurementType::METRIC_MEMORY_USED) {
-                                ret->setCurrent(used);
-                            } else if (type == MeasurementType::METRIC_MEMORY_UTILIZATION) {
-                                ret->setCurrent(utilization);
-                                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                            } 
- 
-                        } else {
-                            exception_msgs["zesMemoryGetState"] = res;
-                        }
+                    zes_mem_state_t sysman_memory_state = {};
+                    sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                    if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
+                        uint64_t used = sysman_memory_state.size - sysman_memory_state.free;
+                        uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * used * 100 / sysman_memory_state.size;
+                        if (type == MeasurementType::METRIC_MEMORY_USED) {
+                            ret->setCurrent(used);
+                        } else if (type == MeasurementType::METRIC_MEMORY_UTILIZATION) {
+                            ret->setCurrent(utilization);
+                            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                        } 
                     } else {
-                        exception_msgs["zesMemoryGetProperties"] = res;
+                        exception_msgs["zesMemoryGetState"] = res;
                     }
                 }
             } else {
