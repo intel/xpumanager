@@ -234,8 +234,8 @@ xpum_result_t GPUDevice::runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexc
             ret = igsc_device_init_by_device(&handle, meiPath.c_str());
             if (ret)
             {
-                flashFwErrMsg = "Cannot initialize device: " + meiPath + ", error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
-                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", meiPath, ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "Cannot initialize device: " + meiPath + ". " + print_device_fw_status(&handle);
+                XPUM_LOG_ERROR("Cannot initialize device: {}. {}", meiPath, print_device_fw_status(&handle));
                 (void)igsc_device_close(&handle);
                 unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -246,8 +246,8 @@ xpum_result_t GPUDevice::runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexc
                                            progress_func, this, flags);
 
             if (ret){
-                flashFwErrMsg = "Update process failed, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
-                XPUM_LOG_ERROR("Update process failed, error code: {}, error message: {}", ret, transIgscErrCodeToMsg(ret));
+                flashFwErrMsg = "Update process failed. " + print_device_fw_status(&handle);
+                XPUM_LOG_ERROR("Update process failed. {}", print_device_fw_status(&handle));
                 (void)igsc_device_close(&handle);
                 unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;

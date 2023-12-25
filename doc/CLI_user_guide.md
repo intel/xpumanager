@@ -15,7 +15,7 @@ This guide describes how to use XPU Manager Command Line Interface to manage Int
 ## Help info
 Show the XPU Manager CLI help info. 
 ```
-./xpumcli 
+xpumcli 
 Intel(R) XPU Manager Command Line Interface -- v1.0 
 Intel(R) XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.  
 Intel(R) XPU Manager is based on Intel(R) oneAPI Level Zero. Before using Intel(R) XPU Manager, the GPU driver and Intel(R) oneAPI Level Zero should be installed rightly.  
@@ -51,7 +51,7 @@ Subcommands:
   
 Show XPU Manager version and Level Zero version. 
 ```
-./xpumcli -v
+xpumcli -v
 CLI:
     Version: 1.0.0.20211217
     Build ID: f847c0fa
@@ -65,7 +65,7 @@ Service:
 ## Discover the devices in this machine
 Help info of the "discovery" subcommand
 ```
-./xpumcli discovery -h
+xpumcli discovery -h
 
 Discover the GPU devices installed on this machine and provide the device info. 
 
@@ -115,7 +115,7 @@ Options:
 
 Discover the devices in this machine
 ```
-./xpumcli discovery
+xpumcli discovery
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
@@ -129,7 +129,7 @@ Discover the devices in this machine
 
 Discover the devices in this machine and get the JSON format output
 ```
-./xpumcli discovery -j
+xpumcli discovery -j
 {
     "device_list": [
         {
@@ -148,7 +148,7 @@ Discover the devices in this machine and get the JSON format output
 
 Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info. 
 ```
-./xpumcli discovery -d 0
+xpumcli discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
@@ -197,7 +197,7 @@ Show the detailed info of one device. The device info includes the model, freque
 
 List the versions of all AMC which can be found on this server. 
 ```
-./xpumcli discovery --listamcversions
+xpumcli discovery --listamcversions
 1 AMC are found
 AMC 1 firmware version: 4.0.0.0
 ```
@@ -205,7 +205,7 @@ AMC 1 firmware version: 4.0.0.0
 ## Manage the devices in groups
 Help info of the group operation
 ```
-./xpumcli group -h
+xpumcli group -h
 
 Group the managed GPU devices.
 
@@ -234,7 +234,7 @@ Options:
  
 Create a group                        
 ```
-./xpumcli group -c -n "testgroup"
+xpumcli group -c -n "testgroup"
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
@@ -245,7 +245,7 @@ Create a group
  
 Add devices to a group
 ```
-./xpumcli group -a -g 1 -d 0 1
+xpumcli group -a -g 1 -d 0 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
@@ -256,7 +256,7 @@ Add devices to a group
  
 List a group info 
 ```
-./xpumcli group -l
+xpumcli group -l
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
@@ -267,7 +267,7 @@ List a group info
  
 Remove devices from a group
 ```
-./xpumcli group -r -d 0 -g 1
+xpumcli group -r -d 0 -g 1
 Successfully remove device [0] from group 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
@@ -279,14 +279,14 @@ Successfully remove device [0] from group 1
  
 Remove a group 
 ```
-./xpumcli group -D -g 1
+xpumcli group -D -g 1
 Successfully remove the group
 ```
  
 ## Get and change XPU Manager settings
 Help message of the "agentset" subcommand.
 ```
-./xpumcli agentset
+xpumcli agentset
 Get or change some XPU Manager settings. 
 
 usage: xpumcli agentset [Options]
@@ -305,7 +305,7 @@ optional arguments:
  
 List the XPU Manager settings
 ```
-./xpumcli agentset -l
+xpumcli agentset -l
 +------------------------+-------------------------------------------------------------------------+
 | Name                   | Value                                                                   |
 +------------------------+-------------------------------------------------------------------------+
@@ -315,7 +315,7 @@ List the XPU Manager settings
 
 Change the XPU Manager sampling period
 ```
-./xpumcli agentset -t 200
+xpumcli agentset -t 200
 +------------------------+-------------------------------------------------------------------------+
 | Name                   | Value                                                                   |
 +------------------------+-------------------------------------------------------------------------+
@@ -327,7 +327,7 @@ Change the XPU Manager sampling period
 ## Get the aggregated device statistics
 Help info for getting the GPU device aggregated statistics 
 ```
-./xpumcli stats -h
+xpumcli stats -h
 
 List the GPU aggregated statistics since last execution of this command or XPU Manager daemon is started.
 
@@ -348,7 +348,7 @@ Options:
  
 List the GPU device aggregated statistics that are collected by XPU Manager. 'Media Engine Freq' is inferred with 'GPU Frequency'. 
 ```
-./xpumcli stats -d 0
+xpumcli stats -d 0
 +----------------------------+---------------------------------------------------------------------+
 | Device ID                  | 0                                                                   |
 +----------------------------+---------------------------------------------------------------------+
@@ -421,12 +421,21 @@ List the GPU device aggregated statistics that are collected by XPU Manager. 'Me
 ## Get the device health status
 Help info of get GPU device component health status
 ```
-./xpumcli health
+xpumcli health
 
 Get the GPU device component health status
 
 Usage: xpumcli health [Options]
   xpumcli health -l
+  xpumcli health -l -j
+  xpumcli health -d [deviceId]
+  xpumcli health -d [pciBdfAddress]
+  xpumcli health -d [deviceId] -j
+  xpumcli health -d [pciBdfAddress] -j
+  xpumcli health -d [deviceId] -c [componentTypeId]
+  xpumcli health -d [pciBdfAddress] -c [componentTypeId] -j
+  xpumcli health -g [groupId]
+  xpumcli health -g [groupId] -j
   xpumcli health -d [deviceId] -c [componentTypeId] --threshold  [threshold]
   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j
   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold]
@@ -444,12 +453,13 @@ optional arguments:
                                 3. GPU Power
                                 4. GPU Memory
                                 5. Xe Link Port
+                                6. GPU Frequency
   --threshold                 Set custom threshold for device component
 ```
  
 Get the GPU device component health status. There are some build-in thresholds for the GPU telemetries. You may also set your custom threshold to help monitor the GPU component health status. 
 ```
-./xpumcli health -l
+xpumcli health -l
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
@@ -480,7 +490,7 @@ Get the GPU device component health status. There are some build-in thresholds f
  
 Change the component custom temperature threshold 
 ```
-./xpumcli health -d 0 -c 1 --threshold 90
+xpumcli health -d 0 -c 1 --threshold 90
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
@@ -518,7 +528,7 @@ Change the component custom temperature threshold
     
 Help info of the device statistics dump. Please note that the metrics 'GPU Energy Consumed', 'Reset Counter', 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 'Media Engine Frequency' is inferred with 'GPU Frequency'.
 ```
-./xpumcli dump
+xpumcli dump
 
 Dump device statistics data.
 
@@ -585,7 +595,7 @@ optional arguments:
 
 Dump the device statistics to screen in CSV format.
 ```
-./xpumcli dump -d 0 -t 0 -m 0,1,2,21,22 -i 1 -n 5
+xpumcli dump -d 0 -t 0 -m 0,1,2,21,22 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz),XL 0/0->1/1 (kB/s),XL 1/1->0/0 (kB/s),Compute Engine 0 (%), Compute Engine 1 (%)
 13:31:43.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
 13:31:44.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
@@ -618,7 +628,7 @@ Dump file path: /usr/lib/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.
 ## Get the system topology
 Help info of get the system topology
 ```
-./xpumcli topology
+xpumcli topology
 
 Get the system topology info.
 
@@ -632,7 +642,7 @@ optional arguments:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
-  -d,--device                 The device ID to query
+  -d,--device                 The device ID or PCI BDF address to query
   -f,--file                   Generate the system topology with the GPU info to a XML file. 
   -m,--matrix                 Print the CPU/GPU topology matrix. 
                                 S: Self
@@ -645,7 +655,7 @@ optional arguments:
 
 Get the hardware topology info which is related to the GPU
 ```
-./xpumcli topology -d 0
+xpumcli topology -d 0
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Topology Information                                                                 |
 +-----------+--------------------------------------------------------------------------------------+
@@ -659,13 +669,13 @@ Get the hardware topology info which is related to the GPU
   
 Generate the system hardware topology to a XML file. 
 ```
-./xpumcli topology -f topo.xml
+xpumcli topology -f topo.xml
 The system topology is generated to the file topo.xml. 
 ```
 
 Generate the CPU/GPU topology matrix. 
 ```
-./xpumcli topology -m
+xpumcli topology -m
 
          GPU 0/0|GPU 0/1|GPU 1/0|GPU 1/1|CPU Affinity
 GPU 0/0 |S      |MDF    |XL*    |XL16   |0-23,48-71
@@ -678,7 +688,7 @@ GPU 1/1 |XL16   |XL*    |MDF    |S      |24-47,72-95
 ## Update the GPU firmware
 Help info of updating GPU firmware
 ```
-./xpumcli updatefw
+xpumcli updatefw
 
 Update GPU firmware.
 
@@ -690,42 +700,47 @@ Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
-  -d,--device                 The device ID
+  -d,--device                 The device ID or PCI BDF address. If it is not specified, all devices will be updated.
   -t,--type                   The firmware name. Valid options: GFX, GFX_DATA, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).
   -f,--file                   The firmware image file path on this server.
   -u,--username               Username used to update AMC firmware through Redfish Host interface
   -p,--password               Password used to update AMC firmware through Redfish Host interface
   -y,--assumeyes              Assume that the answer to any question which would be asked is yes
+  --force                     Force GFX firmware update. This parameter only works for GFX firmware.
 ```
 
 Update GPU GFX firmware
 ```
-./xpumcli updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
-This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
-Start to update firmware:
-Firmware name: GFX
-Image path: /home/test/tools/ATS_M3.bin
-Update firmware successfully. Please reboot OS to take effect. 
+xpumcli updatefw -d 0 -t GFX -f ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin -y
+This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n)
+Device 0 FW version: DG02_2.2271
+Device 1 FW version: DG02_2.2271
+Image FW version: DG02_2.2277
+Do you want to continue? (y/n)
+Start to update firmware
+Firmware Name: GFX
+Image path: /home/test/ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin
+[============================================================] 100 %
+Update firmware successfully.
 ```
 
 Update GPU AMC firmware
 ```
-./xpumcli updatefw -t AMC -f /home/dcm/ats_m_amc_v_3_6_3_0.bin
-CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot.
-Please confirm to proceed ( Y/N ) ?
-Y
+xpumcli updatefw -t AMC -f ats_m_amc_v_6_8_0_0.bin -y
+CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model.
+Please confirm to proceed (y/n)
 Start to update firmware
 Firmware Name: AMC
-Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
-..............Update firmware successfully. Please reboot OS to take effect. 
+Image path: /home/test/ats_m_amc_v_6_8_0_0.bin
+[============================================================] 100 %
+Update firmware successfully.
 
 ```
  
-
 ## Get and change the GPU settings
 Help info of getting/changing the GPU settings
 ```
-./xpumcli config
+xpumcli config
 
 Get and change the GPU settings.
 
@@ -762,12 +777,13 @@ Options:
   --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
                                 BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
   --ppr                       Apply PPR to the device.
+  --force                     Force PPR to run.
 
 ```
 
 show the GPU settings
 ```
-./xpumcli config -d 0
+xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
 | Device Type | Device ID/Tile ID | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
@@ -836,43 +852,43 @@ Succeed to change the core frequency range on GPU 0 tile 0.
  
 Change the GPU power limit.
 ```
-./xpumcli config -d 0 --powerlimit 299
+xpumcli config -d 0 --powerlimit 299
 Succeed to set the power limit on GPU 0.
 ```
 
 Change the GPU memory ECC mode.
 ```
-./xpumcli config -d 0 --memoryecc 0
+xpumcli config -d 0 --memoryecc 0
 Return: Succeed to change the ECC mode to be disabled on GPU 0. Please reset GPU or reboot OS to take effect.
 ```
  
 Change the GPU tile standby mode.
 ```
-./xpumcli config -d 0 -t 0 --standby never
+xpumcli config -d 0 -t 0 --standby never
 Succeed to change the standby mode on GPU 0.
 ```
 
 Change the GPU tile scheduler mode.
 ```
-./xpumcli config -d 0 -t 0 --scheduler timeout,640000
+xpumcli config -d 0 -t 0 --scheduler timeout,640000
 Succeed to change the scheduler mode on GPU 0 tile 0.
 ```
   
 Set the performance factor
 ```
-./xpumcli config -d 0 -t 0 --performancefactor compute,70
+xpumcli config -d 0 -t 0 --performancefactor compute,70
 Succeed to change the compute performance factor to 70 on GPU 0 tile 0.
 ```
 
 Change the Xe Link port status
 ```
-./xpumcli config -d 0 -t 0 --xelinkport 0,1
+xpumcli config -d 0 -t 0 --xelinkport 0,1
 Succeed to change Xe Link port 0 to up.
 ```
 
 Change the Xe Link port beaconing status
 ```
-./xpumcli config -d 0 -t 0 --xelinkportbeaconing 0,1
+xpumcli config -d 0 -t 0 --xelinkportbeaconing 0,1
 Succeed to change Xe Link port 0 beaconing to on.
 ```
   
@@ -886,7 +902,7 @@ The supported policies are list in the table below. For example, if the "GPU Cor
 
 Help info for GPU policy
 ```
-./xpumcli policy
+xpumcli policy
 
 Get and set the GPU policies.
 
@@ -929,13 +945,13 @@ Options:
   
 Create a policy to throttle GPU when the GPU tile temperature is a little high. 
 ```
-./xpumcli policy -c -d 0 --type 1 --condition 1 --threshold 95  --action 1 --throttlefrequencymin 300 --throttlefrequencymax 400
+xpumcli policy -c -d 0 --type 1 --condition 1 --threshold 95  --action 1 --throttlefrequencymin 300 --throttlefrequencymax 400
 Succeed to set the "1. GPU Core Temperature" policy.
 ```
 
 List all supported policies
 ```
-./xpumcli policy --listalltypes
+xpumcli policy --listalltypes
 +-------------------------------+------------------+-----------------------------------------------+
 | Types                         |Conditions        | Actions                                       |
 +-------------------------------+------------------+-----------------------------------------------+
@@ -945,7 +961,7 @@ List all supported policies
 
 List all policies set on the GPU. 
 ```
-./xpumcli policy -l -d 0
+xpumcli policy -l -d 0
 +-----------+-------------------------------+------------------+-----------------------------------+
 | Device ID | Types                         | Conditions       | Actions                           |
 +-----------+-------------------------------+------------------+-----------------------------------+
@@ -956,7 +972,7 @@ List all policies set on the GPU.
   
 Remove a policy.
 ```
-./xpumcli policy -r -d 0 --type 1
+xpumcli policy -r -d 0 --type 1
 Succeed to remove the "1. GPU Core Temperature" policy.
 ```
   
@@ -965,7 +981,7 @@ When running tests on GPU, GPU will be used exclusively. There will be obviously
 
 Help info for GPU diagnostics
 ```
-./xpumcli diag
+xpumcli diag
 
 Run some test suites to diagnose GPU.
 
@@ -1027,7 +1043,7 @@ Options:
 
 Run test to diagnose GPU
 ```
-./xpumcli diag -d 0 -l 1
+xpumcli diag -d 0 -l 1
 Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
 | Device ID              | 0                                                                       |
@@ -1128,12 +1144,19 @@ xpumcli amcsensor
 | AMC ID | Sensors                                                                                 |
 +--------+-----------------------------------------------------------------------------------------+
 | AMC 0  |                                                                                         |
-|        | temp_sensor_0 (degrees C): 41                                                           |
-|        | temp_sensor_1 (degrees C): 39                                                           |
-|        | VCCGT_GPU2_volt (Volts): 0.093                                                          |
-|        | soc_die_temp_1 (degrees C): 46                                                          |
-|        | soc_die_temp_2 (degrees C): 45                                                          |
+|        | temp_sensor_0 (degrees C): 36                                                           |
+|        | temp_sensor_1 (degrees C): 35                                                           |
+|        | VCCGT_GPU2_volt (Volts): 0.015                                                          |
+|        | VCCGT_GPU2_pow (Watts): 0                                                               |
+|        | VCCGT_GPU2_cur (Amps): 0                                                                |
+|        | VCCGT_GPU1_volt (Volts): 0.015                                                          |
+|        | VCCGT_GPU1_pow (Watts): 0                                                               |
+|        | VCCGT_GPU1_cur (Amps): 0                                                                |
+|        | soc_die_temp_1 (degrees C): 42                                                          |
+|        | soc_die_temp_2 (degrees C): 42                                                          |
+|        | total_brd_pwr (Watts): 38                                                               |
 +--------+-----------------------------------------------------------------------------------------+
+
 ```
 
 
@@ -1361,3 +1384,35 @@ The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/co
 ### Limitations
  * XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand virtual GPU utilizations by looking at metrics of PF. 
  * XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available
+
+ ## Get the process info which are using GPU and their GPU memory usage
+Help info of GPU process info
+```
+xpumcli ps -h
+List status of processes.
+
+Usage: xpumcli ps [Options]
+  xpumcli ps
+  xpumcli ps -d [deviceId]
+  xpumcli ps -d [deviceId] -j
+
+PID:      Process ID
+Command:  Process command name
+DeviceID: Device ID
+SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)
+MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -d,--device                 The device ID or PCI BDF address
+```
+  
+Show the process info which are using GPU
+```
+xpumcli ps
+PID       Command             DeviceID       SHR            MEM
+12961     xpumd               0              0              1966
+12961     xpumd               1              0              1966
+```

@@ -287,7 +287,7 @@ namespace xpum {
                 props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
-                    zes_power_sustained_limit_t sustained;
+                    zes_power_sustained_limit_t sustained = {};
                     status = zesPowerGetLimits(power, &sustained, nullptr, nullptr);
                     if (status == ZE_RESULT_SUCCESS) {
                         susPower = sustained.power / 1000;
@@ -354,7 +354,7 @@ namespace xpum {
                 props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
-                    zes_power_sustained_limit_t sustained;
+                    zes_power_sustained_limit_t sustained = {};
                     sustained.enabled = true;
                     sustained.power = powerLimit;
                     status = zesPowerSetLimits(power, &sustained, nullptr, nullptr);
@@ -408,7 +408,7 @@ namespace xpum {
                             continue;
                         } 
                     }
-                    zes_freq_range_t range;
+                    zes_freq_range_t range = {};
                     status = zesFrequencyGetRange(freq, &range);
                     if (status == ZE_RESULT_SUCCESS) {
                         min = range.min;
@@ -466,7 +466,7 @@ namespace xpum {
                             continue;
                         }
                     }
-                    zes_freq_range_t range;
+                    zes_freq_range_t range = {};
                     range.min = min;
                     range.max = max;
                     status = zesFrequencySetRange(freq, &range);
@@ -536,7 +536,8 @@ namespace xpum {
                 zes_power_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    zes_power_energy_counter_t snap1, snap2;
+                    zes_power_energy_counter_t snap1 = {};
+                    zes_power_energy_counter_t snap2 = {};
                     XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t time1 = Utility::getCurrentMicrosecond();
@@ -577,7 +578,7 @@ namespace xpum {
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto perf : hPerf) {
                     zes_perf_properties_t prop = {};
-                    double factor;
+                    double factor = 0;
                     XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetProperties(perf, &prop));
                     if (res == ZE_RESULT_SUCCESS) {
                         XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetConfig(perf, &factor));
@@ -620,7 +621,7 @@ namespace xpum {
                     if (props.type != ZES_FREQ_DOMAIN_GPU) {
                         continue;
                     }
-                    zes_freq_state_t freq_state;
+                    zes_freq_state_t freq_state = {};
                     XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                     if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
                         if (type == MeasurementType::METRIC_FREQUENCY)
@@ -743,29 +744,20 @@ namespace xpum {
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
-                    zes_mem_properties_t props = {};
-                    props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        zes_mem_state_t sysman_memory_state = {};
-                        sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                        XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
-                        if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
-                            uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                            uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * used * 100 / (props.physicalSize == 0 ? sysman_memory_state.size : props.physicalSize);
-
-                            if (type == MeasurementType::METRIC_MEMORY_USED) {
-                                ret->setCurrent(used);
-                            } else if (type == MeasurementType::METRIC_MEMORY_UTILIZATION) {
-                                ret->setCurrent(utilization);
-                                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                            } 
- 
-                        } else {
-                            exception_msgs["zesMemoryGetState"] = res;
-                        }
+                    zes_mem_state_t sysman_memory_state = {};
+                    sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                    if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
+                        uint64_t used = sysman_memory_state.size - sysman_memory_state.free;
+                        uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * used * 100 / sysman_memory_state.size;
+                        if (type == MeasurementType::METRIC_MEMORY_USED) {
+                            ret->setCurrent(used);
+                        } else if (type == MeasurementType::METRIC_MEMORY_UTILIZATION) {
+                            ret->setCurrent(utilization);
+                            ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                        } 
                     } else {
-                        exception_msgs["zesMemoryGetProperties"] = res;
+                        exception_msgs["zesMemoryGetState"] = res;
                     }
                 }
             } else {
@@ -820,7 +812,8 @@ namespace xpum {
                         continue;
                     }
 
-                    zes_mem_bandwidth_t s1, s2;
+                    zes_mem_bandwidth_t s1 = {};
+                    zes_mem_bandwidth_t s2 = {};
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s1));
                     if (res == ZE_RESULT_SUCCESS) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
@@ -874,7 +867,7 @@ namespace xpum {
                         continue;
                     }
 
-                    zes_mem_bandwidth_t mem_bandwidth1;
+                    zes_mem_bandwidth_t mem_bandwidth1 = {};
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth1));
                     if (res == ZE_RESULT_SUCCESS) {
                         if (type == MeasurementType::METRIC_MEMORY_READ) {
@@ -884,7 +877,7 @@ namespace xpum {
                         } else {
                             int sampling_interval = Configuration::MEMORY_READ_WRITE_INTERNAL_PERIOD;
                             std::this_thread::sleep_for(std::chrono::milliseconds(sampling_interval));
-                            zes_mem_bandwidth_t mem_bandwidth2;
+                            zes_mem_bandwidth_t mem_bandwidth2 = {};
                             XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 double read_val = -1;
@@ -954,6 +947,7 @@ namespace xpum {
             exception_msgs["zesDeviceGetProperties"] = res;
         }
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
+        XPUM_LOG_DEBUG("res = {}, engine_count = {}", res, engine_count);
         if (res == ZE_RESULT_SUCCESS && engine_count > 0) {
             std::vector<zes_engine_handle_t> engines(engine_count);
             std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
@@ -1005,14 +999,20 @@ namespace xpum {
                             std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::ENGINE_GPU_UTILIZATION_INTERNAL_PERIOD));
                             zes_engine_stats_t snap2 = {};
                             XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap2));
-                            double val = (snap2.activeTime - snap1.activeTime) * 100.0 / (snap2.timestamp - snap1.timestamp);
-                            if (val > 100.0)
-                                val = 100.0;
-                            if (res == ZE_RESULT_SUCCESS) {
+                            double val = 0;
+                            bool valid = false;
+                            if (snap2.timestamp > snap1.timestamp) {
+                                val = (snap2.activeTime - snap1.activeTime) * 100.0 / (snap2.timestamp - snap1.timestamp);
+                                if (val <= 100.0 && val >= 0) {
+                                    valid = true;
+                                }
+                            }
+                            if (res == ZE_RESULT_SUCCESS && valid == true) {
                                 ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                 ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                             } else {
                                 exception_msgs["zesEngineGetActivity"] = res;
+                                XPUM_LOG_DEBUG("s1.activeTime = {}, s1.timestamp = {}, s2.activeTime = {}, s2.timestamp = {}", snap1.activeTime, snap1.timestamp, snap2.activeTime, snap2.timestamp);                            
                             }
                         } else {
                             exception_msgs["zesEngineGetActivity"] = res;
@@ -1074,7 +1074,7 @@ namespace xpum {
                 zes_power_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    zes_power_energy_counter_t snap;
+                    zes_power_energy_counter_t snap = {};
                     XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap));
                     if (res == ZE_RESULT_SUCCESS) {
                         ret->setCurrent(snap.energy * 1.0 / 1000);
@@ -1344,7 +1344,7 @@ namespace xpum {
                 XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetProperties(hFreq, &freqProps));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
-                        zes_freq_state_t freqState;
+                        zes_freq_state_t freqState = {};
                         XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetState(hFreq, &freqState));
                         if (res == ZE_RESULT_SUCCESS) {
                             ret->setCurrent(freqState.throttleReasons);

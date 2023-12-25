@@ -73,6 +73,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#limitations">Limitations</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage">Get the process info which are using GPU and their GPU memory usage</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a></li>
@@ -206,6 +207,14 @@
                               <span class="mf">19.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">EUs</span>
                               <span class="mf">20.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Engines</span>
                               <span class="mf">21.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Enhancement</span> <span class="n">Engines</span>
+                              <span class="mf">22.</span> <span class="n">GFX</span> <span class="n">Firmware</span> <span class="n">Status</span>
+                              <span class="mf">23.</span> <span class="n">PCI</span> <span class="n">Vendor</span> <span class="n">ID</span>
+                              <span class="mf">24.</span> <span class="n">PCI</span> <span class="n">Device</span> <span class="n">ID</span>
+  <span class="o">--</span><span class="n">listamcversions</span>           <span class="n">Show</span> <span class="nb">all</span> <span class="n">AMC</span> <span class="n">firmware</span> <span class="n">versions</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">u</span><span class="p">,</span><span class="o">--</span><span class="n">username</span>               <span class="n">Username</span> <span class="n">used</span> <span class="n">to</span> <span class="n">authenticate</span> <span class="k">for</span> <span class="n">host</span> <span class="n">redfish</span> <span class="n">access</span>
+  <span class="o">-</span><span class="n">p</span><span class="p">,</span><span class="o">--</span><span class="n">password</span>               <span class="n">Password</span> <span class="n">used</span> <span class="n">to</span> <span class="n">authenticate</span> <span class="k">for</span> <span class="n">host</span> <span class="n">redfish</span> <span class="n">access</span>
+
+
 
 
 </pre></div>
@@ -293,6 +302,13 @@
 
 </pre></div>
 </div>
+<p>Show all AMC firmware versions. For Redfish host interface, the BMC credential need be specified. For IPMI interface, the BMC credential is not required.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">--</span><span class="n">listamcversions</span>
+<span class="mi">2</span> <span class="n">AMC</span> <span class="n">are</span> <span class="n">found</span>
+<span class="n">AMC</span> <span class="mi">0</span> <span class="n">firmware</span> <span class="n">version</span><span class="p">:</span> <span class="mf">6.8.0.0</span>
+<span class="n">AMC</span> <span class="mi">1</span> <span class="n">firmware</span> <span class="n">version</span><span class="p">:</span> <span class="mf">6.8.0.0</span>
+</pre></div>
+</div>
 </section>
 <section id="get-the-system-topology">
 <h2>Get the system topology<a class="headerlink" href="#get-the-system-topology" title="Permalink to this headline"></a></h2>
@@ -367,18 +383,28 @@
   <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
   <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
 
-  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span><span class="o">.</span> <span class="n">If</span> <span class="n">it</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">specified</span><span class="p">,</span> <span class="nb">all</span> <span class="n">devices</span> <span class="n">will</span> <span class="n">be</span> <span class="n">updated</span><span class="o">.</span>
   <span class="o">-</span><span class="n">t</span><span class="p">,</span><span class="o">--</span><span class="nb">type</span>                   <span class="n">The</span> <span class="n">firmware</span> <span class="n">name</span><span class="o">.</span> <span class="n">Valid</span> <span class="n">options</span><span class="p">:</span> <span class="n">GFX</span><span class="p">,</span> <span class="n">GFX_DATA</span><span class="o">.</span>
   <span class="o">-</span><span class="n">f</span><span class="p">,</span><span class="o">--</span><span class="n">file</span>                   <span class="n">The</span> <span class="n">firmware</span> <span class="n">image</span> <span class="n">file</span> <span class="n">path</span> <span class="n">on</span> <span class="n">this</span> <span class="n">server</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">u</span><span class="p">,</span><span class="o">--</span><span class="n">username</span>               <span class="n">Username</span> <span class="n">used</span> <span class="n">to</span> <span class="n">authenticate</span> <span class="k">for</span> <span class="n">host</span> <span class="n">redfish</span> <span class="n">access</span>
+  <span class="o">-</span><span class="n">p</span><span class="p">,</span><span class="o">--</span><span class="n">password</span>               <span class="n">Password</span> <span class="n">used</span> <span class="n">to</span> <span class="n">authenticate</span> <span class="k">for</span> <span class="n">host</span> <span class="n">redfish</span> <span class="n">access</span>
+  <span class="o">-</span><span class="n">y</span><span class="p">,</span><span class="o">--</span><span class="n">assumeyes</span>              <span class="n">Assume</span> <span class="n">that</span> <span class="n">the</span> <span class="n">answer</span> <span class="n">to</span> <span class="nb">any</span> <span class="n">question</span> <span class="n">which</span> <span class="n">would</span> <span class="n">be</span> <span class="n">asked</span> <span class="ow">is</span> <span class="n">yes</span>
+  <span class="o">--</span><span class="n">force</span>                     <span class="n">Force</span> <span class="n">GFX</span> <span class="n">firmware</span> <span class="n">update</span><span class="o">.</span> <span class="n">This</span> <span class="n">parameter</span> <span class="n">only</span> <span class="n">works</span> <span class="k">for</span> <span class="n">GFX</span> <span class="n">firmware</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>Update GPU GFX firmware</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>xpu-smi updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
-This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
-Start to update firmware:
-Firmware name: GFX
-Image path: /home/test/tools/ATS_M3.bin
-Update firmware successfully. Please reboot OS to take effect. 
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>xpu-smi updatefw -t GFX -d 0 -f ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin -y
+This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n)
+Device 0 FW version: DG02_2.2271
+Device 1 FW version: DG02_2.2271
+Image FW version: DG02_2.2277
+Do you want to continue? (y/n)
+Start to update firmware
+Firmware Name: GFX
+Image path: /home/test/ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin
+[============================================================] 100 %
+Update firmware successfully.
+
 </pre></div>
 </div>
 </section>
@@ -441,6 +467,9 @@ Update firmware successfully. Please reboot OS to take effect.
                                     <span class="mf">7.</span> <span class="n">Computation</span> <span class="n">functional</span> <span class="n">test</span>
                                     <span class="mf">8.</span> <span class="n">Media</span> <span class="n">Codec</span> <span class="n">functional</span> <span class="n">test</span>
                                     <span class="mf">9.</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">Throughput</span>
+                              <span class="n">Note</span> <span class="n">that</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">multi</span> <span class="n">NUMA</span> <span class="n">node</span> <span class="n">server</span><span class="p">,</span> <span class="n">it</span> <span class="n">may</span> <span class="n">need</span> <span class="n">to</span> <span class="n">use</span> <span class="n">numactl</span> <span class="n">to</span> <span class="n">specify</span> <span class="n">which</span> <span class="n">node</span> <span class="n">the</span> <span class="n">PCIe</span> <span class="n">bandwidth</span> <span class="n">test</span> <span class="n">runs</span> <span class="n">on</span><span class="o">.</span>
+                              <span class="n">Usage</span><span class="p">:</span> <span class="n">numactl</span> <span class="p">[</span> <span class="o">--</span><span class="n">membind</span> <span class="n">nodes</span> <span class="p">]</span> <span class="p">[</span> <span class="o">--</span><span class="n">cpunodebind</span> <span class="n">nodes</span> <span class="p">]</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">--</span><span class="n">singletest</span> <span class="mi">5</span>
+                              <span class="n">It</span> <span class="n">also</span> <span class="n">applies</span> <span class="n">to</span> <span class="n">diag</span> <span class="n">level</span> <span class="n">tests</span><span class="o">.</span>
 
 </pre></div>
 </div>
@@ -557,9 +586,9 @@ Update firmware successfully. Please reboot OS to take effect.
   <span class="o">--</span><span class="n">xelinkport</span>                <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">down</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">up</span><span class="o">.</span>
   <span class="o">--</span><span class="n">xelinkportbeaconing</span>       <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">beaconing</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">off</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">on</span><span class="o">.</span>
   <span class="o">--</span><span class="n">memoryecc</span>                 <span class="n">Enable</span><span class="o">/</span><span class="n">disable</span> <span class="n">memory</span> <span class="n">ECC</span> <span class="n">setting</span><span class="o">.</span> <span class="mi">0</span><span class="p">:</span><span class="n">disable</span><span class="p">;</span> <span class="mi">1</span><span class="p">:</span><span class="n">enable</span>
-  <span class="o">--</span><span class="n">reset</span>                     <span class="n">Reset</span> <span class="n">device</span> <span class="n">by</span> <span class="n">SBR</span> <span class="p">(</span><span class="n">Secondary</span> <span class="n">Bus</span> <span class="n">Reset</span><span class="p">)</span><span class="o">.</span> <span class="n">For</span> <span class="n">Max</span> <span class="n">series</span> <span class="n">GPU</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=off&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span> <span class="n">when</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">enabled</span> <span class="ow">in</span> 
-                                <span class="n">BIOS</span><span class="o">.</span> <span class="n">If</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=on&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span><span class="o">.</span> 
-  <span class="o">--</span><span class="n">ppr</span>                         <span class="n">Apply</span> <span class="n">PPR</span> <span class="n">to</span> <span class="n">the</span> <span class="n">device</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">reset</span>                     <span class="n">Reset</span> <span class="n">device</span> <span class="n">by</span> <span class="n">SBR</span> <span class="p">(</span><span class="n">Secondary</span> <span class="n">Bus</span> <span class="n">Reset</span><span class="p">)</span><span class="o">.</span> <span class="n">For</span> <span class="n">Max</span> <span class="n">series</span> <span class="n">GPU</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=off&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span> <span class="n">when</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">enabled</span> <span class="ow">in</span> <span class="n">BIOS</span><span class="o">.</span> <span class="n">If</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=on&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span><span class="o">.</span> 
+  <span class="o">--</span><span class="n">ppr</span>                       <span class="n">Apply</span> <span class="n">PPR</span> <span class="n">to</span> <span class="n">the</span> <span class="n">device</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">force</span>                     <span class="n">Force</span> <span class="n">PPR</span> <span class="n">to</span> <span class="n">run</span><span class="o">.</span>
 
 </pre></div>
 </div>
@@ -750,14 +779,21 @@ Update firmware successfully. Please reboot OS to take effect.
 <span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+
 
 <span class="n">optional</span> <span class="n">arguments</span><span class="p">:</span>
   <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
   <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
 
   <span class="o">-</span><span class="n">l</span><span class="p">,</span><span class="o">--</span><span class="nb">list</span>                   <span class="n">Display</span> <span class="n">health</span> <span class="n">info</span> <span class="k">for</span> <span class="nb">all</span> <span class="n">devices</span>
-  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span>
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
   <span class="o">-</span><span class="n">c</span><span class="p">,</span><span class="o">--</span><span class="n">component</span>              <span class="n">Component</span> <span class="n">types</span>
                                 <span class="mf">1.</span> <span class="n">GPU</span> <span class="n">Core</span> <span class="n">Temperature</span>
                                 <span class="mf">2.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Temperature</span>
@@ -1150,6 +1186,38 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 <li><p>XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available</p></li>
 </ul>
 </section>
+</section>
+<section id="get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage">
+<h2>Get the process info which are using GPU and their GPU memory usage<a class="headerlink" href="#get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage" title="Permalink to this headline"></a></h2>
+<p>Help info of GPU process info</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">ps</span> <span class="o">-</span><span class="n">h</span>
+<span class="n">List</span> <span class="n">status</span> <span class="n">of</span> <span class="n">processes</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">ps</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">ps</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">ps</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">ps</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+
+<span class="n">PID</span><span class="p">:</span>      <span class="n">Process</span> <span class="n">ID</span>
+<span class="n">Command</span><span class="p">:</span>  <span class="n">Process</span> <span class="n">command</span> <span class="n">name</span>
+<span class="n">DeviceID</span><span class="p">:</span> <span class="n">Device</span> <span class="n">ID</span>
+<span class="n">SHR</span><span class="p">:</span>      <span class="n">The</span> <span class="n">size</span> <span class="n">of</span> <span class="n">shared</span> <span class="n">device</span> <span class="n">memory</span> <span class="n">mapped</span> <span class="n">into</span> <span class="n">this</span> <span class="n">process</span> <span class="p">(</span><span class="n">may</span> <span class="ow">not</span> <span class="n">necessarily</span> <span class="n">be</span> <span class="n">resident</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span> <span class="n">at</span> <span class="n">the</span> <span class="n">time</span> <span class="n">of</span> <span class="n">reading</span><span class="p">)</span> <span class="p">(</span><span class="n">kB</span><span class="p">)</span>
+<span class="n">MEM</span><span class="p">:</span>      <span class="n">Device</span> <span class="n">memory</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">bytes</span> <span class="n">allocated</span> <span class="n">by</span> <span class="n">this</span> <span class="n">process</span> <span class="p">(</span><span class="n">may</span> <span class="ow">not</span> <span class="n">necessarily</span> <span class="n">be</span> <span class="n">resident</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span> <span class="n">at</span> <span class="n">the</span> <span class="n">time</span> <span class="n">of</span> <span class="n">reading</span><span class="p">)</span> <span class="p">(</span><span class="n">kB</span><span class="p">)</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
+</pre></div>
+</div>
+<p>Show the process info which are using GPU</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">ps</span>
+<span class="n">PID</span>       <span class="n">Command</span>             <span class="n">DeviceID</span>       <span class="n">SHR</span>            <span class="n">MEM</span>
+<span class="mi">12961</span>     <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span>             <span class="mi">0</span>              <span class="mi">0</span>              <span class="mi">1966</span>
+<span class="mi">12961</span>     <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span>             <span class="mi">1</span>              <span class="mi">0</span>              <span class="mi">1966</span>
+</pre></div>
+</div>
 </section>
 </section>
 

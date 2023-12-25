@@ -3,7 +3,7 @@ Intel(R) XPU Manager is a free and open-source tool for monitoring and managing 
 
 It is designed to simplify administration, maximize reliability and uptime, and improve utilization.
 
-XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely. Intel(R) XPU System Management Interface (XPU-SMI) is the daemon-less version of XPU Manager and it only provides the local interface. XPU-SMI feature scope is the subset of XPU Manager. Their features are listed in the table below. Please note that XPU-SMI has been included in the GPU driver repository. If you want to use XPU Manager, please uninstall XPU-SMI and install XPU Manager. 
+XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely. Intel(R) XPU System Management Interface (XPU-SMI) is the daemon-less version of XPU Manager and it only provides the local interface. XPU-SMI feature scope is the subset of XPU Manager. Their features are listed in the table below. Please note that XPU-SMI and XPU Manager can't be installed or executed on the same system due to some resource conflict. XPU-SMI has been included in the GPU driver repository. If you want to use XPU Manager, please uninstall XPU-SMI and install XPU Manager. 
 
 amcmcli is a portable CLI tool to manage GPU AMC firmware on Linux OS. It is independent of GPU driver. 
 
@@ -74,8 +74,8 @@ Update firmware successfully.
 ```
 
  
-## Feature set of XPU Manager, XPU-SMI and Windows CLI tool
-|                           | XPU Manager            | XPU-SMI              | Windows CLI tool             | amcmcli         |
+## Feature set of XPU Manager, XPU-SMI and XPU-SMI Windows CLI tool
+|                           | XPU Manager            | XPU-SMI              | XPU-SMI Windows CLI          | amcmcli         |
 | :------------------------ | :--------------------: | :------------------: | :--------------------------: | :-------------: |
 | Device Info and Topology  | Yes                    | Yes                  | Yes                          | No              |
 | GPU Telemetries           | Yes (aggregated data)  | Yes (real-time data) | Yes (real-time data)         | No              |
@@ -98,16 +98,16 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 ## Supported OSes
 * XPU Manager
 	* Ubuntu 20.04.3/22.04
-	* RHEL 8.5/8.6/8.8/9.2
+	* RHEL 8.8/9.2
 	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9
-	* SLES 15 SP3/SP4
+	* SLES 15 SP4/SP5
 * XPU-SMI
 	* Ubuntu 20.04.3/22.04
-	* RHEL 8.5/8.6/8.8/9.2
+	* RHEL 8.8/9.2
 	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9
-	* SLES 15 SP3/SP4
+	* SLES 15 SP4/SP5
 	* Debian 10.13
 	* Windows Server 2019/2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
   
@@ -121,6 +121,7 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
 * Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
 * Refer to [XPU Manager/XPU-SMI API documents](https://intel.github.io/xpumanager/smi_index.html) to integrate the library or RESTFul interface. 
+* A simple introduction video on [Youtube](https://www.youtube.com/watch?v=1bKeqlriDX0).
  
 ## Architecture
 ![XPU Manager Architecture](doc/img/architecture.PNG)

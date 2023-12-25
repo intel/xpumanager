@@ -97,6 +97,14 @@ Options:
                               19. Number of EUs
                               20. Number of Media Engines
                               21. Number of Media Enhancement Engines
+                              22. GFX Firmware Status
+                              23. PCI Vendor ID
+                              24. PCI Device ID
+  --listamcversions           Show all AMC firmware versions.
+  -u,--username               Username used to authenticate for host redfish access
+  -p,--password               Password used to authenticate for host redfish access
+
+
 
 
 ```
@@ -190,6 +198,14 @@ Device ID,Device Name,Vendor Name,Core Clock Rate
 
 ```
 
+Show all AMC firmware versions. For Redfish host interface, the BMC credential need be specified. For IPMI interface, the BMC credential is not required. 
+```
+xpu-smi discovery --listamcversions
+2 AMC are found
+AMC 0 firmware version: 6.8.0.0
+AMC 1 firmware version: 6.8.0.0
+```
+
 ## Get the system topology
 Help info of get the system topology
 ```
@@ -266,19 +282,29 @@ Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
-  -d,--device                 The device ID or PCI BDF address
+  -d,--device                 The device ID or PCI BDF address. If it is not specified, all devices will be updated.
   -t,--type                   The firmware name. Valid options: GFX, GFX_DATA.
   -f,--file                   The firmware image file path on this server.
+  -u,--username               Username used to authenticate for host redfish access
+  -p,--password               Password used to authenticate for host redfish access
+  -y,--assumeyes              Assume that the answer to any question which would be asked is yes
+  --force                     Force GFX firmware update. This parameter only works for GFX firmware.
 ```
 
 Update GPU GFX firmware
 ```
-xpu-smi updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
-This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
-Start to update firmware:
-Firmware name: GFX
-Image path: /home/test/tools/ATS_M3.bin
-Update firmware successfully. Please reboot OS to take effect. 
+xpu-smi updatefw -t GFX -d 0 -f ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin -y
+This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n)
+Device 0 FW version: DG02_2.2271
+Device 1 FW version: DG02_2.2271
+Image FW version: DG02_2.2277
+Do you want to continue? (y/n)
+Start to update firmware
+Firmware Name: GFX
+Image path: /home/test/ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin
+[============================================================] 100 %
+Update firmware successfully.
+
 ```
   
 ## Diagnose GPU with different test suites
@@ -341,6 +367,9 @@ Options:
                                     7. Computation functional test
                                     8. Media Codec functional test
                                     9. Xe Link Throughput
+                              Note that in a multi NUMA node server, it may need to use numactl to specify which node the PCIe bandwidth test runs on.
+                              Usage: numactl [ --membind nodes ] [ --cpunodebind nodes ] xpu-smi diag -d [deviceId] --singletest 5
+                              It also applies to diag level tests.
 
 ```
 
@@ -371,7 +400,7 @@ Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
 
 ```
-
+  
 Check the GPU status
 ```
 xpu-smi diag --precheck
@@ -460,9 +489,9 @@ Options:
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
-  --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in 
-                                BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
-  --ppr                         Apply PPR to the device.
+  --reset                     Reset device by SBR (Secondary Bus Reset). For Max series GPU, add "pci=realloc=off" into the Linux kernel boot parameter when SR-IOV is enabled in BIOS. If SR-IOV is disabled, add "pci=realloc=on" into the Linux kernel boot parameter. 
+  --ppr                       Apply PPR to the device.
+  --force                     Force PPR to run.
 
 ```
 
@@ -662,14 +691,21 @@ Get the GPU device component health status
 Usage: xpu-smi health [Options]
   xpu-smi health -l
   xpu-smi health -l -j
+  xpu-smi health -d [deviceId]
   xpu-smi health -d [deviceId] -j
+  xpu-smi health -d [pciBdfAddress]
+  xpu-smi health -d [deviceId] -j
+  xpu-smi health -d [pciBdfAddress] -j
+  xpu-smi health -d [deviceId] -c [componentTypeId]
+  xpu-smi health -d [pciBdfAddress] -c [componentTypeId] -j
+
 
 optional arguments:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
   -l,--list                   Display health info for all devices
-  -d,--device                 The device ID
+  -d,--device                 The device ID or PCI BDF address
   -c,--component              Component types
                                 1. GPU Core Temperature
                                 2. GPU Memory Temperature
@@ -1034,3 +1070,35 @@ The advanced configurations of the virtual GPU are in the file, /usr/lib/xpu-smi
 ### Limitations
  * XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand VF utilizations by looking at metrics of PF. 
  * XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available
+
+## Get the process info which are using GPU and their GPU memory usage
+Help info of GPU process info
+```
+xpu-smi ps -h
+List status of processes.
+
+Usage: xpu-smi ps [Options]
+  xpu-smi ps
+  xpu-smi ps -d [deviceId]
+  xpu-smi ps -d [deviceId] -j
+
+PID:      Process ID
+Command:  Process command name
+DeviceID: Device ID
+SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)
+MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -d,--device                 The device ID or PCI BDF address
+```
+  
+Show the process info which are using GPU
+```
+xpu-smi ps
+PID       Command             DeviceID       SHR            MEM
+12961     xpu-smi             0              0              1966
+12961     xpu-smi             1              0              1966
+```

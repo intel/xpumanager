@@ -139,6 +139,8 @@ linux_os_release_t getOsRelease() {
                 return LINUX_OS_RELEASE_RHEL;
             } else if (value.find("debian") != std::string::npos) {
                 return LINUX_OS_RELEASE_DEBIAN;
+            } else if (value.find("openEuler") != std::string::npos) {
+                return LINUX_OS_RELEASE_OPEN_EULER;
             } else {
                 return LINUX_OS_RELEASE_UNKNOWN;
             }

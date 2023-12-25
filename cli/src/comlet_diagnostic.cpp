@@ -187,8 +187,7 @@ Alternatively the strings \"yesterday\", \"today\" are also understood.\n\
 Relative times also may be specified, prefixed with \"-\" referring to times before the current time.\n\
 Scanning would start from the latest boot if it is not specified.");
 
-    auto singleTestIdList = addOption("--singletest", this->opts->singleTestIdList,
-              "Selectively run some particular tests. Separated by the comma.\n\
+std::string singleTestIdListDesc = "Selectively run some particular tests. Separated by the comma.\n\
       1. Computation\n\
       2. Memory Error\n\
       3. Memory Bandwidth\n\
@@ -197,7 +196,13 @@ Scanning would start from the latest boot if it is not specified.");
       6. Power\n\
       7. Computation functional test\n\
       8. Media Codec functional test\n\
-      9. Xe Link Throughput");
+      9. Xe Link Throughput";
+#ifdef DAEMONLESS  
+    singleTestIdListDesc += "\nNote that in a multi NUMA node server, it may need to use numactl to specify which node the PCIe bandwidth test runs on.\n\
+Usage: numactl [ --membind nodes ] [ --cpunodebind nodes ] xpu-smi diag -d [deviceId] --singletest 5\n\
+It also applies to diag level tests.";
+#endif
+    auto singleTestIdList = addOption("--singletest", this->opts->singleTestIdList, singleTestIdListDesc);  
     singleTestIdList->delimiter(',');
     singleTestIdList->check(CLI::Range(1, (int)testIdToType.size()));
 

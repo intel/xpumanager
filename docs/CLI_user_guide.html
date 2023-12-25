@@ -76,6 +76,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#limitations">Limitations</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage">Get the process info which are using GPU and their GPU memory usage</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
@@ -128,7 +129,7 @@
 <section id="help-info">
 <h2>Help info<a class="headerlink" href="#help-info" title="Permalink to this headline"></a></h2>
 <p>Show the XPU Manager CLI help info.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> 
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> 
 <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="n">Command</span> <span class="n">Line</span> <span class="n">Interface</span> <span class="o">--</span> <span class="n">v1</span><span class="mf">.0</span> 
 <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="n">Command</span> <span class="n">Line</span> <span class="n">Interface</span> <span class="n">provides</span> <span class="n">the</span> <span class="n">Intel</span> <span class="n">data</span> <span class="n">center</span> <span class="n">GPU</span> <span class="n">model</span> <span class="ow">and</span> <span class="n">monitoring</span> <span class="n">capabilities</span><span class="o">.</span> <span class="n">It</span> <span class="n">can</span> <span class="n">also</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">Intel</span> <span class="n">data</span> <span class="n">center</span> <span class="n">GPU</span> <span class="n">settings</span> <span class="ow">and</span> <span class="n">update</span> <span class="n">the</span> <span class="n">firmware</span><span class="o">.</span>  
 <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="ow">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span><span class="o">.</span> <span class="n">Before</span> <span class="n">using</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">driver</span> <span class="ow">and</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span> <span class="n">should</span> <span class="n">be</span> <span class="n">installed</span> <span class="n">rightly</span><span class="o">.</span>  
@@ -163,7 +164,7 @@
 </pre></div>
 </div>
 <p>Show XPU Manager version and Level Zero version.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="o">-</span><span class="n">v</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="o">-</span><span class="n">v</span>
 <span class="n">CLI</span><span class="p">:</span>
     <span class="n">Version</span><span class="p">:</span> <span class="mf">1.0.0.20211217</span>
     <span class="n">Build</span> <span class="n">ID</span><span class="p">:</span> <span class="n">f847c0fa</span>
@@ -178,7 +179,7 @@
 <section id="discover-the-devices-in-this-machine">
 <h2>Discover the devices in this machine<a class="headerlink" href="#discover-the-devices-in-this-machine" title="Permalink to this headline"></a></h2>
 <p>Help info of the “discovery” subcommand</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">h</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">h</span>
 
 <span class="n">Discover</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">devices</span> <span class="n">installed</span> <span class="n">on</span> <span class="n">this</span> <span class="n">machine</span> <span class="ow">and</span> <span class="n">provide</span> <span class="n">the</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span> 
 
@@ -225,7 +226,7 @@
 </pre></div>
 </div>
 <p>Discover the devices in this machine</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">discovery</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">discovery</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                   <span class="o">|</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
@@ -238,7 +239,7 @@
 </pre></div>
 </div>
 <p>Discover the devices in this machine and get the JSON format output</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">j</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">j</span>
 <span class="p">{</span>
     <span class="s2">&quot;device_list&quot;</span><span class="p">:</span> <span class="p">[</span>
         <span class="p">{</span>
@@ -256,7 +257,7 @@
 </pre></div>
 </div>
 <p>Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                   <span class="o">|</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
@@ -304,7 +305,7 @@
 </pre></div>
 </div>
 <p>List the versions of all AMC which can be found on this server.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">--</span><span class="n">listamcversions</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">--</span><span class="n">listamcversions</span>
 <span class="mi">1</span> <span class="n">AMC</span> <span class="n">are</span> <span class="n">found</span>
 <span class="n">AMC</span> <span class="mi">1</span> <span class="n">firmware</span> <span class="n">version</span><span class="p">:</span> <span class="mf">4.0.0.0</span>
 </pre></div>
@@ -313,7 +314,7 @@
 <section id="manage-the-devices-in-groups">
 <h2>Manage the devices in groups<a class="headerlink" href="#manage-the-devices-in-groups" title="Permalink to this headline"></a></h2>
 <p>Help info of the group operation</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">h</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">h</span>
 
 <span class="n">Group</span> <span class="n">the</span> <span class="n">managed</span> <span class="n">GPU</span> <span class="n">devices</span><span class="o">.</span>
 
@@ -341,7 +342,7 @@
 </pre></div>
 </div>
 <p>Create a group</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="s2">&quot;testgroup&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="s2">&quot;testgroup&quot;</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Group</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Group</span> <span class="n">Properties</span>                                                                      <span class="o">|</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
@@ -351,7 +352,7 @@
 </pre></div>
 </div>
 <p>Add devices to a group</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">a</span> <span class="o">-</span><span class="n">g</span> <span class="mi">1</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">a</span> <span class="o">-</span><span class="n">g</span> <span class="mi">1</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="mi">1</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Group</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Group</span> <span class="n">Properties</span>                                                                      <span class="o">|</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
@@ -361,7 +362,7 @@
 </pre></div>
 </div>
 <p>List a group info</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">l</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">l</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Group</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Group</span> <span class="n">Properties</span>                                                                      <span class="o">|</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
@@ -371,7 +372,7 @@
 </pre></div>
 </div>
 <p>Remove devices from a group</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">r</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">g</span> <span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">r</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">g</span> <span class="mi">1</span>
 <span class="n">Successfully</span> <span class="n">remove</span> <span class="n">device</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="kn">from</span> <span class="nn">group</span> <span class="mi">1</span>
 <span class="o">+----------+---------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Group</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Group</span> <span class="n">Properties</span>                                                                      <span class="o">|</span>
@@ -382,7 +383,7 @@
 </pre></div>
 </div>
 <p>Remove a group</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">D</span> <span class="o">-</span><span class="n">g</span> <span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">D</span> <span class="o">-</span><span class="n">g</span> <span class="mi">1</span>
 <span class="n">Successfully</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">group</span>
 </pre></div>
 </div>
@@ -390,7 +391,7 @@
 <section id="get-and-change-xpu-manager-settings">
 <h2>Get and change XPU Manager settings<a class="headerlink" href="#get-and-change-xpu-manager-settings" title="Permalink to this headline"></a></h2>
 <p>Help message of the “agentset” subcommand.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">agentset</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">agentset</span>
 <span class="n">Get</span> <span class="ow">or</span> <span class="n">change</span> <span class="n">some</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="n">settings</span><span class="o">.</span> 
 
 <span class="n">usage</span><span class="p">:</span> <span class="n">xpumcli</span> <span class="n">agentset</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
@@ -408,7 +409,7 @@
 </pre></div>
 </div>
 <p>List the XPU Manager settings</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">agentset</span> <span class="o">-</span><span class="n">l</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">agentset</span> <span class="o">-</span><span class="n">l</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Name</span>                   <span class="o">|</span> <span class="n">Value</span>                                                                   <span class="o">|</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
@@ -417,7 +418,7 @@
 </pre></div>
 </div>
 <p>Change the XPU Manager sampling period</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">agentset</span> <span class="o">-</span><span class="n">t</span> <span class="mi">200</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">agentset</span> <span class="o">-</span><span class="n">t</span> <span class="mi">200</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Name</span>                   <span class="o">|</span> <span class="n">Value</span>                                                                   <span class="o">|</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
@@ -429,7 +430,7 @@
 <section id="get-the-aggregated-device-statistics">
 <h2>Get the aggregated device statistics<a class="headerlink" href="#get-the-aggregated-device-statistics" title="Permalink to this headline"></a></h2>
 <p>Help info for getting the GPU device aggregated statistics</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">stats</span> <span class="o">-</span><span class="n">h</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">stats</span> <span class="o">-</span><span class="n">h</span>
 
 <span class="n">List</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">aggregated</span> <span class="n">statistics</span> <span class="n">since</span> <span class="n">last</span> <span class="n">execution</span> <span class="n">of</span> <span class="n">this</span> <span class="n">command</span> <span class="ow">or</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="n">daemon</span> <span class="ow">is</span> <span class="n">started</span><span class="o">.</span>
 
@@ -449,7 +450,7 @@
 </pre></div>
 </div>
 <p>List the GPU device aggregated statistics that are collected by XPU Manager. ‘Media Engine Freq’ is inferred with ‘GPU Frequency’.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
 <span class="o">+----------------------------+---------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>                  <span class="o">|</span> <span class="mi">0</span>                                                                   <span class="o">|</span>
 <span class="o">+----------------------------+---------------------------------------------------------------------+</span>
@@ -523,12 +524,21 @@
 <section id="get-the-device-health-status">
 <h2>Get the device health status<a class="headerlink" href="#get-the-device-health-status" title="Permalink to this headline"></a></h2>
 <p>Help info of get GPU device component health status</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">health</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">health</span>
 
 <span class="n">Get</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">device</span> <span class="n">component</span> <span class="n">health</span> <span class="n">status</span>
 
 <span class="n">Usage</span><span class="p">:</span> <span class="n">xpumcli</span> <span class="n">health</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
   <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">g</span> <span class="p">[</span><span class="n">groupId</span><span class="p">]</span>
+  <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">g</span> <span class="p">[</span><span class="n">groupId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
   <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span> <span class="o">--</span><span class="n">threshold</span>  <span class="p">[</span><span class="n">threshold</span><span class="p">]</span>
   <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span> <span class="o">--</span><span class="n">threshold</span> <span class="p">[</span><span class="n">threshold</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
   <span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">g</span> <span class="p">[</span><span class="n">groupId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="p">[</span><span class="n">componentTypeId</span><span class="p">]</span> <span class="o">--</span><span class="n">threshold</span> <span class="p">[</span><span class="n">threshold</span><span class="p">]</span>
@@ -546,11 +556,12 @@
                                 <span class="mf">3.</span> <span class="n">GPU</span> <span class="n">Power</span>
                                 <span class="mf">4.</span> <span class="n">GPU</span> <span class="n">Memory</span>
                                 <span class="mf">5.</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">Port</span>
+                                <span class="mf">6.</span> <span class="n">GPU</span> <span class="n">Frequency</span>
   <span class="o">--</span><span class="n">threshold</span>                 <span class="n">Set</span> <span class="n">custom</span> <span class="n">threshold</span> <span class="k">for</span> <span class="n">device</span> <span class="n">component</span>
 </pre></div>
 </div>
 <p>Get the GPU device component health status. There are some build-in thresholds for the GPU telemetries. You may also set your custom threshold to help monitor the GPU component health status.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">l</span>
 <span class="o">+------------------------------+-------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>                    <span class="o">|</span> <span class="mi">0</span>                                                                 <span class="o">|</span>
 <span class="o">+------------------------------+-------------------------------------------------------------------+</span>
@@ -580,7 +591,7 @@
 </pre></div>
 </div>
 <p>Change the component custom temperature threshold</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="mi">1</span> <span class="o">--</span><span class="n">threshold</span> <span class="mi">90</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">health</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="mi">1</span> <span class="o">--</span><span class="n">threshold</span> <span class="mi">90</span>
 <span class="o">+------------------------------+-------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>                    <span class="o">|</span> <span class="mi">0</span>                                                                 <span class="o">|</span>
 <span class="o">+------------------------------+-------------------------------------------------------------------+</span>
@@ -627,7 +638,7 @@
 </li>
 </ul>
 <p>Help info of the device statistics dump. Please note that the metrics ‘GPU Energy Consumed’, ‘Reset Counter’, ‘Programming Errors’, ‘Driver Errors’, ‘Cache Errors Correctable’ and ‘Cache Errors Uncorrectable’ are not implemented in dump sub-command so far. Please do not dump these metrics. ‘Media Engine Frequency’ is inferred with ‘GPU Frequency’.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">dump</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">dump</span>
 
 <span class="n">Dump</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">data</span><span class="o">.</span>
 
@@ -693,7 +704,7 @@
 </pre></div>
 </div>
 <p>Dump the device statistics to screen in CSV format.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">dump</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">-</span><span class="n">m</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">22</span> <span class="o">-</span><span class="n">i</span> <span class="mi">1</span> <span class="o">-</span><span class="n">n</span> <span class="mi">5</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">dump</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">-</span><span class="n">m</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">22</span> <span class="o">-</span><span class="n">i</span> <span class="mi">1</span> <span class="o">-</span><span class="n">n</span> <span class="mi">5</span>
 <span class="n">Timestamp</span><span class="p">,</span><span class="n">DeviceId</span><span class="p">,</span><span class="n">TileId</span><span class="p">,</span><span class="n">GPU</span> <span class="n">Utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span><span class="n">GPU</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">),</span><span class="n">GPU</span> <span class="n">Frequency</span> <span class="p">(</span><span class="n">MHz</span><span class="p">),</span><span class="n">XL</span> <span class="mi">0</span><span class="o">/</span><span class="mi">0</span><span class="o">-&gt;</span><span class="mi">1</span><span class="o">/</span><span class="mi">1</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span><span class="n">XL</span> <span class="mi">1</span><span class="o">/</span><span class="mi">1</span><span class="o">-&gt;</span><span class="mi">0</span><span class="o">/</span><span class="mi">0</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span><span class="n">Compute</span> <span class="n">Engine</span> <span class="mi">0</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">Compute</span> <span class="n">Engine</span> <span class="mi">1</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>
 <span class="mi">13</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mf">43.100</span><span class="p">,</span> <span class="mi">00</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">000</span><span class="p">,</span>    <span class="p">,</span> <span class="mi">0300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span>
 <span class="mi">13</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mf">44.100</span><span class="p">,</span> <span class="mi">00</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">000</span><span class="p">,</span>    <span class="p">,</span> <span class="mi">0300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span>
@@ -725,7 +736,7 @@
 <section id="get-the-system-topology">
 <h2>Get the system topology<a class="headerlink" href="#get-the-system-topology" title="Permalink to this headline"></a></h2>
 <p>Help info of get the system topology</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">topology</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">topology</span>
 
 <span class="n">Get</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span> <span class="n">info</span><span class="o">.</span>
 
@@ -739,7 +750,7 @@
   <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
   <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
 
-  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="n">to</span> <span class="n">query</span>
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span> <span class="n">to</span> <span class="n">query</span>
   <span class="o">-</span><span class="n">f</span><span class="p">,</span><span class="o">--</span><span class="n">file</span>                   <span class="n">Generate</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span> <span class="k">with</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">info</span> <span class="n">to</span> <span class="n">a</span> <span class="n">XML</span> <span class="n">file</span><span class="o">.</span> 
   <span class="o">-</span><span class="n">m</span><span class="p">,</span><span class="o">--</span><span class="n">matrix</span>                 <span class="n">Print</span> <span class="n">the</span> <span class="n">CPU</span><span class="o">/</span><span class="n">GPU</span> <span class="n">topology</span> <span class="n">matrix</span><span class="o">.</span> 
                                 <span class="n">S</span><span class="p">:</span> <span class="n">Self</span>
@@ -751,7 +762,7 @@
 </pre></div>
 </div>
 <p>Get the hardware topology info which is related to the GPU</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">topology</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">topology</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Topology</span> <span class="n">Information</span>                                                                 <span class="o">|</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
@@ -764,12 +775,12 @@
 </pre></div>
 </div>
 <p>Generate the system hardware topology to a XML file.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">topology</span> <span class="o">-</span><span class="n">f</span> <span class="n">topo</span><span class="o">.</span><span class="n">xml</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">topology</span> <span class="o">-</span><span class="n">f</span> <span class="n">topo</span><span class="o">.</span><span class="n">xml</span>
 <span class="n">The</span> <span class="n">system</span> <span class="n">topology</span> <span class="ow">is</span> <span class="n">generated</span> <span class="n">to</span> <span class="n">the</span> <span class="n">file</span> <span class="n">topo</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span> 
 </pre></div>
 </div>
 <p>Generate the CPU/GPU topology matrix.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">topology</span> <span class="o">-</span><span class="n">m</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">topology</span> <span class="o">-</span><span class="n">m</span>
 
          <span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">0</span><span class="o">|</span><span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="o">|</span><span class="n">GPU</span> <span class="mi">1</span><span class="o">/</span><span class="mi">0</span><span class="o">|</span><span class="n">GPU</span> <span class="mi">1</span><span class="o">/</span><span class="mi">1</span><span class="o">|</span><span class="n">CPU</span> <span class="n">Affinity</span>
 <span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">0</span> <span class="o">|</span><span class="n">S</span>      <span class="o">|</span><span class="n">MDF</span>    <span class="o">|</span><span class="n">XL</span><span class="o">*</span>    <span class="o">|</span><span class="n">XL16</span>   <span class="o">|</span><span class="mi">0</span><span class="o">-</span><span class="mi">23</span><span class="p">,</span><span class="mi">48</span><span class="o">-</span><span class="mi">71</span>
@@ -782,7 +793,7 @@
 <section id="update-the-gpu-firmware">
 <h2>Update the GPU firmware<a class="headerlink" href="#update-the-gpu-firmware" title="Permalink to this headline"></a></h2>
 <p>Help info of updating GPU firmware</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">updatefw</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">updatefw</span>
 
 <span class="n">Update</span> <span class="n">GPU</span> <span class="n">firmware</span><span class="o">.</span>
 
@@ -794,32 +805,38 @@
   <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
   <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
 
-  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span>
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span><span class="o">.</span> <span class="n">If</span> <span class="n">it</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">specified</span><span class="p">,</span> <span class="nb">all</span> <span class="n">devices</span> <span class="n">will</span> <span class="n">be</span> <span class="n">updated</span><span class="o">.</span>
   <span class="o">-</span><span class="n">t</span><span class="p">,</span><span class="o">--</span><span class="nb">type</span>                   <span class="n">The</span> <span class="n">firmware</span> <span class="n">name</span><span class="o">.</span> <span class="n">Valid</span> <span class="n">options</span><span class="p">:</span> <span class="n">GFX</span><span class="p">,</span> <span class="n">GFX_DATA</span><span class="p">,</span> <span class="n">AMC</span><span class="o">.</span> <span class="n">AMC</span> <span class="n">firmware</span> <span class="n">update</span> <span class="n">just</span> <span class="n">works</span> <span class="n">on</span> <span class="n">Intel</span> <span class="n">M50CYP</span> <span class="n">server</span> <span class="p">(</span><span class="n">BMC</span> <span class="n">firmware</span> <span class="n">version</span> <span class="ow">is</span> <span class="mf">2.82</span> <span class="ow">or</span> <span class="n">newer</span><span class="p">)</span> <span class="ow">and</span> <span class="n">Supermicro</span> <span class="n">SYS</span><span class="o">-</span><span class="mi">620</span><span class="n">C</span><span class="o">-</span><span class="n">TN12R</span> <span class="n">server</span> <span class="p">(</span><span class="n">BMC</span> <span class="n">firmware</span> <span class="n">version</span> <span class="ow">is</span> <span class="mf">11.01</span> <span class="ow">or</span> <span class="n">newer</span><span class="p">)</span><span class="o">.</span>
   <span class="o">-</span><span class="n">f</span><span class="p">,</span><span class="o">--</span><span class="n">file</span>                   <span class="n">The</span> <span class="n">firmware</span> <span class="n">image</span> <span class="n">file</span> <span class="n">path</span> <span class="n">on</span> <span class="n">this</span> <span class="n">server</span><span class="o">.</span>
   <span class="o">-</span><span class="n">u</span><span class="p">,</span><span class="o">--</span><span class="n">username</span>               <span class="n">Username</span> <span class="n">used</span> <span class="n">to</span> <span class="n">update</span> <span class="n">AMC</span> <span class="n">firmware</span> <span class="n">through</span> <span class="n">Redfish</span> <span class="n">Host</span> <span class="n">interface</span>
   <span class="o">-</span><span class="n">p</span><span class="p">,</span><span class="o">--</span><span class="n">password</span>               <span class="n">Password</span> <span class="n">used</span> <span class="n">to</span> <span class="n">update</span> <span class="n">AMC</span> <span class="n">firmware</span> <span class="n">through</span> <span class="n">Redfish</span> <span class="n">Host</span> <span class="n">interface</span>
   <span class="o">-</span><span class="n">y</span><span class="p">,</span><span class="o">--</span><span class="n">assumeyes</span>              <span class="n">Assume</span> <span class="n">that</span> <span class="n">the</span> <span class="n">answer</span> <span class="n">to</span> <span class="nb">any</span> <span class="n">question</span> <span class="n">which</span> <span class="n">would</span> <span class="n">be</span> <span class="n">asked</span> <span class="ow">is</span> <span class="n">yes</span>
+  <span class="o">--</span><span class="n">force</span>                     <span class="n">Force</span> <span class="n">GFX</span> <span class="n">firmware</span> <span class="n">update</span><span class="o">.</span> <span class="n">This</span> <span class="n">parameter</span> <span class="n">only</span> <span class="n">works</span> <span class="k">for</span> <span class="n">GFX</span> <span class="n">firmware</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>Update GPU GFX firmware</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>./xpumcli updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
-This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
-Start to update firmware:
-Firmware name: GFX
-Image path: /home/test/tools/ATS_M3.bin
-Update firmware successfully. Please reboot OS to take effect. 
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>xpumcli updatefw -d 0 -t GFX -f ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin -y
+This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n)
+Device 0 FW version: DG02_2.2271
+Device 1 FW version: DG02_2.2271
+Image FW version: DG02_2.2277
+Do you want to continue? (y/n)
+Start to update firmware
+Firmware Name: GFX
+Image path: /home/test/ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin
+[============================================================] 100 %
+Update firmware successfully.
 </pre></div>
 </div>
 <p>Update GPU AMC firmware</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>./xpumcli updatefw -t AMC -f /home/dcm/ats_m_amc_v_3_6_3_0.bin
-CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot.
-Please confirm to proceed ( Y/N ) ?
-Y
-Start to update firmware
-Firmware Name: AMC
-Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
-..............Update firmware successfully. Please reboot OS to take effect. 
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">updatefw</span> <span class="o">-</span><span class="n">t</span> <span class="n">AMC</span> <span class="o">-</span><span class="n">f</span> <span class="n">ats_m_amc_v_6_8_0_0</span><span class="o">.</span><span class="n">bin</span> <span class="o">-</span><span class="n">y</span>
+<span class="n">CAUTION</span><span class="p">:</span> <span class="n">it</span> <span class="n">will</span> <span class="n">update</span> <span class="n">the</span> <span class="n">AMC</span> <span class="n">firmware</span> <span class="n">of</span> <span class="nb">all</span> <span class="n">cards</span> <span class="ow">and</span> <span class="n">please</span> <span class="n">make</span> <span class="n">sure</span> <span class="n">that</span> <span class="n">you</span> <span class="n">install</span> <span class="n">the</span> <span class="n">GPUs</span> <span class="n">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">model</span><span class="o">.</span>
+<span class="n">Please</span> <span class="n">confirm</span> <span class="n">to</span> <span class="n">proceed</span> <span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="n">n</span><span class="p">)</span>
+<span class="n">Start</span> <span class="n">to</span> <span class="n">update</span> <span class="n">firmware</span>
+<span class="n">Firmware</span> <span class="n">Name</span><span class="p">:</span> <span class="n">AMC</span>
+<span class="n">Image</span> <span class="n">path</span><span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">test</span><span class="o">/</span><span class="n">ats_m_amc_v_6_8_0_0</span><span class="o">.</span><span class="n">bin</span>
+<span class="p">[</span><span class="o">============================================================</span><span class="p">]</span> <span class="mi">100</span> <span class="o">%</span>
+<span class="n">Update</span> <span class="n">firmware</span> <span class="n">successfully</span><span class="o">.</span>
 
 </pre></div>
 </div>
@@ -827,7 +844,7 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 <section id="get-and-change-the-gpu-settings">
 <h2>Get and change the GPU settings<a class="headerlink" href="#get-and-change-the-gpu-settings" title="Permalink to this headline"></a></h2>
 <p>Help info of getting/changing the GPU settings</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span>
 
 <span class="n">Get</span> <span class="ow">and</span> <span class="n">change</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">settings</span><span class="o">.</span>
 
@@ -864,11 +881,12 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
   <span class="o">--</span><span class="n">reset</span>                     <span class="n">Reset</span> <span class="n">device</span> <span class="n">by</span> <span class="n">SBR</span> <span class="p">(</span><span class="n">Secondary</span> <span class="n">Bus</span> <span class="n">Reset</span><span class="p">)</span><span class="o">.</span> <span class="n">For</span> <span class="n">Max</span> <span class="n">series</span> <span class="n">GPU</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=off&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span> <span class="n">when</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">enabled</span> <span class="ow">in</span> 
                                 <span class="n">BIOS</span><span class="o">.</span> <span class="n">If</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">add</span> <span class="s2">&quot;pci=realloc=on&quot;</span> <span class="n">into</span> <span class="n">the</span> <span class="n">Linux</span> <span class="n">kernel</span> <span class="n">boot</span> <span class="n">parameter</span><span class="o">.</span> 
   <span class="o">--</span><span class="n">ppr</span>                       <span class="n">Apply</span> <span class="n">PPR</span> <span class="n">to</span> <span class="n">the</span> <span class="n">device</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">force</span>                     <span class="n">Force</span> <span class="n">PPR</span> <span class="n">to</span> <span class="n">run</span><span class="o">.</span>
 
 </pre></div>
 </div>
 <p>show the GPU settings</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
 <span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">Type</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span><span class="o">/</span><span class="n">Tile</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Configuration</span>                                                  <span class="o">|</span>
 <span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
@@ -935,37 +953,37 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 </pre></div>
 </div>
 <p>Change the GPU power limit.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="n">powerlimit</span> <span class="mi">299</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="n">powerlimit</span> <span class="mi">299</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">power</span> <span class="n">limit</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mf">0.</span>
 </pre></div>
 </div>
 <p>Change the GPU memory ECC mode.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="n">memoryecc</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="n">memoryecc</span> <span class="mi">0</span>
 <span class="n">Return</span><span class="p">:</span> <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">ECC</span> <span class="n">mode</span> <span class="n">to</span> <span class="n">be</span> <span class="n">disabled</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mf">0.</span> <span class="n">Please</span> <span class="n">reset</span> <span class="n">GPU</span> <span class="ow">or</span> <span class="n">reboot</span> <span class="n">OS</span> <span class="n">to</span> <span class="n">take</span> <span class="n">effect</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>Change the GPU tile standby mode.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">standby</span> <span class="n">never</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">standby</span> <span class="n">never</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">standby</span> <span class="n">mode</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mf">0.</span>
 </pre></div>
 </div>
 <p>Change the GPU tile scheduler mode.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">scheduler</span> <span class="n">timeout</span><span class="p">,</span><span class="mi">640000</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">scheduler</span> <span class="n">timeout</span><span class="p">,</span><span class="mi">640000</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">scheduler</span> <span class="n">mode</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mi">0</span> <span class="n">tile</span> <span class="mf">0.</span>
 </pre></div>
 </div>
 <p>Set the performance factor</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">performancefactor</span> <span class="n">compute</span><span class="p">,</span><span class="mi">70</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">performancefactor</span> <span class="n">compute</span><span class="p">,</span><span class="mi">70</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">compute</span> <span class="n">performance</span> <span class="n">factor</span> <span class="n">to</span> <span class="mi">70</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mi">0</span> <span class="n">tile</span> <span class="mf">0.</span>
 </pre></div>
 </div>
 <p>Change the Xe Link port status</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">xelinkport</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">xelinkport</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">up</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>Change the Xe Link port beaconing status</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">xelinkportbeaconing</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">xelinkportbeaconing</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="mi">0</span> <span class="n">beaconing</span> <span class="n">to</span> <span class="n">on</span><span class="o">.</span>
 </pre></div>
 </div>
@@ -988,7 +1006,7 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 </tbody>
 </table>
 <p>Help info for GPU policy</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">policy</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">policy</span>
 
 <span class="n">Get</span> <span class="ow">and</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">policies</span><span class="o">.</span>
 
@@ -1030,12 +1048,12 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 </pre></div>
 </div>
 <p>Create a policy to throttle GPU when the GPU tile temperature is a little high.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="nb">type</span> <span class="mi">1</span> <span class="o">--</span><span class="n">condition</span> <span class="mi">1</span> <span class="o">--</span><span class="n">threshold</span> <span class="mi">95</span>  <span class="o">--</span><span class="n">action</span> <span class="mi">1</span> <span class="o">--</span><span class="n">throttlefrequencymin</span> <span class="mi">300</span> <span class="o">--</span><span class="n">throttlefrequencymax</span> <span class="mi">400</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="nb">type</span> <span class="mi">1</span> <span class="o">--</span><span class="n">condition</span> <span class="mi">1</span> <span class="o">--</span><span class="n">threshold</span> <span class="mi">95</span>  <span class="o">--</span><span class="n">action</span> <span class="mi">1</span> <span class="o">--</span><span class="n">throttlefrequencymin</span> <span class="mi">300</span> <span class="o">--</span><span class="n">throttlefrequencymax</span> <span class="mi">400</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">the</span> <span class="s2">&quot;1. GPU Core Temperature&quot;</span> <span class="n">policy</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>List all supported policies</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">--</span><span class="n">listalltypes</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">--</span><span class="n">listalltypes</span>
 <span class="o">+-------------------------------+------------------+-----------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Types</span>                         <span class="o">|</span><span class="n">Conditions</span>        <span class="o">|</span> <span class="n">Actions</span>                                       <span class="o">|</span>
 <span class="o">+-------------------------------+------------------+-----------------------------------------------+</span>
@@ -1044,7 +1062,7 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 </pre></div>
 </div>
 <p>List all policies set on the GPU.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
 <span class="o">+-----------+-------------------------------+------------------+-----------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Types</span>                         <span class="o">|</span> <span class="n">Conditions</span>       <span class="o">|</span> <span class="n">Actions</span>                           <span class="o">|</span>
 <span class="o">+-----------+-------------------------------+------------------+-----------------------------------+</span>
@@ -1054,7 +1072,7 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 </pre></div>
 </div>
 <p>Remove a policy.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">-</span><span class="n">r</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="nb">type</span> <span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">policy</span> <span class="o">-</span><span class="n">r</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="nb">type</span> <span class="mi">1</span>
 <span class="n">Succeed</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="s2">&quot;1. GPU Core Temperature&quot;</span> <span class="n">policy</span><span class="o">.</span>
 </pre></div>
 </div>
@@ -1063,7 +1081,7 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 <h2>Diagnose GPU with different test suites<a class="headerlink" href="#diagnose-gpu-with-different-test-suites" title="Permalink to this headline"></a></h2>
 <p>When running tests on GPU, GPU will be used exclusively. There will be obviously performance impact on the GPU. Some CPU performance may also be impacted.</p>
 <p>Help info for GPU diagnostics</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">diag</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">diag</span>
 
 <span class="n">Run</span> <span class="n">some</span> <span class="n">test</span> <span class="n">suites</span> <span class="n">to</span> <span class="n">diagnose</span> <span class="n">GPU</span><span class="o">.</span>
 
@@ -1124,7 +1142,7 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 </pre></div>
 </div>
 <p>Run test to diagnose GPU</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">xpumcli</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">l</span> <span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">l</span> <span class="mi">1</span>
 <span class="n">Device</span> <span class="n">Type</span><span class="p">:</span> <span class="n">GPU</span>
 <span class="o">+------------------------+-------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>              <span class="o">|</span> <span class="mi">0</span>                                                                       <span class="o">|</span>
@@ -1221,12 +1239,19 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 <span class="o">|</span> <span class="n">AMC</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Sensors</span>                                                                                 <span class="o">|</span>
 <span class="o">+--------+-----------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">AMC</span> <span class="mi">0</span>  <span class="o">|</span>                                                                                         <span class="o">|</span>
-<span class="o">|</span>        <span class="o">|</span> <span class="n">temp_sensor_0</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">41</span>                                                           <span class="o">|</span>
-<span class="o">|</span>        <span class="o">|</span> <span class="n">temp_sensor_1</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">39</span>                                                           <span class="o">|</span>
-<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU2_volt</span> <span class="p">(</span><span class="n">Volts</span><span class="p">):</span> <span class="mf">0.093</span>                                                          <span class="o">|</span>
-<span class="o">|</span>        <span class="o">|</span> <span class="n">soc_die_temp_1</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">46</span>                                                          <span class="o">|</span>
-<span class="o">|</span>        <span class="o">|</span> <span class="n">soc_die_temp_2</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">45</span>                                                          <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">temp_sensor_0</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">36</span>                                                           <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">temp_sensor_1</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">35</span>                                                           <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU2_volt</span> <span class="p">(</span><span class="n">Volts</span><span class="p">):</span> <span class="mf">0.015</span>                                                          <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU2_pow</span> <span class="p">(</span><span class="n">Watts</span><span class="p">):</span> <span class="mi">0</span>                                                               <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU2_cur</span> <span class="p">(</span><span class="n">Amps</span><span class="p">):</span> <span class="mi">0</span>                                                                <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU1_volt</span> <span class="p">(</span><span class="n">Volts</span><span class="p">):</span> <span class="mf">0.015</span>                                                          <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU1_pow</span> <span class="p">(</span><span class="n">Watts</span><span class="p">):</span> <span class="mi">0</span>                                                               <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">VCCGT_GPU1_cur</span> <span class="p">(</span><span class="n">Amps</span><span class="p">):</span> <span class="mi">0</span>                                                                <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">soc_die_temp_1</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">42</span>                                                          <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">soc_die_temp_2</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">42</span>                                                          <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span> <span class="n">total_brd_pwr</span> <span class="p">(</span><span class="n">Watts</span><span class="p">):</span> <span class="mi">38</span>                                                               <span class="o">|</span>
 <span class="o">+--------+-----------------------------------------------------------------------------------------+</span>
+
 </pre></div>
 </div>
 </section>
@@ -1475,6 +1500,38 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 <li><p>XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available</p></li>
 </ul>
 </section>
+</section>
+<section id="get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage">
+<h2>Get the process info which are using GPU and their GPU memory usage<a class="headerlink" href="#get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage" title="Permalink to this headline"></a></h2>
+<p>Help info of GPU process info</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">ps</span> <span class="o">-</span><span class="n">h</span>
+<span class="n">List</span> <span class="n">status</span> <span class="n">of</span> <span class="n">processes</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpumcli</span> <span class="n">ps</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpumcli</span> <span class="n">ps</span>
+  <span class="n">xpumcli</span> <span class="n">ps</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpumcli</span> <span class="n">ps</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+
+<span class="n">PID</span><span class="p">:</span>      <span class="n">Process</span> <span class="n">ID</span>
+<span class="n">Command</span><span class="p">:</span>  <span class="n">Process</span> <span class="n">command</span> <span class="n">name</span>
+<span class="n">DeviceID</span><span class="p">:</span> <span class="n">Device</span> <span class="n">ID</span>
+<span class="n">SHR</span><span class="p">:</span>      <span class="n">The</span> <span class="n">size</span> <span class="n">of</span> <span class="n">shared</span> <span class="n">device</span> <span class="n">memory</span> <span class="n">mapped</span> <span class="n">into</span> <span class="n">this</span> <span class="n">process</span> <span class="p">(</span><span class="n">may</span> <span class="ow">not</span> <span class="n">necessarily</span> <span class="n">be</span> <span class="n">resident</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span> <span class="n">at</span> <span class="n">the</span> <span class="n">time</span> <span class="n">of</span> <span class="n">reading</span><span class="p">)</span> <span class="p">(</span><span class="n">kB</span><span class="p">)</span>
+<span class="n">MEM</span><span class="p">:</span>      <span class="n">Device</span> <span class="n">memory</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">bytes</span> <span class="n">allocated</span> <span class="n">by</span> <span class="n">this</span> <span class="n">process</span> <span class="p">(</span><span class="n">may</span> <span class="ow">not</span> <span class="n">necessarily</span> <span class="n">be</span> <span class="n">resident</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span> <span class="n">at</span> <span class="n">the</span> <span class="n">time</span> <span class="n">of</span> <span class="n">reading</span><span class="p">)</span> <span class="p">(</span><span class="n">kB</span><span class="p">)</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
+</pre></div>
+</div>
+<p>Show the process info which are using GPU</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">ps</span>
+<span class="n">PID</span>       <span class="n">Command</span>             <span class="n">DeviceID</span>       <span class="n">SHR</span>            <span class="n">MEM</span>
+<span class="mi">12961</span>     <span class="n">xpumd</span>               <span class="mi">0</span>              <span class="mi">0</span>              <span class="mi">1966</span>
+<span class="mi">12961</span>     <span class="n">xpumd</span>               <span class="mi">1</span>              <span class="mi">0</span>              <span class="mi">1966</span>
+</pre></div>
+</div>
 </section>
 </section>
 

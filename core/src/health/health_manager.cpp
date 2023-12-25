@@ -19,8 +19,8 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
     p_health_device_to_tdps = {{0x0205, 150}, {0x0203, 150}, {0x020A, 300}, {0x56C0, 150}, {0x56C1, 37.5}, 
-                               {0x0BD0, 600}, {0x0BD5, 600}, {0x0BD6, 600}, {0x0BD7, 450}, {0x0BD8, 450},
-                               {0x0BD9, 300}, {0x0BDA, 300}, {0x0BDB, 300}, {0x0BE5, 600}, {0x4907, 25}};
+                               {0x0BD0, 600}, {0x0BD4, 600}, {0x0BD5, 600}, {0x0BD6, 600}, {0x0BD7, 450}, {0x0BD8, 450},
+                               {0x0BD9, 300}, {0x0BDA, 300}, {0x0BDB, 300}, {0x0B6E, 300}, {0x0BE5, 600}, {0x4907, 25}};
     p_health_device_to_throttle_core_temperatures = {{0x56C0, 100}, {0x56C1, 95}};
     p_health_device_to_shutdown_core_temperatures = {{0x56C0, 125}, {0x56C1, 125}};
     p_health_device_to_shutdown_memory_temperatures = {{0x56C0, 105}, {0x56C1, 105}};
