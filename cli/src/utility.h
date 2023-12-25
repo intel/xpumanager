@@ -17,6 +17,7 @@ typedef enum linux_os_release_t {
     LINUX_OS_RELEASE_SLES,
     LINUX_OS_RELEASE_RHEL,
     LINUX_OS_RELEASE_DEBIAN,
+    LINUX_OS_RELEASE_OPEN_EULER,
     LINUX_OS_RELEASE_UNKNOWN,
 } linux_os_release_t;
 

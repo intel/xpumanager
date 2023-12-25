@@ -523,7 +523,9 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
          *  Refer: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-working_with_the_grub_2_boot_loader
          */
         cmdStr = "grub2-mkconfig -o /boot/efi/EFI/rhel/grub.cfg";
-    }
+    } else if (osRelease == LINUX_OS_RELEASE_OPEN_EULER && isFileExists("/boot/efi/EFI/openEuler/grub.cfg")) {
+        cmdStr = "grub2-mkconfig -o /boot/efi/EFI/openEuler/grub.cfg";
+    } 
     if (execCommand(cmdStr, cmdRes) != 0) {
         (*json)["error"] = "Fail to update grub.";
         (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
