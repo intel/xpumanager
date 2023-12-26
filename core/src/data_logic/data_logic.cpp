@@ -613,6 +613,12 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
 
     uint32_t index = 0;
     std::shared_ptr<MeasurementData> p_data = getLatestData(METRIC_FABRIC_THROUGHPUT, device_id);
+
+    if(p_data == nullptr){
+        *count = 0;
+        return XPUM_OK;
+    }
+
     auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
