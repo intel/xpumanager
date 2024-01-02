@@ -207,6 +207,8 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(vgpu.listVf))
     app.add_url_rule('/rest/v1/vgpu/removevf', methods=['POST'],
                      view_func=auth.login_required(vgpu.removeAllVf))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/vgpustats', methods=['GET'],
+                     view_func=auth.login_required(vgpu.stats))
     
     return app
 

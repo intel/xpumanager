@@ -24,6 +24,7 @@ struct ComletVgpuOptions {
     bool assumeYes = false;
     int32_t numVfs = 0;
     std::string lmemPerVf = "";
+    bool stats = false;
 };
 
 class ComletVgpu: public ComletBase {

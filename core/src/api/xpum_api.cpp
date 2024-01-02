@@ -3747,6 +3747,31 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
     return Core::instance().getVgpuManager()->removeAllVf(deviceId);
 }
 
+xpum_result_t xpumGetVfMetrics(xpum_device_id_t deviceId, 
+    xpum_vf_metric_t dataList[], uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    std::vector<xpum_vf_metric_t> metrics;
+    if (dataList == nullptr) {
+        res = Core::instance().getVgpuManager()->getVfMetrics(deviceId, metrics,
+                                                              count);
+        return res;
+    }
+    res = Core::instance().getVgpuManager()->getVfMetrics(deviceId, metrics);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (*count < metrics.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    for (size_t i = 0; i < metrics.size(); i++) {
+        dataList[i] = metrics[i];
+    }
+    *count = metrics.size();
+    return XPUM_OK;
+}
 
 xpum_result_t xpumPrecheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
     if (!Core::instance().isInitialized())

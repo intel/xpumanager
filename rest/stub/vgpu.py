@@ -57,3 +57,23 @@ def removeAllVf(deviceId):
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}
+
+def stats(deviceId):
+    resp = stub.getVfMetrics(core_pb2.GetVfMetricsRequest(deviceId=deviceId))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    data = []
+    for it in resp.vfList:
+        vf = dict()
+        vf["bdf_address"] = it.bdfAddress
+        metrics = []
+        for it1 in it.metricList:
+            metric = dict()
+            metric["metric_type"] = it1.metricType
+            metric["value"] = it1.value
+            metric["scale"] = it1.scale
+            metrics.append(metric)
+        vf["metric_list"] = metrics
+        data.append(vf)
+    return 0, "OK", data
+

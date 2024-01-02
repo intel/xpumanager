@@ -1486,6 +1486,21 @@ XPUM_API xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum
  */
 XPUM_API xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId);
 
+
+/**
+ * @brief Get VF (Virtual Function) metrics from Host OS
+ * 
+ * @param deviceId      IN: Device Id
+ * @param dataList     OUT: The array to store all VF metrics for device \a deviceId. First pass NULL to query VF metrics count. Then pass array with desired length to store VF metrics.
+ * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_API_UNSUPPORTED     if required level zero API is not available
+ * @note Support Platform: Linux
+ */
+XPUM_API xpum_result_t xpumGetVfMetrics(xpum_device_id_t deviceId, xpum_vf_metric_t dataList[], uint32_t *count);
+
 /** @} */ // Closing for VGPU_API
 
 
@@ -1518,7 +1533,7 @@ XPUM_API xpum_result_t xpumGenerateDebugLog(const char *fileName);
   * @brief Get realtime metrics (not including per engine utilization) by device
   *
   * @param deviceId      IN: Device id
-  * @param dataList     OUT: The arry to store realtime metrics for device \a deviceId. First pass NULL to query realtime metrics count. Then pass array with desired length to store realtime metrics.
+  * @param dataList     OUT: The array to store realtime metrics for device \a deviceId. First pass NULL to query realtime metrics count. Then pass array with desired length to store realtime metrics.
   * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList
   * @return xpum_result_t
   *      - \ref XPUM_OK                  if query successfully
