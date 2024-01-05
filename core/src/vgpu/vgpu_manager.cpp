@@ -13,12 +13,14 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <iomanip>
+#include <dlfcn.h>
 
 #include "./vgpu_manager.h"
 #include "core/core.h"
 #include "infrastructure/xpum_config.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/utility.h"
+#include "infrastructure/handle_lock.h"
 #include "xpum_api.h"
 
 namespace xpum {
@@ -261,6 +263,252 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
     return XPUM_OK;
 }
 
+static xpum_realtime_metric_type_t engineToMetricType(zes_engine_group_t engine) {
+    xpum_realtime_metric_type_t metricType = XPUM_STATS_MAX;
+    switch (engine) {
+        case ZES_ENGINE_GROUP_ALL:
+            metricType = XPUM_STATS_GPU_UTILIZATION;
+            break;
+        case ZES_ENGINE_GROUP_COMPUTE_ALL:
+            metricType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+            break;
+        case ZES_ENGINE_GROUP_MEDIA_ALL:
+            metricType = XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+            break;
+        case ZES_ENGINE_GROUP_COPY_ALL:
+            metricType = XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+            break;
+        case ZES_ENGINE_GROUP_RENDER_ALL:
+            metricType = XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+            break;
+        default:
+            break;
+    }
+    return metricType;
+}
+
+typedef ze_result_t (*pfnZesEngineGetActivityExt_t)(
+    zes_engine_handle_t hEngine,
+    uint32_t *pCount, zes_engine_stats_t *pStats);
+
+static bool getEngineStats(std::map<zes_engine_group_t, 
+    std::vector<zes_engine_stats_t>> &snap, 
+    std::vector<zes_engine_handle_t> engines,
+    pfnZesEngineGetActivityExt_t pfnZesEngineGetActivityExt) {
+    ze_result_t res = ZE_RESULT_SUCCESS;
+    for (auto &engine : engines) {
+        zes_engine_properties_t props = {};
+        props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+        props.pNext = nullptr;
+        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, 
+            &props));
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {}", res);
+            return false;
+        }
+        if (props.type == ZES_ENGINE_GROUP_ALL ||
+            props.type == ZES_ENGINE_GROUP_COMPUTE_ALL ||
+            props.type == ZES_ENGINE_GROUP_MEDIA_ALL ||
+            props.type == ZES_ENGINE_GROUP_COPY_ALL ||
+            props.type == ZES_ENGINE_GROUP_RENDER_ALL) {
+            uint32_t stats_count = 0;
+            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
+                        engine, &stats_count, nullptr));
+            if (res != ZE_RESULT_SUCCESS || stats_count <= 1) {
+                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {} stats_count = {}",
+                               res, stats_count);
+                return false;
+            }
+            std::vector<zes_engine_stats_t> stats(stats_count);
+            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
+                        engine, &stats_count, stats.data()));
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {}", res);
+                return false;
+            }
+            snap.insert({props.type, stats});
+        }
+    }
+    return true;
+}
+
+xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
+    std::vector<xpum_vf_metric_t> &metrics, uint32_t *count) {
+    xpum_result_t ret = XPUM_GENERIC_ERROR;
+    auto xdev = Core::instance().getDeviceManager()->getDevice(
+        std::to_string(deviceId));
+    if (xdev == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    void *handle = dlopen("libze_loader.so.1", RTLD_NOW);
+    if (handle == nullptr) {
+        return XPUM_LEVEL_ZERO_INITIALIZATION_ERROR;
+    }
+    pfnZesEngineGetActivityExt_t pfnZesEngineGetActivityExt = 
+        reinterpret_cast<pfnZesEngineGetActivityExt_t>(dlsym(handle, 
+        "zesEngineGetActivityExt"));
+    if (pfnZesEngineGetActivityExt == nullptr) {
+        XPUM_LOG_ERROR("dlsym zesEngineGetActivityExt returns NULL");
+        dlclose(handle);
+        return XPUM_API_UNSUPPORTED;
+    }
+    auto device = xdev->getDeviceHandle();
+    ze_result_t res = ZE_RESULT_SUCCESS;
+    uint32_t engine_count = 0;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device,
+                                    &engine_count, nullptr));
+    std::vector<zes_engine_handle_t> engines(engine_count);
+    std::map<zes_engine_group_t, std::vector<zes_engine_stats_t>> snap;
+    std::map<zes_engine_group_t, std::vector<zes_engine_stats_t>>::iterator it; 
+    if (res != ZE_RESULT_SUCCESS || engine_count == 0) {
+        XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {} engine_count = {}", 
+            res, engine_count);
+        goto RTN;
+    }
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device,
+                                    &engine_count, engines.data()));
+    if (res != ZE_RESULT_SUCCESS || engine_count == 0) {
+        XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {} engine_count = {}", 
+            res, engine_count);
+        goto RTN;
+    }
+    if (getEngineStats(snap, engines, pfnZesEngineGetActivityExt) == false) {
+        XPUM_LOG_ERROR("getEngineStats return false");
+        goto RTN;
+    }
+    //check count only
+    if (count != nullptr) {
+        for (it = snap.begin(); it != snap.end(); it++) {
+            *count += it->second.size() - 1;
+        }
+        XPUM_LOG_DEBUG("check count returns {}", *count);
+        ret = XPUM_OK;
+        goto RTN;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(
+        Configuration::VF_METRICS_INTERVAL));
+    for (auto &engine : engines) {
+        zes_engine_properties_t props = {};
+        props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+        props.pNext = nullptr;
+        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, 
+            &props));
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {}", res);
+            goto RTN;
+        }
+        if (props.type == ZES_ENGINE_GROUP_ALL || 
+            props.type == ZES_ENGINE_GROUP_COMPUTE_ALL || 
+            props.type == ZES_ENGINE_GROUP_MEDIA_ALL || 
+            props.type == ZES_ENGINE_GROUP_COPY_ALL ||
+            props.type == ZES_ENGINE_GROUP_RENDER_ALL) {
+            it = snap.find(props.type);
+            if (it == snap.end()) {
+                XPUM_LOG_ERROR("Engine stats not found");
+                goto RTN;
+            }
+            auto stats0 = it->second;
+            uint32_t stats_count1 = 0;
+            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
+                        engine, &stats_count1, nullptr));
+            std::vector<zes_engine_stats_t> stats1(stats_count1);
+            if (res != ZE_RESULT_SUCCESS || stats_count1 <= 1) {
+                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {} stats_count1 = {}", 
+                    res, stats_count1);
+                goto RTN;
+            }
+            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
+                        engine, &stats_count1, stats1.data()));
+            if (res != ZE_RESULT_SUCCESS || stats_count1 != stats0.size()) {
+                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {} stats_count1 = {} stats0.size() = {}", 
+                    res, stats_count1, stats0.size());
+                goto RTN;
+            }
+            for (uint32_t i = 1; i < stats_count1; i++) {
+                xpum_vf_metric_t vfm = {};
+                XPUM_LOG_DEBUG("engine type {} VF index {} stats0 activeTime {} timestamp {} stats1 activeTime {} timestamp {}", 
+                        props.type, i, stats0[i].activeTime, stats0[i].timestamp, 
+                        stats1[i].activeTime, stats1[i].timestamp);
+                if (stats1[i].timestamp == stats0[i].timestamp) {
+                    XPUM_LOG_DEBUG("NA: engine type {} VF index {} stats0 activeTime {} timestamp {} stats1 activeTime {} timestamp {}", 
+                        props.type, i, stats0[i].activeTime, stats0[i].timestamp, 
+                        stats1[i].activeTime, stats1[i].timestamp);
+                    continue;
+                }
+                vfm.vfIndex = i;
+                if (getVfBdf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, i, deviceId)
+                        == false) {
+                    XPUM_LOG_ERROR("getVfBdf returns false at vf index {}", i);
+                    goto RTN;
+                }
+                uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 
+                    100 * (stats1[i].activeTime - 
+                        stats0[i].activeTime) / (stats1[i].timestamp -
+                            stats0[i].timestamp);
+                vfm.deviceId = deviceId;
+                auto metricType = engineToMetricType(props.type);
+                if (metricType == XPUM_STATS_MAX) {
+                    XPUM_LOG_ERROR("Unsupported engine type {}", props.type);
+                    goto RTN;
+                }
+                vfm.metric.metricsType = metricType;
+                vfm.metric.value = val;
+                vfm.metric.scale = 
+                    Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+                metrics.push_back(vfm);
+            }
+        }
+    }
+    ret = XPUM_OK;
+RTN:
+    dlclose(handle);
+    return ret;
+}
+
+bool VgpuManager::getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex, 
+        xpum_device_id_t deviceId) {
+//BDF Format in uevent is cccc:cc:cc.c
+#define BDF_SIZE 12
+    if (bdf == nullptr || szBdf < BDF_SIZE + 1) {
+        return false;
+    }
+    auto device = Core::instance().getDeviceManager()->getDevice(
+            std::to_string(deviceId));
+    if (device == nullptr) {
+        return false;
+    }
+    Property prop = {};
+    if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop)
+            == false) {
+        return false;
+    }
+    std::string str = prop.getValue();
+    std::string::size_type n = str.rfind('/');
+    if (n == std::string::npos || n == str.length() - 1) {
+        return false;
+    }
+    str = str.substr(n);
+    str = "/sys/class/drm/" + str + "/iov/vf" + std::to_string(vfIndex) + 
+        "/device/uevent";
+    std::ifstream ifs(str);
+    if (ifs.is_open() == false) {
+        XPUM_LOG_DEBUG("cannot open uevent file = {}", str);
+        return false;
+    }
+    std::string content((std::istreambuf_iterator<char>(ifs)), 
+            (std::istreambuf_iterator<char>()));
+    std::string key = "PCI_SLOT_NAME=";
+    n = content.find(key);
+    if (n == std::string::npos || 
+            n + key.length() + BDF_SIZE > content.length() - 1) {
+        XPUM_LOG_DEBUG("uevent offset error");
+        return false;
+    }
+    str = content.substr(n + key.length(), BDF_SIZE);
+    str.copy(bdf, BDF_SIZE);
+    bdf[BDF_SIZE] = '\0';
+    return true;
+}
 
 bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data) {
     auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));

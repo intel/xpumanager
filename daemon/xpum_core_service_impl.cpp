@@ -2790,6 +2790,45 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::getVfMetrics(::grpc::ServerContext* context, const ::GetVfMetricsRequest* request, ::GetVfMetricsResponse *response) {
+    uint32_t count = 0; 
+    xpum_result_t res = xpumGetVfMetrics(0, nullptr, &count);
+    if (res != XPUM_OK) {
+        if (res == XPUM_API_UNSUPPORTED) {
+            response->set_errormsg("Unsupported level zero API version");
+        } else {
+            response->set_errormsg("Error");
+        }
+        response->set_errorno(res);
+        return grpc::Status::OK;
+    }
+    std::vector<xpum_vf_metric_t> metrics(count);
+    res = xpumGetVfMetrics(0, metrics.data(), &count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        response->set_errorno(res);
+        return grpc::Status::OK;
+    }
+    std::map<uint32_t, VfMetrics *> map;
+    VfMetrics *vf = nullptr;
+    for (auto &metric : metrics) {
+        auto iter = map.find(metric.vfIndex);
+        if (iter == map.end()) {
+            vf = response->add_vflist();
+            vf->set_bdfaddress(metric.bdfAddress);
+            map[metric.vfIndex] = vf;
+        } else {
+            vf = iter->second;
+        }
+        VfMetric *pdata = vf->add_metriclist();
+        pdata->set_metrictype(metric.metric.metricsType);
+        pdata->set_scale(metric.metric.scale);
+        pdata->set_value(metric.metric.value);
+    }
+
+    return grpc::Status::OK;
+}
+
 void XpumCoreServiceImpl::close() {
     this->stop = true;
     condtionForCallBackDataList.notify_all();

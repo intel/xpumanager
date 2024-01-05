@@ -166,6 +166,8 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual ::grpc::Status removeAllVf(::grpc::ServerContext* context, const ::VgpuRemoveAllVfRequest* request, ::VgpuRemoveAllVfResponse *response) override;
 
+    virtual ::grpc::Status getVfMetrics(::grpc::ServerContext* context, const ::GetVfMetricsRequest* request, ::GetVfMetricsResponse *response) override;
+
    private:
     std::atomic_bool stop;
     std::mutex dumpRawDataFilenameMtx;

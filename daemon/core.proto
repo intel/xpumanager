@@ -1132,6 +1132,27 @@ message VgpuRemoveAllVfResponse {
     string errorMsg = 2;
 }
 
+message GetVfMetricsRequest {
+    int32 deviceId = 1;
+}
+
+message VfMetric {
+    uint32 metricType = 1;
+    uint64 value = 2;
+    uint32 scale = 3;
+}
+
+message VfMetrics {
+    string bdfAddress = 1;
+    repeated VfMetric metricList = 2;
+}
+
+message GetVfMetricsResponse {
+    repeated VfMetrics vfList = 1;
+    int32 errorNo = 2;
+    string errorMsg = 3;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -1211,4 +1232,5 @@ service XpumCoreService {
     rpc createVf ( VgpuCreateVfRequest ) returns ( VgpuCreateVfResponse );
     rpc getDeviceFunction ( VgpuGetDeviceFunctionRequest ) returns ( VgpuGetDeviceFunctionResponse );
     rpc removeAllVf ( VgpuRemoveAllVfRequest ) returns ( VgpuRemoveAllVfResponse );
+    rpc getVfMetrics ( GetVfMetricsRequest ) returns ( GetVfMetricsResponse );
 }

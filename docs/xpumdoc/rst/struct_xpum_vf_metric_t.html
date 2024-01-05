@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>enum xpum_engine_type_enum &mdash; XPU Manager  documentation</title>
+  <title>struct xpum_vf_metric_t &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
@@ -21,8 +21,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="enum xpum_engine_type_flags_t" href="enum_xpum_engine_type_flags_t.html" />
-    <link rel="prev" title="enum xpum_ecc_state_t" href="enum_xpum_ecc_state_t.html" /> 
+    <link rel="next" title="struct xpum_vgpu_config_t" href="struct_xpum_vgpu_config_t.html" />
+    <link rel="prev" title="struct xpum_version_info" href="struct_xpum_version_info.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -41,20 +41,25 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../SMI_README.html">Intel XPU System Management Interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../smi_install_guide.html">Intel(R) XPU-SMI Installation Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../smi_user_guide.html">Intel(R) XPU System Management Interface User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../README.html">Intel(R) XPU Manager and XPU System Management Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../CLI_user_guide.html">Intel(R) XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../restful.html">Restful API</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_GROUP_MANAGEMENT_API.html">Group management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_AGENT_SETTING_API.html">Agent settings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DUMP_RAW_DATA_API.html">Dump metrics raw data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_VGPU_API.html">VGPU management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEBUG_LOG_API.html">Debug log api</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_REALTIME_METRIC_API.html">Device realtime metrics</a></li>
@@ -72,7 +77,7 @@
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_dump_type_enum.html">enum xpum_dump_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_ecc_action_t.html">enum xpum_ecc_action_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_ecc_state_t.html">enum xpum_ecc_state_t</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">enum xpum_engine_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_engine_type_enum.html">enum xpum_engine_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_engine_type_flags_t.html">enum xpum_engine_type_flags_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_fabric_throughput_type_enum.html">enum xpum_fabric_throughput_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_firmware_flash_result_enum.html">enum xpum_firmware_flash_result_enum</a></li>
@@ -152,7 +157,7 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_standby_data_t.html">struct xpum_standby_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_topology_t.html">struct xpum_topology_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_version_info.html">struct xpum_version_info</a></li>
-<li class="toctree-l4"><a class="reference internal" href="struct_xpum_vf_metric_t.html">struct xpum_vf_metric_t</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">struct xpum_vf_metric_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_config_t.html">struct xpum_vgpu_config_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_function_info_t.html">struct xpum_vgpu_function_info_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html">struct xpum_vgpu_precheck_result_t</a></li>
@@ -166,6 +171,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
@@ -183,10 +189,10 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../smi_index.html">XPU-SMI Linux Documentation</a> &raquo;</li>
+          <li><a href="../../xpum_index.html">XPUM Documentation</a> &raquo;</li>
           <li><a href="index.html">Core Library API</a> &raquo;</li>
           <li><a href="global.html">Global Namespace</a> &raquo;</li>
-      <li>enum xpum_engine_type_enum</li>
+      <li>struct xpum_vf_metric_t</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -195,30 +201,44 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="enum-xpum-engine-type-enum">
-<span id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866"></span><span id="index-0"></span><h1>enum xpum_engine_type_enum<a class="headerlink" href="#enum-xpum-engine-type-enum" title="Permalink to this headline"></a></h1>
-<p>Engine types.</p>
+  <section id="struct-xpum-vf-metric-t">
+<span id="xpum-doxid-structxpum-vf-metric-t"></span><span id="index-0"></span><h1>struct xpum_vf_metric_t<a class="headerlink" href="#struct-xpum-vf-metric-t" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>Struct to store metrics of a VF(Virtual Function) <a class="reference internal" href="#details-structxpum-vf-metric-t"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span>
 
-<span class="k">enum</span> <span class="n">xpum_engine_type_enum</span>
+<span class="k">struct</span> <span class="n">xpum_vf_metric_t</span>
 <span class="p">{</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866ab94e8684063019f6a4bc558da7ddd7c5"><span></span><span class="n">XPUM_ENGINE_TYPE_COMPUTE</span></span><span></span>           <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866a2936fba8bf36b00796256339eb6cf6d1"><span></span><span class="n">XPUM_ENGINE_TYPE_RENDER</span></span><span></span>            <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866a0247d97d5fead01171fb7965710439ce"><span></span><span class="n">XPUM_ENGINE_TYPE_DECODE</span></span><span></span>            <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866ac0b8fbcdda715ce7097925dffc8c527b"><span></span><span class="n">XPUM_ENGINE_TYPE_ENCODE</span></span><span></span>            <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866aa659ef8380e9981c7243ff90b9d75a38"><span></span><span class="n">XPUM_ENGINE_TYPE_COPY</span></span><span></span>              <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866af49da4f35187d9fc7295f0991674158e"><span></span><span class="n">XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT</span></span><span></span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866a9d748891ddf6a2c35067e98fc265a23e"><span></span><span class="n">XPUM_ENGINE_TYPE_3D</span></span><span></span>                <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866ab24c5480282c9891ff0d60ebb475347e"><span></span><span class="n">XPUM_ENGINE_TYPE_UNKNOWN</span></span><span></span>           <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="c1">// fields</span>
+
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-vf-metric-t-1a8eb8ad9fc13008e37076a1d745fe2a31"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-vf-metric-t-1ab89fd7116df601299d0db7e439e2a92c"><span class="std std-ref">bdfAddress</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-vf-metric-t-1ac0cb2498ec22a68cc9538b898f9fa0d1"><span></span><span class="n">vfIndex</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="struct_xpum_device_realtime_metric_t.html#xpum-doxid-structxpum-device-realtime-metric-t"><span class="std std-ref">xpum_device_realtime_metric_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-vf-metric-t-1a77517518a494aa916944cd9951f3c4ac"><span></span><span class="n">metric</span></span><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-structxpum-vf-metric-t"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>Struct to store metrics of a VF(Virtual Function)</p>
+<section id="fields">
+<h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-vf-metric-t-1a8eb8ad9fc13008e37076a1d745fe2a31"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<p>Device id.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-vf-metric-t-1ab89fd7116df601299d0db7e439e2a92c"><span id="index-2"></span><span></span><span class="kt">char</span> <span class="n">bdfAddress</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<p>BDF address of the VF.</p>
+</section>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="enum_xpum_ecc_state_t.html" class="btn btn-neutral float-left" title="enum xpum_ecc_state_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="enum_xpum_engine_type_flags_t.html" class="btn btn-neutral float-right" title="enum xpum_engine_type_flags_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="struct_xpum_version_info.html" class="btn btn-neutral float-left" title="struct xpum_version_info" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="struct_xpum_vgpu_config_t.html" class="btn btn-neutral float-right" title="struct xpum_vgpu_config_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

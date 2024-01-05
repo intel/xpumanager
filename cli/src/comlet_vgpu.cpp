@@ -80,9 +80,29 @@ static nlohmann::json functionListTableWithoutId = R"({
     }]
 })"_json;
 
+static nlohmann::json statsTable = R"({
+    "columns": [{
+        "title": "Device Information"
+    }],
+    "rows": [{
+        "instance": "vf_list[]",
+        "cells": [
+            [
+                { "label": "PCI BDF Address", "value": "bdf_address" },
+                { "label": "GPU Utilization (%) ", "value": "gpu_util", "fixer": "round" },
+                { "label": "Compute Engine Util(%) ", "value": "ce_util", "fixer": "round" },
+                { "label": "Render Engine Util (%) ", "value": "re_util", "fixer": "round" },
+                { "label": "Media Engine Util (%) ", "value": "me_util", "fixer": "round" },
+                { "label": "Copy Engine Util (%) ", "value": "coe_util", "fixer": "round" }
+            ]
+        ]
+    }]
+})"_json;
+
 static CharTableConfig precheckTableConfig(precheckTable);
 static CharTableConfig functionListTableConfig(functionListTable);
 static CharTableConfig functionListTableWithoutIdConfig(functionListTableWithoutId);
+static CharTableConfig statsTableConfig(statsTable);
 
 ComletVgpu::ComletVgpu() : ComletBase("vgpu", 
     "Create and remove virtual GPUs in SRIOV configuration.") {
@@ -112,6 +132,7 @@ void ComletVgpu::setupOptions() {
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
     auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     addFlag("-y, --assumeyes", opts->assumeYes, "Assume that the answer to any question which would be asked is yes");
+    auto statsFlag = addFlag("-s, --stats", this->opts->stats, "Show statistics data of all virtual GPUs");
 
     /*
      *  All the flags should be exclusive to each other.
@@ -140,6 +161,14 @@ void ComletVgpu::setupOptions() {
     kernFlag->excludes(deviceIdOpt);
     kernFlag->excludes(numVfsOpt);
     kernFlag->excludes(lmemOpt);
+    statsFlag->excludes(precheckFlag);
+    statsFlag->excludes(createFlag);
+    statsFlag->excludes(listFlag);
+    statsFlag->excludes(numVfsOpt);
+    statsFlag->excludes(lmemOpt);
+    statsFlag->excludes(removeFlag);
+    statsFlag->excludes(kernFlag);
+    statsFlag->needs(deviceIdOpt);
 }
 
 std::unique_ptr<nlohmann::json> ComletVgpu::run() {
@@ -157,7 +186,8 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
     /*
      *  Do precheck first, if failed, stop creating/listing/removing VFs.
      */
-    if (this->opts->create || this->opts->list || this->opts->remove) {
+    if (this->opts->create || this->opts->list || this->opts->remove || 
+        this->opts->stats) {
         json = this->coreStub->doVgpuPrecheck();
         if (json->contains("iommu_status") && (*json)["iommu_status"].get<std::string>().compare("Pass") == 0
             && json->contains("sriov_status") && (*json)["sriov_status"].get<std::string>().compare("Pass") == 0
@@ -201,6 +231,8 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
         json = this->coreStub->removeAllVf(targetId);
     } else if (this->opts->kern) {
         json = addKernelParam();
+    } else if (this->opts->stats) {
+        json = this->coreStub->getVfMetrics(targetId);
     } else {
         (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
         (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
@@ -295,6 +327,10 @@ void ComletVgpu::getTableResult(std::ostream &out) {
             out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
         else
             out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on iommu=pt i915.force_probe=* i915.max_vfs=63 i915.enable_iaf=0\". Please reboot OS to take effect." << std::endl;
+    } else if (this->opts->stats == true) {
+        CharTable table(statsTableConfig, *res);
+        table.show(out);
+        return;
     }
 }
 

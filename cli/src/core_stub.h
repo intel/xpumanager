@@ -144,6 +144,8 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> removeAllVf(int deviceId)=0;
 
+    virtual std::unique_ptr<nlohmann::json> getVfMetrics(int deviceId)=0;
+
    protected:
     std::string getCardUUID(const std::string& rawUUID);
 };

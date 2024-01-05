@@ -764,6 +764,16 @@ typedef struct xpum_device_realtime_metrics_t {
     xpum_device_realtime_metric_t dataList[XPUM_STATS_MAX];
 } xpum_device_realtime_metrics_t;
 
+/**
+ * @brief Struct to store metrics of a VF(Virtual Function) 
+ * 
+ */
+typedef struct xpum_vf_metric_t {
+    xpum_device_id_t deviceId;                  ///< Device id
+    char bdfAddress[XPUM_MAX_STR_LENGTH];       ///< BDF address of the VF
+    uint32_t vfIndex;
+    xpum_device_realtime_metric_t metric;
+} xpum_vf_metric_t;
 
 typedef struct xpum_fabric_port_config_t {
     bool onSubdevice;

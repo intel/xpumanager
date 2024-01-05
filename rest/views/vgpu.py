@@ -45,6 +45,18 @@ class RemoveVgpuSchema(Schema):
         metadata={"description": "The device to remove all VFs"}
     )
    
+class VfMetricSchema(Schema):
+    metric_type = fields.Int(metadata={"description": "Metric Type"})
+    value = fields.Int(metadata={"description": "Value"})
+    scale = fields.Int(metadata={"description": "Scale"}) 
+    
+class VfMetricsSchema(Schema):
+    bdf_address = fields.String(metadata={"description": "BDF Address"})
+    metric_list = fields.Nested(VfMetricSchema, many=True)
+
+class VfListSchema(Schema):
+    vf_list = fields.Nested(VfMetricsSchema, many=True)
+
 
 def doVgpuPrecheck():
     """
@@ -101,5 +113,26 @@ def removeAllVf():
     code, message, data = stub.removeAllVf(deviceId)
     if code == 0:
         return jsonify(data)
+    error = dict(Status=code, Message=message)
+    return jsonify(error), 400
+
+def stats(deviceId):
+    """
+    Get statistics data of all virtual GPUs.
+    ---
+    get:
+        tags:
+            - "vgpu"
+        description: Get statistics data of all virtual GPUs
+        responses:
+            200:
+                description: OK
+                schema: VfListSchema
+            500:
+                description: Error
+    """
+    code, message, data = stub.stats(deviceId)
+    if code == 0:
+        return jsonify(dict(vf_list=data))
     error = dict(Status=code, Message=message)
     return jsonify(error), 400

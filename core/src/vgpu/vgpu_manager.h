@@ -34,6 +34,9 @@ private:
     
     void writeVfAttrToSysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem);
 
+    bool getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex, 
+        xpum_device_id_t deviceId);
+
     std::mutex mutex;
 
 public:
@@ -46,6 +49,9 @@ public:
 
     // Clear all VFs
     xpum_result_t removeAllVf(xpum_device_id_t deviceId);
+
+    // It returns metric count instead of metrics if count is not nullptr
+    xpum_result_t getVfMetrics(xpum_device_id_t deviceId, std::vector<xpum_vf_metric_t> &metrics, uint32_t *count = nullptr);
     
 };
 

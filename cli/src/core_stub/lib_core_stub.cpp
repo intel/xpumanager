@@ -2337,4 +2337,68 @@ std::unique_ptr<nlohmann::json> LibCoreStub::removeAllVf(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> LibCoreStub::getVfMetrics(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    uint32_t count = 0; 
+    xpum_result_t res = xpumGetVfMetrics(0, nullptr, &count);
+    if (res != XPUM_OK) {
+        if (res == XPUM_API_UNSUPPORTED) {
+            (*json)["error"] = "Unsupported level zero API version";
+        } else {
+            (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    std::vector<xpum_vf_metric_t> metrics(count);
+    res = xpumGetVfMetrics(0, metrics.data(), &count);
+    if (res != XPUM_OK) {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    std::map<uint32_t, size_t> map;
+    std::vector<nlohmann::json> vfs;
+    for (size_t i = 0; i < metrics.size(); i++) {
+        auto metric = metrics[i];
+        if (metric.metric.scale == 0) {
+            continue;
+        }
+        auto val = double(metric.metric.value) / metric.metric.scale;
+        auto iter = map.find(metric.vfIndex);
+        size_t idx = 0;
+        if (iter == map.end()) {
+            auto vf = nlohmann::json();
+            idx = vfs.size();
+            map[metric.vfIndex] = idx;
+            vfs.push_back(vf);
+            vfs[idx]["bdf_address"] = metric.bdfAddress;
+        } else {
+            idx = iter->second;
+        }
+        switch (metric.metric.metricsType) {
+            case XPUM_STATS_GPU_UTILIZATION:
+                vfs[idx]["gpu_util"] = val;
+                break;
+            case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+                vfs[idx]["ce_util"] = val;
+                break;
+            case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+                vfs[idx]["me_util"] = val;
+                break;
+            case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+                vfs[idx]["coe_util"] = val;
+                break;
+            case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+                vfs[idx]["re_util"] = val;
+                break;
+            default:
+                break;
+        }
+    }
+    (*json)["vf_list"] = vfs;
+    (*json)["status"] = "OK";
+    return json;
+}
+
 } // end namespace xpum::cli

@@ -1848,6 +1848,28 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 </dl>
 </dd></dl>
 
+<dl class="http get">
+<dt class="sig sig-object http" id="get--rest-v1-devices-deviceId-vgpustats">
+<span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/vgpustats</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-vgpustats" title="Permalink to this definition"></a></dt>
+<dd><p>Get statistics data of all virtual GPUs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Status Codes</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
+<li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
+</ul>
+</dd>
+<dt class="field-even">Response JSON Object</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>vf_list[].bdf_address</strong> (<em>string</em>) – BDF Address</p></li>
+<li><p><strong>vf_list[].metric_list[].metric_type</strong> (<em>integer</em>) – Metric Type</p></li>
+<li><p><strong>vf_list[].metric_list[].scale</strong> (<em>integer</em>) – Scale</p></li>
+<li><p><strong>vf_list[].metric_list[].value</strong> (<em>integer</em>) – Value</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 </section>
 

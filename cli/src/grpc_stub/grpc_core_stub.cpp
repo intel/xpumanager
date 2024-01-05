@@ -2668,4 +2668,57 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::removeAllVf(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getVfMetrics(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GetVfMetricsRequest req;
+    GetVfMetricsResponse resp;
+    req.set_deviceid(deviceId);
+    grpc::Status status = stub->getVfMetrics(&context, req, &resp);
+    if (status.ok()) {
+        if (resp.errormsg().length() > 0) {
+            (*json)["error"] = resp.errormsg();
+            (*json)["errno"] = errorNumTranslate(resp.errorno());
+        } else {
+            (*json)["status"] = "OK";
+        }
+        std::vector<nlohmann::json> vfs;
+        for (auto iter : resp.vflist()) {
+            auto vf = nlohmann::json();
+            vf["bdf_address"] = iter.bdfaddress();
+            for (auto &metric : iter.metriclist()) {
+                if (metric.scale() == 0) {
+                    continue;
+                }
+                auto val = double(metric.value()) / metric.scale();
+                switch (metric.metrictype()) {
+                    case XPUM_STATS_GPU_UTILIZATION:
+                        vf["gpu_util"] = val;
+                        break;
+                    case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+                        vf["ce_util"] = val;
+                        break;
+                    case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+                        vf["me_util"] = val;
+                        break;
+                    case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+                        vf["coe_util"] = val;
+                        break;
+                    case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+                        vf["re_util"] = val;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            vfs.push_back(vf);
+        }
+        (*json)["vf_list"] = vfs;
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

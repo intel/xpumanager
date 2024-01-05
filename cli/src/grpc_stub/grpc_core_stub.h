@@ -144,6 +144,8 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> removeAllVf(int deviceId);
 
+    std::unique_ptr<nlohmann::json> getVfMetrics(int deviceId);
+
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
 
