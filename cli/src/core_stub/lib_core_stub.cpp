@@ -2359,7 +2359,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getVfMetrics(int deviceId) {
     }
     std::map<uint32_t, size_t> map;
     std::vector<nlohmann::json> vfs;
-    for (size_t i = 0; i < metrics.size(); i++) {
+    for (uint32_t i = 0; i < count; i++) {
         auto metric = metrics[i];
         if (metric.metric.scale == 0) {
             continue;
