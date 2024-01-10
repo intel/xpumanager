@@ -1926,8 +1926,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s2));
-                    if (res == ZE_RESULT_SUCCESS && (s2.maxBandwidth * (s2.timestamp - s1.timestamp)) != 0) {
-                        val = 100 * 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
+                    // Scale max bandwidth first otherwise the caculation (
+                    // 100 * 1000000 * counter_change) might overflow uint64_t
+                    uint64_t scaledMaxBw = s2.maxBandwidth / 100;
+                    if (res == ZE_RESULT_SUCCESS && (scaledMaxBw * (s2.timestamp - s1.timestamp)) != 0) {
+                        val = 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (scaledMaxBw * (s2.timestamp - s1.timestamp));
                         data_acquired = true;
                     } else {
                         XPUM_LOG_DEBUG("zesMemoryGetBandwidth return s1 timestamp: {}, s2 timestamp: {}, s2.maxBandwidth: {}", s1.timestamp, s2.timestamp, s2.maxBandwidth);
