@@ -680,6 +680,8 @@ The media engine frequency is inferred with GPU frequency. Some GPU telemetries 
 cd /sys/class/intel_pmt/telem1
 sudo chmod o+r telem
 ```
+Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device.   
+  
 
 ## Get the device health status
 Help info of get GPU device component health status
@@ -844,6 +846,8 @@ Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
 06:14:49.000,    0, 0.00, 14.61,    0
 06:14:50.000,    0, 0.00, 14.61,    0
 ```
+Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device.   
+  
  
 ## Collect the GPU debug log files
 Help info of collecting GPU log files.  

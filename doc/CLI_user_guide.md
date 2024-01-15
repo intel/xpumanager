@@ -417,6 +417,8 @@ xpumcli stats -d 0
 +----------------------------+---------------------------------------------------------------------+
 
 ```
+Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device.   
+  
  
 ## Get the device health status
 Help info of get GPU device component health status
@@ -624,6 +626,8 @@ xpumcli dump --rawdata --stop 0
 Task 0 is stopped. 
 Dump file path: /usr/lib/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
+Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device.   
+  
 
 ## Get the system topology
 Help info of get the system topology
