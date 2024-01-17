@@ -74,8 +74,6 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_ENERGY;
         case DeviceCapability::METRIC_MEMORY_USED_UTILIZATION:
             return MeasurementType::METRIC_MEMORY_USED;
-        case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
-            return MeasurementType::METRIC_MEMORY_BANDWIDTH;
         case DeviceCapability::METRIC_MEMORY_THROUGHPUT_BANDWIDTH:
             return MeasurementType::METRIC_MEMORY_READ;
         case DeviceCapability::METRIC_COMPUTATION:
