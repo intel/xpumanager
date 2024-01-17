@@ -69,7 +69,7 @@ class GPUDeviceStub {
 
     void getMemoryBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-    void getMemoryReadWrite(const zes_device_handle_t& device, Callback_t callback) noexcept;
+    void getMemoryThroughputAndBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getGPUUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
@@ -216,7 +216,7 @@ private:
 
     static std::shared_ptr<MeasurementData> toGetMemoryBandwidth(const zes_device_handle_t& device);
 
-    static std::shared_ptr<MeasurementData> toGetMemoryReadWrite(const zes_device_handle_t& device);
+    static std::shared_ptr<MeasurementData> toGetMemoryThroughputAndBandwidth(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetGPUUtilization(const zes_device_handle_t& device);
 
