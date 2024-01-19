@@ -155,10 +155,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_3D_ALL); };
         case DeviceCapability::METRIC_ENERGY:
             return [p_device](Callback_t callback) { p_device->getEnergy(callback); };
-        case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
-            return [p_device](Callback_t callback) { p_device->getMemoryBandwidth(callback); };
-        case DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT:
-            return [p_device](Callback_t callback) { p_device->getMemoryReadWrite(callback); };
+        case DeviceCapability::METRIC_MEMORY_THROUGHPUT_BANDWIDTH:
+            return [p_device](Callback_t callback) { p_device->getMemoryThroughputAndBandwidth(callback); };
         case DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE:
             return [p_device](Callback_t callback) { p_device->getEuActiveStallIdle(callback, MeasurementType::METRIC_EU_ACTIVE); };
         case DeviceCapability::METRIC_RAS_ERROR:

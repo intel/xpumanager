@@ -6,6 +6,7 @@
 
 #include "dump_task.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -107,13 +108,25 @@ void DumpRawDataTask::buildColumns() {
     // get engine count
     auto engineCountList = getDeviceAndTileEngineCount(deviceId);
 
-    std::vector<xpum::EngineCountData>* pEngineCountList = nullptr;
+    std::vector<xpum::EngineCount> curEngineCountList;
+    bool needAggFromTiles = true;
 
     for (auto& ec : engineCountList) {
         if ((tileId == -1 && !ec.isTileLevel) || (ec.isTileLevel && (tileId == ec.tileId))) {
-            pEngineCountList = &ec.engineCountList;
+            curEngineCountList.push_back(ec);
+            needAggFromTiles = false;
             break;
         }
+    }
+
+    if (needAggFromTiles){
+        for (auto& ec : engineCountList) {
+            if ((tileId == -1) && ec.isTileLevel) {
+                curEngineCountList.push_back(ec);
+            }
+        }
+        std::sort(curEngineCountList.begin(), curEngineCountList.end(),
+            [] (const xpum::EngineCount& a, const xpum::EngineCount& b) {return a.tileId < b.tileId;});
     }
 
     // get fabric count
@@ -123,6 +136,18 @@ void DumpRawDataTask::buildColumns() {
         if ((tileId == -1 && !fc.isTileLevel) || (fc.isTileLevel && (tileId == fc.tileId))) {
             pFabricCountList = &fc.dataList;
             break;
+        }
+    }
+
+    if(pFabricCountList == nullptr){
+        for (auto& fc : fabricCountList) {
+            if(fc.isTileLevel && (tileId == -1)){
+                if(pFabricCountList == nullptr){
+                    pFabricCountList = &fc.dataList;
+                } else {
+                    pFabricCountList->insert(pFabricCountList->end(), fc.dataList.begin(), fc.dataList.end());
+                }
+            }
         }
     }
 
@@ -149,16 +174,23 @@ void DumpRawDataTask::buildColumns() {
                                       return value;
                                   }});
         } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
-            if (pEngineCountList == nullptr)
+            if (curEngineCountList.empty())
                 continue;
-            for (auto ecByType : *pEngineCountList) {
+            for (auto ec : curEngineCountList) {
+            for(auto ecByType : ec.engineCountList){
                 auto engineType = ecByType.engineType;
+                auto tileId = ec.tileId;
                 if (engineType != config.engineType)
                     continue;
+
+                std::string tileInfo = "";
+                if(needAggFromTiles) {
+                    tileInfo = std::to_string(ec.tileId) + "/";
+                }
                 for (int engineIdx = 0; engineIdx < ecByType.count; engineIdx++) {
-                    std::string header = engineNameMap[config.engineType] + " " + std::to_string(engineIdx) + " (%)";
+                    std::string header = engineNameMap[config.engineType] + " " + tileInfo + std::to_string(engineIdx) + " (%)";
                     columnList.push_back({header,
-                                          [engineType, engineIdx, p_this, config]() {
+                                          [engineType, needAggFromTiles, tileId, engineIdx, p_this, config]() {
                                               auto& m = p_this->engineUtilRawDataMap;
                                               auto it = m.find(engineType);
                                               std::string value;
@@ -170,10 +202,24 @@ void DumpRawDataTask::buildColumns() {
                                               if (it2 == mm.end()) {
                                                   return value;
                                               }
-                                              auto& data = it2->second;
-                                              return getScaledValue(data.value, data.scale * config.scale);
+                                              auto& dataList = it2->second;
+                                              if (!needAggFromTiles && dataList.size() > 0){
+                                                  auto& data = dataList[0];
+                                                  return getScaledValue(data.value, data.scale * config.scale);
+                                              } else if (needAggFromTiles && dataList.size() > 0){
+                                                  auto it = std::find_if(dataList.begin(), dataList.end(),
+                                                                        [tileId] (const xpum::xpum_device_engine_metric_t& d) {return tileId == d.tileId;});
+                                                  if(it == dataList.end()){
+                                                    return value;
+                                                  }
+                                                  auto& data = (*it);
+                                                  return getScaledValue(data.value, data.scale * config.scale);
+                                              } else {
+                                                  return value;
+                                              }
                                           }});
                 }
+            }
             }
         } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC && pFabricCountList) {
             for (auto& fc : *pFabricCountList) {
@@ -274,13 +320,73 @@ void DumpRawDataTask::updateData() {
 
     rawDataMap.clear();
 
+    std::map<xpum_stats_type_t, xpum_device_metric_data_t> rawDeviceDataMap;
+    std::map<xpum_device_tile_id_t, std::map<xpum_stats_type_t, xpum_device_metric_data_t>> rawTileDataMap;
+    std::map<xpum_stats_type_t, xpum_device_metric_data_t> aggregatedDeviceDataMap;
+
+    std::set<xpum_stats_type_enum> tiltMetricTypes;
+    std::set<xpum_stats_type_enum> deviceMetricTypes;
+    std::set<xpum_stats_type_enum> aggregatedMetricTypes;
+
     for (auto deviceMetrics : deviceMetricsList) {
-        if ((p_this->tileId == -1 && !deviceMetrics.isTileData) || (deviceMetrics.isTileData && (p_this->tileId == deviceMetrics.tileId))) {
+        if ((deviceMetrics.isTileData)) {
             for (int i = 0; i < deviceMetrics.count; i++) {
                 auto data = deviceMetrics.dataList[i];
-                rawDataMap[data.metricsType] = data;
+                rawTileDataMap[deviceMetrics.tileId][data.metricsType] = data;
+                tiltMetricTypes.insert(data.metricsType);
             }
-            break;
+        } else {
+            for (int i = 0; i < deviceMetrics.count; i++) {
+                auto data = deviceMetrics.dataList[i];
+                rawDeviceDataMap[data.metricsType] = data;
+                deviceMetricTypes.insert(data.metricsType);
+            }
+        }
+    }
+
+    std::set_difference(tiltMetricTypes.begin(), tiltMetricTypes.end(),
+                        deviceMetricTypes.begin(), deviceMetricTypes.end(), std::inserter(aggregatedMetricTypes, aggregatedMetricTypes.begin()));
+
+    for (auto metric : aggregatedMetricTypes) {
+        int tileCount = 0;
+        for (auto tileMetrics : rawTileDataMap) {
+            auto tileAllMetrics = tileMetrics.second;
+            if (tileAllMetrics.count(metric)) {
+                if (tileCount == 0) {
+                    aggregatedDeviceDataMap[metric] = tileAllMetrics[metric];
+                } else {
+                    if(sumMetricsList.find(metric) != sumMetricsList.end()){
+                        if(aggregatedDeviceDataMap[metric].scale == 0){
+                            aggregatedDeviceDataMap[metric] = tileAllMetrics[metric];
+                        } else {
+                            aggregatedDeviceDataMap[metric].value +=
+                            (tileAllMetrics[metric].value * tileAllMetrics[metric].scale / aggregatedDeviceDataMap[metric].scale);
+                        }
+                    } else {
+                        if(aggregatedDeviceDataMap[metric].scale == 0){
+                            if(tileAllMetrics[metric].scale != 0){
+                                aggregatedDeviceDataMap[metric] = tileAllMetrics[metric];
+                                auto doubleNumber = aggregatedDeviceDataMap[metric].value/ (double) (1 + tileCount);
+                                aggregatedDeviceDataMap[metric].value = round(doubleNumber * 100) / 100;
+                            }
+                        } else {
+                            auto doubleNumber = (aggregatedDeviceDataMap[metric].value * aggregatedDeviceDataMap[metric].scale * tileCount +
+                            tileAllMetrics[metric].value * tileAllMetrics[metric].scale / (double) (1 + tileCount)) / aggregatedDeviceDataMap[metric].scale;
+                            aggregatedDeviceDataMap[metric].value = round(doubleNumber * 100) / 100;
+                        }
+                    }
+                }
+                tileCount += 1;
+            }
+        }
+    }
+
+    if(p_this->tileId == -1){
+        rawDataMap.insert(rawDeviceDataMap.begin(), rawDeviceDataMap.end());
+        rawDataMap.insert(aggregatedDeviceDataMap.begin(), aggregatedDeviceDataMap.end());
+    } else {
+        if(rawTileDataMap.count(p_this->tileId)){
+            rawDataMap.insert(rawTileDataMap[p_this->tileId].begin(), rawTileDataMap[p_this->tileId].end());
         }
     }
 
@@ -293,13 +399,18 @@ void DumpRawDataTask::updateData() {
     std::vector<xpum_device_engine_metric_t> engineUtilRawDataList(engineUtilRawDataSize);
     p_data_logic->getEngineUtilizations(p_this->deviceId, engineUtilRawDataList.data(), &engineUtilRawDataSize);
     for (auto engineUtilRawData : engineUtilRawDataList) {
-        if ((p_this->tileId == -1 && !engineUtilRawData.isTileData) || (engineUtilRawData.isTileData && (p_this->tileId == engineUtilRawData.tileId))) {
+        if ((p_this->tileId == -1) || (engineUtilRawData.isTileData && (p_this->tileId == engineUtilRawData.tileId))) {
             auto engineType = engineUtilRawData.type;
             auto it = engineUtilRawDataMap.find(engineType);
             if (it == engineUtilRawDataMap.end()) {
-                engineUtilRawDataMap[engineType] = std::map<int, xpum_device_engine_metric_t>();
+                engineUtilRawDataMap[engineType] = std::map<int, std::vector<xpum_device_engine_metric_t>>();
             }
-            engineUtilRawDataMap[engineType][engineUtilRawData.index] = engineUtilRawData;
+
+            auto it1 = engineUtilRawDataMap[engineType].find(engineUtilRawData.index);
+            if (it1 == engineUtilRawDataMap[engineType].end()){
+                engineUtilRawDataMap[engineType][engineUtilRawData.index] = std::vector<xpum_device_engine_metric_t>();
+            }
+            engineUtilRawDataMap[engineType][engineUtilRawData.index].push_back(engineUtilRawData);
         }
     }
 

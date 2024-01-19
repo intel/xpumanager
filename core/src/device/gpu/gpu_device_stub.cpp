@@ -834,10 +834,9 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
     if (checkCapability(props.core.name, bdf_address, "Memory Used Utilization", toGetMemoryUsedUtilization, device))
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED_UTILIZATION);
     */
-    if (checkCapability(props.core.name, bdf_address, "Memory Bandwidth", toGetMemoryBandwidth, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
-    if (checkCapability(props.core.name, bdf_address, "Memory Read Write Throughput", toGetMemoryReadWrite, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT);
+
+    if (checkCapability(props.core.name, bdf_address, "Memory Throughput and Bandwidth", toGetMemoryThroughputAndBandwidth, device))
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_THROUGHPUT_BANDWIDTH);
     if (checkCapability(props.core.name, bdf_address, "GPU Utilization", toGetGPUUtilization, device))
         capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
     if (checkCapability(props.core.name, bdf_address, "Engine Utilization", toGetEngineUtilization, device))
@@ -1891,87 +1890,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUsedUtilization(const
     }
 }
 
-void GPUDeviceStub::getMemoryBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept {
+void GPUDeviceStub::getMemoryThroughputAndBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
-    invokeTask(callback, toGetMemoryBandwidth, device);
+    invokeTask(callback, toGetMemoryThroughputAndBandwidth, device);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_device_handle_t& device) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryThroughputAndBandwidth(const zes_device_handle_t& device) {
     if (device == nullptr) {
-        throw BaseException("toGetMemoryBandwidth error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    uint32_t mem_module_count = 0;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            for (auto& mem : mems) {
-                zes_mem_properties_t props = {};
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
-                    continue;
-                }
-                uint64_t val = 0;
-                zes_mem_bandwidth_t s1 = {};
-                zes_mem_bandwidth_t s2 = {};
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s1));
-                if (res == ZE_RESULT_SUCCESS) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s2));
-                    if (res == ZE_RESULT_SUCCESS && (s2.maxBandwidth * (s2.timestamp - s1.timestamp)) != 0) {
-                        val = 100 * 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
-                        data_acquired = true;
-                    } else {
-                        XPUM_LOG_DEBUG("zesMemoryGetBandwidth return s1 timestamp: {}, s2 timestamp: {}, s2.maxBandwidth: {}", s1.timestamp, s2.timestamp, s2.maxBandwidth);
-                        exception_msgs["zesMemoryGetBandwidth-2"] = res;
-                    }
-                } else {
-                    exception_msgs["zesMemoryGetBandwidth-1"] = res;
-                }
-                if (data_acquired == true) {
-                    if (val > 100) {
-                        val = 100;
-                    }   
-                    if (props.onSubdevice) {
-                        ret->setSubdeviceDataCurrent(props.subdeviceId, val);
-                    } else {
-                        ret->setCurrent(val);
-                    }
-                }
-            }
-        } else {
-            exception_msgs["zesDeviceEnumMemoryModules"] = res;
-        }
-    } else {
-        exception_msgs["zesDeviceEnumMemoryModules"] = res;
-    }
-
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getMemoryReadWrite(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetMemoryReadWrite, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadWrite(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetMemoryReadWrite error");
+        throw BaseException("toGetMemoryThroughputAndBandwidth error");
     }
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
@@ -1994,6 +1922,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadWrite(const zes_d
                 zes_mem_bandwidth_t mem_bandwidth = {};
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
+
                     uint32_t subdeviceId = UINT32_MAX;
                     if (props.onSubdevice) {
                         subdeviceId = props.subdeviceId;
@@ -2002,8 +1931,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadWrite(const zes_d
                         ret->setCurrent(mem_bandwidth.readCounter);
                     }
                     ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE, mem_bandwidth.writeCounter);
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, mem_bandwidth.readCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
+                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, mem_bandwidth.readCounter / 1024 * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    // The 100 for percentage and the first 1000 for mili seconds to seconds in the next comment code, but to overcome the possible overflow we use the next line of comment code
+                    // ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter + mem_bandwidth.writeCounter) / mem_bandwidth.maxBandwidth * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter / 1000 + mem_bandwidth.writeCounter / 1000) / (mem_bandwidth.maxBandwidth / 1000) * 1000, 1, true, mem_bandwidth.timestamp / 1000);
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;

@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <map>
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -52,8 +53,27 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
     std::vector<DumpColumn> columnList;
 
     std::map<xpum_stats_type_t, xpum_device_metric_data_t> rawDataMap;
-    std::map<xpum_engine_type_t, std::map<int, xpum_device_engine_metric_t>> engineUtilRawDataMap;
+    std::map<xpum_engine_type_t, std::map<int, std::vector<xpum_device_engine_metric_t>>> engineUtilRawDataMap;
     std::map<std::string, xpum_device_fabric_throughput_metric_t> fabricRawDataMap;
+
+    std::set<xpum_stats_type_t> sumMetricsList{ XPUM_STATS_MEMORY_READ,
+                                                        XPUM_STATS_MEMORY_WRITE,
+                                                        XPUM_STATS_MEMORY_READ_THROUGHPUT,
+                                                        XPUM_STATS_MEMORY_WRITE_THROUGHPUT,
+                                                        XPUM_STATS_MEMORY_USED,
+                                                        XPUM_STATS_PCIE_READ_THROUGHPUT,
+                                                        XPUM_STATS_PCIE_WRITE_THROUGHPUT,
+                                                        XPUM_STATS_RAS_ERROR_CAT_RESET,
+                                                        XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+                                                        XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,
+                                                        XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+                                                        XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+                                                        XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+                                                        XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+                                                        XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE,
+                                                        XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE
+                                                        };
+
 
    public:
     DumpRawDataTask(xpum_dump_task_id_t taskId,

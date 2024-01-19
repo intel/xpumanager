@@ -2811,7 +2811,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     }
     std::map<uint32_t, VfMetrics *> map;
     VfMetrics *vf = nullptr;
-    for (auto &metric : metrics) {
+    for (uint32_t i = 0; i < count; i++) {
+        auto metric = metrics[i];
         auto iter = map.find(metric.vfIndex);
         if (iter == map.end()) {
             vf = response->add_vflist();

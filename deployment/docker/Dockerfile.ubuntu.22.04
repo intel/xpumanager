@@ -65,7 +65,7 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends \
     pciutils \
     dmidecode \
-    curl \
+    libcurl4 \
     iproute2 \
     python3 \
     libnl-genl-3-200 \

@@ -62,8 +62,9 @@ RUN apt-get update && \
   echo "deb [trusted=yes arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main" > /etc/apt/sources.list.d/intel-graphics.list && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+    pciutils \
     dmidecode \
-    curl \
+    libcurl4 \
     iproute2 \
     python3 \
     libnl-genl-3-200 \
