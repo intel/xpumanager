@@ -1,9 +1,16 @@
 Intel ® XPU Manager Third Party Programs File
 
-This file is the "third-party-programs.txt" file specified in the associated Intel end user license agreement for the Intel software you are licensing.
+This file contains the list of third party software ("third party programs")
+contained in the Intel software and their required notices and/or license
+terms. This third party software, even if included with the distribution of
+the Intel software, may be governed by separate license terms, including
+without limitation, third party license terms, other Intel software license
+terms, and open source software license terms. These separate license terms
+govern your use of the third party programs as set forth in in the
+"THIRD-PARTY-PROGRAMS" file.
 
-Third party programs and their corresponding required notices and/or license terms are listed below.
-
+Third party programs and their corresponding required notices and/or license terms are listed
+below.
 
 =====================================================================
 
@@ -597,8 +604,6 @@ DAMAGE.
    python3-werkzeug
    Copyright 2007 Pallets
 
-   IPMITool 1.8.18 
-   Copyright (c) 2003 Sun Microsystems, Inc.  All Rights Reserved.
 
    libssh-4
    Copyright (C) 2004-2007 Sara Golemon <sarag@libssh2.org>
@@ -732,10 +737,6 @@ support library is itself covered by the above license.
 =====================================================================
 10. libmpdec2
 
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: mpdecimal
-Source: http://www.bytereef.org/mpdecimal/download.html
-
 Files: *
 Copyright: Copyright (c) 2008-2013 Stefan Krah. All rights reserved.
 License: BSD
@@ -786,107 +787,108 @@ License: BSD
  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-Files: debian/*
-Copyright: 2012 Matthias Klose <doko@debian.org>
-License: GPL-2+
- This package is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
- .
- This package is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- .
- You should have received a copy of the GNU General Public License
- along with this program. If not, see <http://www.gnu.org/licenses/>
- .
- On Debian systems, the complete text of the GNU General
- Public License version 2 can be found in "/usr/share/common-licenses/GPL-2". 
+ OTHERWISE) ARISING IN ANY WAY OUT OF THE US
 
 =====================================================================
 
 11. libjs-jquery
+    Copyright: 2005-2011 John Resig, Brandon Aaron & Jörn Zaefferer
 
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: jQuery
-Source: http://jquery.com/
-Comment: For more details on developers please see http://docs.jquery.com/Contributors
-Files-Excluded: dist external/npo external/qunit external/qunit-assert-step external/requirejs external/sinon
+    doxyrest
+    Copyright (c) 2016, Tibbo Technology Inc
+    Copyright (c) 2016, Vladimir Gladkov
+    Copyright (c) 2016-2019, Doxyrest maintainers
+    
+    Flask-HTTPAuth
+    Copyright (c) 2013 Miguel Grinberg
+    
+    Gunicorn
+    2009-2018 (c) BenoChesneau <benoitc@e-engura.org>
+    2009-2015 (c) Paul J. Davis <paul.joseph.davis@gmail.com>
+    
+    libexpat1
+    Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper
+    Copyright (c) 2001-2019 Expat maintainers
+    
+    libigdml1
+    Copyright (c) 2020, Intel Corporation  
+    
+    libmd1
+    Copyright (c) 2019, Intel Corporation
+    
+    libpython3-stdlib
+    Copyright (c) 2021 John Reese  
+    
+    libz3-4
+    Copyright (c) Microsoft Corporation
+    All rights reserved. 
+    
+    marshmallow
+    Copyright 2021 Steven Loria and contributors
+    
+    nlohmann-json
+    Copyright (c) 2013-2022 Niels Lohmann
+    
+    python3-distutils
+    Copyright: Upstream Author: Guido van Rossum <guido@cwi.nl> and others.
+    
+    python3-flask-httpauth
+    Copyright (c) 2013 Miguel Grinberg
+    
+    python3-lib2to3
+    Copyright: Upstream Author: Guido van Rossum <guido@cwi.nl> and others.
+    
+    python3-minimal
+    Copyright (c) 2017 Geoffrey A. Reed
+    
+    python3-setuptools
+    Copyright Jason R. Coombs
+    
+    python3-six
+    Copyright (c) 2010-2020 Benjamin Peterson
+    
+    python3-urllib3
+    Copyright (c) 2008-2020 Andrey Petrov and contributors (see CONTRIBUTORS.txt)
+    
+    level-zero
+    Copyright (C) 2019-2021 Intel Corporation
+    
+    libigc1 (Intel® Graphics Compiler) 
+    Copyright (C) 2019-2021 Intel Corporation
+    
+    libigdfcl1 (Intel® Graphics Compiler)
+    Copyright (C) 2019-2021 Intel Corporation
+    
+    libigdgmm11 (Intel(R) Graphics Memory Management Library)
+    Copyright (c) 2017 Intel Corporation
 
-Files: *
-Copyright: 2005-2011 John Resig, Brandon Aaron & Jörn Zaefferer
-License: GPL-2 or MIT
+    python3-charset-normalizer
+    Copyright © Ahmed TAHRI @Ousret.
 
-Files: src/selector.js
-Copyright: 2011, The Dojo Foundation
-License: MIT or BSD-3-clause or GPL-2
+    libbrotli1
+    Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+    Upstream-Name: brotli
+    Source: https://github.com/google/brotli
+    Files: *
+    Copyright: 2009, 2010, 2013-2015 by the Brotli Authors
+    License: MIT
 
-Files: external/sizzle/*
-Copyright: 2011, The Dojo Foundation
-License: MIT or BSD-3-clause or GPL-2
+    libnghttp2-14
+    Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa
+    Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors
 
-Files: debian/*
-Copyright: 2008 Steve Kemp <skx@debian.org>
-           2010 Marcelo Jorge Vieira <metal@debian.org>
-           2015-2016 Antonio Terceiro <terceiro@debian.org>
-License: GPL-2 or MIT
+    libpsl5
+    Copyright (C) 2014-2022 Tim Rühsen
 
-License: GPL-2
-  On Debian GNU/Linux systems, the complete text of the GNU General
-  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+    jquery
 
-License: MIT
-  Copyright (c) 2011 John Resig, http://jquery.com/
-  .
-  Permission is hereby granted, free of charge, to any person obtaining
-  a copy of this software and associated documentation files (the
-  "Software"), to deal in the Software without restriction, including
-  without limitation the rights to use, copy, modify, merge, publish,
-  distribute, sublicense, and/or sell copies of the Software, and to
-  permit persons to whom the Software is furnished to do so, subject to
-  the following conditions:
-  .
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
-  .
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-License: BSD-3-clause
-  Copyright (c) 2009, John Resig
-  All rights reserved.
-  .
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-  .
-  THIS SOFTWARE IS PROVIDED BY John Resig ''AS IS'' AND ANY
-  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  DISCLAIMED. IN NO EVENT SHALL <copyright holder> BE LIABLE FOR ANY
-  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 =====================================================================
 
@@ -897,8 +899,6 @@ License: BSD-3-clause
     libpci3
 
     iproute2
-
-    libxtables12
 
     Licensed under GPL-2.0-or-later
 
@@ -1956,7 +1956,7 @@ License: MPL-2.0
    This Source Code Form is "Incompatible With Secondary Licenses", as
    defined by the Mozilla Public License, v. 2.0.
 
-============================================================
+=====================================================================
 15. python3-chardet
 
     This is a continuation of Mark Pilgrim's excellent original chardet port from C, and Ian Cordasco's charade Python 3-compatible fork.
@@ -2446,137 +2446,7 @@ DAMAGES.
 					 
 =====================================================================
 
-16. doxyrest
-    Copyright (c) 2016, Tibbo Technology Inc
-    Copyright (c) 2016, Vladimir Gladkov
-    Copyright (c) 2016-2019, Doxyrest maintainers
-    
-    Flask-HTTPAuth
-    Copyright (c) 2013 Miguel Grinberg
-    
-    Gunicorn
-    2009-2018 (c) BenoChesneau <benoitc@e-engura.org>
-    2009-2015 (c) Paul J. Davis <paul.joseph.davis@gmail.com>
-    
-    libexpat1
-    Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper
-    Copyright (c) 2001-2019 Expat maintainers
-    
-    libigdml1
-    Copyright (c) 2020, Intel Corporation  
-    
-    libmd1
-    Copyright (c) 2019, Intel Corporation
-    
-    libpython3-stdlib
-    Copyright (c) 2021 John Reese  
-    
-    libz3-4
-    Copyright (c) Microsoft Corporation
-    All rights reserved. 
-    
-    marshmallow
-    Copyright 2021 Steven Loria and contributors
-    
-    nlohmann-json
-    Copyright (c) 2013-2022 Niels Lohmann
-    
-    python3-distutils
-    Copyright: Upstream Author: Guido van Rossum <guido@cwi.nl> and others.
-    
-    python3-flask-httpauth
-    Copyright (c) 2013 Miguel Grinberg
-    
-    python3-lib2to3
-    Copyright: Upstream Author: Guido van Rossum <guido@cwi.nl> and others.
-    
-    python3-minimal
-    Copyright (c) 2017 Geoffrey A. Reed
-    
-    python3-setuptools
-    Copyright Jason R. Coombs
-    
-    python3-six
-    Copyright (c) 2010-2020 Benjamin Peterson
-    
-    python3-urllib3
-    Copyright (c) 2008-2020 Andrey Petrov and contributors (see CONTRIBUTORS.txt)
-    
-    level-zero
-    Copyright (C) 2019-2021 Intel Corporation
-    
-    libigc1 (Intel® Graphics Compiler) 
-    Copyright (C) 2019-2021 Intel Corporation
-    
-    libigdfcl1 (Intel® Graphics Compiler)
-    Copyright (C) 2019-2021 Intel Corporation
-    
-    libigdgmm11 (Intel(R) Graphics Memory Management Library)
-    Copyright (c) 2017 Intel Corporation
-
-    python3-charset-normalizer
-    Copyright © Ahmed TAHRI @Ousret.
-
-    libva-drm2
-    Copyright: 1998-1999, Precision Insight, Inc.
-           2000, VA Linux Systems, Inc.
-           2004, IBM Corporation
-           2006-2018, Intel Corportation
-           2006, Tungsten Graphics, Inc.
-           2008, NVIDIA Corporation
-           2009-2010, Splitted-Desktop Systems
-
-    libbrotli1
-    Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-    Upstream-Name: brotli
-    Source: https://github.com/google/brotli
-    Files: *
-    Copyright: 2009, 2010, 2013-2015 by the Brotli Authors
-    License: MIT
-    Files: debian/*
-    Copyright: 2015 Tomasz Buchert <tomasz@debian.org>
-    License: MIT
-
-    libnghttp2-14
-    Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa
-    Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors
-
-    libpsl5
-    Copyright (C) 2014-2022 Tim Rühsen
-
-    libdrm-intel1
-    This package was downloaded from
-    https://dri.freedesktop.org/libdrm/
-    It was debianized by Marcelo E. Magallon <mmagallo@debian.org> on
-    Fri, 19 Aug 2005 21:11:18 -0600.
-    Copyright 2005 Adam Jackson.
-
-
-    Intel(R) oneVPL GPU Runtime
-    Copyright (c) 2021 Intel Corporation
-
-    libva2
-    Copyright: 1998-1999, Precision Insight, Inc.
-           2000, VA Linux Systems, Inc.
-           2004, IBM Corporation
-           2006-2022, Intel Corporation
-           2006, Tungsten Graphics, Inc.
-           2008, NVIDIA Corporation
-           2009-2010, Splitted-Desktop Systems
-           Microsoft Corporation
-
-    jquery
-
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-=====================================================================
-
-17. spdlog
+16. spdlog
     Copyright (c) 2016 Gabi Melman.                                       
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -2602,7 +2472,7 @@ This software depends on the fmt lib (MIT License),
 and users must comply to its license: https://github.com/fmtlib/fmt/blob/master/LICENSE.rst
 
 =====================================================================
-18. libc-ares2
+17. libc-ares2
     Copyright: 
     2000-2009   Daniel Stenberg, Dominick Meglio, liren at vivisimo.com, 
                James Bursa, Duncan Wilcox, Dirk Manske, Dan Fandrich, 
@@ -2671,7 +2541,10 @@ The Debian packaging is © 2007, Andreas Schuldei <andreas@debian.org> and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
 
 =====================================================================
-19. libdrm-common
+18. libdrm-common
+    Copyright 2005 Adam Jackson.
+
+    libdrm2
     Copyright 2005 Adam Jackson.
 
  Permission is hereby granted, free of charge, to any person obtaining
@@ -2984,319 +2857,7 @@ is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
 
 
 =====================================================================
-20. libdrm2
-    Copyright 2005 Adam Jackson.
-
- Permission is hereby granted, free of charge, to any person obtaining
- a copy of this software and associated documentation files (the
- "Software"), to deal in the Software without restriction, including
- without limitation on the rights to use, copy, modify, merge,
- publish, distribute, sub license, and/or sell copies of the Software,
- and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice (including the
- next paragraph) shall be included in all copies or substantial
- portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- NON-INFRINGEMENT.  IN NO EVENT SHALL ADAM JACKSON BE LIABLE FOR ANY
- CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright 2000 Precision Insight, Inc., Cedar Park, Texas.
- Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California.
- Copyright 2002 Tungsten Graphics, Inc., Cedar Park, Texas.
- All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining
- a copy of this software and associated documentation files (the
- "Software"), to deal in the Software without restriction, including
- without limitation the rights to use, copy, modify, merge, publish,
- distribute, sublicense, and/or sell copies of the Software, and to
- permit persons to whom the Software is furnished to do so, subject to
- the following conditions:
-
- The above copyright notice and this permission notice (including the
- next paragraph) shall be included in all copies or substantial
- portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- NONINFRINGEMENT.  IN NO EVENT SHALL PRECISION INSIGHT AND/OR ITS
- SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- DEALINGS IN THE SOFTWARE.
-
-
- Copyright (c) 2007-2008 Dave Airlie <airlied@linux.ie>
- Copyright (c) 2007-2008 Jakob Bornecrantz <wallbraker@gmail.com>
- Copyright (c) 2008 Red Hat Inc.
- Copyright (c) 2007-2008 Tungsten Graphics, Inc., Cedar Park, TX., USA
- Copyright (c) 2007-2009 Intel Corporation
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- IN THE SOFTWARE.
-
-
- Copyright 2002-2006 Tungsten Graphics, Inc., Cedar Park, Texas.
- All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the next
- paragraph) shall be included in all copies or substantial portions of the
- Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- TUNGSTEN GRAPHICS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright 2000 Gareth Hughes
- Copyright 2002 Frank C. Earl
- Copyright 2002-2003 Leif Delgass
- All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the next
- paragraph) shall be included in all copies or substantial portions of the
- Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- THE COPYRIGHT OWNER(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California.
- Copyright 2005 Stephane Marchesin.
- All rights reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the next
- paragraph) shall be included in all copies or substantial portions of the
- Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- VA LINUX SYSTEMS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright 2004  Felix Kuehling
- All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sub license,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the
- next paragraph) shall be included in all copies or substantial portions
- of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- NON-INFRINGEMENT. IN NO EVENT SHALL FELIX KUEHLING BE LIABLE FOR
- ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
- CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright 2005 Eric Anholt
- Copyright © 2007-2008 Intel Corporation
- Copyright © 2008 Jérôme Glisse
- All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the next
- paragraph) shall be included in all copies or substantial portions of the
- Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
-
-
- Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
- Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sub license,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the
- next paragraph) shall be included in all copies or substantial portions
- of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- DEALINGS IN THE SOFTWARE.
-
-
- Copyright © 2009 VMware, Inc., Palo Alto, CA., USA
- Copyright © 2007-2009 Red Hat Inc.
- Copyright © 2007 Intel Corporation
- Copyright 2006 Tungsten Graphics, Inc., Bismarck, ND., USA
- Copyright © 2008 Dave Airlie
- Copyright © 2008 Jérôme Glisse
- Copyright © 2008 Nicolai Haehnle
- All Rights Reserved.
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the
- "Software"), to deal in the Software without restriction, including
- without limitation the rights to use, copy, modify, merge, publish,
- distribute, sub license, and/or sell copies of the Software, and to
- permit persons to whom the Software is furnished to do so, subject to
- the following conditions:
-
- The above copyright notice and this permission notice (including the
- next paragraph) shall be included in all copies or substantial portions
- of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,
- DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
- USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright (C) 1999 Wittawat Yamwong
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included
- in all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- WITTAWAT YAMWONG, OR ANY OTHER CONTRIBUTORS BE LIABLE FOR ANY CLAIM,?
- DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR?
- OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE?
- OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
- Copyright (c) 2007 Nouveau Project
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
- OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
-
-
- Copyright 2010 Jerome Glisse <glisse@freedesktop.org>
-
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- on the rights to use, copy, modify, merge, publish, distribute, sub
- license, and/or sell copies of the Software, and to permit persons to whom
- the Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice (including the next
- paragraph) shall be included in all copies or substantial portions of the
- Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- THE AUTHOR(S) AND/OR THEIR SUPPLIERS BE LIABLE FOR ANY CLAIM,
- DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
- USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-=====================================================================
-21. python3-pkg-resources
+19. python3-pkg-resources
 
 pycopy-lib consists of multiple modules from different sources and
 authors. Each module comes under its own licensing terms. Short name of
@@ -3445,7 +3006,7 @@ agrees to be bound by the terms and conditions of this License
 Agreement.
 
 =====================================================================
-22. fmt
+20. fmt
     Copyright (c) 2012 - present, Victor Zverovich
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -3459,7 +3020,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 As an exception, if, as a result of your compiling your source code, portions of this Software are embedded into a machine-executable object form of such source code, you may redistribute such embedded portions in such object form without including the above copyright and permission notices.
 
 =====================================================================
-23. python3-certifi
+21. python3-certifi
 
 This package contains a modified version of ca-bundle.crt:
 
@@ -3484,53 +3045,9 @@ one at http://mozilla.org/MPL/2.0/.
 @(#) $RCSfile: certdata.txt,v $ $Revision: 1.80 $ $Date: 2011/11/03 15:11:58 $
 
 =====================================================================
-24. Python
-
-PSF LICENSE AGREEMENT FOR PYTHON 3.10.2
-1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and
-   the Individual or Organization ("Licensee") accessing and otherwise using Python
-   3.10.2 software in source or binary form and its associated documentation.
-
-2. Subject to the terms and conditions of this License Agreement, PSF hereby
-   grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
-   analyze, test, perform and/or display publicly, prepare derivative works,
-   distribute, and otherwise use Python 3.10.2 alone or in any derivative
-   version, provided, however, that PSF's License Agreement and PSF's notice of
-   copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
-   Reserved" are retained in Python 3.10.2 alone or in any derivative version
-   prepared by Licensee.
-
-3. In the event Licensee prepares a derivative work that is based on or
-   incorporates Python 3.10.2 or any part thereof, and wants to make the
-   derivative work available to others as provided herein, then Licensee hereby
-   agrees to include in any such work a brief summary of the changes made to Python
-   3.10.2.
-
-4. PSF is making Python 3.10.2 available to Licensee on an "AS IS" basis.
-   PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED.  BY WAY OF
-   EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY REPRESENTATION OR
-   WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE
-   USE OF PYTHON 3.10.2 WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
-
-5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON 3.10.2
-   FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS A RESULT OF
-   MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 3.10.2, OR ANY DERIVATIVE
-   THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
-
-6. This License Agreement will automatically terminate upon a material breach of
-   its terms and conditions.
-
-7. Nothing in this License Agreement shall be deemed to create any relationship
-   of agency, partnership, or joint venture between PSF and Licensee.  This License
-   Agreement does not grant permission to use PSF trademarks or trade name in a
-   trademark sense to endorse or promote products or services of Licensee, or any
-   third party.
-
-8. By copying, installing or otherwise using Python 3.10.2, Licensee agrees
-   to be bound by the terms and conditions of this License Agreement.
-
-=====================================================================
-25. python3.8-minimal
+22. Python
+    
+    python3.8-minimal
 
     libpython3.10-minimal
 
@@ -4537,26 +4054,23 @@ License: Permission to use, copy, modify, and distribute this software and its
   WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 =====================================================================
 
-26. AMC FW update library
+23. AMC FW update library
     Copyright 2022 Intel Corporation
 
-Intel Simplified Software License (Version August 2021)
 
-Use and Redistribution.  You may use and redistribute the software (the Software), without modification, provided the following conditions are met:
+Intel Simplified Software License (Version October 2022)
 
-* Redistributions must reproduce the above copyright notice and the
-following terms of use in the Software and in the documentation and/or other materials provided with the distribution.
-* Neither the name of Intel nor the names of its suppliers may be used to 
-  endorse or promote products derived from this Software without specific
-  prior written permission.
-* No reverse engineering, decompilation, or disassembly of this Software
-  is permitted.
+Use and Redistribution.  You may use and redistribute the software, which is provided in binary form only, (the “Software”), without modification, provided the following conditions are met:
+
+* 	Redistributions must reproduce the above copyright notice and these terms of use in the Software and in the documentation and/or other materials provided with the distribution.
+* 	Neither the name of Intel nor the names of its suppliers may be used to endorse or promote products derived from this Software without specific prior written permission.
+* 	No reverse engineering, decompilation, or disassembly of the Software is permitted, nor any modification or alteration of the Software or its operation at any time, including during execution.
 
 No other licenses.  Except as provided in the preceding section, Intel grants no licenses or other rights by implication, estoppel or otherwise to, patent, copyright, trademark, trade name, service mark or other intellectual property licenses or rights of Intel.
 
-Third party software.  The Software may contain Third Party Software. Third Party Software is open source software, third party software, or other Intel software that may be identified in the Software itself or in the files (if any) listed in the third-party-software.txt or similarly named text file included with the Software. Third Party Software, even if included with the distribution of the Software, may be governed by separate license terms, including without limitation, open source software license terms, third party software license terms, and other Intel software license terms. Those separate license terms solely govern your use of the Third Party Software, and nothing in this license limits any rights under, or grants rights that supersede, the terms of the applicable license terms.  
+Third party software.  “Third Party Software” means the files (if any) listed in the “third-party-software.txt” or other similarly-named text file that may be included with the Software. Third Party Software, even if included with the distribution of the Software, may be governed by separate license terms, including without limitation, third party license terms, open source software notices and terms, and/or other Intel software license terms. These separate license terms solely govern Your use of the Third Party Software.
 
-DISCLAIMER.  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE DISCLAIMED. THIS SOFTWARE IS NOT INTENDED FOR USE IN SYSTEMS OR APPLICATIONS WHERE FAILURE OF THE SOFTWARE MAY CAUSE PERSONAL INJURY OR DEATH AND YOU AGREE THAT YOU ARE FULLY RESPONSIBLE FOR ANY CLAIMS, COSTS, DAMAGES, EXPENSES, AND ATTORNEYS FEES ARISING OUT OF ANY SUCH USE, EVEN IF ANY CLAIM ALLEGES THAT INTEL WAS NEGLIGENT REGARDING THE DESIGN OR MANUFACTURE OF THE SOFTWARE.
+DISCLAIMER.  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE DISCLAIMED. THIS SOFTWARE IS NOT INTENDED FOR USE IN SYSTEMS OR APPLICATIONS WHERE FAILURE OF THE SOFTWARE MAY CAUSE PERSONAL INJURY OR DEATH AND YOU AGREE THAT YOU ARE FULLY RESPONSIBLE FOR ANY CLAIMS, COSTS, DAMAGES, EXPENSES, AND ATTORNEYS’ FEES ARISING OUT OF ANY SUCH USE, EVEN IF ANY CLAIM ALLEGES THAT INTEL WAS NEGLIGENT REGARDING THE DESIGN OR MANUFACTURE OF THE SOFTWARE.
 
 LIMITATION OF LIABILITY. IN NO EVENT WILL INTEL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
@@ -4564,34 +4078,22 @@ No support.  Intel may make changes to the Software, at any time without notice,
 
 Termination. Your right to use the Software is terminated in the event of your breach of this license.
 
-Feedback.  Should you provide Intel with comments, modifications, corrections, enhancements or other input (Feedback) related to the Software, Intel will be free to use, disclose, reproduce, license or otherwise distribute or exploit the Feedback in its sole discretion without any obligations or restrictions of any kind, including without limitation, intellectual property rights or licensing obligations.
+Feedback.  Should you provide Intel with comments, modifications, corrections, enhancements or other input (“Feedback”) related to the Software, Intel will be free to use, disclose, reproduce, license or otherwise distribute or exploit the Feedback in its sole discretion without any obligations or restrictions of any kind, including without limitation, intellectual property rights or licensing obligations.
 
 Compliance with laws.  You agree to comply with all relevant laws and regulations governing your use, transfer, import or export (or prohibition thereof) of the Software.
 
-Governing law.  All disputes will be governed by the laws of the United States of America and the State of Delaware without reference to conflict of law principles and subject to the exclusive jurisdiction of the state or federal courts sitting in the State of Delaware, and each party agrees that it submits to the personal jurisdiction and venue of those courts and waives any objections. The United Nations Convention on Contracts for the International Sale of Goods (1980) is specifically excluded and will not apply to the Software.
+Governing law.  All disputes will be governed by the laws of the United States of America and the State of Delaware without reference to conflict of law principles and subject to the exclusive jurisdiction of the state or federal courts sitting in the State of Delaware, and each party agrees that it submits to the personal jurisdiction and venue of those courts and waives any objections. THE UNITED NATIONS CONVENTION ON CONTRACTS FOR THE INTERNATIONAL SALE OF GOODS (1980) IS SPECIFICALLY EXCLUDED AND WILL NOT APPLY TO THE SOFTWARE.
 
 =====================================================================
 
-27. libnl
+24. libnl
     Copyright various authors (see file headers)
 
 /* SPDX-License-Identifier: LGPL-2.1-only */
 
 =====================================================================
 
-28. media-types
-    Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-    Source: https://salsa.debian.org/debian/media-types
-
-    Files: *
-    Copyright: public-domain
-    License: ad-hoc
-    This package contains public information compiled from around the 'net and
-    many people.
-
-=====================================================================
-
-29. libsasl2-2
+25. libsasl2-2
 
     libsasl2-modules-de
 
@@ -4642,15 +4144,19 @@ Governing law.  All disputes will be governed by the laws of the United States o
 
 =====================================================================
 
-30. libmpdec3
-    License
-    The latest source and binary distributions on this page are licensed under the Simplified BSD License.
+26. libmpdec3
+    Copyright (c) 2008-2024 Stefan Krah. All rights reserved.
 
-    ocl-icd-libopencl1
-
-    Copyright (c) 2012-2020, Brice Videau <bvideau@anl.gov>
-    Copyright (c) 2012-2020, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
-    All rights reserved.
+    libbpf
+    Copyright: 2013-2015 Alexei Starovoitov <ast@kernel.org>
+           2015 Wang Nan <wangnan0@huawei.com>
+           2015 Huawei Inc.
+           2018, 2019 Facebook
+           2017 Nicira, Inc.
+           2019 Isovalent, Inc.
+           2019 Netronome Systems, Inc.
+           2003-2013 Thomas Graf <tgraf@suug.ch>
+           2018-2019 Intel Corporation.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met: 
@@ -4674,7 +4180,7 @@ Governing law.  All disputes will be governed by the laws of the United States o
 
 =====================================================================
 
-31. libmd0 
+27. libmd0 
     Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
     Files:
@@ -4855,7 +4361,7 @@ Governing law.  All disputes will be governed by the laws of the United States o
 
 =====================================================================
 
-32. libbsd0
+28. libbsd0
     Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
     Files:
@@ -5416,11 +4922,7 @@ Governing law.  All disputes will be governed by the laws of the United States o
     SUCH DAMAGE.
 =====================================================================
 
-33. libcap2-bin
-    The SPDX-License-Identifier for libcap, libpsx, the cap and psx Go packages are all the same: "BSD-3-Clause OR GPL-2.0-only" .
-=====================================================================
-
-34. libelf1
+29. libelf1
     This package was debianized by Kurt Roeckx <kurt@roeckx.be> on
     Sun, 21 May 2006 15:03:01 +0000.
 
@@ -5493,571 +4995,32 @@ Governing law.  All disputes will be governed by the laws of the United States o
     `/usr/share/common-licenses/LGPL-3'.
 =====================================================================
 
-35. libbpf0
-    Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-    Upstream-Name: libbpf
-    Source: https://github.com/libbpf/libbpf
-
-    Files:     *
-    Copyright: 2013-2015 Alexei Starovoitov <ast@kernel.org>
-              2015 Wang Nan <wangnan0@huawei.com>
-              2015 Huawei Inc.
-              2018, 2019 Facebook
-              2017 Nicira, Inc.
-              2019 Isovalent, Inc.
-              2019 Netronome Systems, Inc.
-              2003-2013 Thomas Graf <tgraf@suug.ch>
-              2018-2019 Intel Corporation.
-    License:   LGPL-2.1 or BSD-2-Clause
-
-    Files:     docs/conf.py
-    Copyright: Grant Seltzer <grantseltzer@gmail.com>
-    License:   GPL-2.0
-
-    Files:     include/uapi/linux/bpf.h
-              include/uapi/linux/bpf_common.h
-              include/uapi/linux/btf.h
-              include/uapi/linux/if_link.h
-              include/uapi/linux/if_xdp.h
-              include/uapi/linux/netlink.h
-    Copyright: 2011-2014 PLUMgrid, http://plumgrid.com
-              2018 Facebook
-              2018 Intel Corporation.
-    License:   GPL-2 with Linux-syscall-note exception
-
-    Files:     debian/*
-    Copyright: 2018 Ben Hutchings <ben@decadent.org.uk>
-              2018 Hilko Bengen <bengen@debian.org>
-              2018 Luca Boccassi <bluca@debian.org>
-              2020 Sudip Mukherjee <sudipm.mukherjee@gmail.com>
-    License:   GPL-2+
-
-    License:   GPL-2.0
-    This program is free software; you can redistribute it
-    and/or modify it under the terms of the GNU General Public
-    License version 2 as published by the Free Software
-    Foundation.
-    .
-    This program is distributed in the hope that it will be
-    useful, but WITHOUT ANY WARRANTY; without even the implied
-    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the GNU General Public License for more
-    details.
-    .
-    You should have received a copy of the GNU General Public
-    License along with this package; if not, write to the Free
-    Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-    Boston, MA 02110-1301 USA
-    .
-    On Debian systems, the full text of the GNU General Public
-    License version 2 can be found in the file
-    `/usr/share/common-licenses/GPL-2'.
-
-    License:   GPL-2+
-    This package is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-    .
-    This package is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    .
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <https://www.gnu.org/licenses/>
-    .
-    On Debian systems, the complete text of the GNU General
-    Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
-
-    License:   LGPL-2.1
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation;
-    version 2.1 of the License (not later!)
-    .
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    .
-    You should have received a copy of the GNU Lesser General Public
-    License along with this program; if not,  see <http://www.gnu.org/licenses>
-    .
-    On Debian systems, the complete text of the GNU Lesser General Public License
-    Version 2.1 can be found in `/usr/share/common-licenses/LGPL-2.1'.
-
-    License:   BSD-2-Clause
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    1. Redistributions of source code must retain the above copyright notice,
-        this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
-    .
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE.
-
-    License:   GPL-2 with Linux-syscall-note exception
-    NOTE! This copyright does *not* cover user programs that use kernel services
-    by normal system calls - this is merely considered normal use of the kernel,
-    and does *not* fall under the heading of "derived work". Also note that the
-    GPL below is copyrighted by the Free Software Foundation, but the instance of
-    code that it refers to (the Linux kernel) is copyrighted by me and others who
-    actually wrote it.
-    .
-    Also note that the only valid version of the GPL as far as the kernel is
-    concerned is _this_ particular version of the license (ie v2, not v2.2 or v3.x
-    or whatever), unless explicitly otherwise stated.
-    .
-    Linus Torvalds
-    .
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; version 2 of the License.
-    .
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    .
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
-    .
-    On Debian and systems the full text of the GNU General Public
-    License version 2 can be found in the file
-    "/usr/share/common-licenses/GPL-2".
-
-=====================================================================
-
-36. Intel Media Driver
-
-    Copyright (c) 2007-2017 Intel Corporation
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-    Copyright (c) 2010, The WebM Project authors. All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-    Neither the name of Google, nor the WebM Project, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-    Copyright 1999 Precision Insight, Inc., Cedar Park, Texas. Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California. Copyright (c) 2008 Red Hat Inc. Copyright (c) 2007-2008 Tungsten Graphics, Inc., Cedar Park, TX., USA Copyright (c) 2007-2008 Intel Corporation Copyright 2002 Tungsten Graphics, Inc., Cedar Park, Texas. Copyright 2003 Tungsten Graphics, Inc., Cedar Park, Texas. Copyright 2006 Tungsten Graphics, Inc., Bismarck, ND. USA. Copyright © 2014 NVIDIA Corporation Copyright 1999 Precision Insight, Inc., Cedar Park, Texas. Copyright (c) 2007-2008 Tungsten Graphics, Inc., Cedar Park, Texas. Copyright © 2007 Red Hat Inc. Copyright © 2007-2012 Intel Corporation Copyright 2006 Tungsten Graphics, Inc., Bismarck, ND., USA Copyright 1999 Precision Insight, Inc., Cedar Park, Texas. Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California. Sun Apr 18 09:35:45 1999 by faith@precisioninsight.com Copyright 1999 Precision Insight, Inc., Cedar Park, Texas. Copyright (c) 2007-2008 Tungsten Graphics, Inc., Cedar Park, Texas. Copyright 1999 Precision Insight, Inc., Cedar Park, Texas.
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-    Copyright 2008, Google Inc. All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer. * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. * Neither the name of Google Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-=====================================================================
-
-37. libpciaccess0
-
-    (C) Copyright IBM Corporation 2006, 2007
-    (C) Copyright Eric Anholt 2006
-    (C) Copyright Mark Kettenis 2011
-    (C) Copyright Robert Millan 2012
-    Copyright (c) 2007, 2008, 2009, 2011, 2012, 2016 Oracle and/or its affiliates.
-    Copyright 2009, 2012 Red Hat, Inc.
-    All Rights Reserved.
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to
-    deal in the Software without restriction, including without limitation on
-    the rights to use, copy, modify, merge, publish, distribute, sub license,
-    and/or sell copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice (including the next
-    paragraph) shall be included in all copies or substantial portions of the
-    Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.  IN NO EVENT SHALL
-    IBM AND/OR THEIR SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-    IN THE SOFTWARE.
-
-    ------------------------------------------------------------------------------
-
-    Copyright (c) 2008 Juan Romero Pardines
-    Copyright (c) 2008, 2011 Mark Kettenis
-    Copyright (c) 2009 Michael Lorenz
-    Copyright (c) 2009, 2012 Samuel Thibault
-
-    Permission to use, copy, modify, and distribute this software for any
-    purpose with or without fee is hereby granted, provided that the above
-    copyright notice and this permission notice appear in all copies.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-    ------------------------------------------------------------------------------
-
-    Copyright (C) 2000 The XFree86 Project, Inc.  All Rights Reserved.
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to
-    deal in the Software without restriction, including without limitation the
-    rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-    sell copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-    XFREE86 PROJECT BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-    Except as contained in this notice, the name of the XFree86 Project shall
-    not be used in advertising or otherwise to promote the sale, use or other
-    dealings in this Software without prior written authorization from the
-    XFree86 Project.
-
-    ------------------------------------------------------------------------------
-
-    Copyright (c) 2007 Paulo R. Zanoni, Tiago Vignatti
-    Copyright (c) 2009 Tiago Vignatti
-
-    Permission is hereby granted, free of charge, to any person
-    obtaining a copy of this software and associated documentation
-    files (the "Software"), to deal in the Software without
-    restriction, including without limitation the rights to use,
-    copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following
-    conditions:
-
-    The above copyright notice and this permission notice shall be
-    included in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-    OTHER DEALINGS IN THE SOFTWARE.
-
-=====================================================================
-
-38. libcurl
-    COPYRIGHT AND PERMISSION NOTICE
+30. libcurl4
+    Copyright: 1996-2015, Daniel Stenberg <daniel@haxx.se>
 
     Copyright (c) 1996 - 2024, Daniel Stenberg, daniel@haxx.se, and many contributors, see the THANKS file.
 
-    All rights reserved.
-
-    Permission to use, copy, modify, and distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-    Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
-
-=====================================================================
-
-39. libcurl4
-    Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-    Upstream-Name: curl
-    Source: http://curl.haxx.se
-
-    Files: *
-    Copyright: 1996-2015, Daniel Stenberg <daniel@haxx.se>
-    License: curl
-
-    Files: lib/vtls/sectransp.*
-    Copyright: 2012-2014, Nick Zitzmann <nickzman@gmail.com>
-    2012-2019, Daniel Stenberg <daniel@haxx.se>
-    License: curl
-
-    Files: lib/curl_rtmp.*
-    Copyright: 2010, Howard Chu <hyc@highlandsun.com>
-    License: curl
-
-    Files: lib/vtls/schannel.*
-    Copyright: 2012-2014, Marc Hoersken <info@marc-hoersken.de>
-    2012, Mark Salisbury <mark.salisbury@hp.com>
-    2012-2015, Daniel Stenberg <daniel@haxx.se>
-    License: curl
-
-    Files: lib/inet_pton.c
-    lib/inet_ntop.c
-    Copyright: 1996-2001 Internet Software Consortium
-    License: ISC
-
-    Files: lib/krb5.c
-    Copyright: 2004-2015 Daniel Stenberg
-    1995-1999 Kungliga Tekniska HÃ¶gskolan
-    License: BSD-3-Clause
-
-    Files: lib/md4.c
-    Copyright: 2001, Solar Designer <solar@openwall.com>
-    License: public-domain
-
-    Files: lib/openldap.*
-    Copyright: 2011-2015, Daniel Stenberg <daniel@haxx.se>
-    2010, Howard Chu <hyc@openldap.org>
-    License: curl
-
-    Files: lib/vtls/mbedtls.*
-    Copyright: 2010-2011, Hoi-Ho Chan <hoiho.chan@gmail.com>
-    2012-2020, Daniel Stenberg <daniel@haxx.se>
-    License: curl
-
-    Files: lib/socks_gssapi.c
-    lib/socks_sspi.*
-    Copyright: 2009, 2011, Markus Moeller, <markus_moeller@compuserve.com>
-    2012-2015, Daniel Stenberg, <daniel@haxx.se>
-    License: curl
-
-    Files: tests/certs/scripts/genroot.sh
-    tests/certs/scripts/genserv.sh
-    Copyright: 2000-2009, EdelWeb for EdelKey and OpenEvidence
-    License: curl
-
-    Files: tests/server/tftpd.c
-    Copyright: 1983 Regents of the University of California
-    License: BSD-4-Clause
-
-    Files: tests/server/fake_ntlm.c
-    Copyright: 2010, Mandy Wu <mandy.wu@intel.com>
-    2011-2013, Daniel Stenberg <daniel@haxx.se>
-    License: curl
-
-    Files: docs/examples/fopen.c
-    Copyright: 2003, Simtec Electronics
-    License: BSD-3-Clause
-
-    Files: docs/examples/rtsp.c
-    Copyright: 2011, Jim Hollinger
-    License: BSD-3-Clause
-
-    Files: docs/examples/curlgtk.c
-    Copyright: 2003, The OpenEvidence Project
-    License: curl
-
-    Files: docs/examples/curlx.c
-    Copyright: 2003, The OpenEvidence Project
-    License: other
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    .
-    1. Redistributions of source code must retain the above copyright
-        notice, this list of conditions, the following disclaimer,
-        and the original OpenSSL and SSLeay Licences below.
-    .
-    2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions, the following disclaimer
-        and the original OpenSSL and SSLeay Licences below in
-        the documentation and/or other materials provided with the
-        distribution.
-    .
-    3. All advertising materials mentioning features or use of this
-        software must display the following acknowledgments:
-        "This product includes software developed by the Openevidence Project
-        for use in the OpenEvidence Toolkit. (http://www.openevidence.org/)"
-        This product includes software developed by the OpenSSL Project
-        for use in the OpenSSL Toolkit (http://www.openssl.org/)"
-        This product includes cryptographic software written by Eric Young
-        (eay@cryptsoft.com).  This product includes software written by Tim
-        Hudson (tjh@cryptsoft.com)."
-    .
-    4. The names "OpenEvidence Toolkit" and "OpenEvidence Project" must not be
-        used to endorse or promote products derived from this software without
-        prior written permission. For written permission, please contact
-        openevidence-core@openevidence.org.
-    .
-    5. Products derived from this software may not be called "OpenEvidence"
-        nor may "OpenEvidence" appear in their names without prior written
-        permission of the OpenEvidence Project.
-    .
-    6. Redistributions of any form whatsoever must retain the following
-        acknowledgments:
-        "This product includes software developed by the OpenEvidence Project
-        for use in the OpenEvidence Toolkit (http://www.openevidence.org/)
-        This product includes software developed by the OpenSSL Project
-        for use in the OpenSSL Toolkit (http://www.openssl.org/)"
-        This product includes cryptographic software written by Eric Young
-        (eay@cryptsoft.com).  This product includes software written by Tim
-        Hudson (tjh@cryptsoft.com)."
-    .
-    THIS SOFTWARE IS PROVIDED BY THE OpenEvidence PROJECT ``AS IS'' AND ANY
-    EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-    PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenEvidence PROJECT OR
-    ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-    NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-    OF THE POSSIBILITY OF SUCH DAMAGE.
-
-    Files: src/macos/src/macos_main.cpp
-    Copyright: 2001, Eric Lavigne
-    License: other
-    Permission is granted to anyone to use this software for any purpose on any computer system, and to redistribute it freely, subject to the following restrictions: - The author is not responsible for the consequences of use of this software, no matter how awful, even if they arise from defects in it. - The origin of this software must not be misrepresented, either by explicit claim or by omission. - You are allowed to distributed modified copies of the software, in source and binary form, provided they are marked plainly as altered versions, and are not misrepresented as being the original software.
-
-    Files: debian/*
-    Copyright: 2000-2010, Domenico Andreoli <cavok@debian.org>
-    2010-2011, Ramakrishnan Muthukrishnan <rkrishnan@debian.org>
-    2011, Alessandro Ghedini <ghedo@debian.org>
-    License: curl
-
-    License: curl
-    All rights reserved.
-    .
-    Permission to use, copy, modify, and distribute this software for any purpose
-    with or without fee is hereby granted, provided that the above copyright
-    notice and this permission notice appear in all copies.
-    .
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN
-    NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
-    OR OTHER DEALINGS IN THE SOFTWARE.
-    .
-    Except as contained in this notice, the name of a copyright holder shall not
-    be used in advertising or otherwise to promote the sale, use or other dealings
-    in this Software without prior written authorization of the copyright holder.
-
-    License: BSD-3-Clause
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    .
-    1. Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
-    .
-    2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
-    .
-    3. Neither the name of the Institute nor the names of its contributors
-        may be used to endorse or promote products derived from this software
-        without specific prior written permission.
-    .
-    THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
-    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
-
-    License: BSD-4-Clause
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    .
-    1. Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
-    .
-    2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
-    .
-    3. Neither the name of the Institute nor the names of its contributors
-        may be used to endorse or promote products derived from this software
-        without specific prior written permission.
-    .
-    4. Neither the name of the <organization> nor the
-        names of its contributors may be used to endorse or promote products
-        derived from this software without specific prior written permission.
-    .
-    THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
-    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
-
-    License: ISC
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted, provided that the above
-    copyright notice and this permission notice appear in all copies.
-    .
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-    License: public-domain
-    This software was written by Alexander Peslyak in 2001.  No copyright is
-    claimed, and the software is hereby placed in the public domain.  In case
-    this attempt to disclaim copyright and place the software in the public
-    domain is deemed null and void, then the software is Copyright (c) 2001
-    Alexander Peslyak and it is hereby released to the general public under the
-    following terms:
-    .
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted.
-    .
-    There's ABSOLUTELY NO WARRANTY, express or implied.
+ All rights reserved.
+ .
+ Permission to use, copy, modify, and distribute this software for any purpose
+ with or without fee is hereby granted, provided that the above copyright
+ notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN
+ NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+ OR OTHER DEALINGS IN THE SOFTWARE.
+ .
+ Except as contained in this notice, the name of a copyright holder shall not
+ be used in advertising or otherwise to promote the sale, use or other dealings
+ in this Software without prior written authorization of the copyright holder.
 
 =====================================================================
 
-40. libldap
+31. libldap
     This package was downloaded from:
 
         <http://www.openldap.org/>
@@ -6527,59 +5490,167 @@ Governing law.  All disputes will be governed by the laws of the United States o
 
 =====================================================================
 
-41. libwayland-client0
-    Upstream-Name: wayland
-    Upstream-Contact: Kristian HÃ¸gsberg <krh@bitplanet.net>
-    Source: https://wayland.freedesktop.org/releases/
+32. libxtables12
 
-    Files: debian/*
-    Copyright: Â© 2011 Cyril Brulebois <kibi@debian.org>
-    License: X11
+	License: GPL-2.0-only
+	
+	GNU GENERAL PUBLIC LICENSE
+	Version 2, June 1991
 
-    Files: *
-    Copyright:
-    Â© 1999 SuSE, Inc.
-    Â© 2002 Keith Packard
-    Â© 2006, 2008 Junio C Hamano
-    Â© 2008-2012 Kristian HÃ¸gsberg
-    Â© 2010-2012 Intel Corporation
-    Â© 2011 Benjamin Franzke
-    Â© 2012-2013, 2016 Collabora, Ltd
-    Â© 2012-2013 Jason Ekstrand
-    Â© 2012-2014 Jonas Ã…dahl
-    Â© 2013 Marek Chalupa
-    Â© 2014-2015 Red Hat, Inc.
-    Â© 2015 Giulio Camuffo
-    Â© 2016 KlarÃ¤lvdalens Datakonsult AB
-    Â© 2016 Yong Bakos
-    Â© 2017 NVIDIA CORPORATION
-    Â© 2017 Samsung Electronics Co., Ltd
-    License: X11
+	Copyright (C) 1989, 1991 Free Software Foundation, Inc.  
+	51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-    License: X11
-    Permission is hereby granted, free of charge, to any person obtaining a
-    copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following conditions:
-    .
-    The above copyright notice and this permission notice (including the next
-    paragraph) shall be included in all copies or substantial portions of the
-    Software.
-    .
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.
-    .
-      ---
-    .
-    The above is the version of the MIT "Expat" License used by X.org:
-    .
-        http://cgit.freedesktop.org/xorg/xserver/tree/COPYING
+	Everyone is permitted to copy and distribute verbatim copies
+	of this license document, but changing it is not allowed.
+	Preamble
+	The licenses for most software are designed to take away your freedom to share and change it. By contrast, the GNU General Public License is intended to guarantee your freedom to share and change free software--to make sure the software is free for all its users. This General Public License applies to most of the Free Software Foundation's software and to any other program whose authors commit to using it. (Some other Free Software Foundation software is covered by the GNU Lesser General Public License instead.) You can apply it to your programs, too.
+
+	When we speak of free software, we are referring to freedom, not price. Our General Public Licenses are designed to make sure that you have the freedom to distribute copies of free software (and charge for this service if you wish), that you receive source code or can get it if you want it, that you can change the software or use pieces of it in new free programs; and that you know you can do these things.
+
+	To protect your rights, we need to make restrictions that forbid anyone to deny you these rights or to ask you to surrender the rights. These restrictions translate to certain responsibilities for you if you distribute copies of the software, or if you modify it.
+
+	For example, if you distribute copies of such a program, whether gratis or for a fee, you must give the recipients all the rights that you have. You must make sure that they, too, receive or can get the source code. And you must show them these terms so they know their rights.
+
+	We protect your rights with two steps: (1) copyright the software, and (2) offer you this license which gives you legal permission to copy, distribute and/or modify the software.
+
+	Also, for each author's protection and ours, we want to make certain that everyone understands that there is no warranty for this free software. If the software is modified by someone else and passed on, we want its recipients to know that what they have is not the original, so that any problems introduced by others will not reflect on the original authors' reputations.
+
+	Finally, any free program is threatened constantly by software patents. We wish to avoid the danger that redistributors of a free program will individually obtain patent licenses, in effect making the program proprietary. To prevent this, we have made it clear that any patent must be licensed for everyone's free use or not licensed at all.
+
+	The precise terms and conditions for copying, distribution and modification follow.
+
+	TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+	0. This License applies to any program or other work which contains a notice placed by the copyright holder saying it may be distributed under the terms of this General Public License. The "Program", below, refers to any such program or work, and a "work based on the Program" means either the Program or any derivative work under copyright law: that is to say, a work containing the Program or a portion of it, either verbatim or with modifications and/or translated into another language. (Hereinafter, translation is included without limitation in the term "modification".) Each licensee is addressed as "you".
+
+	Activities other than copying, distribution and modification are not covered by this License; they are outside its scope. The act of running the Program is not restricted, and the output from the Program is covered only if its contents constitute a work based on the Program (independent of having been made by running the Program). Whether that is true depends on what the Program does.
+
+	1. You may copy and distribute verbatim copies of the Program's source code as you receive it, in any medium, provided that you conspicuously and appropriately publish on each copy an appropriate copyright notice and disclaimer of warranty; keep intact all the notices that refer to this License and to the absence of any warranty; and give any other recipients of the Program a copy of this License along with the Program.
+
+	You may charge a fee for the physical act of transferring a copy, and you may at your option offer warranty protection in exchange for a fee.
+
+	2. You may modify your copy or copies of the Program or any portion of it, thus forming a work based on the Program, and copy and distribute such modifications or work under the terms of Section 1 above, provided that you also meet all of these conditions:
+
+	a) You must cause the modified files to carry prominent notices stating that you changed the files and the date of any change.
+	b) You must cause any work that you distribute or publish, that in whole or in part contains or is derived from the Program or any part thereof, to be licensed as a whole at no charge to all third parties under the terms of this License.
+	c) If the modified program normally reads commands interactively when run, you must cause it, when started running for such interactive use in the most ordinary way, to print or display an announcement including an appropriate copyright notice and a notice that there is no warranty (or else, saying that you provide a warranty) and that users may redistribute the program under these conditions, and telling the user how to view a copy of this License. (Exception: if the Program itself is interactive but does not normally print such an announcement, your work based on the Program is not required to print an announcement.)
+	These requirements apply to the modified work as a whole. If identifiable sections of that work are not derived from the Program, and can be reasonably considered independent and separate works in themselves, then this License, and its terms, do not apply to those sections when you distribute them as separate works. But when you distribute the same sections as part of a whole which is a work based on the Program, the distribution of the whole must be on the terms of this License, whose permissions for other licensees extend to the entire whole, and thus to each and every part regardless of who wrote it.
+
+	Thus, it is not the intent of this section to claim rights or contest your rights to work written entirely by you; rather, the intent is to exercise the right to control the distribution of derivative or collective works based on the Program.
+
+	In addition, mere aggregation of another work not based on the Program with the Program (or with a work based on the Program) on a volume of a storage or distribution medium does not bring the other work under the scope of this License.
+
+	3. You may copy and distribute the Program (or a work based on it, under Section 2) in object code or executable form under the terms of Sections 1 and 2 above provided that you also do one of the following:
+
+	a) Accompany it with the complete corresponding machine-readable source code, which must be distributed under the terms of Sections 1 and 2 above on a medium customarily used for software interchange; or,
+	b) Accompany it with a written offer, valid for at least three years, to give any third party, for a charge no more than your cost of physically performing source distribution, a complete machine-readable copy of the corresponding source code, to be distributed under the terms of Sections 1 and 2 above on a medium customarily used for software interchange; or,
+	c) Accompany it with the information you received as to the offer to distribute corresponding source code. (This alternative is allowed only for noncommercial distribution and only if you received the program in object code or executable form with such an offer, in accord with Subsection b above.)
+	The source code for a work means the preferred form of the work for making modifications to it. For an executable work, complete source code means all the source code for all modules it contains, plus any associated interface definition files, plus the scripts used to control compilation and installation of the executable. However, as a special exception, the source code distributed need not include anything that is normally distributed (in either source or binary form) with the major components (compiler, kernel, and so on) of the operating system on which the executable runs, unless that component itself accompanies the executable.
+
+	If distribution of executable or object code is made by offering access to copy from a designated place, then offering equivalent access to copy the source code from the same place counts as distribution of the source code, even though third parties are not compelled to copy the source along with the object code.
+
+	4. You may not copy, modify, sublicense, or distribute the Program except as expressly provided under this License. Any attempt otherwise to copy, modify, sublicense or distribute the Program is void, and will automatically terminate your rights under this License. However, parties who have received copies, or rights, from you under this License will not have their licenses terminated so long as such parties remain in full compliance.
+
+	5. You are not required to accept this License, since you have not signed it. However, nothing else grants you permission to modify or distribute the Program or its derivative works. These actions are prohibited by law if you do not accept this License. Therefore, by modifying or distributing the Program (or any work based on the Program), you indicate your acceptance of this License to do so, and all its terms and conditions for copying, distributing or modifying the Program or works based on it.
+
+	6. Each time you redistribute the Program (or any work based on the Program), the recipient automatically receives a license from the original licensor to copy, distribute or modify the Program subject to these terms and conditions. You may not impose any further restrictions on the recipients' exercise of the rights granted herein. You are not responsible for enforcing compliance by third parties to this License.
+
+	7. If, as a consequence of a court judgment or allegation of patent infringement or for any other reason (not limited to patent issues), conditions are imposed on you (whether by court order, agreement or otherwise) that contradict the conditions of this License, they do not excuse you from the conditions of this License. If you cannot distribute so as to satisfy simultaneously your obligations under this License and any other pertinent obligations, then as a consequence you may not distribute the Program at all. For example, if a patent license would not permit royalty-free redistribution of the Program by all those who receive copies directly or indirectly through you, then the only way you could satisfy both it and this License would be to refrain entirely from distribution of the Program.
+
+	If any portion of this section is held invalid or unenforceable under any particular circumstance, the balance of the section is intended to apply and the section as a whole is intended to apply in other circumstances.
+
+	It is not the purpose of this section to induce you to infringe any patents or other property right claims or to contest validity of any such claims; this section has the sole purpose of protecting the integrity of the free software distribution system, which is implemented by public license practices. Many people have made generous contributions to the wide range of software distributed through that system in reliance on consistent application of that system; it is up to the author/donor to decide if he or she is willing to distribute software through any other system and a licensee cannot impose that choice.
+
+	This section is intended to make thoroughly clear what is believed to be a consequence of the rest of this License.
+
+	8. If the distribution and/or use of the Program is restricted in certain countries either by patents or by copyrighted interfaces, the original copyright holder who places the Program under this License may add an explicit geographical distribution limitation excluding those countries, so that distribution is permitted only in or among countries not thus excluded. In such case, this License incorporates the limitation as if written in the body of this License.
+
+	9. The Free Software Foundation may publish revised and/or new versions of the General Public License from time to time. Such new versions will be similar in spirit to the present version, but may differ in detail to address new problems or concerns.
+
+	Each version is given a distinguishing version number. If the Program specifies a version number of this License which applies to it and "any later version", you have the option of following the terms and conditions either of that version or of any later version published by the Free Software Foundation. If the Program does not specify a version number of this License, you may choose any version ever published by the Free Software Foundation.
+
+	10. If you wish to incorporate parts of the Program into other free programs whose distribution conditions are different, write to the author to ask for permission. For software which is copyrighted by the Free Software Foundation, write to the Free Software Foundation; we sometimes make exceptions for this. Our decision will be guided by the two goals of preserving the free status of all derivatives of our free software and of promoting the sharing and reuse of software generally.
+
+	NO WARRANTY
+
+	11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+	12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+	END OF TERMS AND CONDITIONS
+	How to Apply These Terms to Your New Programs
+	If you develop a new program, and you want it to be of the greatest possible use to the public, the best way to achieve this is to make it free software which everyone can redistribute and change under these terms.
+
+	To do so, attach the following notices to the program. It is safest to attach them to the start of each source file to most effectively convey the exclusion of warranty; and each file should have at least the "copyright" line and a pointer to where the full notice is found.
+
+	one line to give the program's name and an idea of what it does.
+	Copyright (C) yyyy  name of author
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+	Also add information on how to contact you by electronic and paper mail.
+
+	If the program is interactive, make it output a short notice like this when it starts in an interactive mode:
+
+	Gnomovision version 69, Copyright (C) year name of author
+	Gnomovision comes with ABSOLUTELY NO WARRANTY; for details
+	type `show w'.  This is free software, and you are welcome
+	to redistribute it under certain conditions; type `show c' 
+	for details.
+	The hypothetical commands `show w' and `show c' should show the appropriate parts of the General Public License. Of course, the commands you use may be called something other than `show w' and `show c'; they could even be mouse-clicks or menu items--whatever suits your program.
+
+	You should also get your employer (if you work as a programmer) or your school, if any, to sign a "copyright disclaimer" for the program, if necessary. Here is a sample; alter the names:
+
+	Yoyodyne, Inc., hereby disclaims all copyright
+	interest in the program `Gnomovision'
+	(which makes passes at compilers) written 
+	by James Hacker.
+
+	signature of Ty Coon, 1 April 1989
+	Ty Coon, President of Vice
+	This General Public License does not permit incorporating your program into proprietary programs. If your program is a subroutine library, you may consider it more useful to permit linking proprietary applications with the library. If this is what you want to do, use the GNU Lesser General Public License instead of this License.
 
 =====================================================================
+33. IPMITool 1.8.18 
+   Copyright (c) 2003 Sun Microsystems, Inc.  All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+Redistribution of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+Redistribution in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+Neither the name of Sun Microsystems, Inc. or the names of
+contributors may be used to endorse or promote products derived
+from this software without specific prior written permission.
+
+This software is provided "AS IS," without a warranty of any kind.
+ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES,
+INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED.
+SUN MICROSYSTEMS, INC. ("SUN") AND ITS LICENSORS SHALL NOT BE LIABLE
+FOR ANY DAMAGES SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING
+OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.  IN NO EVENT WILL
+SUN OR ITS LICENSORS BE LIABLE FOR ANY LOST REVENUE, PROFIT OR DATA,
+OR FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL OR
+PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY OF
+LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE,
+EVEN IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+=====================================================================
+
