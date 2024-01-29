@@ -28,11 +28,10 @@ mkdir -p .ccache
 # Create builder
 BASE_VERSION=20.04 # or 22.04
 sudo docker build \
---build-arg BASE_VERSION=$BASE_VERSION \
 --build-arg http_proxy=$http_proxy \
 --build-arg https_proxy=$https_proxy \
 --iidfile /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid \
--f builder/Dockerfile.builder-ubuntu .
+-f builder/Dockerfile.builder-ubuntu$BASE_VERSION .
 
 # Build xpumanager package
 rm -fr build

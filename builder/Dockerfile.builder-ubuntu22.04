@@ -1,5 +1,4 @@
-ARG BASE_VERSION=20.04
-FROM ubuntu:$BASE_VERSION
+FROM ubuntu:jammy-20220801@sha256:34fea4f31bf187bc915536831fd0afc9d214755bf700b5cdb1336c82516d154e
 
 ARG L0_DEV_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.5/level-zero-devel_1.8.5+u18.04_amd64.deb
 ARG L0_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.5/level-zero_1.8.5+u18.04_amd64.deb
