@@ -1166,7 +1166,7 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
-    if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 && server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
+    if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 || server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
         XPUM_LOG_INFO("Get pushUri: {} and triggerUri: {}", pushUri, triggerUri);
         if (!pushUri.length() || !triggerUri.length()) {
             param.errCode = XPUM_GENERIC_ERROR;
@@ -1253,7 +1253,7 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
             }
             retry = 3;
             std::vector<std::string> taskUriList;
-            if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 && server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
+            if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 || server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
                 // check image verify result
                 while (true) {
                     bool finished = false;
