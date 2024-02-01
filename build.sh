@@ -5,6 +5,7 @@
 # @file build.sh
 #
 
+set -e
 
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
