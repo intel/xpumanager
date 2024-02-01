@@ -189,6 +189,87 @@ static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
     return ss.str();
 }
 
+std::vector<std::string> getRc6PathList(GPUDevice* pDevice) {
+    std::vector<std::string> pathList;
+    if (!pDevice)
+        return pathList;
+    Property drm_device, tile_count;
+    pDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, drm_device);
+    pDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, tile_count);
+
+    std::string drm_device_str = drm_device.getValue();
+
+    XPUM_LOG_TRACE("Device {} drm device: {}", pDevice->getId(), drm_device_str);
+
+    if (drm_device_str.empty())
+        return pathList;
+
+    for (int i = 0; i < tile_count.getValueInt(); i++) {
+        std::string path = "/sys/class/drm/" + drm_device_str.substr(9) + "/gt/gt" + std::to_string(i) + "/rc6_enable";
+        pathList.push_back(path);
+        XPUM_LOG_TRACE("Device {} rc6_enable file path: {}", pDevice->getId(), path);
+    }
+
+    return pathList;
+}
+
+bool readRc6(GPUDevice* pDevice, std::vector<int>& valueList, bool& rc6Enabled) {
+    auto pathList = getRc6PathList(pDevice);
+    if (pathList.empty()) {
+        XPUM_LOG_ERROR("Fail to get rc6_enable path for device {}", pDevice->getId());
+        return false;
+    }
+    valueList.clear();
+    bool _rc6Enabled = false;
+    for (auto path : pathList) {
+        int val;
+        std::fstream rc6(path, std::ios_base::in);
+        if (!rc6) {
+            XPUM_LOG_ERROR("Fail to open {}", path);
+            return false;
+        }
+        if (rc6 >> val) {
+            XPUM_LOG_INFO("Get {} value: {}", path, val);
+        } else {
+            XPUM_LOG_ERROR("Fail to read rc6_enable value from: {}", path);
+            return false;
+        }
+        valueList.push_back(val);
+        _rc6Enabled = _rc6Enabled || val;
+    }
+    rc6Enabled = _rc6Enabled;
+    return true;
+}
+
+bool writeRc6(GPUDevice* pDevice, std::vector<int>& valueList) {
+    auto pathList = getRc6PathList(pDevice);
+    if (pathList.empty()) {
+        XPUM_LOG_ERROR("Fail to get rc6_enable path for device {}", pDevice->getId());
+        return false;
+    }
+
+    if (valueList.size() != pathList.size()) {
+        XPUM_LOG_ERROR("Rc6 value count {} mismatch rc6 file count {} of device {}", valueList.size(), pathList.size(), pDevice->getId());
+        return false;
+    }
+
+    for (size_t i = 0; i < valueList.size(); i++) {
+        auto path = pathList.at(i);
+        int val = valueList.at(i);
+        std::fstream rc6(path, std::ios_base::out);
+        if (!rc6) {
+            XPUM_LOG_ERROR("Fail to open {}", path);
+            return false;
+        }
+        if (rc6 << val) {
+            XPUM_LOG_INFO("Write {} to {}", val, path);
+        } else {
+            XPUM_LOG_ERROR("Fail to write {} to {}", val, path);
+            return false;
+        }
+    }
+    return true;
+}
 
 xpum_result_t GPUDevice::runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexcept {
     auto& img = param.img;
@@ -234,9 +315,27 @@ xpum_result_t GPUDevice::runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexc
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
+            bool rc6Enabled = false;
+            std::vector<int> valueList;
+            if (this->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                // disable rc6 when updating PVC firmware
+                if (readRc6(this, valueList, rc6Enabled)) {
+                    if (rc6Enabled) {
+                        std::vector<int> zeros(valueList.size(), 0);
+                        writeRc6(this, zeros);
+                    }
+                } else {
+                    rc6Enabled = false;
+                    valueList.clear();
+                }
+            }
 
             ret = igsc_device_fw_update_ex(&handle, (const uint8_t*)img.data(), img.size(),
                                            progress_func, this, flags);
+
+            if (rc6Enabled && this->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                writeRc6(this, valueList);
+            }
 
             if (ret){
                 flashFwErrMsg = "Update process failed. " + print_device_fw_status(&handle);
