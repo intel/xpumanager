@@ -1,5 +1,4 @@
-ARG BASE_VERSION=15.4
-FROM opensuse/leap:$BASE_VERSION
+FROM registry.suse.com/suse/sle15:15.4.27.8.1@sha256:996ee2bc5ae2301191053e33424806b2a37af8b51aadf2b76f061f90df0a2fbe
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.8.5.tar.gz
 ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh
@@ -9,7 +8,10 @@ ARG ZLIB_VERSION=v1.3
 ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_19_1
 
-RUN echo gpgcheck=off >> /etc/zypp/repos.d/repo-oss.repo && rm -f /etc/zypp/repos.d/*backport*
+RUN zypper addrepo https://download.opensuse.org/distribution/leap/15.4/repo/oss/ "Main Repository" && \
+    zypper --gpg-auto-import-keys refresh
+
+RUN zypper addlock libstdc++6
 
 RUN zypper -n in --no-recommends -t pattern devel_basis && \
     zypper -n in --no-recommends \
@@ -18,14 +20,10 @@ RUN zypper -n in --no-recommends -t pattern devel_basis && \
     git \
     glibc-devel-static \
     libopenssl-1_1-devel \
-    python39 \
-    python39-devel \
-    python39-pip \
     rpm-build \
     systemd-devel \
     wget \
-    doxygen \
-    lua53-devel && \
+    libffi-devel && \
     zypper clean -a
 
 RUN mkdir cmake && \
@@ -36,6 +34,18 @@ RUN mkdir cmake && \
     rm -f cmake.sh
 
 ENV PATH="/cmake/bin:${PATH}".
+
+RUN wget -qc --no-check-certificate https://www.python.org/ftp/python/3.8.9/Python-3.8.9.tar.xz && \
+    tar -xf Python-3.8.9.tar.xz && \
+    cd /Python-3.8.9 && \
+    ./configure --enable-optimizations && \
+    make -j4 && \
+    make altinstall && \
+    rm -fr /Python-3.8.9
+
+COPY builder/requirements.txt /tmp/requirements.txt
+
+RUN python3.8 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
@@ -52,10 +62,6 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
       ../.. && \
     make -j && make install && \
     rm -fr /grpc
-
-COPY builder/requirements.txt /tmp/requirements.txt
-
-RUN python3.9 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN wget -qc --no-check-certificate $L0_SRC_URL -O - | tar -xz && \
     cd /level-zero-* && \
@@ -82,9 +88,8 @@ RUN wget -qc --no-check-certificate $IGSC_URL -O - | tar -xz && \
     make -j4 && \
     make install
 
-RUN ln -sf $(which python3.9) /usr/bin/python && \
-    ln -sf $(which python3.9) /usr/bin/python3 && \
-    ln -sf /usr/lib64/liblua.so.5.3 /usr/lib64/liblua-5.3.so && \
+RUN ln -sf $(which python3.8) /usr/bin/python && \
+    ln -sf $(which python3.8) /usr/bin/python3 && \
     ldconfig
 
 ENV ACLOCAL_PATH=/usr/share/aclocal

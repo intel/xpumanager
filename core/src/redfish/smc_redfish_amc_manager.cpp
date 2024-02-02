@@ -14,6 +14,7 @@
 #include "infrastructure/logger.h"
 #include "libcurl.h"
 #include "util.h"
+#include <regex>
 
 
 using namespace nlohmann;
@@ -23,6 +24,8 @@ namespace xpum {
 static LibCurlApi libcurl;
 
 static SMCServerModel server_model;
+
+std::string AMC_PATTERN_LIST[]{"/redfish/v1/UpdateService/FirmwareInventory/GPU\\d+", "/redfish/v1/UpdateService/FirmwareInventory/UBB_\\d+_AMC_\\d+"};
 
 static size_t curlWriteToStringCallback(void* contents, size_t size, size_t nmemb, std::string* s) {
     size_t newLength = size * nmemb;
@@ -230,8 +233,12 @@ static xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
         for (auto inv : fwInventoryJson["Members"]) {
             if (inv.contains("@odata.id")) {
                 std::string link = inv["@odata.id"].get<std::string>();
-                if (link.find("/redfish/v1/UpdateService/FirmwareInventory/GPU") != link.npos) {
-                    gpuOdataIdList.push_back(link);
+                for(auto patternString : AMC_PATTERN_LIST){
+                    std::regex pattern(patternString);
+                    if (regex_search(link, pattern)) {
+                        gpuOdataIdList.push_back(link);
+                        break;
+                    }
                 }
             }
         }
@@ -300,6 +307,8 @@ bool SMCRedfishAmcManager::init(InitParam& param) {
         } else {
             _model = SMC_UNKNOWN;
         }
+    } else if (systemInfo.productName == "SYS-821GV-TNR") {
+        _model = SMC_SYS_821GV_TNR;
     } else {
         _model = SMC_UNKNOWN;
     }
@@ -606,7 +615,7 @@ static xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
         return XPUM_GENERIC_ERROR;
     }
     pushUri = updateServiceJson["MultipartHttpPushUri"].get<std::string>();
-    if (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) {
+    if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 || server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
         if (!updateServiceJson.contains("Actions") ||
             !updateServiceJson["Actions"].contains("#UpdateService.StartUpdate") ||
             !updateServiceJson["Actions"]["#UpdateService.StartUpdate"].contains("target")) {
@@ -657,11 +666,8 @@ static bool uploadImage(RedfishHostInterface interface,
         libcurl.curl_mime_name(part, "UpdateParameters");
         libcurl.curl_mime_type(part, "application/json");
         json updateParams;
-        // for (auto link : targetLinks) {
-        //     updateParams["Targets"].push_back(link);
-        // }
         updateParams["Targets"].push_back(targetLink);
-        updateParams["@Redfish.OperationApplyTime"] = (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) ? "OnStartUpdateRequest" : "Immediate";
+        updateParams["@Redfish.OperationApplyTime"] = (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 || server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) ? "OnStartUpdateRequest" : "Immediate";
         auto updateParamsStr = updateParams.dump();
 
         XPUM_LOG_INFO("UpdateParameters json: {}", updateParamsStr);
@@ -1160,7 +1166,7 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
-    if (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) {
+    if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 || server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
         XPUM_LOG_INFO("Get pushUri: {} and triggerUri: {}", pushUri, triggerUri);
         if (!pushUri.length() || !triggerUri.length()) {
             param.errCode = XPUM_GENERIC_ERROR;
@@ -1187,6 +1193,14 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     if (result != XPUM_OK) {
         XPUM_LOG_INFO("Fail to get gpu fw inventory list");
         param.errCode = result;
+        param.callback();
+        return;
+    }
+
+    if (odataIds.size() == 0) {
+        XPUM_LOG_INFO("Get empty gpu fw inventory list");
+        param.errCode = XPUM_GENERIC_ERROR;
+        param.errMsg = "No AMC are found";
         param.callback();
         return;
     }
@@ -1239,7 +1253,7 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
             }
             retry = 3;
             std::vector<std::string> taskUriList;
-            if (server_model != SMC_4U_SYS_420GP_TNR && server_model != SMC_UNKNOWN) {
+            if (server_model == SMC_2U_SYS_620C_TN12R_RSC_D2_668G4 || server_model == SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4) {
                 // check image verify result
                 while (true) {
                     bool finished = false;

@@ -23,6 +23,7 @@ struct ComletDiscoveryOptions {
     std::vector<int> propIdList;
     std::string username = "";
     std::string password = "";
+    bool assumeyes;
 };
 
 class ComletDiscovery : public ComletBase {

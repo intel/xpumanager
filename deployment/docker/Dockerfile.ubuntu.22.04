@@ -11,7 +11,7 @@
 #
 # Run by (refer to deployment/docker/README.md for details):
 # docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager:ubuntu22.04
-FROM ubuntu:jammy as builder
+FROM ubuntu:jammy-20231128@sha256:8eab65df33a6de2844c9aefd19efe8ddb87b7df5e9185a4ab73af936225685bb as builder
 ENV HOME=/home/nobody
 ENV no_proxy=localhost,127.0.0.1
 ENV NO_PROXY=localhost,127.0.0.1
@@ -41,7 +41,7 @@ RUN find . -name "easy_install*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "setuptools*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "__pycache__" -exec rm -rf {} \; ;exit 0
 
-FROM ubuntu:jammy
+FROM ubuntu:jammy-20231128@sha256:8eab65df33a6de2844c9aefd19efe8ddb87b7df5e9185a4ab73af936225685bb
 
 ENV HOME=/home/nobody
 ENV no_proxy=localhost,127.0.0.1
@@ -69,13 +69,10 @@ RUN apt-get update && \
     iproute2 \
     python3 \
     libnl-genl-3-200 \
-    libmfx-tools \
     intel-gsc \
     intel-level-zero-gpu \
     level-zero \
     libdrm2 \
-    intel-media-va-driver-non-free \
-    libmfxgen1 \
     intel-metrics-discovery \
     intel-metrics-library && \
   apt-get remove -y wget gnupg2 ca-certificates && \

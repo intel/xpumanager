@@ -11,7 +11,7 @@
 #
 # Run by (refer to deployment/docker/README.md for details):
 # docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager
-FROM ubuntu:20.04 as builder
+FROM ubuntu:focal-20231128@sha256:f5c3e53367f142fab0b49908550bdcdc4fb619d2f61ec1dfa60d26e0d59ac9e7 as builder
 
 ENV HOME=/home/nobody
 ENV no_proxy=localhost,127.0.0.1
@@ -42,7 +42,7 @@ RUN find . -name "easy_install*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "setuptools*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "__pycache__" -exec rm -rf {} \; ;exit 0
 
-FROM ubuntu:20.04
+FROM ubuntu:focal-20231128@sha256:f5c3e53367f142fab0b49908550bdcdc4fb619d2f61ec1dfa60d26e0d59ac9e7
 
 ENV HOME=/home/nobody
 ENV no_proxy=localhost,127.0.0.1
@@ -68,13 +68,10 @@ RUN apt-get update && \
     iproute2 \
     python3 \
     libnl-genl-3-200 \
-    libmfx-tools \
     intel-gsc \
     intel-level-zero-gpu \
     level-zero \
-    libdrm2 \
-    intel-media-va-driver-non-free \
-    libmfxgen1 
+    libdrm2
 
 RUN if [ "$(apt-cache search --names-only 'intel-metrics-discovery')" ] ; then \
       apt-get install -y --no-install-recommends intel-metrics-discovery ; \

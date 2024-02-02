@@ -1,0 +1,6 @@
+resources:
+  - ../../base
+  - configmap-smarter-device-manager.yaml
+  - daemonset-smarter-device-manager.yaml
+patches:
+  - path: daemonset-intel-xpum-privileged.yaml

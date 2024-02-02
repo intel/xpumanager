@@ -1,5 +1,4 @@
-ARG BASE_VERSION=10.13
-FROM debian:$BASE_VERSION
+FROM debian:10.13@sha256:d39357a2a8840e450e387df33a5aaf8f0c8f99e388a0e18169f3dd240fc2393d
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.8.5.tar.gz
 ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh

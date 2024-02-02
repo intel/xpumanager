@@ -247,6 +247,8 @@ void ComletDiscovery::setupOptions() {
 
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
+
+    addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
 }
 
 void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
@@ -489,7 +491,7 @@ static void showAmcFwVersion(std::ostream &out, std::shared_ptr<nlohmann::json> 
 }
 
 void ComletDiscovery::getTableResult(std::ostream &out) {
-    if (this->opts->listamcversions) {
+    if (this->opts->listamcversions && !opts->assumeyes) {
         if (!showWarnMsg(out))
             return;
     }
