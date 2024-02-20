@@ -5,6 +5,7 @@
  */
 
 #include <string>
+#include <cstdint>
 namespace xpum {
 
 std::string add_two_hex_string(std::string str1, std::string str2);
