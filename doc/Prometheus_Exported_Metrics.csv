@@ -30,6 +30,6 @@ XPUM_STATS_PCIE_READ,"Total PCIe read bytes (in bytes), per GPU",xpum_pcie_read_
 XPUM_STATS_PCIE_WRITE,"Total PCIe write bytes (in bytes), per GPU",xpum_pcie_write_bytes,N/A (pcm)
 XPUM_STATS_ENGINE_UTILIZATION,"Per-engine utilization (in %)",xpum_per_engine_ratio,N/A (pcm)
 XPUM_STATS_FABRIC_THROUGHPUT,"Data transmitted through fabric link (in bytes)",xpum_fabric_tx_bytes,zesFabricPortGetThroughput
-XPUM_STATS_TOPOLOGY_LINK,"Connection type fo two GPU tiles",xpum_topology_link,N/A (pcm)
+XPUM_STATS_TOPOLOGY_LINK,"Connection type of two GPU tiles",xpum_topology_link,N/A (pcm)
 XPUM_STATS_XELINK_THROUGHPUT,"The Xelink throughput",xpum_xelink_throughput,zesFabricPortGetThroughput
 XPUM_STATS_XELINK_PORT_STATUS,"The Xelink port status", xpum_xelink_port_status,zesDeviceEnumFabricPorts
