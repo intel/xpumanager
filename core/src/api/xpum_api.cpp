@@ -1727,7 +1727,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
     return res;
 }
 
-std::set<int64_t> monitor_freq_set{100, 200, 500, 1000};
+std::set<int64_t> monitor_freq_set{5, 10, 20, 50, 100, 200, 500, 1000};
 
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();

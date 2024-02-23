@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -27,6 +28,9 @@ struct ComletDumpOptions {
     std::vector<std::string> deviceTileIds = {"-1"};
     std::vector<int> metricsIdList;
     uint32_t timeInterval = 1;
+    uint64_t msTimeInterval = 0;
+    std::string dumpFilePath;
+    int64_t dumpTotalTime = -1;
     int dumpTimes = -1;
     // for dump raw data to file
     bool rawData;
@@ -46,6 +50,9 @@ class ComletDump : public ComletBase {
     std::map<std::string, std::unique_ptr<nlohmann::json>> deviceJsons;
     std::string curDeviceId;
     std::string curTileId;
+
+    std::atomic<bool> keepDumping;
+    std::ofstream dumpFile;
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
     std::set<std::string> sumMetricsList{"XPUM_STATS_MEMORY_READ", "XPUM_STATS_MEMORY_WRITE", "XPUM_STATS_MEMORY_READ_THROUGHPUT", "XPUM_STATS_MEMORY_WRITE_THROUGHPUT", "XPUM_STATS_MEMORY_USED", "XPUM_STATS_PCIE_READ_THROUGHPUT", "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "XPUM_STATS_RAS_ERROR_CAT_RESET", "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE"};
@@ -69,6 +76,8 @@ class ComletDump : public ComletBase {
     virtual void getJsonResult(std::ostream &out, bool raw = false) override;
 
     virtual void getTableResult(std::ostream &out) override;
+
+    void waitForEsc();
 
     void printByLine(std::ostream &out);
 

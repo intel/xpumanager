@@ -16,6 +16,7 @@
 #include "xpum_structs.h"
 #include "utility.h"
 #include "exit_code.h"
+#include <chrono>
 
 using xpum::dump::engineNameMap;
 
@@ -255,6 +256,51 @@ void ComletDump::setupOptions() {
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
+#ifdef DAEMONLESS
+    std::string msTimeHelp = "";
+    auto dumpFileFlag = addOption("--file", this->opts->dumpFilePath, "Dump the raw statistics to the file.");
+    auto msTimeIntervalOpt = addOption("--ims", this->opts->msTimeInterval, msTimeHelp +
+    "The interval (in milliseconds) to dump the device statistics to file for high-frequency monitorming.\n" +
+    "The recommended metrics types for high-frequency sampling: GPU power, GPU frequency, GPU utilization,\n"+
+    "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, GPU engine utilizations, Xe Link throughput.");
+    msTimeIntervalOpt->check(
+        [](const std::string &str) {
+            std::string errStr = "Value should be integer larger than or equal to 10 and less than or equal 1000";
+            if (!isNumber(str))
+                return errStr;
+            int value;
+            try {
+                value = std::stoi(str);
+            } catch (const std::out_of_range &oor) {
+                return errStr;
+            }
+            if (value < 10 || value > 1000)
+                return errStr;
+            return std::string();
+        });
+    msTimeIntervalOpt->excludes(timeIntervalOpt);
+    msTimeIntervalOpt->excludes(dumpTimesOpt);
+    msTimeIntervalOpt->needs(dumpFileFlag);
+
+    auto dumpTotalTimeFlag = addOption("--time", this->opts->dumpTotalTime, "Dump total time in seconds.");
+    dumpTotalTimeFlag->check(
+        [](const std::string &str) {
+            std::string errStr = "Value should be integer larger than or equal to 0 and less than or equal 100000000";
+            if (!isNumber(str))
+                return errStr;
+            int value;
+            try {
+                value = std::stoi(str);
+            } catch (const std::out_of_range &oor) {
+                return errStr;
+            }
+            if (value < 0 || value > 100000000)
+                return errStr;
+            return std::string();
+        });
+    dumpTotalTimeFlag->needs(msTimeIntervalOpt);
+#endif
+
 #ifndef DAEMONLESS
     auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
     auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
@@ -292,6 +338,28 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
         json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         (*json)["error"] = "Duplicated metrics type";
         return json;
+    }
+
+    // In this case the ims is set
+    if(this->opts->msTimeInterval != 0){
+        int64_t interval = this->opts->msTimeInterval / 2;
+        // monitor freq set is {5, 10, 20, 50, 100, 200, 500, 1000}
+        if (interval >= 500){
+            interval = 500;
+        } else if (interval >= 200) {
+            interval = 200;
+        } else if (interval >= 100) {
+            interval = 100;
+        } else if (interval >= 50) {
+            interval = 50;
+        } else if (interval >= 20) {
+            interval = 20;
+        } else if (interval >= 10) {
+            interval = 10;
+        } else {
+            interval = 5;
+        }
+        this->coreStub->setAgentConfig("XPUM_AGENT_CONFIG_SAMPLE_INTERVAL", &interval);
     }
 
     if (this->opts->rawData) {
@@ -445,12 +513,41 @@ void ComletDump::dumpRawDataToFile(std::ostream &out) {
     }
 }
 
+void ComletDump::waitForEsc() {
+    int key;
+    std::cout << "Dump data to file " << this->opts->dumpFilePath << ". Press the key ESC to stop dumping." << std::endl;
+    while (true) {
+        key = getChar();
+        if (key == -1) {
+            std::cerr << "Something wrong in getChar." << std::endl;
+            keepDumping = false;
+            break;
+        }
+        if (key == 27) {
+            keepDumping = false;
+            break;
+        }
+    }
+}
+
 void ComletDump::getTableResult(std::ostream &out) {
     if (this->opts->rawData) {
         dumpRawDataToFile(out);
     } else {
 #ifdef DAEMONLESS
-        if (gpu_id_to_bdfs.size() > 0 && this->opts->metricsIdList.size() == 1 && this->opts->metricsIdList[0] == XPUM_DUMP_POWER) {
+        keepDumping = true;
+        if (!this->opts->dumpFilePath.empty()){
+            dumpFile.open(this->opts->dumpFilePath);
+            if (!dumpFile) {
+                std::cout << "Error: "
+                        << "open file failed" << std::endl;
+                return;
+            }
+            std::thread([this] { this->waitForEsc(); }).detach();
+            printByLine(dumpFile);
+            dumpFile.close();
+            std::cout << "Dumping is stopped." << std::endl;
+        } else if (gpu_id_to_bdfs.size() > 0 && this->opts->metricsIdList.size() == 1 && this->opts->metricsIdList[0] == XPUM_DUMP_POWER) {
             printByLineWithoutInitializeCore(out);
         } else {
             printByLine(out);
@@ -837,7 +934,14 @@ void ComletDump::printByLine(std::ostream &out) {
     // timestamp column
     columnSchemaList.push_back({"Timestamp",
                                 []() {
-                                    return CoreStub::isotimestamp(time(nullptr) * 1000, true);
+                                    long ms; // Milliseconds
+                                    time_t s;  // Seconds
+                                    struct timespec spec;
+                                    clock_gettime(CLOCK_REALTIME, &spec);
+
+                                    s  = spec.tv_sec;
+                                    ms = spec.tv_nsec / 1000000; // Convert nanoseconds to milliseconds
+                                    return CoreStub::isotimestamp(s * 1000 + ms, true);
                                 }});
 
     // device id column
@@ -1093,9 +1197,31 @@ void ComletDump::printByLine(std::ostream &out) {
     out << std::endl;
 
     int iter = 0;
+    u_int64_t index = 0;
+    uint64_t sleepMilliseconds = (this->opts->msTimeInterval == 0) ? (1000 * this->opts->timeInterval) : this->opts->msTimeInterval;
 
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(this->opts->timeInterval * 1000));
+    std::chrono::system_clock::time_point begin = std::chrono::system_clock::now();
+    while (keepDumping) {
+        if ((this->opts->dumpTotalTime != -1 && (uint64_t)(this->opts->dumpTotalTime) * 1000 <= sleepMilliseconds * index)) {
+            keepDumping = false;
+            break;
+        }
+
+        ++index;
+
+        // for big interval
+        if (sleepMilliseconds > 1000){
+            auto leftTime = sleepMilliseconds;
+            while (leftTime > 1000 && keepDumping){
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                leftTime -= 1000;
+            }
+            if(!keepDumping){
+                break;
+            }
+        }
+
+        std::this_thread::sleep_until(begin + std::chrono::milliseconds(sleepMilliseconds * index));
         res = run();
         if (res->contains("error")) {
             out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
@@ -1147,9 +1273,11 @@ void ComletDump::printByLine(std::ostream &out) {
                 out << std::endl;
             }
         }
-        if (this->opts->dumpTimes != -1 && ++iter >= this->opts->dumpTimes) {
-            break;
+        if ((this->opts->dumpTimes != -1 && ++iter >= this->opts->dumpTimes)) {
+            keepDumping = false;
         }
+
     }
 }
+
 } // end namespace xpum::cli

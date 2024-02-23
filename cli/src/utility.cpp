@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <termios.h>
 
 #include <cstdio>
 #include <string>
@@ -174,6 +175,33 @@ std::string getKeyStringValue(std::string key, const nlohmann::json &item) {
         return sub.value();
     }
     return "";
+}
+
+int getChar() {
+        char ch = 0;
+        struct termios oldTermios = {0};
+        if (tcgetattr(0, &oldTermios) < 0){
+            perror("error in tcgetattr()");
+            return -1;
+        }
+        oldTermios.c_lflag &= ~ICANON;
+        oldTermios.c_lflag &= ~ECHO;
+        oldTermios.c_cc[VMIN] = 1;
+        oldTermios.c_cc[VTIME] = 0;
+        if (tcsetattr(0, TCSANOW, &oldTermios) < 0){
+            perror("error in tcsetattr()");
+            return -1;
+        }
+
+        if (read(0, &ch, 1) < 0){
+            perror ("error in read()");
+        }
+        oldTermios.c_lflag |= ICANON;
+        oldTermios.c_lflag |= ECHO;
+        if (tcsetattr(0, TCSADRAIN, &oldTermios) < 0){
+            perror ("error in tcsetattr()");
+        }
+        return (ch);
 }
 
 }// end namespace xpum::cli
