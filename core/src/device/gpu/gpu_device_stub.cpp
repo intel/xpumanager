@@ -1921,8 +1921,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryThroughputAndBandwidt
 
                 zes_mem_bandwidth_t mem_bandwidth = {};
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS) {
-
+                if (res == ZE_RESULT_SUCCESS && 
+                        mem_bandwidth.maxBandwidth > 0) {
                     uint32_t subdeviceId = UINT32_MAX;
                     if (props.onSubdevice) {
                         subdeviceId = props.subdeviceId;

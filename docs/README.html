@@ -1,23 +1,26 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Intel(R) XPU Manager and XPU System Management Interface &mdash; XPU Manager  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-pygments.css?v=ff3f4257" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-sphinx_rtd_theme.css?v=b6ca47bd" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/target-highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=16ad857a"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/target-highlight.js?v=df7d332b"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -30,11 +33,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> XPU Manager
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            XPU Manager
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -77,9 +84,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
-      <li>Intel(R) XPU Manager and XPU System Management Interface</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM Documentation</a></li>
+      <li class="breadcrumb-item active">Intel(R) XPU Manager and XPU System Management Interface</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -88,15 +95,15 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-r-xpu-manager-and-xpu-system-management-interface">
-<h1>Intel(R) XPU Manager and XPU System Management Interface<a class="headerlink" href="#intel-r-xpu-manager-and-xpu-system-management-interface" title="Permalink to this headline"></a></h1>
+  <section id="intel-r-xpu-manager-and-xpu-system-management-interface">
+<h1>Intel(R) XPU Manager and XPU System Management Interface<a class="headerlink" href="#intel-r-xpu-manager-and-xpu-system-management-interface" title="Permalink to this heading"></a></h1>
 <p>Intel(R) XPU Manager is a free and open-source tool for monitoring and managing Intel data center GPUs.</p>
 <p>It is designed to simplify administration, maximize reliability and uptime, and improve utilization.</p>
 <p>XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely. Intel(R) XPU System Management Interface (XPU-SMI) is the daemon-less version of XPU Manager and it only provides the local interface. XPU-SMI feature scope is the subset of XPU Manager. Their features are listed in the table below. Please note that XPU-SMI and XPU Manager can’t be installed or executed on the same system due to some resource conflict. XPU-SMI has been included in the GPU driver repository. If you want to use XPU Manager, please uninstall XPU-SMI and install XPU Manager.</p>
 <p>amcmcli is a portable CLI tool to manage GPU AMC firmware on Linux OS. It is independent of GPU driver.</p>
 <p>3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the XPU Manager or XPU-SMI to manage Intel data center GPUs.</p>
 <section id="intel-r-xpu-manager-features">
-<h2>Intel(R) XPU Manager features<a class="headerlink" href="#intel-r-xpu-manager-features" title="Permalink to this headline"></a></h2>
+<h2>Intel(R) XPU Manager features<a class="headerlink" href="#intel-r-xpu-manager-features" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>Administration:</p>
 <ul>
@@ -132,7 +139,7 @@
 </ul>
 </section>
 <section id="cli-output-of-gpu-device-info-telemetries-and-firmware-update">
-<h2>CLI output of GPU device info, telemetries and firmware update<a class="headerlink" href="#cli-output-of-gpu-device-info-telemetries-and-firmware-update" title="Permalink to this headline"></a></h2>
+<h2>CLI output of GPU device info, telemetries and firmware update<a class="headerlink" href="#cli-output-of-gpu-device-info-telemetries-and-firmware-update" title="Permalink to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>xpumcli discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
@@ -179,14 +186,14 @@ Update firmware successfully.
 </div>
 </section>
 <section id="feature-set-of-xpu-manager-xpu-smi-and-xpu-smi-windows-cli-tool">
-<h2>Feature set of XPU Manager, XPU-SMI and XPU-SMI Windows CLI tool<a class="headerlink" href="#feature-set-of-xpu-manager-xpu-smi-and-xpu-smi-windows-cli-tool" title="Permalink to this headline"></a></h2>
-<table class="colwidths-auto docutils align-default">
+<h2>Feature set of XPU Manager, XPU-SMI and XPU-SMI Windows CLI tool<a class="headerlink" href="#feature-set-of-xpu-manager-xpu-smi-and-xpu-smi-windows-cli-tool" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="text-left head"><p></p></th>
-<th class="text-center head"><p>XPU Manager</p></th>
-<th class="text-center head"><p>XPU-SMI</p></th>
-<th class="text-center head"><p>XPU-SMI Windows CLI</p></th>
-<th class="text-center head"><p>amcmcli</p></th>
+<tr class="row-odd"><th class="head text-left"><p></p></th>
+<th class="head text-center"><p>XPU Manager</p></th>
+<th class="head text-center"><p>XPU-SMI</p></th>
+<th class="head text-center"><p>XPU-SMI Windows CLI</p></th>
+<th class="head text-center"><p>amcmcli</p></th>
 </tr>
 </thead>
 <tbody>
@@ -254,18 +261,18 @@ Update firmware successfully.
 </table>
 </section>
 <section id="how-to-get-xpu-manager-xpu-smi-windows-cli-and-amcmcli-binaries">
-<h2>How to get XPU Manager, XPU-SMI, Windows CLI and amcmcli binaries.<a class="headerlink" href="#how-to-get-xpu-manager-xpu-smi-windows-cli-and-amcmcli-binaries" title="Permalink to this headline"></a></h2>
+<h2>How to get XPU Manager, XPU-SMI, Windows CLI and amcmcli binaries.<a class="headerlink" href="#how-to-get-xpu-manager-xpu-smi-windows-cli-and-amcmcli-binaries" title="Permalink to this heading"></a></h2>
 <p>You may get the latest installers or binaries in <a class="reference external" href="https://github.com/intel/xpumanager/releases">Releases</a>.</p>
 </section>
 <section id="supported-devices">
-<h2>Supported Devices<a class="headerlink" href="#supported-devices" title="Permalink to this headline"></a></h2>
+<h2>Supported Devices<a class="headerlink" href="#supported-devices" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>Intel(R) Data Center Flex Series GPU (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
 <li><p>Intel(R) Data Center Max Series GPU (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
 </ul>
 </section>
 <section id="supported-oses">
-<h2>Supported OSes<a class="headerlink" href="#supported-oses" title="Permalink to this headline"></a></h2>
+<h2>Supported OSes<a class="headerlink" href="#supported-oses" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>XPU Manager</p>
 <ul>
@@ -290,26 +297,26 @@ Update firmware successfully.
 </ul>
 </section>
 <section id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline"></a></h2>
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
 <ul class="simple">
-<li><p>Refer to the <span class="xref myst">XPU Manager Installation Guide</span> and for how to install/uninstall XPU Manager.</p></li>
-<li><p>Refer to the <span class="xref myst">XPU-SMI Installation Guide</span> and for how to install/uninstall XPU-SMI.</p></li>
-<li><p>Refer to the <span class="xref myst">XPU Manager CLI User Guide</span> to start to use XPU Manager.</p></li>
-<li><p>Refer to the <span class="xref myst">XPU-SMI CLI User Guide</span> to start to use XPU-SMI.</p></li>
-<li><p>Refer to the <span class="xref myst">XPU-SMI Windows CLI User Guide</span> to start to use XPU-SMI Windows CLI.</p></li>
-<li><p>Refer to the <span class="xref myst">XPU Manager amcmcli User Guide</span> to start to use XPU Manager amcmcli.</p></li>
+<li><p>Refer to the <a class="reference internal" href="#doc/Install_guide.md"><span class="xref myst">XPU Manager Installation Guide</span></a> and for how to install/uninstall XPU Manager.</p></li>
+<li><p>Refer to the <a class="reference internal" href="#doc/smi_install_guide.md"><span class="xref myst">XPU-SMI Installation Guide</span></a> and for how to install/uninstall XPU-SMI.</p></li>
+<li><p>Refer to the <a class="reference internal" href="#doc/CLI_user_guide.md"><span class="xref myst">XPU Manager CLI User Guide</span></a> to start to use XPU Manager.</p></li>
+<li><p>Refer to the <a class="reference internal" href="#doc/smi_user_guide.md"><span class="xref myst">XPU-SMI CLI User Guide</span></a> to start to use XPU-SMI.</p></li>
+<li><p>Refer to the <a class="reference internal" href="#doc/xpum_win_user_guide.md"><span class="xref myst">XPU-SMI Windows CLI User Guide</span></a> to start to use XPU-SMI Windows CLI.</p></li>
+<li><p>Refer to the <a class="reference internal" href="#doc/amcmcli_user_guide.md"><span class="xref myst">XPU Manager amcmcli User Guide</span></a> to start to use XPU Manager amcmcli.</p></li>
 <li><p>Refer to <a class="reference external" href="https://hub.docker.com/r/intel/xpumanager">DockerHub</a> for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.</p></li>
-<li><p>Refer to <span class="xref myst">Building XPU Manager Installer</span> to build XPU Manager installer packages.</p></li>
+<li><p>Refer to <a class="reference internal" href="#BUILDING.md"><span class="xref myst">Building XPU Manager Installer</span></a> to build XPU Manager installer packages.</p></li>
 <li><p>Refer to <a class="reference external" href="https://intel.github.io/xpumanager/smi_index.html">XPU Manager/XPU-SMI API documents</a> to integrate the library or RESTFul interface.</p></li>
 <li><p>A simple introduction video on <a class="reference external" href="https://www.youtube.com/watch?v=1bKeqlriDX0">Youtube</a>.</p></li>
 </ul>
 </section>
 <section id="architecture">
-<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline"></a></h2>
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this heading"></a></h2>
 <p><img alt="XPU Manager Architecture" src="_images/architecture.PNG" /></p>
 </section>
 <section id="gpu-telemetry-exported-to-grafana">
-<h2>GPU telemetry exported to Grafana<a class="headerlink" href="#gpu-telemetry-exported-to-grafana" title="Permalink to this headline"></a></h2>
+<h2>GPU telemetry exported to Grafana<a class="headerlink" href="#gpu-telemetry-exported-to-grafana" title="Permalink to this heading"></a></h2>
 <p><img alt="GPU telemetry exported from XPU Manager to Grafana" src="_images/Grafana.PNG" /></p>
 </section>
 </section>

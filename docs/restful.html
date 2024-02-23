@@ -1,23 +1,26 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Restful API &mdash; XPU Manager  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-pygments.css?v=ff3f4257" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-sphinx_rtd_theme.css?v=b6ca47bd" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/target-highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=16ad857a"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/target-highlight.js?v=df7d332b"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -30,11 +33,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> XPU Manager
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            XPU Manager
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -83,9 +90,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
-      <li>Restful API</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM Documentation</a></li>
+      <li class="breadcrumb-item active">Restful API</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -95,21 +102,21 @@
            <div itemprop="articleBody">
              
   <section id="restful-api">
-<h1>Restful API<a class="headerlink" href="#restful-api" title="Permalink to this headline"></a></h1>
+<h1>Restful API<a class="headerlink" href="#restful-api" title="Permalink to this heading"></a></h1>
 <section id="version-info">
-<h2>Version Info<a class="headerlink" href="#version-info" title="Permalink to this headline"></a></h2>
+<h2>Version Info<a class="headerlink" href="#version-info" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-version">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/version</span></span><a class="headerlink" href="#get--rest-v1-version" title="Permalink to this definition"></a></dt>
 <dd><p>Get XPU Manager version infos</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>level_zero_version</strong> (<em>string</em>) – Underlying level-zero lib version</p></li>
 <li><p><strong>xpum_version</strong> (<em>string</em>) – XPUM version</p></li>
@@ -121,19 +128,19 @@
 
 </section>
 <section id="devices">
-<h2>Devices<a class="headerlink" href="#devices" title="Permalink to this headline"></a></h2>
+<h2>Devices<a class="headerlink" href="#devices" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-devices">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices</span></span><a class="headerlink" href="#get--rest-v1-devices" title="Permalink to this definition"></a></dt>
 <dd><p>Get device list</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>devices[].&#64;odata.id</strong> (<em>string</em>) – Link to device detail properties</p></li>
 <li><p><strong>devices[].device_id</strong> (<em>integer</em>) – Device id</p></li>
@@ -153,18 +160,18 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId" title="Permalink to this definition"></a></dt>
 <dd><p>Get device properties</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>password</strong> (<em>string</em>) – Password for redfish auth</p></li>
 <li><p><strong>username</strong> (<em>string</em>) – Username for redfish auth</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
@@ -172,7 +179,7 @@
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>amc_firmware_name</strong> (<em>string</em>) – The AMC firmware name of device</p></li>
 <li><p><strong>amc_firmware_version</strong> (<em>string</em>) – The AMC firmware version of device</p></li>
@@ -231,19 +238,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/amcversions</span></span><a class="headerlink" href="#get--rest-v1-devices-amcversions" title="Permalink to this definition"></a></dt>
 <dd><p>Get amc firmware versions.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Request JSON Object</dt>
+<dt class="field-odd">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>password</strong> (<em>string</em>) – Password for redfish auth</p></li>
 <li><p><strong>username</strong> (<em>string</em>) – Username for redfish auth</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>amc_fw_version[]</strong> (<em>string</em>) – AMC versions</p></li>
 <li><p><strong>error</strong> (<em>string</em>) – Error message</p></li>
@@ -254,23 +261,23 @@
 
 </section>
 <section id="diagnostics">
-<h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this headline"></a></h2>
+<h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading"></a></h2>
 <dl class="http post">
 <dt class="sig sig-object http" id="post--rest-v1-devices-deviceId-diagnostics">
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/diagnostics</span></span><a class="headerlink" href="#post--rest-v1-devices-deviceId-diagnostics" title="Permalink to this definition"></a></dt>
 <dd><p>Run diagnostics for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>level</strong> (<em>integer</em>) – The level for diagnostics to run</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request, for example invalid level</p></li>
@@ -286,19 +293,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/diagnostics</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-diagnostics" title="Permalink to this definition"></a></dt>
 <dd><p>Get diagnostics result for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Device not found</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>component_count</strong> (<em>integer</em>) – Component count</p></li>
 <li><p><strong>component_list[].component_type</strong> (<em>string</em>) – Component type</p></li>
@@ -322,17 +329,17 @@
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/diagnostics</span></span><a class="headerlink" href="#post--rest-v1-groups-groupId-diagnostics" title="Permalink to this definition"></a></dt>
 <dd><p>Run diagnostics for group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>level</strong> (<em>integer</em>) – The level for diagnostics to run</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request, for example invalid level</p></li>
@@ -348,19 +355,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/diagnostics</span></span><a class="headerlink" href="#get--rest-v1-groups-groupId-diagnostics" title="Permalink to this definition"></a></dt>
 <dd><p>Get diagnostics result for group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Group not found</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_count</strong> (<em>integer</em>) – Device count</p></li>
 <li><p><strong>device_list[].component_count</strong> (<em>integer</em>) – Component count</p></li>
@@ -384,25 +391,25 @@
 
 </section>
 <section id="health">
-<h2>Health<a class="headerlink" href="#health" title="Permalink to this headline"></a></h2>
+<h2>Health<a class="headerlink" href="#health" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-devices-deviceId-health">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/health</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-health" title="Permalink to this definition"></a></dt>
 <dd><p>Get health for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Device not found</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>core_temperature.custom_threshold</strong> (<em>integer</em>) – The custom threshold in celsius degree for health</p></li>
 <li><p><strong>core_temperature.description</strong> (<em>string</em>) – The description for health</p></li>
@@ -435,19 +442,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/health</span></span><a class="headerlink" href="#get--rest-v1-groups-groupId-health" title="Permalink to this definition"></a></dt>
 <dd><p>Get health for group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Group not found</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_count</strong> (<em>integer</em>) – Device count</p></li>
 <li><p><strong>device_list[].core_temperature.custom_threshold</strong> (<em>integer</em>) – The custom threshold in celsius degree for health</p></li>
@@ -482,20 +489,20 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/health/{healthType}</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-health-healthType" title="Permalink to this definition"></a></dt>
 <dd><p>Get specific health for device and response JSON object only contains targeted-type health</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>healthType</strong> (<em>str</em>) – Health type, coreTemperature, memoryTemperature, power, memory, xeLinkPort or frequency</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Device not found or health type not supported</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>core_temperature.custom_threshold</strong> (<em>integer</em>) – The custom threshold in celsius degree for health</p></li>
 <li><p><strong>core_temperature.description</strong> (<em>string</em>) – The description for health</p></li>
@@ -528,18 +535,18 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/health/{healthType}</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-health-healthType" title="Permalink to this definition"></a></dt>
 <dd><p>Set health config for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>healthType</strong> (<em>str</em>) – Health type, only coreTemperature, memoryTemperature or power</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>custom_threshold</strong> (<em>integer</em>) – The custom threshold for coreTemperature in celsius degree, memoryTemperature in celsius degree or power in watts</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request, for example invalid threshold</p></li>
@@ -555,20 +562,20 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/health/{healthType}</span></span><a class="headerlink" href="#get--rest-v1-groups-groupId-health-healthType" title="Permalink to this definition"></a></dt>
 <dd><p>Get health for group and response JSON object only contains targeted-type health</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 <li><p><strong>healthType</strong> (<em>str</em>) – Health type, coreTemperature, memoryTemperature, power, memory, xeLinkPort or frequency</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Group not found or health type not supported</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_count</strong> (<em>integer</em>) – Device count</p></li>
 <li><p><strong>device_list[].core_temperature.custom_threshold</strong> (<em>integer</em>) – The custom threshold in celsius degree for health</p></li>
@@ -603,18 +610,18 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/health/{healthType}</span></span><a class="headerlink" href="#put--rest-v1-groups-groupId-health-healthType" title="Permalink to this definition"></a></dt>
 <dd><p>Set health config for group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 <li><p><strong>healthType</strong> (<em>str</em>) – health type, only coreTemperature, memoryTemperature or power</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>custom_threshold</strong> (<em>integer</em>) – The custom threshold for coreTemperature in celsius degree, memoryTemperature in celsius degree or power in watts</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request, for example invalid threshold</p></li>
@@ -627,20 +634,20 @@
 
 </section>
 <section id="policy">
-<h2>Policy<a class="headerlink" href="#policy" title="Permalink to this headline"></a></h2>
+<h2>Policy<a class="headerlink" href="#policy" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-policy">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/policy</span></span><a class="headerlink" href="#get--rest-v1-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Get all policies for all devices</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Request Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>[].device_id</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>[].policy_list[].action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -661,18 +668,18 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/policy</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Get all policies for a device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[].device_id</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>[].policy_list[].action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -693,12 +700,12 @@
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/policy</span></span><a class="headerlink" href="#post--rest-v1-devices-deviceId-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Set a policy for a device.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
 <li><p><strong>action.throttle_device_frequency_min</strong> (<em>integer</em>) – The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -710,14 +717,14 @@
 <li><p><strong>type</strong> (<em>string</em>) – Policy type. Supported types: XPUM_POLICY_TYPE_GPU_TEMPERATURE, XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE, XPUM_POLICY_TYPE_GPU_POWER, XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET, XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, XPUM_POLICY_TYPE_GPU_MISSING, XPUM_POLICY_TYPE_GPU_THROTTLE</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Request Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>message</strong> (<em>string</em>) – success or error message</p></li>
 <li><p><strong>status</strong> (<em>integer</em>) – status code, 0 is success, other is error.</p></li>
@@ -731,12 +738,12 @@
 <span class="sig-name descname"><span class="pre">DELETE</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/policy</span></span><a class="headerlink" href="#delete--rest-v1-devices-deviceId-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Delete a policy for a device. The policy type must be set.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
 <li><p><strong>action.throttle_device_frequency_min</strong> (<em>integer</em>) – The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -748,14 +755,14 @@
 <li><p><strong>type</strong> (<em>string</em>) – Policy type. Supported types: XPUM_POLICY_TYPE_GPU_TEMPERATURE, XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE, XPUM_POLICY_TYPE_GPU_POWER, XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET, XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, XPUM_POLICY_TYPE_GPU_MISSING, XPUM_POLICY_TYPE_GPU_THROTTLE</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Request Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>message</strong> (<em>string</em>) – success or error message</p></li>
 <li><p><strong>status</strong> (<em>integer</em>) – status code, 0 is success, other is error.</p></li>
@@ -769,19 +776,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/policy</span></span><a class="headerlink" href="#get--rest-v1-groups-groupId-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Get all policies for a group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Request Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[].device_id</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>[].policy_list[].action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -802,12 +809,12 @@
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/policy</span></span><a class="headerlink" href="#post--rest-v1-groups-groupId-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Set a policy for a group.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
 <li><p><strong>action.throttle_device_frequency_min</strong> (<em>integer</em>) – The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -819,14 +826,14 @@
 <li><p><strong>type</strong> (<em>string</em>) – Policy type. Supported types: XPUM_POLICY_TYPE_GPU_TEMPERATURE, XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE, XPUM_POLICY_TYPE_GPU_POWER, XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET, XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, XPUM_POLICY_TYPE_GPU_MISSING, XPUM_POLICY_TYPE_GPU_THROTTLE</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Request Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>message</strong> (<em>string</em>) – success or error message</p></li>
 <li><p><strong>status</strong> (<em>integer</em>) – status code, 0 is success, other is error.</p></li>
@@ -840,12 +847,12 @@
 <span class="sig-name descname"><span class="pre">DELETE</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/policy</span></span><a class="headerlink" href="#delete--rest-v1-groups-groupId-policy" title="Permalink to this definition"></a></dt>
 <dd><p>Delete a policy for a group. The policy type must be set.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>action.throttle_device_frequency_max</strong> (<em>integer</em>) – The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
 <li><p><strong>action.throttle_device_frequency_min</strong> (<em>integer</em>) – The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type.</p></li>
@@ -857,14 +864,14 @@
 <li><p><strong>type</strong> (<em>string</em>) – Policy type. Supported types: XPUM_POLICY_TYPE_GPU_TEMPERATURE, XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE, XPUM_POLICY_TYPE_GPU_POWER, XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET, XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, XPUM_POLICY_TYPE_GPU_MISSING, XPUM_POLICY_TYPE_GPU_THROTTLE</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Request Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>message</strong> (<em>string</em>) – success or error message</p></li>
 <li><p><strong>status</strong> (<em>integer</em>) – status code, 0 is success, other is error.</p></li>
@@ -875,24 +882,24 @@
 
 </section>
 <section id="group-management">
-<h2>Group Management<a class="headerlink" href="#group-management" title="Permalink to this headline"></a></h2>
+<h2>Group Management<a class="headerlink" href="#group-management" title="Permalink to this heading"></a></h2>
 <dl class="http post">
 <dt class="sig sig-object http" id="post--rest-v1-groups">
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups</span></span><a class="headerlink" href="#post--rest-v1-groups" title="Permalink to this definition"></a></dt>
 <dd><p>Create a new group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Request JSON Object</dt>
+<dt class="field-odd">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>group_name</strong> (<em>string</em>) – The name for the group to be created (required)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_id_list[]</strong> (<em>integer</em>) – The id of devices belong to this group</p></li>
 <li><p><strong>group_id</strong> (<em>integer</em>) – The id of the group</p></li>
@@ -907,13 +914,13 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups</span></span><a class="headerlink" href="#get--rest-v1-groups" title="Permalink to this definition"></a></dt>
 <dd><p>Get all groups</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>group_list[].device_id_list[]</strong> (<em>integer</em>) – The id of devices belong to this group</p></li>
 <li><p><strong>group_list[].group_id</strong> (<em>integer</em>) – The id of the group</p></li>
@@ -928,18 +935,18 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}</span></span><a class="headerlink" href="#get--rest-v1-groups-groupId" title="Permalink to this definition"></a></dt>
 <dd><p>Get information of a group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_id_list[]</strong> (<em>integer</em>) – The id of devices belong to this group</p></li>
 <li><p><strong>group_id</strong> (<em>integer</em>) – The id of the group</p></li>
@@ -954,24 +961,24 @@
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}</span></span><a class="headerlink" href="#post--rest-v1-groups-groupId" title="Permalink to this definition"></a></dt>
 <dd><p>Modify a group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>device_id_add[]</strong> (<em>integer</em>) – The id of devices add to this group</p></li>
 <li><p><strong>device_id_remove[]</strong> (<em>integer</em>) – The id of devices remove from this group</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>fail_to_add[].device_id</strong> (<em>integer</em>) – The id of device failed to be added to or removed from the group</p></li>
 <li><p><strong>fail_to_add[].error_msg</strong> (<em>string</em>) – Error message</p></li>
@@ -990,7 +997,7 @@
 <span class="sig-name descname"><span class="pre">DELETE</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}</span></span><a class="headerlink" href="#delete--rest-v1-groups-groupId" title="Permalink to this definition"></a></dt>
 <dd><p>Delete a group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
@@ -1001,32 +1008,32 @@
 
 </section>
 <section id="firmware-flash">
-<h2>Firmware Flash<a class="headerlink" href="#firmware-flash" title="Permalink to this headline"></a></h2>
+<h2>Firmware Flash<a class="headerlink" href="#firmware-flash" title="Permalink to this heading"></a></h2>
 <dl class="http post">
 <dt class="sig sig-object http" id="post--rest-v1-devices-deviceId-updatefw">
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/updatefw</span></span><a class="headerlink" href="#post--rest-v1-devices-deviceId-updatefw" title="Permalink to this definition"></a></dt>
 <dd><p>Run firmware flash on single device or single card</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>file</strong> (<em>string</em>) – The path of firmware binary file to flash (required)</p></li>
 <li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN</p></li>
 <li><p><strong>force</strong> (<em>boolean</em>) – Force GFX firmware update. This parameter only works for GFX firmware.</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>error</strong> (<em>string</em>) – Error message</p></li>
 <li><p><strong>result</strong> (<em>string</em>) – The result of the query</p></li>
@@ -1040,24 +1047,24 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/firmware</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-firmware" title="Permalink to this definition"></a></dt>
 <dd><p>Get firmware flash state of single device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN (required)</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>error</strong> (<em>string</em>) – Error message</p></li>
 <li><p><strong>result</strong> (<em>string</em>) – Firmware flash state, OK/FAILED/ONGOING</p></li>
@@ -1071,7 +1078,7 @@
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/updatefw</span></span><a class="headerlink" href="#post--rest-v1-devices-updatefw" title="Permalink to this definition"></a></dt>
 <dd><p>Run firmware flash on all devices</p>
 <dl class="field-list simple">
-<dt class="field-odd">Request JSON Object</dt>
+<dt class="field-odd">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file</strong> (<em>string</em>) – The path of firmware binary file to flash (required)</p></li>
 <li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: AMC</p></li>
@@ -1079,14 +1086,14 @@
 <li><p><strong>username</strong> (<em>string</em>) – Username for redfish auth</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>error</strong> (<em>string</em>) – Error message</p></li>
 <li><p><strong>result</strong> (<em>string</em>) – The result of the query</p></li>
@@ -1100,19 +1107,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/firmware</span></span><a class="headerlink" href="#get--rest-v1-devices-firmware" title="Permalink to this definition"></a></dt>
 <dd><p>Get firmware flash state of all devices</p>
 <dl class="field-list simple">
-<dt class="field-odd">Request JSON Object</dt>
+<dt class="field-odd">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: AMC (required)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>error</strong> (<em>string</em>) – Error message</p></li>
 <li><p><strong>result</strong> (<em>string</em>) – Firmware flash state, OK/FAILED/ONGOING</p></li>
@@ -1123,19 +1130,19 @@
 
 </section>
 <section id="agent-setting">
-<h2>Agent Setting<a class="headerlink" href="#agent-setting" title="Permalink to this headline"></a></h2>
+<h2>Agent Setting<a class="headerlink" href="#agent-setting" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-agentSettings">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/agentSettings</span></span><a class="headerlink" href="#get--rest-v1-agentSettings" title="Permalink to this definition"></a></dt>
 <dd><p>Get XPUM settings</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>sample_interval</strong> (<em>integer</em>) – Agent sample interval, in milliseconds, options are [100, 200, 500, 1000]</p></li>
 </ul>
@@ -1148,18 +1155,18 @@
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/agentSettings</span></span><a class="headerlink" href="#post--rest-v1-agentSettings" title="Permalink to this definition"></a></dt>
 <dd><p>Modify XPUM settings</p>
 <dl class="field-list simple">
-<dt class="field-odd">Request JSON Object</dt>
+<dt class="field-odd">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>sample_interval</strong> (<em>integer</em>) – Agent sample interval, in milliseconds, options are [100, 200, 500, 1000]</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>sample_interval</strong> (<em>integer</em>) – Agent sample interval, in milliseconds, options are [100, 200, 500, 1000]</p></li>
 </ul>
@@ -1169,24 +1176,24 @@
 
 </section>
 <section id="statistics">
-<h2>Statistics<a class="headerlink" href="#statistics" title="Permalink to this headline"></a></h2>
+<h2>Statistics<a class="headerlink" href="#statistics" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-devices-deviceId-stats">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/stats</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-stats" title="Permalink to this definition"></a></dt>
 <dd><p>Get statistics by device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>begin</strong> (<em>string</em>) – The time of last query</p></li>
 <li><p><strong>device_id</strong> (<em>integer</em>) – Device id</p></li>
@@ -1219,19 +1226,19 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/groups/{groupId}/stats</span></span><a class="headerlink" href="#get--rest-v1-groups-groupId-stats" title="Permalink to this definition"></a></dt>
 <dd><p>Get statistics by group</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>groupId</strong> (<em>integer</em>) – Group id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Error</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>datas[].begin</strong> (<em>string</em>) – The time of last query</p></li>
 <li><p><strong>datas[].device_id</strong> (<em>integer</em>) – Device id</p></li>
@@ -1262,24 +1269,24 @@
 
 </section>
 <section id="config">
-<h2>Config<a class="headerlink" href="#config" title="Permalink to this headline"></a></h2>
+<h2>Config<a class="headerlink" href="#config" title="Permalink to this heading"></a></h2>
 <dl class="http put">
 <dt class="sig sig-object http" id="put--rest-v1-devices-deviceId-standby">
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/standby</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-standby" title="Permalink to this definition"></a></dt>
 <dd><p>Set standby mode for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>standby_mode</strong> (<em>string</em>) – The standby mode: never, default</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1293,17 +1300,17 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/powerlimit</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-powerlimit" title="Permalink to this definition"></a></dt>
 <dd><p>Set power limit for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_id</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>power_limit</strong> (<em>integer</em>) – The power limit value</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1317,19 +1324,19 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/frequencyrange</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-frequencyrange" title="Permalink to this definition"></a></dt>
 <dd><p>Set frequency range for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>max_frequency</strong> (<em>integer</em>) – The max frequency value</p></li>
 <li><p><strong>min_frequency</strong> (<em>integer</em>) – The min frequency value</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1343,12 +1350,12 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/scheduler</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-scheduler" title="Permalink to this definition"></a></dt>
 <dd><p>Set scheduler mode for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>scheduler_mode</strong> (<em>string</em>) – The scheduler mode: timeout, timeslice, exclusive and debug</p></li>
 <li><p><strong>scheduler_timeslice_interval</strong> (<em>integer</em>) – The interval for timeslice mode</p></li>
@@ -1357,7 +1364,7 @@
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1371,23 +1378,23 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/config</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-config" title="Permalink to this definition"></a></dt>
 <dd><p>Get all configuration for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>memory_ecc_current_state</strong> (<em>string</em>) – The current state of memory ecc</p></li>
@@ -1414,19 +1421,19 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/performancefactor</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-performancefactor" title="Permalink to this definition"></a></dt>
 <dd><p>Set performance factor for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>engine</strong> (<em>string</em>) – engine name</p></li>
 <li><p><strong>factor</strong> (<em>number</em>) – performance factor</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1440,12 +1447,12 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/reset</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-reset" title="Permalink to this definition"></a></dt>
 <dd><p>Reset the device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1459,12 +1466,12 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/ppr</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-ppr" title="Permalink to this definition"></a></dt>
 <dd><p>Apply PPR to the device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1478,19 +1485,19 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/portenabled</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-portenabled" title="Permalink to this definition"></a></dt>
 <dd><p>Set port enabled for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>enabled</strong> (<em>integer</em>) – The enabled 1; disabled 0</p></li>
 <li><p><strong>port</strong> (<em>integer</em>) – The port number</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1504,19 +1511,19 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/portbeaconing</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-portbeaconing" title="Permalink to this definition"></a></dt>
 <dd><p>Set port beaconing for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>beaconing</strong> (<em>integer</em>) – The beaconing on 1; off 0</p></li>
 <li><p><strong>port</strong> (<em>integer</em>) – The port number</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile id</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1530,17 +1537,17 @@
 <span class="sig-name descname"><span class="pre">PUT</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/memoryecc</span></span><a class="headerlink" href="#put--rest-v1-devices-deviceId-memoryecc" title="Permalink to this definition"></a></dt>
 <dd><p>Set memory ecc state for device</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Request JSON Object</dt>
+<dt class="field-even">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>enabled</strong> (<em>integer</em>) – The enabled 1; disabled 0</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
@@ -1551,24 +1558,24 @@
 
 </section>
 <section id="topology">
-<h2>Topology<a class="headerlink" href="#topology" title="Permalink to this headline"></a></h2>
+<h2>Topology<a class="headerlink" href="#topology" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-devices-deviceId-topology">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/topology</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-topology" title="Permalink to this definition"></a></dt>
 <dd><p>Get device topology</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>affinity_localcpulist</strong> (<em>string</em>) – local cpu list</p></li>
 <li><p><strong>affinity_localcpus</strong> (<em>string</em>) – local cpus</p></li>
@@ -1585,13 +1592,13 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/topology</span></span><a class="headerlink" href="#get--rest-v1-topology" title="Permalink to this definition"></a></dt>
 <dd><p>Export node topology</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>length</strong> (<em>integer</em>) – XML buffer length</p></li>
 <li><p><strong>xmlstring</strong> (<em>string</em>) – XML sting of node topology</p></li>
@@ -1605,13 +1612,13 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/topology/xelink</span></span><a class="headerlink" href="#get--rest-v1-topology-xelink" title="Permalink to this definition"></a></dt>
 <dd><p>Get xelink topology</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>link_type</strong> (<em>string</em>) – link type</p></li>
 <li><p><strong>local_cpu_affinity</strong> (<em>string</em>) – cpu affinity</p></li>
@@ -1629,24 +1636,24 @@
 
 </section>
 <section id="ps">
-<h2>ps<a class="headerlink" href="#ps" title="Permalink to this headline"></a></h2>
+<h2>ps<a class="headerlink" href="#ps" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-devices-deviceId-ps">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/ps</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-ps" title="Permalink to this definition"></a></dt>
 <dd><p>Get per process device utilization.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>utils[].device_id</strong> (<em>integer</em>) – Device ID</p></li>
 <li><p><strong>utils[].mem_size</strong> (<em>integer</em>) – Memory size</p></li>
@@ -1663,13 +1670,13 @@
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/ps</span></span><a class="headerlink" href="#get--rest-v1-ps" title="Permalink to this definition"></a></dt>
 <dd><p>Get per process device utilization.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>utils[].device_id</strong> (<em>integer</em>) – Device ID</p></li>
 <li><p><strong>utils[].mem_size</strong> (<em>integer</em>) – Memory size</p></li>
@@ -1683,13 +1690,13 @@
 
 </section>
 <section id="dump-raw-data">
-<h2>Dump Raw Data<a class="headerlink" href="#dump-raw-data" title="Permalink to this headline"></a></h2>
+<h2>Dump Raw Data<a class="headerlink" href="#dump-raw-data" title="Permalink to this heading"></a></h2>
 <dl class="http post">
 <dt class="sig sig-object http" id="post--rest-v1-dump">
 <span class="sig-name descname"><span class="pre">POST</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/dump</span></span><a class="headerlink" href="#post--rest-v1-dump" title="Permalink to this definition"></a></dt>
 <dd><p>Start dump raw data task</p>
 <dl class="field-list simple">
-<dt class="field-odd">Request JSON Object</dt>
+<dt class="field-odd">Request JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device_id</strong> (<em>integer</em>) – The device to dump raw data (required)</p></li>
 <li><p><strong>metrics_type_list[]</strong> (<em>string</em>) – The metrics type to dump, options are:
@@ -1733,14 +1740,14 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile to dump raw data</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a></span> – Bad Request</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dump_file_path</strong> (<em>string</em>) – The path to file of dumped data</p></li>
 <li><p><strong>task_id</strong> (<em>integer</em>) – The task id</p></li>
@@ -1754,13 +1761,13 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/dump</span></span><a class="headerlink" href="#get--rest-v1-dump" title="Permalink to this definition"></a></dt>
 <dd><p>List all dump raw data task</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>dump_task_ids[]</strong> (<em>integer</em>) – The id list of all tasks</p></li>
 </ul>
@@ -1773,19 +1780,19 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 <span class="sig-name descname"><span class="pre">DELETE</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/dump/{taskId}</span></span><a class="headerlink" href="#delete--rest-v1-dump-taskId" title="Permalink to this definition"></a></dt>
 <dd><p>Stop dump raw data task</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>taskId</strong> (<em>integer</em>) – the dump raw data task id</p></li>
 </ul>
 </dd>
-<dt class="field-even">Status Codes</dt>
+<dt class="field-even">Status Codes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a></span> – Task not found</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Internal Error</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Response JSON Object</dt>
+<dt class="field-odd">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dump_file_path</strong> (<em>string</em>) – The path to file of dumped data</p></li>
 <li><p><strong>task_id</strong> (<em>integer</em>) – The task id</p></li>
@@ -1796,19 +1803,19 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 
 </section>
 <section id="sensor">
-<h2>Sensor<a class="headerlink" href="#sensor" title="Permalink to this headline"></a></h2>
+<h2>Sensor<a class="headerlink" href="#sensor" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-sensor">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/sensor</span></span><a class="headerlink" href="#get--rest-v1-sensor" title="Permalink to this definition"></a></dt>
 <dd><p>Get sensor reading</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>sensor_reading[].amc_index</strong> (<em>number</em>) – AMC index</p></li>
 <li><p><strong>sensor_reading[].sensor_high</strong> (<em>number</em>) – High bound of sensor reading</p></li>
@@ -1823,19 +1830,19 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 
 </section>
 <section id="vgpu">
-<h2>vgpu<a class="headerlink" href="#vgpu" title="Permalink to this headline"></a></h2>
+<h2>vgpu<a class="headerlink" href="#vgpu" title="Permalink to this heading"></a></h2>
 <dl class="http get">
 <dt class="sig sig-object http" id="get--rest-v1-vgpu-precheck">
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/vgpu/precheck</span></span><a class="headerlink" href="#get--rest-v1-vgpu-precheck" title="Permalink to this definition"></a></dt>
 <dd><p>Check if BIOS settings are ready to create virtual GPUs</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>iommu_message</strong> (<em>string</em>) – IOMMU message</p></li>
 <li><p><strong>iommu_status</strong> (<em>string</em>) – IOMMU status</p></li>
@@ -1853,13 +1860,13 @@ XPUM_DUMP_MEDIA_ENGINE_FREQUENCY</p></li>
 <span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/vgpustats</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-vgpustats" title="Permalink to this definition"></a></dt>
 <dd><p>Get statistics data of all virtual GPUs</p>
 <dl class="field-list simple">
-<dt class="field-odd">Status Codes</dt>
+<dt class="field-odd">Status Codes<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
 <li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
 </ul>
 </dd>
-<dt class="field-even">Response JSON Object</dt>
+<dt class="field-even">Response JSON Object<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>vf_list[].bdf_address</strong> (<em>string</em>) – BDF Address</p></li>
 <li><p><strong>vf_list[].metric_list[].metric_type</strong> (<em>integer</em>) – Metric Type</p></li>

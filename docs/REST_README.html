@@ -1,23 +1,26 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XPUM REST API Setup Guide &mdash; XPU Manager  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-pygments.css?v=ff3f4257" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-sphinx_rtd_theme.css?v=b6ca47bd" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/target-highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=16ad857a"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/target-highlight.js?v=df7d332b"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -30,11 +33,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> XPU Manager
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            XPU Manager
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -77,10 +84,10 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
-          <li><a href="installation.html">Installation</a> &raquo;</li>
-      <li>XPUM REST API Setup Guide</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM Documentation</a></li>
+          <li class="breadcrumb-item"><a href="installation.html">Installation</a></li>
+      <li class="breadcrumb-item active">XPUM REST API Setup Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -89,10 +96,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="xpum-rest-api-setup-guide">
-<h1>XPUM REST API Setup Guide<a class="headerlink" href="#xpum-rest-api-setup-guide" title="Permalink to this headline"></a></h1>
+  <section id="xpum-rest-api-setup-guide">
+<h1>XPUM REST API Setup Guide<a class="headerlink" href="#xpum-rest-api-setup-guide" title="Permalink to this heading"></a></h1>
 <section id="pre-installation-actions">
-<h2>Pre-installation Actions<a class="headerlink" href="#pre-installation-actions" title="Permalink to this headline"></a></h2>
+<h2>Pre-installation Actions<a class="headerlink" href="#pre-installation-actions" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>install python3, may need to soft link python if your python package doesn’t auto generate one.</p></li>
 <li><p>install python3-devel ( Redhat or CentOS only )</p></li>
@@ -100,16 +107,16 @@
 </ol>
 </section>
 <section id="quick-installation">
-<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline"></a></h2>
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Run enable_restful.sh in the folder /usr/lib/xpum to enable restful feature.
 <br>If start xpum_rest.service failed with error “Executable path is not absolute, ignoring: gunicorn” on Centos 7, please refer to the following section “Start Service”.</p></li>
 </ol>
 </section>
 <section id="step-by-step-installation">
-<h2>Step by Step Installation<a class="headerlink" href="#step-by-step-installation" title="Permalink to this headline"></a></h2>
+<h2>Step by Step Installation<a class="headerlink" href="#step-by-step-installation" title="Permalink to this heading"></a></h2>
 <section id="python-packages-installation">
-<h3>Python Packages Installation<a class="headerlink" href="#python-packages-installation" title="Permalink to this headline"></a></h3>
+<h3>Python Packages Installation<a class="headerlink" href="#python-packages-installation" title="Permalink to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p>Install python packages as root for all user. The INSTALLDIR is /usr/lib/xpum on the Linux platform.
 <br>
@@ -118,14 +125,14 @@
 </ol>
 </section>
 <section id="run-script">
-<h3>Run Script<a class="headerlink" href="#run-script" title="Permalink to this headline"></a></h3>
+<h3>Run Script<a class="headerlink" href="#run-script" title="Permalink to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p>Run rest_config.py to setup password for REST API user xpumadmin.</p></li>
 <li><p>Run keytool.sh to generate self-signed certificate and keys.</p></li>
 </ol>
 </section>
 <section id="start-service">
-<h3>Start Service<a class="headerlink" href="#start-service" title="Permalink to this headline"></a></h3>
+<h3>Start Service<a class="headerlink" href="#start-service" title="Permalink to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p>systemctl start xpum_rest.service</p></li>
 <li><p>systemctl enable xpum_rest.service
@@ -138,13 +145,13 @@
 </section>
 </section>
 <section id="change-rest-service-binding-address-port">
-<h2>Change rest service binding address &amp; port<a class="headerlink" href="#change-rest-service-binding-address-port" title="Permalink to this headline"></a></h2>
+<h2>Change rest service binding address &amp; port<a class="headerlink" href="#change-rest-service-binding-address-port" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>change service file xpum_rest.service “–bind” parameters in “ExecStart”</p></li>
 </ol>
 </section>
 <section id="replace-rest-service-certificate-private-key">
-<h2>Replace rest service certificate &amp; private key<a class="headerlink" href="#replace-rest-service-certificate-private-key" title="Permalink to this headline"></a></h2>
+<h2>Replace rest service certificate &amp; private key<a class="headerlink" href="#replace-rest-service-certificate-private-key" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Replace certificate file cert.pem under INSTALLDIR/rest/conf</p></li>
 <li><p>Replace private key file key.pem under INSTALLDIR/rest/conf</p></li>

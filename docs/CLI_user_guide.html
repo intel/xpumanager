@@ -1,23 +1,26 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Intel(R) XPU Manager Command Line Interface User Guide &mdash; XPU Manager  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-pygments.css?v=ff3f4257" />
+      <link rel="stylesheet" type="text/css" href="_static/doxyrest-sphinx_rtd_theme.css?v=b6ca47bd" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/target-highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=16ad857a"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/target-highlight.js?v=df7d332b"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -30,11 +33,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> XPU Manager
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            XPU Manager
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -100,9 +107,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
-      <li>Intel(R) XPU Manager Command Line Interface User Guide</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM Documentation</a></li>
+      <li class="breadcrumb-item active">Intel(R) XPU Manager Command Line Interface User Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -111,11 +118,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-r-xpu-manager-command-line-interface-user-guide">
-<h1>Intel(R) XPU Manager Command Line Interface User Guide<a class="headerlink" href="#intel-r-xpu-manager-command-line-interface-user-guide" title="Permalink to this headline"></a></h1>
+  <section id="intel-r-xpu-manager-command-line-interface-user-guide">
+<h1>Intel(R) XPU Manager Command Line Interface User Guide<a class="headerlink" href="#intel-r-xpu-manager-command-line-interface-user-guide" title="Permalink to this heading"></a></h1>
 <p>This guide describes how to use XPU Manager Command Line Interface to manage Intel GPU devices.</p>
 <section id="intel-r-xpu-manager-command-line-interface-main-features">
-<h2>Intel(R) XPU Manager Command Line Interface main features<a class="headerlink" href="#intel-r-xpu-manager-command-line-interface-main-features" title="Permalink to this headline"></a></h2>
+<h2>Intel(R) XPU Manager Command Line Interface main features<a class="headerlink" href="#intel-r-xpu-manager-command-line-interface-main-features" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>Show the device info.</p></li>
 <li><p>Manage multiple devices by the group-level.</p></li>
@@ -127,7 +134,7 @@
 </ul>
 </section>
 <section id="help-info">
-<h2>Help info<a class="headerlink" href="#help-info" title="Permalink to this headline"></a></h2>
+<h2>Help info<a class="headerlink" href="#help-info" title="Permalink to this heading"></a></h2>
 <p>Show the XPU Manager CLI help info.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> 
 <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="n">Command</span> <span class="n">Line</span> <span class="n">Interface</span> <span class="o">--</span> <span class="n">v1</span><span class="mf">.0</span> 
@@ -177,7 +184,7 @@
 </div>
 </section>
 <section id="discover-the-devices-in-this-machine">
-<h2>Discover the devices in this machine<a class="headerlink" href="#discover-the-devices-in-this-machine" title="Permalink to this headline"></a></h2>
+<h2>Discover the devices in this machine<a class="headerlink" href="#discover-the-devices-in-this-machine" title="Permalink to this heading"></a></h2>
 <p>Help info of the “discovery” subcommand</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">h</span>
 
@@ -312,7 +319,7 @@
 </div>
 </section>
 <section id="manage-the-devices-in-groups">
-<h2>Manage the devices in groups<a class="headerlink" href="#manage-the-devices-in-groups" title="Permalink to this headline"></a></h2>
+<h2>Manage the devices in groups<a class="headerlink" href="#manage-the-devices-in-groups" title="Permalink to this heading"></a></h2>
 <p>Help info of the group operation</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">group</span> <span class="o">-</span><span class="n">h</span>
 
@@ -389,7 +396,7 @@
 </div>
 </section>
 <section id="get-and-change-xpu-manager-settings">
-<h2>Get and change XPU Manager settings<a class="headerlink" href="#get-and-change-xpu-manager-settings" title="Permalink to this headline"></a></h2>
+<h2>Get and change XPU Manager settings<a class="headerlink" href="#get-and-change-xpu-manager-settings" title="Permalink to this heading"></a></h2>
 <p>Help message of the “agentset” subcommand.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">agentset</span>
 <span class="n">Get</span> <span class="ow">or</span> <span class="n">change</span> <span class="n">some</span> <span class="n">XPU</span> <span class="n">Manager</span> <span class="n">settings</span><span class="o">.</span> 
@@ -428,7 +435,7 @@
 </div>
 </section>
 <section id="get-the-aggregated-device-statistics">
-<h2>Get the aggregated device statistics<a class="headerlink" href="#get-the-aggregated-device-statistics" title="Permalink to this headline"></a></h2>
+<h2>Get the aggregated device statistics<a class="headerlink" href="#get-the-aggregated-device-statistics" title="Permalink to this heading"></a></h2>
 <p>Help info for getting the GPU device aggregated statistics</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">stats</span> <span class="o">-</span><span class="n">h</span>
 
@@ -523,7 +530,7 @@
 <p>Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device.</p>
 </section>
 <section id="get-the-device-health-status">
-<h2>Get the device health status<a class="headerlink" href="#get-the-device-health-status" title="Permalink to this headline"></a></h2>
+<h2>Get the device health status<a class="headerlink" href="#get-the-device-health-status" title="Permalink to this heading"></a></h2>
 <p>Help info of get GPU device component health status</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">health</span>
 
@@ -606,9 +613,9 @@
 </div>
 </section>
 <section id="dump-the-device-statistics-in-csv-format">
-<h2>Dump the device statistics in CSV format<a class="headerlink" href="#dump-the-device-statistics-in-csv-format" title="Permalink to this headline"></a></h2>
+<h2>Dump the device statistics in CSV format<a class="headerlink" href="#dump-the-device-statistics-in-csv-format" title="Permalink to this heading"></a></h2>
 <section id="the-statistics-supported-by-intel-data-center-gpus">
-<h3>The Statistics supported by Intel data center GPUs<a class="headerlink" href="#the-statistics-supported-by-intel-data-center-gpus" title="Permalink to this headline"></a></h3>
+<h3>The Statistics supported by Intel data center GPUs<a class="headerlink" href="#the-statistics-supported-by-intel-data-center-gpus" title="Permalink to this heading"></a></h3>
 <ul class="simple">
 <li><p>Intel(R) Data Center Flex Series GPU</p>
 <ul>
@@ -736,7 +743,7 @@
 </section>
 </section>
 <section id="get-the-system-topology">
-<h2>Get the system topology<a class="headerlink" href="#get-the-system-topology" title="Permalink to this headline"></a></h2>
+<h2>Get the system topology<a class="headerlink" href="#get-the-system-topology" title="Permalink to this heading"></a></h2>
 <p>Help info of get the system topology</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">topology</span>
 
@@ -793,7 +800,7 @@
 </div>
 </section>
 <section id="update-the-gpu-firmware">
-<h2>Update the GPU firmware<a class="headerlink" href="#update-the-gpu-firmware" title="Permalink to this headline"></a></h2>
+<h2>Update the GPU firmware<a class="headerlink" href="#update-the-gpu-firmware" title="Permalink to this heading"></a></h2>
 <p>Help info of updating GPU firmware</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">updatefw</span>
 
@@ -844,7 +851,7 @@ Update firmware successfully.
 </div>
 </section>
 <section id="get-and-change-the-gpu-settings">
-<h2>Get and change the GPU settings<a class="headerlink" href="#get-and-change-the-gpu-settings" title="Permalink to this headline"></a></h2>
+<h2>Get and change the GPU settings<a class="headerlink" href="#get-and-change-the-gpu-settings" title="Permalink to this heading"></a></h2>
 <p>Help info of getting/changing the GPU settings</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">config</span>
 
@@ -991,13 +998,13 @@ Update firmware successfully.
 </div>
 </section>
 <section id="get-and-set-the-policy-automatic-action-triggered-by-the-condition">
-<h2>Get and set the policy, automatic action triggered by the condition<a class="headerlink" href="#get-and-set-the-policy-automatic-action-triggered-by-the-condition" title="Permalink to this headline"></a></h2>
+<h2>Get and set the policy, automatic action triggered by the condition<a class="headerlink" href="#get-and-set-the-policy-automatic-action-triggered-by-the-condition" title="Permalink to this heading"></a></h2>
 <p>The supported policies are list in the table below. For example, if the “GPU Core Temperature” policy is set and one GPU tile temperature is more than the specified threshold, the GPU throttling action will be taken automatically.</p>
-<table class="colwidths-auto docutils align-default">
+<table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="text-left head"><p>Types</p></th>
-<th class="text-left head"><p>Conditions</p></th>
-<th class="text-left head"><p>Actions</p></th>
+<tr class="row-odd"><th class="head text-left"><p>Types</p></th>
+<th class="head text-left"><p>Conditions</p></th>
+<th class="head text-left"><p>Actions</p></th>
 </tr>
 </thead>
 <tbody>
@@ -1080,7 +1087,7 @@ Update firmware successfully.
 </div>
 </section>
 <section id="diagnose-gpu-with-different-test-suites">
-<h2>Diagnose GPU with different test suites<a class="headerlink" href="#diagnose-gpu-with-different-test-suites" title="Permalink to this headline"></a></h2>
+<h2>Diagnose GPU with different test suites<a class="headerlink" href="#diagnose-gpu-with-different-test-suites" title="Permalink to this heading"></a></h2>
 <p>When running tests on GPU, GPU will be used exclusively. There will be obviously performance impact on the GPU. Some CPU performance may also be impacted.</p>
 <p>Help info for GPU diagnostics</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">diag</span>
@@ -1219,7 +1226,7 @@ Update firmware successfully.
 </div>
 </section>
 <section id="show-amc-real-time-sensor-readings">
-<h2>Show AMC real-time sensor readings<a class="headerlink" href="#show-amc-real-time-sensor-readings" title="Permalink to this headline"></a></h2>
+<h2>Show AMC real-time sensor readings<a class="headerlink" href="#show-amc-real-time-sensor-readings" title="Permalink to this heading"></a></h2>
 <p>This command only works for Intel(R) Data Center GPU Flex 140/170 on Intel M50CYP servers.</p>
 <p>Help info for get AMC senor readings</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">amcsensor</span> <span class="o">-</span><span class="n">h</span>
@@ -1258,7 +1265,7 @@ Update firmware successfully.
 </div>
 </section>
 <section id="collect-the-gpu-debug-log-files">
-<h2>Collect the GPU debug log files<a class="headerlink" href="#collect-the-gpu-debug-log-files" title="Permalink to this headline"></a></h2>
+<h2>Collect the GPU debug log files<a class="headerlink" href="#collect-the-gpu-debug-log-files" title="Permalink to this heading"></a></h2>
 <p>Help info of collecting GPU log files.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">log</span> <span class="o">-</span><span class="n">h</span>
 <span class="n">Collect</span> <span class="n">GPU</span> <span class="n">debug</span> <span class="n">logs</span><span class="o">.</span>
@@ -1280,12 +1287,12 @@ Update firmware successfully.
 </div>
 </section>
 <section id="set-up-gpu-sr-iov-configuration">
-<h2>Set up GPU SR-IOV configuration<a class="headerlink" href="#set-up-gpu-sr-iov-configuration" title="Permalink to this headline"></a></h2>
+<h2>Set up GPU SR-IOV configuration<a class="headerlink" href="#set-up-gpu-sr-iov-configuration" title="Permalink to this heading"></a></h2>
 <p>Only Ubuntu and CentOS 7 are validated.</p>
 <section id="bios-settings-for-gpu-sr-iov">
-<h3>BIOS settings for GPU SR-IOV<a class="headerlink" href="#bios-settings-for-gpu-sr-iov" title="Permalink to this headline"></a></h3>
+<h3>BIOS settings for GPU SR-IOV<a class="headerlink" href="#bios-settings-for-gpu-sr-iov" title="Permalink to this heading"></a></h3>
 <section id="intel-m50cyp">
-<h4>Intel M50CYP<a class="headerlink" href="#intel-m50cyp" title="Permalink to this headline"></a></h4>
+<h4>Intel M50CYP<a class="headerlink" href="#intel-m50cyp" title="Permalink to this heading"></a></h4>
 <p>Advanced -&gt; PCI Configuration -&gt; Memory Mapped I/O above 4GB : Enabled<br />
 Advanced -&gt; PCI Configuration -&gt; MMIO High Base : 56T<br />
 Advanced -&gt; PCI Configuration -&gt; Memory Mapped I/O Size : 1024G<br />
@@ -1298,7 +1305,7 @@ Advanced -&gt; Processor Configuration -&gt; Intel(R) Virtualization Technology:
 Advanced -&gt; Integrated IO Configuration -&gt; Intel(R) VT for Directed I/O : Enabled</p>
 </section>
 <section id="inspur-nf5280m6">
-<h4>Inspur NF5280M6<a class="headerlink" href="#inspur-nf5280m6" title="Permalink to this headline"></a></h4>
+<h4>Inspur NF5280M6<a class="headerlink" href="#inspur-nf5280m6" title="Permalink to this heading"></a></h4>
 <p>MMCFG Base = Auto<br />
 MMCFG Size = Auto<br />
 MMIO High Base = 32T<br />
@@ -1309,7 +1316,7 @@ Intel VT for Directed I/O (VT-d) = Enabled<br />
 Power/Performance Profile = Virtualization</p>
 </section>
 <section id="h3c-r5300-g5">
-<h4>H3C R5300 G5<a class="headerlink" href="#h3c-r5300-g5" title="Permalink to this headline"></a></h4>
+<h4>H3C R5300 G5<a class="headerlink" href="#h3c-r5300-g5" title="Permalink to this heading"></a></h4>
 <p>MMCFG Base=Auto<br />
 MMIO High Base=32T<br />
 MMIO High Granularity Size=1024G<br />
@@ -1321,7 +1328,7 @@ Workload Configuration=Balanced<br />
 Workload Profile Configuration=Graphic Processing</p>
 </section>
 <section id="dell-poweredge-xr12">
-<h4>Dell PowerEdge XR12<a class="headerlink" href="#dell-poweredge-xr12" title="Permalink to this headline"></a></h4>
+<h4>Dell PowerEdge XR12<a class="headerlink" href="#dell-poweredge-xr12" title="Permalink to this heading"></a></h4>
 <p>Integrated Devices -&gt; Memory Mapped I/O above 4GB = Enabled<br />
 Integrated Devices -&gt; Memory Mapped Base = 56TB<br />
 Integrated Devices -&gt; SR-IOV Global Enable = Enabled<br />
@@ -1329,7 +1336,7 @@ Processor Settings -&gt; Virtualization Technology = Enabled<br />
 System Profile Settings -&gt; System Profile = Performance</p>
 </section>
 <section id="supermicro-sys-620c-tn12r">
-<h4>Supermicro SYS-620C-TN12R<a class="headerlink" href="#supermicro-sys-620c-tn12r" title="Permalink to this headline"></a></h4>
+<h4>Supermicro SYS-620C-TN12R<a class="headerlink" href="#supermicro-sys-620c-tn12r" title="Permalink to this heading"></a></h4>
 <p>Advanced -&gt; Chipset Configuration -&gt; NorthBridge -&gt; IIO Configuration -&gt; Intel VT for Directed I/O (VT-d) -&gt; Enable<br />
 Advanced -&gt; Chipset Configuration -&gt; NorthBridge -&gt; IIO Configuration -&gt; PCI-E ASPM Support (Global) -&gt; No<br />
 Advanced -&gt; Chipset Configuration -&gt; NorthBridge -&gt; IIO Configuration -&gt; IIO eDPC Support -&gt; Disable<br />
@@ -1341,19 +1348,19 @@ Advanced -&gt; PCIe/PCI/PnP Configuration -&gt; MMIO High Base -&gt; 32T<br />
 Advanced -&gt; PCIE/PCI/PnP Configuration -&gt; MMIO High Granularity Size -&gt; 1024G or 2048G</p>
 </section>
 <section id="hpe-proliant-dl380-gen10">
-<h4>HPE ProLiant DL380 Gen10<a class="headerlink" href="#hpe-proliant-dl380-gen10" title="Permalink to this headline"></a></h4>
+<h4>HPE ProLiant DL380 Gen10<a class="headerlink" href="#hpe-proliant-dl380-gen10" title="Permalink to this heading"></a></h4>
 <p>Virtualization Options -&gt; Intel(R) Virtualization Technology: Enabled<br />
 Virtualization Options -&gt; Intel(R) VT-d: Enabled<br />
 Virtualization Options -&gt; SR-IOV: Enabled</p>
 </section>
 </section>
 <section id="add-linux-kernel-command-line-options">
-<h3>Add Linux kernel command line options<a class="headerlink" href="#add-linux-kernel-command-line-options" title="Permalink to this headline"></a></h3>
+<h3>Add Linux kernel command line options<a class="headerlink" href="#add-linux-kernel-command-line-options" title="Permalink to this heading"></a></h3>
 <p>After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added into the “GRUB_CMDLINE_LINUX” setting of the file, /etc/default/grub. They are “intel_iommu=on i915.max_vfs=31”. “intel_iommmu” is for IOMMU and “i915.max_vfs” is for SR-IOV. After you update the grub file, please run the command like “update-grub” to set to kernel image and reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set.
 The command “sudo xpumcli vgpu –addkernelparam” can automatically add these kernel parameters.</p>
 </section>
 <section id="help-info-of-gpu-sr-iov-configuration-feature">
-<h3>Help info of GPU SR-IOV configuration feature.<a class="headerlink" href="#help-info-of-gpu-sr-iov-configuration-feature" title="Permalink to this headline"></a></h3>
+<h3>Help info of GPU SR-IOV configuration feature.<a class="headerlink" href="#help-info-of-gpu-sr-iov-configuration-feature" title="Permalink to this heading"></a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">vgpu</span>
 <span class="n">Create</span> <span class="ow">and</span> <span class="n">remove</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="ow">in</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="n">configuration</span><span class="o">.</span>
 
@@ -1387,7 +1394,7 @@ The command “sudo xpumcli vgpu –addkernelparam” can automatically add thes
 </div>
 </section>
 <section id="gpu-sr-iov-precheck">
-<h3>GPU SR-IOV precheck<a class="headerlink" href="#gpu-sr-iov-precheck" title="Permalink to this headline"></a></h3>
+<h3>GPU SR-IOV precheck<a class="headerlink" href="#gpu-sr-iov-precheck" title="Permalink to this heading"></a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">--</span><span class="n">precheck</span>
 <span class="o">+------------------+-------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">VMX</span> <span class="n">Flag</span>         <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                                  <span class="o">|</span>
@@ -1404,7 +1411,7 @@ The command “sudo xpumcli vgpu –addkernelparam” can automatically add thes
 </div>
 </section>
 <section id="add-the-linux-kernel-command-line-parameters-for-the-virtual-gpus">
-<h3>Add the Linux kernel command line parameters for the virtual GPUs<a class="headerlink" href="#add-the-linux-kernel-command-line-parameters-for-the-virtual-gpus" title="Permalink to this headline"></a></h3>
+<h3>Add the Linux kernel command line parameters for the virtual GPUs<a class="headerlink" href="#add-the-linux-kernel-command-line-parameters-for-the-virtual-gpus" title="Permalink to this heading"></a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>sudo xpumcli vgpu --addkernelparam -y
 Do you want to add the required kernel command line parameters? (y/n) y
 Succeed in adding the required kernel command line parameters, &quot;intel_iommu=on i915.max_vfs=31&quot;. &quot;intel_iommmu&quot; is for IOMMU and &quot;i915.max_vfs&quot; is for SR-IOV. Please reboot OS to take effect. 
@@ -1412,7 +1419,7 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 </div>
 </section>
 <section id="create-the-virtual-gpus">
-<h3>Create the virtual GPUs<a class="headerlink" href="#create-the-virtual-gpus" title="Permalink to this headline"></a></h3>
+<h3>Create the virtual GPUs<a class="headerlink" href="#create-the-virtual-gpus" title="Permalink to this heading"></a></h3>
 <p>After all GPU SR-IOV pre-checks are passed, you may create the virtual GPUs</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="mi">4</span> <span class="o">--</span><span class="n">lmem</span> <span class="mi">500</span>
 <span class="o">+--------------------------------------------------------------------------------------------------+</span>
@@ -1442,7 +1449,7 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 </div>
 </section>
 <section id="list-the-virtual-gpus">
-<h3>list the virtual GPUs<a class="headerlink" href="#list-the-virtual-gpus" title="Permalink to this headline"></a></h3>
+<h3>list the virtual GPUs<a class="headerlink" href="#list-the-virtual-gpus" title="Permalink to this heading"></a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">l</span>
 <span class="o">+--------------------------------------------------------------------------------------------------+</span>
 <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                               <span class="o">|</span>
@@ -1471,7 +1478,7 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 </div>
 </section>
 <section id="remove-all-the-virtual-gpus-on-the-specified-gpu">
-<h3>Remove all the virtual GPUs on the specified GPU<a class="headerlink" href="#remove-all-the-virtual-gpus-on-the-specified-gpu" title="Permalink to this headline"></a></h3>
+<h3>Remove all the virtual GPUs on the specified GPU<a class="headerlink" href="#remove-all-the-virtual-gpus-on-the-specified-gpu" title="Permalink to this heading"></a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpumcli</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">r</span>
 <span class="n">CAUTION</span><span class="p">:</span> <span class="n">we</span> <span class="n">are</span> <span class="n">removing</span> <span class="nb">all</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">device</span> <span class="mi">0</span><span class="p">,</span> <span class="n">please</span> <span class="n">make</span> <span class="n">sure</span> <span class="nb">all</span> <span class="n">vGPU</span><span class="o">-</span><span class="n">assigned</span> <span class="n">virtual</span> <span class="n">machines</span> <span class="n">are</span> <span class="n">shut</span> <span class="n">down</span><span class="o">.</span>
 <span class="n">Please</span> <span class="n">confirm</span> <span class="n">to</span> <span class="n">proceed</span> <span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="n">n</span><span class="p">)</span> <span class="n">y</span>
@@ -1481,7 +1488,7 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 </div>
 </section>
 <section id="the-advanced-configuration-of-virtual-gpus">
-<h3>The advanced configuration of virtual GPUs<a class="headerlink" href="#the-advanced-configuration-of-virtual-gpus" title="Permalink to this headline"></a></h3>
+<h3>The advanced configuration of virtual GPUs<a class="headerlink" href="#the-advanced-configuration-of-virtual-gpus" title="Permalink to this heading"></a></h3>
 <p>The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME “56c0N16” means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here is the detailed info of the virtual GPU settings.</p>
 <ul class="simple">
 <li><p>VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication</p></li>
@@ -1496,7 +1503,7 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 </ul>
 </section>
 <section id="limitations">
-<h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline"></a></h3>
+<h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this heading"></a></h3>
 <ul class="simple">
 <li><p>XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand virtual GPU utilizations by looking at metrics of PF.</p></li>
 <li><p>XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available</p></li>
@@ -1504,7 +1511,7 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 </section>
 </section>
 <section id="get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage">
-<h2>Get the process info which are using GPU and their GPU memory usage<a class="headerlink" href="#get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage" title="Permalink to this headline"></a></h2>
+<h2>Get the process info which are using GPU and their GPU memory usage<a class="headerlink" href="#get-the-process-info-which-are-using-gpu-and-their-gpu-memory-usage" title="Permalink to this heading"></a></h2>
 <p>Help info of GPU process info</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">ps</span> <span class="o">-</span><span class="n">h</span>
 <span class="n">List</span> <span class="n">status</span> <span class="n">of</span> <span class="n">processes</span><span class="o">.</span>
