@@ -2402,7 +2402,7 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
         else{
             //use TDP value
             int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
-            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1)
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_1C)
                 max_power = 120 * 1000;
             else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
                 max_power = 25 * 1000;

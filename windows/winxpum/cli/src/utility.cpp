@@ -72,7 +72,7 @@ namespace xpum::cli {
 
     bool isATSMPlatform(std::string str) {
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-        return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
+        return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos || str.find("56c2") != std::string::npos;
     }
 
 }// end namespace xpum::cli
