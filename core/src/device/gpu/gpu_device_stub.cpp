@@ -837,11 +837,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
 
     if (checkCapability(props.core.name, bdf_address, "Memory Throughput and Bandwidth", toGetMemoryThroughputAndBandwidth, device))
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_THROUGHPUT_BANDWIDTH);
-    if (checkCapability(props.core.name, bdf_address, "GPU Utilization", toGetGPUUtilization, device))
-        capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
-    if (checkCapability(props.core.name, bdf_address, "Engine Utilization", toGetEngineUtilization, device))
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_UTILIZATION);
-    if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device))
+   if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device))
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
 
     if (Configuration::XPUM_MODE == "xpu-smi") {
@@ -858,9 +854,19 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
                 XPUM_DEVICE_MODEL_PVC) {
             capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
         }
+        /*
+            Skip engine utilization capability check to workaround L0 fd 
+            exhausted issue for xpu-smi
+        */
+        capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_UTILIZATION);
     } else {
         if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
-            capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
+            capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);    
+        if (checkCapability(props.core.name, bdf_address, "GPU Utilization", toGetGPUUtilization, device))
+            capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
+        if (checkCapability(props.core.name, bdf_address, "Engine Utilization", toGetEngineUtilization, device))
+            capabilities.push_back(DeviceCapability::METRIC_ENGINE_UTILIZATION);
     }
 
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
