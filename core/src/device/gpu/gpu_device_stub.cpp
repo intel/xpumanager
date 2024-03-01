@@ -751,6 +751,9 @@ static std::string getDriverVersion() {
     if (rpm_res.exitStatus() == 0) {
         std::string strData = rpm_res.output();
         auto pos1 = strData.find(name);
+        if (pos1 == std::string::npos) {
+            return version;
+        }
         pos1 += name.length();
         pos1 = strData.find_first_of("0123456789",pos1);
         auto pos2 = strData.find_first_of("-",pos1);
@@ -765,6 +768,9 @@ static std::string getDriverVersion() {
         if (deb_res.exitStatus() == 0) {
             std::string strData = deb_res.output();
             auto pos1 = strData.find(name);
+            if (pos1 == std::string::npos) {
+                return version;
+            }
             pos1 += name.length();
             pos1 = strData.find_first_of("0123456789", pos1);
             auto pos2 = strData.find_first_of(" ", pos1);
