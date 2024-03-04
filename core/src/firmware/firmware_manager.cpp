@@ -1048,6 +1048,9 @@ GfxFwStatus FirmwareManager::getGfxFwStatus(xpum_device_id_t deviceId){
         std::string sysfs_path = "/sys/class/mei/" + meiName + "/fw_status";
         std::string val;
         std::ifstream ifile(sysfs_path);
+        if (ifile.is_open() == false) {
+            return GfxFwStatus::UNKNOWN;
+        }
         ifile >> val;
         ifile.close();
         uint32_t reg_status = std::stoi(val, 0, 16);

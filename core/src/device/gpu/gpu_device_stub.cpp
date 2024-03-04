@@ -7,6 +7,8 @@
 #include "device/gpu/gpu_device_stub.h"
 
 #include <unistd.h>
+#include <sys/resource.h>
+#include <errno.h>
 
 #include <algorithm>
 #include <deque>
@@ -309,7 +311,14 @@ int GPUDeviceStub::zeInitReturnCode = -1; // -1 means zeInit has never been call
 void GPUDeviceStub::init() {
     // Add a temporary workaround for PVC idle powers
     loadPVCIdlePowers();
-
+    if (Configuration::XPUM_MODE == "xpu-smi") {
+        struct rlimit limit;
+        limit.rlim_cur = 16 * 1024;
+        limit.rlim_max = 16 * 1024;
+        if (setrlimit(RLIMIT_NOFILE, &limit) != 0) {
+            XPUM_LOG_DEBUG("setrlimit failed with error {}", errno);
+        }
+    }
     initialized = true;
     putenv(const_cast<char*>("ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE"));
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));

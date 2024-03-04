@@ -60,6 +60,9 @@ uint64_t access_device_memory(std::string hex_base, uint64_t width) {
 bool getDeviceRegion(std::string bdf, std::string& region_base){
     std::string cmd = "lspci -vvv -s " + bdf + " | egrep \"size=[0-9]{1,2}M\" 2>/dev/null";
     FILE* f = popen(cmd.c_str(), "r");
+    if (f == NULL) {
+        return false;
+    }
     char c_line[1024];
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);
