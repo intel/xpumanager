@@ -260,7 +260,7 @@ namespace xpum {
         }
         if (media_engine_count == 0 || meida_enhancement_engine_count == 0){
             int model_type = getDeviceModelByPciDeviceId(deviceId);
-            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_3) {
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_3 || model_type == XPUM_DEVICE_MODEL_ATS_M_1C) {
                 media_engine_count = (media_engine_count == 0) ? 2 : media_engine_count;
                 meida_enhancement_engine_count = (meida_enhancement_engine_count == 0) ? 2 : meida_enhancement_engine_count;
             }
@@ -321,6 +321,9 @@ namespace xpum {
                 max_limit = 25;
                 break;
             case 0x56c0:
+                max_limit = 120;
+                break;
+            case 0x56c2:
                 max_limit = 120;
                 break;
             case 0x4905:

@@ -51,4 +51,6 @@ std::string getKeyNumberValue(std::string key, const nlohmann::json &item);
 
 std::string getKeyStringValue(std::string key, const nlohmann::json &item);
 
+int getChar();
+
 } // end namespace xpum::cli

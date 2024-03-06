@@ -8,7 +8,7 @@ Type=simple
 
 RuntimeDirectory=xpum
 
-LimitNOFILE=8192
+LimitNOFILE=16384
 LimitCORE=infinity
 ExecStartPre=/bin/sh -c "ulimit -c unlimited"
 

@@ -588,40 +588,30 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
     }
 }
 
+//This function won't work when device handle is returned by zesDeviceGet
 bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
-    zes_device_properties_t props;
-    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    ze_device_properties_t props = {};
+    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
     bool is_atsm = false;
-    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
-        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3);
+    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
+        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1C);
     }
     return is_atsm;
 }
 
+//This function won't work when device handle is returned by zesDeviceGet
 bool Utility::isPVCPlatform(const zes_device_handle_t &device) {
-    zes_device_properties_t props;
-    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    ze_device_properties_t props = {};
+    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
     bool is_pvc = false;
-    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
+    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
         is_pvc = (device_model == XPUM_DEVICE_MODEL_PVC);
     }
     return is_pvc;
-}
-
-bool Utility::isSG1Platform(const zes_device_handle_t &device) {
-    zes_device_properties_t props;
-    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-    props.pNext = nullptr;
-    bool is_sg1 = false;
-    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
-        is_sg1 = (device_model == XPUM_DEVICE_MODEL_SG1);
-    }
-    return is_sg1;
 }
 
 void Utility::parallel_in_batches(unsigned num_elements, unsigned num_threads,

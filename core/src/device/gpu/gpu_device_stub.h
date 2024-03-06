@@ -187,7 +187,7 @@ class GPUDeviceStub {
 
     static std::string getPciSlotByPath(std::vector<std::string> pciPath); 
 
-    static bool isOamPlatform(zes_device_handle_t device);
+    static bool isOamPlatform(ze_device_handle_t device);
 
     static uint32_t getRegisterValueFromSys(zes_device_handle_t device, uint64_t offset);
 
@@ -257,11 +257,11 @@ private:
 
     static std::string to_regex_string(zes_pci_address_t address);
 
-    static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
+    static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
 
-    static void addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
+    static void addCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
-    static void addEngineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
+    static void addEngineCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
     static void checkInitDependency();
 
@@ -270,7 +270,7 @@ private:
     static std::string buildErrors(const std::map<std::string, ze_result_t>& exception_msgs, const char* func, uint32_t line);
     static std::string getProcessName(uint32_t processId);
 
-    static void logSupportedMetrics(zes_device_handle_t device, const zes_device_properties_t& props, const std::vector<DeviceCapability>& capabilities);
+    static void logSupportedMetrics(zes_device_handle_t device, const ze_device_properties_t& props, const std::vector<DeviceCapability>& capabilities);
     
     static std::string getDRMDevice(const zes_pci_properties_t& pci_props);
 

@@ -351,7 +351,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     }
 
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_ENGINE_UTILIZATION, device_id, session_id);
-    if (p_data == nullptr || p_data->getTimestamp() < *begin) {
+    if (p_data == nullptr) {
         *count = 0;
         return XPUM_OK;
     }

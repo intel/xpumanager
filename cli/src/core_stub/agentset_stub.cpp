@@ -29,9 +29,43 @@ struct AgentConfigType {
 static AgentConfigType agentConfigTypeList[]{
     {XPUM_AGENT_CONFIG_SAMPLE_INTERVAL, "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL", VALUE_TYPE_INT64, "sampling_interval"}};
 
-
+static int agentConfigStrToKey(std::string keyStr) {
+    for (auto config : agentConfigTypeList) {
+        if (config.keyStr.compare(keyStr) == 0) {
+            return config.key;
+        }
+    }
+    return -1;
+}
 std::unique_ptr<nlohmann::json> LibCoreStub::setAgentConfig(std::string jsonName, void* pValue) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    auto key = agentConfigStrToKey(jsonName);
+    if(key == -1){
+        (*json)["error"] = "Config Name is not found";
+    }
+    auto res = xpumSetAgentConfig((xpum_agent_config_t)key, pValue);
+
+    switch (res)
+    {
+    case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+        (*json)["error"] = "Level Zero Initialization Error";
+        break;
+    case XPUM_NOT_INITIALIZED:
+        (*json)["error"] = "XPUM is not initializaed";
+        break;
+    case XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY:
+        (*json)["error"] = "Unknow Agent Config Key";
+        break;
+    case XPUM_RESULT_AGENT_SET_INVALID_VALUE:
+        (*json)["error"] = "Invalid Agent Set Value";
+        break;
+
+    default:
+        (*json)["error"] = "Error";
+        break;
+    }
+
     return json;
 }
 

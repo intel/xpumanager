@@ -1727,7 +1727,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
     return res;
 }
 
-std::set<int64_t> monitor_freq_set{100, 200, 500, 1000};
+std::set<int64_t> monitor_freq_set{5, 10, 20, 50, 100, 200, 500, 1000};
 
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
@@ -2402,7 +2402,7 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
         else{
             //use TDP value
             int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
-            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1)
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_1C)
                 max_power = 120 * 1000;
             else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
                 max_power = 25 * 1000;

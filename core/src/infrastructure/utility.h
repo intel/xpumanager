@@ -56,8 +56,6 @@ class Utility {
     
     static bool isPVCPlatform(const zes_device_handle_t &device);
 
-    static bool isSG1Platform(const zes_device_handle_t &device);
-
     static void parallel_in_batches(unsigned num_elements, unsigned num_threads,
                   std::function<void (int start, int end)> functor,
                   bool use_multithreading = true);
