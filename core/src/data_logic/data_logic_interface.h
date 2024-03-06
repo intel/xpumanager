@@ -61,10 +61,6 @@ class DataLogicInterface : public InitCloseInterface {
         virtual bool getFabricLinkInfo(xpum_device_id_t deviceId,
                 FabricLinkInfo info[],
                 uint32_t *count) = 0;
-        virtual uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types) = 0;
-        virtual void stopRawDataCollectionTask(uint32_t task_id) = 0;
-        virtual std::deque<MeasurementCacheData> getCachedRawData(uint32_t task_id, MeasurementType type) = 0;
-        virtual std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id) = 0;
         virtual void updateStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
         virtual uint64_t getStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
         virtual void updateEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
