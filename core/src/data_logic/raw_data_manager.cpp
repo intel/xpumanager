@@ -11,16 +11,12 @@
 #include "engine_group_utilization_data_handler.h"
 #include "engine_utilization_data_handler.h"
 #include "fabric_throughput_data_handler.h"
-#include "frequency_data_handler.h"
-#include "frequency_throttle_time_data_handler.h"
 #include "gpu_utilization_data_handler.h"
 #include "infrastructure/configuration.h"
-#include "memory_data_handler.h"
+#include "counter_data_handler.h"
 #include "metric_statistics_data_handler.h"
-#include "power_data_handler.h"
+#include "time_weighted_average_data_handler.h"
 #include "shared_data.h"
-#include "temperature_data_handler.h"
-#include "throughput_data_handler.h"
 #include "perf_metrics_data_handler.h"
 #include "device/gpu/gpu_device_stub.h"
 
@@ -54,7 +50,7 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY]->init();
 
     data_handlers[MeasurementType::METRIC_POWER] =
-        std::make_shared<PowerDataHandler>(MeasurementType::METRIC_POWER, p_persistency);
+        std::make_shared<TimeWeightedAverageDataHandler>(MeasurementType::METRIC_POWER, p_persistency);
     data_handlers[MeasurementType::METRIC_POWER]->init();
 
     data_handlers[MeasurementType::METRIC_ENERGY] =
@@ -70,23 +66,23 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_MEMORY_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH] =
-        std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_BANDWIDTH, p_persistency);
+        std::make_shared<TimeWeightedAverageDataHandler>(MeasurementType::METRIC_MEMORY_BANDWIDTH, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_READ] =
-        std::make_shared<MemoryDataHandler>(MeasurementType::METRIC_MEMORY_READ, p_persistency);
+        std::make_shared<CounterDataHandler>(MeasurementType::METRIC_MEMORY_READ, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_READ]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE] =
-        std::make_shared<MemoryDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);
+        std::make_shared<CounterDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT] =
-        std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, p_persistency);
+        std::make_shared<TimeWeightedAverageDataHandler>(MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT] =
-        std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, p_persistency);
+        std::make_shared<TimeWeightedAverageDataHandler>(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_UTILIZATION] =
@@ -154,7 +150,7 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE]->init();
 
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE] =
-        std::make_shared<FrequencyThrottleTimeDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
+        std::make_shared<TimeWeightedAverageDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
 
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU] =
