@@ -16,7 +16,7 @@ namespace xpum {
 
 GPUUtilizationDataHandler::GPUUtilizationDataHandler(MeasurementType type,
                                                      std::shared_ptr<Persistency>& p_persistency)
-    : MetricStatisticsDataHandler(type, p_persistency) {
+    : StatsDataHandler(type, p_persistency) {
 }
 
 GPUUtilizationDataHandler::~GPUUtilizationDataHandler() {

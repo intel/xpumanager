@@ -16,7 +16,7 @@ namespace xpum {
 
 EngineUtilizationDataHandler::EngineUtilizationDataHandler(MeasurementType type,
                                                            std::shared_ptr<Persistency>& p_persistency)
-    : MetricCollectionStatisticsDataHandler(type, p_persistency) {
+    : MultiMetricsStatsDataHandler(type, p_persistency) {
 }
 
 EngineUtilizationDataHandler::~EngineUtilizationDataHandler() {

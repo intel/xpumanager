@@ -53,11 +53,11 @@ struct Statistics_data {
     }
 };
 
-class MetricStatisticsDataHandler : public DataHandler {
+class StatsDataHandler : public DataHandler {
    public:
-    MetricStatisticsDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+    StatsDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
-    virtual ~MetricStatisticsDataHandler();
+    virtual ~StatsDataHandler();
 
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 
@@ -70,6 +70,7 @@ class MetricStatisticsDataHandler : public DataHandler {
 
     void updateStatistics(std::shared_ptr<SharedData> &p_data);
 
-    std::map<uint64_t, std::map<std::string, Statistics_data>> statistics_datas;
+    //The map index is session ID, the second map index is device ID
+    std::map<uint64_t, std::map<std::string, Statistics_data>> multi_sessions_data;
 };
 } // end namespace xpum

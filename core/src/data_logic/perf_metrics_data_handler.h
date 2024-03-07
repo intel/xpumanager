@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "metric_statistics_data_handler.h"
+#include "stats_data_handler.h"
 
 namespace xpum {
 
-class PerfMetricsHandler : public MetricStatisticsDataHandler {
+class PerfMetricsHandler : public StatsDataHandler {
    public:
     PerfMetricsHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 

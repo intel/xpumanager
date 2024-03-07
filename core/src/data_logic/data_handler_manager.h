@@ -10,7 +10,6 @@
 #include <mutex>
 
 #include "data_handler.h"
-#include "infrastructure/measurement_cache_data.h"
 #include "infrastructure/measurement_type.h"
 #include "persistency.h"
 
@@ -60,8 +59,6 @@ class DataHandlerManager {
     std::map<MeasurementType, std::shared_ptr<DataHandler>> data_handlers;
 
     std::shared_ptr<Persistency> p_persistency;
-
-    std::map<uint32_t, std::map<MeasurementType, std::deque<MeasurementCacheData>>> caches;
 
     std::map<uint32_t, std::map<uint32_t, uint64_t>> stats_session_timestamps;
 

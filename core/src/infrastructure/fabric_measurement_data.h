@@ -7,7 +7,6 @@
 #pragma once
 
 #include "measurement_data.h"
-#include "metric_collection_measurement_data.h"
 
 namespace xpum {
 
@@ -28,7 +27,7 @@ struct FabricRawData_t {
     };
 };
 
-class FabricMeasurementData : public MetricCollectionMeasurementData {
+class FabricMeasurementData : public MeasurementData {
    public:
     FabricMeasurementData() {
         p_fabric_datas = std::make_shared<std::map<uint64_t, FabricRawData_t>>();

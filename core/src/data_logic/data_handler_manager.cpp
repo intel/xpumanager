@@ -14,7 +14,7 @@
 #include "gpu_utilization_data_handler.h"
 #include "infrastructure/configuration.h"
 #include "counter_data_handler.h"
-#include "metric_statistics_data_handler.h"
+#include "stats_data_handler.h"
 #include "time_weighted_average_data_handler.h"
 #include "shared_data.h"
 #include "perf_metrics_data_handler.h"
@@ -34,19 +34,19 @@ void DataHandlerManager::init() {
     std::unique_lock<std::mutex> lock(mutex);
 
     data_handlers[MeasurementType::METRIC_TEMPERATURE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_TEMPERATURE, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_TEMPERATURE, p_persistency);
     data_handlers[MeasurementType::METRIC_TEMPERATURE]->init();
 
     data_handlers[MeasurementType::METRIC_FREQUENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_FREQUENCY, p_persistency);
     data_handlers[MeasurementType::METRIC_FREQUENCY]->init();
 
     data_handlers[MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY, p_persistency);
     data_handlers[MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY]->init();
 
     data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_REQUEST_FREQUENCY, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_REQUEST_FREQUENCY, p_persistency);
     data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY]->init();
 
     data_handlers[MeasurementType::METRIC_POWER] =
@@ -54,15 +54,15 @@ void DataHandlerManager::init() {
     data_handlers[MeasurementType::METRIC_POWER]->init();
 
     data_handlers[MeasurementType::METRIC_ENERGY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENERGY, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_ENERGY, p_persistency);
     data_handlers[MeasurementType::METRIC_ENERGY]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_USED] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_USED, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_MEMORY_USED, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_USED]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_UTILIZATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_UTILIZATION, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_MEMORY_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH] =
@@ -114,39 +114,39 @@ void DataHandlerManager::init() {
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_EU_ACTIVE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_ACTIVE, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_EU_ACTIVE, p_persistency);
     data_handlers[MeasurementType::METRIC_EU_ACTIVE]->init();
 
     data_handlers[MeasurementType::METRIC_EU_STALL] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_STALL, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_EU_STALL, p_persistency);
     data_handlers[MeasurementType::METRIC_EU_STALL]->init();
 
     data_handlers[MeasurementType::METRIC_EU_IDLE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_IDLE, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_EU_IDLE, p_persistency);
     data_handlers[MeasurementType::METRIC_EU_IDLE]->init();
 
     //METRIC_RAS_ERROR
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE]->init();
-    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE] = std::make_shared<StatsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_TEMPERATURE, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_MEMORY_TEMPERATURE, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE]->init();
 
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE] =
@@ -154,22 +154,22 @@ void DataHandlerManager::init() {
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
 
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU, p_persistency);
 
     data_handlers[MeasurementType::METRIC_PCIE_READ_THROUGHPUT] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ_THROUGHPUT, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_PCIE_READ_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_READ_THROUGHPUT]->init();
 
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT]->init();
 
     data_handlers[MeasurementType::METRIC_PCIE_READ] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_PCIE_READ, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_READ]->init();
 
     data_handlers[MeasurementType::METRIC_PCIE_WRITE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE, p_persistency);
+        std::make_shared<StatsDataHandler>(MeasurementType::METRIC_PCIE_WRITE, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_WRITE]->init();
 
     data_handlers[MeasurementType::METRIC_FABRIC_THROUGHPUT] =

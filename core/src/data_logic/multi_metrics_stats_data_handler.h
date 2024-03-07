@@ -1,7 +1,7 @@
 /* 
  *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
- *  @file metric_collection_statistics_data_handler.h
+ *  @file multi_metrics_stats_data_handler.h
  */
 
 #pragma once
@@ -31,11 +31,16 @@ struct Statistics_data_t {
     }
 };
 
-class MetricCollectionStatisticsDataHandler : public DataHandler {
-   public:
-    MetricCollectionStatisticsDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+//The map index is engine handle or fabric ID
+typedef std::map<uint64_t, Statistics_data_t> multi_metrics_data_t;
+//The map index is device ID
+typedef std::map<std::string, multi_metrics_data_t> multi_devices_data_t;
 
-    virtual ~MetricCollectionStatisticsDataHandler();
+class MultiMetricsStatsDataHandler : public DataHandler {
+   public:
+    MultiMetricsStatsDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+
+    virtual ~MultiMetricsStatsDataHandler();
 
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 
@@ -48,6 +53,6 @@ class MetricCollectionStatisticsDataHandler : public DataHandler {
 
     void updateStatistics(std::shared_ptr<SharedData> &p_data);
 
-    std::map<uint64_t, std::map<std::string, std::map<uint64_t, Statistics_data_t>>> statistics_datas;
+    std::map<uint64_t, multi_devices_data_t> multi_sessions_data;
 };
 } // end namespace xpum

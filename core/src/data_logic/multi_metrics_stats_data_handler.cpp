@@ -1,10 +1,10 @@
 /* 
  *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
- *  @file metric_collection_statistics_data_handler.cpp
+ *  @file multi_metrics_stats_data_handler.cpp
  */
 
-#include "metric_collection_statistics_data_handler.h"
+#include "multi_metrics_stats_data_handler.h"
 
 #include <algorithm>
 #include <iostream>
@@ -14,39 +14,39 @@
 
 namespace xpum {
 
-MetricCollectionStatisticsDataHandler::MetricCollectionStatisticsDataHandler(MeasurementType type,
+MultiMetricsStatsDataHandler::MultiMetricsStatsDataHandler(MeasurementType type,
                                                                              std::shared_ptr<Persistency>& p_persistency)
     : DataHandler(type, p_persistency) {
 }
 
-MetricCollectionStatisticsDataHandler::~MetricCollectionStatisticsDataHandler() {
+MultiMetricsStatsDataHandler::~MultiMetricsStatsDataHandler() {
     close();
 }
 
-void MetricCollectionStatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
+void MultiMetricsStatsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
     updateStatistics(p_data);
 }
 
-void MetricCollectionStatisticsDataHandler::resetStatistics(std::string& device_id, uint64_t session_id) {
-    if (statistics_datas.find(session_id) != statistics_datas.end()) {
-        if (statistics_datas[session_id].find(device_id) != statistics_datas[session_id].end()) {
-            statistics_datas[session_id][device_id].clear();
+void MultiMetricsStatsDataHandler::resetStatistics(std::string& device_id, uint64_t session_id) {
+    if (multi_sessions_data.find(session_id) != multi_sessions_data.end()) {
+        if (multi_sessions_data[session_id].find(device_id) != multi_sessions_data[session_id].end()) {
+            multi_sessions_data[session_id][device_id].clear();
         }
     }
 }
 
-void MetricCollectionStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& p_data) {
+void MultiMetricsStatsDataHandler::updateStatistics(std::shared_ptr<SharedData>& p_data) {
     std::unique_lock<std::mutex> lock(this->mutex);
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
         for (uint64_t session = 0; session < Configuration::MAX_STATISTICS_SESSION_NUM; session++) {
-            auto metric_collection_datas = std::static_pointer_cast<MetricCollectionMeasurementData>(iter->second)->getDatas();
-            std::map<std::string, std::map<uint64_t, Statistics_data_t>>::iterator iter_statistics = statistics_datas[session].find(iter->first);
-            if (iter_statistics != statistics_datas[session].end()) {
+            auto metric_collection_datas = iter->second->getDatas();
+            std::map<std::string, std::map<uint64_t, Statistics_data_t>>::iterator iter_statistics = multi_sessions_data[session].find(iter->first);
+            if (iter_statistics != multi_sessions_data[session].end()) {
                 auto metric_collection_datas_iter = metric_collection_datas->begin();
                 while (metric_collection_datas_iter != metric_collection_datas->end()) {
-                    auto stats_iter = statistics_datas[session][iter->first].find(uint64_t(metric_collection_datas_iter->first));
-                    if (stats_iter != statistics_datas[session][iter->first].end()) {
+                    auto stats_iter = multi_sessions_data[session][iter->first].find(uint64_t(metric_collection_datas_iter->first));
+                    if (stats_iter != multi_sessions_data[session][iter->first].end()) {
                         stats_iter->second.count++;
                         if (metric_collection_datas_iter->second.current < stats_iter->second.min) {
                             stats_iter->second.min = metric_collection_datas_iter->second.current;
@@ -57,14 +57,14 @@ void MetricCollectionStatisticsDataHandler::updateStatistics(std::shared_ptr<Sha
                         stats_iter->second.avg = stats_iter->second.avg * (stats_iter->second.count - 1) * 1.0 / stats_iter->second.count + metric_collection_datas_iter->second.current * 1.0 / stats_iter->second.count;
                         stats_iter->second.latest_time = p_data->getTime();
                     } else {
-                        statistics_datas[session][iter->first][uint64_t(metric_collection_datas_iter->first)] = Statistics_data_t(metric_collection_datas_iter->second.current, p_data->getTime());
+                        multi_sessions_data[session][iter->first][uint64_t(metric_collection_datas_iter->first)] = Statistics_data_t(metric_collection_datas_iter->second.current, p_data->getTime());
                     }
                     metric_collection_datas_iter++;
                 }
             } else {
                 auto metric_collection_datas_iter = metric_collection_datas->begin();
                 while (metric_collection_datas_iter != metric_collection_datas->end()) {
-                    statistics_datas[session][iter->first][uint64_t(metric_collection_datas_iter->first)] = Statistics_data_t(metric_collection_datas_iter->second.current, p_data->getTime());
+                    multi_sessions_data[session][iter->first][uint64_t(metric_collection_datas_iter->first)] = Statistics_data_t(metric_collection_datas_iter->second.current, p_data->getTime());
                     metric_collection_datas_iter++;
                 }
             }
@@ -73,7 +73,7 @@ void MetricCollectionStatisticsDataHandler::updateStatistics(std::shared_ptr<Sha
     }
 }
 
-std::shared_ptr<MeasurementData> MetricCollectionStatisticsDataHandler::getLatestData(std::string& device_id) noexcept {
+std::shared_ptr<MeasurementData> MultiMetricsStatsDataHandler::getLatestData(std::string& device_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
         return nullptr;
@@ -87,7 +87,7 @@ std::shared_ptr<MeasurementData> MetricCollectionStatisticsDataHandler::getLates
     }
 }
 
-std::shared_ptr<MeasurementData> MetricCollectionStatisticsDataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
+std::shared_ptr<MeasurementData> MultiMetricsStatsDataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
         return nullptr;
@@ -95,8 +95,8 @@ std::shared_ptr<MeasurementData> MetricCollectionStatisticsDataHandler::getLates
 
     auto datas = p_latestData->getData();
     if (datas.find(device_id) != datas.end() && datas[device_id] != nullptr) {
-        auto cur_datas = std::static_pointer_cast<MetricCollectionMeasurementData>(datas[device_id]);
-        auto metric_collection_datas = std::static_pointer_cast<MetricCollectionMeasurementData>(datas[device_id])->getDatas();
+        auto cur_datas = datas[device_id];
+        auto metric_collection_datas = datas[device_id]->getDatas();
         auto metric_collection_datas_iter = metric_collection_datas->begin();
         while (metric_collection_datas_iter != metric_collection_datas->end()) {
             cur_datas->setDataCur(metric_collection_datas_iter->first, metric_collection_datas_iter->second.current);
@@ -111,16 +111,16 @@ std::shared_ptr<MeasurementData> MetricCollectionStatisticsDataHandler::getLates
         }
     }
 
-    if (statistics_datas.find(session_id) != statistics_datas.end() && statistics_datas[session_id].find(device_id) != statistics_datas[session_id].end() && datas[device_id] != nullptr) {
-        auto metric_collection_datas = std::static_pointer_cast<MetricCollectionMeasurementData>(datas[device_id])->getDatas();
+    if (multi_sessions_data.find(session_id) != multi_sessions_data.end() && multi_sessions_data[session_id].find(device_id) != multi_sessions_data[session_id].end() && datas[device_id] != nullptr) {
+        auto metric_collection_datas = datas[device_id]->getDatas();
         auto metric_collection_datas_iter = metric_collection_datas->begin();
         while (metric_collection_datas_iter != metric_collection_datas->end()) {
-            auto cur_datas = std::static_pointer_cast<MetricCollectionMeasurementData>(datas[device_id]);
-            cur_datas->setDataMin(metric_collection_datas_iter->first, statistics_datas[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].min);
-            cur_datas->setDataMax(metric_collection_datas_iter->first, statistics_datas[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].max);
-            cur_datas->setDataAvg(metric_collection_datas_iter->first, statistics_datas[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].avg);
-            cur_datas->setStartTime(statistics_datas[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].start_time);
-            cur_datas->setLatestTime(statistics_datas[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].latest_time);
+            auto cur_datas = std::static_pointer_cast<MeasurementData>(datas[device_id]);
+            cur_datas->setDataMin(metric_collection_datas_iter->first, multi_sessions_data[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].min);
+            cur_datas->setDataMax(metric_collection_datas_iter->first, multi_sessions_data[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].max);
+            cur_datas->setDataAvg(metric_collection_datas_iter->first, multi_sessions_data[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].avg);
+            cur_datas->setStartTime(multi_sessions_data[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].start_time);
+            cur_datas->setLatestTime(multi_sessions_data[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].latest_time);
             ++metric_collection_datas_iter;
         }
         resetStatistics(device_id, session_id);

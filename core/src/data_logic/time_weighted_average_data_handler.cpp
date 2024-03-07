@@ -13,7 +13,7 @@ namespace xpum {
 
 TimeWeightedAverageDataHandler::TimeWeightedAverageDataHandler(MeasurementType type,
                                                                std::shared_ptr<Persistency>& p_persistency)
-    : MetricStatisticsDataHandler(type, p_persistency) {
+    : StatsDataHandler(type, p_persistency) {
 }
 
 TimeWeightedAverageDataHandler::~TimeWeightedAverageDataHandler() {

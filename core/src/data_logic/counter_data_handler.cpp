@@ -12,7 +12,7 @@ namespace xpum {
 
 CounterDataHandler::CounterDataHandler(MeasurementType type, 
                                                    std::shared_ptr<Persistency>& p_persistency) 
-: MetricStatisticsDataHandler(type, p_persistency) {
+: StatsDataHandler(type, p_persistency) {
 }
 
 CounterDataHandler::~CounterDataHandler() {

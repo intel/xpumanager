@@ -11,7 +11,6 @@
 
 #include "infrastructure/const.h"
 #include "infrastructure/measurement_data.h"
-#include "infrastructure/measurement_cache_data.h"
 #include "infrastructure/measurement_type.h"
 #include "infrastructure/init_close_interface.h"
 #include "../include/xpum_structs.h"
