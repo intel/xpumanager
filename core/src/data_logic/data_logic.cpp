@@ -61,14 +61,6 @@ std::shared_ptr<MeasurementData> DataLogic::getLatestData(MeasurementType type,
     return p_data_handler_manager->getLatestData(type, device_id);
 }
 
-void DataLogic::getLatestData(MeasurementType type,
-                              std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
-    if (p_data_handler_manager == nullptr) {
-        throw IlegalStateException("initialization is not done!");
-    }
-    return p_data_handler_manager->getLatestData(type, datas);
-}
-
 std::shared_ptr<MeasurementData> DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) {
     if (p_data_handler_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
@@ -151,21 +143,22 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     device_stats.count = 0;
     if (hasDataOnDevice) {
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second->hasDataOnDevice()) {
+            auto &measurementData = datas_iter->second;
+            if (measurementData->hasDataOnDevice()) {
                 xpum_device_stats_data_t stats_data{};
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.scale = datas_iter->second->getScale();
+                stats_data.scale = measurementData->getScale();
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
-                    stats_data.accumulated = datas_iter->second->getCurrent();
-                    stats_data.value = datas_iter->second->getCurrent() - datas_iter->second->getMin();
+                    stats_data.accumulated = measurementData->getCurrent();
+                    stats_data.value = measurementData->getCurrent() - measurementData->getMin();
                 } else {
                     stats_data.isCounter = false;
-                    stats_data.avg = datas_iter->second->getAvg();
-                    stats_data.min = datas_iter->second->getMin();
-                    stats_data.max = datas_iter->second->getMax();
-                    stats_data.value = datas_iter->second->getCurrent();
+                    stats_data.avg = measurementData->getAvg();
+                    stats_data.min = measurementData->getMin();
+                    stats_data.max = measurementData->getMax();
+                    stats_data.value = measurementData->getCurrent();
                 }
                 device_stats.dataList[device_stats.count++] = stats_data;
             }
@@ -186,21 +179,22 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         subdevice_stats.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second->hasSubdeviceData() && datas_iter->second->getSubdeviceDatas()->find(i) != datas_iter->second->getSubdeviceDatas()->end() && datas_iter->second->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
+            auto &measurementData = datas_iter->second;
+            if (measurementData->hasSubdeviceData() && measurementData->getSubdeviceDatas()->find(i) != measurementData->getSubdeviceDatas()->end() && measurementData->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
                 xpum_device_stats_data_t stats_data{};
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.scale = datas_iter->second->getScale();
+                stats_data.scale = measurementData->getScale();
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
-                    stats_data.accumulated = datas_iter->second->getSubdeviceDataCurrent(i);
-                    stats_data.value = datas_iter->second->getSubdeviceDataCurrent(i) - datas_iter->second->getSubdeviceDataMin(i);
+                    stats_data.accumulated = measurementData->getSubdeviceDataCurrent(i);
+                    stats_data.value = measurementData->getSubdeviceDataCurrent(i) - measurementData->getSubdeviceDataMin(i);
                 } else {
                     stats_data.isCounter = false;
-                    stats_data.avg = datas_iter->second->getSubdeviceDataAvg(i);
-                    stats_data.min = datas_iter->second->getSubdeviceDataMin(i);
-                    stats_data.max = datas_iter->second->getSubdeviceDataMax(i);
-                    stats_data.value = datas_iter->second->getSubdeviceDataCurrent(i);
+                    stats_data.avg = measurementData->getSubdeviceDataAvg(i);
+                    stats_data.min = measurementData->getSubdeviceDataMin(i);
+                    stats_data.max = measurementData->getSubdeviceDataMax(i);
+                    stats_data.value = measurementData->getSubdeviceDataCurrent(i);
                 }
                 subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
             }
@@ -271,14 +265,15 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     device_metrics.count = 0;
     if (hasDataOnDevice) {
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second->hasDataOnDevice()) {
+            auto &measurementData = datas_iter->second;
+            if (measurementData->hasDataOnDevice()) {
                 xpum_device_metric_data_t metric_data;
                 MeasurementType type = datas_iter->first;
                 metric_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
-                metric_data.value = datas_iter->second->getCurrent();
-                metric_data.timestamp = datas_iter->second->getTimestamp();
-                metric_data.scale = datas_iter->second->getScale();
+                metric_data.value = measurementData->getCurrent();
+                metric_data.timestamp = measurementData->getTimestamp();
+                metric_data.scale = measurementData->getScale();
                 device_metrics.dataList[device_metrics.count++] = metric_data;
             }
             ++datas_iter;
@@ -295,14 +290,15 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         subdevice_metrics.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second->hasSubdeviceData() && datas_iter->second->getSubdeviceDatas()->find(i) != datas_iter->second->getSubdeviceDatas()->end() && datas_iter->second->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
+            auto &measurementData = datas_iter->second;
+            if (measurementData->hasSubdeviceData() && measurementData->getSubdeviceDatas()->find(i) != measurementData->getSubdeviceDatas()->end() && measurementData->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
                 xpum_device_metric_data_t metric_data;
                 MeasurementType type = datas_iter->first;
                 metric_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
-                metric_data.value = datas_iter->second->getSubdeviceDataCurrent(i);
-                metric_data.timestamp = datas_iter->second->getTimestamp();
-                metric_data.scale = datas_iter->second->getScale();
+                metric_data.value = measurementData->getSubdeviceDataCurrent(i);
+                metric_data.timestamp = measurementData->getTimestamp();
+                metric_data.scale = measurementData->getScale();
                 subdevice_metrics.dataList[subdevice_metrics.count++] = metric_data;
             }
             ++datas_iter;
@@ -355,21 +351,23 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         *count = 0;
         return XPUM_OK;
     }
-    auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
+    auto iter = p_data->getDatas()->begin();
     uint32_t index = 0;
-    while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
-        uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
-        if (engine_index != std::numeric_limits<uint32_t>::max() && engine_datas_iter->second.current != std::numeric_limits<uint64_t>::max()) {
+    while (iter != p_data->getDatas()->end()) {
+        auto &engineHandle = iter->first;
+        auto &measurementData = iter->second;
+        uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engineHandle);
+        if (engine_index != std::numeric_limits<uint32_t>::max() && measurementData.current != std::numeric_limits<uint64_t>::max()) {
             xpum_device_engine_stats_t data;
-            data.isTileData = engine_datas_iter->second.on_subdevice;
-            data.tileId = engine_datas_iter->second.subdevice_id;
-            data.value = engine_datas_iter->second.current;
-            data.min = engine_datas_iter->second.min;
-            data.avg = engine_datas_iter->second.avg;
-            data.max = engine_datas_iter->second.max;
+            data.isTileData = measurementData.on_subdevice;
+            data.tileId = measurementData.subdevice_id;
+            data.value = measurementData.current;
+            data.min = measurementData.min;
+            data.avg = measurementData.avg;
+            data.max = measurementData.max;
             data.index = engine_index;
             data.scale = p_data->getScale();
-            data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
+            data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engineHandle));
             data.deviceId = deviceId;
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
@@ -377,7 +375,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
             dataList[index] = data;
             ++index;
         }
-        ++engine_datas_iter;
+        ++iter;
     }
     *count = index;
     return XPUM_OK;
@@ -422,25 +420,27 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
         *count = 0;
         return XPUM_OK;
     }
-    auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
+    auto iter = p_data->getDatas()->begin();
     uint32_t index = 0;
-    while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
-        uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
+    while (iter != p_data->getDatas()->end()) {
+        auto &engineHandle = iter->first;
+        auto &measurementData = iter->second;
+        uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engineHandle);
         if (engine_index != std::numeric_limits<uint32_t>::max()) {
             xpum_device_engine_metric_t data;
-            data.isTileData = engine_datas_iter->second.on_subdevice;
-            data.tileId = engine_datas_iter->second.subdevice_id;
-            data.value = engine_datas_iter->second.current;
+            data.isTileData = measurementData.on_subdevice;
+            data.tileId = measurementData.subdevice_id;
+            data.value = measurementData.current;
             data.index = engine_index;
             data.scale = p_data->getScale();
-            data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
+            data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engineHandle));
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
             dataList[index] = data;
             ++index;
         }
-        ++engine_datas_iter;
+        ++iter;
     }
     return XPUM_OK;
 }
@@ -511,10 +511,12 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         return XPUM_OK;
     }
 
-    fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
-    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
+    auto iter = p_data->getDatas()->begin();
+    while (iter != p_data->getDatas()->end()) {
+        auto &fabricId = iter->first;
+        auto &measurementData = iter->second;
         FabricThroughputInfo info;
-        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
+        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabricId, info)) {
             xpum_device_fabric_throughput_stats_t stats{};
             stats.tile_id = info.attach_id;
             std::string did = 
@@ -528,21 +530,21 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
             if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
-                stats.value = fabric_datas_iter->second.current - fabric_datas_iter->second.min;
-                stats.accumulated = fabric_datas_iter->second.current;
+                stats.value = measurementData.current - measurementData.min;
+                stats.accumulated = measurementData.current;
                 stats.scale = 1;
             } else {
-                stats.value = fabric_datas_iter->second.current;
-                stats.min = fabric_datas_iter->second.min;
-                stats.avg = fabric_datas_iter->second.avg;
-                stats.max = fabric_datas_iter->second.max;
+                stats.value = measurementData.current;
+                stats.min = measurementData.min;
+                stats.avg = measurementData.avg;
+                stats.max = measurementData.max;
                 stats.scale = p_data->getScale();
             }
             stats.deviceId = deviceId;
             dataList[index] = stats;
             ++index;
         }
-        ++fabric_datas_iter;
+        ++iter;
     }
     *count = index;
     return XPUM_OK;
@@ -590,10 +592,12 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
         return XPUM_OK;
     }
 
-    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
-    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
+    auto iter = p_data->getDatas()->begin();
+    while (iter != p_data->getDatas()->end()) {
+        auto &fabricId = iter->first;
+        auto &measurementData = iter->second;
         FabricThroughputInfo info;
-        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
+        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabricId, info)) {
             xpum_device_fabric_throughput_metric_t stats;
             stats.tile_id = info.attach_id;
             std::string did = 
@@ -611,14 +615,14 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
             } else {
                 stats.scale = p_data->getScale();
             }
-            stats.value = fabric_datas_iter->second.current;
+            stats.value = measurementData.current;
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
             dataList[index] = stats;
             ++index;
         }
-        ++fabric_datas_iter;
+        ++iter;
     }
     *count = index;
     return XPUM_OK;

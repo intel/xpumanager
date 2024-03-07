@@ -77,23 +77,4 @@ std::shared_ptr<MeasurementData> AvgDataHandler::getLatestData(std::string& devi
     return datas[device_id];
 }
 
-void AvgDataHandler::getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    if (p_latestData == nullptr) {
-        return;
-    }
-
-    auto existing_datas = p_latestData->getData();
-    for (auto it = existing_datas.begin(); it != existing_datas.end(); it++) {
-        datas[it->first] = it->second;
-        std::string device_id = it->first;
-        int min = 0;
-        int max = 0;
-        int avg = 0;
-        getAvg(device_id, min, max, avg);
-        datas[device_id]->setMin(min);
-        datas[device_id]->setMax(max);
-        datas[device_id]->setAvg(avg);
-    }
-}
 } // end namespace xpum

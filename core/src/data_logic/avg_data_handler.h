@@ -20,8 +20,6 @@ class AvgDataHandler : public DataHandler {
 
     virtual std::shared_ptr<MeasurementData> getLatestData(std::string& device_id) noexcept;
 
-    virtual void getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept;
-
 private:
     void getAvg(std::string& device_id, int& min, int& max, int& avg);
     std::deque<std::shared_ptr<SharedData>> deque;

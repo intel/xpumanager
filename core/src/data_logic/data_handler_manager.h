@@ -35,10 +35,6 @@ class DataHandlerManager {
         MeasurementType type,
         std::string& device_id) noexcept;
 
-    void getLatestData(
-        MeasurementType type,
-        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept;
-
     std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) noexcept;
 
     void updateStatsTimestamp(uint32_t session_id, uint32_t device_id);

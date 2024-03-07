@@ -25,11 +25,6 @@ class DataLogicInterface : public InitCloseInterface {
                 MeasurementType type,
                 Timestamp_t time,
                 std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) = 0;
-        virtual std::shared_ptr<MeasurementData> getLatestData(MeasurementType type,
-                std::string &device_id) = 0;
-        virtual void getLatestData(MeasurementType type,
-                std::map<std::string, std::shared_ptr<MeasurementData>> &datas) = 0;
-        virtual std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string &device_id, uint64_t session_id) = 0;
         virtual xpum_result_t getMetricsStatistics(xpum_device_id_t deviceId,
                 xpum_device_stats_t dataList[],
                 uint32_t *count,

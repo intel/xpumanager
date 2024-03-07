@@ -217,18 +217,6 @@ std::shared_ptr<MeasurementData> DataHandlerManager::getLatestStatistics(Measure
     return p_handler == nullptr ? nullptr : p_handler->getLatestStatistics(device_id, session_id);
 }
 
-void DataHandlerManager::getLatestData(
-    MeasurementType type,
-    std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {
-    std::unique_lock<std::mutex> lock(mutex);
-    auto& p_handler = data_handlers[type];
-    lock.unlock();
-
-    if (p_handler != nullptr) {
-        p_handler->getLatestData(datas);
-    }
-}
-
 void DataHandlerManager::updateStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
     stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
