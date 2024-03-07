@@ -67,6 +67,7 @@ class ComletDump : public ComletBase {
             }
             metricsHelpStr += "\n";
         }
+        keepDumping.store(true);
     }
     virtual ~ComletDump() {}
 
