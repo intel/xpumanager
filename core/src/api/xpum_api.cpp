@@ -2782,7 +2782,7 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         engineUsage = std::max(engineCompute / countComputeEngine, engineRender / countRenderEngine);
     engineUsage /= scale;
 
-    auto p_perf_datas = p_measurement_data->getDatas();
+    auto p_perf_datas = p_measurement_data->getPerfMetricDatas();
     if (p_perf_datas->size() <= 0) {
         return XPUM_METRIC_NOT_SUPPORTED;
     }

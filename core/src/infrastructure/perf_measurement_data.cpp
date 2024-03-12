@@ -20,7 +20,7 @@ void PerfMeasurementData::addData(std::shared_ptr<PerfMetricDeviceData_t>& data)
     p_device_datas->push_back(data);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<PerfMetricDeviceData_t>>> PerfMeasurementData::getDatas() {
+std::shared_ptr<std::vector<std::shared_ptr<PerfMetricDeviceData_t>>> PerfMeasurementData::getPerfMetricDatas() {
     return p_device_datas;
 }
 

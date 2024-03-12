@@ -60,14 +60,14 @@ struct AdditionalData {
     }
 };
 
-struct MetricCollectionMeasurementData_t {
+struct SingleMeasurementData_t {
     bool on_subdevice;
     uint32_t subdevice_id;
     uint64_t current;
     uint64_t max;
     uint64_t min;
     uint64_t avg;
-    MetricCollectionMeasurementData_t() {
+    SingleMeasurementData_t() {
         on_subdevice = false;
         subdevice_id = std::numeric_limits<uint32_t>::max();
         avg = min = max = current = std::numeric_limits<uint64_t>::max();
@@ -77,7 +77,7 @@ struct MetricCollectionMeasurementData_t {
 class MeasurementData {
    public:
     ~MeasurementData() {
-        p_collection_datas->clear();
+        p_multi_metrics_datas->clear();
     }
 
     MeasurementData() : start_time(0),
@@ -96,7 +96,7 @@ class MeasurementData {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
-        p_collection_datas = std::make_shared<std::map<uint64_t, MetricCollectionMeasurementData_t>>();
+        p_multi_metrics_datas = std::make_shared<std::map<uint64_t, SingleMeasurementData_t>>();
     }
 
     MeasurementData(uint64_t value) : start_time(0),
@@ -115,7 +115,7 @@ class MeasurementData {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
-        p_collection_datas = std::make_shared<std::map<uint64_t, MetricCollectionMeasurementData_t>>();
+        p_multi_metrics_datas = std::make_shared<std::map<uint64_t, SingleMeasurementData_t>>();
     }
 
     MeasurementData(const MeasurementData& other) {
@@ -138,7 +138,7 @@ class MeasurementData {
         subdevice_additional_data_types = other.subdevice_additional_data_types;
         subdevice_additional_datas = other.subdevice_additional_datas;
         errors = other.errors;
-        p_collection_datas = other.p_collection_datas;
+        p_multi_metrics_datas = other.p_multi_metrics_datas;
     }
 
    public:
@@ -268,10 +268,10 @@ class MeasurementData {
         return this->errors;
     }
 
-    const std::shared_ptr<std::map<uint64_t, MetricCollectionMeasurementData_t>> getDatas() {
-        return p_collection_datas;
+    const std::shared_ptr<std::map<uint64_t, SingleMeasurementData_t>> getMultiMetricsDatas() {
+        return p_multi_metrics_datas;
     }
-    void addMetricCollectionMeasurementData(uint64_t handle, bool on_subdevice, uint32_t subdevice_id);
+    void addSingleMeasurementData(uint64_t handle, bool on_subdevice, uint32_t subdevice_id);
     void setDataCur(uint64_t handle, uint64_t cur);
     void setDataMin(uint64_t handle, uint64_t min);
     void setDataMax(uint64_t handle, uint64_t max);
@@ -322,7 +322,7 @@ class MeasurementData {
 
     std::string errors;
 
-    std::shared_ptr<std::map<uint64_t, MetricCollectionMeasurementData_t>> p_collection_datas;
+    std::shared_ptr<std::map<uint64_t, SingleMeasurementData_t>> p_multi_metrics_datas;
 };
 
 } // end namespace xpum

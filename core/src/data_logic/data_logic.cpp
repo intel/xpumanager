@@ -351,9 +351,9 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         *count = 0;
         return XPUM_OK;
     }
-    auto iter = p_data->getDatas()->begin();
+    auto iter = p_data->getMultiMetricsDatas()->begin();
     uint32_t index = 0;
-    while (iter != p_data->getDatas()->end()) {
+    while (iter != p_data->getMultiMetricsDatas()->end()) {
         auto &engineHandle = iter->first;
         auto &measurementData = iter->second;
         uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engineHandle);
@@ -420,9 +420,9 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
         *count = 0;
         return XPUM_OK;
     }
-    auto iter = p_data->getDatas()->begin();
+    auto iter = p_data->getMultiMetricsDatas()->begin();
     uint32_t index = 0;
-    while (iter != p_data->getDatas()->end()) {
+    while (iter != p_data->getMultiMetricsDatas()->end()) {
         auto &engineHandle = iter->first;
         auto &measurementData = iter->second;
         uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engineHandle);
@@ -490,8 +490,8 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         return XPUM_OK;
     }
 
-    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
-    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
+    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getMultiMetricsDatas()->begin();
+    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getMultiMetricsDatas()->end()) {
         FabricThroughputInfo info;
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
             ++total;
@@ -511,8 +511,8 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         return XPUM_OK;
     }
 
-    auto iter = p_data->getDatas()->begin();
-    while (iter != p_data->getDatas()->end()) {
+    auto iter = p_data->getMultiMetricsDatas()->begin();
+    while (iter != p_data->getMultiMetricsDatas()->end()) {
         auto &fabricId = iter->first;
         auto &measurementData = iter->second;
         FabricThroughputInfo info;
@@ -592,8 +592,8 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
         return XPUM_OK;
     }
 
-    auto iter = p_data->getDatas()->begin();
-    while (iter != p_data->getDatas()->end()) {
+    auto iter = p_data->getMultiMetricsDatas()->begin();
+    while (iter != p_data->getMultiMetricsDatas()->end()) {
         auto &fabricId = iter->first;
         auto &measurementData = iter->second;
         FabricThroughputInfo info;

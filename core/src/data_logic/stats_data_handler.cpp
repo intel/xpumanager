@@ -32,54 +32,59 @@ void StatsDataHandler::updateStatistics(std::shared_ptr<SharedData>& p_data) {
     std::unique_lock<std::mutex> lock(this->mutex);
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
+        auto &deviceId = iter->first;
+        auto &measurementData = iter->second;
         for (uint64_t session = 0; session < Configuration::MAX_STATISTICS_SESSION_NUM; session++) {
-            std::map<std::string, Statistics_data>::iterator iter_statistics = multi_sessions_data[session].find(iter->first);
+            std::map<std::string, Statistics_data>::iterator iter_statistics = multi_sessions_data[session].find(deviceId);
             if (iter_statistics != multi_sessions_data[session].end()) {
-                iter_statistics->second.count++;
-                if (iter->second->hasDataOnDevice()) {
-                    iter_statistics->second.hasDataOnDevice = true;
-                    if (iter->second->getCurrent() < iter_statistics->second.min) {
-                        iter_statistics->second.min = iter->second->getCurrent();
+                auto &stats = iter_statistics->second;
+                stats.count++;
+                if (measurementData->hasDataOnDevice()) {
+                    stats.hasDataOnDevice = true;
+                    if (measurementData->getCurrent() < stats.min) {
+                        stats.min = measurementData->getCurrent();
                     }
-                    if (iter->second->getCurrent() > iter_statistics->second.max) {
-                        iter_statistics->second.max = iter->second->getCurrent();
+                    if (measurementData->getCurrent() > stats.max) {
+                        stats.max = measurementData->getCurrent();
                     }
-                    iter_statistics->second.avg = iter_statistics->second.avg * (iter_statistics->second.count - 1) * 1.0 / iter_statistics->second.count + iter->second->getCurrent() * 1.0 / iter_statistics->second.count;
+                    stats.avg = stats.avg * (stats.count - 1) * 1.0 / stats.count + measurementData->getCurrent() * 1.0 / stats.count;
                 } else {
-                    iter_statistics->second.hasDataOnDevice = false;
+                    stats.hasDataOnDevice = false;
                 }
-                iter_statistics->second.latest_time = p_data->getTime();
+                stats.latest_time = p_data->getTime();
             } else {
-                if (iter->second->getCurrent() != std::numeric_limits<uint64_t>::max()) {
-                    multi_sessions_data[session].insert(std::make_pair(iter->first, Statistics_data(iter->second->getCurrent(), p_data->getTime())));
+                if (measurementData->getCurrent() != std::numeric_limits<uint64_t>::max()) {
+                    multi_sessions_data[session].insert(std::make_pair(deviceId, Statistics_data(measurementData->getCurrent(), p_data->getTime())));
                 }
             }
 
-            std::map<uint32_t, SubdeviceData>::const_iterator iter_subdevice = iter->second->getSubdeviceDatas()->begin();
-            while (iter_subdevice != iter->second->getSubdeviceDatas()->end()) {
-                if (multi_sessions_data[session].find(iter->first) == multi_sessions_data[session].end()) {
-                    multi_sessions_data[session].insert(std::make_pair(iter->first, Statistics_data(iter_subdevice->first, iter->second->getSubdeviceDataCurrent(iter_subdevice->first), p_data->getTime())));
+            std::map<uint32_t, SubdeviceData>::const_iterator iter_subdevice = measurementData->getSubdeviceDatas()->begin();
+            while (iter_subdevice != measurementData->getSubdeviceDatas()->end()) {
+                auto &subDeviceId = iter_subdevice->first;
+                if (multi_sessions_data[session].find(deviceId) == multi_sessions_data[session].end()) {
+                    multi_sessions_data[session].insert(std::make_pair(deviceId, Statistics_data(subDeviceId, measurementData->getSubdeviceDataCurrent(subDeviceId), p_data->getTime())));
                     continue;
                 }
-                std::map<uint32_t, Statistics_subdevice_data>::iterator iter_subdevice_statistics = multi_sessions_data[session].find(iter->first)->second.subdevice_datas.find(iter_subdevice->first);
-                if (iter_subdevice_statistics != multi_sessions_data[session].find(iter->first)->second.subdevice_datas.end()) {
-                    if (iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first) != std::numeric_limits<uint64_t>::max()) {
-                        iter_subdevice_statistics->second.count++;
-                        uint64_t current_data = iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first);
-                        if (current_data < iter_subdevice_statistics->second.min) {
-                            iter_subdevice_statistics->second.min = current_data;
+                std::map<uint32_t, Statistics_subdevice_data>::iterator iter_subdevice_statistics = multi_sessions_data[session].find(deviceId)->second.subdevice_datas.find(subDeviceId);
+                if (iter_subdevice_statistics != multi_sessions_data[session].find(deviceId)->second.subdevice_datas.end()) {
+                    auto &subStats = iter_subdevice_statistics->second;
+                    if (measurementData->getSubdeviceDataCurrent(subDeviceId) != std::numeric_limits<uint64_t>::max()) {
+                        subStats.count++;
+                        uint64_t current_data = measurementData->getSubdeviceDataCurrent(subDeviceId);
+                        if (current_data < subStats.min) {
+                            subStats.min = current_data;
                         }
-                        if (current_data > iter_subdevice_statistics->second.max) {
-                            iter_subdevice_statistics->second.max = current_data;
+                        if (current_data > subStats.max) {
+                            subStats.max = current_data;
                         }
-                        iter_subdevice_statistics->second.avg = (iter_subdevice_statistics->second.avg * (iter_subdevice_statistics->second.count - 1) + iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first)) * 1.0 / iter_subdevice_statistics->second.count;
+                        subStats.avg = (subStats.avg * (subStats.count - 1) + measurementData->getSubdeviceDataCurrent(iter_subdevice_statistics->first)) * 1.0 / subStats.count;
                     }
                 } else {
-                    if (iter->second->getSubdeviceDataCurrent(iter_subdevice->first) != std::numeric_limits<uint64_t>::max()) {
-                        if (multi_sessions_data[session].find(iter->first) == multi_sessions_data[session].end()) {
-                            multi_sessions_data[session].insert(std::make_pair(iter->first, Statistics_data(iter_subdevice->first, iter->second->getSubdeviceDataCurrent(iter_subdevice->first), p_data->getTime())));
+                    if (measurementData->getSubdeviceDataCurrent(subDeviceId) != std::numeric_limits<uint64_t>::max()) {
+                        if (multi_sessions_data[session].find(deviceId) == multi_sessions_data[session].end()) {
+                            multi_sessions_data[session].insert(std::make_pair(deviceId, Statistics_data(subDeviceId, measurementData->getSubdeviceDataCurrent(subDeviceId), p_data->getTime())));
                         } else {
-                            multi_sessions_data[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second->getSubdeviceDataCurrent(iter_subdevice->first))));
+                            multi_sessions_data[session].find(deviceId)->second.subdevice_datas.insert(std::make_pair(subDeviceId, Statistics_subdevice_data(measurementData->getSubdeviceDataCurrent(subDeviceId))));
                         }
                     }
                 }
@@ -122,6 +127,8 @@ std::shared_ptr<MeasurementData> StatsDataHandler::getLatestStatistics(std::stri
         datas[device_id]->setStartTime(datas[device_id]->getTimestamp());
         datas[device_id]->setLatestTime(datas[device_id]->getTimestamp());
         auto sub = datas[device_id]->getSubdeviceDatas()->begin();
+        //The first sub is subDeviceId 
+        //The second of sub is Statistics_subdevice_data
         while (sub != datas[device_id]->getSubdeviceDatas()->end()) {
             sub->second.avg = sub->second.current;
             sub->second.min = sub->second.current;
@@ -132,13 +139,16 @@ std::shared_ptr<MeasurementData> StatsDataHandler::getLatestStatistics(std::stri
 
     if (multi_sessions_data.find(session_id) != multi_sessions_data.end() && datas[device_id] != nullptr) {
         std::map<std::string, Statistics_data>::iterator iter = multi_sessions_data[session_id].find(device_id);
+        auto &stats = iter->second;
         if (iter != multi_sessions_data[session_id].end()) {
-            datas[device_id]->setAvg(iter->second.avg);
-            datas[device_id]->setMin(iter->second.min);
-            datas[device_id]->setMax(iter->second.max);
-            datas[device_id]->setStartTime(iter->second.start_time);
-            datas[device_id]->setLatestTime(iter->second.latest_time);
-            for (auto& sub : iter->second.subdevice_datas) {
+            datas[device_id]->setAvg(stats.avg);
+            datas[device_id]->setMin(stats.min);
+            datas[device_id]->setMax(stats.max);
+            datas[device_id]->setStartTime(stats.start_time);
+            datas[device_id]->setLatestTime(stats.latest_time);
+            //The first sub is subDeviceId 
+            //The second of sub is Statistics_subdevice_data
+            for (auto& sub : stats.subdevice_datas) {
                 datas[device_id]->setSubdeviceDataAvg(sub.first, sub.second.avg);
                 datas[device_id]->setSubdeviceDataMin(sub.first, sub.second.min);
                 datas[device_id]->setSubdeviceDataMax(sub.first, sub.second.max);
