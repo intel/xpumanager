@@ -49,7 +49,7 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
       -DgRPC_BUILD_TESTS=OFF \
       -DCMAKE_CXX_STANDARD=14 \
       ../.. && \
-    make -j && make install && \
+    make -j4 && make install && \
     rm -fr /grpc
 
 RUN wget -qc --no-check-certificate $METEE_URL -O - | tar -xz && \
