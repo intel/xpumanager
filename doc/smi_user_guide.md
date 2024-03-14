@@ -103,9 +103,7 @@ Options:
   --listamcversions           Show all AMC firmware versions.
   -u,--username               Username used to authenticate for host redfish access
   -p,--password               Password used to authenticate for host redfish access
-
-
-
+  -y,--assumeyes              Assume that the answer to any question which would be asked is yes
 
 ```
 
@@ -205,6 +203,7 @@ xpu-smi discovery --listamcversions
 AMC 0 firmware version: 6.8.0.0
 AMC 1 firmware version: 6.8.0.0
 ```
+Note: the serial number is not available for Flex series GPU. 
 
 ## Get the system topology
 Help info of get the system topology
@@ -834,6 +833,12 @@ Options:
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.
 
+  --file                      Dump the raw statistics to the file.
+  --ims                       The interval (in milliseconds) to dump the device statistics to file for high-frequency monitoring. Its value should be 10 to 1000.
+                              The recommended metrics types for high-frequency sampling: GPU power, GPU frequency, GPU utilization,
+                              GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, GPU engine utilizations, Xe Link throughput.
+  --time                      Dump total time in seconds.
+
 ```
 
 Dump the device statistics to screen in CSV format.
@@ -846,7 +851,17 @@ Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
 06:14:49.000,    0, 0.00, 14.61,    0
 06:14:50.000,    0, 0.00, 14.61,    0
 ```
-Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device.   
+  
+Dump the device statistics to file in CSV format. In this mode, you may get the GPU statistics such as per 10 milliseconds. 
+```
+xpu-smi dump -d 0 -m 0,1,2 --file data.csv --ims 10
+Dump data to file data.csv. Press the key ESC to stop dumping.
+
+Dumping is stopped.
+
+```
+
+Sometimes, GPU memory throughput is temporarily unavailable due to the slow response from the device. 
   
  
 ## Collect the GPU debug log files
