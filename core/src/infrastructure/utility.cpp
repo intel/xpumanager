@@ -596,7 +596,7 @@ bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
     bool is_atsm = false;
     if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
         int device_model = getDeviceModelByPciDeviceId(props.deviceId);
-        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1C);
+        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1G);
     }
     return is_atsm;
 }
