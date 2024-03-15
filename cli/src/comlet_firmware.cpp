@@ -117,6 +117,15 @@ void ComletFirmware::setupOptions() {
 
     forceFlag->needs(fwTypeOpt);
 
+#ifdef DAEMONLESS
+    auto recoveryFlag = addFlag("--recovery", opts->recovery, "Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series.");
+    recoveryFlag->needs(fwTypeOpt);
+    recoveryFlag->excludes(deviceIdOpt);
+#endif
+}
+
+bool ComletFirmware::isRecovery() {
+    return opts->recovery;
 }
 
 int ComletFirmware::deviceIdStrToInt(std::string deviceId) {
@@ -153,6 +162,14 @@ nlohmann::json ComletFirmware::validateArguments() {
         result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         return result;
     }
+
+    // recovery
+    if (opts->recovery && opts->firmwareType != "GFX" && opts->firmwareType != "GFX_DATA") {
+        result["error"] = "Recovery option only supported for GFX and GFX_DATA firmware.";
+        result["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+        return result;
+    }
+
     return result;
 }
 
@@ -573,14 +590,14 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << std::endl;
         }
     } else if (type == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
-        //check unzip
+        // check unzip
         if (std::system("which unzip >/dev/null 2>&1") != 0) {
             out << "Error: unzip not found, please install unzip at first." << std::endl;
             exit_code = XPUM_CLI_ERROR_OPEN_FILE;
             return;
         }
 
-        //check ecc state
+        // check ecc state
         auto json = coreStub->getDeviceConfig(deviceId, -1);
         if (json->contains("error")) {
             out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
@@ -606,7 +623,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
 
         const char *dirName = "/tmp/tmp_fw_update_for_xpum";
         if (!removeDir(dirName)) {
-            out << "Error: "<< std::string(dirName) << " exist and remove failed." << std::endl;
+            out << "Error: " << std::string(dirName) << " exist and remove failed." << std::endl;
             exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
             removeDir(dirName);
             return;
@@ -669,7 +686,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 }
             }
         }
-        if(deviceIdsToFlashFirmware.size()==0){
+        if (deviceIdsToFlashFirmware.size() == 0) {
             deviceIdsToFlashFirmware.push_back(deviceId);
         }
         // version confirmation
@@ -694,7 +711,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 return;
             }
             std::string fwDataVersion = getCurrentFwCodeDataVersion(json, "GFX_DATA");
-            if (std::stoi(dataImageVersion, nullptr, 16) > std::stoi(fwDataVersion, nullptr, 16)){
+            if (std::stoi(dataImageVersion, nullptr, 16) > std::stoi(fwDataVersion, nullptr, 16)) {
                 out << "Device " << deviceId << " FW Data version: " << fwDataVersion << std::endl;
                 isImageNewer = true;
             }
@@ -741,7 +758,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 if (errNo == XPUM_CLI_ERROR_LEVEL_ZERO_INITIALIZATION_ERROR) {
                     if (type == XPUM_DEVICE_FIRMWARE_GFX ||
                         type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
-                    igscOnly = true;
+                        igscOnly = true;
                 }
             }
         } else {
