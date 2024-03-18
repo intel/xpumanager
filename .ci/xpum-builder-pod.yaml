@@ -11,27 +11,12 @@ metadata:
     worker: xpum-builder
   namespace: jenkins
 spec:
-  tolerations:
-  - key: jenkins-job-only
-    effect: NoSchedule
-  - key: node-role.kubernetes.io/master
-    effect: NoSchedule
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 1
-        preference:
-          matchExpressions:
-          - key: node-locale
-            operator: In
-            values:
-            - zz1
   containers:
     - args:
       - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-sles:lz-1.8.5-20221102"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20240220"
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
@@ -59,7 +44,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu-focal:lz-1.8.5-20221102"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-focal:lz-1.8.5-20240220"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-focal"
       resources:
@@ -84,10 +69,10 @@ spec:
           readOnly: false
       workingDir: "/home/jenkins/agent"
     - args:
-        - "99d"
+      - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu-jammy:lz-1.8.5-20221102"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20240220"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-jammy"
       resources:
@@ -115,9 +100,37 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.5-20221102"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-debian:lz-1.8.5-20240220"
       imagePullPolicy: "Always"
-      name: "xpum-builder-centos7"
+      name: "xpum-builder-debian"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      securityContext:
+        privileged: false
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
+      workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20240220"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos7-6"
       resources:
         limits: 
           memory: "6Gi"
@@ -141,9 +154,9 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos8:lz-1.8.5-20221102"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos8-2:lz-1.8.5-20240220"
       imagePullPolicy: "Always"
-      name: "xpum-builder-centos8"
+      name: "xpum-builder-centos8-2"
       resources:
         limits: 
           memory: "6Gi"
@@ -163,49 +176,31 @@ spec:
           name: "jenkins-shared-pvc"
           readOnly: false
       workingDir: "/home/jenkins/agent"
-    - name: "kaniko-1"
-      image: "gcr.io/kaniko-project/executor:debug"
-      imagePullPolicy: Always
+    - args:
+        - "99d"
       command:
-      - /busybox/cat
-      tty: true
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20240220"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos-stream9"
       resources:
-        limits: 
-          memory: "2Gi"
-          cpu: "2"
         requests:
           memory: "2Gi"
-          cpu: "1"
-      securityContext:
-        privileged: false
+          cpu: "0.5"
+        limits: 
+          memory: "6Gi"
+          cpu: "2"
+      tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
-        - name: docker-config
-          mountPath: /kaniko/.docker
-      workingDir: "/home/jenkins/agent"
-    - name: "kaniko-2"
-      image: "gcr.io/kaniko-project/executor:debug"
-      imagePullPolicy: Always
-      command:
-      - /busybox/cat
-      tty: true
-      resources:
-        limits: 
-          memory: "2Gi"
-          cpu: "2"
-        requests:
-          memory: "2Gi"
-          cpu: "1"
-      securityContext:
-        privileged: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
           readOnly: false
-        - name: docker-config
-          mountPath: /kaniko/.docker
       workingDir: "/home/jenkins/agent"
     - env:
         - name: "JENKINS_TUNNEL"
@@ -213,8 +208,8 @@ spec:
         - name: "JENKINS_AGENT_WORKDIR"
           value: "/home/jenkins/agent"
         - name: "JENKINS_URL"
-          value: "http://sh1sdev002.sh.intel.com:30346/"
-      image: "jenkins/inbound-agent:4.11-1"
+          value: "http://10.239.172.8:30346/"
+      image: "jenkins/inbound-agent:latest-jdk17"
       name: "jnlp"
       resources:
         limits: 
@@ -230,7 +225,6 @@ spec:
   hostNetwork: false
   nodeSelector:
     kubernetes.io/os: "linux"
-    jenkins-workder: "true"
   restartPolicy: "Never"
   volumes:
     - name: sign-secret
@@ -238,7 +232,7 @@ spec:
         secretName: sign-secret
         items:
           - key: password
-            path: password.sys_dcm
+            path: password.sys_xpum
     - emptyDir:
         medium: ""
       name: "workspace-volume"
@@ -246,10 +240,10 @@ spec:
       projected:
         sources:
         - secret:
-            name: regcre-ccr-registry-caas-intel-com
+            name: docker-config-secret
             items:
               - key: .dockerconfigjson
                 path: config.json
     - name: jenkins-shared-pvc
       persistentVolumeClaim:
-        claimName: dms-cluster-jenkins-share
+        claimName: jenkins-pv-claim

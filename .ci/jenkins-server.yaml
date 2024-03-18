@@ -5,10 +5,70 @@
 #
 
 !!!!!!! Must uncomment Secret and use real PASSWORD for "PLACEHOLDER"!!!!!!!
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jenkins-admin
+rules:
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins-admin
+  namespace: jenkins
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jenkins-admin
+subjects:
+- kind: ServiceAccount
+  name: jenkins-admin
+  namespace: jenkins
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-path
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: local-path
+  claimRef:
+    name: jenkins-pv-claim
+    namespace: jenkins
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: /
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jenkins-pvc
+  name: jenkins-pv-claim
   namespace: jenkins
 spec:
   accessModes:
@@ -33,17 +93,15 @@ spec:
       labels:
         app: jenkins
     spec:
-      tolerations:
-      - key: node-role.kubernetes.io/master
-        effect: NoSchedule
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
+      securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+      serviceAccountName: jenkins-admin
       containers:
       - name: jenkins
         image: jenkins/jenkins:lts-jdk17
         imagePullPolicy: Always
         securityContext:
-          allowPrivilegeEscalation: false
           runAsUser: 0
         resources:
           limits:
@@ -77,7 +135,7 @@ spec:
       volumes:
       - name: jenkins-home
         persistentVolumeClaim:
-          claimName: jenkins-pvc
+          claimName: jenkins-pv-claim
 ---
 apiVersion: v1
 kind: Service
@@ -107,7 +165,7 @@ metadata:
   namespace: jenkins
 type: kubernetes.io/basic-auth
 stringData:
-  username: sys_dcm
+  username: sys_xpum
   password: PLACEHOLDER
 ---
 apiVersion: v1
