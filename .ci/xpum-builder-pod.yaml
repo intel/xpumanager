@@ -9,7 +9,7 @@ kind: Pod
 metadata:
   labels:
     worker: xpum-builder
-  namespace: jenkins
+  namespace: xpum-cluster
 spec:
   containers:
     - args:
@@ -203,12 +203,8 @@ spec:
           readOnly: false
       workingDir: "/home/jenkins/agent"
     - env:
-        - name: "JENKINS_TUNNEL"
-          value: ":32757"
         - name: "JENKINS_AGENT_WORKDIR"
           value: "/home/jenkins/agent"
-        - name: "JENKINS_URL"
-          value: "http://10.239.172.8:30346/"
       image: "jenkins/inbound-agent:latest-jdk17"
       name: "jnlp"
       resources:
