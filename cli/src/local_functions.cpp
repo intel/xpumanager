@@ -552,10 +552,14 @@ static std::vector<std::string> getBdfAddrFromIgsc() {
 }
 
 static bool unloadDriver(std::string &error) {
-    int ret = execCommand("systemctl stop gdm 2>&1", error);
-    if (ret) {
-        error = "Fail to stop gdm, error message: " + error;
-        return false;
+    std::string _tmp;
+    int ret = execCommand("systemctl status gdm 2>&1", _tmp);
+    if (!ret) {
+        ret = execCommand("systemctl stop gdm 2>&1", error);
+        if (ret) {
+            error = "Fail to stop gdm, error message: " + error;
+            return false;
+        }
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -580,11 +584,7 @@ static bool unloadDriver(std::string &error) {
 
         std::string powerControlPath = "/sys/bus/pci/devices/" + bdfAddr + "/power/control";
         std::fstream powerControl(powerControlPath, std::ios_base::out);
-        if (!powerControl) {
-            error = "Fail to open " + powerControlPath;
-            return false;
-        }
-        if (!(powerControl << "auto")) {
+        if (powerControl && !(powerControl << "auto")) {
             error = "Fail to write auto to " + powerControlPath;
             return false;
         }
@@ -670,7 +670,7 @@ bool setSurvivabilityMode(bool enable, std::string &error, bool &modified) {
             if (!unloadDriver(error)) {
                 return false;
             }
-            int ret = execCommand("modprobe i915 survivability_mode=1 2>/dev/null", error);
+            int ret = execCommand("modprobe i915 survivability_mode=1 2>&1", error);
             if (ret) {
                 error = "Fail to enter suvivability mode, error message: " + error + ".";
                 return false;
@@ -681,10 +681,12 @@ bool setSurvivabilityMode(bool enable, std::string &error, bool &modified) {
         }
     } else {
         if (val == "Y") {
-            if (!unloadDriver(error)) {
+            int ret = execCommand("rmmod i915 2>&1", error);
+            if (ret) {
+                error = "Fail to unload driver, error message: " + error + ".";
                 return false;
             }
-            int ret = execCommand("modprobe i915 2>/dev/null", error);
+            ret = execCommand("modprobe i915 2>&1", error);
             if (ret) {
                 error = "Fail to leave suvivability mode, error message: " + error + ".";
                 return false;
