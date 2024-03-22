@@ -7,7 +7,6 @@
 #pragma once
 
 #include "measurement_data.h"
-#include "metric_collection_measurement_data.h"
 
 namespace xpum {
 
@@ -22,7 +21,7 @@ struct EngineRawData_t {
     };
 };
 
-class EngineCollectionMeasurementData : public MetricCollectionMeasurementData {
+class EngineCollectionMeasurementData : public MeasurementData {
    public:
     EngineCollectionMeasurementData() {
         p_engine_datas = std::make_shared<std::map<uint64_t, EngineRawData_t>>();

@@ -10,7 +10,7 @@
 #include "data_logic_interface.h"
 #include "infrastructure/const.h"
 #include "persistency.h"
-#include "raw_data_manager.h"
+#include "data_handler_manager.h"
 
 namespace xpum {
 
@@ -32,16 +32,6 @@ class DataLogic : public DataLogicInterface {
         MeasurementType type,
         Timestamp_t time,
         std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) override;
-
-    std::shared_ptr<MeasurementData> getLatestData(
-        MeasurementType type,
-        std::string& device_id) override;
-
-    void getLatestData(
-        MeasurementType type,
-        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) override;
-
-    std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) override;
 
     xpum_result_t getMetricsStatistics(xpum_device_id_t device_id,
                                        xpum_device_stats_t data_list[],
@@ -80,14 +70,6 @@ class DataLogic : public DataLogicInterface {
                                         xpum_device_engine_metric_t dataList[],
                                         uint32_t* count);
 
-    uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types);
-
-    void stopRawDataCollectionTask(uint32_t task_id);
-
-    std::deque<MeasurementCacheData> getCachedRawData(uint32_t task_id, MeasurementType type);
-
-    std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id);
-
     void updateStatsTimestamp(uint32_t session_id, uint32_t device_id);
 
     uint64_t getStatsTimestamp(uint32_t session_id, uint32_t device_id);
@@ -101,7 +83,14 @@ class DataLogic : public DataLogicInterface {
     uint64_t getFabricStatsTimestamp(uint32_t session_id, uint32_t device_id);
 
    private:
-    std::unique_ptr<RawDataManager> p_raw_data_manager;
+    std::shared_ptr<MeasurementData> getLatestData(MeasurementType type, 
+        std::string& device_id);
+
+    std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, 
+        std::string& device_id, uint64_t session_id);
+
+
+    std::unique_ptr<DataHandlerManager> p_data_handler_manager;
 
     std::shared_ptr<Persistency> p_persistency;
 };

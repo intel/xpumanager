@@ -27,9 +27,12 @@
 #include "grpc_core_stub.h"
 #else
 #include "lib_core_stub.h"
+#include "local_functions.h"
 #endif
 
 namespace xpum::cli {
+
+static bool survivabilityModeModified = false;
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp, bool privilege) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
@@ -178,16 +181,69 @@ int CLIWrapper::printResult(std::ostream &out) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);  
             } else if (comlet->getCommand().compare("vgpu") == 0 && std::dynamic_pointer_cast<ComletVgpu>(comlet)->isAddKernelParam()) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);
+            } else if (comlet->getCommand().compare("updatefw") == 0 && std::dynamic_pointer_cast<ComletFirmware>(comlet)->isRecovery()) {
+                // Entering survivability mode need to stop all processes using i915
+                // So need to set survivability mode before core init
+                if (!this->opts->json) {
+                    std::string warnMsg = "This operation will unload the GPU driver, make GPU to the recovery mode and update all GPU GFX firmware. Do you want to continue? (y/n)";
+                    out << warnMsg;
+                    if (!std::dynamic_pointer_cast<ComletFirmware>(comlet)->assumeYes()) {
+                        std::string confirm;
+                        std::cin >> confirm;
+                        if (confirm != "Y" && confirm != "y") {
+                            out << "update aborted" << std::endl;
+                            return XPUM_OK;
+                        }
+                    } else {
+                        out << std::endl;
+                    }
+                }
+                std::string error;
+                if (!recoverable()) {
+                    error = "Recovery only supported on Flex Series. And make sure all devices are of the same model.";
+                } else {
+                    setSurvivabilityMode(true, error, survivabilityModeModified);
+                }
+                if (!error.empty()) {
+                    if (this->opts->json) {
+                        nlohmann::json tmp;
+                        tmp["error"] = "Error: " + error;
+                        out << (this->opts->raw ? tmp.dump() : tmp.dump(4)) << std::endl;
+                    } else {
+                        out << "Error: " + error << std::endl;
+                    }
+                    return XPUM_CLI_ERROR_GENERIC_ERROR;
+                }
+                this->coreStub = std::make_shared<LibCoreStub>();
             } else {
-                this->coreStub = std::make_shared<LibCoreStub>();  
+                this->coreStub = std::make_shared<LibCoreStub>();
             }
             comlet->coreStub = this->coreStub;
 #endif
             if (this->opts->json) {
                 comlet->getJsonResult(out, this->opts->raw);
-                return comlet->exit_code;
+            } else {
+                comlet->getTableResult(out);
             }
-            comlet->getTableResult(out);
+#ifdef DAEMONLESS
+            // Leave survivability mode if it is modified by xpu-smi
+            if (comlet->getCommand() == "updatefw" && std::dynamic_pointer_cast<ComletFirmware>(comlet)->isRecovery() &&
+                survivabilityModeModified) {
+                std::string error;
+                bool _modified;
+                bool ret = setSurvivabilityMode(false, error, _modified);
+                if (!comlet->exit_code && !ret) {
+                    if (this->opts->json) {
+                        nlohmann::json tmp;
+                        tmp["error"] = error;
+                        out << (this->opts->raw ? tmp.dump() : tmp.dump(4)) << std::endl;
+                    } else {
+                        out << "Error: " + error << std::endl;
+                    }
+                    comlet->exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
+                }
+            }
+#endif
             return comlet->exit_code;
         }
     }

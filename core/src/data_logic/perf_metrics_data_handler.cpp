@@ -18,7 +18,7 @@ namespace xpum {
 
 PerfMetricsHandler::PerfMetricsHandler(MeasurementType type,
                                        std::shared_ptr<Persistency>& p_persistency)
-    : MetricStatisticsDataHandler(type, p_persistency) {
+    : StatsDataHandler(type, p_persistency) {
 }
 
 PerfMetricsHandler::~PerfMetricsHandler() {
@@ -32,7 +32,7 @@ void PerfMetricsHandler::calculateData(std::shared_ptr<SharedData>& p_data) {
     for (auto it = all_device_data.begin(); it != all_device_data.end(); it++) {
         std::shared_ptr<PerfMeasurementData> p_measurement_data = std::static_pointer_cast<PerfMeasurementData>(it->second);
         std::cout << "Device Id:" << it->first << std::endl;
-        auto p_perf_datas = p_measurement_data->getDatas();
+        auto p_perf_datas = p_measurement_data->getPerfMetricDatas();
         for (size_t i = 0; i < p_perf_datas->size(); i++) {
             std::cout << "Sub device:" << i << std::endl;
             for (auto group_data : (*p_perf_datas)[i]->data) {

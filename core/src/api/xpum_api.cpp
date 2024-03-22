@@ -1599,81 +1599,6 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
     return XPUM_OK;
 }
 
-xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
-                                                 xpum_stats_type_t metricsTypeList[],
-                                                 int count,
-                                                 xpum_dump_task_id_t *taskId) {
-    xpum_result_t res = Core::instance().apiAccessPreCheck();
-    if (res != XPUM_OK) {
-        return res;
-    }
-
-    if (Core::instance().getDataLogic() == nullptr) {
-        return XPUM_NOT_INITIALIZED;
-    }
-    std::vector<MeasurementType> types;
-    for (int i = 0; i < count; ++i) {
-        types.push_back(Utility::measurementTypeFromXpumStatsType(metricsTypeList[i]));
-    }
-    uint32_t id = Core::instance().getDataLogic()->startRawDataCollectionTask(deviceId, types);
-    if (id == Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
-    } else {
-        *taskId = id;
-        return xpum_result_t::XPUM_OK;
-    }
-}
-
-xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId) {
-    xpum_result_t res = Core::instance().apiAccessPreCheck();
-    if (res != XPUM_OK) {
-        return res;
-    }
-
-    Core::instance().getDataLogic()->stopRawDataCollectionTask(taskId);
-    return xpum_result_t::XPUM_OK;
-}
-
-xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count) {
-    xpum_result_t res = Core::instance().apiAccessPreCheck();
-    if (res != XPUM_OK) {
-        return res;
-    }
-
-    if (Core::instance().getDataLogic() == nullptr) {
-        return XPUM_NOT_INITIALIZED;
-    }
-
-    int item_count = 0;
-    std::vector<std::deque<MeasurementCacheData>> datas = Core::instance().getDataLogic()->getCachedRawData(taskId);
-    std::vector<std::deque<MeasurementCacheData>>::iterator iter = datas.begin();
-    while (iter != datas.end()) {
-        std::deque<MeasurementCacheData>::iterator iter_cache_data = (*iter).begin();
-        while (iter_cache_data != (*iter).end()) {
-            if (dataList == nullptr) {
-                item_count++;
-            } else {
-                xpum_metrics_raw_data_t t;
-                t.deviceId = std::stoi(iter_cache_data->getDeviceId());
-                MeasurementType type = iter_cache_data->getType();
-                t.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                t.isTileData = iter_cache_data->onSubdevice();
-                t.tileId = t.isTileData ? iter_cache_data->getSubdeviceID() : -1;
-                t.timestamp = iter_cache_data->getTime();
-                t.value = iter_cache_data->getData();
-                if (item_count >= *count) {
-                    return XPUM_BUFFER_TOO_SMALL;
-                }
-                dataList[item_count++] = t;
-            }
-            ++iter_cache_data;
-        }
-        ++iter;
-    }
-    *count = item_count;
-    return XPUM_OK;
-}
-
 xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   xpum_device_stats_t dataList[],
                                   uint32_t *count,
@@ -2402,7 +2327,7 @@ void getMinAndMaxPowerLimitMultiMethods(std::string id, Power power, int32_t& mi
         else{
             //use TDP value
             int model_type = Core::instance().getDeviceManager()->getDevice(id)->getDeviceModel();
-            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_1C)
+            if (model_type == XPUM_DEVICE_MODEL_ATS_M_1 || model_type == XPUM_DEVICE_MODEL_ATS_M_1G)
                 max_power = 120 * 1000;
             else if (model_type == XPUM_DEVICE_MODEL_ATS_M_3)
                 max_power = 25 * 1000;
@@ -2857,7 +2782,7 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         engineUsage = std::max(engineCompute / countComputeEngine, engineRender / countRenderEngine);
     engineUsage /= scale;
 
-    auto p_perf_datas = p_measurement_data->getDatas();
+    auto p_perf_datas = p_measurement_data->getPerfMetricDatas();
     if (p_perf_datas->size() <= 0) {
         return XPUM_METRIC_NOT_SUPPORTED;
     }

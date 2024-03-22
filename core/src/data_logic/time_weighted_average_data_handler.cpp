@@ -13,7 +13,7 @@ namespace xpum {
 
 TimeWeightedAverageDataHandler::TimeWeightedAverageDataHandler(MeasurementType type,
                                                                std::shared_ptr<Persistency>& p_persistency)
-    : MetricStatisticsDataHandler(type, p_persistency) {
+    : StatsDataHandler(type, p_persistency) {
 }
 
 TimeWeightedAverageDataHandler::~TimeWeightedAverageDataHandler() {
@@ -28,12 +28,14 @@ void TimeWeightedAverageDataHandler::counterOverflowDetection(std::shared_ptr<Sh
 
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
-        if (iter->second->hasRawDataOnDevice() 
-        && p_preData->getData().find(iter->first) != p_preData->getData().end()
-        && p_preData->getData()[iter->first]->hasRawDataOnDevice()
-        && p_data->getData().find(iter->first) != p_data->getData().end()) {
-            uint64_t pre_data = p_preData->getData()[iter->first]->getRawdata();
-            uint64_t cur_data = p_data->getData()[iter->first]->getRawdata();
+        auto &deviceId = iter->first;
+        auto &measurementData = iter->second;
+        if (measurementData->hasRawDataOnDevice() 
+        && p_preData->getData().find(deviceId) != p_preData->getData().end()
+        && p_preData->getData()[deviceId]->hasRawDataOnDevice()
+        && p_data->getData().find(deviceId) != p_data->getData().end()) {
+            uint64_t pre_data = p_preData->getData()[deviceId]->getRawdata();
+            uint64_t cur_data = p_data->getData()[deviceId]->getRawdata();
             if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
                 if (pre_data > cur_data) {
                     p_preData = nullptr;
@@ -42,18 +44,19 @@ void TimeWeightedAverageDataHandler::counterOverflowDetection(std::shared_ptr<Sh
             }
         }
 
-        if (iter->second->hasSubdeviceRawData()
-        && p_preData->getData().find(iter->first) != p_preData->getData().end()
-        && p_preData->getData()[iter->first]->hasSubdeviceRawData()
-        && p_data->getData().find(iter->first) != p_data->getData().end()) {
-            auto iter_subdevice = iter->second->getSubdeviceRawDatas()->begin();
-            while (iter_subdevice != iter->second->getSubdeviceRawDatas()->end() 
-            && p_preData->getData()[iter->first]->getSubdeviceRawDatas()->find(iter_subdevice->first) != p_preData->getData()[iter->first]->getSubdeviceRawDatas()->end()) {
-                uint64_t pre_data = p_preData->getData()[iter->first]->getSubdeviceRawData(iter_subdevice->first);
-                uint64_t cur_data = p_data->getData()[iter->first]->getSubdeviceRawData(iter_subdevice->first);
+        if (measurementData->hasSubdeviceRawData()
+        && p_preData->getData().find(deviceId) != p_preData->getData().end()
+        && p_preData->getData()[deviceId]->hasSubdeviceRawData()
+        && p_data->getData().find(deviceId) != p_data->getData().end()) {
+            auto iter_subdevice = measurementData->getSubdeviceRawDatas()->begin();
+            while (iter_subdevice != measurementData->getSubdeviceRawDatas()->end() 
+            && p_preData->getData()[deviceId]->getSubdeviceRawDatas()->find(iter_subdevice->first) != p_preData->getData()[deviceId]->getSubdeviceRawDatas()->end()) {
+                auto &subDeviceId = iter_subdevice->first;
+                uint64_t pre_data = p_preData->getData()[deviceId]->getSubdeviceRawData(subDeviceId);
+                uint64_t cur_data = p_data->getData()[deviceId]->getSubdeviceRawData(subDeviceId);
                 if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
                     if (pre_data > cur_data) {
-                        p_preData->getData()[iter->first]->clearSubdeviceRawdata(iter_subdevice->first);
+                        p_preData->getData()[deviceId]->clearSubdeviceRawdata(subDeviceId);
                     }
                 }
                 ++iter_subdevice;
@@ -72,35 +75,39 @@ void TimeWeightedAverageDataHandler::calculateData(std::shared_ptr<SharedData>& 
     
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
-        if (iter->second->hasRawDataOnDevice() 
-                && p_preData->getData().find(iter->first) != p_preData->getData().end() 
-                && p_preData->getData()[iter->first]->hasRawDataOnDevice()
-                && p_data->getData().find(iter->first) != p_data->getData().end()) {
-            uint64_t pre_data = p_preData->getData()[iter->first]->getRawdata();
-            uint64_t pre_data_raw_timestamp = p_preData->getData()[iter->first]->getRawTimestamp();
-            uint64_t cur_data = p_data->getData()[iter->first]->getRawdata();
-            uint64_t cur_data_raw_timestamp = p_data->getData()[iter->first]->getRawTimestamp();
+        auto &deviceId = iter->first;
+        auto &measurementData = iter->second;
+        if (measurementData->hasRawDataOnDevice() 
+                && p_preData->getData().find(deviceId) != p_preData->getData().end() 
+                && p_preData->getData()[deviceId]->hasRawDataOnDevice()
+                && p_data->getData().find(deviceId) != p_data->getData().end()) {
+            uint64_t pre_data = p_preData->getData()[deviceId]->getRawdata();
+            uint64_t pre_data_raw_timestamp = p_preData->getData()[deviceId]->getRawTimestamp();
+            uint64_t cur_data = p_data->getData()[deviceId]->getRawdata();
+            uint64_t cur_data_raw_timestamp = p_data->getData()[deviceId]->getRawTimestamp();
             if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
                 if (cur_data_raw_timestamp - pre_data_raw_timestamp != 0) {
-                    p_data->getData()[iter->first]->setCurrent((cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
+                    p_data->getData()[deviceId]->setCurrent((cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
                 }
             }
         }
 
-        if (iter->second->hasSubdeviceRawData() 
-                && p_preData->getData().find(iter->first) != p_preData->getData().end() 
-                && p_preData->getData()[iter->first]->hasSubdeviceRawData() 
-                && p_data->getData().find(iter->first) != p_data->getData().end()) {
-            std::map<uint32_t, SubdeviceRawData>::const_iterator iter_subdevice = iter->second->getSubdeviceRawDatas()->begin();
-            while (iter_subdevice != iter->second->getSubdeviceRawDatas()->end() 
-                    && p_preData->getData()[iter->first]->getSubdeviceRawDatas()->find(iter_subdevice->first) != p_preData->getData()[iter->first]->getSubdeviceRawDatas()->end()) {
-                uint64_t pre_data = p_preData->getData()[iter->first]->getSubdeviceRawData(iter_subdevice->first);
-                uint64_t pre_data_raw_timestamp = p_preData->getData()[iter->first]->getSubdeviceDataRawTimestamp(iter_subdevice->first);
-                uint64_t cur_data = iter_subdevice->second.raw_data;
-                uint64_t cur_data_raw_timestamp = iter_subdevice->second.raw_timestamp;
+        if (measurementData->hasSubdeviceRawData() 
+                && p_preData->getData().find(deviceId) != p_preData->getData().end() 
+                && p_preData->getData()[deviceId]->hasSubdeviceRawData() 
+                && p_data->getData().find(deviceId) != p_data->getData().end()) {
+            std::map<uint32_t, SubdeviceRawData>::const_iterator iter_subdevice = measurementData->getSubdeviceRawDatas()->begin();
+            while (iter_subdevice != measurementData->getSubdeviceRawDatas()->end() 
+                    && p_preData->getData()[deviceId]->getSubdeviceRawDatas()->find(iter_subdevice->first) != p_preData->getData()[deviceId]->getSubdeviceRawDatas()->end()) {
+                auto &subDeviceId = iter_subdevice->first;
+                auto &subRawData = iter_subdevice->second;
+                uint64_t pre_data = p_preData->getData()[deviceId]->getSubdeviceRawData(subDeviceId);
+                uint64_t pre_data_raw_timestamp = p_preData->getData()[deviceId]->getSubdeviceDataRawTimestamp(subDeviceId);
+                uint64_t cur_data = subRawData.raw_data;
+                uint64_t cur_data_raw_timestamp = subRawData.raw_timestamp;
                 if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
                     if (cur_data_raw_timestamp - pre_data_raw_timestamp != 0) {
-                        p_data->getData()[iter->first]->setSubdeviceDataCurrent(iter_subdevice->first, (cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
+                        p_data->getData()[deviceId]->setSubdeviceDataCurrent(subDeviceId, (cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
                     }
                 }
                 ++iter_subdevice;

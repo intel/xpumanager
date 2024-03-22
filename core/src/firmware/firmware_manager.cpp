@@ -105,7 +105,7 @@ void FirmwareManager::init() {
             auto gfxFwVersion = getGfxVersionByMeiDevice(pDevice->getMeiDevicePath());
             pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, gfxFwVersion));
             XPUM_LOG_DEBUG("Device {} get GFX fw version: {}", i, gfxFwVersion);
-            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1C) {
+            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1G) {
                 // fwDataMgmt
                 pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
                 pDevice->getFwDataMgmt()->getFwDataVersion();
@@ -487,7 +487,7 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
         }
 
         // validate the image is compatible with the device
-        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1C) {
+        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1G) {
             if (!force) {
                 auto res = atsmHwConfigCompatibleCheck(device->getMeiDevicePath(), buffer);
                 if (res != XPUM_OK)
@@ -766,7 +766,7 @@ xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const c
 
     for (auto device : deviceList) {
         auto deviceModel = device->getDeviceModel();
-        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1C)) {
+        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1G)) {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA;
         }
     }
@@ -840,7 +840,7 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
 
     for (auto device : deviceList) {
         auto deviceModel = device->getDeviceModel();
-        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1C)) {
+        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1G)) {
             result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
             return;
         }
@@ -1079,7 +1079,7 @@ xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, con
     }
     // validate the image is compatible with the device
     auto deviceModel = pDevice->getDeviceModel();
-    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1C)) {
+    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1G)) {
         return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA;
     }
 
@@ -1115,7 +1115,7 @@ void FirmwareManager::getFwCodeDataFlashResult(xpum_device_id_t deviceId, xpum_f
     result->type = XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA;
 
     auto deviceModel = pDevice->getDeviceModel();
-    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1C)) {
+    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1G)) {
         result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
         return;
     }

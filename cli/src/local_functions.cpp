@@ -24,6 +24,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <iostream>
+#include <igsc_lib.h>
 
 #include "config.h"
 #include "local_functions.h"
@@ -345,7 +346,7 @@ bool isSG1(std::string &pciId) {
 
 bool isATSMPlatform(std::string str) {
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
+    return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos || str.find("56c2") != std::string::npos;
 }
 
 bool isOamPlatform(std::string str) {
@@ -534,4 +535,168 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     return json;
 }
 
+static std::vector<std::string> getBdfAddrFromIgsc() {
+    std::vector<std::string> res;
+    std::string output;
+    int ret = execCommand("igsc list-devices 2>&1", output);
+    if (!ret) {
+        std::regex bdfPattern("[0-9a-f]{4}\\:[0-9a-f]{2}\\:[0-9a-f]{2}\\.[0-9a-f]");
+        auto begin = std::sregex_iterator(output.begin(), output.end(), bdfPattern);
+        auto end = std::sregex_iterator();
+        for (std::sregex_iterator i = begin; i != end; ++i) {
+            std::smatch match = *i;
+            res.push_back(match.str());
+        }
+    }
+    return res;
+}
+
+static bool unloadDriver(std::string &error) {
+    std::string _tmp;
+    int ret = execCommand("systemctl status gdm 2>&1", _tmp);
+    if (!ret) {
+        ret = execCommand("systemctl stop gdm 2>&1", error);
+        if (ret) {
+            error = "Fail to stop gdm, error message: " + error;
+            return false;
+        }
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    std::vector<std::string> bdfAddrList = getBdfAddrFromIgsc();
+    if (bdfAddrList.empty()) {
+        error = "Fail to find device bdf address.";
+        return false;
+    }
+
+    for (auto bdfAddr : bdfAddrList) {
+        std::string unbindPath = "/sys/bus/pci/drivers/i915/unbind";
+        std::fstream unbind(unbindPath, std::ios_base::out);
+        if (!unbind) {
+            error = "Fail to open " + unbindPath;
+            return false;
+        }
+        if (!(unbind << bdfAddr)) {
+            error = "Fail to write auto to " + unbindPath;
+            return false;
+        }
+
+        std::string powerControlPath = "/sys/bus/pci/devices/" + bdfAddr + "/power/control";
+        std::fstream powerControl(powerControlPath, std::ios_base::out);
+        if (powerControl && !(powerControl << "auto")) {
+            error = "Fail to write auto to " + powerControlPath;
+            return false;
+        }
+
+        std::string resetPath = "/sys/bus/pci/devices/" + bdfAddr + "/reset";
+        std::fstream reset(resetPath, std::ios_base::out);
+        if (!reset) {
+            error = "Fail to open " + resetPath;
+            return false;
+        }
+        if (!(reset << 1)) {
+            error = "Fail to write 1 to " + resetPath;
+            return false;
+        }
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    ret = execCommand("rmmod i915 2>&1", error);
+    if (ret) {
+        error = "Fail to rmmod i915, error message: " + error;
+        return false;
+    }
+    return true;
+}
+
+bool recoverable() {
+    std::string driverPath = "/sys/bus/pci/drivers/i915";
+    std::regex bdfPattern("[0-9a-f]{4}\\:[0-9a-f]{2}\\:[0-9a-f]{2}\\.[0-9a-f]");
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    bool find_flex = false;
+    bool all_flex = true;
+    std::string deviceIdStr;
+
+    pdir = opendir(driverPath.c_str());
+    if (pdir) {
+        while ((pdirent = readdir(pdir))) {
+            if (std::regex_match(pdirent->d_name, bdfPattern)) {
+                std::string bdfAddr = pdirent->d_name;
+                std::string deviceIdPath = driverPath + "/" + bdfAddr + "/device";
+                std::fstream deviceId(deviceIdPath, std::ios_base::in);
+                std::string tmp;
+                if (deviceId && deviceId >> tmp) {
+                    if (isATSMPlatform(tmp)) {
+                        if (deviceIdStr.empty()) {
+                            deviceIdStr = tmp;
+                            find_flex = true;
+                        } else if (deviceIdStr == tmp) {
+                            find_flex = true;
+                        } else {
+                            // different model in same node
+                            all_flex = false;
+                        }
+                    } else {
+                        all_flex = false;
+                    }
+                }
+            }
+        }
+        closedir(pdir);
+    }
+    return find_flex && all_flex;
+}
+
+bool setSurvivabilityMode(bool enable, std::string &error, bool &modified) {
+    std::string SURVIVABILITY_MODE_PATH = "/sys/module/i915/parameters/survivability_mode";
+    modified = false;
+
+    std::string val;
+    std::fstream modeFile(SURVIVABILITY_MODE_PATH, std::ios_base::in);
+    if (!modeFile) {
+        error = "Driver installed doesn't support survivability mode. Or please run recovery with superuser.";
+        return false;
+    }
+    if (!(modeFile >> val)) {
+        error = "Fail to read survivability_mode value from: " + SURVIVABILITY_MODE_PATH + ".";
+        return false;
+    }
+
+    if (enable) {
+        if (val == "Y") {
+            return true;
+        } else {
+            if (!unloadDriver(error)) {
+                return false;
+            }
+            int ret = execCommand("modprobe i915 survivability_mode=1 2>&1", error);
+            if (ret) {
+                error = "Fail to enter suvivability mode, error message: " + error + ".";
+                return false;
+            } else {
+                modified = true;
+                return true;
+            }
+        }
+    } else {
+        if (val == "Y") {
+            int ret = execCommand("rmmod i915 2>&1", error);
+            if (ret) {
+                error = "Fail to unload driver, error message: " + error + ".";
+                return false;
+            }
+            ret = execCommand("modprobe i915 2>&1", error);
+            if (ret) {
+                error = "Fail to leave suvivability mode, error message: " + error + ".";
+                return false;
+            } else {
+                modified = true;
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+}
 }

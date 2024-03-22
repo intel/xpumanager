@@ -150,4 +150,59 @@ void MeasurementData::addExtendedData(uint64_t key, ExtendedMeasurementData data
     (*p_extended_datas)[key] = data;
 }
 
+void MeasurementData::addSingleMeasurementData(uint64_t handle, bool on_subdevice, uint32_t subdevice_id) {
+    (*p_multi_metrics_datas)[handle].on_subdevice = on_subdevice;
+    (*p_multi_metrics_datas)[handle].subdevice_id = subdevice_id;
+}
+
+void MeasurementData::setDataCur(uint64_t handle, uint64_t cur) {
+    (*p_multi_metrics_datas)[handle].current = cur;
+}
+
+void MeasurementData::setDataMin(uint64_t handle, uint64_t min) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        (*p_multi_metrics_datas)[handle].min = min;
+    }
+}
+
+void MeasurementData::setDataMax(uint64_t handle, uint64_t max) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        (*p_multi_metrics_datas)[handle].max = max;
+    }
+}
+
+void MeasurementData::setDataAvg(uint64_t handle, uint64_t avg) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        (*p_multi_metrics_datas)[handle].avg = avg;
+    }
+}
+
+uint64_t MeasurementData::getDataCur(uint64_t handle) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        return (*p_multi_metrics_datas)[handle].current;
+    }
+    return std::numeric_limits<uint64_t>::max();
+}
+
+uint64_t MeasurementData::getDataMin(uint64_t handle) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        return (*p_multi_metrics_datas)[handle].min;
+    }
+    return std::numeric_limits<uint64_t>::max();
+}
+
+uint64_t MeasurementData::getDataMax(uint64_t handle) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        return (*p_multi_metrics_datas)[handle].max;
+    }
+    return std::numeric_limits<uint64_t>::max();
+}
+
+uint64_t MeasurementData::getDataAvg(uint64_t handle) {
+    if (p_multi_metrics_datas->find(handle) != p_multi_metrics_datas->end()) {
+        return (*p_multi_metrics_datas)[handle].avg;
+    }
+    return std::numeric_limits<uint64_t>::max();
+}
+
 } // end namespace xpum

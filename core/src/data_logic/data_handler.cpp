@@ -87,16 +87,4 @@ std::shared_ptr<MeasurementData> DataHandler::getLatestStatistics(std::string& d
     }
 }
 
-void DataHandler::getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    if (p_latestData == nullptr) {
-        return;
-    }
-
-    auto existing_datas = p_latestData->getData();
-    for (auto it = existing_datas.begin(); it != existing_datas.end(); it++) {
-        datas[it->first] = it->second;
-    }
-}
-
 } // end namespace xpum

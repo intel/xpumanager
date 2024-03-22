@@ -16,7 +16,7 @@ namespace xpum {
 
 GPUUtilizationDataHandler::GPUUtilizationDataHandler(MeasurementType type,
                                                      std::shared_ptr<Persistency>& p_persistency)
-    : MetricStatisticsDataHandler(type, p_persistency) {
+    : StatsDataHandler(type, p_persistency) {
 }
 
 GPUUtilizationDataHandler::~GPUUtilizationDataHandler() {
@@ -40,27 +40,31 @@ void GPUUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_dat
 
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
+        auto &deviceId = iter->first;
         auto extended_data = iter->second->getExtendedDatas()->begin();
         while (extended_data != iter->second->getExtendedDatas()->end()) {
-            auto pre_data = p_preData->getData().find(iter->first);
+            auto &engineHandle = extended_data->first;
+            auto &exMeasurementData = extended_data->second;
+            auto pre_data = p_preData->getData().find(deviceId);
+            //pre_data->second is MeasurementData
             if (pre_data != p_preData->getData().end()) {
-                auto pre_extended = pre_data->second->getExtendedDatas()->find(extended_data->first);
+                auto pre_extended = pre_data->second->getExtendedDatas()->find(engineHandle);
                 if (pre_extended != pre_data->second->getExtendedDatas()->end()) {
-                    if (extended_data->second.type == ZES_ENGINE_GROUP_ALL) {
-                        if (extended_data->second.timestamp == 
+                    if (exMeasurementData.type == ZES_ENGINE_GROUP_ALL) {
+                        if (exMeasurementData.timestamp == 
                                 pre_extended->second.timestamp) {
                             ++extended_data;
                             continue;
                         }
-                        uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
+                        uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (exMeasurementData.active_time - pre_extended->second.active_time) / (exMeasurementData.timestamp - pre_extended->second.timestamp);
                         if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
                             val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
                         }
-                        p_data->getData()[iter->first]->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                        if (extended_data->second.on_subdevice) {
-                            p_data->getData()[iter->first]->setSubdeviceDataCurrent(extended_data->second.subdevice_id, val);
+                        p_data->getData()[deviceId]->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                        if (exMeasurementData.on_subdevice) {
+                            p_data->getData()[deviceId]->setSubdeviceDataCurrent(exMeasurementData.subdevice_id, val);
                         } else {
-                            p_data->getData()[iter->first]->setCurrent(val);
+                            p_data->getData()[deviceId]->setCurrent(val);
                         }
                     }
                 }

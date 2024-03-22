@@ -108,6 +108,8 @@ Options:
   --listamcversions           Show all AMC firmware versions.
   -u,--username               Username used to get AMC version with Redfish Host interface
   -p,--password               Password used to get AMC version with Redfish Host interface
+  -y,--assumeyes              Assume that the answer to any question which would be asked is yes
+
 
 ```
 
@@ -201,6 +203,7 @@ xpumcli discovery --listamcversions
 1 AMC are found
 AMC 1 firmware version: 4.0.0.0
 ```
+Note: the serial number is not available for Flex series GPU. 
 
 ## Manage the devices in groups
 Help info of the group operation

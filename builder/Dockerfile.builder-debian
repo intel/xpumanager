@@ -50,7 +50,7 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
     cmake -DgRPC_INSTALL=ON \
       -DgRPC_BUILD_TESTS=OFF \
       ../.. && \
-    make -j && make install && \
+    make -j4 && make install && \
     rm -fr /grpc
 
 RUN wget -qc --no-check-certificate $L0_SRC_URL -O - | tar -xz && \

@@ -17,7 +17,7 @@ void EngineCollectionMeasurementData::addRawData(uint64_t handle,
     (*p_engine_datas)[handle].type = type;
     (*p_engine_datas)[handle].raw_active_time = raw_active_time;
     (*p_engine_datas)[handle].raw_timestamp = raw_timestamp;
-    addMetricCollectionMeasurementData(handle, on_subdevice, subdevice_id);
+    addSingleMeasurementData(handle, on_subdevice, subdevice_id);
 }
 
 zes_engine_group_t EngineCollectionMeasurementData::getEngineType(uint64_t handle) {

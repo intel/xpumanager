@@ -34,7 +34,7 @@ class PerfMeasurementData : public MeasurementData {
     ~PerfMeasurementData();
 
     void addData(std::shared_ptr<PerfMetricDeviceData_t>& p_data);
-    std::shared_ptr<std::vector<std::shared_ptr<PerfMetricDeviceData_t>>> getDatas();
+    std::shared_ptr<std::vector<std::shared_ptr<PerfMetricDeviceData_t>>> getPerfMetricDatas();
 
    private:
     std::shared_ptr<std::vector<std::shared_ptr<PerfMetricDeviceData_t>>> p_device_datas;

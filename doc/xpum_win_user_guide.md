@@ -432,3 +432,6 @@ Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
 06:57:15.000, 0, 0.00, 48.24, 1200
 06:57:16.000, 0, 0.00, 46.47, 1200
 ```
+
+## Security
+The package does not require any special installation. After downloading, please check its signature and checksum. Because its execution needs the administrator privilege, it must be kept in a directory which non-admin user have no write permission. We recommend putting it under C:\Program Files.

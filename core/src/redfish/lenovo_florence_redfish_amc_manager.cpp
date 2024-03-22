@@ -322,7 +322,7 @@ void FlorenceRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsPar
 
     if (fwInventoryJson.contains("Members")) {
         for (auto inv : fwInventoryJson["Members"]) {
-            if (!inv.contains("ProcessorType"))
+            if (!inv.contains("ProcessorType") || inv["ProcessorType"].is_null())
                 continue;
             std::string type = inv["ProcessorType"].get<std::string>();
             if (type != "GPU")

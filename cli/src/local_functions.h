@@ -49,5 +49,8 @@ std::unique_ptr<nlohmann::json> addKernelParam();
 
 bool isPhysicalFunctionDevice(std::string pci_addr);
 
+bool setSurvivabilityMode(bool enable, std::string &error, bool &modified);
+
+bool recoverable();
 }
 

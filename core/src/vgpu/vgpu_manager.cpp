@@ -145,7 +145,7 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
         xpum_vgpu_function_info_t info = {};
         info.functionType = (functionIndex == 0 ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL);
         std::string lmemString, uevent, lmemPath, ueventPath;
-        if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1C) {
+        if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1G) {
             if (functionIndex == 0) {
                 lmemPath = devicePath + "/iov/pf/gt/available/lmem_free";
             } else {
@@ -243,7 +243,7 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
                 continue;
             }
             try {
-                if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1C) {
+                if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1G) {
                     writeVfAttrToSysfs(iovPath.str() + ent->d_name + "/gt", zeroAttr, 0);
                 } else if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_PVC) {
                     for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
@@ -538,7 +538,7 @@ bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data
     data.eccState = current;
     
     std::string lmem, ggtt, doorbell, context;
-    if (data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1C) {
+    if (data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || data.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1G) {
         std::string pfIovPath = std::string("/sys/class/drm/") + drm + "/iov/pf/gt/available/";
         try {
             readFile(pfIovPath + "lmem_free", lmem);
@@ -760,7 +760,7 @@ xpum_result_t VgpuManager::vgpuValidateDevice(xpum_device_id_t deviceId) {
 bool VgpuManager::createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromConfigFile& attrs, uint32_t numVfs, uint64_t lmem) {
     std::string devicePathString = std::string("/sys/class/drm/") + deviceInfo.drmPath;
     try {
-        if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1C) {
+        if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3 || deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1G) {
             writeFile(devicePathString + "/iov/pf/gt/exec_quantum_ms", std::to_string(attrs.pfExec));
             writeFile(devicePathString + "/iov/pf/gt/preempt_timeout_us", std::to_string(attrs.pfPreempt));
             writeFile(devicePathString + "/iov/pf/gt/policies/sched_if_idle", attrs.schedIfIdle ? "1": "0");

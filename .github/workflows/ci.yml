@@ -1,0 +1,30 @@
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-linux:
+    runs-on: [ubuntu-22.04]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Build docker image
+        run: |
+          docker build -f ${{ github.workspace }}/builder/Dockerfile.builder-ubuntu22.04 -t intel-xpumanager ${{ github.workspace }}
+      - name: Run build.sh
+        run: |
+          rm -fr build
+          docker run -v ${{ github.workspace }}:/workspace intel-xpumanager bash -c "cd /workspace && ./build.sh"
+      - name: Check if the build was successful
+        run: |
+          set -e
+          if ls "${{ github.workspace }}/build"/*.deb >/dev/null 2>&1; then
+            echo "Package exists."
+          else
+            echo "Package does not exist."
+            exit 1
+          fi

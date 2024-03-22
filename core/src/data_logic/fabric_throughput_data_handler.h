@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "metric_collection_statistics_data_handler.h"
+#include "multi_metrics_stats_data_handler.h"
 
 namespace xpum {
 
-class FabricThroughputDataHandler : public MetricCollectionStatisticsDataHandler {
+class FabricThroughputDataHandler : public MultiMetricsStatsDataHandler {
    public:
     FabricThroughputDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 

@@ -260,7 +260,7 @@ void ComletDump::setupOptions() {
     std::string msTimeHelp = "";
     auto dumpFileFlag = addOption("--file", this->opts->dumpFilePath, "Dump the raw statistics to the file.");
     auto msTimeIntervalOpt = addOption("--ims", this->opts->msTimeInterval, msTimeHelp +
-    "The interval (in milliseconds) to dump the device statistics to file for high-frequency monitorming.\n" +
+    "The interval (in milliseconds) to dump the device statistics to file for high-frequency monitoring.\n" +
     "The recommended metrics types for high-frequency sampling: GPU power, GPU frequency, GPU utilization,\n"+
     "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, GPU engine utilizations, Xe Link throughput.");
     msTimeIntervalOpt->check(

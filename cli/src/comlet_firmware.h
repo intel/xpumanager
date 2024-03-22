@@ -25,6 +25,7 @@ struct FlashFirmwareOptions {
 
     bool forceUpdate = false;
 
+    bool recovery = false;
 };
 
 class ComletFirmware : public ComletBase {
@@ -41,6 +42,12 @@ class ComletFirmware : public ComletBase {
 
     inline std::string getFirmwareType(){
         return opts->firmwareType;
+    }
+
+    bool isRecovery();
+
+    bool assumeYes() {
+        return opts->assumeyes;
     }
 
    private:
