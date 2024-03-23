@@ -4023,7 +4023,7 @@ bool GPUDeviceStub::getFabricPorts(const zes_device_handle_t& device, std::vecto
 
             XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetConfig(hPort, &config));
             if (res != ZE_RESULT_SUCCESS) {
-                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {} port:{}.{}.{}",
+                XPUM_LOG_WARN("Failed to zesFabricPortGetConfig returned: {} port:{}.{}.{}",
                               res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);
             }
             info.portConf = config;
