@@ -194,6 +194,9 @@ class GPUDeviceStub {
     static uint32_t getRegisterValueFromSys(std::string bdfAddress, uint64_t offset);
 
     static std::string parseMemoryFailedMRCInfo(uint32_t registerValue);
+
+    static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type);
+
 private: 
     GPUDeviceStub(); 
     ~GPUDeviceStub();
@@ -207,8 +210,6 @@ private:
     static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
 
     static std::shared_ptr<MeasurementData> toGetActuralRequestFrequency(const zes_device_handle_t& device);
-
-    static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type);
 
     static std::shared_ptr<MeasurementData> toGetMemoryUsedUtilization(const zes_device_handle_t& device);
 

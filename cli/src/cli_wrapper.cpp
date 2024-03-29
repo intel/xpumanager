@@ -111,7 +111,7 @@ int CLIWrapper::printResult(std::ostream &out) {
                         putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
                     }
                 }
-            } else if (comlet->getCommand().compare("updatefw") != 0) {
+            } else if (comlet->getCommand().compare("updatefw") != 0 && comlet->getCommand().compare("diag") != 0) {
                 putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
             } else if (comlet->getCommand().compare("updatefw") == 0){
                 std::shared_ptr<ComletFirmware> cf

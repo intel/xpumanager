@@ -12,8 +12,28 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <functional>
+#include <numeric>
 
 namespace xpum {
+
+    double calculateMean(const std::vector<double>& data) {
+        double sum = std::accumulate(std::begin(data), std::end(data), 0.0);
+        double mean = sum / data.size();
+        return mean;
+    }
+
+    double calcaulateVariance(const std::vector<double>& data) {
+        double sum = std::accumulate(std::begin(data), std::end(data), 0.0);
+        double mean = sum / data.size();
+        
+        double variance = 0.0;
+        std::for_each(std::begin(data), std::end(data), [&](const double d) {
+            variance += pow(d - mean, 2);
+        });
+        variance /= data.size();
+        return variance;
+    }
 
     bool isPathExist(const std::string &s) {
         struct stat buffer;
@@ -60,6 +80,16 @@ namespace xpum {
                     value = value.substr(0, value.find("#"));
                 if (name == "CPU_TEMPERATURE_THRESHOLD") {
                     PrecheckManager::cpu_temperature_threshold = atoi(value.c_str());
+                } else if (name == "GPU_TEMPERATURE_THRESHOLD") {
+                    DiagnosticManager::GPU_TEMPERATURE_THRESHOLD = atoi(value.c_str());
+                } else if (name == "PVC_FW_MINIMUM_VERSION") {
+                    DiagnosticManager::PVC_FW_MINIMUM_VERSION = value;
+                } else if (name == "PVC_AMC_MINIMUM_VERSION") {
+                    DiagnosticManager::PVC_AMC_MINIMUM_VERSION = value;
+                } else if (name == "ATSM150_FW_MINIMUM_VERSION") {
+                    DiagnosticManager::ATSM150_FW_MINIMUM_VERSION = value;
+                } else if (name == "ATSM75_FW_MINIMUM_VERSION") {
+                    DiagnosticManager::ATSM75_FW_MINIMUM_VERSION = value;
                 } else if (name == "MEDIA_CODER_TOOLS_PATH") {
                     if (value == "/usr/bin/" || value == "/usr/share/mfx/samples/") {
                         DiagnosticManager::MEDIA_CODER_TOOLS_PATH = value;
@@ -85,6 +115,18 @@ namespace xpum {
                         float val = std::stof(value);
                         if (val > 0 && val <= 1)
                             DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = val;
+                    } catch(...) { }
+                } else if (name == "REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE") {
+                    try {
+                        int val = std::stoi(value);
+                        if (val > 0)
+                            DiagnosticManager::REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE = val;
+                    } catch(...) { }
+                } else if (name == "REF_XE_LINK_THROUGHPUT_TWO_RILE_DEVICE") {
+                    try {
+                        int val = std::stoi(value);
+                        if (val > 0)
+                            DiagnosticManager::REF_XE_LINK_THROUGHPUT_TWO_RILE_DEVICE = val;
                     } catch(...) { }
                 } else if (name == "XE_LINK_THROUGHPUT_USAGE_PERCENTAGE") {
                     try {
