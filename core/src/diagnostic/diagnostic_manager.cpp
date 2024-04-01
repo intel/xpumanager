@@ -30,6 +30,7 @@ DiagnosticManager::DiagnosticManager(std::shared_ptr<DeviceManagerInterface> &p_
                                      std::shared_ptr<DataLogicInterface> &p_data_logic,
                                      std::shared_ptr<FirmwareManager> &p_firmware_manager)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic), p_firmware_manager(p_firmware_manager) {
+    this->p_device_manager->getDeviceList(this->devices);
     XPUM_LOG_TRACE("DiagnosticManager()");
 }
 
@@ -99,8 +100,6 @@ xpum_result_t DiagnosticManager::runDiagnosticsCore(xpum_device_id_t deviceId, x
     std::unique_lock<std::mutex> lock(this->mutex);
 
     bool isPVCPlatform = false;
-    std::vector<std::shared_ptr<Device>> devices;
-    this->p_device_manager->getDeviceList(devices);
     if (devices.empty())
         return XPUM_RESULT_DEVICE_NOT_FOUND;
 
@@ -158,10 +157,7 @@ xpum_result_t DiagnosticManager::runDiagnosticsCore(xpum_device_id_t deviceId, x
         XPUM_LOG_DEBUG("fail to read diagnostics.conf");
     }
 
-    std::thread task(DiagnosticManager::doDiagnosticCore,
-                     deviceId, diagnostic_task_infos,
-                     devices, std::ref(this->diagnostic_perf_datas), std::ref(this->diagnostic_exclusive_processes),
-                     std::ref(this->media_codec_perf_datas), std::ref(this->xe_link_throughput_datas));
+    std::thread task(&DiagnosticManager::doDiagnosticCore, this, deviceId);
     task.detach();
     return XPUM_OK;
 }
@@ -552,13 +548,7 @@ void DiagnosticManager::doDiagnosticExceptionHandle(xpum_diag_task_type_t type, 
     component.finished = true;
 }
 
-void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId,
-                                                    std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> diagnostic_task_infos,
-                                                    std::vector<std::shared_ptr<Device>> devices, 
-                                                    std::map<xpum_device_id_t, PerfDatas>& diagnostic_perf_datas,
-                                                    std::map<xpum_device_id_t, std::vector<std::pair<std::string, std::string>>> &diagnostic_exclusive_processes,
-                                                    std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas,
-                                                    std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas) {
+void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
     for (auto device : devices) {
         xpum_device_id_t currentId = std::stoi(device->getId());
         if (deviceId != ALL_GPU_ID && currentId != deviceId)

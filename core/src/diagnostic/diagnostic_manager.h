@@ -95,13 +95,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static bool isLevelDiagnosticType(xpum_diag_task_type_t type);
 
-    static void doDiagnosticCore(xpum_device_id_t deviceId,
-                                                       std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> diagnostic_task_infos,
-                                                       std::vector<std::shared_ptr<Device>> devices,
-                                                       std::map<xpum_device_id_t, PerfDatas> &diagnostic_perf_datas,
-                                                       std::map<xpum_device_id_t, std::vector<std::pair<std::string, std::string>>> &diagnostic_exclusive_processes,
-                                                       std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>> &media_codec_perf_datas,
-                                                       std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>> &xe_link_throughput_datas);
+    void doDiagnosticCore(xpum_device_id_t deviceId);
 
     static void doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
@@ -271,6 +265,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>> xe_link_throughput_datas; 
 
     std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> stress_task_map;
+
+    std::vector<std::shared_ptr<Device>> devices;
 
     std::mutex mutex;
 };
