@@ -76,7 +76,7 @@ const std::string DiagnosticManager::COMPONENT_TYPE_NOT_SUPPORTED = "Not support
 std::map<uint32_t, int32_t> DiagnosticManager::fabric_id_convert_to_device_id;
 std::map<int32_t, std::set<int32_t>> DiagnosticManager::device_id_link_to_device_ids;
 std::string DiagnosticManager::PVC_FW_MINIMUM_VERSION = "PVC2_1.23423";
-std::string DiagnosticManager::PVC_AMC_MINIMUM_VERSION = "7.7.0.0";
+std::string DiagnosticManager::PVC_AMC_MINIMUM_VERSION = "6.7.0.0";
 std::string DiagnosticManager::ATSM150_FW_MINIMUM_VERSION = "DG02_1.3271";
 std::string DiagnosticManager::ATSM75_FW_MINIMUM_VERSION = "DG02_2.2277";
 
