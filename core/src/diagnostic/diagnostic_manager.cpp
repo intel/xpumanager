@@ -4259,7 +4259,7 @@ xpum_result_t DiagnosticManager::checkStress(xpum_device_id_t deviceId, xpum_dia
     }
     // this feature does not consider diff GPU in same server node
     auto device = p_device_manager->getDevice("0");
-    if (stress_task_map.size() > 0 && stress_score_map.size() > 0 && 
+    if (stress_task_map.size() > 0 && allScores.size() > 0 && 
         device != nullptr) {
         double mean = calculateMean(allScores);
         double variance = calcaulateVariance(allScores);
