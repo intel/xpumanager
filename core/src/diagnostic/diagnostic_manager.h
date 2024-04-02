@@ -232,7 +232,9 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static void stressThreadFunc(int stress_time,
                                  const ze_device_handle_t &ze_device,
                                  const ze_driver_handle_t &ze_driver,
-                                 std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                 std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+                                 std::mutex *p_mutex,
+                                 std::map<xpum_device_id_t, std::shared_ptr<std::vector<double>>> *p_stress_score_map);
     
     static void copyMemoryDataAndCalculateXeLinkThroughput(const ze_driver_handle_t &ze_driver, std::vector<std::tuple<ze_device_handle_t, zes_device_handle_t, int32_t, ze_device_handle_t, zes_device_handle_t, int32_t>> test_pairs,
                                                         std::map<xpum_device_id_t, PerfDatas> &diagnostic_perf_datas,
@@ -265,6 +267,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>> xe_link_throughput_datas; 
 
     std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> stress_task_map;
+
+    std::map<xpum_device_id_t, std::shared_ptr<std::vector<double>>> stress_score_map;
 
     std::vector<std::shared_ptr<Device>> devices;
 

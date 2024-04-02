@@ -150,10 +150,23 @@ std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATI
                                                 {8, XPUM_DIAG_LIGHT_CODEC},
                                                 {9, XPUM_DIAG_XE_LINK_THROUGHPUT}};
 
+std::unique_ptr<nlohmann::json> ComletDiagnostic::deviceOptToId(int &deviceId, 
+    const std::string &deviceOpt) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceOpt == "-1") {
+        deviceId = -1;
+        return json;
+    }
+    if (isNumber(deviceOpt) == true) {
+        deviceId = std::stoi(deviceOpt);
+        return json;        
+    }
+    return this->coreStub->getDeivceIdByBDF(deviceOpt.c_str(), &deviceId);
+}
+
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device ID or PCI BDF address");
-    deviceIdOpt->delimiter(',');
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
 #ifndef DAEMONLESS
     auto groupIdOpt = addOption("-g,--group", this->opts->groupId, "The group ID");
 #endif
@@ -162,7 +175,7 @@ void ComletDiagnostic::setupOptions() {
     if (isGroupOperation())
         return std::string();
 #endif
-    std::string errStr = "Device id should be a non-negative integer or a BDF string";
+    std::string errStr = "Device id should be an integer or a BDF string";
     if (isValidDeviceId(str) || str == "-1") {
         return std::string();        
     } else if (isBDF(str)) {
@@ -237,6 +250,15 @@ bool ComletDiagnostic::isPreCheck() {
 }
 
 
+void ComletDiagnostic::getJsonResult(std::ostream &out, bool raw) {
+    if (this->opts->stress) {
+        out << "Not supported" << std::endl;
+        return;
+    } else {
+        ComletBase::getJsonResult(out, raw);
+    }
+};
+
 std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 #ifndef DAEMONLESS
@@ -271,6 +293,12 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         }
     }
 
+    int deviceId = -1;
+    auto ret = deviceOptToId(deviceId, this->opts->deviceId);
+    if (ret->contains("error") == true) {
+        return ret;
+    }
+
     if (this->opts->level >= 1 && this->opts->level <= 3) {
 #ifndef DAEMONLESS
         if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
@@ -278,17 +306,8 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
             return json;
         }
 #endif
-        if (this->opts->deviceIds[0] != "-1") {
-            int targetId = -1;
-            if (isNumber(this->opts->deviceIds[0])) {
-                targetId = std::stoi(this->opts->deviceIds[0]);
-            } else {
-                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceIds[0].c_str(), &targetId);
-                if (convertResult->contains("error")) {
-                    return convertResult;
-                }
-            }
-            json = this->coreStub->runDiagnostics(targetId, this->opts->level, {}, this->opts->rawJson);
+        if (this->opts->deviceId != "-1") {
+            json = this->coreStub->runDiagnostics(deviceId, this->opts->level, {}, this->opts->rawJson);
             return json;
         } else {
             auto deviceListJson = this->coreStub->getDeviceList();
@@ -299,7 +318,6 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
                 ids = ids.empty() ? to_string(device["device_id"]) : ids + ", " + to_string(device["device_id"]);
                 opt_ids.push_back(to_string(device["device_id"]));
             }
-            this->opts->deviceIds = opt_ids;
             // run level diagnostics on all GPUs
             json = this->coreStub->runDiagnostics(-1, this->opts->level, {}, this->opts->rawJson);
             if (json->contains("error") && (*json)["errno"] != XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED)
@@ -320,17 +338,8 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
             return json;
         }
 #endif
-        if (this->opts->deviceIds[0] != "-1") {
-            int targetId = -1;
-            if (isNumber(this->opts->deviceIds[0])) {
-                targetId = std::stoi(this->opts->deviceIds[0]);
-            } else {
-                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceIds[0].c_str(), &targetId);
-                if (convertResult->contains("error")) {
-                    return convertResult;
-                }
-            }
-            json = this->coreStub->runDiagnostics(targetId, -1, targetTypes, this->opts->rawJson);
+        if (this->opts->deviceId != "-1") {
+            json = this->coreStub->runDiagnostics(deviceId, -1, targetTypes, this->opts->rawJson);
             return json;
         } else {
             auto deviceListJson = this->coreStub->getDeviceList();
@@ -341,7 +350,6 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
                 ids = ids.empty() ? to_string(device["device_id"]) : ids + ", " + to_string(device["device_id"]);
                 opt_ids.push_back(to_string(device["device_id"]));
             }
-            this->opts->deviceIds = opt_ids;
             // run singletest diagnostics on all GPUs 
             json = this->coreStub->runDiagnostics(-1, -1, targetTypes, this->opts->rawJson);
             if (json->contains("error") && (*json)["errno"] != XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED)
@@ -363,23 +371,7 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
 
     if (this->opts->stress) {
-        if (isDeviceOperation()) {
-            for (auto deviceId : this->opts->deviceIds) {
-                json = this->coreStub->getDeviceProperties(std::stoi(deviceId));
-                if (json->contains("error")) {
-                    return json;
-                }
-            }
-            for (auto deviceId : this->opts->deviceIds) {
-                json = this->coreStub->runStress(std::stoi(deviceId), this->opts->stressTime);
-                if (json->contains("error")) {
-                    break;
-                }
-            }
-            return json;
-        } else {
-            return this->coreStub->runStress(std::stoi(this->opts->deviceIds[0]), this->opts->stressTime);
-        }
+        return this->coreStub->runStress(deviceId, this->opts->stressTime);
     }
 
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
@@ -400,23 +392,6 @@ static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::js
     } else {
         CharTable table(ComletConfigDiagnosticDevice, *json, cont);
         table.show(out);
-    }
-}
-
-static void showStreesedDevices(std::ostream &out, const std::vector<std::string> &ids) {
-    if (ids.size() <= 0) {
-        return;
-    }
-    if (ids[0] == "-1") {
-        out << "Stress on all GPU" << std::endl;;
-        return;
-    } else {
-        std::string gpus;
-        for (auto id : ids) {
-            gpus += id + ",";
-        }
-        gpus.pop_back();
-        out << "Stress on GPU " << gpus << std::endl;
     }
 }
 
@@ -448,46 +423,60 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
 #endif
 
     if (this->opts->stress) {
-        showStreesedDevices(out, this->opts->deviceIds);
-        auto begin = std::chrono::system_clock::now();
+        int deviceId = -1;
+        auto ret = deviceOptToId(deviceId, this->opts->deviceId);
+        if (ret->contains("error") == true) {
+            out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+            setExitCodeByJson(*json);
+            return;
+        }
+        out << "Started to stress GPU and would update the status in every minute" << std::endl;
+        uint64_t round = 0;
         while (true) {
-            size_t fin_dev_count = 0;
-            for (auto deviceId : this->opts->deviceIds) {
-                json = this->coreStub->checkStress(std::stoi(deviceId));
-                if (json->contains("error")) {
-                    out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
-                    setExitCodeByJson(*json);
-                    return;
-                }
-                auto tasks = (*json)["task_list"];
-                size_t fin_task_count = 0;
-                for (auto task : tasks) {
-                    auto now = std::chrono::system_clock::now();
-                    int pastSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - begin).count();
-                    bool finished = task["finished"];
-                    out << "Device: " << task["device_id"] << " Finished:" << finished << " Time: " << pastSeconds << " seconds" << std::endl;
-                    if (finished) {
-                        fin_task_count++;
-                    }
-                }
-                if (tasks.size() == fin_task_count) {
-                    fin_dev_count++;
-                }
+            std::this_thread::sleep_for(std::chrono::seconds(60));
+            json = this->coreStub->checkStress(deviceId);
+            if (json->contains("error")) {
+                out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(*json);
+                return;
             }
-            if (fin_dev_count == this->opts->deviceIds.size()) {
+            round++;
+            auto tasks = (*json)["task_list"];
+            if (tasks == nullptr || tasks.size() == 0) {
+                out << "Error: stress task list not found." << std::endl;
+                exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
+                return;
+            }
+            out << "Stress on GPU: ";
+            size_t fin_task_count = 0;
+            size_t i = 0;
+            for (auto task : tasks) {
+                out << task["device_id"];
+                if (i != tasks.size() - 1) {
+                    out << ",";
+                }
+                bool finished = task["finished"];
+                if (finished) {
+                    fin_task_count++;
+                }
+                i++;
+            }
+            out << "; Round " << round << "; " << tasks[0]["message"] << std::endl;
+            if (tasks.size() == fin_task_count) {
                 out << "Finish stressing." << std::endl;
-                break;
+                break;   
             }
-            std::this_thread::sleep_for(std::chrono::seconds(5));
         }
         return;
     }
 
-    if (isDeviceOperation()) {
-        if (this->opts->level >= 1 && this->opts->level <= 3)
-            showDeviceDiagnostic(out, json, LEVEL_TEST);
-        else
-            showDeviceDiagnostic(out, json, SINGLE_TEST);
+    if (this->opts->level >= 1 && this->opts->level <= 3) {
+        showDeviceDiagnostic(out, json, LEVEL_TEST);
+        return;
+    }
+
+    if (this->opts->singleTestIdList.size() > 0) {
+        showDeviceDiagnostic(out, json, SINGLE_TEST);
         return;
     }
 

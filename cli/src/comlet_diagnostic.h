@@ -16,7 +16,7 @@
 namespace xpum::cli {
 
 struct ComletDiagnosticOptions {
-    std::vector<std::string> deviceIds = {"-1"};
+    std::string deviceId = "-1";
 #ifndef DAEMONLESS
     uint32_t groupId = UINT_MAX;
 #endif
@@ -49,9 +49,10 @@ class ComletDiagnostic : public ComletBase {
     virtual std::unique_ptr<nlohmann::json> run() override;
 
     virtual void getTableResult(std::ostream &out) override;
+    virtual void getJsonResult(std::ostream &out, bool raw) override;
 
     inline const bool isDeviceOperation() const {
-        return opts->deviceIds[0] != "-1";
+        return opts->deviceId != "-1";
     }
 
 #ifndef DAEMONLESS
@@ -67,6 +68,8 @@ class ComletDiagnostic : public ComletBase {
     bool isPreCheck();
 
    private:
+    std::unique_ptr<nlohmann::json> deviceOptToId(int &deviceId, 
+        const std::string &deviceOpt);
     std::unique_ptr<ComletDiagnosticOptions> opts;
 };
 } // end namespace xpum::cli

@@ -2023,6 +2023,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
         auto taskJson = nlohmann::json();
         taskJson["device_id"] = taskInfos[i].deviceId;
         taskJson["finished"] = taskInfos[i].finished;
+        taskJson["message"] = taskInfos[i].message;
         tasks.push_back(taskJson);
     }
     (*json)["task_list"] = tasks;

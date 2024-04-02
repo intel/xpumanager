@@ -2347,6 +2347,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::checkStress(int deviceId) {
                 auto taskJson = nlohmann::json();
                 taskJson["device_id"] = response.taskinfo(i).deviceid();
                 taskJson["finished"] = response.taskinfo(i).finished();
+                taskJson["message"] = response.taskinfo(i).message();
                 tasks.push_back(taskJson);
             }
             (*json)["task_list"] = tasks;
