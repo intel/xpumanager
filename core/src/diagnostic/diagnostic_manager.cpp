@@ -1526,7 +1526,10 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
                     if (ret != ZE_RESULT_SUCCESS) {
                         throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
                     }
-                    waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
+                    ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueSynchronize()[" + zeResultErrorCodeStr(ret) + "]");
+                    } 
                 }
                 time_end = std::chrono::high_resolution_clock::now();
                 total_time_nsec = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
