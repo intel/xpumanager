@@ -426,7 +426,8 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
         int deviceId = -1;
         auto ret = deviceOptToId(deviceId, this->opts->deviceId);
         if (ret->contains("error") == true) {
-            out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+            out << "Error: " << 
+                (*json)["error"].get<std::string>() << std::endl;
             setExitCodeByJson(*json);
             return;
         }
@@ -436,7 +437,8 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
             std::this_thread::sleep_for(std::chrono::seconds(60));
             json = this->coreStub->checkStress(deviceId);
             if (json->contains("error")) {
-                out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+                out << "Error: " << 
+                    (*json)["error"].get<std::string>() << std::endl;
                 setExitCodeByJson(*json);
                 return;
             }
@@ -461,7 +463,8 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
                 }
                 i++;
             }
-            out << "; Round " << round << "; " << tasks[0]["message"] << std::endl;
+            out << "; Round " << round << "; " << 
+                tasks[0]["message"].get<std::string>() << std::endl;
             if (tasks.size() == fin_task_count) {
                 out << "Finish stressing." << std::endl;
                 break;   

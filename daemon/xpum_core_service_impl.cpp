@@ -2620,6 +2620,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             DiagnosticsTaskInfo* taskInfo = response->add_taskinfo();
             taskInfo->set_deviceid(taskInfos[i].deviceId);
             taskInfo->set_finished(taskInfos[i].finished);
+            taskInfo->set_message(taskInfos[i].message);
         }
     } else {
         switch (res) {
