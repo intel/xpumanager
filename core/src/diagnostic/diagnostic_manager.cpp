@@ -208,6 +208,7 @@ void DiagnosticManager::initDiagTaskInfo(std::shared_ptr<xpum::xpum_diag_task_in
         component.type = static_cast<xpum_diag_task_type_t>(index);
         component.finished = false;
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
+        component.message[0] = '\0';
     }
 }
 
@@ -318,6 +319,14 @@ void DiagnosticManager::combineMultiDeviceDiagnosticInfo(xpum::xpum_diag_task_in
     result->endTime = diagnostic_task_infos.at(lastId)->endTime;
     result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
+    for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
+        xpum_diag_component_info_t &component =  result->componentList[index];
+        component.type = static_cast<xpum_diag_task_type_t>(index);
+        component.finished = false;
+        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
+        component.message[0] = '\0';
+    }
+
     updateMessage(result->message, std::string("Doing diagnostics"));
     for (auto diagnostic_task_info : diagnostic_task_infos) {
         auto currentId = diagnostic_task_info.first;
@@ -329,11 +338,11 @@ void DiagnosticManager::combineMultiDeviceDiagnosticInfo(xpum::xpum_diag_task_in
             component.finished = diag_task_info->componentList[component.type].finished;
             if (component.result != XPUM_DIAG_RESULT_FAIL)
                 component.result = diag_task_info->componentList[component.type].result;
-            else
+            if (component.result == XPUM_DIAG_RESULT_FAIL)
                 result->result = XPUM_DIAG_RESULT_FAIL;
     
             std::string mesg(currentId == 0 ? "" : component.message);
-            if (component.result == XPUM_DIAG_RESULT_FAIL || std::string(diag_task_info->componentList[component.type].message).find("Warning") != std::string::npos) {
+            if (diag_task_info->componentList[component.type].result == XPUM_DIAG_RESULT_FAIL || std::string(diag_task_info->componentList[component.type].message).find("Warning") != std::string::npos) {
                 mesg += "\n GPU " + std::to_string(currentId) + " : " + std::string(diag_task_info->componentList[component.type].message);
                 if (component.type == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
                     for (auto process : diagnostic_exclusive_processes[currentId]) {
@@ -827,15 +836,15 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
             }
         }
     }
-    if (fw_version_check_message.size() > 0) {
-        component2.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        std::string desc = "Fail to check libraries." + fw_version_check_message;
+    if (fw_version_check_message.size() > 0 || gfx_versions.size() > 1 || amc_inband_versions.size() > 1) {
+        std::string desc = "Fail to check libraries.";
+        component2.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        if (fw_version_check_message.size() > 0) 
+            desc += fw_version_check_message;
         if (gfx_versions.size() > 1) {
-            component2.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
             desc += " All GPUs do not have the same GFX version.";            
         }
         if (amc_inband_versions.size() > 1) {
-            component2.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
             desc += " All GPUs do not have the same AMC version.";       
         }
         updateMessage(component2.message, desc);
