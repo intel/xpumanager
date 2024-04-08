@@ -60,7 +60,9 @@ void MultiMetricsStatsDataHandler::updateStatistics(std::shared_ptr<SharedData>&
                         stats_iter->second.avg = stats_iter->second.avg * (stats_iter->second.count - 1) * 1.0 / stats_iter->second.count + singleMeasurementData.current * 1.0 / stats_iter->second.count;
                         stats_iter->second.latest_time = p_data->getTime();
                     } else {
-                        multi_sessions_data[session][deviceId][uint64_t(metricHandle)] = Statistics_data_t(singleMeasurementData.current, p_data->getTime());
+                        if (singleMeasurementData.current != std::numeric_limits<uint64_t>::max()) {
+                            multi_sessions_data[session][deviceId][uint64_t(metricHandle)] = Statistics_data_t(singleMeasurementData.current, p_data->getTime());
+                        }
                     }
                     multi_metrics_datas_iter++;
                 }
@@ -69,7 +71,9 @@ void MultiMetricsStatsDataHandler::updateStatistics(std::shared_ptr<SharedData>&
                 while (multi_metrics_datas_iter != multi_metrics_measurement_datas->end()) {
                     //multi_metrics_datas_iter->first is handle (engine or fp)
                     //multi_metrics_datas_iter->second is SingleMeasurementData_t
-                    multi_sessions_data[session][deviceId][uint64_t(multi_metrics_datas_iter->first)] = Statistics_data_t(multi_metrics_datas_iter->second.current, p_data->getTime());
+                    if (multi_metrics_datas_iter->second.current != std::numeric_limits<uint64_t>::max()) {
+                        multi_sessions_data[session][deviceId][uint64_t(multi_metrics_datas_iter->first)] = Statistics_data_t(multi_metrics_datas_iter->second.current, p_data->getTime());
+                    }
                     multi_metrics_datas_iter++;
                 }
             }
@@ -123,12 +127,14 @@ std::shared_ptr<MeasurementData> MultiMetricsStatsDataHandler::getLatestStatisti
         auto multi_metrics_datas_iter = multi_metrics_measurement_datas->begin();
         while (multi_metrics_datas_iter != multi_metrics_measurement_datas->end()) {
             auto &metricHandle = multi_metrics_datas_iter->first;
-            auto cur_datas = std::static_pointer_cast<MeasurementData>(datas[device_id]);
-            cur_datas->setDataMin(metricHandle, multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].min);
-            cur_datas->setDataMax(metricHandle, multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].max);
-            cur_datas->setDataAvg(metricHandle, multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].avg);
-            cur_datas->setStartTime(multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].start_time);
-            cur_datas->setLatestTime(multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].latest_time);
+            if(multi_sessions_data[session_id][device_id].find(metricHandle) != multi_sessions_data[session_id][device_id].end()){
+                auto cur_datas = std::static_pointer_cast<MeasurementData>(datas[device_id]);
+                cur_datas->setDataMin(metricHandle, multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].min);
+                cur_datas->setDataMax(metricHandle, multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].max);
+                cur_datas->setDataAvg(metricHandle, multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].avg);
+                cur_datas->setStartTime(multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].start_time);
+                cur_datas->setLatestTime(multi_sessions_data[session_id][device_id][uint64_t(metricHandle)].latest_time);
+            }
             ++multi_metrics_datas_iter;
         }
         resetStatistics(device_id, session_id);

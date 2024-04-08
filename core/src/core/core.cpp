@@ -114,10 +114,6 @@ void Core::init() {
     p_group_manager = std::make_shared<GroupManager>(p_device_manager, p_data_logic);
     p_group_manager->init();
 
-    XPUM_LOG_INFO("initialize diagnostic manager");
-    p_diagnostic_manager = std::make_shared<DiagnosticManager>(p_device_manager, p_data_logic);
-    p_diagnostic_manager->init();
-
     XPUM_LOG_INFO("initialize policy manager");
     p_policy_manager = std::make_shared<PolicyManager>(p_device_manager, p_data_logic, p_group_manager);
     p_policy_manager->init();
@@ -127,6 +123,10 @@ void Core::init() {
 
     XPUM_LOG_INFO("initialize firmware manager");
     p_firmware_manager->init();
+
+    XPUM_LOG_INFO("initialize diagnostic manager");
+    p_diagnostic_manager = std::make_shared<DiagnosticManager>(p_device_manager, p_data_logic, p_firmware_manager);
+    p_diagnostic_manager->init();
 
     XPUM_LOG_INFO("initialize monitor manager");
     p_monitor_manager = std::make_shared<MonitorManager>(p_device_manager, p_data_logic);

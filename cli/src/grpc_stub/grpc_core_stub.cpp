@@ -562,7 +562,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(int deviceId,
                 componentJson["finished"] = response.componentinfo(i).finished();
                 componentJson["message"] = response.componentinfo(i).message();
                 componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
-                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE) {
+                if (response.deviceid() != -1 && response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE) {
                     auto process_list_json = getDeviceProcessState(response.deviceid());
                     if (process_list_json->contains("device_process_list") && (*process_list_json)["device_process_list"].size() > 1) {
                         std::vector<nlohmann::json> processList;
@@ -580,11 +580,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(int deviceId,
                         }
                     }
                 }
-                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
+                if (response.deviceid() != -1 && response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
                     && response.componentinfo(i).result() == DIAG_RESULT_PASS) {
                     componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.deviceid(), rawComponentTypeStr))["media_codec_list"];
                 }            
-                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT
+                if (response.deviceid() != -1 && response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT
                     && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
                     auto json = getDiagnosticsXeLinkThroughputResult(response.deviceid(), rawComponentTypeStr);
                     if ((*json)["xe_link_throughput_list_count"] > 0) {
@@ -2347,6 +2347,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::checkStress(int deviceId) {
                 auto taskJson = nlohmann::json();
                 taskJson["device_id"] = response.taskinfo(i).deviceid();
                 taskJson["finished"] = response.taskinfo(i).finished();
+                taskJson["message"] = response.taskinfo(i).message();
                 tasks.push_back(taskJson);
             }
             (*json)["task_list"] = tasks;

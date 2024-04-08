@@ -412,7 +412,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
             componentJson["finished"] = task_info.componentList[i].finished;
             componentJson["message"] = task_info.componentList[i].message;
             componentJson["result"] = diagnosticResultEnumToString(task_info.componentList[i].result);
-            if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
+            if (deviceId != -1 && task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
                 uint32_t count = 0;
                 res = xpumGetDeviceProcessState(task_info.deviceId, nullptr, &count);
                 if (res == XPUM_OK) {
@@ -455,11 +455,11 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
                     }                    
                 }
             }
-            if (task_info.componentList[i].type == XPUM_DIAG_MEDIA_CODEC 
+            if (deviceId != -1 && task_info.componentList[i].type == XPUM_DIAG_MEDIA_CODEC 
                 && task_info.componentList[i].result == XPUM_DIAG_RESULT_PASS) {
                 componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(task_info.deviceId, rawComponentTypeStr))["media_codec_list"];
             }
-            if (task_info.componentList[i].type == XPUM_DIAG_XE_LINK_THROUGHPUT 
+            if (deviceId != -1 && task_info.componentList[i].type == XPUM_DIAG_XE_LINK_THROUGHPUT 
                 && task_info.componentList[i].result == XPUM_DIAG_RESULT_FAIL) {
                 auto json = getDiagnosticsXeLinkThroughputResult(task_info.deviceId, rawComponentTypeStr);
                 if ((*json)["xe_link_throughput_list_count"] > 0) {
@@ -2023,6 +2023,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
         auto taskJson = nlohmann::json();
         taskJson["device_id"] = taskInfos[i].deviceId;
         taskJson["finished"] = taskInfos[i].finished;
+        taskJson["message"] = taskInfos[i].message;
         tasks.push_back(taskJson);
     }
     (*json)["task_list"] = tasks;

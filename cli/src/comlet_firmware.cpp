@@ -872,6 +872,8 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 out << "Please reboot OS to take effect." << std::endl;
             } else if (type == XPUM_DEVICE_FIRMWARE_AMC && getSysVendor() == "Supermicro") {
                 out << "Please reboot OS to take effect." << std::endl;
+            } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
+                out << "Please reset the GPU or reboot OS to take effect." << std::endl;
             }
             return;
         } else if (flashStatus.compare("FAILED") == 0) {

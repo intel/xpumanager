@@ -114,7 +114,7 @@ message GroupAddRemoveDevice{
 }
 
 message RunDiagnosticsRequest{
-    uint32 deviceId = 1;
+    int32 deviceId = 1;
     uint32 level = 2;
 }
 
@@ -173,7 +173,7 @@ message DiagnosticsComponentInfo{
 }
 
 message DiagnosticsTaskInfo{
-    uint32 deviceId = 1;
+    int32 deviceId = 1;
     uint32 level = 2;
     uint32 targetType = 3;
     bool finished = 4;
