@@ -234,7 +234,7 @@ namespace xpum {
 
         bool findCurrentBootLine = false;
         // Filter related logs
-        print_log_cmd += " | grep -i \"boot\\|i915\\|drm\\|mce\\|mca\\|caterr\"";
+        print_log_cmd += " | grep -i \"mei\\|boot\\|i915\\|drm\\|mce\\|mca\\|caterr\"";
         f = popen(print_log_cmd.c_str(), "r");
         if (f == nullptr) {
             XPUM_LOG_ERROR("Failed to check log with command: {}", print_log_cmd);
