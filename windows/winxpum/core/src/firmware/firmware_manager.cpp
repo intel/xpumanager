@@ -745,6 +745,7 @@ namespace xpum {
                 sprintf_s(bdf_array, "%04hu:%02x:%02x.%01x", info.domain, info.bus, info.dev, info.func);
                 std::string bdf = std::string(bdf_array);
                 bdf_to_devicepath[bdf] = std::string(info.name);
+                isIgscInit = true;
                 /* make sure we have a printable name */
                 info.name[0] = '\0';
                 (void)igsc_device_close(&handle);
@@ -752,10 +753,9 @@ namespace xpum {
             igsc_device_iterator_destroy(iter);
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             XPUM_LOG_DEBUG(igscMissingErrorInfo);
-            return false;
+            isIgscInit = false;
         }
-        isIgscInit = true;
-        return true;
+        return isIgscInit;
     }
 
     xpum_result_t FirmwareManager::getAmcFwVersions(std::vector<std::string> *versions, const char* user, const char* password) {
