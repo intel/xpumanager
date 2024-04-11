@@ -967,42 +967,8 @@ void DiagnosticManager::doDiagnosticHardwareSysman(const zes_device_handle_t &ze
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     // disable hardware diagnostics due to instability
-    // uint32_t test_suite_count = 0;
-    // ze_result_t res;
-    bool find_test_suite = false;
-    bool pass_test_suite = true;
-    // XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, nullptr));
-    // if (res != ZE_RESULT_SUCCESS) {
-    //     throw BaseException("zesDeviceEnumDiagnosticTestSuites()[" + zeResultErrorCodeStr(ret) + "]");
-    // }
-    // if (test_suite_count > 0) {
-    //     find_test_suite = true;
-    //     std::vector<zes_diag_handle_t> test_suites(test_suite_count);
-    //     XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, test_suites.data()));
-    //     if (res != ZE_RESULT_SUCCESS) {
-    //         throw BaseException("zesDeviceEnumDiagnosticTestSuites()[" + zeResultErrorCodeStr(ret) + "]");
-    //     }
-    //     for (auto &test_suite : test_suites) {
-    //         zes_diag_result_t result;
-    //         XPUM_ZE_HANDLE_LOCK(test_suite, res = zesDiagnosticsRunTests(test_suite, ZES_DIAG_FIRST_TEST_INDEX, ZES_DIAG_LAST_TEST_INDEX, &result));
-    //         if (res == ZE_RESULT_SUCCESS) {
-    //             if (result != zes_diag_result_t::ZES_DIAG_RESULT_NO_ERRORS) {
-    //                 pass_test_suite = false;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-    if (find_test_suite == true && pass_test_suite == true) {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        updateMessage(component.message, std::string("Pass to do hardware sysman diagnostics."));
-    } else if (find_test_suite == true && pass_test_suite == false) {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to do hardware sysman diagnostics."));
-    } else {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to find test suites for hardware sysman diagnostics."));
-    }
+    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+    updateMessage(component.message, std::string("Fail to find test suites for hardware sysman diagnostics."));
     component.finished = true;
 }
 
