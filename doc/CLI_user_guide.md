@@ -560,7 +560,7 @@ optional arguments:
                               7. GPU Memory Write (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles.
                               8. GPU Energy Consumed (J), per tile or device. 
                               9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile or device. Device-level is the average value of tiles for multi-tiles.
-                              10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile or device. Device-level is the average value of tiles for multi-tiles. At least one thread is loaded, but the EU is stalled.
+                              10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled. Per tile or device. Device-level is the average value of tiles for multi-tiles.
                               11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile or device. Device-level is the average value of tiles for multi-tiles.
                               12. Reset Counter, per tile or device. Device-level is the sum value of tiles for multi-tiles.
                               13. Programming Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles.
