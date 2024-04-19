@@ -967,42 +967,8 @@ void DiagnosticManager::doDiagnosticHardwareSysman(const zes_device_handle_t &ze
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     // disable hardware diagnostics due to instability
-    // uint32_t test_suite_count = 0;
-    // ze_result_t res;
-    bool find_test_suite = false;
-    bool pass_test_suite = true;
-    // XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, nullptr));
-    // if (res != ZE_RESULT_SUCCESS) {
-    //     throw BaseException("zesDeviceEnumDiagnosticTestSuites()[" + zeResultErrorCodeStr(ret) + "]");
-    // }
-    // if (test_suite_count > 0) {
-    //     find_test_suite = true;
-    //     std::vector<zes_diag_handle_t> test_suites(test_suite_count);
-    //     XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, test_suites.data()));
-    //     if (res != ZE_RESULT_SUCCESS) {
-    //         throw BaseException("zesDeviceEnumDiagnosticTestSuites()[" + zeResultErrorCodeStr(ret) + "]");
-    //     }
-    //     for (auto &test_suite : test_suites) {
-    //         zes_diag_result_t result;
-    //         XPUM_ZE_HANDLE_LOCK(test_suite, res = zesDiagnosticsRunTests(test_suite, ZES_DIAG_FIRST_TEST_INDEX, ZES_DIAG_LAST_TEST_INDEX, &result));
-    //         if (res == ZE_RESULT_SUCCESS) {
-    //             if (result != zes_diag_result_t::ZES_DIAG_RESULT_NO_ERRORS) {
-    //                 pass_test_suite = false;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-    if (find_test_suite == true && pass_test_suite == true) {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        updateMessage(component.message, std::string("Pass to do hardware sysman diagnostics."));
-    } else if (find_test_suite == true && pass_test_suite == false) {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to do hardware sysman diagnostics."));
-    } else {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to find test suites for hardware sysman diagnostics."));
-    }
+    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+    updateMessage(component.message, std::string("Fail to find test suites for hardware sysman diagnostics."));
     component.finished = true;
 }
 
@@ -1414,6 +1380,38 @@ std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
     return ret;
 }
 
+std::vector<int> DiagnosticManager::getDeviceAvailableCopyEngingGroups(const ze_device_handle_t& ze_device, bool onlyComputeMainCopy) {
+    std::vector<int> availableGroups;
+    uint32_t numQueueGroups = 0;
+    ze_result_t ret;
+    
+    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeDeviceGetCommandQueueGroupProperties(ze_device, &numQueueGroups, nullptr));
+    if (ret != ZE_RESULT_SUCCESS || numQueueGroups == 0) {
+        throw BaseException("zeDeviceGetCommandQueueGroupProperties()[" + zeResultErrorCodeStr(ret) + "]");
+    }
+    std::vector<ze_command_queue_group_properties_t> queueProperties;
+    queueProperties.resize(numQueueGroups);
+    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeDeviceGetCommandQueueGroupProperties(ze_device, &numQueueGroups, queueProperties.data()));
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zeDeviceGetCommandQueueGroupProperties()[" + zeResultErrorCodeStr(ret) + "]");
+    }
+
+    for (uint32_t i = 0; i < numQueueGroups; i++) {
+        if (queueProperties[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+            availableGroups.push_back(i);
+            XPUM_LOG_DEBUG("Group {} (compute): {} queues", i, queueProperties[i].numQueues);
+        } else if ((queueProperties[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == 0 &&
+                (queueProperties[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY)) {
+            availableGroups.push_back(i);
+            XPUM_LOG_DEBUG("Group {} (copy): {} queues", i, queueProperties[i].numQueues);
+        }
+        if (onlyComputeMainCopy && availableGroups.size() == 2)
+            break;
+    }
+    return availableGroups;
+}
+
+
 void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_device,
                                                       const zes_device_handle_t &zes_device, 
                                                       const ze_driver_handle_t &ze_driver,
@@ -1424,197 +1422,213 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
-    ze_result_t ret;
-    std::vector<ze_device_handle_t> device_handles;
-    std::vector<long double> all_bandwidth;
-    std::vector<std::thread> bandwidth_threads;
-    std::vector<std::string> error_messages;
-    uint32_t subdevice_count = 0;
-    ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
-    }
-
-    if (subdevice_count == 0) {
-        device_handles.push_back(ze_device);
-        all_bandwidth.push_back(0);
-        error_messages.push_back("");
-    } else {
-        std::vector<ze_device_handle_t> subdevices(subdevice_count);
-        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
-        }
-        for (auto &subdevice : subdevices) {
-            device_handles.push_back(subdevice);
-            all_bandwidth.push_back(0);
-            error_messages.push_back("");
-        }
-    }
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
     std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
-    for (std::size_t i = 0; i < device_handles.size(); i++) {
-        bandwidth_threads.push_back(std::thread([&all_bandwidth, &error_messages, i, &device_handles, &ze_driver]() {
-            try {
-                ze_result_t ret;
-                ze_context_handle_t context;
-                ze_context_desc_t context_desc = {
-                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
-                        nullptr, 
-                        0
-                };
-                XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeContextCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-
-                ze_command_queue_handle_t command_queue;
-                ze_command_queue_desc_t command_queue_description{};
-                command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-                command_queue_description.pNext = nullptr;
-                command_queue_description.ordinal = 0;
-                command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &command_queue_description, &command_queue));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandQueueCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-
-                ze_command_list_handle_t command_list;
-                ze_command_list_desc_t command_list_description{};
-                command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
-                command_list_description.pNext = nullptr;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &command_list_description, &command_list));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                long double total_bandwidth = 0.0;
-                long double total_latency = 0.0;
-
-                // DCGM PCIE_STR_INTS_PER_COPY 10000000.0 * 4 bytes = 40Mb
-                std::size_t size = 1 << 28;
-                void *device_buffer;
-                void *host_buffer;
-
-                ze_device_mem_alloc_desc_t device_desc;
-                device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-                device_desc.pNext = nullptr;
-                device_desc.ordinal = 0;
-                device_desc.flags = 0;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &device_desc, size, 1, device_handles[i], &device_buffer));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemAllocDevice()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-
-                ze_host_mem_alloc_desc_t host_desc;
-                host_desc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
-                host_desc.pNext = nullptr;
-                host_desc.flags = 0;
-                ret = zeMemAllocHost(context, &host_desc, size, 1, &host_buffer);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemAllocHost()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-
-                uint32_t number_iterations = 500;
-                long double total_time_nsec = 0.0;
-                std::size_t element_size = sizeof(uint8_t);
-                std::size_t buffer_size = element_size * size;
-                ret = zeCommandListAppendMemoryCopy(command_list, device_buffer, host_buffer, buffer_size, nullptr, 0, nullptr);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListAppendMemoryCopy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeCommandListClose(command_list);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListClose()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                std::chrono::high_resolution_clock::time_point time_start, time_end;
-                time_start = std::chrono::high_resolution_clock::now();
-                for (uint32_t i = 0; i < number_iterations; i++) {
-                    ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
-                    if (ret != ZE_RESULT_SUCCESS) {
-                        throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
-                    }
-                    ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
-                    if (ret != ZE_RESULT_SUCCESS) {
-                        throw BaseException("zeCommandQueueSynchronize()[" + zeResultErrorCodeStr(ret) + "]");
-                    } 
-                }
-                time_end = std::chrono::high_resolution_clock::now();
-                total_time_nsec = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
-
-                ret = zeCommandListDestroy(command_list);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeCommandQueueDestroy(command_queue);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandQueueDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeMemFree(context, const_cast<void *>(device_buffer));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeMemFree(context, const_cast<void *>(host_buffer));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeContextDestroy(context);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeContextDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                calculateBandwidthLatency(total_time_nsec, static_cast<long double>(size * number_iterations), total_bandwidth, total_latency, number_iterations);
-                all_bandwidth[i] = total_bandwidth;
-            } catch (BaseException &e) {
-                XPUM_LOG_DEBUG("Error in integration diagnostic");
-                all_bandwidth[i] = -1;
-                error_messages[i] = e.what();
-            } catch (...) {
-                XPUM_LOG_DEBUG("Error in integration diagnostic");
-                all_bandwidth[i] = -1;
-            }
-        }));
-    }
-    for (std::size_t i = 0; i < bandwidth_threads.size(); i++) {
-        bandwidth_threads[i].join();
-    }
-
-    long double total_bandwidth = 0;
-    for (std::size_t i = 0; i < bandwidth_threads.size(); i++) {
-        if (all_bandwidth[i] < 0) {
-            if (error_messages[i].length() == 0)
-                throw BaseException("unknown reasons");
-            else
-                throw BaseException(error_messages[i]);
+    
+    std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
+    // show compute engine group perf data if all groups pass 
+    std::reverse(copyEngineGroupIds.begin(), copyEngineGroupIds.end()); 
+    for (auto copyEngineGroupId : copyEngineGroupIds) {
+        ze_result_t ret;
+        std::vector<ze_device_handle_t> device_handles;
+        std::vector<long double> all_bandwidth;
+        std::vector<std::thread> bandwidth_threads;
+        std::vector<std::string> error_messages;
+        uint32_t subdevice_count = 0;
+        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
         }
-        total_bandwidth += all_bandwidth[i];
-    }
-    std::string bandwidth_detail = " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
-    auto bandwidth_threshold = 0;
-    auto ref_bandwidth = 0;
-    if (device_names.find(ze_device) != device_names.end()) {
-        bandwidth_threshold = thresholds[device_names[ze_device]]["PCIE_BANDWIDTH_MIN_GBPS"];
-        ref_bandwidth = thresholds[device_names[ze_device]]["REF_PCIE_BANDWIDTH_GBPS"];
-    }
-    diagnostic_perf_datas[p_task_info->deviceId].pcie_bandwidth = total_bandwidth;
-    diagnostic_perf_datas[p_task_info->deviceId].reference_pcie_bandwidth = ref_bandwidth;
-    if (bandwidth_threshold <= 0) {
-        std::string desc = "Fail to check PCIe bandwidth.";
-        desc += bandwidth_detail;
-        desc += "  Unconfigured or invalid threshold.";
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, desc);
-    } else if (total_bandwidth < bandwidth_threshold) {
-        std::string desc = "Fail to check PCIe bandwidth.";
-        desc += bandwidth_detail;
-        desc += " Threshold is " + std::to_string(bandwidth_threshold) + " GBPS.";
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, desc);
-    } else {
-        std::string desc = "Pass to check PCIe bandwidth.";
-        desc += bandwidth_detail;
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        updateMessage(component.message, desc);
+
+        if (subdevice_count == 0) {
+            device_handles.push_back(ze_device);
+            all_bandwidth.push_back(0);
+            error_messages.push_back("");
+        } else {
+            std::vector<ze_device_handle_t> subdevices(subdevice_count);
+            ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
+            }
+            for (auto &subdevice : subdevices) {
+                device_handles.push_back(subdevice);
+                all_bandwidth.push_back(0);
+                error_messages.push_back("");
+            }
+        }
+        for (std::size_t i = 0; i < device_handles.size(); i++) {
+            bandwidth_threads.push_back(std::thread([&all_bandwidth, &error_messages, i, &device_handles, &ze_driver, copyEngineGroupId]() {
+                try {
+                    ze_result_t ret;
+                    ze_context_handle_t context;
+                    ze_context_desc_t context_desc = {
+                            ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                            nullptr, 
+                            0
+                    };
+                    XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeContextCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+
+                    ze_command_queue_handle_t command_queue;
+                    ze_command_queue_desc_t command_queue_description{};
+                    command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+                    command_queue_description.pNext = nullptr;
+                    command_queue_description.ordinal = copyEngineGroupId;
+                    command_queue_description.index = 0;
+                    command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &command_queue_description, &command_queue));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+
+                    ze_command_list_handle_t command_list;
+                    ze_command_list_desc_t command_list_description{};
+                    command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+                    command_list_description.commandQueueGroupOrdinal = copyEngineGroupId;
+                    command_list_description.pNext = nullptr;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &command_list_description, &command_list));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    long double total_bandwidth = 0.0;
+                    long double total_latency = 0.0;
+
+                    // DCGM PCIE_STR_INTS_PER_COPY 10000000.0 * 4 bytes = 40Mb
+                    std::size_t size = 1 << 28;
+                    void *device_buffer;
+                    void *host_buffer;
+
+                    ze_device_mem_alloc_desc_t device_desc;
+                    device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                    device_desc.pNext = nullptr;
+                    device_desc.ordinal = 0;
+                    device_desc.flags = 0;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &device_desc, size, 1, device_handles[i], &device_buffer));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemAllocDevice()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+
+                    ze_host_mem_alloc_desc_t host_desc;
+                    host_desc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
+                    host_desc.pNext = nullptr;
+                    host_desc.flags = 0;
+                    ret = zeMemAllocHost(context, &host_desc, size, 1, &host_buffer);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemAllocHost()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+
+                    uint32_t number_iterations = 500;
+                    long double total_time_nsec = 0.0;
+                    std::size_t element_size = sizeof(uint8_t);
+                    std::size_t buffer_size = element_size * size;
+                    ret = zeCommandListAppendMemoryCopy(command_list, device_buffer, host_buffer, buffer_size, nullptr, 0, nullptr);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListAppendMemoryCopy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandListClose(command_list);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListClose()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    std::chrono::high_resolution_clock::time_point time_start, time_end;
+                    time_start = std::chrono::high_resolution_clock::now();
+                    for (uint32_t i = 0; i < number_iterations; i++) {
+                        ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
+                        if (ret != ZE_RESULT_SUCCESS) {
+                            throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
+                        }
+                        ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+                        if (ret != ZE_RESULT_SUCCESS) {
+                            throw BaseException("zeCommandQueueSynchronize()[" + zeResultErrorCodeStr(ret) + "]");
+                        } 
+                    }
+                    time_end = std::chrono::high_resolution_clock::now();
+                    total_time_nsec = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
+
+                    ret = zeCommandListDestroy(command_list);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandQueueDestroy(command_queue);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeMemFree(context, const_cast<void *>(device_buffer));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeMemFree(context, const_cast<void *>(host_buffer));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeContextDestroy(context);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeContextDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    calculateBandwidthLatency(total_time_nsec, static_cast<long double>(size * number_iterations), total_bandwidth, total_latency, number_iterations);
+                    all_bandwidth[i] = total_bandwidth;
+                } catch (BaseException &e) {
+                    XPUM_LOG_DEBUG("Error in integration diagnostic {}",  e.what());
+                    all_bandwidth[i] = -1;
+                    error_messages[i] = e.what();
+                } catch (...) {
+                    XPUM_LOG_DEBUG("Error in integration diagnostic");
+                    all_bandwidth[i] = -1;
+                }
+            }));
+        }
+        for (std::size_t i = 0; i < bandwidth_threads.size(); i++) {
+            bandwidth_threads[i].join();
+        }
+
+        long double total_bandwidth = 0;
+        for (std::size_t i = 0; i < bandwidth_threads.size(); i++) {
+            if (all_bandwidth[i] < 0) {
+                if (error_messages[i].length() == 0)
+                    throw BaseException("unknown reasons");
+                else
+                    throw BaseException(error_messages[i]);
+            }
+            total_bandwidth += all_bandwidth[i];
+        }
+        XPUM_LOG_DEBUG("PCIe bandwidth on copy engine group {}, {} GBPS", copyEngineGroupId, roundDouble(total_bandwidth, 3));
+        std::string bandwidth_detail = " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
+        auto bandwidth_threshold = 0;
+        auto ref_bandwidth = 0;
+        if (device_names.find(ze_device) != device_names.end()) {
+            bandwidth_threshold = thresholds[device_names[ze_device]]["PCIE_BANDWIDTH_MIN_GBPS"];
+            ref_bandwidth = thresholds[device_names[ze_device]]["REF_PCIE_BANDWIDTH_GBPS"];
+        }
+        diagnostic_perf_datas[p_task_info->deviceId].pcie_bandwidth = total_bandwidth;
+        diagnostic_perf_datas[p_task_info->deviceId].reference_pcie_bandwidth = ref_bandwidth;
+        if (bandwidth_threshold <= 0) {
+            std::string desc = "Fail to check PCIe bandwidth.";
+            desc += bandwidth_detail;
+            desc += "  Unconfigured or invalid threshold.";
+            component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+            updateMessage(component.message, desc);
+        } else if (total_bandwidth < bandwidth_threshold) {
+            std::string desc = "Fail to check PCIe bandwidth.";
+            desc += bandwidth_detail;
+            desc += " Threshold is " + std::to_string(bandwidth_threshold) + " GBPS.";
+            component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+            updateMessage(component.message, desc);
+        } else {
+            std::string desc = "Pass to check PCIe bandwidth.";
+            desc += bandwidth_detail;
+            component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+            updateMessage(component.message, desc);
+        }
+
+        if (component.result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+            std::string desc(component.message);
+            desc += " Fail on copy engine group " + std::to_string(copyEngineGroupId) + ".";
+            updateMessage(component.message, desc);
+            break;
+        }
     }
     subtask_done.store(true);
     read_temperature_thread.join();
@@ -3054,348 +3068,398 @@ void DiagnosticManager::doDiagnosticPeformanceMemoryBandwidth(const ze_device_ha
     updateMessage(memorybandwidth_component.message, std::string("Running"));
     memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
-    ze_result_t ret;
-    std::vector<ze_device_handle_t> device_handles;
-    std::vector<long double> all_gbps;
-    std::vector<std::thread> memorybandwidth_threads;
-    std::vector<std::string> error_messages;
-    uint32_t subdevice_count = 0;
-    ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
-    }
-
-    if (subdevice_count == 0) {
-        device_handles.push_back(ze_device);
-        all_gbps.push_back(0);
-        error_messages.push_back("");
-    } else {
-        std::vector<ze_device_handle_t> subdevices(subdevice_count);
-        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
-        }
-        for (auto &subdevice : subdevices) {
-            device_handles.push_back(subdevice);
-            all_gbps.push_back(0);
-            error_messages.push_back("");
-        }
-    }
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
     std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
-    for (std::size_t i = 0; i < device_handles.size(); i++) {
-        memorybandwidth_threads.push_back(std::thread([&all_gbps, &error_messages, i, &device_handles, &ze_driver]() {
-            try {
-                ze_result_t ret;
-                long double timed_lo, timed_go, timed, gbps;
-                struct ZeWorkGroups workgroup_info;
-                uint64_t temp_global_size;
-                ze_device_properties_t device_properties;
-                device_properties.pNext = nullptr;
-                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeDeviceGetProperties()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ze_device_compute_properties_t device_compute_properties;
-                device_compute_properties.pNext = nullptr;
-                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeDeviceGetComputeProperties()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ze_context_handle_t context;
-                ze_context_desc_t context_desc = {
-                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
-                        nullptr, 
-                        0
-                };
-                XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeContextCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ze_module_handle_t module_handle;
-                ze_module_desc_t module_description = {};
-                std::vector<uint8_t> binary_file = loadBinaryFile("ze_global_bw.spv");
-                module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
-                module_description.pNext = nullptr;
-                module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
-                module_description.inputSize = static_cast<uint32_t>(binary_file.size());
-                module_description.pInputModule = binary_file.data();
-                module_description.pBuildFlags = nullptr;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeModuleCreate(context, device_handles[i], &module_description, &module_handle, nullptr));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                uint64_t max_items = device_properties.maxMemAllocSize / sizeof(float) / 2;
-                uint64_t num_items = std::min(max_items, (uint64_t)(1 << 29));
-                uint64_t base = (uint64_t)device_compute_properties.maxGroupSizeX * 16 * 16;
-                num_items = (num_items / base) * base;
-
-                std::vector<float> arr(static_cast<uint32_t>(num_items));
-                for (uint32_t i = 0; i < num_items; i++) {
-                    arr[i] = static_cast<float>(i);
-                }
-
-                num_items = setWorkgroups(device_compute_properties, num_items, &workgroup_info);
-
-                void *inputBuf;
-                ze_device_mem_alloc_desc_t in_device_desc = {};
-                in_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-                in_device_desc.pNext = nullptr;
-                in_device_desc.ordinal = 0;
-                in_device_desc.flags = 0;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &in_device_desc, static_cast<size_t>((num_items * sizeof(float))), 1, device_handles[i], &inputBuf));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemAllocDevice()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                void *outputBuf;
-                ze_device_mem_alloc_desc_t out_device_desc = {};
-                out_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-                out_device_desc.pNext = nullptr;
-                out_device_desc.ordinal = 0;
-                out_device_desc.flags = 0;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &out_device_desc, static_cast<size_t>((num_items * sizeof(float))), 1, device_handles[i], &outputBuf));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemAllocDevice()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-
-                ze_command_list_handle_t command_list;
-                ze_command_list_desc_t command_list_description{};
-                command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
-                command_list_description.pNext = nullptr;
-                command_list_description.flags = ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY;
-                command_list_description.commandQueueGroupOrdinal = 0;
-
-                ze_command_queue_handle_t command_queue;
-                ze_command_queue_desc_t command_queue_description{};
-                command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-                command_queue_description.pNext = nullptr;
-                command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
-                command_queue_description.flags = ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY;
-                command_queue_description.ordinal = 0;
-                command_queue_description.index = 0;
-
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &command_list_description, &command_list));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &command_queue_description, &command_queue));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandQueueCreate()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeCommandListAppendMemoryCopy(command_list, inputBuf, arr.data(), (arr.size() * sizeof(float)), nullptr, 0, nullptr);
-                ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListAppendBarrier()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeCommandListClose(command_list);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListClose()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
-                ret = zeCommandListReset(command_list);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListReset()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ze_kernel_handle_t local_offset_v1;
-                ze_kernel_handle_t local_offset_v2;
-                ze_kernel_handle_t local_offset_v4;
-                ze_kernel_handle_t local_offset_v8;
-                ze_kernel_handle_t local_offset_v16;
-                ze_kernel_handle_t global_offset_v1;
-                ze_kernel_handle_t global_offset_v2;
-                ze_kernel_handle_t global_offset_v4;
-                ze_kernel_handle_t global_offset_v8;
-                ze_kernel_handle_t global_offset_v16;
-
-                setupFunction(module_handle, local_offset_v1, "global_bandwidth_v1_local_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, global_offset_v1, "global_bandwidth_v1_global_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, local_offset_v2, "global_bandwidth_v2_local_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, global_offset_v2, "global_bandwidth_v2_global_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, local_offset_v4, "global_bandwidth_v4_local_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, global_offset_v4, "global_bandwidth_v4_global_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, local_offset_v8, "global_bandwidth_v8_local_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, global_offset_v8, "global_bandwidth_v8_global_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, local_offset_v16, "global_bandwidth_v16_local_offset", inputBuf, outputBuf);
-                setupFunction(module_handle, global_offset_v16, "global_bandwidth_v16_global_offset", inputBuf, outputBuf);
-
-                timed = 0;
-                timed_lo = 0;
-                timed_go = 0;
-                temp_global_size = (num_items / 16);
-                setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
-                timed_lo = runKernel(command_queue, command_list, local_offset_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed_go = runKernel(command_queue, command_list, global_offset_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed = (timed_lo < timed_go) ? timed_lo : timed_go;
-                gbps = calculateGbps(timed, num_items * sizeof(float));
-                all_gbps[i] = std::max(all_gbps[i], gbps);
-
-                timed = 0;
-                timed_lo = 0;
-                timed_go = 0;
-                temp_global_size = (num_items / 2 / 16);
-                setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
-                timed_lo = runKernel(command_queue, command_list, local_offset_v2, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed_go = runKernel(command_queue, command_list, global_offset_v2, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed = (timed_lo < timed_go) ? timed_lo : timed_go;
-                gbps = calculateGbps(timed, num_items * sizeof(float));
-                all_gbps[i] = std::max(all_gbps[i], gbps);
-
-                timed = 0;
-                timed_lo = 0;
-                timed_go = 0;
-                temp_global_size = (num_items / 4 / 16);
-                setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
-                timed_lo = runKernel(command_queue, command_list, local_offset_v4, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed_go = runKernel(command_queue, command_list, global_offset_v4, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed = (timed_lo < timed_go) ? timed_lo : timed_go;
-                gbps = calculateGbps(timed, num_items * sizeof(float));
-                all_gbps[i] = std::max(all_gbps[i], gbps);
-
-                timed = 0;
-                timed_lo = 0;
-                timed_go = 0;
-                temp_global_size = (num_items / 8 / 16);
-                setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
-                timed_lo = runKernel(command_queue, command_list, local_offset_v8, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed_go = runKernel(command_queue, command_list, global_offset_v8, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed = (timed_lo < timed_go) ? timed_lo : timed_go;
-                gbps = calculateGbps(timed, num_items * sizeof(float));
-                all_gbps[i] = std::max(all_gbps[i], gbps);
-
-                timed = 0;
-                timed_lo = 0;
-                timed_go = 0;
-                temp_global_size = (num_items / 16 / 16);
-                setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
-                timed_lo = runKernel(command_queue, command_list, local_offset_v16, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed_go = runKernel(command_queue, command_list, global_offset_v16, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
-                timed = (timed_lo < timed_go) ? timed_lo : timed_go;
-                gbps = calculateGbps(timed, num_items * sizeof(float));
-                all_gbps[i] = std::max(all_gbps[i], gbps);
-
-                ret = zeKernelDestroy(local_offset_v1);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(global_offset_v1);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(local_offset_v2);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(global_offset_v2);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(local_offset_v4);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(global_offset_v4);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(local_offset_v8);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(global_offset_v8);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(local_offset_v16);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeKernelDestroy(global_offset_v16);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeCommandListDestroy(command_list);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandListDestroy()");
-                }
-                ret = zeCommandQueueDestroy(command_queue);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeCommandQueueDestroy()");
-                }
-                ret = zeMemFree(context, inputBuf);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeMemFree(context, outputBuf);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeModuleDestroy(module_handle);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeModuleDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-                ret = zeContextDestroy(context);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeContextDestroy()[" + zeResultErrorCodeStr(ret) + "]");
-                }
-            } catch (BaseException &e) {
-                XPUM_LOG_DEBUG("Error in memory bandwidth diagnostic");
-                all_gbps[i] = -1;
-                error_messages[i] = e.what();
-            } catch (...) {
-                XPUM_LOG_DEBUG("Error in memory bandwidth diagnostic");
-                all_gbps[i] = -1;
-            }
-        }));
-    }
-    for (std::size_t i = 0; i < memorybandwidth_threads.size(); i++) {
-        memorybandwidth_threads[i].join();
-    }
-    long double all_gbps_value = 0;
-    for (std::size_t i = 0; i < all_gbps.size(); i++) {
-        if (all_gbps[i] < 0) {
-            if (error_messages[i].length() == 0)
-                throw BaseException("unknown reasons");
-            else
-                throw BaseException(error_messages[i]);
+    std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
+    // show compute engine group perf data if all groups pass 
+    std::reverse(copyEngineGroupIds.begin(), copyEngineGroupIds.end());
+    for (auto copyEngineGroupId : copyEngineGroupIds) {
+        ze_result_t ret;
+        std::vector<ze_device_handle_t> device_handles;
+        std::vector<long double> all_gbps;
+        std::vector<std::thread> memorybandwidth_threads;
+        std::vector<std::string> error_messages;
+        uint32_t subdevice_count = 0;
+        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
         }
-        XPUM_LOG_DEBUG("memory bandwidth: {} GBPS", all_gbps[i]);
-        all_gbps_value += all_gbps[i];
-    }
 
-    std::string memorybandwidth_detail = "Its memory bandwidth is " + roundDouble(all_gbps_value, 3) + " GBPS.";
-    auto memorybandwidth_threshold = 0;
-    auto ref_memorybandwidth = 0;
-    if (device_names.find(ze_device) != device_names.end()) {
-        memorybandwidth_threshold = thresholds[device_names[ze_device]]["MEMORY_BANDWIDTH_MIN_GBPS"];
-        ref_memorybandwidth = thresholds[device_names[ze_device]]["REF_MEMORY_BANDWIDTH_GBPS"];
-    }
-    diagnostic_perf_datas[p_task_info->deviceId].memory_bandwidth = all_gbps_value;
-    diagnostic_perf_datas[p_task_info->deviceId].reference_memory_bandwidth = ref_memorybandwidth;
-    if (memorybandwidth_threshold <= 0) {
-        memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Fail to check memory bandwidth.";
-        desc += " " + memorybandwidth_detail;
-        desc += "  Unconfigured or invalid threshold.";
-        updateMessage(memorybandwidth_component.message, desc);
-    } else if (all_gbps_value < memorybandwidth_threshold) {
-        memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Fail to check memory bandwidth.";
-        desc += " " + memorybandwidth_detail;
-        desc += " Threshold is " + std::to_string(memorybandwidth_threshold) + " GBPS.";
-        updateMessage(memorybandwidth_component.message, desc);
-    } else {
-        memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        std::string desc = "Pass to check memory bandwidth.";
-        desc += " " + memorybandwidth_detail;
-        updateMessage(memorybandwidth_component.message, desc);
+        if (subdevice_count == 0) {
+            device_handles.push_back(ze_device);
+            all_gbps.push_back(0);
+            error_messages.push_back("");
+        } else {
+            std::vector<ze_device_handle_t> subdevices(subdevice_count);
+            ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw BaseException("zeDeviceGetSubDevices()[" + zeResultErrorCodeStr(ret) + "]");
+            }
+            for (auto &subdevice : subdevices) {
+                device_handles.push_back(subdevice);
+                all_gbps.push_back(0);
+                error_messages.push_back("");
+            }
+        }
+        for (std::size_t i = 0; i < device_handles.size(); i++) {
+            memorybandwidth_threads.push_back(std::thread([&all_gbps, &error_messages, i, &device_handles, &ze_driver, copyEngineGroupId]() {
+                try {
+                    ze_result_t ret;
+                    long double timed_lo, timed_go, timed, gbps;
+                    struct ZeWorkGroups workgroup_info;
+                    uint64_t temp_global_size;
+                    ze_device_properties_t device_properties;
+                    device_properties.pNext = nullptr;
+                    device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeDeviceGetProperties()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ze_device_compute_properties_t device_compute_properties;
+                    device_compute_properties.pNext = nullptr;
+                    device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeDeviceGetComputeProperties()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ze_context_handle_t context;
+                    ze_context_desc_t context_desc = {
+                            ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                            nullptr, 
+                            0
+                    };
+                    XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeContextCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ze_module_handle_t module_handle;
+                    ze_module_desc_t module_description = {};
+                    std::vector<uint8_t> binary_file = loadBinaryFile("ze_global_bw.spv");
+                    module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+                    module_description.pNext = nullptr;
+                    module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
+                    module_description.inputSize = static_cast<uint32_t>(binary_file.size());
+                    module_description.pInputModule = binary_file.data();
+                    module_description.pBuildFlags = nullptr;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeModuleCreate(context, device_handles[i], &module_description, &module_handle, nullptr));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeModuleCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    uint64_t max_items = device_properties.maxMemAllocSize / sizeof(float) / 2;
+                    uint64_t num_items = std::min(max_items, (uint64_t)(1 << 29));
+                    uint64_t base = (uint64_t)device_compute_properties.maxGroupSizeX * 16 * 16;
+                    num_items = (num_items / base) * base;
+
+                    std::vector<float> arr(static_cast<uint32_t>(num_items));
+                    for (uint32_t i = 0; i < num_items; i++) {
+                        arr[i] = static_cast<float>(i);
+                    }
+
+                    num_items = setWorkgroups(device_compute_properties, num_items, &workgroup_info);
+
+                    void *inputBuf;
+                    ze_device_mem_alloc_desc_t in_device_desc = {};
+                    in_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                    in_device_desc.pNext = nullptr;
+                    in_device_desc.ordinal = 0;
+                    in_device_desc.flags = 0;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &in_device_desc, static_cast<size_t>((num_items * sizeof(float))), 1, device_handles[i], &inputBuf));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemAllocDevice()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    void *outputBuf;
+                    ze_device_mem_alloc_desc_t out_device_desc = {};
+                    out_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                    out_device_desc.pNext = nullptr;
+                    out_device_desc.ordinal = 0;
+                    out_device_desc.flags = 0;
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &out_device_desc, static_cast<size_t>((num_items * sizeof(float))), 1, device_handles[i], &outputBuf));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemAllocDevice()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ze_command_list_handle_t copy_command_list;
+                    ze_command_list_desc_t copy_command_list_description{};
+                    copy_command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+                    copy_command_list_description.pNext = nullptr;
+                    copy_command_list_description.flags = ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY;
+                    copy_command_list_description.commandQueueGroupOrdinal = copyEngineGroupId;
+
+                    ze_command_queue_handle_t copy_command_queue;
+                    ze_command_queue_desc_t copy_command_queue_description{};
+                    copy_command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+                    copy_command_queue_description.pNext = nullptr;
+                    copy_command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+                    copy_command_queue_description.flags = ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY;
+                    copy_command_queue_description.ordinal = copyEngineGroupId;
+                    copy_command_queue_description.index = 0;
+
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &copy_command_list_description, &copy_command_list));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &copy_command_queue_description, &copy_command_queue));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandListAppendMemoryCopy(copy_command_list, inputBuf, arr.data(), (arr.size() * sizeof(float)), nullptr, 0, nullptr);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListAppendMemoryCopy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandListAppendBarrier(copy_command_list, nullptr, 0, nullptr);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListAppendBarrier()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandListClose(copy_command_list);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListClose()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandQueueExecuteCommandLists(copy_command_queue, 1, &copy_command_list, nullptr);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueExecuteCommandLists()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandQueueSynchronize(copy_command_queue, UINT64_MAX);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueSynchronize()[" + zeResultErrorCodeStr(ret) + "]");
+                    } 
+                    ret = zeCommandListReset(copy_command_list);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListReset()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+
+                    ze_command_list_handle_t command_list;
+                    ze_command_list_desc_t command_list_description{};
+                    command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+                    command_list_description.pNext = nullptr;
+                    command_list_description.flags = ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY;
+                    command_list_description.commandQueueGroupOrdinal = 0;
+
+                    ze_command_queue_handle_t command_queue;
+                    ze_command_queue_desc_t command_queue_description{};
+                    command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+                    command_queue_description.pNext = nullptr;
+                    command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+                    command_queue_description.flags = ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY;
+                    command_queue_description.ordinal = 0;
+                    command_queue_description.index = 0;
+
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &command_list_description, &command_list));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &command_queue_description, &command_queue));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueCreate()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ze_kernel_handle_t local_offset_v1;
+                    ze_kernel_handle_t local_offset_v2;
+                    ze_kernel_handle_t local_offset_v4;
+                    ze_kernel_handle_t local_offset_v8;
+                    ze_kernel_handle_t local_offset_v16;
+                    ze_kernel_handle_t global_offset_v1;
+                    ze_kernel_handle_t global_offset_v2;
+                    ze_kernel_handle_t global_offset_v4;
+                    ze_kernel_handle_t global_offset_v8;
+                    ze_kernel_handle_t global_offset_v16;
+
+                    setupFunction(module_handle, local_offset_v1, "global_bandwidth_v1_local_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, global_offset_v1, "global_bandwidth_v1_global_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, local_offset_v2, "global_bandwidth_v2_local_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, global_offset_v2, "global_bandwidth_v2_global_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, local_offset_v4, "global_bandwidth_v4_local_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, global_offset_v4, "global_bandwidth_v4_global_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, local_offset_v8, "global_bandwidth_v8_local_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, global_offset_v8, "global_bandwidth_v8_global_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, local_offset_v16, "global_bandwidth_v16_local_offset", inputBuf, outputBuf);
+                    setupFunction(module_handle, global_offset_v16, "global_bandwidth_v16_global_offset", inputBuf, outputBuf);
+
+                    timed = 0;
+                    timed_lo = 0;
+                    timed_go = 0;
+                    temp_global_size = (num_items / 16);
+                    setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
+                    timed_lo = runKernel(command_queue, command_list, local_offset_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed_go = runKernel(command_queue, command_list, global_offset_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed = (timed_lo < timed_go) ? timed_lo : timed_go;
+                    gbps = calculateGbps(timed, num_items * sizeof(float));
+                    all_gbps[i] = std::max(all_gbps[i], gbps);
+
+                    timed = 0;
+                    timed_lo = 0;
+                    timed_go = 0;
+                    temp_global_size = (num_items / 2 / 16);
+                    setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
+                    timed_lo = runKernel(command_queue, command_list, local_offset_v2, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed_go = runKernel(command_queue, command_list, global_offset_v2, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed = (timed_lo < timed_go) ? timed_lo : timed_go;
+                    gbps = calculateGbps(timed, num_items * sizeof(float));
+                    all_gbps[i] = std::max(all_gbps[i], gbps);
+
+                    timed = 0;
+                    timed_lo = 0;
+                    timed_go = 0;
+                    temp_global_size = (num_items / 4 / 16);
+                    setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
+                    timed_lo = runKernel(command_queue, command_list, local_offset_v4, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed_go = runKernel(command_queue, command_list, global_offset_v4, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed = (timed_lo < timed_go) ? timed_lo : timed_go;
+                    gbps = calculateGbps(timed, num_items * sizeof(float));
+                    all_gbps[i] = std::max(all_gbps[i], gbps);
+
+                    timed = 0;
+                    timed_lo = 0;
+                    timed_go = 0;
+                    temp_global_size = (num_items / 8 / 16);
+                    setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
+                    timed_lo = runKernel(command_queue, command_list, local_offset_v8, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed_go = runKernel(command_queue, command_list, global_offset_v8, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed = (timed_lo < timed_go) ? timed_lo : timed_go;
+                    gbps = calculateGbps(timed, num_items * sizeof(float));
+                    all_gbps[i] = std::max(all_gbps[i], gbps);
+
+                    timed = 0;
+                    timed_lo = 0;
+                    timed_go = 0;
+                    temp_global_size = (num_items / 16 / 16);
+                    setWorkgroups(device_compute_properties, temp_global_size, &workgroup_info);
+                    timed_lo = runKernel(command_queue, command_list, local_offset_v16, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed_go = runKernel(command_queue, command_list, global_offset_v16, workgroup_info, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH);
+                    timed = (timed_lo < timed_go) ? timed_lo : timed_go;
+                    gbps = calculateGbps(timed, num_items * sizeof(float));
+                    all_gbps[i] = std::max(all_gbps[i], gbps);
+
+                    ret = zeKernelDestroy(local_offset_v1);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(global_offset_v1);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(local_offset_v2);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(global_offset_v2);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(local_offset_v4);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(global_offset_v4);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(local_offset_v8);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(global_offset_v8);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(local_offset_v16);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeKernelDestroy(global_offset_v16);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeKernelDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeCommandListDestroy(command_list);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListDestroy()");
+                    }
+                    ret = zeCommandQueueDestroy(command_queue);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueDestroy()");
+                    }
+                    ret = zeCommandListDestroy(copy_command_list);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandListDestroy()");
+                    }
+                    ret = zeCommandQueueDestroy(copy_command_queue);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeCommandQueueDestroy()");
+                    }
+                    ret = zeMemFree(context, inputBuf);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeMemFree(context, outputBuf);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeMemFree()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeModuleDestroy(module_handle);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeModuleDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                    ret = zeContextDestroy(context);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zeContextDestroy()[" + zeResultErrorCodeStr(ret) + "]");
+                    }
+                } catch (BaseException &e) {
+                    XPUM_LOG_DEBUG("Error in memory bandwidth diagnostic {}", e.what());
+                    all_gbps[i] = -1;
+                    error_messages[i] = e.what();
+                } catch (...) {
+                    XPUM_LOG_DEBUG("Error in memory bandwidth diagnostic");
+                    all_gbps[i] = -1;
+                }
+            }));
+        }
+        for (std::size_t i = 0; i < memorybandwidth_threads.size(); i++) {
+            memorybandwidth_threads[i].join();
+        }
+        long double all_gbps_value = 0;
+        for (std::size_t i = 0; i < all_gbps.size(); i++) {
+            if (all_gbps[i] < 0) {
+                if (error_messages[i].length() == 0)
+                    throw BaseException("unknown reasons");
+                else
+                    throw BaseException(error_messages[i]);
+            }
+            all_gbps_value += all_gbps[i];
+        }
+        XPUM_LOG_DEBUG("memory bandwidth on copy engine group {}, {} GBPS", copyEngineGroupId, roundDouble(all_gbps_value, 3));
+
+        std::string memorybandwidth_detail = "Its memory bandwidth is " + roundDouble(all_gbps_value, 3) + " GBPS.";
+        auto memorybandwidth_threshold = 0;
+        auto ref_memorybandwidth = 0;
+        if (device_names.find(ze_device) != device_names.end()) {
+            memorybandwidth_threshold = thresholds[device_names[ze_device]]["MEMORY_BANDWIDTH_MIN_GBPS"];
+            ref_memorybandwidth = thresholds[device_names[ze_device]]["REF_MEMORY_BANDWIDTH_GBPS"];
+        }
+        diagnostic_perf_datas[p_task_info->deviceId].memory_bandwidth = all_gbps_value;
+        diagnostic_perf_datas[p_task_info->deviceId].reference_memory_bandwidth = ref_memorybandwidth;
+        if (memorybandwidth_threshold <= 0) {
+            memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+            std::string desc = "Fail to check memory bandwidth.";
+            desc += " " + memorybandwidth_detail;
+            desc += "  Unconfigured or invalid threshold.";
+            updateMessage(memorybandwidth_component.message, desc);
+        } else if (all_gbps_value < memorybandwidth_threshold) {
+            memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+            std::string desc = "Fail to check memory bandwidth.";
+            desc += " " + memorybandwidth_detail;
+            desc += " Threshold is " + std::to_string(memorybandwidth_threshold) + " GBPS.";
+            updateMessage(memorybandwidth_component.message, desc);
+        } else {
+            memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+            std::string desc = "Pass to check memory bandwidth.";
+            desc += " " + memorybandwidth_detail;
+            updateMessage(memorybandwidth_component.message, desc);
+        }
+
+        if (memorybandwidth_component.result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+            std::string desc(memorybandwidth_component.message);
+            desc += " Fail on copy engine group " + std::to_string(copyEngineGroupId) + ".";
+            updateMessage(memorybandwidth_component.message, desc);
+            break;
+        }
     }
     subtask_done.store(true);
     read_temperature_thread.join();
@@ -3555,7 +3619,7 @@ void DiagnosticManager::getXeLinkPortTransmitCounters(const zes_device_handle_t&
 
 void DiagnosticManager::copyMemoryDataAndCalculateXeLinkThroughput(const ze_driver_handle_t &ze_driver, std::vector<std::tuple<ze_device_handle_t, zes_device_handle_t, int32_t, ze_device_handle_t, zes_device_handle_t, int32_t>> test_pairs,
                                              std::map<xpum_device_id_t, PerfDatas> &diagnostic_perf_datas,
-                                             std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas) {
+                                             std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas, int copyEngineGroupId) {
     for (auto test_pair : test_pairs) {
         size_t mem_size = 268435456; /* 256 MiB. Consistent with ze_peer.*/
 
@@ -3591,6 +3655,7 @@ void DiagnosticManager::copyMemoryDataAndCalculateXeLinkThroughput(const ze_driv
         }
         ze_command_list_desc_t command_list_description = {};
         command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+        command_list_description.commandQueueGroupOrdinal = copyEngineGroupId;
         src_device_instance.cmd_list = nullptr;
         XPUM_ZE_HANDLE_LOCK(src_device_instance.device, ret = zeCommandListCreate(context, src_device_instance.device, &command_list_description, &src_device_instance.cmd_list));
         if (ret != ZE_RESULT_SUCCESS) {
@@ -3599,7 +3664,7 @@ void DiagnosticManager::copyMemoryDataAndCalculateXeLinkThroughput(const ze_driv
 
         ze_command_queue_desc_t command_queue_description = {};
         command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-        command_queue_description.ordinal = 0;
+        command_queue_description.ordinal = copyEngineGroupId;
         command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_DEFAULT;
         command_queue_description.flags = 0;
         command_queue_description.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL;
@@ -3743,12 +3808,13 @@ void DiagnosticManager::copyMemoryDataAndCalculateXeLinkThroughput(const ze_driv
                     + std::to_string(tx_data.first[5]);
                 if (xe_link_data_tx.dstDeviceId == std::get<5>(test_pair)) {
                     diagnostic_perf_datas[std::get<2>(test_pair)].xe_link_throughtput.push_back(xe_link_data_tx.currentSpeed);
-                    if (xe_link_data_tx.currentSpeed < xe_link_data_tx.threshold) {
+                    // when select compute engine group, check all tile ports, otherwise check tile 0 ports becasue only copy engines from stack-0 are used with implicit scaling.
+                    if (xe_link_data_tx.currentSpeed < xe_link_data_tx.threshold && (copyEngineGroupId == 0 || tx_data.first[1] == 0)) {
                         xe_link_throughput_datas[std::get<2>(test_pair)].push_back(xe_link_data_tx);
-                        XPUM_LOG_DEBUG("failed test - fabric port {}, max_speed: {} GBPS, current_speed: {} GBPS, threshold: {} GBPS", peer_ports
+                        XPUM_LOG_DEBUG("failed test on copy engine group {} - fabric port {}, max_speed: {} GBPS, current_speed: {} GBPS, threshold: {} GBPS", copyEngineGroupId, peer_ports
                         , xe_link_data_tx.maxSpeed, xe_link_data_tx.currentSpeed, xe_link_data_tx.threshold);
                     } else {
-                        XPUM_LOG_DEBUG("passed test - fabric port {}, max_speed: {} GBPS, current_speed: {} GBPS, threshold: {} GBPS", peer_ports
+                        XPUM_LOG_DEBUG("passed test on copy engine group {} - fabric port {}, max_speed: {} GBPS, current_speed: {} GBPS, threshold: {} GBPS", copyEngineGroupId, peer_ports
                         , xe_link_data_tx.maxSpeed, xe_link_data_tx.currentSpeed, xe_link_data_tx.threshold);                    
                     }
                 }
@@ -3815,8 +3881,7 @@ void DiagnosticManager::doDiagnosticXeLinkThroughput(const ze_device_handle_t &z
         updateMessage(xe_link_throughput_component.message, failed_port_status_message);
         return;
     }
-    xe_link_throughput_datas.clear();
-    // src_device_handle, src_device_id, dst_device_hanle, dst_device_id
+
     std::vector<std::tuple<ze_device_handle_t, zes_device_handle_t, int32_t, ze_device_handle_t, zes_device_handle_t, int32_t>> test_pairs;
     for (auto device : devices) {
         ze_device_handle_t peer_ze_device = device->getDeviceZeHandle();
@@ -3905,27 +3970,36 @@ void DiagnosticManager::doDiagnosticXeLinkThroughput(const ze_device_handle_t &z
     std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
 
-    copyMemoryDataAndCalculateXeLinkThroughput(ze_driver, test_pairs, diagnostic_perf_datas, xe_link_throughput_datas);
-    
-    bool find_failed_port = false;
-    for (auto data : xe_link_throughput_datas) {
-        for (auto item : data.second) {
-            if (item.srcDeviceId == device_id || item.dstDeviceId == device_id) {
-                find_failed_port = true;
-                break;
+    std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
+    // show compute engine group perf data if all groups pass 
+    std::reverse(copyEngineGroupIds.begin(), copyEngineGroupIds.end());
+    for (auto copyEngineGroupId : copyEngineGroupIds) {
+        xe_link_throughput_datas.clear();
+
+        copyMemoryDataAndCalculateXeLinkThroughput(ze_driver, test_pairs, diagnostic_perf_datas, xe_link_throughput_datas, copyEngineGroupId);
+        
+        bool find_failed_port = false;
+        for (auto data : xe_link_throughput_datas) {
+            for (auto item : data.second) {
+                if (item.srcDeviceId == device_id || item.dstDeviceId == device_id) {
+                    find_failed_port = true;
+                    break;
+                }
             }
+            if (find_failed_port)
+                break;
         }
-        if (find_failed_port)
-            break;
-    }
-       
-    if (!find_failed_port) {
-        updateMessage(xe_link_throughput_component.message, std::string("Pass to check Xe Link throughput."));
-        xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-    } else {
-        updateMessage(xe_link_throughput_component.message, std::string("Some Xe Link throughput is low."));
-        xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;   
-    }
+        
+        if (!find_failed_port) {
+            updateMessage(xe_link_throughput_component.message, std::string("Pass to check Xe Link throughput."));
+            xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+        } else {
+            std::string desc = "Some Xe Link throughput is low. Fail on copy engine group " + std::to_string(copyEngineGroupId) + "."; 
+            updateMessage(xe_link_throughput_component.message, desc);
+            xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+            break;   
+        }
+    } 
     subtask_done.store(true);
     read_temperature_thread.join();
     XPUM_LOG_INFO("read temperature thread end");

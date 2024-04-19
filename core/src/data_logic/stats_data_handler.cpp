@@ -137,7 +137,7 @@ std::shared_ptr<MeasurementData> StatsDataHandler::getLatestStatistics(std::stri
         }
     }
 
-    if (multi_sessions_data.find(session_id) != multi_sessions_data.end() && datas[device_id] != nullptr) {
+    if (multi_sessions_data.find(session_id) != multi_sessions_data.end() && datas.find(device_id) != datas.end() && datas[device_id] != nullptr) {
         std::map<std::string, Statistics_data>::iterator iter = multi_sessions_data[session_id].find(device_id);
         auto &stats = iter->second;
         if (iter != multi_sessions_data[session_id].end()) {

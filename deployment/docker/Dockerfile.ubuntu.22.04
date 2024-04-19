@@ -30,7 +30,6 @@ RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
-RUN pip install gunicorn[gthread]
 WORKDIR /opt/venv
 RUN find . -name "pip*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "*normalizer*" -exec rm -rf {} \; ;exit 0

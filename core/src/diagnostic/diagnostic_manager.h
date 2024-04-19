@@ -238,7 +238,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     
     static void copyMemoryDataAndCalculateXeLinkThroughput(const ze_driver_handle_t &ze_driver, std::vector<std::tuple<ze_device_handle_t, zes_device_handle_t, int32_t, ze_device_handle_t, zes_device_handle_t, int32_t>> test_pairs,
                                                         std::map<xpum_device_id_t, PerfDatas> &diagnostic_perf_datas,
-                                                        std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas);
+                                                        std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas, int copyEngineGroupId);
+
+
+    static std::vector<int> getDeviceAvailableCopyEngingGroups(const ze_device_handle_t& ze_device, bool onlyComputeMainCopy);
 
     static void getXeLinkPortTransmitCounters(const zes_device_handle_t& zes_device, int32_t device_id, std::map<std::vector<int32_t>, uint64_t>& tx_counters, double& max_speed);
 

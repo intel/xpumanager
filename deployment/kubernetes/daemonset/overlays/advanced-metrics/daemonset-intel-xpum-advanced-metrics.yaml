@@ -1,3 +1,10 @@
+#
+# Copyright (C) 2021-2023 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file daemonset-intel-xpum-advanced-metrics.yaml
+#
+
+# Adding support for monitoring PCIe Throughput and Execution Unit (EU) Metrics
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -19,7 +26,7 @@ spec:
         - name: XPUM_EXPORTER_ONLY
           value: "1"
         - name: XPUM_METRICS
-          value: 0-38
+          value: 0-39
         resources:
           limits:
             # maps all GPUs to container
@@ -30,9 +37,9 @@ spec:
             smarter-devices/cpu: 1
             smarter-devices/mem: 1
         securityContext:
-          privileged: true
-          allowPrivilegeEscalation: true
-          runAsUser: 0
+          capabilities:
+            drop: [ "ALL" ]
+            add:  [ "SYS_ADMIN", "SYS_RAWIO" ]
         volumeMounts:
           # for precheck
         - mountPath: /sys/kernel/debug

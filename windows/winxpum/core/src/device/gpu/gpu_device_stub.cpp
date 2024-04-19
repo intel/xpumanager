@@ -15,6 +15,7 @@
 #include "infrastructure/configuration.h"
 #include "infrastructure/utility.h"
 #include "api/device_model.h"
+#include "core/core.h"
 
 #include <iomanip>
 
@@ -951,6 +952,7 @@ namespace xpum {
         }
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
         XPUM_LOG_DEBUG("res = {}, engine_count = {}", res, engine_count);
+        bool _engineGroupDataGotten = false;
         if (res == ZE_RESULT_SUCCESS && engine_count > 0) {
             std::vector<zes_engine_handle_t> engines(engine_count);
             std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
@@ -1008,6 +1010,7 @@ namespace xpum {
                                 val = (snap2.activeTime - snap1.activeTime) * 100.0 / (snap2.timestamp - snap1.timestamp);
                                 if (val <= 100.0 && val >= 0) {
                                     valid = true;
+                                    _engineGroupDataGotten = valid || _engineGroupDataGotten;
                                 }
                             }
                             if (res == ZE_RESULT_SUCCESS && valid == true) {
@@ -1027,8 +1030,11 @@ namespace xpum {
             } else {
                 exception_msgs["zesDeviceEnumEngineGroups"] = res;
             }
-        } else {
-            // When running on VF, zesDeviceEnumEngineGroups would return ZE_RESULT_SUCCESS and the engine_count would be 0; on PF, the engine_count would be greater than 0. So use this condition to see if on VF. If the behavior of zesDeviceEnumEngineGroups API was changed in the future, we may need to update the code here accordingly.
+        }
+        std::vector<std::shared_ptr<Device>> devices;
+        Core::instance().getDeviceManager()->getDeviceList(devices);
+        const int deviceCount = devices.size();
+        if (!_engineGroupDataGotten && deviceCount == 1) {
             if (type == MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) {
                 ret->setCurrent((uint64_t)(getCopyEngineUtilByNativeAPI() * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE));
                 ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);

@@ -55,7 +55,25 @@ class ComletDump : public ComletBase {
     std::ofstream dumpFile;
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
-    std::set<std::string> sumMetricsList{"XPUM_STATS_MEMORY_READ", "XPUM_STATS_MEMORY_WRITE", "XPUM_STATS_MEMORY_READ_THROUGHPUT", "XPUM_STATS_MEMORY_WRITE_THROUGHPUT", "XPUM_STATS_MEMORY_USED", "XPUM_STATS_PCIE_READ_THROUGHPUT", "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "XPUM_STATS_RAS_ERROR_CAT_RESET", "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE"};
+    std::set<std::string> sumMetricsList{ "XPUM_STATS_MEMORY_READ", 
+                                            "XPUM_STATS_MEMORY_WRITE", 
+                                            "XPUM_STATS_MEMORY_READ_THROUGHPUT", 
+                                            "XPUM_STATS_MEMORY_WRITE_THROUGHPUT", 
+                                            "XPUM_STATS_MEMORY_USED", 
+                                            "XPUM_STATS_PCIE_READ_THROUGHPUT", 
+                                            "XPUM_STATS_PCIE_WRITE_THROUGHPUT", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_RESET", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", 
+                                            "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE",
+                                            "XPUM_STATS_ENERGY",
+                                            "XPUM_STATS_POWER"
+                                            };
 
    public:
     ComletDump() : ComletBase("dump", "Dump device statistics data.") {

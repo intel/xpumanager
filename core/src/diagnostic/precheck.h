@@ -12,7 +12,7 @@
 
 namespace xpum {
 
-const int XPUM_MAX_PRECHECK_ERROR_TYPE_INFO_LIST_SIZE = 16;
+const int XPUM_MAX_PRECHECK_ERROR_TYPE_INFO_LIST_SIZE = 17;
 
 const int PROCESSOR_COUNT = std::thread::hardware_concurrency();
 
@@ -32,7 +32,8 @@ const xpum_precheck_error_t PRECHECK_ERROR_TYPE_INFO_LIST[XPUM_MAX_PRECHECK_ERRO
     {errorId : 13, errorType : XPUM_HUC_NOT_RUNNING, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
     {errorId : 14, errorType : XPUM_LEVEL_ZERO_METRICS_INIT_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_UMD, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH},
     {errorId : 15, errorType : XPUM_MEMORY_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
-    {errorId : 16, errorType : XPUM_GPU_INITIALIZATION_FAILED, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL}};
+    {errorId : 16, errorType : XPUM_GPU_INITIALIZATION_FAILED, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
+    {errorId : 17, errorType : XPUM_MEI_ERROR, errorCategory : XPUM_PRECHECK_ERROR_CATEGORY_KMD, errorSeverity : XPUM_PRECHECK_ERROR_SEVERITY_HIGH}};
 
 struct ErrorPattern {
     std::string pattern;
@@ -62,11 +63,13 @@ const std::vector<ErrorPattern> error_patterns = {
         {".*drm.*ERROR.*", "i915", XPUM_PRECHECK_COMPONENT_TYPE_DRIVER, XPUM_DRM_ERROR},
         // cpu error
         {".*(mce|mca).*err.*", "", XPUM_PRECHECK_COMPONENT_TYPE_CPU, -1,  XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
-        {".*caterr.*", "", XPUM_PRECHECK_COMPONENT_TYPE_CPU, -1, XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL}
+        {".*caterr.*", "", XPUM_PRECHECK_COMPONENT_TYPE_CPU, -1, XPUM_PRECHECK_ERROR_CATEGORY_HARDWARE, XPUM_PRECHECK_ERROR_SEVERITY_CRITICAL},
+        // mei error
+        {".*mei_gsc.*(id exceeded).*", "", XPUM_PRECHECK_COMPONENT_TYPE_DRIVER, 17, XPUM_PRECHECK_ERROR_CATEGORY_KMD, XPUM_PRECHECK_ERROR_SEVERITY_HIGH}
 };
 
 // The order of the vector impacts how error patterns are matched. It starts from special patterns to general patterns.
-const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", "forcewake", "i915", "drm",  "mce", "mca", "caterr"};
+const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", "forcewake", "mei", "i915", "drm",  "mce", "mca", "caterr"};
 
 class PrecheckManager {
    public:

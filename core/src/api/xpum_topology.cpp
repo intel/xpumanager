@@ -238,8 +238,10 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
 
             topoInfo.maxBitRate = -1;
 
-            if (fabricPorts[x].enabled && fabricPorts[x].healthy && fabricPorts[x].fabric_existing) {
-                if (fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId) {
+            if (fabricPorts[x].enabled && fabricPorts[x].healthy && fabricPorts[x].fabric_existing &&
+            fabricPorts[y].enabled && fabricPorts[y].healthy && fabricPorts[y].fabric_existing) {
+                if (fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId &&
+                fabricPorts[y].remotePortId == fabricPorts[x].localPortProp.portId) {
                     topoInfo.linkType = XPUM_LINK_XE;
                     XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}",
                                    fabricPorts[x].deviceId, fabricPorts[x].localPortProp.subdeviceId,

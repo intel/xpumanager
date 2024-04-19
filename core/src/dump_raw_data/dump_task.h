@@ -71,7 +71,9 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
                                                         XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
                                                         XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
                                                         XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE,
-                                                        XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE
+                                                        XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,
+                                                        XPUM_STATS_ENERGY,
+                                                        XPUM_STATS_POWER
                                                         };
 
 

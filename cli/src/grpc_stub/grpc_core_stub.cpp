@@ -2380,6 +2380,7 @@ std::string errorTypeToStr(PrecheckErrorType type) {
         case LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
         case MEMORY_ERROR: ret = "Memory Error"; break;
         case GPU_INITIALIZATION_FAILED: ret = "GPU Initialization Failed"; break;
+        case MEI_ERROR: ret = "MEI Error"; break;
         default: break;
     }
     return ret;

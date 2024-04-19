@@ -2050,6 +2050,7 @@ std::string errorTypeToStr(xpum_precheck_error_type_t error_type) {
         case XPUM_LEVEL_ZERO_METRICS_INIT_ERROR: ret = "Level Zero Metrics Init Error"; break;
         case XPUM_MEMORY_ERROR: ret = "Memory Error"; break;
         case XPUM_GPU_INITIALIZATION_FAILED: ret = "GPU Initialization Failed"; break;
+        case XPUM_MEI_ERROR: ret = "MEI Error"; break;
         default: break;
     }
     return ret;
