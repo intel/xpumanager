@@ -34,6 +34,7 @@ static uint32_t getVFMaxNumberByPciDeviceId(int deviceId) {
     switch (deviceId) {
         case 0x56c0:
         case 0x56c1:
+        case 0x56c2:
             return 31;
         case 0x0bd4:
         case 0x0bd5:
@@ -747,7 +748,7 @@ xpum_result_t VgpuManager::vgpuValidateDevice(xpum_device_id_t deviceId) {
     }
     
     // Now we only need to support ATSM and some of PVC
-    std::vector<int> supportedDevices{0x56c0, 0x56c1, 0x0bd4, 0x0bd5, 0x0bd6, 0x0bda, 0x0bdb, 0x0b6e};
+    std::vector<int> supportedDevices{0x56c0, 0x56c1, 0x56c2, 0x0bd4, 0x0bd5, 0x0bd6, 0x0bda, 0x0bdb, 0x0b6e};
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
     int pciDeviceId = std::stoi(prop.getValue().substr(2), nullptr, 16);
     if (std::find(supportedDevices.begin(), supportedDevices.end(), pciDeviceId) == supportedDevices.end()) {
