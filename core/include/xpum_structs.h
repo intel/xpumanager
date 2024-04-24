@@ -451,6 +451,7 @@ typedef enum xpum_diag_task_type_enum {
     // level 3
     XPUM_DIAG_XE_LINK_THROUGHPUT = 14,
 
+    XPUM_DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT = 15,
     XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 

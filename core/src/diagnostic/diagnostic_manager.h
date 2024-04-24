@@ -44,18 +44,24 @@ struct DeviceInstance {
     ze_command_queue_handle_t cmd_queue;
 };
 
+struct DeviceCmdQueueAndListPairs {
+    std::vector<std::pair<ze_command_queue_handle_t, ze_command_list_handle_t>> engines;
+};
+
 struct PerfDatas {
     double pcie_bandwidth;
     double gflops;
     double memory_bandwidth;
     double peak_power;
     std::vector<double> xe_link_throughtput;
+    double xe_link_all_to_all_throughtput;  // all-to-all read and write bandwidth per GPU
 
     int reference_pcie_bandwidth;
     int reference_gflops;
     int reference_memory_bandwidth;
     int reference_peak_power;
     int reference_xe_link_throughtput;
+    int reference_xe_link_all_to_all_throughtput;
 };
 
 class DiagnosticManager : public DiagnosticManagerInterface {
@@ -155,6 +161,11 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                                             std::vector<std::shared_ptr<Device>> devices,
                                                             std::map<xpum_device_id_t, PerfDatas> &diagnostic_perf_datas,
                                                             std::map<xpum_device_id_t, std::vector<xpum_diag_xe_link_throughput_t>>& xe_link_throughput_datas);
+    
+    static void doDiagnosticXeLinkAllToAllThroughput(const ze_driver_handle_t &ze_driver,
+                                                    std::vector<std::shared_ptr<Device>> devices, 
+                                                    std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>>& diagnostic_task_infos, 
+                                                    std::map<xpum_device_id_t, PerfDatas> &diagnostic_perf_datas);
 
     static void doDiagnosticExceptionHandle(xpum_diag_task_type_t type, std::string error, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
@@ -178,7 +189,19 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static int REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE;
     
-    static int REF_XE_LINK_THROUGHPUT_TWO_RILE_DEVICE;
+    static int REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE;
+
+    static float XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF;
+
+    static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE;
+
+    static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE;
+
+    static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE;
+
+    static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE;
+
+    static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE;
 
     static uint64_t GPU_TEMPERATURE_THRESHOLD;
 
