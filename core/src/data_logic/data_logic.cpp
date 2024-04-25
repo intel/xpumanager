@@ -442,6 +442,7 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
         }
         ++iter;
     }
+    *count = index;
     return XPUM_OK;
 }
 

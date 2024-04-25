@@ -50,6 +50,7 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
                         if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
                             val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
                         }
+                        std::static_pointer_cast<EngineCollectionMeasurementData>(iter->second)->addSingleMeasurementData(engineHandle, engineRawData.on_subdevice, engineRawData.subdevice_id);
                         std::static_pointer_cast<EngineCollectionMeasurementData>(iter->second)->setDataCur(engineHandle, val);
                         iter->second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                     }
