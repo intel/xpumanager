@@ -74,11 +74,11 @@ float DiagnosticManager::XE_LINK_THROUGHPUT_USAGE_PERCENTAGE = 0.7;
 int DiagnosticManager::REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE = 23;
 int DiagnosticManager::REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE = 19;
 float DiagnosticManager::XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF = 0.8;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE = 235;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = 114;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = 606;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = 212;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = 135;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE = 117;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = 57;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = 303;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = 106;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = 67;
 const std::string DiagnosticManager::COMPONENT_TYPE_NOT_SUPPORTED = "Not supported";
 std::map<uint32_t, int32_t> DiagnosticManager::fabric_id_convert_to_device_id;
 std::map<int32_t, std::set<int32_t>> DiagnosticManager::device_id_link_to_device_ids;
@@ -399,21 +399,20 @@ void DiagnosticManager::combineMultiDeviceDiagnosticInfo(xpum::xpum_diag_task_in
     double memory_bandwidth_mean = calculateMean(perf_memory_bandwidth_datas);
     double peak_power_mean = calculateMean(perf_peak_powers);
     double xe_link_throughput_mean = calculateMean(perf_xe_link_throughput_datas);
-    double xe_link_all_to_all_throughput_mean = calculateMean(perf_xe_link_all_to_all_throughput_datas);
+    double xe_link_all_to_all_throughput_total = std::accumulate(perf_xe_link_all_to_all_throughput_datas.begin(), perf_xe_link_all_to_all_throughput_datas.end(), 0.0);
 
     double pcie_bandwidth_variance = calcaulateVariance(perf_pcie_bandwidth_datas);
     double gflops_variance = calcaulateVariance(perf_gflops_datas);
     double memory_bandwidth_variance = calcaulateVariance(perf_memory_bandwidth_datas);
     double peak_power_variance = calcaulateVariance(perf_peak_powers);
     double xe_link_throughput_variance = calcaulateVariance(perf_xe_link_throughput_datas);
-    double xe_link_all_to_all_throughput_variance = calcaulateVariance(perf_xe_link_all_to_all_throughput_datas);
 
     int pcie_bandwidth_ref = diagnostic_perf_datas.begin()->second.reference_pcie_bandwidth;
     int gflops_ref = diagnostic_perf_datas.begin()->second.reference_gflops;
     int memory_bandwidth_ref = diagnostic_perf_datas.begin()->second.reference_memory_bandwidth;
     int peak_power_ref = diagnostic_perf_datas.begin()->second.reference_peak_power;
     int xe_link_throughput_ref = diagnostic_perf_datas.begin()->second.reference_xe_link_throughtput;
-    int xe_link_all_to_all_throughput_ref = diagnostic_perf_datas.begin()->second.reference_xe_link_all_to_all_throughtput;
+    int xe_link_all_to_all_throughput_ref = diagnostic_perf_datas.begin()->second.reference_xe_link_all_to_all_throughtput * perf_xe_link_all_to_all_throughput_datas.size();
 
     for (int i = 0; i < result->count; i++) {
         xpum_diag_component_info_t &component = result->componentList[i];
@@ -478,8 +477,7 @@ void DiagnosticManager::combineMultiDeviceDiagnosticInfo(xpum::xpum_diag_task_in
                     break;
                 case XPUM_DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT:
                     desc = "Pass to check Xe Link all-to-all throughput.";
-                    desc += " \n Mean throughput between 2 GPU: " + roundDouble(xe_link_all_to_all_throughput_mean, 3) + " GBPS.";
-                    desc += " Var: " + roundDouble(xe_link_all_to_all_throughput_variance, 3) + ".";
+                    desc += " \n Throughput: " + roundDouble(xe_link_all_to_all_throughput_total, 3) + " GBPS.";
                     desc += " Ref: " + std::to_string(xe_link_all_to_all_throughput_ref) + " GBPS.";
                     break;
                 default:
@@ -4319,13 +4317,13 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
         uint32_t fabric_port_count = 0;
         XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumFabricPorts(zes_device, &fabric_port_count, nullptr));
         if (fabric_port_count == 0) {
-            failed_port_status_message = "Xe Link port not found on GPU " + device->getId();
+            failed_port_status_message = "Xe Link port not found";
             break;
         }
         std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_port_count);
         XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumFabricPorts(zes_device, &fabric_port_count, fabric_ports.data()));
         if (ret != ZE_RESULT_SUCCESS) {
-            failed_port_status_message = "Xe Link port not found on GPU " + device->getId();
+            failed_port_status_message = "Xe Link port not found";
             break;
         }
         for (auto& fabric_port: fabric_ports) {
@@ -4517,23 +4515,23 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
                         int32_t deviceId = std::stoi(port.first.substr(0, 1));
                         if (TxCnts.count(port.first) > 0 && currentTimestamps.count(port.first) > 0 && Timestamps.count(port.first)) {
                             txThroughtput = 1000000.0 * (port.second - TxCnts[port.first]) / (currentTimestamps[port.first] - Timestamps[port.first]) / 1000000000;
+                            // only count per GPU tx throughput
                             currentAllToallThroughputs[deviceId] += txThroughtput;
                             XPUM_LOG_DEBUG("peer_port : {} txThroughtput(GB/s): {}",  port.first, txThroughtput);
                         }
                     }
                     double rxThroughtput = 0;
                     for (auto port : currentRxCnts) {
-                        int32_t deviceId = std::stoi(port.first.substr(0, 1));
                         if (RxCnts.count(port.first) > 0 && currentTimestamps.count(port.first) > 0 && Timestamps.count(port.first)) {
                             rxThroughtput = 1000000.0 * (port.second - RxCnts[port.first]) / (currentTimestamps[port.first] - Timestamps[port.first]) / 1000000000;
-                            currentAllToallThroughputs[deviceId] += rxThroughtput;
+                            // log rx throughput info for debug 
                             XPUM_LOG_DEBUG("peer_port : {} rxThroughtput(GB/s): {}",  port.first, rxThroughtput);
                         }
                     }
                     double currentSum = std::accumulate(currentAllToallThroughputs.begin(), currentAllToallThroughputs.end(), 0.0);
                     if (currentSum > std::accumulate(allToallThroughputs.begin(), allToallThroughputs.end(), 0.0)) {
                         allToallThroughputs = currentAllToallThroughputs;
-                        XPUM_LOG_DEBUG("diagnostic: update max xe link all-to-all throughput");
+                        XPUM_LOG_DEBUG("diagnostic: update max xe link all-to-all throughput {}", currentSum);
                     }
                 }
 
@@ -4541,7 +4539,7 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
                 RxCnts = currentRxCnts;
                 Timestamps = currentTimestamps;
             } catch (...) {
-                XPUM_LOG_ERROR("Failed to get update Xe Link all-to-all throughput");
+                XPUM_LOG_ERROR("Failed to update Xe Link all-to-all throughput");
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
