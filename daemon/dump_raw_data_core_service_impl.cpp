@@ -61,6 +61,8 @@ static void removeFileOnStartTaskFail(std::string filePath) {
 
     int32_t deviceId = request->deviceid();
     int tileId = request->tileid();
+    xpum_dump_raw_data_option_t dumpOptions {};
+    dumpOptions.showDate = request->showdate();
 
     dumpRawDataFilenameMtx.lock();
     int64_t milli_sec = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -81,12 +83,13 @@ static void removeFileOnStartTaskFail(std::string filePath) {
 
     createEmptyFile(dumpFilePath);
 
-    auto res = xpumStartDumpRawDataTask(
+    auto res = xpumStartDumpRawDataTaskEx(
         deviceId,
         tileId,
         dumpTypeList.data(),
         dumpTypeList.size(),
         dumpFilePath.c_str(),
+        dumpOptions,
         &taskInfo);
     response->set_errorno(res);
     if (res == XPUM_OK) {

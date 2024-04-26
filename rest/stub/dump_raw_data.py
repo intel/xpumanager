@@ -15,7 +15,7 @@ url_prefix = "/download"
 dump_folder = "/tmp/xpumdump"
 
 
-def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
+def startDumpRawDataTask(deviceId, tileId, metricsTypeList, showDate=False):
 
     enumList = [core_pb2.GeneralEnum(
         value=XpumDumpType[m].value) for m in metricsTypeList]
@@ -23,7 +23,8 @@ def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
     resp = stub.startDumpRawDataTask(core_pb2.StartDumpRawDataTaskRequest(
         deviceId=deviceId,
         tileId=tileId,
-        metricsTypeList=enumList
+        metricsTypeList=enumList,
+        showDate=showDate
     ))
 
     if len(resp.errorMsg) != 0:

@@ -1277,6 +1277,30 @@ XPUM_API xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
                                        xpum_dump_raw_data_task_t *taskInfo);
 
 /**
+ * @brief Start dump raw data task. When call this function, core lib will start to write raw data into dump file 
+ * 
+ * @param deviceId      IN: Device id to query 
+ * @param tileId        IN: tile id to query, when pass -1, means to get device level data
+ * @param dumpTypeList   IN: metrics to dump
+ * @param count         IN: The count of entries in \a metricsTypeList
+ * @param dumpFilePath  IN: The path of file to dump raw data
+ * @param dumpOptions   IN: Dump Options for Raw Data Task
+ * @param taskInfo      OUT: The info of the task just created
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK  if query successfully
+ *      - \ref XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT  if not supported metrics type passed in
+ *      - \ref XPUM_GENERIC_ERROR if other error happens
+ * @note Support Platform: Linux
+ */
+XPUM_API xpum_result_t xpumStartDumpRawDataTaskEx(xpum_device_id_t deviceId,
+                                       xpum_device_tile_id_t tileId,
+                                       const xpum_dump_type_t dumpTypeList[],
+                                       const int count,
+                                       const char *dumpFilePath,
+                                       xpum_dump_raw_data_option_t dumpOptions,
+                                       xpum_dump_raw_data_task_t *taskInfo);
+
+/**
  * @brief Stop write to dumpFilePath
  * 
  * @param taskId      IN: Task id

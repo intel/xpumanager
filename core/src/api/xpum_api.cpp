@@ -3519,6 +3519,17 @@ xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
                                        const int count,
                                        const char *dumpFilePath,
                                        xpum_dump_raw_data_task_t *taskInfo) {
+    xpum_dump_raw_data_option_t dumpOptions {};
+    return xpumStartDumpRawDataTaskEx(deviceId, tileId, dumpTypeList, count, dumpFilePath, dumpOptions, taskInfo);
+}
+
+xpum_result_t xpumStartDumpRawDataTaskEx(xpum_device_id_t deviceId,
+                                       xpum_device_tile_id_t tileId,
+                                       const xpum_dump_type_t dumpTypeList[],
+                                       const int count,
+                                       const char *dumpFilePath,
+                                       xpum_dump_raw_data_option_t dumpOptions,
+                                       xpum_dump_raw_data_task_t *taskInfo) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -3530,7 +3541,7 @@ xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
         res = validateDeviceIdAndTileId(deviceId, tileId);
     if (res != XPUM_OK)
         return res;
-    return Core::instance().getDumpRawDataManager()->startDumpRawDataTask(deviceId, tileId, dumpTypeList, count, dumpFilePath, taskInfo);
+    return Core::instance().getDumpRawDataManager()->startDumpRawDataTask(deviceId, tileId, dumpTypeList, count, dumpFilePath, dumpOptions, taskInfo);
 }
 
 xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_data_task_t *taskInfo) {

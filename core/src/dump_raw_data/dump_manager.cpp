@@ -43,6 +43,7 @@ xpum_result_t DumpRawDataManager::
                          const xpum_dump_type_t dumpTypeList[],
                          const int count,
                          const char *dumpFilePath,
+                         xpum_dump_raw_data_option_t dumpOptions,
                          xpum_dump_raw_data_task_t *taskInfo) {
     std::lock_guard<std::mutex> lock(dumpMutex);
     if (dumpFilePath == nullptr)
@@ -71,6 +72,9 @@ xpum_result_t DumpRawDataManager::
 
     // create task
     std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath), pThreadPool);
+    
+    //set dumpOptions before start p_task
+    p_task->dumpOptions = dumpOptions;
 
     for (int i = 0; i < count; i++) {
         // p_task->metricsTypeList.push_back(dumpTypeList[i]);

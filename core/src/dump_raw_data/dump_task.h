@@ -42,6 +42,7 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
     std::vector<xpum_dump_type_t> dumpTypeList;
     std::string dumpFilePath;
     uint64_t begin;
+    xpum_dump_raw_data_option_t dumpOptions;
 
    private:
     std::shared_ptr<ScheduledThreadPool> pThreadPool;

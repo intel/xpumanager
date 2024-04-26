@@ -852,6 +852,7 @@ message StartDumpRawDataTaskRequest{
     uint32 deviceId = 1;
     int32 tileId = 2;
     repeated GeneralEnum metricsTypeList = 3;
+    bool showDate = 4;
 }
 
 message StartDumpRawDataTaskResponse{

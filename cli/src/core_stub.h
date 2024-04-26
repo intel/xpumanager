@@ -111,7 +111,7 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password, bool force=false)=0;
     virtual std::unique_ptr<nlohmann::json> getFirmwareFlashResult(int deviceId, unsigned int type)=0;
 
-    virtual std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList)=0;
+    virtual std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList, bool showDate=false)=0;
     virtual std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId)=0;
     virtual std::unique_ptr<nlohmann::json> listDumpRawDataTasks()=0;
     virtual std::unique_ptr<nlohmann::json> genDebugLog(const std::string &fileName) = 0;

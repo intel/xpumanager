@@ -1125,6 +1125,10 @@ typedef enum xpum_dump_type_enum {
     XPUM_DUMP_MAX
 } xpum_dump_type_t;
 
+typedef struct xpum_dump_raw_data_option_t {
+    bool showDate;                         ///< Show date or not in the timestamp
+} xpum_dump_raw_data_option_t;
+
 /**
  * @brief dump raw data task structure
  * 

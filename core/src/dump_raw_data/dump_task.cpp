@@ -36,6 +36,7 @@ DumpRawDataTask::DumpRawDataTask(xpum_dump_task_id_t taskId,
       pThreadPool(pThreadPool) {
     p_data_logic = xpum::Core::instance().getDataLogic();
     begin = 0;
+    dumpOptions = xpum_dump_raw_data_option_t{};
 }
 
 DumpRawDataTask::~DumpRawDataTask() {
@@ -90,8 +91,10 @@ void DumpRawDataTask::buildColumns() {
     auto p_this = shared_from_this();
 
     // timestamp column
+    auto showDate = p_this->dumpOptions.showDate;
+    XPUM_LOG_DEBUG("showDate: {}", showDate ? "true" : "false");
     columnList.push_back({"Timestamp",
-                          []() { return Utility::getCurrentLocalTimeString(); }});
+                          [showDate]() { return Utility::getCurrentLocalTimeString(showDate); }});
 
     // device id column
     auto deviceId = p_this->deviceId;
