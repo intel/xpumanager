@@ -4358,7 +4358,7 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
         for (auto& diagnostic_task_info : diagnostic_task_infos) {
             xpum_diag_component_info_t &xe_link_throughput_component = diagnostic_task_info.second->componentList[xpum_diag_task_type_t::XPUM_DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT];
             xe_link_throughput_component.finished = true;
-            if (failed_port_status_message.size() > 0)
+            if (isPVCPlatform && failed_port_status_message.size() > 0)
                 updateMessage(xe_link_throughput_component.message, failed_port_status_message);
             else
                 updateMessage(xe_link_throughput_component.message, COMPONENT_TYPE_NOT_SUPPORTED);
