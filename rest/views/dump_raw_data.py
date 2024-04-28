@@ -91,7 +91,7 @@ def startDumpRawDataTask():
     deviceId = reqData.get("device_id")
     metricsTypeList = reqData.get("metrics_type_list")
     tileId = reqData.get("tile_id", -1)
-    show_date = reqData.get("show_date")
+    showDate = reqData.get("show_date")
     code, message, data = stub.startDumpRawDataTask(
         deviceId, tileId, metricsTypeList, showDate)
     if code == 0:
