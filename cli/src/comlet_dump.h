@@ -38,6 +38,7 @@ struct ComletDumpOptions {
     // bool stopDumpTask;
     bool listDumpTask;
     int dumpTaskId = -1;
+    bool showDate;
 };
 
 class ComletDump : public ComletBase {

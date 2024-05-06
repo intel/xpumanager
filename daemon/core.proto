@@ -165,6 +165,7 @@ message DiagnosticsComponentInfo{
     DIAG_MEMORY_ERROR = 12;
     DIAG_LIGHT_CODEC = 13;
     DIAG_XE_LINK_THROUGHPUT = 14;
+    DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT = 15;
   }
   Type type = 1;
   bool finished = 2;
@@ -851,6 +852,7 @@ message StartDumpRawDataTaskRequest{
     uint32 deviceId = 1;
     int32 tileId = 2;
     repeated GeneralEnum metricsTypeList = 3;
+    bool showDate = 4;
 }
 
 message StartDumpRawDataTaskResponse{

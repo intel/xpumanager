@@ -135,6 +135,7 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html">struct xpum_diag_media_codec_metrics_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_task_info_t.html">struct xpum_diag_task_info_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_xe_link_throughput_t.html">struct xpum_diag_xe_link_throughput_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_dump_raw_data_option_t.html">struct xpum_dump_raw_data_option_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html">struct xpum_dump_raw_data_task_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_fabric_port_config_t.html">struct xpum_fabric_port_config_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_firmware_flash_job.html">struct xpum_firmware_flash_job</a></li>
@@ -345,6 +346,7 @@
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html#xpum-doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_diag_task_info_t.html#xpum-doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_diag_xe_link_throughput_t.html#xpum-doxid-structxpum-diag-xe-link-throughput-t"><span class="std std-ref">xpum_diag_xe_link_throughput_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="struct_xpum_dump_raw_data_option_t.html#xpum-doxid-structxpum-dump-raw-data-option-t"><span class="std std-ref">xpum_dump_raw_data_option_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_fabric_port_config_t.html#xpum-doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_firmware_flash_job.html#xpum-doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="p">;</span>
@@ -815,6 +817,16 @@ XPUM_API<span></span> <a class="reference internal" href="#xpum-doxid-xpum-struc
     <span class="k">const</span> <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[],</span>
     <span class="k">const</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">dumpFilePath</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
+    <span class="p">);</span>
+
+XPUM_API<span></span> <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStartDumpRawDataTaskEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[],</span>
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">dumpFilePath</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_option_t.html#xpum-doxid-structxpum-dump-raw-data-option-t"><span class="std std-ref">xpum_dump_raw_data_option_t</span></a><span></span> <span class="n">dumpOptions</span><span class="p">,</span>
     <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#xpum-doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
     <span class="p">);</span>
 

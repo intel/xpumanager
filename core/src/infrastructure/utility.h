@@ -24,11 +24,11 @@ class Utility {
 
     static std::string getCurrentTimeString();
 
-    static std::string getCurrentLocalTimeString();
+    static std::string getCurrentLocalTimeString(bool showData=false);
 
     static std::string getTimeString(long long milliseconds);
 
-    static std::string getLocalTimeString(uint64_t milliseconds);
+    static std::string getLocalTimeString(uint64_t milliseconds, bool showData=false);
 
     static MeasurementType measurementTypeFromCapability(DeviceCapability& capability);
 

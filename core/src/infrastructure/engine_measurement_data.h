@@ -14,10 +14,13 @@ struct EngineRawData_t {
     zes_engine_group_t type;
     uint64_t raw_active_time;
     uint64_t raw_timestamp;
+    bool on_subdevice;
+    uint32_t subdevice_id;
     EngineRawData_t() {
         type = ZES_ENGINE_GROUP_FORCE_UINT32;
         raw_active_time = std::numeric_limits<uint64_t>::max();
         raw_timestamp = 0;
+        on_subdevice = false;
     };
 };
 

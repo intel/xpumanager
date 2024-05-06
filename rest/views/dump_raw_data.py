@@ -40,6 +40,9 @@ class StartDumpRawDataTaskSchema(Schema):
         required=True,
         validate=[validate.Length(1), is_unique]
     )
+    show_date = fields.Boolean(
+        metadata={"description": "Controls timestamp format in dumps: '1' includes full date and time, '0' (default) includes only time."}
+    )
 
 
 class DumpRawDataTaskInfoSchema(Schema):
@@ -88,8 +91,9 @@ def startDumpRawDataTask():
     deviceId = reqData.get("device_id")
     metricsTypeList = reqData.get("metrics_type_list")
     tileId = reqData.get("tile_id", -1)
+    showDate = reqData.get("show_date")
     code, message, data = stub.startDumpRawDataTask(
-        deviceId, tileId, metricsTypeList)
+        deviceId, tileId, metricsTypeList, showDate)
     if code == 0:
         return jsonify(data)
     elif code == stub.XpumResult["XPUM_RESULT_DEVICE_NOT_FOUND"].value:

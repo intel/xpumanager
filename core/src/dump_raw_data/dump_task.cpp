@@ -36,6 +36,7 @@ DumpRawDataTask::DumpRawDataTask(xpum_dump_task_id_t taskId,
       pThreadPool(pThreadPool) {
     p_data_logic = xpum::Core::instance().getDataLogic();
     begin = 0;
+    dumpOptions = xpum_dump_raw_data_option_t{};
 }
 
 DumpRawDataTask::~DumpRawDataTask() {
@@ -90,8 +91,10 @@ void DumpRawDataTask::buildColumns() {
     auto p_this = shared_from_this();
 
     // timestamp column
+    auto showDate = p_this->dumpOptions.showDate;
+    XPUM_LOG_DEBUG("showDate: {}", showDate ? "true" : "false");
     columnList.push_back({"Timestamp",
-                          []() { return Utility::getCurrentLocalTimeString(); }});
+                          [showDate]() { return Utility::getCurrentLocalTimeString(showDate); }});
 
     // device id column
     auto deviceId = p_this->deviceId;
@@ -398,7 +401,8 @@ void DumpRawDataTask::updateData() {
     p_data_logic->getEngineUtilizations(p_this->deviceId, nullptr, &engineUtilRawDataSize);
     std::vector<xpum_device_engine_metric_t> engineUtilRawDataList(engineUtilRawDataSize);
     p_data_logic->getEngineUtilizations(p_this->deviceId, engineUtilRawDataList.data(), &engineUtilRawDataSize);
-    for (auto engineUtilRawData : engineUtilRawDataList) {
+    for (uint32_t i = 0; i < engineUtilRawDataSize; i++) {
+        auto engineUtilRawData = engineUtilRawDataList[i];
         if ((p_this->tileId == -1) || (engineUtilRawData.isTileData && (p_this->tileId == engineUtilRawData.tileId))) {
             auto engineType = engineUtilRawData.type;
             auto it = engineUtilRawDataMap.find(engineType);
@@ -407,7 +411,7 @@ void DumpRawDataTask::updateData() {
             }
 
             auto it1 = engineUtilRawDataMap[engineType].find(engineUtilRawData.index);
-            if (it1 == engineUtilRawDataMap[engineType].end()){
+            if (it1 == engineUtilRawDataMap[engineType].end()) {
                 engineUtilRawDataMap[engineType][engineUtilRawData.index] = std::vector<xpum_device_engine_metric_t>();
             }
             engineUtilRawDataMap[engineType][engineUtilRawData.index].push_back(engineUtilRawData);

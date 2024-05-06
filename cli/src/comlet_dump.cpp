@@ -328,6 +328,7 @@ void ComletDump::setupOptions() {
     listDumpFlag->excludes(timeIntervalOpt);
     listDumpFlag->excludes(dumpTimesOpt);
 #endif
+    addFlag("--date", this->opts->showDate, "Show date in timestamp.");
 }
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
@@ -378,7 +379,7 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
                     auto &m = dumpTypeOptions[i];
                     dumpTypeList.push_back(m.dumpType);
                 }
-                json = this->coreStub->startDumpRawDataTask(deviceId, tileId, dumpTypeList);
+                json = this->coreStub->startDumpRawDataTask(deviceId, tileId, dumpTypeList, this->opts->showDate);
             }
         } else if (this->opts->listDumpTask) {
             json = this->coreStub->listDumpRawDataTasks();
@@ -697,8 +698,11 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
 
     // timestamp column
     columnSchemaList.push_back({"Timestamp",
-                                []() {
-                                    return CoreStub::isotimestamp(time(nullptr) * 1000, true);
+                                [this]() {
+                                    if (this->opts->showDate)
+                                        return CoreStub::isotimestamp(time(nullptr) * 1000);
+                                    else
+                                        return CoreStub::isotimestamp(time(nullptr) * 1000, true);
                                 }});
 
     // device id column
@@ -933,7 +937,7 @@ void ComletDump::printByLine(std::ostream &out) {
 
     // timestamp column
     columnSchemaList.push_back({"Timestamp",
-                                []() {
+                                [this]() {
                                     long ms; // Milliseconds
                                     time_t s;  // Seconds
                                     struct timespec spec;
@@ -941,7 +945,10 @@ void ComletDump::printByLine(std::ostream &out) {
 
                                     s  = spec.tv_sec;
                                     ms = spec.tv_nsec / 1000000; // Convert nanoseconds to milliseconds
-                                    return CoreStub::isotimestamp(s * 1000 + ms, true);
+                                    if (this->opts->showDate)
+                                        return CoreStub::isotimestamp(s * 1000 + ms);
+                                    else
+                                        return CoreStub::isotimestamp(s * 1000 + ms, true);
                                 }});
 
     // device id column

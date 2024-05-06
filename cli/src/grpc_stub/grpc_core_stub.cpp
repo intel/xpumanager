@@ -422,6 +422,9 @@ static std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type
         case DiagnosticsComponentInfo_Type_DIAG_XE_LINK_THROUGHPUT:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_XE_LINK_THROUGHPUT" : "Xe Link Throughput");
             break;
+        case DiagnosticsComponentInfo_Type_DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT" : "Xe Link all-to-all Throughput");
+            break;
         default:
             break;
     }

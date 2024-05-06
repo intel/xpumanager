@@ -13,7 +13,7 @@
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> LibCoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> dumpTypeList) {
+std::unique_ptr<nlohmann::json> LibCoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> dumpTypeList, bool showDate) {
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 

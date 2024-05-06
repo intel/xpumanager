@@ -451,6 +451,7 @@ typedef enum xpum_diag_task_type_enum {
     // level 3
     XPUM_DIAG_XE_LINK_THROUGHPUT = 14,
 
+    XPUM_DIAG_XE_LINK_ALL_TO_ALL_THROUGHPUT = 15,
     XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 
@@ -1123,6 +1124,10 @@ typedef enum xpum_dump_type_enum {
     XPUM_DUMP_MEDIA_ENGINE_FREQUENCY = 36,
     XPUM_DUMP_MAX
 } xpum_dump_type_t;
+
+typedef struct xpum_dump_raw_data_option_t {
+    bool showDate;                         ///< Show date or not in the timestamp
+} xpum_dump_raw_data_option_t;
 
 /**
  * @brief dump raw data task structure

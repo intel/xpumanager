@@ -16,7 +16,7 @@
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> dumpTypeList) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> dumpTypeList, bool showDate) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -30,6 +30,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::startDumpRawDataTask(uint32_t devi
         auto p_enum = request.add_metricstypelist();
         p_enum->set_value(dumpType);
     }
+    request.set_showdate(showDate);
 
     grpc::Status status = stub->startDumpRawDataTask(&context, request, &response);
 

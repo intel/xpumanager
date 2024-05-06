@@ -39,6 +39,7 @@ class DumpRawDataManager {
                                        const xpum_dump_type_t dumpTypeList[],
                                        const int count,
                                        const char *dumpFilePath,
+                                       xpum_dump_raw_data_option_t dumpOptions,
                                        xpum_dump_raw_data_task_t *taskInfo);
 
     xpum_result_t stopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_data_task_t *taskInfo);

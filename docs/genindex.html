@@ -842,7 +842,7 @@
 </li>
         <li><a href="smidoc/rst/group_BASIC_API.html#index-1">xpumInit</a>, <a href="xpumdoc/rst/group_BASIC_API.html#index-1">[1]</a>
 </li>
-        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-3">xpumListDumpRawDataTasks</a>
+        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-4">xpumListDumpRawDataTasks</a>
 </li>
         <li><a href="smidoc/rst/group_DIAGNOSTICS_API.html#index-8">xpumPrecheck</a>, <a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-11">[1]</a>
 </li>
@@ -898,7 +898,9 @@
 </li>
         <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-1">xpumStartDumpRawDataTask</a>
 </li>
-        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-2">xpumStopDumpRawDataTask</a>
+        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-2">xpumStartDumpRawDataTaskEx</a>
+</li>
+        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-3">xpumStopDumpRawDataTask</a>
 </li>
         <li><a href="smidoc/rst/group_BASIC_API.html#index-3">xpumVersionInfo</a>, <a href="xpumdoc/rst/group_BASIC_API.html#index-3">[1]</a>
 </li>
@@ -1263,6 +1265,13 @@
 </li>
       </ul></li>
       <li>
+    showDate
+
+      <ul>
+        <li><a href="smidoc/rst/struct_xpum_dump_raw_data_option_t.html#index-1">variable</a>, <a href="xpumdoc/rst/struct_xpum_dump_raw_data_option_t.html#index-1">[1]</a>
+</li>
+      </ul></li>
+      <li>
     shutdownThreshold
 
       <ul>
@@ -1348,6 +1357,8 @@
         <li><a href="smidoc/rst/struct_xpum_diag_task_info_t.html#index-0">xpum_diag_task_info_t</a>, <a href="xpumdoc/rst/struct_xpum_diag_task_info_t.html#index-0">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_diag_xe_link_throughput_t.html#index-0">xpum_diag_xe_link_throughput_t</a>, <a href="xpumdoc/rst/struct_xpum_diag_xe_link_throughput_t.html#index-0">[1]</a>
+</li>
+        <li><a href="smidoc/rst/struct_xpum_dump_raw_data_option_t.html#index-0">xpum_dump_raw_data_option_t</a>, <a href="xpumdoc/rst/struct_xpum_dump_raw_data_option_t.html#index-0">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_dump_raw_data_task_t.html#index-0">xpum_dump_raw_data_task_t</a>, <a href="xpumdoc/rst/struct_xpum_dump_raw_data_task_t.html#index-0">[1]</a>
 </li>
@@ -1695,6 +1706,8 @@
         <li><a href="smidoc/rst/struct_xpum_sensor_reading_t.html#index-5">sensorName</a>, <a href="xpumdoc/rst/struct_xpum_sensor_reading_t.html#index-5">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_sensor_reading_t.html#index-6">sensorUnit</a>, <a href="xpumdoc/rst/struct_xpum_sensor_reading_t.html#index-6">[1]</a>
+</li>
+        <li><a href="smidoc/rst/struct_xpum_dump_raw_data_option_t.html#index-1">showDate</a>, <a href="xpumdoc/rst/struct_xpum_dump_raw_data_option_t.html#index-1">[1]</a>
 </li>
         <li><a href="smidoc/rst/struct_xpum_health_data_t.html#index-6">shutdownThreshold</a>, <a href="xpumdoc/rst/struct_xpum_health_data_t.html#index-6">[1]</a>
 </li>
@@ -2545,6 +2558,13 @@
 
       <ul>
         <li><a href="smidoc/rst/enum_xpum_result_enum.html#index-16">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_result_enum.html#index-16">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    xpum_dump_raw_data_option_t
+
+      <ul>
+        <li><a href="smidoc/rst/struct_xpum_dump_raw_data_option_t.html#index-0">struct</a>, <a href="xpumdoc/rst/struct_xpum_dump_raw_data_option_t.html#index-0">[1]</a>
 </li>
       </ul></li>
       <li>
@@ -4116,7 +4136,7 @@
     xpumListDumpRawDataTasks
 
       <ul>
-        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-3">function</a>
+        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-4">function</a>
 </li>
       </ul></li>
       <li>
@@ -4309,10 +4329,17 @@
 </li>
       </ul></li>
       <li>
-    xpumStopDumpRawDataTask
+    xpumStartDumpRawDataTaskEx
 
       <ul>
         <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-2">function</a>
+</li>
+      </ul></li>
+      <li>
+    xpumStopDumpRawDataTask
+
+      <ul>
+        <li><a href="xpumdoc/rst/group_DUMP_RAW_DATA_API.html#index-3">function</a>
 </li>
       </ul></li>
       <li>
