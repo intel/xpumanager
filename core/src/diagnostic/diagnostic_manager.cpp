@@ -992,9 +992,7 @@ void DiagnosticManager::doDiagnosticHardwareSysman(const zes_device_handle_t &ze
 }
 
 static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
-    char path[PATH_MAX];
     char buf[128];
-    char uevent[1024];
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
     int len = 0;
@@ -1015,25 +1013,14 @@ static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
         if (strstr(pdirent->d_name, "-") != NULL) {
             continue;
         }
-        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
-                pdirent->d_name);
-        if (len <= 0 || len >= PATH_MAX) {
+        UEvent uevent;
+        if (Utility::getUEvent(uevent, pdirent->d_name) == false) {
             break;
         }
-        int fd = open(path, O_RDONLY);
-        if (fd < 0) {
-            break;
-        }
-        int szRead = read(fd, uevent, 1024);
-        close(fd);
-        if (szRead < 0 || szRead >= 1024) {
-            break;
-        }
-        uevent[szRead] = 0;
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (len > 0 && strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent.bdf.c_str(), buf) != NULL) {
             ret = "/dev/dri/";
             ret += pdirent->d_name;
             break;

@@ -10,13 +10,14 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <algorithm>
+#include <chrono>
 
 #include "core_stub.h"
 #include "pretty_table.h"
 #include "xpum_structs.h"
 #include "utility.h"
 #include "exit_code.h"
-#include <chrono>
+#include "local_functions.h"
 
 using xpum::dump::engineNameMap;
 
@@ -166,22 +167,19 @@ bool ComletDump::dumpIdlePowerOnly() {
             if (strstr(pdirent->d_name, "-") != NULL) {
                 continue;
             }
-            std::string uevent = getFileValue("/sys/class/drm/" + std::string(pdirent->d_name) +"/device/uevent");
-            std::string key = "PCI_ID=8086:";
-            auto pos = uevent.find(key); 
-            if (pos != std::string::npos) {
-                std::string bdf_key = "PCI_SLOT_NAME=";
-                auto bdf_pos = uevent.find(bdf_key); 
-                if (bdf_pos != std::string::npos) {
-                    auto device_id = uevent.substr(pos + key.length(), 4);
-                    if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0 || device_id.compare(0, 3, "0B6") == 0) {
-                        auto bdf = uevent.substr(bdf_pos + bdf_key.length(), 12);
-                        gpu_bdfs.insert(bdf);
-                        if (device_id.compare("0BD9") == 0 || device_id.compare("0BDA") == 0 || device_id.compare("0BDB") == 0 || device_id.compare("0B6E") == 0) {
-                            gpu_bdf_to_tile_num[bdf] = 1;
-                        } else {
-                            gpu_bdf_to_tile_num[bdf] = 2;
-                        }
+            UEvent uevent;
+            if (getUEvent(uevent, pdirent->d_name) == true) {
+                if (uevent.pciId.compare(0, 3, "0BD") == 0 ||
+                    uevent.pciId.compare(0, 3, "0BE") == 0 ||
+                    uevent.pciId.compare(0, 3, "0B6") == 0) {
+                    gpu_bdfs.insert(uevent.bdf);
+                    if (uevent.pciId.compare("0BD9") == 0 ||
+                        uevent.pciId.compare("0BDA") == 0 ||
+                        uevent.pciId.compare("0BDB") == 0 ||
+                        uevent.pciId.compare("0B6E") == 0) {
+                        gpu_bdf_to_tile_num[uevent.bdf] = 1;
+                    } else {
+                        gpu_bdf_to_tile_num[uevent.bdf] = 2;
                     }
                 }
             }

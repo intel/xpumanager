@@ -29,10 +29,16 @@ struct PciDeviceData {
     std::string pciDeviceId;
 };
 
+struct UEvent {
+    std::string pciId;
+    std::string bdf;
+};
+
 bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);  
 bool getBdfListFromLspci(std::vector<std::string> &list);
 bool getPciDeviceData(PciDeviceData &data, const std::string &bdf);
 bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
+bool getUEvent(UEvent &uevent, const char *d_name);
 
 bool isATSMPlatform(std::string str);
 bool isATSM3(std::string &pciId);
