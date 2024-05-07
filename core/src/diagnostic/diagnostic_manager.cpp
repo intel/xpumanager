@@ -75,9 +75,10 @@ int DiagnosticManager::REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE = 23;
 int DiagnosticManager::REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE = 19;
 float DiagnosticManager::XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF = 0.8;
 int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE = 117;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = 57;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = 55;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE = 51;
 int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = 303;
-int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = 106;
+int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = 116;
 int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = 67;
 const std::string DiagnosticManager::COMPONENT_TYPE_NOT_SUPPORTED = "Not supported";
 std::map<uint32_t, int32_t> DiagnosticManager::fabric_id_convert_to_device_id;
@@ -4255,16 +4256,20 @@ void xe_link_all_to_all_parallel_copy(const ze_driver_handle_t &ze_driver, std::
         queues.push_back(i);
 
     size_t buffer_size = 0;
-    int number_buffer_elements = 67108864; // 64MB
-    number_buffer_elements = number_buffer_elements * queues.size();
-  
-    set_up_buffers(context, device_ids, all_ze_devices, ze_src_buffers, ze_dst_buffers, ze_host_buffer, number_buffer_elements, buffer_size);
+    // The buffer size may have impacts on peak throughput and here we adopt the range from 4MiB to 64 MiB.
+    for (int step = 4; step <= 64; step *= 2) {
+        int number_buffer_elements = step * 1024 * 1024; // MiB
+        number_buffer_elements = number_buffer_elements * queues.size();
+    
+        set_up_buffers(context, device_ids, all_ze_devices, ze_src_buffers, ze_dst_buffers, ze_host_buffer, number_buffer_elements, buffer_size);
 
-    initialize_buffers(context, device_ids, ze_peer_devices, ze_src_buffers, ze_host_buffer, buffer_size);
+        initialize_buffers(context, device_ids, ze_peer_devices, ze_src_buffers, ze_host_buffer, buffer_size);
 
-    perform_copy(device_ids, ze_peer_devices, queues, ze_src_buffers, ze_dst_buffers, buffer_size, hasXeLink);
+        perform_copy(device_ids, ze_peer_devices, queues, ze_src_buffers, ze_dst_buffers, buffer_size, hasXeLink);
 
-    free_buffers(context, device_ids, ze_src_buffers, ze_dst_buffers, ze_host_buffer);
+        free_buffers(context, device_ids, ze_src_buffers, ze_dst_buffers, ze_host_buffer);
+    }
+
 
     for (auto &device : ze_peer_devices) {
         for (auto enginePair : device.engines) {
@@ -4437,7 +4442,7 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
         } else if (root_device_count == 4) {
             REF_XE_LINK_ALL_TO_ALL_THROUGHPUT = REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE;
         } else if (root_device_count == 8) {
-            REF_XE_LINK_ALL_TO_ALL_THROUGHPUT = REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE;
+            REF_XE_LINK_ALL_TO_ALL_THROUGHPUT = REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE;
         }
     }
 
@@ -4513,7 +4518,8 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
                     double txThroughtput = 0;
                     for (auto port : currentTxCnts) {
                         int32_t deviceId = std::stoi(port.first.substr(0, 1));
-                        if (TxCnts.count(port.first) > 0 && currentTimestamps.count(port.first) > 0 && Timestamps.count(port.first)) {
+                        if (TxCnts.count(port.first) > 0 && currentTimestamps.count(port.first) > 0 && Timestamps.count(port.first) 
+                                && port.second > TxCnts[port.first] && currentTimestamps[port.first] > Timestamps[port.first]) {
                             txThroughtput = 1000000.0 * (port.second - TxCnts[port.first]) / (currentTimestamps[port.first] - Timestamps[port.first]) / 1000000000;
                             // only count per GPU tx throughput
                             currentAllToallThroughputs[deviceId] += txThroughtput;
@@ -4522,7 +4528,8 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
                     }
                     double rxThroughtput = 0;
                     for (auto port : currentRxCnts) {
-                        if (RxCnts.count(port.first) > 0 && currentTimestamps.count(port.first) > 0 && Timestamps.count(port.first)) {
+                        if (RxCnts.count(port.first) > 0 && currentTimestamps.count(port.first) > 0 && Timestamps.count(port.first)
+                                && port.second > RxCnts[port.first] && currentTimestamps[port.first] > Timestamps[port.first]) {
                             rxThroughtput = 1000000.0 * (port.second - RxCnts[port.first]) / (currentTimestamps[port.first] - Timestamps[port.first]) / 1000000000;
                             // log rx throughput info for debug 
                             XPUM_LOG_DEBUG("peer_port : {} rxThroughtput(GB/s): {}",  port.first, rxThroughtput);

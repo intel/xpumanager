@@ -234,6 +234,12 @@ namespace xpum {
                         if (val > 0)
                             DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = val;
                     } catch(...) { }
+                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE") {
+                    try {
+                        int val = std::stoi(value);
+                        if (val > 0)
+                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE = val;
+                    } catch(...) { }
                 } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE") {
                     try {
                         int val = std::stoi(value);
