@@ -26,15 +26,53 @@ namespace xpum {
 
     std::string zeResultErrorCodeStr(ze_result_t ret);
 
-    void memoryAlloc(const ze_context_handle_t &context, ze_device_handle_t ze_device, size_t size, void **ptr);
+    void contextCreate(ze_driver_handle_t hDriver, ze_context_handle_t *hContext);
 
-    void memoryAllocHost(const ze_context_handle_t &context, size_t size, void **ptr);
+    void contextDestroy(ze_context_handle_t hContext);
+
+    void moduleCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device, std::vector<uint8_t> binary_file, ze_module_handle_t *module_handle);
+
+    void moduleDestroy(ze_module_handle_t hModule);
+
+    void kernelCreate(ze_module_handle_t hModule, std::string name, ze_kernel_handle_t *hKernel);
+
+    void kernelDestroy(ze_kernel_handle_t hKernel);
+
+    void kernelSetGroupSize(ze_kernel_handle_t hKernel, uint32_t groupSizeX, uint32_t groupSizeY, uint32_t groupSizeZ);
+
+    void kernelSetArgumentValue(ze_kernel_handle_t hKernel, uint32_t argIndex, size_t argSize, const void *pArgValue);
+
+    void memoryAlloc(const ze_context_handle_t &context, ze_device_handle_t ze_device, size_t size, size_t alignment, void **ptr);
+
+    void memoryAllocShared(const ze_context_handle_t &context, ze_device_handle_t ze_device, size_t size, size_t alignment, void **ptr);
+
+    void memoryAllocHost(const ze_context_handle_t &context, size_t size, size_t alignment, void **ptr);
 
     void memoryFree(const ze_context_handle_t &context, const void *ptr);
 
-    void commandListCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device, uint32_t command_queue_group_ordinal, ze_command_list_handle_t *phCommandList);
+    void commandQueueCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device, const uint32_t command_queue_group_ordinal, const uint32_t command_queue_index, ze_command_queue_handle_t *phCommandQueue, uint32_t flags = 0);
 
-    void commandQueueCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device, const uint32_t command_queue_group_ordinal, const uint32_t command_queue_index, ze_command_queue_handle_t *command_queue);
+    void commandQueueExecuteCommandLists(ze_command_queue_handle_t hCommandQueue, ze_command_list_handle_t hCommandList);
+
+    void commandQueueSynchronize(ze_command_queue_handle_t hCommandQueue);
+
+    void commandQueueDestroy(ze_command_queue_handle_t hCommandQueue);
+
+    void commandListCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device, uint32_t command_queue_group_ordinal, ze_command_list_handle_t *phCommandList, uint32_t flags = 0);
+
+    void commandListAppendBarrier(ze_command_list_handle_t hCommandList);
+
+    void commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_kernel_handle_t hKernel, const ze_group_count_t *pLaunchFuncArgs);
+
+    void commandListAppendMemoryCopy(ze_command_list_handle_t hCommandList, void *dstptr, const void *srcptr, size_t size);
+
+    void commandListAppendMemoryFill(ze_command_list_handle_t hCommandList, void *ptr, const void *pattern, size_t pattern_size, size_t size);
+
+    void commandListReset(ze_command_list_handle_t hCommandList);
+
+    void commandListClose(ze_command_list_handle_t hCommandList);
+
+    void commandListDestroy(ze_command_list_handle_t hCommandList);
 
     bool zeDeviceCanAccessAllPeer(std::vector<ze_device_handle_t> ze_devices);
 
