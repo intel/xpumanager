@@ -138,12 +138,6 @@ std::string ComletDump::getEnv(){
     return env;
 }
 
-static std::string getFileValue(std::string file_name) {
-    std::ifstream ifs(file_name);
-    std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-    return content;
-}
-
 // For PVC idle power
 static std::map<int, std::string> gpu_id_to_bdfs;
 static std::map<std::string, int> gpu_bdf_to_ids;
