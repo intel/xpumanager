@@ -17,7 +17,7 @@ class Persistency {
    public:
     virtual ~Persistency(){};
 
-    virtual void storeMeasurementData(
+    virtual void storeData2PersistentStorage(
         MeasurementType type,
         Timestamp_t time,
         std::map<std::string, std::shared_ptr<MeasurementData>>& datas) = 0;

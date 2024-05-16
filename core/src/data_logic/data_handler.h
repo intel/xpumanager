@@ -31,7 +31,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
 
     void close();
 
-    void preHandleData(std::shared_ptr<SharedData> &p_data) noexcept;
+    void updateDataInHandler(std::shared_ptr<SharedData> &p_data) noexcept;
 
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept = 0;
 

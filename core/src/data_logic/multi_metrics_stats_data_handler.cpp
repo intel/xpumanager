@@ -82,20 +82,6 @@ void MultiMetricsStatsDataHandler::updateStatistics(std::shared_ptr<SharedData>&
     }
 }
 
-std::shared_ptr<MeasurementData> MultiMetricsStatsDataHandler::getLatestData(std::string& device_id) noexcept {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    if (p_latestData == nullptr) {
-        return nullptr;
-    }
-
-    auto datas = p_latestData->getData();
-    if (datas.find(device_id) != datas.end()) {
-        return datas[device_id];
-    } else {
-        return nullptr;
-    }
-}
-
 std::shared_ptr<MeasurementData> MultiMetricsStatsDataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
