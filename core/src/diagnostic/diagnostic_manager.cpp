@@ -1015,7 +1015,7 @@ static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
         }
         UEvent uevent;
         if (Utility::getUEvent(uevent, pdirent->d_name) == false) {
-            break;
+            continue;
         }
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,

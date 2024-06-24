@@ -1368,7 +1368,7 @@ std::string GPUDeviceStub::getDRMDevice(const zes_pci_properties_t& pci_props) {
         }
         UEvent uevent;
         if (Utility::getUEvent(uevent, pdirent->d_name) == false) {
-            break;
+            continue;
         }
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
@@ -2932,7 +2932,7 @@ static bool getCardIdx(uint32_t &card_idx, const zes_device_handle_t& device) {
         }
         UEvent uevent;
         if (Utility::getUEvent(uevent, pdirent->d_name) == false) {
-            break;
+            continue;
         }
         len = snprintf(buf, BUF_SIZE, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
