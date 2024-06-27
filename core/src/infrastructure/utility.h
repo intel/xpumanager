@@ -16,6 +16,11 @@
 
 namespace xpum {
 
+struct UEvent {
+    std::string pciId;
+    std::string bdf;
+};
+
 class Utility {
    public:
     static long long getCurrentMillisecond();
@@ -61,6 +66,7 @@ class Utility {
                   bool use_multithreading = true);
    
    static std::vector<std::string> split(const std::string &s, char delim);
+   static bool getUEvent(UEvent &uevent, const char *d_name);
 };
 
 } // end namespace xpum

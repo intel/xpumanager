@@ -18,7 +18,7 @@ else()
   )
 endif()
 
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC -Wl,--exclude-libs,ALL")
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -s")
 
@@ -179,8 +179,8 @@ if(HAVE_PCIACCESS_H)
             stdc++fs
             pcm-iio-gpu
             pciaccess
-            igsc
-            metee)
+            metee
+            igsc)
   if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
     target_link_libraries(
       test_xpum_api
@@ -191,15 +191,15 @@ if(HAVE_PCIACCESS_H)
               stdc++fs
               pcm-iio-gpu
               pciaccess
-              igsc
-              metee)
+              metee
+              igsc)
   endif()
 else()
   target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu
-                                     stdc++fs igsc metee)
+                                     stdc++fs metee igsc)
   if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
     target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc
-                                                pcm-iio-gpu stdc++fs igsc metee)
+                                                pcm-iio-gpu stdc++fs metee igsc)
   endif()
 endif()
 

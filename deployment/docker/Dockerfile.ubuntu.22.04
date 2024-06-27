@@ -57,8 +57,8 @@ WORKDIR /tmp/work
 RUN apt-get update && \
   apt-get -y upgrade && \
   apt-get install -y --no-install-recommends wget gnupg2 ca-certificates && \
-  wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg && \
-  echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy/production/2328 unified' | \
+  wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg && \
+  echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy/lts/2350 unified' | \
   tee /etc/apt/sources.list.d/intel.gpu.jammy.list && \
   apt-get update && \
   apt-get install -y --no-install-recommends \

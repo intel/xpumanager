@@ -158,17 +158,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
                 if (strstr(pdirent->d_name, "-") != NULL) {
                     continue;
                 }
-                std::string uevent = getFileValue("/sys/class/drm/" + std::string(pdirent->d_name) +"/device/uevent");
-                std::string key = "PCI_ID=8086:";
-                auto pos = uevent.find(key); 
-                if (pos != std::string::npos) {
-                    std::string bdf_key = "PCI_SLOT_NAME=";
-                    auto bdf_pos = uevent.find(bdf_key); 
-                    if (bdf_pos != std::string::npos) {
-                        auto device_id = uevent.substr(pos + key.length(), 4);
-                        if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0 || device_id.compare(0, 3, "0B6") == 0)
-                            pvc_gpu_bdfs.insert(uevent.substr(bdf_pos + bdf_key.length(), 12));
-                    }
+                UEvent uevent;
+                if (Utility::getUEvent(uevent, pdirent->d_name) == true) {
+                    if (uevent.pciId.compare(0, 3, "0BD") == 0 ||
+                        uevent.pciId.compare(0, 3, "0BE") == 0 ||
+                        uevent.pciId.compare(0, 3, "0B6") == 0) {
+                        pvc_gpu_bdfs.insert(uevent.bdf);
+                    } 
                 }
             }
             closedir(pdir);
@@ -1349,9 +1345,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 }
 
 std::string GPUDeviceStub::getDRMDevice(const zes_pci_properties_t& pci_props) {
-    char path[PATH_MAX];
     char buf[128];
-    char uevent[1024];
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
     int len = 0;
@@ -1372,25 +1366,14 @@ std::string GPUDeviceStub::getDRMDevice(const zes_pci_properties_t& pci_props) {
         if (strstr(pdirent->d_name, "-") != NULL) {
             continue;
         }
-        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
-                pdirent->d_name);
-        if (len <= 0 || len >= PATH_MAX) {
-            break;
+        UEvent uevent;
+        if (Utility::getUEvent(uevent, pdirent->d_name) == false) {
+            continue;
         }
-        int fd = open(path, O_RDONLY);
-        if (fd < 0) {
-            break;
-        }
-        int szRead = read(fd, uevent, 1024);
-        close(fd);
-        if (szRead < 0 || szRead >= 1024) {
-            break;
-        }
-        uevent[szRead] = 0;
         len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (len > 0 && strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent.bdf.c_str(), buf) != NULL) {
             ret = "/dev/dri/";
             ret += pdirent->d_name;
             break;
@@ -2926,9 +2909,7 @@ static bool getCardIdx(uint32_t &card_idx, const zes_device_handle_t& device) {
         return false;
     }
 
-    char path[PATH_MAX];
     char buf[BUF_SIZE];
-    char uevent[1024];
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
     int len = 0;
@@ -2949,25 +2930,14 @@ static bool getCardIdx(uint32_t &card_idx, const zes_device_handle_t& device) {
         if (strstr(pdirent->d_name, "-") != NULL) {
             continue;
         }
-        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
-                pdirent->d_name);
-        if (len <= 0 || len >= PATH_MAX) {
-            break;
+        UEvent uevent;
+        if (Utility::getUEvent(uevent, pdirent->d_name) == false) {
+            continue;
         }
-        int fd = open(path, O_RDONLY);
-        if (fd < 0) {
-            break;
-        }
-        int szRead = read(fd, uevent, 1024);
-        close(fd);
-        if (szRead < 0 || szRead >= 1024) {
-            break;
-        }
-        uevent[szRead] = 0;
         len = snprintf(buf, BUF_SIZE, "%04d:%02x:%02x.%x",
                 pci_props.address.domain, pci_props.address.bus,
                 pci_props.address.device, pci_props.address.function);
-        if (len > 0 && strstr(uevent, buf) != NULL) {
+        if (len > 0 && strstr(uevent.bdf.c_str(), buf) != NULL) {
             sscanf(pdirent->d_name, "card%d", &card_idx);
             ret = true;
             break;

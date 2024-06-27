@@ -197,6 +197,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE;
 
+    static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE;
+
     static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE;
 
     static int REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE;
@@ -245,8 +247,6 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                  struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type, bool checkOnly = false);
 
     static long double calculateGbps(long double period, long double buffer_size);
-
-    static void waitForCommandQueueSynchronize(ze_command_queue_handle_t command_queue, std::string info);
 
     static void updateMessage(char *arr, std::string str);
 

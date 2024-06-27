@@ -390,15 +390,52 @@ static int execCommand(const std::string& command, std::string &result) {
     return exitcode;
 }
 
-bool isATSMPlatformFromSysFile() {
+bool getUEvent(UEvent &uevent, const char *d_name) {
+    bool ret = false;
+    char buf[1024];
     char path[PATH_MAX];
+    if (d_name == NULL) {
+        return false;
+    }
+    snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent", d_name);
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        return false;
+    }
+    int cnt = read(fd, buf, 1024);
+    if (cnt < 0 || cnt >= 1024) {
+        close(fd);
+        return false;
+    }
+    buf[cnt] = 0;
+    std::string str(buf);
+    std::string key = "PCI_ID=8086:";
+    auto pos = str.find(key); 
+    if (pos != std::string::npos) {
+        uevent.pciId = str.substr(pos + key.length(), 4);
+    } else {
+        goto RTN;
+    }
+    key = "PCI_SLOT_NAME=";
+    pos = str.find(key);
+    if (pos != std::string::npos) {
+        uevent.bdf = str.substr(pos + key.length(), 12);
+    } else {
+        goto RTN;
+    }
+    ret = true;
+
+RTN:
+    close(fd);
+    return ret;
+}
+
+bool isATSMPlatformFromSysFile() {
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
-
     bool is_atsm_platform = true;
     pdir = opendir("/sys/class/drm");
     if (pdir != NULL) {
-        char uevent[1024];
         while ((pdirent = readdir(pdir)) != NULL) {
             if (pdirent->d_name[0] == '.') {
                 continue;
@@ -412,26 +449,11 @@ bool isATSMPlatformFromSysFile() {
             if (strstr(pdirent->d_name, "-") != NULL) {
                 continue;
             }
-            snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent", pdirent->d_name);
-            int fd = open(path, O_RDONLY);
-            if (fd < 0) {
-                continue;
+            UEvent uevent;
+            if (getUEvent(uevent, pdirent->d_name) == true) {
+                is_atsm_platform = isATSMPlatform(uevent.pciId);
             }
-            int cnt = read(fd, uevent, 1024);
-            if (cnt < 0 || cnt >= 1024) {
-                close(fd);
-                continue;
-            }
-            close(fd);
-            uevent[cnt] = 0;
-            std::string str(uevent);
-            std::string key = "PCI_ID=8086:";
-            auto pos = str.find(key); 
-            if (pos != std::string::npos) {
-                std::string device_id = str.substr(pos + key.length(), 4);
-                is_atsm_platform = isATSMPlatform(device_id);
-            }
-        }
+       }
         closedir(pdir);
     }
     return is_atsm_platform;

@@ -61,8 +61,6 @@ class StatsDataHandler : public DataHandler {
 
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 
-    virtual std::shared_ptr<MeasurementData> getLatestData(std::string &device_id) noexcept;
-
     virtual std::shared_ptr<MeasurementData> getLatestStatistics(std::string &device_id, uint64_t session_id) noexcept;
 
    protected:

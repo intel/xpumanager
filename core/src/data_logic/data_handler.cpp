@@ -32,7 +32,7 @@ void DataHandler::close() {
     stop = true;
 }
 
-void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
+void DataHandler::updateDataInHandler(std::shared_ptr<SharedData>& p_data) noexcept {
     // handle data in the caller thread directly, don't put any time consuming task here
 
     std::unique_lock<std::mutex> lock(this->mutex);
@@ -47,7 +47,7 @@ void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
 
     if (p_data != nullptr) {
         try {
-            this->p_persistency->storeMeasurementData(this->type, p_data->getTime(), p_data->getData());
+            this->p_persistency->storeData2PersistentStorage(this->type, p_data->getTime(), p_data->getData());
         } catch (std::exception& e) {
             std::string error = "Failed to persist measurement data:";
             error += e.what();
