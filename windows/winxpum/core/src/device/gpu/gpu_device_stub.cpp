@@ -1010,7 +1010,7 @@ namespace xpum {
                                 val = (snap2.activeTime - snap1.activeTime) * 100.0 / (snap2.timestamp - snap1.timestamp);
                                 if (val <= 100.0 && val >= 0) {
                                     valid = true;
-                                    _engineGroupDataGotten = valid || _engineGroupDataGotten;
+                                    _engineGroupDataGotten = true;
                                 }
                             }
                             if (res == ZE_RESULT_SUCCESS && valid == true) {
