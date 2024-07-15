@@ -197,6 +197,9 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type);
 
+    static bool isPhysicalFunctionDevice(std::string pci_addr);
+
+    static bool hasVirtualFunctionOnDevice(const zes_device_handle_t &zes_device);
 private: 
     GPUDeviceStub(); 
     ~GPUDeviceStub();

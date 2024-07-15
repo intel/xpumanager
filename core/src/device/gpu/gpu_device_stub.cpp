@@ -823,6 +823,37 @@ static xpum_device_function_type_t getGPUFunctionType(std::string pci_addr) {
     return DEVICE_FUNCTION_TYPE_PHYSICAL;
 }
 
+bool GPUDeviceStub::isPhysicalFunctionDevice(std::string pci_addr) {
+    if (getGPUFunctionType(pci_addr) == DEVICE_FUNCTION_TYPE_VIRTUAL)
+        return false;
+    return true;
+}
+
+bool GPUDeviceStub::hasVirtualFunctionOnDevice(const zes_device_handle_t &zes_device) {
+    ze_result_t res;
+    zes_pci_properties_t pci_props = {};
+    XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDevicePciGetProperties(zes_device, &pci_props));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    std::string bdf_address = to_string(pci_props.address);
+    if (!GPUDeviceStub::isPhysicalFunctionDevice(bdf_address))
+        return false;
+
+    std::string line;
+    std::string fname = "/sys/bus/pci/devices/" + bdf_address + "/" + "sriov_numvfs";
+    std::ifstream file(fname);
+    if (file.is_open()) {
+        getline(file, line);
+        file.close();
+    }
+    XPUM_LOG_DEBUG("{} is {}", fname, line);
+    if (line.size() > 0 && line != "0") {
+        return true;
+    }
+    return false;
+}
+
 void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     zes_pci_properties_t pci_props = {};
     ze_result_t res;

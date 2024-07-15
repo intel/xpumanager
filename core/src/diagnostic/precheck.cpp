@@ -499,30 +499,6 @@ namespace xpum {
         }
     }
 
-    bool isPhysicalFunctionDevice(std::string pci_addr) {
-        DIR *dir;
-        struct dirent *ent;
-        std::stringstream ss;
-        ss << "/sys/bus/pci/devices/" << pci_addr;
-        dir = opendir(ss.str().c_str());
-        
-        if (dir == NULL) {
-            return false;
-        }
-        while ((ent = readdir(dir)) != NULL) {
-            /*
-                Containing `physfn` which links to the PF it belongs to
-                means it's a VF, otherwise it's a PF.
-            */
-            if (strstr(ent->d_name, "physfn") != NULL) {
-                closedir(dir);
-                return false;
-            }
-        }
-        closedir(dir);
-        return true;
-    }
-
     bool isATSMPlatform(std::string str) {
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
         return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos || str.find("56c2") != std::string::npos;
@@ -564,7 +540,7 @@ namespace xpum {
             std::string line(c_line);
             is_atsm_platform = isATSMPlatform(line);
             std::string bdf = line.substr(0, 12);
-            if (isPhysicalFunctionDevice(bdf)) {
+            if (GPUDeviceStub::isPhysicalFunctionDevice(bdf)) {
                 gpu_ids.push_back(std::to_string(gpu_id));
                 gpu_bdfs.push_back(bdf);
                 xpum_precheck_component_info_t gpu_component {};
@@ -601,7 +577,7 @@ namespace xpum {
                         continue;
                     }
                     is_atsm_platform = isATSMPlatform(uevent.pciId);
-                    if (isPhysicalFunctionDevice(uevent.bdf)) {
+                    if (GPUDeviceStub::isPhysicalFunctionDevice(uevent.bdf)) {
                         gpu_ids.push_back(std::string(pdirent->d_name).substr(4));
                         gpu_bdfs.push_back(uevent.bdf);
                         xpum_precheck_component_info_t gpu_component {};
