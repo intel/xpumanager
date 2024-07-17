@@ -608,7 +608,73 @@ void VgpuManager::writeFile(const std::string path, const std::string& content) 
     XPUM_LOG_DEBUG("write: {} {}", path, content);
 }
 
-static AttrFromConfigFile combineAttrConfig(std::map<uint32_t, AttrFromConfigFile> data, uint32_t numVfs, int pciDeviceId) {
+static bool caseInsensitiveMatch(std::string s1, std::string s2) {
+   std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
+   std::transform(s2.begin(), s2.end(), s2.begin(), ::tolower);
+   return s1.compare(s2) == 0;
+}
+
+/**
+ * The vGPUScheduler is based on vGPUProfilesV2_V2.5
+ * For Intel Data Center Flex GPUs, vGPUScheduler has three options to meet various application scenarios:
+ * [1] Flexible_30fps_GPUTimeSlicing
+ * - ScheduleIfIdle = False
+ * - PFExecutionQuantum = 20
+ * - PFPreemptionTimeout = 20000
+ * - VFExecutionQuantum = max( 32 // VFCount, 1)
+ * - VFPreemptionTimeout = 128000 if (VFCount == 1) else max( 64000 // VFCount, 16000)
+ * [2] Fixed_30fps_GPUTimeSlicing
+ * - ScheduleIfIdle = true
+ * - PFExecutionQuantum = 20
+ * - PFPreemptionTimeout = 20000
+ * - VFExecutionQuantum = max( 32 // VFCount, 1)
+ * - VFPreemptionTimeout = 128000 if (VFCount == 1) else max( 64000 // VFCount, 16000)
+ * [3] Flexible_BurstableQoS_GPUTimeSlicing
+ * - ScheduleIfIdle = False
+ * - PFExecutionQuantum = 20
+ * - PFPreemptionTimeout = 20000
+ * - VFExecutionQuantum = min((2000 // max(VFCount-1,1)*0.5, 50))
+ * - VFPreemptionTimeout = (2000 // max(VFCount-1,1) - min((2000 // max(VFCount-1,1))*0.5, 50))*1000
+ * The vGPUScheduler is Flexible_30fps_GPUTimeSlicing by default if not set or set incorrectly
+ * For Intel Data Center Max GPUs, vGPUScheduler only has one effective option and other settings will not take effect:
+ * [1] Flexible_BurstableQoS_GPUTimeSlicing
+ * - ScheduleIfIdle = False
+ * - PFExecutionQuantum = 64
+ * - PFPreemptionTimeout = 128000
+ * - VFExecutionQuantum = min((2000 // max(VFCount-1,1)*0.5, 50))
+ * - VFPreemptionTimeout = (2000 // max(VFCount-1,1) - min((2000 // max(VFCount-1,1))*0.5, 50))*1000
+ * 
+ */
+
+static void updateVgpuSchedulerConfigParamerters(std::string devicePciId, int numVfs, std::string scheduler, std::map<uint32_t, AttrFromConfigFile>& data) {
+    if (devicePciId == "56c0" || devicePciId == "56c1" || devicePciId == "56c2") {
+        data[numVfs].pfExec = 20;
+        data[numVfs].pfPreempt = 20000;
+        if (caseInsensitiveMatch(scheduler, "Flexible_BurstableQoS_GPUTimeSlicing")) {
+            data[numVfs].schedIfIdle = false;
+            data[numVfs].vfExec = std::min(int(2000 / std::max(numVfs - 1, 1) * 0.5), 50);
+            data[numVfs].vfPreempt = (2000 / std::max(numVfs - 1, 1) - std::min(int((2000 / std::max(numVfs - 1 , 1)) * 0.5), 50)) * 1000;
+        } else if (caseInsensitiveMatch(scheduler, "Fixed_30fps_GPUTimeSlicing")) {
+            data[numVfs].schedIfIdle = true;
+            data[numVfs].vfExec = std::max(32 / numVfs, 1);
+            data[numVfs].vfPreempt = (numVfs == 1 ? 128000 : std::max(64000 / numVfs, 16000));
+        } else { //Flexible_30fps_GPUTimeSlicing
+            data[numVfs].schedIfIdle = false;
+            data[numVfs].vfExec = std::max(32 / numVfs, 1);
+            data[numVfs].vfPreempt = (numVfs == 1 ? 128000 : std::max(64000 / numVfs, 16000));
+        }
+    } else {
+        data[numVfs].pfExec = 64;
+        data[numVfs].pfPreempt = 128000;
+        data[numVfs].schedIfIdle = false;
+        data[numVfs].vfExec = std::min(int(2000 / std::max(numVfs - 1, 1) * 0.5), 50);
+        data[numVfs].vfPreempt = (2000 / std::max(numVfs - 1, 1) - std::min(int((2000 / std::max(numVfs - 1 , 1)) * 0.5), 50)) * 1000;
+    }
+    XPUM_LOG_DEBUG("vgpu scheduler: {}, numVfs: {}, vfExec: {}, vfPreempt: {}, pfExec: {}, pfPreempt: {}, schedIfIdle: {}", scheduler, numVfs,
+    data[numVfs].vfExec, data[numVfs].vfPreempt, data[numVfs].pfExec, data[numVfs].pfPreempt, data[numVfs].schedIfIdle);
+}
+
+static AttrFromConfigFile combineAttrConfig(std::map<uint32_t, AttrFromConfigFile> data, uint32_t numVfs, std::string devicePciId, std::string scheduler) {
     if (data.size() == 1 && data.find(numVfs) != data.end())
         return data.begin()->second;
     if (data.find(numVfs) == data.end()) {
@@ -625,23 +691,7 @@ static AttrFromConfigFile combineAttrConfig(std::map<uint32_t, AttrFromConfigFil
         data[numVfs].vfDoorbells = data[XPUM_MAX_VF_NUM].vfDoorbells / static_cast<uint64_t>(numVfs);
     if (data[numVfs].vfGgtt == 0 && data[XPUM_MAX_VF_NUM].vfGgtt != 0)
         data[numVfs].vfGgtt = data[XPUM_MAX_VF_NUM].vfGgtt / static_cast<uint64_t>(numVfs);
-    if (data[numVfs].vfExec == 0 && data[XPUM_MAX_VF_NUM].vfExec != 0)
-        data[numVfs].vfExec = data[XPUM_MAX_VF_NUM].vfExec / static_cast<uint64_t>(numVfs);
-    if (data[numVfs].vfPreempt == 0 && data[XPUM_MAX_VF_NUM].vfPreempt != 0)
-        data[numVfs].vfPreempt = data[XPUM_MAX_VF_NUM].vfPreempt / static_cast<uint64_t>(numVfs);
-    if (pciDeviceId == 0x56c0 || pciDeviceId == 0x56c1 || pciDeviceId == 0x56c2) {
-        if (data[numVfs].pfExec == 0 && data[XPUM_MAX_VF_NUM].pfExec != 0)
-            data[numVfs].pfExec = data[XPUM_MAX_VF_NUM].pfExec;
-        if (data[numVfs].pfPreempt == 0 && data[XPUM_MAX_VF_NUM].pfPreempt != 0)
-            data[numVfs].pfPreempt = data[XPUM_MAX_VF_NUM].pfPreempt;
-    } else {
-        if (data[numVfs].pfExec == 0 && data[XPUM_MAX_VF_NUM].pfExec != 0) {
-            data[numVfs].pfExec = data[XPUM_MAX_VF_NUM].pfExec / static_cast<uint64_t>(numVfs);
-        }
-        if (data[numVfs].pfPreempt == 0 && data[XPUM_MAX_VF_NUM].pfPreempt != 0) {
-            data[numVfs].pfPreempt = data[XPUM_MAX_VF_NUM].pfPreempt / static_cast<uint64_t>(numVfs);
-        }
-    }
+    updateVgpuSchedulerConfigParamerters(devicePciId, numVfs, scheduler, data);
     return data[numVfs];
 }
 
@@ -659,7 +709,7 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
         if (!is_path_exist(fileName))
             fileName = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/config/" + std::string("vgpu.conf");
     }
-
+    XPUM_LOG_DEBUG("read vgpu.conf: {}", fileName);
     Property prop;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
     std::ostringstream oss;
@@ -673,6 +723,7 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
     std::string line;
     std::map<uint32_t, AttrFromConfigFile> data;
     uint32_t currentNameId = 0;
+    std::string default_vgpu_scheduler;
     while (std::getline(ifs, line)) {
         line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
         if (line[0] == '#' || line.empty()) {
@@ -714,24 +765,21 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
                 data[currentNameId].vfDoorbells = std::stoi(value);
             } else if (strcmp(key.c_str(), "VF_GGTT") == 0 && currentNameId) {
                 data[currentNameId].vfGgtt = std::stoul(value);
-            } else if (strcmp(key.c_str(), "VF_EXEC_QUANT_MS") == 0 && currentNameId) {
-                data[currentNameId].vfExec = std::stoul(value);
-            } else if (strcmp(key.c_str(), "VF_PREEMPT_TIMEOUT_US") == 0 && currentNameId) {
-                data[currentNameId].vfPreempt = std::stoul(value);
-            } else if (strcmp(key.c_str(), "PF_EXEC_QUANT_MS") == 0 && currentNameId) {
-                data[currentNameId].pfExec = std::stoul(value);
-            } else if (strcmp(key.c_str(), "PF_PREEMPT_TIMEOUT") == 0 && currentNameId) {
-                data[currentNameId].pfPreempt = std::stoul(value);
-            } else if (strcmp(key.c_str(), "SCHED_IF_IDLE") == 0 && currentNameId) {
-                data[currentNameId].schedIfIdle = (bool)std::stoi(value);
+            } else if (strcmp(key.c_str(), "VGPU_SCHEDULER") == 0 && currentNameId) {
+                updateVgpuSchedulerConfigParamerters(devicePciId, currentNameId, value, data);
+                if (currentNameId == XPUM_MAX_VF_NUM)
+                    default_vgpu_scheduler = value;
             } else if (strcmp(key.c_str(), "DRIVERS_AUTOPROBE") == 0 && currentNameId) {
                 data[currentNameId].driversAutoprobe = (bool)std::stoi(value);
+                if (currentNameId != XPUM_MAX_VF_NUM) {
+                    XPUM_LOG_DEBUG("find predefined vgpu configration from vgpu.conf");
+                    break;
+                }
             }
         }
     }
-    int pciDeviceId = std::stoi(prop.getValue().substr(2), nullptr, 16);
     if (data.size())
-        attrs = combineAttrConfig(data, numVfs, pciDeviceId);
+        attrs = combineAttrConfig(data, numVfs, devicePciId, default_vgpu_scheduler);
     return true;
 }
 
