@@ -1192,13 +1192,13 @@ Succeed in adding the required kernel command line parameters, &quot;intel_iommu
 <li><p>VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication</p></li>
 <li><p>VF_DOORBELLS: Number of doorbells per virtual GPU, used for KMD-GuC communication</p></li>
 <li><p>VF_GGTT: GGTT(Global Graphics Translation Table) size per virtual GPU, used for memory mapping, in bytes</p></li>
-<li><p>VF_EXEC_QUANT_MS: Denotes the amount of time that a particular virtual GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds</p></li>
-<li><p>VF_PREEMPT_TIMEOUT_US: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds</p></li>
-<li><p>PF_EXEC_QUANT_MS: Denotes the amount of time that the physical GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds</p></li>
-<li><p>PF_PREEMPT_TIMEOUT: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds</p></li>
-<li><p>SCHED_IF_IDLE: 0: flexible scheduling, the virtual GPU will be allocated its time slice only if it has pending workload, and the time slice shifts to next virtual GPU when all workload submitted by current virtual GPU are completed. 1: strict scheduling, the virtual GPU will always be allocated its time slice even if it’s idle.</p></li>
+<li><p>VGPU_SCHEDULER: virtual GPU Sheduler to set different PF/VF executionQuantum, PF/VF preemptionTimeout and scheduleIfIdle policy. For Intel Data Center Flex GPUs, it has three options to meet various application scenarios: Flexible_30fps_GPUTimeSlicing, Fixed_30fps_GPUTimeSlicing, Flexible_BurstableQoS_GPUTimeSlicing. The default is Flexible_30fps_GPUTimeSlicing if not set or set incorrectly. For Intel Data Center Max GPUs, it only has one effective option: Flexible_BurstableQoS_GPUTimeSlicing. Other settings will not take effect. For implementation details about VGPU_SCHEDULER, please refer to the link: https://github.com/intel/xpumanager/blob/master/core/src/vgpu/vgpu_manager.cpp</p></li>
 <li><p>DRIVERS_AUTOPROBE: Determines whether the newly enabled virtual GPUs are immediately bound to a driver, 0 or 1</p></li>
 </ul>
+<p>To automatically change different vGPU schedulers, you may use the command sed as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sed</span> <span class="o">-</span><span class="n">i</span> <span class="s2">&quot;s/VGPU_SCHEDULER=Flexible_30fps_GPUTimeSlicing/VGPU_SCHEDULER=Flexible_BurstableQoS_GPUTimeSlicing/g&quot;</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">vgpu</span><span class="o">.</span><span class="n">conf</span>
+</pre></div>
+</div>
 </section>
 <section id="limitations">
 <h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this heading"></a></h3>

@@ -141,6 +141,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                                                 std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDiagnosticPeformanceMemoryAllocation(const ze_device_handle_t &ze_device,
+                                                             const zes_device_handle_t &zes_device,
                                                              const ze_driver_handle_t &ze_driver,
                                                              std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
@@ -151,6 +152,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                                             std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDiagnosticMemoryError(const ze_device_handle_t &ze_device,
+                                                            const zes_device_handle_t &zes_device,
                                                             const ze_driver_handle_t &ze_driver,
                                                             std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
@@ -275,6 +277,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static std::map<int32_t, std::set<int32_t>> device_id_link_to_device_ids;
 
     static const std::string COMPONENT_TYPE_NOT_SUPPORTED;
+
+    static const std::string COMPONENT_TYPE_NOT_SUPPORTED_ON_PF;
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 

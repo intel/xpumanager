@@ -1078,12 +1078,13 @@ The advanced configurations of the virtual GPU are in the file, /usr/lib/xpu-smi
  * VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication 
  * VF_DOORBELLS: Number of doorbells per virtual GPU, used for KMD-GuC communication
  * VF_GGTT: GGTT(Global Graphics Translation Table) size per virtual GPU, used for memory mapping, in bytes
- * VF_EXEC_QUANT_MS: Denotes the amount of time that a particular virtual GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds
- * VF_PREEMPT_TIMEOUT_US: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds 
- * PF_EXEC_QUANT_MS: Denotes the amount of time that the physical GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds
- * PF_PREEMPT_TIMEOUT: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds
- * SCHED_IF_IDLE: 0: flexible scheduling, the virtual GPU will be allocated its time slice only if it has pending workload, and the time slice shifts to next virtual GPU when all workload submitted by current virtual GPU are completed. 1: strict scheduling, the virtual GPU will always be allocated its time slice even if it's idle. 
+ * VGPU_SCHEDULER: virtual GPU Sheduler to set different PF/VF executionQuantum, PF/VF preemptionTimeout and scheduleIfIdle policy. For Intel Data Center Flex GPUs, it has three options to meet various application scenarios: Flexible_30fps_GPUTimeSlicing, Fixed_30fps_GPUTimeSlicing, Flexible_BurstableQoS_GPUTimeSlicing. The default is Flexible_30fps_GPUTimeSlicing if not set or set incorrectly. For Intel Data Center Max GPUs, it only has one effective option: Flexible_BurstableQoS_GPUTimeSlicing. Other settings will not take effect. For implementation details about VGPU_SCHEDULER, please refer to the link: https://github.com/intel/xpumanager/blob/master/core/src/vgpu/vgpu_manager.cpp
  * DRIVERS_AUTOPROBE: Determines whether the newly enabled virtual GPUs are immediately bound to a driver, 0 or 1
+
+To automatically change different vGPU schedulers, you may use the command sed as follows:
+```
+sed -i "s/VGPU_SCHEDULER=Flexible_30fps_GPUTimeSlicing/VGPU_SCHEDULER=Flexible_BurstableQoS_GPUTimeSlicing/g" /usr/lib/xpu-smi/config/vgpu.conf
+```
 
 ### Limitations
  * XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand VF utilizations by looking at metrics of PF. 

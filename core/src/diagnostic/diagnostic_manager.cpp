@@ -81,6 +81,7 @@ int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = 30
 int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = 116;
 int DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = 67;
 const std::string DiagnosticManager::COMPONENT_TYPE_NOT_SUPPORTED = "Not supported";
+const std::string DiagnosticManager::COMPONENT_TYPE_NOT_SUPPORTED_ON_PF = "Not supported on physical functions.";
 std::map<uint32_t, int32_t> DiagnosticManager::fabric_id_convert_to_device_id;
 std::map<int32_t, std::set<int32_t>> DiagnosticManager::device_id_link_to_device_ids;
 std::string DiagnosticManager::PVC_FW_MINIMUM_VERSION = "PVC2_1.23423";
@@ -698,7 +699,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
                     XPUM_LOG_INFO("device: {} - start memory allocation diagnostic", currentId);
                     try {
-                        doDiagnosticPeformanceMemoryAllocation(ze_device, ze_driver, p_task_info);
+                        doDiagnosticPeformanceMemoryAllocation(ze_device, zes_device, ze_driver, p_task_info);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION, e.what(), p_task_info);
                     }
@@ -706,7 +707,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_MEMORY_ERROR:
                     XPUM_LOG_INFO("device: {} - start memory error diagnostic", currentId);
                     try {
-                        doDiagnosticMemoryError(ze_device, ze_driver, p_task_info);
+                        doDiagnosticMemoryError(ze_device, zes_device, ze_driver, p_task_info);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_MEMORY_ERROR, e.what(), p_task_info);
                     }
@@ -816,10 +817,22 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
     std::set<std::string> gfx_versions;
     std::set<std::string> amc_inband_versions;
     for (auto device : devices) {
+        Property property;
+        if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, property)) {
+            XPUM_LOG_DEBUG("device: {}, bdf address: {}", device->getId(), property.getValue());
+        }
+        std::string bdf = property.getValue();
+        if (bdf.empty()) {
+            XPUM_LOG_DEBUG("device: {} has no bdf address, skip it", device->getId());
+            continue; 
+        }
+        if (!GPUDeviceStub::isPhysicalFunctionDevice(bdf)) {
+            XPUM_LOG_DEBUG("device: {} is VF, not check its firmware version", device->getId());
+            continue;
+        }
         std::string gfx_version;
         std::string amc_inband_version;
         // gfx version
-        Property property;
         if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, property)) {
             XPUM_LOG_DEBUG("device: {}, gfx version: {}", device->getId(), property.getValue());
         }
@@ -828,10 +841,6 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
     
         // amc version inband for PVC
         if (device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-            if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, property)) {
-                XPUM_LOG_DEBUG("device: {}, bdf address: {}", device->getId(), property.getValue());
-            }
-            std::string bdf = property.getValue();
             getAMCFirmwareVersionInBand(amc_inband_version, bdf);
             XPUM_LOG_DEBUG("device: {}, amc version: {}", device->getId(), amc_inband_version);
             amc_inband_versions.insert(amc_inband_version);
@@ -1074,7 +1083,11 @@ void DiagnosticManager::doDiagnosticMediaCodec(const zes_device_handle_t &zes_de
         bool sample_multi_transcode_tool_exist = true;
         std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
         if (!file_transcode.good()) {
-            sample_multi_transcode_tool_exist = false;
+            std::ifstream file_transcode_retry("/usr/bin/sample_multi_transcode");
+            if (!file_transcode_retry.good())
+                sample_multi_transcode_tool_exist = false;
+            else
+                DiagnosticManager::MEDIA_CODER_TOOLS_PATH="/usr/bin/";
         }
 
         bool h265_1080p_file_exist = true;
@@ -1321,6 +1334,10 @@ std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
        << std::setw(2) << pci_props.address.device << std::string(".") << pci_props.address.function;
     std::string bdf_address = os.str();
 
+    // not check VF PCIe downgraded status, it's always unknown
+    if (!GPUDeviceStub::isPhysicalFunctionDevice(bdf_address))
+        return ret;
+    
     char link_path[PATH_MAX];
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
@@ -1601,11 +1618,16 @@ void DiagnosticManager::showResultsHost2device(std::size_t buffer_size, long dou
               << std::setprecision(2) << total_latency << " usec" << std::endl;
 }
 
-void DiagnosticManager::doDiagnosticPeformanceMemoryAllocation(const ze_device_handle_t &ze_device,
+void DiagnosticManager::doDiagnosticPeformanceMemoryAllocation(const ze_device_handle_t &ze_device, const zes_device_handle_t &zes_device,
                                                                      const ze_driver_handle_t &ze_driver,
                                                                      std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
     xpum_diag_component_info_t &component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION];
     p_task_info->count += 1;
+    if (GPUDeviceStub::hasVirtualFunctionOnDevice(zes_device)) {
+        updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED_ON_PF);
+        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        return;
+    }
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
@@ -1743,11 +1765,16 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
     return binary_file;
 }
 
-void DiagnosticManager::doDiagnosticMemoryError(const ze_device_handle_t &ze_device,
+void DiagnosticManager::doDiagnosticMemoryError(const ze_device_handle_t &ze_device, const zes_device_handle_t &zes_device,
                                                                      const ze_driver_handle_t &ze_driver,
                                                                      std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
     xpum_diag_component_info_t &component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_MEMORY_ERROR];
     p_task_info->count += 1;
+    if (GPUDeviceStub::hasVirtualFunctionOnDevice(zes_device)) {
+        updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED_ON_PF);
+        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        return;
+    }
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     ze_result_t ret;
@@ -1971,8 +1998,11 @@ void DiagnosticManager::doDiagnosticPeformanceComputation(const ze_device_handle
     }
     xpum_diag_component_info_t &compute_component = p_task_info->componentList[comp_index];
     p_task_info->count += 1;
-    updateMessage(compute_component.message, std::string("Running"));
-    compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
+    if (comp_index == xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION && GPUDeviceStub::hasVirtualFunctionOnDevice(zes_device)) {
+        updateMessage(compute_component.message, COMPONENT_TYPE_NOT_SUPPORTED_ON_PF);
+        compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        return;
+    }
 
     ze_result_t ret;
     std::vector<ze_device_handle_t> device_handles;
@@ -2152,6 +2182,11 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
     std::atomic<bool> computation_done(false);
     xpum_diag_component_info_t &power_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_POWER];
     p_task_info->count += 1;
+    if (GPUDeviceStub::hasVirtualFunctionOnDevice(zes_device)) {
+        updateMessage(power_component.message, COMPONENT_TYPE_NOT_SUPPORTED_ON_PF);
+        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        return;
+    }
     updateMessage(power_component.message, std::string("Running"));
     power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
@@ -2489,6 +2524,11 @@ void DiagnosticManager::doDiagnosticPeformanceMemoryBandwidth(const ze_device_ha
                                                                     std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
     xpum_diag_component_info_t &memorybandwidth_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH];
     p_task_info->count += 1;
+    if (GPUDeviceStub::hasVirtualFunctionOnDevice(zes_device)) {
+        updateMessage(memorybandwidth_component.message, COMPONENT_TYPE_NOT_SUPPORTED_ON_PF);
+        memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        return;
+    }
     updateMessage(memorybandwidth_component.message, std::string("Running"));
     memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
