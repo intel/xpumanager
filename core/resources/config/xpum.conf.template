@@ -2,3 +2,51 @@
 # Request timeout for Redfish Host Interface 
 #-------------------------------------------------------
 # REDFISH_HOST_TIMEOUT = 120
+
+#-------------------------------------------------------
+# media codec files for GPU Diagnostics
+#-------------------------------------------------------
+# MEDIA_CODER_TOOLS_PATH = /usr/share/mfx/samples/  # or /usr/bin/
+# MEDIA_CODER_TOOLS_1080P_FILE = test_stream_1080p.265 # HEVC
+# MEDIA_CODER_TOOLS_4K_FILE = test_stream_4K.265       # HEVC UHD
+# CPU_TEMPERATURE_THRESHOLD = 85
+
+
+#-------------------------------------------------------
+# configurations for precheck
+# KERNEL_MESSAGES_SOURCE can be journalctl(default), dmesg or file, which is case-insensitive.
+# When KERNEL_MESSAGES_SOURCE is file, precheck would scan kernel messages from the file specified in KERNEL_MESSAGES_FILE. 
+# If file is absent or unreadable, precheck would fall back to the "dmesg" kernel messages source. 
+#-------------------------------------------------------
+# KERNEL_MESSAGES_SOURCE = journalctl
+# KERNEL_MESSAGES_FILE = <file_path>
+
+
+#-------------------------------------------------------
+# timeout for command queue synchronize 
+#-------------------------------------------------------
+# ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 1500 # seconds
+
+
+#-------------------------------------------------------
+# memory use percentage for error test
+#-------------------------------------------------------
+# MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = 0.9
+
+#-------------------------------------------------------
+# usage percentage threshold for xe link throughtput 
+#-------------------------------------------------------
+# XE_LINK_THROUGHPUT_USAGE_PERCENTAGE = 0.7
+# REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE = 23
+# REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE = 19
+
+#-------------------------------------------------------
+# xe link all-to-all throughput on multiple link engines
+#-------------------------------------------------------
+# XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF = 0.8
+# REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE = 117
+# REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = 55
+# REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE = 51
+# REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = 303
+# REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = 116
+# REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = 67

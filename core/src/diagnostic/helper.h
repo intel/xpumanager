@@ -16,9 +16,13 @@
 
 namespace xpum {
 
+    const std::string DIAG_CONFIG_THRESHOLD_CONIG_FILE = "diagnostics.conf";
+
+    const std::string XPUM_GLOBAL_CONFIG_FILE = "xpum.conf";
+
     bool isPathExist(const std::string &s);
 
-    void readConfigFile();
+    void readConfigFile(std::string conf_file_name);
 
     double calculateMean(const std::vector<double>& data);
 

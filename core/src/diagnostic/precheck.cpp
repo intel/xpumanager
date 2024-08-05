@@ -682,7 +682,7 @@ namespace xpum {
 
     xpum_result_t PrecheckManager::precheck(xpum_precheck_component_info_t resultList[], int *count, xpum_precheck_options options) {
         xpum_precheck_log_source logSource = XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL;
-        readConfigFile();
+        readConfigFile(XPUM_GLOBAL_CONFIG_FILE);
         XPUM_LOG_INFO("log source: {}, log file: {}", PrecheckManager::KERNEL_MESSAGES_SOURCE, PrecheckManager::KERNEL_MESSAGES_FILE);
         if (PrecheckManager::KERNEL_MESSAGES_SOURCE == "file")  {
             if (!isPathExist(PrecheckManager::KERNEL_MESSAGES_FILE))

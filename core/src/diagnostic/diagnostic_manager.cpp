@@ -160,9 +160,10 @@ xpum_result_t DiagnosticManager::runDiagnosticsCore(xpum_device_id_t deviceId, x
     }
 
     try {
-        readConfigFile();
+        readConfigFile(XPUM_GLOBAL_CONFIG_FILE);
+        readConfigFile(DIAG_CONFIG_THRESHOLD_CONIG_FILE);
     } catch (BaseException &e) {
-        XPUM_LOG_DEBUG("fail to read diagnostics.conf");
+        XPUM_LOG_DEBUG("fail to read xpum.conf and diagnostics.conf");
     }
 
     std::thread task(&DiagnosticManager::doDiagnosticCore, this, deviceId);
@@ -3861,7 +3862,8 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
 }
 
 xpum_result_t DiagnosticManager::runStress(xpum_device_id_t deviceId, uint32_t stressTime) {
-    readConfigFile(); 
+    readConfigFile(XPUM_GLOBAL_CONFIG_FILE);
+    readConfigFile(DIAG_CONFIG_THRESHOLD_CONIG_FILE);
     std::unique_lock<std::mutex> lock(this->mutex);
     std::vector<std::shared_ptr<Device>> devices;
     if (deviceId == -1) {
