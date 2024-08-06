@@ -1966,8 +1966,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryThroughputAndBandwidt
 
                 zes_mem_bandwidth_t mem_bandwidth = {};
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS && 
-                        mem_bandwidth.maxBandwidth > 0) {
+                if (res == ZE_RESULT_SUCCESS) {
                     uint32_t subdeviceId = UINT32_MAX;
                     if (props.onSubdevice) {
                         subdeviceId = props.subdeviceId;
@@ -1980,7 +1979,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryThroughputAndBandwidt
                     ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, mem_bandwidth.timestamp / 1000);
                     // The 100 for percentage and the first 1000 for mili seconds to seconds in the next comment code, but to overcome the possible overflow we use the next line of comment code
                     // ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter + mem_bandwidth.writeCounter) / mem_bandwidth.maxBandwidth * 1000, 1, true, mem_bandwidth.timestamp / 1000);
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter / 1000 + mem_bandwidth.writeCounter / 1000) / (mem_bandwidth.maxBandwidth / 1000) * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    if (mem_bandwidth.maxBandwidth > 0) { 
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter / 1000 + mem_bandwidth.writeCounter / 1000) / (mem_bandwidth.maxBandwidth / 1000) * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    }
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
