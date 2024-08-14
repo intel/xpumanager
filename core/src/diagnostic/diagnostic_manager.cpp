@@ -1383,7 +1383,6 @@ std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
     std::string cs = "current_link_speed", cw = "current_link_width", 
                 ms = "max_link_speed", mw = "max_link_width";
     while (card_full_path != "/sys/class/drm") { 
-        ;  
         if (isPathExist(card_full_path + "/" + cs) && isPathExist(card_full_path + "/" + cw)
             && isPathExist(card_full_path + "/" + ms) && isPathExist(card_full_path + "/" + mw)) {
             XPUM_LOG_DEBUG("check current speed and width on: {}", card_full_path);
@@ -1391,8 +1390,25 @@ std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
             if (getOneLineFileContent(card_full_path, cw) != getOneLineFileContent(card_full_path, mw)) {
                 ret = "Width on " + current_bridge + " downgraded to x" +  getOneLineFileContent(card_full_path, cw) + ".";
             }
-            if (getOneLineFileContent(card_full_path, cs) != getOneLineFileContent(card_full_path, ms)) {
-                ret = "Speed on " + current_bridge + " downgraded to " +  getOneLineFileContent(card_full_path, cs) + ".";
+            std::string current_link_speed = getOneLineFileContent(card_full_path, cs);
+            std::string max_link_speed = getOneLineFileContent(card_full_path, ms);
+            if (current_link_speed != max_link_speed) {
+                float parsed_speed = -1;
+                try {
+                    parsed_speed = std::stof(current_link_speed.substr(0, current_link_speed.find_first_of(' ')));
+                } catch(...) {
+                    XPUM_LOG_ERROR("fail to parse current_link_speed on {}", current_bridge);
+                }
+                XPUM_LOG_DEBUG("check current_link_speed on {}: current_link_speed: {}, max_link_speed: {}, parsed_speed: {}", 
+                    current_bridge, current_link_speed, max_link_speed, parsed_speed);
+                // For ATS-M, check downgraded link speed only when current_link_speed < 16.0 GT/s
+                // For PVC, check downgraded link speed only when current_link_speed < 32.0 GT/s
+                if (parsed_speed > 0) {
+                    if (Utility::isATSMPlatform(zes_device) && parsed_speed < 16)
+                        ret = "Speed on " + current_bridge + " downgraded to " +  current_link_speed + ".";
+                    if (Utility::isPVCPlatform(zes_device) && parsed_speed < 32)
+                        ret = "Speed on " + current_bridge + " downgraded to " +  current_link_speed + ".";
+                }
             }
         }
         
