@@ -1,4 +1,4 @@
-FROM ubuntu:focal-20220801@sha256:af5efa9c28de78b754777af9b4d850112cad01899a5d37d2617bb94dc63a49aa
+FROM ubuntu:noble-20231126.1@sha256:3e1fb4aeedc137fc8cffe5f0a7c25bfd216ffab624460c8c17031724d9dc61e4
 
 ARG L0_DEV_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.5/level-zero-devel_1.8.5+u18.04_amd64.deb
 ARG L0_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.5/level-zero_1.8.5+u18.04_amd64.deb
@@ -27,7 +27,7 @@ ENV PATH="/cmake/bin:${PATH}".
 
 COPY builder/requirements.txt /tmp/requirements.txt
 
-RUN python3 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
+RUN python3 -m pip --proxy=$http_proxy install --break-system-packages -r /tmp/requirements.txt
 
 RUN mkdir /work && cd /work && \
     wget -q --no-check-certificate $L0_DEV_DEB_URL && \

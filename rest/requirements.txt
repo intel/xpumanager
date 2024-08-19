@@ -2,7 +2,7 @@ Flask==2.2.5
 Flask-HTTPAuth==4.5.0
 requests==2.32.0
 prometheus-client==0.12.0
-grpcio==1.56.2
+grpcio==1.59.5
 protobuf==4.21.10
 marshmallow==3.7.1
 gunicorn[gthread]==22.0.0

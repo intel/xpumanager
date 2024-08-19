@@ -87,30 +87,6 @@ pipeline {
 
       stage('Build') {
         parallel {
-          stage('build focal deb') {
-            steps {
-              container(name: 'xpum-builder-ubuntu-focal') {
-                script {
-                  loadEnvironmentVariables()
-                }
-                sh '''env && MAIN_WORKSPACE=$PWD && \
-                mkdir ../ws_ubuntu_focal && \
-                cp -rp . ../ws_ubuntu_focal && \
-                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_ubuntu_focal/doc && \
-                cd ../ws_ubuntu_focal && \
-                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
-                export CCACHE_BASEDIR=$PWD && \
-                mkdir $MAIN_WORKSPACE/build-deb-focal && \
-                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
-                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb-focal && \
-                rm -fr build && \
-                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
-                cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-focal
-                '''
-              }
-            }
-          }
-
           stage('build jammy deb') {
             steps {
               container(name: 'xpum-builder-ubuntu-jammy') {
@@ -130,6 +106,30 @@ pipeline {
                 rm -fr build && \
                 ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-jammy
+                '''
+              }
+            }
+          }
+
+          stage('build noble deb') {
+            steps {
+              container(name: 'xpum-builder-ubuntu-noble') {
+                script {
+                  loadEnvironmentVariables()
+                }
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_ubuntu_noble && \
+                cp -rp . ../ws_ubuntu_noble && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_ubuntu_noble/doc && \
+                cd ../ws_ubuntu_noble && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-deb-noble && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb-noble && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-noble
                 '''
               }
             }

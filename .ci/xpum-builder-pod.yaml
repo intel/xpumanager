@@ -16,37 +16,9 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20240619"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20240816"
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
-      resources:
-        limits: 
-          memory: "6Gi"
-          cpu: "4"
-        requests:
-          memory: "2Gi"
-          cpu: "1"
-      securityContext:
-        privileged: false
-      tty: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - name: sign-secret
-          mountPath: "/root"
-          readOnly: true
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
-    - args:
-        - "99d"
-      command:
-        - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-focal:lz-1.8.5-20240619"
-      imagePullPolicy: "Always"
-      name: "xpum-builder-ubuntu-focal"
       resources:
         limits: 
           memory: "6Gi"
@@ -72,9 +44,37 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20240619"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20240816"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-jammy"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      securityContext:
+        privileged: false
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
+      workingDir: "/home/jenkins/agent"
+    - args:
+      - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-noble:lz-1.8.5-20240816"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-ubuntu-noble"
       resources:
         limits: 
           memory: "6Gi"
@@ -100,7 +100,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-debian:lz-1.8.5-20240619"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-debian:lz-1.8.5-20240816"
       imagePullPolicy: "Always"
       name: "xpum-builder-debian"
       resources:
@@ -128,7 +128,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20240619"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20240816"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7-6"
       resources:
@@ -154,7 +154,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos8-2:lz-1.8.5-20240619"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos8-2:lz-1.8.5-20240816"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos8-2"
       resources:
@@ -180,7 +180,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20240619"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20240816"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos-stream9"
       resources:
