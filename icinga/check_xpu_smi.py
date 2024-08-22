@@ -56,7 +56,7 @@ def query_cmd(cmd):
         if port:
             by_ssh_cmd += " -p {}".format(port)
         full_cmd = "{} {}".format(by_ssh_cmd, cmd).split(" ")
-    res = subprocess.run(full_cmd, capture_output=True)
+    res = subprocess.run(full_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     if res.returncode != 0:
         print("Critical: {}".format(res.stderr.decode()))
         exit(2)
