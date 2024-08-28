@@ -46,14 +46,17 @@ telemetry_type_list = [
 telemetry_type_dict = dict(telemetry_type_list)
 
 
-def ssh_query(cmd):
-    by_ssh_cmd = "ssh -oStrictHostKeyChecking=accept-new {} -l {}".format(host, username)
-    if identity_file:
-        by_ssh_cmd += " -i {}".format(identity_file)
-    if port:
-        by_ssh_cmd += " -p {}".format(port)
-    full_cmd = "{} {}".format(by_ssh_cmd, cmd).split(" ")
-    res = subprocess.run(full_cmd, capture_output=True)
+def query_cmd(cmd):
+    if local_run:
+        full_cmd = format(cmd).split(" ")
+    else:
+        by_ssh_cmd = "ssh -oStrictHostKeyChecking=accept-new {} -l {}".format(host, username)
+        if identity_file:
+            by_ssh_cmd += " -i {}".format(identity_file)
+        if port:
+            by_ssh_cmd += " -p {}".format(port)
+        full_cmd = "{} {}".format(by_ssh_cmd, cmd).split(" ")
+    res = subprocess.run(full_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     if res.returncode != 0:
         print("Critical: {}".format(res.stderr.decode()))
         exit(2)
@@ -62,7 +65,7 @@ def ssh_query(cmd):
 
 def checkTelemetry():
 
-    data = ssh_query("sudo xpu-smi stats -d {} -j".format(deviceId))
+    data = query_cmd("sudo xpu-smi stats -d {} -j".format(deviceId))
 
     ok_list = []
     warning_list = []
@@ -196,7 +199,7 @@ health_type_dict = dict(health_type_list)
 
 
 def checkHealth():
-    data = ssh_query("sudo xpu-smi health -d {} -j".format(deviceId))
+    data = query_cmd("sudo xpu-smi health -d {} -j".format(deviceId))
     ok_list = []
     warning_list = []
     critical_list = []
@@ -240,7 +243,7 @@ def arg():
     parser.add_argument('-V', '--version', action='version',
                         version='%(prog)s v' + sys.modules[__name__].__version__)
     parser.add_argument(
-        '-H', '--host', required=True, help="Host name, IP Address")
+        '-H', '--host', help="Host name, IP Address")
     parser.add_argument(
         '-p', '--port', help="SSH Port number")
     parser.add_argument(
@@ -253,6 +256,9 @@ def arg():
 
     parser.add_argument('-T', '--Type', required=True,
                         choices=['telemetry', 'health'], help="The gpu info type to check")
+
+    parser.add_argument(
+        '-l', '--local_run', help="Run locally without SSH.", action='store_true')
 
     for k in telemetry_type_dict:
         v = telemetry_type_dict[k]
@@ -268,12 +274,14 @@ def arg():
     global deviceId
     global username
     global identity_file
+    global local_run
 
     host = parsed.host
     port = parsed.port
     username = parsed.Username
     deviceId = parsed.deviceId
     identity_file = parsed.identity
+    local_run = parsed.local_run
 
     global warning_threshold
     global critical_threshold
