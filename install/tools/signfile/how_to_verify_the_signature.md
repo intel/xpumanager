@@ -2,7 +2,7 @@
 
 ## DEB package:
 ```sh
-gpg --import intel_graphics_linux_pgp_2021.pem
+gpg --import intel_graphics_linux_pgp.pem
 apt-get install dpkg-sig
 dpkg-sig --verify xpumanager.xxx.deb
 #should display "GOODSIG…"
@@ -10,7 +10,7 @@ dpkg-sig --verify xpumanager.xxx.deb
 
 ## RPM package:
 ```sh
-rpm --import intel_graphics_linux_pgp_2021.pem
+rpm --import intel_graphics_linux_pgp.pem
 rpm -K xpumanager.xxx.rpm
 #should display "…digests signatures OK"
 ```
@@ -25,7 +25,7 @@ openssl smime -verify -in xpu-smi-xxx.sig -inform der -content xpu-smi-xxx.zip -
 
 ## amcmcli:
 ```sh
-gpg --import intel_graphics_linux_pgp_2021.pem
+gpg --import intel_graphics_linux_pgp.pem
 gpg --verify amcmcli.sig amcmcli
 #should display "gpg: Good signature from "CN=XPUM_PGP_KEY" [unknown]"
 ```
