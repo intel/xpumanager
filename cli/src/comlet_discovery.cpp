@@ -74,6 +74,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "SKU Type", "value": "sku_type"},
                 { "rowTitle": " " },
                 { "label": "Driver Version", "value": "driver_version", "dumpId": 8 },
+                { "label": "Driver Package Version", "value": "driver_pack_version" },
                 { "label": "Kernel Version", "value": "kernel_version" },
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },

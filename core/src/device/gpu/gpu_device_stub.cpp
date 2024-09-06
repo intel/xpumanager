@@ -741,14 +741,8 @@ static std::string getI915Version() {
     return ret;
 }
 
-static std::string getDriverVersion() {
+static std::string getDriverPackVersion() {
     std::string version;
-    // Try to get i915 backported version from sysfs first
-    version = getI915Version();
-    if (version.length() > 0) {
-        return version;
-    }
-
     std::string release;
     std::string name = "intel-i915-dkms";
     std::string rpm_cmd = "rpm -qa 2>/dev/null| grep " + name + " 2>/dev/null";
@@ -760,12 +754,12 @@ static std::string getDriverVersion() {
             return version;
         }
         pos1 += name.length();
-        pos1 = strData.find_first_of("0123456789",pos1);
-        auto pos2 = strData.find_first_of("-",pos1);
-        version = strData.substr(pos1,pos2-pos1);
+        pos1 = strData.find_first_of("0123456789", pos1);
+        auto pos2 = strData.find_first_of("-", pos1);
+        version = strData.substr(pos1, pos2 - pos1);
         pos1 = pos2 + 1;
-        pos2 = strData.find_first_of(".",pos1);
-        release = strData.substr(pos1,pos2-pos1);
+        pos2 = strData.find_first_of(".", pos1);
+        release = strData.substr(pos1, pos2 - pos1);
         version = version + "-" + release;
     } else {
         std::string deb_cmd = "dpkg -l 2>/dev/null| grep " + name + " 2>/dev/null";
@@ -783,6 +777,16 @@ static std::string getDriverVersion() {
         }
     }
     return version;
+}
+
+static std::string getDriverVersion() {
+    std::string version;
+    // Try to get i915 backported version from sysfs first
+    version = getI915Version();
+    if (version.length() > 0) {
+        return version;
+    }
+    return getDriverPackVersion();
 }
 
 static std::string getKernelVersion() {
@@ -1193,6 +1197,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_PACK_VERSION, getDriverPackVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION, getKernelVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(props.boardNumber)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME, std::string(props.vendorName)));
