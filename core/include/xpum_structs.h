@@ -261,6 +261,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS = 45,            ///< The GFX firmware status
     XPUM_DEVICE_PROPERTY_SKU_TYPE = 46,                       ///< The type of SKU
     XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE = 47,        ///< Xe Link Calibration Date
+    XPUM_DEVICE_PROPERTY_DRIVER_PACK_VERSION = 48,            ///< The driver package version
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 

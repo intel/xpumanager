@@ -741,14 +741,8 @@ static std::string getI915Version() {
     return ret;
 }
 
-static std::string getDriverVersion() {
+static std::string getDriverPackVersion() {
     std::string version;
-    // Try to get i915 backported version from sysfs first
-    version = getI915Version();
-    if (version.length() > 0) {
-        return version;
-    }
-
     std::string release;
     std::string name = "intel-i915-dkms";
     std::string rpm_cmd = "rpm -qa 2>/dev/null| grep " + name + " 2>/dev/null";
@@ -760,12 +754,12 @@ static std::string getDriverVersion() {
             return version;
         }
         pos1 += name.length();
-        pos1 = strData.find_first_of("0123456789",pos1);
-        auto pos2 = strData.find_first_of("-",pos1);
-        version = strData.substr(pos1,pos2-pos1);
+        pos1 = strData.find_first_of("0123456789", pos1);
+        auto pos2 = strData.find_first_of("-", pos1);
+        version = strData.substr(pos1, pos2 - pos1);
         pos1 = pos2 + 1;
-        pos2 = strData.find_first_of(".",pos1);
-        release = strData.substr(pos1,pos2-pos1);
+        pos2 = strData.find_first_of(".", pos1);
+        release = strData.substr(pos1, pos2 - pos1);
         version = version + "-" + release;
     } else {
         std::string deb_cmd = "dpkg -l 2>/dev/null| grep " + name + " 2>/dev/null";
@@ -783,6 +777,16 @@ static std::string getDriverVersion() {
         }
     }
     return version;
+}
+
+static std::string getDriverVersion() {
+    std::string version;
+    // Try to get i915 backported version from sysfs first
+    version = getI915Version();
+    if (version.length() > 0) {
+        return version;
+    }
+    return getDriverPackVersion();
 }
 
 static std::string getKernelVersion() {
@@ -1193,6 +1197,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_PACK_VERSION, getDriverPackVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION, getKernelVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(props.boardNumber)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME, std::string(props.vendorName)));
@@ -1966,8 +1971,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryThroughputAndBandwidt
 
                 zes_mem_bandwidth_t mem_bandwidth = {};
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS && 
-                        mem_bandwidth.maxBandwidth > 0) {
+                if (res == ZE_RESULT_SUCCESS) {
                     uint32_t subdeviceId = UINT32_MAX;
                     if (props.onSubdevice) {
                         subdeviceId = props.subdeviceId;
@@ -1980,7 +1984,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryThroughputAndBandwidt
                     ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, mem_bandwidth.timestamp / 1000);
                     // The 100 for percentage and the first 1000 for mili seconds to seconds in the next comment code, but to overcome the possible overflow we use the next line of comment code
                     // ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter + mem_bandwidth.writeCounter) / mem_bandwidth.maxBandwidth * 1000, 1, true, mem_bandwidth.timestamp / 1000);
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter / 1000 + mem_bandwidth.writeCounter / 1000) / (mem_bandwidth.maxBandwidth / 1000) * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    if (mem_bandwidth.maxBandwidth > 0) { 
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_BANDWIDTH, 100 * (mem_bandwidth.readCounter / 1000 + mem_bandwidth.writeCounter / 1000) / (mem_bandwidth.maxBandwidth / 1000) * 1000, 1, true, mem_bandwidth.timestamp / 1000);
+                    }
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;

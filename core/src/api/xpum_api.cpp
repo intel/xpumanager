@@ -146,6 +146,8 @@ const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
             return "SKU_TYPE";
         case XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE:
             return "XE_LINK_CALIBRATION_DATE";
+        case XPUM_DEVICE_PROPERTY_DRIVER_PACK_VERSION:
+            return "DRIVER_PACK_VERSION";
         default:
             return "";
     }
@@ -897,6 +899,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE;
         case XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE:
             return XPUM_DEVICE_PROPERTY_INTERNAL_XELINK_CALIBRATION_DATE;
+        case XPUM_DEVICE_PROPERTY_DRIVER_PACK_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_PACK_VERSION;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }

@@ -92,7 +92,7 @@ COPY --from=builder /opt/venv /opt/venv
 COPY build-deb/*.deb .
 RUN ldconfig && dpkg -i --force-all *.deb
 
-RUN sed -i 's/KERNEL_MESSAGES_SOURCE = journalctl/KERNEL_MESSAGES_SOURCE = dmesg/' /usr/lib/xpum/config/diagnostics.conf
+RUN echo "KERNEL_MESSAGES_SOURCE = dmesg" >> /usr/lib/xpum/config/xpum.conf
 
 WORKDIR /
 

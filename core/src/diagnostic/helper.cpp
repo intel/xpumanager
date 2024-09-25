@@ -285,9 +285,9 @@ namespace xpum {
         return (stat(s.c_str(), &buffer) == 0);
     }
     
-    void readConfigFile() {
+    void readConfigFile(std::string conf_file_name) {
         DiagnosticManager::thresholds.clear();
-        std::string file_name = std::string(XPUM_CONFIG_DIR) + std::string("diagnostics.conf");
+        std::string file_name = std::string(XPUM_CONFIG_DIR) + conf_file_name;
         if (!isPathExist(file_name)) {
             char exe_path[XPUM_MAX_PATH_LEN];
             ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
@@ -300,13 +300,13 @@ namespace xpum {
             if (current_file.find_last_of('/') != std::string::npos)
             xpum_mode = current_file.substr(current_file.find_last_of('/') + 1);
             if (xpum_mode != "xpu-smi") {
-                file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("diagnostics.conf");
+                file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + conf_file_name;
                 if (!isPathExist(file_name))
-                    file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("diagnostics.conf");
+                    file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + conf_file_name;
             } else {
-                file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("diagnostics.conf");
+                file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + conf_file_name;
                 if (!isPathExist(file_name))
-                    file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("diagnostics.conf");
+                    file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + conf_file_name;
             }
         }
         std::ifstream conf_file(file_name);
@@ -323,108 +323,112 @@ namespace xpum {
                 auto value = line.substr(delimiter_pos + 1);
                 if (value.find("#") != std::string::npos)
                     value = value.substr(0, value.find("#"));
-                if (name == "CPU_TEMPERATURE_THRESHOLD") {
-                    PrecheckManager::cpu_temperature_threshold = atoi(value.c_str());
-                } else if (name == "GPU_TEMPERATURE_THRESHOLD") {
-                    DiagnosticManager::GPU_TEMPERATURE_THRESHOLD = atoi(value.c_str());
-                } else if (name == "PVC_FW_MINIMUM_VERSION") {
-                    DiagnosticManager::PVC_FW_MINIMUM_VERSION = value;
-                } else if (name == "PVC_AMC_MINIMUM_VERSION") {
-                    DiagnosticManager::PVC_AMC_MINIMUM_VERSION = value;
-                } else if (name == "ATSM150_FW_MINIMUM_VERSION") {
-                    DiagnosticManager::ATSM150_FW_MINIMUM_VERSION = value;
-                } else if (name == "ATSM75_FW_MINIMUM_VERSION") {
-                    DiagnosticManager::ATSM75_FW_MINIMUM_VERSION = value;
-                } else if (name == "MEDIA_CODER_TOOLS_PATH") {
-                    if (value == "/usr/bin/" || value == "/usr/share/mfx/samples/") {
-                        DiagnosticManager::MEDIA_CODER_TOOLS_PATH = value;
+                if (conf_file_name == XPUM_GLOBAL_CONFIG_FILE) {
+                    if (name == "CPU_TEMPERATURE_THRESHOLD") {
+                        PrecheckManager::cpu_temperature_threshold = atoi(value.c_str());
+                    } else if (name == "GPU_TEMPERATURE_THRESHOLD") {
+                        DiagnosticManager::GPU_TEMPERATURE_THRESHOLD = atoi(value.c_str());
+                    } else if (name == "PVC_FW_MINIMUM_VERSION") {
+                        DiagnosticManager::PVC_FW_MINIMUM_VERSION = value;
+                    } else if (name == "PVC_AMC_MINIMUM_VERSION") {
+                        DiagnosticManager::PVC_AMC_MINIMUM_VERSION = value;
+                    } else if (name == "ATSM150_FW_MINIMUM_VERSION") {
+                        DiagnosticManager::ATSM150_FW_MINIMUM_VERSION = value;
+                    } else if (name == "ATSM75_FW_MINIMUM_VERSION") {
+                        DiagnosticManager::ATSM75_FW_MINIMUM_VERSION = value;
+                    } else if (name == "MEDIA_CODER_TOOLS_PATH") {
+                        if (value == "/usr/bin/" || value == "/usr/share/mfx/samples/") {
+                            DiagnosticManager::MEDIA_CODER_TOOLS_PATH = value;
+                        }
+                    } else if (name == "MEDIA_CODER_TOOLS_1080P_FILE") {
+                        DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = value;
+                    } else if (name == "MEDIA_CODER_TOOLS_4K_FILE") {
+                        DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = value;
+                    } else if (name == "KERNEL_MESSAGES_SOURCE") {
+                        std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+                        PrecheckManager::KERNEL_MESSAGES_SOURCE = value;
+                    } else if (name == "KERNEL_MESSAGES_FILE") {
+                        std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+                        PrecheckManager::KERNEL_MESSAGES_FILE = value;
+                    } else if (name == "ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = val;
+                        } catch(...) { }
+                    } else if (name == "MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST") {
+                        try {
+                            float val = std::stof(value);
+                            if (val > 0 && val <= 1)
+                                DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = val;
+                        } catch(...) { }
+                    } else if (name == "XE_LINK_THROUGHPUT_USAGE_PERCENTAGE") {
+                        try {
+                            float val = std::stof(value);
+                            if (val > 0 && val <= 1)
+                                DiagnosticManager::XE_LINK_THROUGHPUT_USAGE_PERCENTAGE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF") {
+                        try {
+                            float val = std::stof(value);
+                            if (val > 0 && val <= 1)
+                                DiagnosticManager::XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = val;
+                        } catch(...) { }
+                    } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE") {
+                        try {
+                            int val = std::stoi(value);
+                            if (val > 0)
+                                DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = val;
+                        } catch(...) { }
                     }
-                } else if (name == "MEDIA_CODER_TOOLS_1080P_FILE") {
-                    DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = value;
-                } else if (name == "MEDIA_CODER_TOOLS_4K_FILE") {
-                    DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = value;
-                } else if (name == "KERNEL_MESSAGES_SOURCE") {
-                    std::transform(value.begin(), value.end(), value.begin(), ::tolower);
-                    PrecheckManager::KERNEL_MESSAGES_SOURCE = value;
-                } else if (name == "KERNEL_MESSAGES_FILE") {
-                    std::transform(value.begin(), value.end(), value.begin(), ::tolower);
-                    PrecheckManager::KERNEL_MESSAGES_FILE = value;
-                } else if (name == "ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = val;
-                    } catch(...) { }
-                } else if (name == "MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST") {
-                    try {
-                        float val = std::stof(value);
-                        if (val > 0 && val <= 1)
-                            DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = val;
-                    } catch(...) { }
-                } else if (name == "XE_LINK_THROUGHPUT_USAGE_PERCENTAGE") {
-                    try {
-                        float val = std::stof(value);
-                        if (val > 0 && val <= 1)
-                            DiagnosticManager::XE_LINK_THROUGHPUT_USAGE_PERCENTAGE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_THROUGHPUT_ONE_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_THROUGHPUT_TWO_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF") {
-                    try {
-                        float val = std::stof(value);
-                        if (val > 0 && val <= 1)
-                            DiagnosticManager::XE_LINK_ALL_TO_ALL_THROUGHPUT_MIN_RATIO_OF_REF = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_ONE_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_ONE_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_ONE_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X2_TWO_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X4_TWO_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE") {
-                    try {
-                        int val = std::stoi(value);
-                        if (val > 0)
-                            DiagnosticManager::REF_XE_LINK_ALL_TO_ALL_THROUGHPUT_X8_TWO_TILE_DEVICE = val;
-                    } catch(...) { }
-                } else if (name == "NAME") {
-                    current_device = value;
                 } else {
-                    DiagnosticManager::thresholds[current_device][name] = atoi(value.c_str());
+                    if (name == "NAME") {
+                        current_device = value;
+                    } else {
+                        DiagnosticManager::thresholds[current_device][name] = atoi(value.c_str());
+                    }
                 }
             }
             conf_file.close();

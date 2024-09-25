@@ -193,7 +193,7 @@ void ComletDiagnostic::setupOptions() {
     auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver. By default, precheck scans kernel messages by journalctl.\n\
-It could be configured to scan dmesg or log file through diagnostics.conf.");
+It could be configured to scan dmesg or log file through xpum.conf.");
     auto listErrorTypeOpt = addFlag("--listtypes", this->opts->listErrorType, "List all supported GPU error types");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
     auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. It only works with the journalctl option. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
