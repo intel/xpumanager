@@ -26,11 +26,11 @@ It supports local command line interface and local library call interface.
 
 
 ## Intel XPU System Management Interface Command Line Interface
-* Show GPU basic information
+* Show GPU basic information  
 ![Show GPU basic information](doc/img/cli_gpu_info.PNG)
   
 
-* Change GPU settings
+* Change GPU settings  
 ![Show GPU settings](doc/img/cli_settings.PNG)
   
   
