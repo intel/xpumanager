@@ -32,7 +32,7 @@ def loadEnvironmentVariables() {
 
 pipeline {
     parameters { 
-      string(name: 'PUBLISH_DOCKER_REGISTRY', defaultValue: 'ccr-registry.caas.intel.com/xpum', description: 'the docker registry for publishing the xpum image') 
+      string(name: 'PUBLISH_DOCKER_REGISTRY', defaultValue: 'gar-registry.caas.intel.com/xpum', description: 'the docker registry for publishing the xpum image') 
     }
     options {
         copyArtifactPermission('*')
