@@ -2513,7 +2513,12 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
 }
 
 long double DiagnosticManager::calculateGbps(long double period, long double total_gbps) {
-    return total_gbps / period / 1.0;
+    if (period != 0.0L)
+        return total_gbps / period;
+    else {
+        XPUM_LOG_WARN("calculate gbps error - total_gbps:{} period:{}", total_gbps, period);
+        return -1.0L;
+    }
 }
 
 void DiagnosticManager::updateMessage(char *arr, std::string str) {
