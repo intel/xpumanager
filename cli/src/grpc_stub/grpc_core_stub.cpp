@@ -2712,6 +2712,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getVfMetrics(int deviceId) {
                     case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
                         vf["re_util"] = val;
                         break;
+                    case XPUM_STATS_MEMORY_UTILIZATION:
+                        vf["mem_util"] = val;
                     default:
                         break;
                 }
