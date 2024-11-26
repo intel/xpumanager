@@ -2878,7 +2878,10 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
 
         inUse = active + stall;
         notInUse = 100 - inUse;
-        hypoInUse = inUse * 100 / engineUsage;
+        if (engineUsage != 0)
+            hypoInUse = inUse * 100 / engineUsage;
+        else
+            hypoInUse = 0;
         if (hypoInUse > 100) {
             hypoInUse = 100;
         }
@@ -2913,7 +2916,10 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
             }
             stallTotal = stallALU + stallBarrier + stallDep + stallOther + stallInstFetch;
 
-            remaining /= stallTotal;
+            if (stallTotal != 0)
+                remaining /= stallTotal;
+            else
+                remaining = 0;
             stallALU *= remaining;
             stallBarrier *= remaining;
             stallDep *= remaining;
