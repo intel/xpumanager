@@ -361,7 +361,7 @@ static xpum_realtime_metric_type_t engineToMetricType(zes_engine_group_t engine)
 bool static findVfMgmtApi(VfMgmtApi_t &vfMgmtApi, void *dlHandle) {
     vfMgmtApi.pfnZesDeviceEnumEnabledVfExp = 
         reinterpret_cast<pfnZesDeviceEnumEnabledVfExp_t>(dlsym(dlHandle, 
-        "zesDeviceEnumEnabledVfExp"));
+        "zesDeviceEnumEnabledVFExp"));
     if (vfMgmtApi.pfnZesDeviceEnumEnabledVfExp == nullptr) {
         return false;
     }
@@ -485,11 +485,24 @@ xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
     uint32_t vfCount = 0;
     XPUM_ZE_HANDLE_LOCK(dh, res = vfMgmtApi.pfnZesDeviceEnumEnabledVfExp(
                                     dh, &vfCount, nullptr));
-    if (res != ZE_RESULT_SUCCESS || vfCount == 0) {
+    if (res != ZE_RESULT_SUCCESS) {
         XPUM_LOG_DEBUG("pfnZesDeviceEnumEnabledVfExp returns {} vfCount = {}", 
             res, vfCount);
         dlclose(handle);
         return XPUM_GENERIC_ERROR;
+    }
+    if (vfCount == 0) {
+        //check count only
+        if (count != nullptr) {
+            *count = 0;
+            ret = XPUM_OK;
+        } else {
+            ret = XPUM_GENERIC_ERROR;
+            XPUM_LOG_DEBUG("pfnZesDeviceEnumEnabledVfExp vfCount = {}", 
+                vfCount);
+        }
+        dlclose(handle);
+        return ret;
     }
     std::vector<zes_vf_handle_t> vfs(vfCount);
     XPUM_ZE_HANDLE_LOCK(dh, res = vfMgmtApi.pfnZesDeviceEnumEnabledVfExp(
