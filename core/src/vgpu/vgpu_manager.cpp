@@ -530,7 +530,7 @@ xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
             std::vector<zes_vf_util_engine_exp2_t> vues(veuc);    
             XPUM_ZE_HANDLE_LOCK(dh, res =
                 vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
-                vfh, &veuc, nullptr));
+                vfh, &veuc, vues.data()));
             if (res != ZE_RESULT_SUCCESS) {
                 XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
                     res, veuc);
