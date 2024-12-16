@@ -337,19 +337,18 @@ typedef struct {
 static xpum_realtime_metric_type_t engineToMetricType(zes_engine_group_t engine) {
     xpum_realtime_metric_type_t metricType = XPUM_STATS_MAX;
     switch (engine) {
-        case ZES_ENGINE_GROUP_ALL:
-            metricType = XPUM_STATS_GPU_UTILIZATION;
-            break;
-        case ZES_ENGINE_GROUP_COMPUTE_ALL:
-            metricType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
-            break;
-        case ZES_ENGINE_GROUP_MEDIA_ALL:
+        case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+        case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
             metricType = XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
             break;
-        case ZES_ENGINE_GROUP_COPY_ALL:
+        case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+            metricType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+            break;
+        case ZES_ENGINE_GROUP_COPY_SINGLE:
             metricType = XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
             break;
-        case ZES_ENGINE_GROUP_RENDER_ALL:
+        case ZES_ENGINE_GROUP_RENDER_SINGLE:
             metricType = XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
             break;
         default:
@@ -416,44 +415,176 @@ static bool getVfEngineUtilWithSnaps(std::vector<xpum_vf_metric_t> &metrics,
                 res, veuc);
             return false;
         }
-        for (auto vue : vues) {
-            // Skip if it is not one of the five supported engine groups
-            if (vue.vfEngineType != ZES_ENGINE_GROUP_ALL && 
-                vue.vfEngineType != ZES_ENGINE_GROUP_COMPUTE_ALL &&
-                vue.vfEngineType != ZES_ENGINE_GROUP_MEDIA_ALL &&
-                vue.vfEngineType != ZES_ENGINE_GROUP_COPY_ALL &&
-                vue.vfEngineType != ZES_ENGINE_GROUP_RENDER_ALL) {
-                continue;
+        if (vues.size() != snaps[i].vues.size()) {
+            XPUM_LOG_DEBUG("VF engine number changed");
+            return false;
+        }
+        std::vector<xpum_vf_metric_t> singleGroupMetrics;
+        // zesVFManagementGetVFEngineUtilizationExp2 returns engine counters 
+        // in same order though it is not documented at the time
+        for (std::size_t j = 0; j < snaps[i].vues.size(); j++) {
+            auto vue = vues[j];
+            if (vue.vfEngineType != snaps[i].vues[j].vfEngineType) {
+                XPUM_LOG_DEBUG("VF engine type order changed");
+                return false;
             }
-            for (std::size_t j = 0; j < snaps[i].vues.size(); j++) {
-                if (vue.vfEngineType == snaps[i].vues[j].vfEngineType) {
-                    if (vue.samplingCounterValue -
-                        snaps[i].vues[j].samplingCounterValue <= 0 ||
-                        vue.activeCounterValue -
-                        snaps[i].vues[j].activeCounterValue < 0) {
-                        XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns invalid values activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
-                            snaps[i].vues[j].activeCounterValue,
-                            snaps[i].vues[j].samplingCounterValue,
-                            vue.activeCounterValue,
-                            vue.samplingCounterValue);
-                        return false;
+            if (vue.samplingCounterValue -
+                snaps[i].vues[j].samplingCounterValue <= 0 ||
+                vue.activeCounterValue -
+                snaps[i].vues[j].activeCounterValue < 0) {
+                XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns invalid values activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
+                    snaps[i].vues[j].activeCounterValue,
+                    snaps[i].vues[j].samplingCounterValue,
+                    vue.activeCounterValue,
+                    vue.samplingCounterValue);
+                return false;
+            }
+            xpum_vf_metric_t vfm = {};
+            vfm.metric.metricsType = engineToMetricType(vue.vfEngineType);
+            vfm.metric.value = vfm.metric.scale * 100 * (
+                vue.activeCounterValue - 
+                snaps[i].vues[j].activeCounterValue) / (
+                vue.samplingCounterValue - 
+                snaps[i].vues[j].samplingCounterValue);
+            singleGroupMetrics.push_back(vfm);
+            XPUM_LOG_TRACE("vfEngineType = {}: activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
+                vue.vfEngineType,
+                snaps[i].vues[j].activeCounterValue,
+                    snaps[i].vues[j].samplingCounterValue,
+                    vue.activeCounterValue,
+                    vue.samplingCounterValue);
+
+        }
+
+        // Aggregate (by max) utilization per metrics type
+        uint64_t mediaUtil = UINT64_MAX;
+        uint64_t copyUtil = UINT64_MAX;
+        uint64_t renderUtil = UINT64_MAX;
+        uint64_t computeUtil = UINT64_MAX;
+        uint64_t allUtil = UINT64_MAX;
+        for (auto m : singleGroupMetrics) {
+            switch (m.metric.metricsType) {
+                case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+                    if (mediaUtil == UINT64_MAX) {
+                        mediaUtil = m.metric.value;
+                    } else {
+                        mediaUtil = mediaUtil > m.metric.value ? 
+                            mediaUtil : m.metric.value;
                     }
-                    xpum_vf_metric_t vfm = {};
-                    vfm.deviceId = deviceId;
-                    vfm.vfIndex = snaps[i].vfid;
-                    snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
-                        snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
-                        snaps[i].cap.address.device, snaps[i].cap.address.function);
-                    vfm.metric.metricsType = engineToMetricType(vue.vfEngineType);
-                    vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
-                    vfm.metric.value = vfm.metric.scale * 100 * (
-                        vue.activeCounterValue - 
-                        snaps[i].vues[j].activeCounterValue) / (
-                        vue.samplingCounterValue - 
-                        snaps[i].vues[j].samplingCounterValue);
-                    metrics.push_back(vfm);
-                }
+                    break;
+                case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+                    if (renderUtil == UINT64_MAX) {
+                        renderUtil = m.metric.value;
+                    } else {
+                        renderUtil = renderUtil > m.metric.value ? 
+                            renderUtil : m.metric.value;
+                    }
+                    break;
+                case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+                    if (computeUtil == UINT64_MAX) {
+                        computeUtil = m.metric.value;
+                    } else {
+                        computeUtil = computeUtil > m.metric.value ? 
+                            computeUtil : m.metric.value;
+                    }
+                    break;
+                case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+                    if (copyUtil == UINT64_MAX) {
+                        copyUtil = m.metric.value;
+                    } else {
+                        copyUtil = copyUtil > m.metric.value ?
+                            copyUtil : m.metric.value;
+                    }
+                    break;
+                default:
+                   XPUM_LOG_DEBUG("unknown VF metric type"); 
+                   return false;
             }
+        }
+        if (mediaUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = mediaUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("media overall {}", mediaUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = mediaUtil;
+            } else {
+                allUtil = allUtil > mediaUtil ? allUtil : mediaUtil;
+            }
+        }
+        if (renderUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = renderUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("render overall {}", renderUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = renderUtil;
+            } else {
+                allUtil = allUtil > renderUtil ? allUtil : renderUtil;
+            }
+        }
+        if (computeUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = computeUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("compute overall {}", computeUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = computeUtil;
+            } else {
+                allUtil = allUtil > computeUtil ? allUtil : computeUtil;
+            }
+        }
+        if (copyUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = copyUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("copy overall {}", copyUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = copyUtil;
+            } else {
+                allUtil = allUtil > copyUtil ? allUtil : copyUtil;
+            }
+        }
+        if (allUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = allUtil;
+            vfm.metric.metricsType = XPUM_STATS_GPU_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("GPU overall {}", allUtil);
         }
     }
     return true;
@@ -536,17 +667,67 @@ xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
                     res, veuc);
                 goto RTN;
             }
-            // Support five engine groups below
+
+
+            /* 
+            According to the doc, the 6 single engine groups below are supported
+            by zesVFManagementGetVFEngineUtilizationExp2
+            https://docs.intel.com/documents/GfxSWAT/Common/sysman/SysmanAPI.html#engine
+
+            ZES_ENGINE_GROUP_COMPUTE_SINGLE = 4
+            ZES_ENGINE_GROUP_RENDER_SINGLE = 5    
+            ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE = 6
+            ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE = 7
+            ZES_ENGINE_GROUP_COPY_SINGLE = 8
+            ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE = 9
+
+            The single engine groups would be aggregated (max) to 4 overall 
+            engine groups: media, compute, copy, and render. And these 4 
+            would be aggreated to overall GPU util, then the expected engine 
+            count is 4+1=5 for each VF
+            */
+
+            /*
+            The varialbe would be set to 1 if the corresponding single engine
+            gropup is found. If multiple engine instance for a single engine
+            group exists, it is still 1 because the data would be aggregaed
+            */
+            uint32_t mediaEngine = 0;
+            uint32_t computeEngine = 0;
+            uint32_t copyEngine = 0;
+            uint32_t renderEngine = 0;
+
             for (auto vue : vues) {
-                if (vue.vfEngineType == ZES_ENGINE_GROUP_ALL ||
-                    vue.vfEngineType == ZES_ENGINE_GROUP_COMPUTE_ALL ||
-                    vue.vfEngineType == ZES_ENGINE_GROUP_MEDIA_ALL ||
-                    vue.vfEngineType == ZES_ENGINE_GROUP_COPY_ALL ||
-                    vue.vfEngineType == ZES_ENGINE_GROUP_RENDER_ALL) {
-                    engineUtilCount++;
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE ||
+                    vue.vfEngineType == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE ||
+                    vue.vfEngineType == 
+                    ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
+                    mediaEngine = 1;
+                    continue;
+                }
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_COMPUTE_SINGLE) {
+                    computeEngine = 1;
+                    continue;
+                }
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_RENDER_SINGLE) {
+                    renderEngine = 1;
+                    continue;
+                }
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_COPY_SINGLE) {
+                    copyEngine = 1;
+                    continue;
                 }
             }
+            uint32_t allEngine = mediaEngine + computeEngine + copyEngine +
+                renderEngine;
+            if (allEngine > 0) {
+                // The four aggregated engine group will be aggregated to 
+                // overall GPU util
+                allEngine++;
+            }
+            engineUtilCount += allEngine;
         }
+        // Add vfCount because there would be memory util for each VF
         *count = engineUtilCount + vfCount;
         ret = XPUM_OK;
         goto RTN;
