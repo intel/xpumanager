@@ -441,11 +441,16 @@ static bool getVfEngineUtilWithSnaps(std::vector<xpum_vf_metric_t> &metrics,
             }
             xpum_vf_metric_t vfm = {};
             vfm.metric.metricsType = engineToMetricType(vue.vfEngineType);
-            vfm.metric.value = vfm.metric.scale * 100 * (
-                vue.activeCounterValue - 
+            vfm.metric.value = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE
+                * 100 * (vue.activeCounterValue - 
                 snaps[i].vues[j].activeCounterValue) / (
                 vue.samplingCounterValue - 
                 snaps[i].vues[j].samplingCounterValue);
+            if (vfm.metric.value > 
+                Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
+                vfm.metric.value = 
+                    Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
+            }
             singleGroupMetrics.push_back(vfm);
             XPUM_LOG_TRACE("vfEngineType = {}: activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
                 vue.vfEngineType,
