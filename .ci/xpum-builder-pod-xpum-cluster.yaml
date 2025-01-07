@@ -250,7 +250,7 @@ spec:
           value: "http://proxy-dmz.intel.com:912"
         - name: "no_proxy"
           value: "*.intel.com"
-      image: "jenkins/inbound-agent:latest-jdk11"
+      image: "jenkins/inbound-agent:latest-jdk17"
       name: "jnlp"
       resources:
         requests:
