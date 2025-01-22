@@ -1331,6 +1331,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             }
             ze_device_properties_t props = {};
             props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+            auto extendedProperties = std::make_unique<ze_base_properties_t>();
+            if (extendedProperties) {
+                props.pNext = extendedProperties.get();
+                extendedProperties->stype = ZE_STRUCTURE_TYPE_EU_COUNT_EXT;
+            }
             XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetProperties(device,
                         &props));
             if(res != ZE_RESULT_SUCCESS) {
@@ -1378,7 +1383,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE, std::to_string(zes_props.numSubdevices)));
                 uint32_t tileCount = zes_props.numSubdevices == 0 ? 1 : zes_props.numSubdevices;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
-                uint32_t euCount = props.numSlices * props.numSubslicesPerSlice * props.numEUsPerSubslice;
+                uint32_t euCount = 0;
+                if (props.pNext != nullptr) {
+                    ze_eu_count_ext_t* eu_count_ext = (ze_eu_count_ext_t*)(props.pNext);
+                    euCount = eu_count_ext->numTotalEUs;
+                }
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
                 zes_pci_properties_t pci_props = {};
 
