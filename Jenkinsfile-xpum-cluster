@@ -314,65 +314,61 @@ pipeline {
         }
       }
 
-      stage('Publish') {
-        parallel {
-          stage('Archive') {
-            steps {
-              archiveArtifacts(artifacts: "${env.ARCHIVE_FILES}", fingerprint: true, onlyIfSuccessful: true)
-            }
-          }
+      stage('Archive') {
+        steps {
+          archiveArtifacts(artifacts: "${env.ARCHIVE_FILES}", fingerprint: true)
+        }
+      }
 
-          stage('Upload artifact') {
-            steps{
-                script {
-                  loadEnvironmentVariables()
-                }
-                rtServer (
-                    id: 'AF-XPUM',
-                    url: 'https://ubit-artifactory-sh.intel.com/artifactory/',
-                    // If you're using Credentials ID:
-                    credentialsId: 'sys-xpum-credentials',
-                    // If Jenkins is configured to use an http proxy, you can bypass the proxy when using this Artifactory server:
-                    bypassProxy: true,
-                    // Configure the connection timeout (in seconds).
-                    // The default value (if not configured) is 300 seconds
-                    timeout: 300
-                )
-                rtUpload(
-                    serverId: 'AF-XPUM',
-                    spec: '''{
-                      "files": [
-                        {
-                          "pattern": "build-deb-*/*.deb",
-                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
-                          "props": "retention.days=720;mytest=true"
-                        },
-                        {
-                          "pattern": "build-centos*/*.rpm",
-                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
-                          "props": "retention.days=720;mytest=true"
-                        },
-                        {
-                          "pattern": "build-sles/*.rpm",
-                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
-                          "props": "retention.days=720;mytest=true"
-                        },
-                        {
-                          "pattern": "intel_graphics_linux_pgp.pem",
-                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
-                          "props": "retention.days=720;mytest=true"
-                        },
-                        {
-                          "pattern": "build-centos7/amcmcli*",
-                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
-                          "props": "retention.days=720;mytest=true"
-                        }
-                      ]
-                    }''',
-                    "failNoOp": true
-                )
+      stage('Upload artifact') {
+        steps{
+            script {
+              loadEnvironmentVariables()
             }
-          }
+            rtServer (
+                id: 'AF-XPUM',
+                url: 'https://ubit-artifactory-sh.intel.com/artifactory/',
+                // If you're using Credentials ID:
+                credentialsId: 'sys-xpum-credentials',
+                // If Jenkins is configured to use an http proxy, you can bypass the proxy when using this Artifactory server:
+                bypassProxy: true,
+                // Configure the connection timeout (in seconds).
+                // The default value (if not configured) is 300 seconds
+                timeout: 300
+            )
+            rtUpload(
+                serverId: 'AF-XPUM',
+                spec: '''{
+                  "files": [
+                    {
+                      "pattern": "build-deb-*/*.deb",
+                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "props": "retention.days=720;mytest=true"
+                    },
+                    {
+                      "pattern": "build-centos*/*.rpm",
+                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "props": "retention.days=720;mytest=true"
+                    },
+                    {
+                      "pattern": "build-sles/*.rpm",
+                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "props": "retention.days=720;mytest=true"
+                    },
+                    {
+                      "pattern": "intel_graphics_linux_pgp.pem",
+                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "props": "retention.days=720;mytest=true"
+                    },
+                    {
+                      "pattern": "build-centos7/amcmcli*",
+                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "props": "retention.days=720;mytest=true"
+                    }
+                  ]
+                }''',
+                "failNoOp": true
+            )
         }
       }
     }
