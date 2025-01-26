@@ -93,7 +93,8 @@ static nlohmann::json statsTable = R"({
                 { "label": "Compute Engine Util(%) ", "value": "ce_util", "fixer": "round" },
                 { "label": "Render Engine Util (%) ", "value": "re_util", "fixer": "round" },
                 { "label": "Media Engine Util (%) ", "value": "me_util", "fixer": "round" },
-                { "label": "Copy Engine Util (%) ", "value": "coe_util", "fixer": "round" }
+                { "label": "Copy Engine Util (%) ", "value": "coe_util", "fixer": "round" },
+                { "label": "GPU Memory Util (%) ", "value": "mem_util", "fixer": "round" }
             ]
         ]
     }]

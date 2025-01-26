@@ -264,22 +264,91 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
     return XPUM_OK;
 }
 
+
+/*
+For VF metrics, calling SYSMAN API with dlopen and duplicating definition of
+SYSMAN data structures should be a temperatory solution.
+
+Once XPUM is able to break backward compatibility, e.g., 2.0 release,
+these code should be refactored:
+1. Call SYSMAN API directly instead of dlopen
+2. Remove these duplicated data structure definition
+*/
+
+typedef struct _zes_vf_handle_t *zes_vf_handle_t;
+
+typedef struct _zes_vf_exp_capabilities_t
+{
+    zes_structure_type_t stype;                                             ///< [in] type of this structure
+    void* pNext;                                                            ///< [in,out][optional] must be null or a pointer to an extension-specific
+                                                                            ///< structure (i.e. contains stype and pNext).
+    zes_pci_address_t address;                                              ///< [out] Virtual function BDF address
+    uint32_t vfDeviceMemSize;                                               ///< [out] Virtual function memory size in bytes
+    uint32_t vfID;                                                          ///< [out] Virtual Function ID
+
+} zes_vf_exp_capabilities_t;
+
+typedef struct _zes_vf_util_mem_exp2_t
+{
+    zes_structure_type_t stype;                                             ///< [in] type of this structure
+    const void* pNext;                                                      ///< [in][optional] must be null or a pointer to an extension-specific
+                                                                            ///< structure (i.e. contains stype and pNext).
+    zes_mem_loc_t vfMemLocation;                                            ///< [out] Location of this memory (system, device)
+    uint64_t vfMemUtilized;                                                 ///< [out] Free memory size in bytes.
+
+} zes_vf_util_mem_exp2_t;
+
+typedef struct _zes_vf_util_engine_exp2_t
+{
+    zes_structure_type_t stype;                                             ///< [in] type of this structure
+    const void* pNext;                                                      ///< [in][optional] must be null or a pointer to an extension-specific
+                                                                            ///< structure (i.e. contains stype and pNext).
+    zes_engine_group_t vfEngineType;                                        ///< [out] The engine group.
+    uint64_t activeCounterValue;                                            ///< [out] Represents active counter.
+    uint64_t samplingCounterValue;                                          ///< [out] Represents counter value when activeCounterValue was sampled.
+                                                                            ///< Refer to the formulae above for calculating the utilization percent
+
+} zes_vf_util_engine_exp2_t;
+
+typedef ze_result_t (*pfnZesDeviceEnumEnabledVfExp_t)(
+    zes_device_handle_t hDevice, uint32_t *pCount, zes_vf_handle_t *phVFhandle);
+
+typedef ze_result_t (*pfnZesVFManagementGetVFCapabilitiesExp_t)(
+    zes_vf_handle_t hVFhandle, zes_vf_exp_capabilities_t *pCapability);
+
+typedef ze_result_t (*pfnZesVFManagementGetVFMemoryUtilizationExp2_t)(
+    zes_vf_handle_t hVFhandle, uint32_t *pCount, 
+    zes_vf_util_mem_exp2_t *pMemUtil);
+
+typedef ze_result_t (*pfnZesVFManagementGetVFEngineUtilizationExp2_t)(
+    zes_vf_handle_t hVFhandle, uint32_t *pCount, 
+    zes_vf_util_engine_exp2_t *pEngineUtil);
+
+typedef struct {
+    pfnZesDeviceEnumEnabledVfExp_t pfnZesDeviceEnumEnabledVfExp;
+    pfnZesVFManagementGetVFCapabilitiesExp_t 
+        pfnZesVFManagementGetVFCapabilitiesExp;
+    pfnZesVFManagementGetVFMemoryUtilizationExp2_t
+        pfnZesVFManagementGetVFMemoryUtilizationExp2;
+    pfnZesVFManagementGetVFEngineUtilizationExp2_t
+       pfnZesVFManagementGetVFEngineUtilizationExp2 ;
+} VfMgmtApi_t;
+
 static xpum_realtime_metric_type_t engineToMetricType(zes_engine_group_t engine) {
     xpum_realtime_metric_type_t metricType = XPUM_STATS_MAX;
     switch (engine) {
-        case ZES_ENGINE_GROUP_ALL:
-            metricType = XPUM_STATS_GPU_UTILIZATION;
-            break;
-        case ZES_ENGINE_GROUP_COMPUTE_ALL:
-            metricType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
-            break;
-        case ZES_ENGINE_GROUP_MEDIA_ALL:
+        case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+        case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
             metricType = XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
             break;
-        case ZES_ENGINE_GROUP_COPY_ALL:
+        case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+            metricType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+            break;
+        case ZES_ENGINE_GROUP_COPY_SINGLE:
             metricType = XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
             break;
-        case ZES_ENGINE_GROUP_RENDER_ALL:
+        case ZES_ENGINE_GROUP_RENDER_SINGLE:
             metricType = XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
             break;
         default:
@@ -288,46 +357,239 @@ static xpum_realtime_metric_type_t engineToMetricType(zes_engine_group_t engine)
     return metricType;
 }
 
-typedef ze_result_t (*pfnZesEngineGetActivityExt_t)(
-    zes_engine_handle_t hEngine,
-    uint32_t *pCount, zes_engine_stats_t *pStats);
+bool static findVfMgmtApi(VfMgmtApi_t &vfMgmtApi, void *dlHandle) {
+    vfMgmtApi.pfnZesDeviceEnumEnabledVfExp = 
+        reinterpret_cast<pfnZesDeviceEnumEnabledVfExp_t>(dlsym(dlHandle, 
+        "zesDeviceEnumEnabledVFExp"));
+    if (vfMgmtApi.pfnZesDeviceEnumEnabledVfExp == nullptr) {
+        return false;
+    }
+    vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp = 
+        reinterpret_cast<pfnZesVFManagementGetVFCapabilitiesExp_t>(dlsym(
+            dlHandle, "zesVFManagementGetVFCapabilitiesExp"));
+    if (vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp == nullptr) {
+        return false;
+    }
+    vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2 = 
+        reinterpret_cast<pfnZesVFManagementGetVFMemoryUtilizationExp2_t>(dlsym(
+            dlHandle, "zesVFManagementGetVFMemoryUtilizationExp2"));
+    if (vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2 == nullptr) {
+        return false;
+    }
+    vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2 =
+        reinterpret_cast<pfnZesVFManagementGetVFEngineUtilizationExp2_t>(dlsym(
+            dlHandle, "zesVFManagementGetVFEngineUtilizationExp2"));
+    if (vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2 == nullptr) {
+        return false;
+    }
+    return true;
+}
 
-static bool getEngineStats(std::map<zes_engine_group_t, 
-    std::vector<zes_engine_stats_t>> &snap, 
-    std::vector<zes_engine_handle_t> engines,
-    pfnZesEngineGetActivityExt_t pfnZesEngineGetActivityExt) {
+typedef struct {
+    uint32_t vfid;
+    zes_vf_handle_t vfh;
+    zes_vf_exp_capabilities_t cap;
+    std::vector<zes_vf_util_engine_exp2_t> vues;
+} vf_util_snap_t;
+
+static bool getVfEngineUtilWithSnaps(std::vector<xpum_vf_metric_t> &metrics,
+    std::vector<vf_util_snap_t> &snaps, VfMgmtApi_t &vfMgmtApi, 
+    xpum_device_id_t deviceId, zes_device_handle_t &dh) {
     ze_result_t res = ZE_RESULT_SUCCESS;
-    for (auto &engine : engines) {
-        zes_engine_properties_t props = {};
-        props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-        props.pNext = nullptr;
-        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, 
-            &props));
-        if (res != ZE_RESULT_SUCCESS) {
-            XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {}", res);
+    for (std::size_t i = 0; i < snaps.size(); i++) {
+        uint32_t veuc = 0;
+        XPUM_ZE_HANDLE_LOCK(dh, res =
+            vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+            snaps[i].vfh, &veuc, nullptr));
+        if (res != ZE_RESULT_SUCCESS || veuc != snaps[i].vues.size()) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
+                res, veuc);
             return false;
         }
-        if (props.type == ZES_ENGINE_GROUP_ALL ||
-            props.type == ZES_ENGINE_GROUP_COMPUTE_ALL ||
-            props.type == ZES_ENGINE_GROUP_MEDIA_ALL ||
-            props.type == ZES_ENGINE_GROUP_COPY_ALL ||
-            props.type == ZES_ENGINE_GROUP_RENDER_ALL) {
-            uint32_t stats_count = 0;
-            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
-                        engine, &stats_count, nullptr));
-            if (res != ZE_RESULT_SUCCESS || stats_count <= 1) {
-                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {} stats_count = {}",
-                               res, stats_count);
+        std::vector<zes_vf_util_engine_exp2_t> vues(veuc);
+        XPUM_ZE_HANDLE_LOCK(dh, res =
+            vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+            snaps[i].vfh, &veuc, vues.data()));
+        if (res != ZE_RESULT_SUCCESS || veuc != snaps[i].vues.size()) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
+                res, veuc);
+            return false;
+        }
+        if (vues.size() != snaps[i].vues.size()) {
+            XPUM_LOG_DEBUG("VF engine number changed");
+            return false;
+        }
+        std::vector<xpum_vf_metric_t> singleGroupMetrics;
+        // zesVFManagementGetVFEngineUtilizationExp2 returns engine counters 
+        // in same order though it is not documented at the time
+        for (std::size_t j = 0; j < snaps[i].vues.size(); j++) {
+            auto vue = vues[j];
+            if (vue.vfEngineType != snaps[i].vues[j].vfEngineType) {
+                XPUM_LOG_DEBUG("VF engine type order changed");
                 return false;
             }
-            std::vector<zes_engine_stats_t> stats(stats_count);
-            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
-                        engine, &stats_count, stats.data()));
-            if (res != ZE_RESULT_SUCCESS) {
-                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {}", res);
+            if (vue.samplingCounterValue -
+                snaps[i].vues[j].samplingCounterValue <= 0 ||
+                vue.activeCounterValue -
+                snaps[i].vues[j].activeCounterValue < 0) {
+                XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns invalid values activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
+                    snaps[i].vues[j].activeCounterValue,
+                    snaps[i].vues[j].samplingCounterValue,
+                    vue.activeCounterValue,
+                    vue.samplingCounterValue);
                 return false;
             }
-            snap.insert({props.type, stats});
+            xpum_vf_metric_t vfm = {};
+            vfm.metric.metricsType = engineToMetricType(vue.vfEngineType);
+            vfm.metric.value = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE
+                * 100 * (vue.activeCounterValue - 
+                snaps[i].vues[j].activeCounterValue) / (
+                vue.samplingCounterValue - 
+                snaps[i].vues[j].samplingCounterValue);
+            if (vfm.metric.value > 
+                Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
+                vfm.metric.value = 
+                    Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
+            }
+            singleGroupMetrics.push_back(vfm);
+            XPUM_LOG_TRACE("vfEngineType = {}: activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
+                vue.vfEngineType,
+                snaps[i].vues[j].activeCounterValue,
+                    snaps[i].vues[j].samplingCounterValue,
+                    vue.activeCounterValue,
+                    vue.samplingCounterValue);
+
+        }
+
+        // Aggregate (by max) utilization per metrics type
+        uint64_t mediaUtil = UINT64_MAX;
+        uint64_t copyUtil = UINT64_MAX;
+        uint64_t renderUtil = UINT64_MAX;
+        uint64_t computeUtil = UINT64_MAX;
+        uint64_t allUtil = UINT64_MAX;
+        for (auto m : singleGroupMetrics) {
+            switch (m.metric.metricsType) {
+                case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+                    if (mediaUtil == UINT64_MAX) {
+                        mediaUtil = m.metric.value;
+                    } else {
+                        mediaUtil = mediaUtil > m.metric.value ? 
+                            mediaUtil : m.metric.value;
+                    }
+                    break;
+                case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+                    if (renderUtil == UINT64_MAX) {
+                        renderUtil = m.metric.value;
+                    } else {
+                        renderUtil = renderUtil > m.metric.value ? 
+                            renderUtil : m.metric.value;
+                    }
+                    break;
+                case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+                    if (computeUtil == UINT64_MAX) {
+                        computeUtil = m.metric.value;
+                    } else {
+                        computeUtil = computeUtil > m.metric.value ? 
+                            computeUtil : m.metric.value;
+                    }
+                    break;
+                case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+                    if (copyUtil == UINT64_MAX) {
+                        copyUtil = m.metric.value;
+                    } else {
+                        copyUtil = copyUtil > m.metric.value ?
+                            copyUtil : m.metric.value;
+                    }
+                    break;
+                default:
+                   XPUM_LOG_DEBUG("unknown VF metric type"); 
+                   return false;
+            }
+        }
+        if (mediaUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = mediaUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("media overall {}", mediaUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = mediaUtil;
+            } else {
+                allUtil = allUtil > mediaUtil ? allUtil : mediaUtil;
+            }
+        }
+        if (renderUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = renderUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("render overall {}", renderUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = renderUtil;
+            } else {
+                allUtil = allUtil > renderUtil ? allUtil : renderUtil;
+            }
+        }
+        if (computeUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = computeUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("compute overall {}", computeUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = computeUtil;
+            } else {
+                allUtil = allUtil > computeUtil ? allUtil : computeUtil;
+            }
+        }
+        if (copyUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = copyUtil;
+            vfm.metric.metricsType = XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("copy overall {}", copyUtil);
+            if (allUtil == UINT64_MAX) {
+                allUtil = copyUtil;
+            } else {
+                allUtil = allUtil > copyUtil ? allUtil : copyUtil;
+            }
+        }
+        if (allUtil != UINT64_MAX) {
+            xpum_vf_metric_t vfm = {};
+            vfm.deviceId = deviceId;
+            vfm.vfIndex = snaps[i].vfid;
+            snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                snaps[i].cap.address.domain, snaps[i].cap.address.bus, 
+                snaps[i].cap.address.device, snaps[i].cap.address.function);
+            vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+            vfm.metric.value = allUtil;
+            vfm.metric.metricsType = XPUM_STATS_GPU_UTILIZATION;
+            metrics.push_back(vfm);
+            XPUM_LOG_TRACE("GPU overall {}", allUtil);
         }
     }
     return true;
@@ -336,131 +598,233 @@ static bool getEngineStats(std::map<zes_engine_group_t,
 xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
     std::vector<xpum_vf_metric_t> &metrics, uint32_t *count) {
     xpum_result_t ret = XPUM_GENERIC_ERROR;
-    auto xdev = Core::instance().getDeviceManager()->getDevice(
+    std::vector<vf_util_snap_t> snaps;
+
+    auto device = Core::instance().getDeviceManager()->getDevice(
         std::to_string(deviceId));
-    if (xdev == nullptr) {
+    if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     void *handle = dlopen("libze_loader.so.1", RTLD_NOW);
     if (handle == nullptr) {
         return XPUM_LEVEL_ZERO_INITIALIZATION_ERROR;
     }
-    pfnZesEngineGetActivityExt_t pfnZesEngineGetActivityExt = 
-        reinterpret_cast<pfnZesEngineGetActivityExt_t>(dlsym(handle, 
-        "zesEngineGetActivityExt"));
-    if (pfnZesEngineGetActivityExt == nullptr) {
-        XPUM_LOG_ERROR("dlsym zesEngineGetActivityExt returns NULL");
+    VfMgmtApi_t vfMgmtApi;
+    if (findVfMgmtApi(vfMgmtApi, handle) == false) {
         dlclose(handle);
+        XPUM_LOG_DEBUG("getVfMetrics: findVfMgmtApi returns false");
         return XPUM_API_UNSUPPORTED;
     }
-    auto device = xdev->getDeviceHandle();
+
     ze_result_t res = ZE_RESULT_SUCCESS;
-    uint32_t engine_count = 0;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device,
-                                    &engine_count, nullptr));
-    std::vector<zes_engine_handle_t> engines(engine_count);
-    std::map<zes_engine_group_t, std::vector<zes_engine_stats_t>> snap;
-    std::map<zes_engine_group_t, std::vector<zes_engine_stats_t>>::iterator it; 
-    if (res != ZE_RESULT_SUCCESS || engine_count == 0) {
-        XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {} engine_count = {}", 
-            res, engine_count);
+    auto dh = device->getDeviceHandle();
+    uint32_t vfCount = 0;
+    XPUM_ZE_HANDLE_LOCK(dh, res = vfMgmtApi.pfnZesDeviceEnumEnabledVfExp(
+                                    dh, &vfCount, nullptr));
+    if (res != ZE_RESULT_SUCCESS) {
+        XPUM_LOG_DEBUG("pfnZesDeviceEnumEnabledVfExp returns {} vfCount = {}", 
+            res, vfCount);
+        dlclose(handle);
+        return XPUM_GENERIC_ERROR;
+    }
+    if (vfCount == 0) {
+        //check count only
+        if (count != nullptr) {
+            *count = 0;
+            ret = XPUM_OK;
+        } else {
+            ret = XPUM_GENERIC_ERROR;
+            XPUM_LOG_DEBUG("pfnZesDeviceEnumEnabledVfExp vfCount = {}", 
+                vfCount);
+        }
+        dlclose(handle);
+        return ret;
+    }
+    std::vector<zes_vf_handle_t> vfs(vfCount);
+    XPUM_ZE_HANDLE_LOCK(dh, res = vfMgmtApi.pfnZesDeviceEnumEnabledVfExp(
+                                    dh, &vfCount, vfs.data()));
+    if (res != ZE_RESULT_SUCCESS || vfCount == 0) {
+        XPUM_LOG_DEBUG("pfnZesDeviceEnumEnabledVfExp returns {} vfCount = {}", 
+            res, vfCount);
         goto RTN;
     }
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device,
-                                    &engine_count, engines.data()));
-    if (res != ZE_RESULT_SUCCESS || engine_count == 0) {
-        XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {} engine_count = {}", 
-            res, engine_count);
-        goto RTN;
-    }
-    if (getEngineStats(snap, engines, pfnZesEngineGetActivityExt) == false) {
-        XPUM_LOG_ERROR("getEngineStats return false");
-        goto RTN;
-    }
+
     //check count only
     if (count != nullptr) {
-        for (it = snap.begin(); it != snap.end(); it++) {
-            *count += it->second.size() - 1;
+        uint32_t engineUtilCount = 0;
+        for (auto vfh : vfs) {
+            // veuc: VF Engine Util Count
+            uint32_t veuc = 0;
+            XPUM_ZE_HANDLE_LOCK(dh, res =
+                vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+                vfh, &veuc, nullptr));
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
+                    res, veuc);
+                goto RTN;
+            }
+            std::vector<zes_vf_util_engine_exp2_t> vues(veuc);    
+            XPUM_ZE_HANDLE_LOCK(dh, res =
+                vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+                vfh, &veuc, vues.data()));
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
+                    res, veuc);
+                goto RTN;
+            }
+
+
+            /* 
+            According to the doc, the 6 single engine groups below are supported
+            by zesVFManagementGetVFEngineUtilizationExp2
+            https://docs.intel.com/documents/GfxSWAT/Common/sysman/SysmanAPI.html#engine
+
+            ZES_ENGINE_GROUP_COMPUTE_SINGLE = 4
+            ZES_ENGINE_GROUP_RENDER_SINGLE = 5    
+            ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE = 6
+            ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE = 7
+            ZES_ENGINE_GROUP_COPY_SINGLE = 8
+            ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE = 9
+
+            The single engine groups would be aggregated (max) to 4 overall 
+            engine groups: media, compute, copy, and render. And these 4 
+            would be aggreated to overall GPU util, then the expected engine 
+            count is 4+1=5 for each VF
+            */
+
+            /*
+            The varialbe would be set to 1 if the corresponding single engine
+            gropup is found. If multiple engine instance for a single engine
+            group exists, it is still 1 because the data would be aggregaed
+            */
+            uint32_t mediaEngine = 0;
+            uint32_t computeEngine = 0;
+            uint32_t copyEngine = 0;
+            uint32_t renderEngine = 0;
+
+            for (auto vue : vues) {
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE ||
+                    vue.vfEngineType == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE ||
+                    vue.vfEngineType == 
+                    ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
+                    mediaEngine = 1;
+                    continue;
+                }
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_COMPUTE_SINGLE) {
+                    computeEngine = 1;
+                    continue;
+                }
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_RENDER_SINGLE) {
+                    renderEngine = 1;
+                    continue;
+                }
+                if (vue.vfEngineType == ZES_ENGINE_GROUP_COPY_SINGLE) {
+                    copyEngine = 1;
+                    continue;
+                }
+            }
+            uint32_t allEngine = mediaEngine + computeEngine + copyEngine +
+                renderEngine;
+            if (allEngine > 0) {
+                // The four aggregated engine group will be aggregated to 
+                // overall GPU util
+                allEngine++;
+            }
+            engineUtilCount += allEngine;
         }
-        XPUM_LOG_DEBUG("check count returns {}", *count);
+        // Add vfCount because there would be memory util for each VF
+        *count = engineUtilCount + vfCount;
         ret = XPUM_OK;
         goto RTN;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(
-        Configuration::VF_METRICS_INTERVAL));
-    for (auto &engine : engines) {
-        zes_engine_properties_t props = {};
-        props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-        props.pNext = nullptr;
-        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, 
-            &props));
-        if (res != ZE_RESULT_SUCCESS) {
-            XPUM_LOG_ERROR("zesDeviceEnumEngineGroups returns {}", res);
+
+    for (auto vfh : vfs) {
+        zes_vf_exp_capabilities_t cap = {};
+        XPUM_ZE_HANDLE_LOCK(dh, res = 
+            vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp(vfh, &cap));
+        if (res != ZE_RESULT_SUCCESS || cap.vfDeviceMemSize == 0) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFCapabilitiesExp returns {}",
+                res);
             goto RTN;
         }
-        if (props.type == ZES_ENGINE_GROUP_ALL || 
-            props.type == ZES_ENGINE_GROUP_COMPUTE_ALL || 
-            props.type == ZES_ENGINE_GROUP_MEDIA_ALL || 
-            props.type == ZES_ENGINE_GROUP_COPY_ALL ||
-            props.type == ZES_ENGINE_GROUP_RENDER_ALL) {
-            it = snap.find(props.type);
-            if (it == snap.end()) {
-                XPUM_LOG_ERROR("Engine stats not found");
-                goto RTN;
-            }
-            auto stats0 = it->second;
-            uint32_t stats_count1 = 0;
-            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
-                        engine, &stats_count1, nullptr));
-            std::vector<zes_engine_stats_t> stats1(stats_count1);
-            if (res != ZE_RESULT_SUCCESS || stats_count1 <= 1) {
-                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {} stats_count1 = {}", 
-                    res, stats_count1);
-                goto RTN;
-            }
-            XPUM_ZE_HANDLE_LOCK(engine, res = pfnZesEngineGetActivityExt(
-                        engine, &stats_count1, stats1.data()));
-            if (res != ZE_RESULT_SUCCESS || stats_count1 != stats0.size()) {
-                XPUM_LOG_ERROR("zesEngineGetActivityExt returns {} stats_count1 = {} stats0.size() = {}", 
-                    res, stats_count1, stats0.size());
-                goto RTN;
-            }
-            for (uint32_t i = 1; i < stats_count1; i++) {
-                xpum_vf_metric_t vfm = {};
-                XPUM_LOG_DEBUG("engine type {} VF index {} stats0 activeTime {} timestamp {} stats1 activeTime {} timestamp {}", 
-                        props.type, i, stats0[i].activeTime, stats0[i].timestamp, 
-                        stats1[i].activeTime, stats1[i].timestamp);
-                if (stats1[i].timestamp == stats0[i].timestamp) {
-                    XPUM_LOG_DEBUG("NA: engine type {} VF index {} stats0 activeTime {} timestamp {} stats1 activeTime {} timestamp {}", 
-                        props.type, i, stats0[i].activeTime, stats0[i].timestamp, 
-                        stats1[i].activeTime, stats1[i].timestamp);
-                    continue;
-                }
-                vfm.vfIndex = i;
-                if (getVfBdf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, i, deviceId)
-                        == false) {
-                    XPUM_LOG_ERROR("getVfBdf returns false at vf index {}", i);
-                    goto RTN;
-                }
-                uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 
-                    100 * (stats1[i].activeTime - 
-                        stats0[i].activeTime) / (stats1[i].timestamp -
-                            stats0[i].timestamp);
-                vfm.deviceId = deviceId;
-                auto metricType = engineToMetricType(props.type);
-                if (metricType == XPUM_STATS_MAX) {
-                    XPUM_LOG_ERROR("Unsupported engine type {}", props.type);
-                    goto RTN;
-                }
-                vfm.metric.metricsType = metricType;
-                vfm.metric.value = val;
-                vfm.metric.scale = 
-                    Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
-                metrics.push_back(vfm);
+
+        uint32_t mc = 0;
+        XPUM_ZE_HANDLE_LOCK(dh, res = 
+            vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2(vfh, &mc, 
+            nullptr));
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns {}",
+                res);
+            goto RTN;
+        } 
+        std::vector<zes_vf_util_mem_exp2_t> vums(mc);
+        XPUM_ZE_HANDLE_LOCK(dh, res = 
+            vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2(vfh, &mc, 
+            vums.data()));
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns {}",
+                res);
+            goto RTN;
+        }
+        // vmu: VF Memory Utilized
+        uint64_t vmu = UINT64_MAX;
+        for (auto mu : vums) {
+            if (mu.vfMemLocation == ZES_MEM_LOC_DEVICE) {
+                vmu = mu.vfMemUtilized;
             }
         }
+        if (vmu == UINT64_MAX) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns no ZES_MEM_LOC_DEVICE");
+            goto RTN;
+        }
+        xpum_vf_metric_t vfm = {};
+        vfm.deviceId = deviceId;
+        snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
+                cap.address.domain, cap.address.bus, 
+                cap.address.device, cap.address.function);
+        if (getVfId(vfm.vfIndex, vfm.bdfAddress, XPUM_MAX_STR_LENGTH, 
+            deviceId) == false) {
+            XPUM_LOG_DEBUG("VF index cannot be found for bdf {}", 
+                vfm.bdfAddress);
+        }
+        vfm.metric.metricsType = XPUM_STATS_MEMORY_UTILIZATION;
+        vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+        vfm.metric.value = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 *
+            vmu / cap.vfDeviceMemSize;
+        metrics.push_back(vfm);
+
+        uint32_t veuc = 0;
+        XPUM_ZE_HANDLE_LOCK(dh, res =
+            vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+            vfh, &veuc, nullptr));
+        if (res != ZE_RESULT_SUCCESS || veuc == 0) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
+                res, veuc);
+            goto RTN;
+        }
+
+        vf_util_snap_t snap;
+        snap.vfid = vfm.vfIndex;
+        snap.vfh = vfh;
+        snap.cap = cap;
+        snap.vues = std::vector<zes_vf_util_engine_exp2_t>(veuc);
+        XPUM_ZE_HANDLE_LOCK(dh, res =
+            vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+            vfh, &veuc, snap.vues.data()));
+        if (res != ZE_RESULT_SUCCESS || veuc == 0) {
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
+                res, veuc);
+            goto RTN;
+        }
+        snaps.push_back(snap);
     }
-    ret = XPUM_OK;
+    std::this_thread::sleep_for(std::chrono::milliseconds(
+        Configuration::VF_METRICS_INTERVAL));
+    if (getVfEngineUtilWithSnaps(metrics, snaps, vfMgmtApi, deviceId, dh) 
+        == true) {
+        ret = XPUM_OK;
+    }
+
 RTN:
     dlclose(handle);
     return ret;
@@ -509,6 +873,60 @@ bool VgpuManager::getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex,
     str.copy(bdf, BDF_SIZE);
     bdf[BDF_SIZE] = '\0';
     return true;
+}
+
+bool VgpuManager::getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf, 
+    xpum_device_id_t deviceId) {
+//BDF Format in uevent is cccc:cc:cc.c
+    if (bdf == nullptr || szBdf < BDF_SIZE + 1) {
+        return false;
+    }
+    bool ret = false;
+    auto device = Core::instance().getDeviceManager()->getDevice(
+            std::to_string(deviceId));
+    if (device == nullptr) {
+        return false;
+    }
+    Property prop = {};
+    if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop)
+            == false) {
+        return false;
+    }
+    std::string str = prop.getValue();
+    std::string::size_type n = str.rfind('/');
+    if (n == std::string::npos || n == str.length() - 1) {
+        return false;
+    }
+    str = str.substr(n);
+    str = "/sys/class/drm/" + str + "/iov/";
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    pdir = opendir(str.c_str());
+    if (pdir != NULL) {
+        while ((pdirent = readdir(pdir)) != NULL) {
+            if (pdirent->d_name[0] == '.') {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "vf", 2) != 0) {
+                continue;
+            }
+            std::string ueventFN = str + pdirent->d_name + "/device/uevent";
+            std::ifstream ifs(ueventFN);
+            if (ifs.is_open() == false) {
+                XPUM_LOG_DEBUG("cannot open uevent file = {}", ueventFN);
+                continue;
+            }
+            std::string content((std::istreambuf_iterator<char>(ifs)), 
+                (std::istreambuf_iterator<char>()));
+            if (content.find(bdf) != std::string::npos) {
+                sscanf(pdirent->d_name, "vf%d", &vfIndex);
+                ret = true;
+                break;
+            }
+        }
+        closedir(pdir);
+    }
+    return ret;
 }
 
 bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data) {

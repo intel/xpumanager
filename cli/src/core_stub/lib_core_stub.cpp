@@ -2397,6 +2397,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getVfMetrics(int deviceId) {
             case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
                 vfs[idx]["re_util"] = val;
                 break;
+            case XPUM_STATS_MEMORY_UTILIZATION:
+                vfs[idx]["mem_util"] = val;
             default:
                 break;
         }

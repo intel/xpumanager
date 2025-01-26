@@ -16,8 +16,7 @@ RUN cd /etc/yum.repos.d/ && \
 
 RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm https://repo.ius.io/ius-release-el7.rpm && \
     yum update -y && \
-    yum install -y centos-release-scl \
-        ccache \
+    yum install -y ccache \
         curl \
         doxygen \
         git \
@@ -28,7 +27,9 @@ RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_6
         make \
         openssl-devel \
         rpm-build \
-        which && \
+        which
+RUN yum-config-manager --add-repo=http://vault.centos.org/centos/7/sclo/x86_64/rh/ && \
+    sed -i '/\[vault.centos.org_centos_7_sclo_x86_64_rh_\]/a gpgcheck=0' /etc/yum.repos.d/vault.centos.org_centos_7_sclo_x86_64_rh_.repo && \
     yum install -y devtoolset-9-gcc* \
         rh-python38 \
         rh-python38-python-devel \

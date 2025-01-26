@@ -37,6 +37,15 @@ private:
     bool getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex, 
         xpum_device_id_t deviceId);
 
+    bool getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf, 
+        xpum_device_id_t deviceId);
+
+    xpum_result_t getVfEngineUtil(xpum_device_id_t deviceId,
+        std::vector<xpum_vf_metric_t> &metrics, uint32_t *count = nullptr);
+
+    xpum_result_t getVfMemUtil(xpum_device_id_t deviceId,
+        std::vector<xpum_vf_metric_t> &metrics, uint32_t *count = nullptr);
+
     std::mutex mutex;
 
 public:

@@ -10,6 +10,7 @@
 #include <thread>
 #include <tuple>
 #include <numeric>
+#include <limits>
 
 #include "firmware/firmware_manager.h"
 #include "device/gpu/gpu_device_stub.h"
@@ -844,7 +845,9 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
         if (device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
             getAMCFirmwareVersionInBand(amc_inband_version, bdf);
             XPUM_LOG_DEBUG("device: {}, amc version: {}", device->getId(), amc_inband_version);
-            amc_inband_versions.insert(amc_inband_version);
+            if (amc_inband_version.compare("0.0.0.0") != 0) {
+                amc_inband_versions.insert(amc_inband_version);
+            }
         }
 
         if (device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) { 
@@ -860,7 +863,7 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
                 fw_version_check_message += " GPU " + device->getId() + ": GFX version: " + gfx_version + " Minimum version: " + PVC_FW_MINIMUM_VERSION + ".";
             }
 
-            if (amc_inband_version < PVC_AMC_MINIMUM_VERSION) {
+            if (amc_inband_version.compare("0.0.0.0") != 0 && amc_inband_version < PVC_AMC_MINIMUM_VERSION) {
                 fw_version_check_message += " GPU " + device->getId() + ": AMC version: " + amc_inband_version + " Minimum version: " + PVC_AMC_MINIMUM_VERSION + ".";
             }
         }
@@ -2513,7 +2516,12 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
 }
 
 long double DiagnosticManager::calculateGbps(long double period, long double total_gbps) {
-    return total_gbps / period / 1.0;
+    if (period != 0.0L)
+        return total_gbps / period;
+    else {
+        XPUM_LOG_WARN("calculate gbps error - total_gbps:{} period:{}", total_gbps, period);
+        return std::numeric_limits<double>::max();
+    }
 }
 
 void DiagnosticManager::updateMessage(char *arr, std::string str) {
