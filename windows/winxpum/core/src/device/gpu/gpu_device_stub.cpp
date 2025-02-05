@@ -1158,6 +1158,10 @@ namespace xpum {
         if (res != ZE_RESULT_SUCCESS) {
             ret->setErrors("toGetEuActiveStallIdle error");
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetContextActivateMetricGroups error: {0:x}", res);
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
 
@@ -1167,6 +1171,10 @@ namespace xpum {
         if (res != ZE_RESULT_SUCCESS) {
             ret->setErrors("toGetEuActiveStallIdle error");
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricStreamerOpen error: {0:x}", res);
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD));
@@ -1174,18 +1182,34 @@ namespace xpum {
         XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle read hMetricStreamer");
         res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
         if (res != ZE_RESULT_SUCCESS || rawSize == 0) {
-            XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() raw data size1 {}, res {0:x}", rawSize, res);
+            XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() raw data size1 {}, res {}", rawSize, res);
             ret->setErrors("toGetEuActiveStallIdle error");
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricStreamerReadData error: {0:x}", res);
+            res = zetMetricStreamerClose(hMetricStreamer);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricStreamerClose error: {0:x}", res);
+            }
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         std::vector<uint8_t> rawData(rawSize);
         res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
         rawSize = rawData.size();
         if (res != ZE_RESULT_SUCCESS || rawSize == 0) {
-            XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() raw data size2 {}, res {0:x}", rawSize, res); 
+            XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() raw data size2 {}, res {}", rawSize, res); 
             ret->setErrors("toGetEuActiveStallIdle error");
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricStreamerReadData error: {0:x}", res);
+            res = zetMetricStreamerClose(hMetricStreamer);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricStreamerClose error: {0:x}", res);
+            }
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
 
@@ -1193,12 +1217,20 @@ namespace xpum {
         if (res != ZE_RESULT_SUCCESS) {
             ret->setErrors("toGetEuActiveStallIdle error");
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricStreamerClose error: {0:x}", res);
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         res = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
         if (res != ZE_RESULT_SUCCESS) {
             ret->setErrors("toGetEuActiveStallIdle error");
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetContextActivateMetricGroups error: {0:x}", res);
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         uint32_t numMetricValues = 0;
@@ -1208,6 +1240,10 @@ namespace xpum {
             XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() raw data size3 {}, numMetricValues {}, res {0:x}", rawSize, numMetricValues, res);
             XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zetMetricGroupCalculateMetricValues error: {0:x}", res);
             ret->setErrors("toGetEuActiveStallIdle error");
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         std::vector<zet_typed_value_t> metricValues(numMetricValues);
@@ -1216,6 +1252,10 @@ namespace xpum {
         if (res != ZE_RESULT_SUCCESS || numMetricValues == 0) {
             XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() numMetricValues {}, res {0:x}", numMetricValues, res);
             ret->setErrors("toGetEuActiveStallIdle error");
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         uint32_t metricCount = 0;
@@ -1223,6 +1263,10 @@ namespace xpum {
         if (res != ZE_RESULT_SUCCESS || metricCount == 0) {
             XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() metricCount1 {}, res {0:x}", metricCount, res);
             ret->setErrors("toGetEuActiveStallIdle error");
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
         }
         std::vector<zet_metric_handle_t> phMetrics(metricCount);
@@ -1230,7 +1274,16 @@ namespace xpum {
         if (res != ZE_RESULT_SUCCESS || metricCount == 0) {
             XPUM_LOG_DEBUG("GPUDeviceStub::toGetEuActiveStallIdle() metricCount2 {}, res {0:x}", metricCount, res);
             ret->setErrors("toGetEuActiveStallIdle error");
+            res = zeContextDestroy(hContext);
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
+            }
             return ret;
+        }
+
+        res = zeContextDestroy(hContext);
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_ERROR("GPUDeviceStub::toGetEuActiveStallIdle zeContextDestroy error: {0:x}", res);
         }
 
         uint32_t numReports = numMetricValues / metricCount;
