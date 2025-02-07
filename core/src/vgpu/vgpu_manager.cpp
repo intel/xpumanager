@@ -277,16 +277,16 @@ these code should be refactored:
 
 typedef struct _zes_vf_handle_t *zes_vf_handle_t;
 
-typedef struct _zes_vf_exp_capabilities_t
+typedef struct _zes_vf_exp2_capabilities_t
 {
     zes_structure_type_t stype;                                             ///< [in] type of this structure
     void* pNext;                                                            ///< [in,out][optional] must be null or a pointer to an extension-specific
                                                                             ///< structure (i.e. contains stype and pNext).
     zes_pci_address_t address;                                              ///< [out] Virtual function BDF address
-    uint32_t vfDeviceMemSize;                                               ///< [out] Virtual function memory size in bytes
+    uint64_t vfDeviceMemSize;                                               ///< [out] Virtual function memory size in bytes
     uint32_t vfID;                                                          ///< [out] Virtual Function ID
 
-} zes_vf_exp_capabilities_t;
+} zes_vf_exp2_capabilities_t;
 
 typedef struct _zes_vf_util_mem_exp2_t
 {
@@ -313,8 +313,8 @@ typedef struct _zes_vf_util_engine_exp2_t
 typedef ze_result_t (*pfnZesDeviceEnumEnabledVfExp_t)(
     zes_device_handle_t hDevice, uint32_t *pCount, zes_vf_handle_t *phVFhandle);
 
-typedef ze_result_t (*pfnZesVFManagementGetVFCapabilitiesExp_t)(
-    zes_vf_handle_t hVFhandle, zes_vf_exp_capabilities_t *pCapability);
+typedef ze_result_t (*pfnZesVFManagementGetVFCapabilitiesExp2_t)(
+    zes_vf_handle_t hVFhandle, zes_vf_exp2_capabilities_t *pCapability);
 
 typedef ze_result_t (*pfnZesVFManagementGetVFMemoryUtilizationExp2_t)(
     zes_vf_handle_t hVFhandle, uint32_t *pCount, 
@@ -326,8 +326,8 @@ typedef ze_result_t (*pfnZesVFManagementGetVFEngineUtilizationExp2_t)(
 
 typedef struct {
     pfnZesDeviceEnumEnabledVfExp_t pfnZesDeviceEnumEnabledVfExp;
-    pfnZesVFManagementGetVFCapabilitiesExp_t 
-        pfnZesVFManagementGetVFCapabilitiesExp;
+    pfnZesVFManagementGetVFCapabilitiesExp2_t 
+        pfnZesVFManagementGetVFCapabilitiesExp2;
     pfnZesVFManagementGetVFMemoryUtilizationExp2_t
         pfnZesVFManagementGetVFMemoryUtilizationExp2;
     pfnZesVFManagementGetVFEngineUtilizationExp2_t
@@ -364,10 +364,10 @@ bool static findVfMgmtApi(VfMgmtApi_t &vfMgmtApi, void *dlHandle) {
     if (vfMgmtApi.pfnZesDeviceEnumEnabledVfExp == nullptr) {
         return false;
     }
-    vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp = 
-        reinterpret_cast<pfnZesVFManagementGetVFCapabilitiesExp_t>(dlsym(
-            dlHandle, "zesVFManagementGetVFCapabilitiesExp"));
-    if (vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp == nullptr) {
+    vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2 = 
+        reinterpret_cast<pfnZesVFManagementGetVFCapabilitiesExp2_t>(dlsym(
+            dlHandle, "zesVFManagementGetVFCapabilitiesExp2"));
+    if (vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2 == nullptr) {
         return false;
     }
     vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2 = 
@@ -388,7 +388,7 @@ bool static findVfMgmtApi(VfMgmtApi_t &vfMgmtApi, void *dlHandle) {
 typedef struct {
     uint32_t vfid;
     zes_vf_handle_t vfh;
-    zes_vf_exp_capabilities_t cap;
+    zes_vf_exp2_capabilities_t cap;
     std::vector<zes_vf_util_engine_exp2_t> vues;
 } vf_util_snap_t;
 
@@ -739,11 +739,11 @@ xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
     }
 
     for (auto vfh : vfs) {
-        zes_vf_exp_capabilities_t cap = {};
+        zes_vf_exp2_capabilities_t cap = {};
         XPUM_ZE_HANDLE_LOCK(dh, res = 
-            vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp(vfh, &cap));
+            vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2(vfh, &cap));
         if (res != ZE_RESULT_SUCCESS || cap.vfDeviceMemSize == 0) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFCapabilitiesExp returns {}",
+            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFCapabilitiesExp2 returns {}",
                 res);
             goto RTN;
         }
