@@ -2793,7 +2793,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
 
 ::grpc::Status XpumCoreServiceImpl::getVfMetrics(::grpc::ServerContext* context, const ::GetVfMetricsRequest* request, ::GetVfMetricsResponse *response) {
     uint32_t count = 0; 
-    xpum_result_t res = xpumGetVfMetrics(0, nullptr, &count);
+    xpum_result_t res = xpumGetVfMetrics(request->deviceid(), nullptr, &count);
     if (res != XPUM_OK) {
         if (res == XPUM_API_UNSUPPORTED) {
             response->set_errormsg("Unsupported level zero API version");
@@ -2804,7 +2804,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
         return grpc::Status::OK;
     }
     std::vector<xpum_vf_metric_t> metrics(count);
-    res = xpumGetVfMetrics(0, metrics.data(), &count);
+    res = xpumGetVfMetrics(request->deviceid(), metrics.data(), &count);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
         response->set_errorno(res);

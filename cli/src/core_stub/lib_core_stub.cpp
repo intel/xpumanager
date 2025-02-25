@@ -2345,7 +2345,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::removeAllVf(int deviceId) {
 std::unique_ptr<nlohmann::json> LibCoreStub::getVfMetrics(int deviceId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     uint32_t count = 0; 
-    xpum_result_t res = xpumGetVfMetrics(0, nullptr, &count);
+    xpum_result_t res = xpumGetVfMetrics(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
         if (res == XPUM_API_UNSUPPORTED) {
             (*json)["error"] = "Unsupported level zero API version";
@@ -2356,7 +2356,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getVfMetrics(int deviceId) {
         return json;
     }
     std::vector<xpum_vf_metric_t> metrics(count);
-    res = xpumGetVfMetrics(0, metrics.data(), &count);
+    res = xpumGetVfMetrics(deviceId, metrics.data(), &count);
     if (res != XPUM_OK) {
         (*json)["error"] = "Error";
         (*json)["errno"] = errorNumTranslate(res);
