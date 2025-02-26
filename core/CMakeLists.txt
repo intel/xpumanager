@@ -95,6 +95,7 @@ target_include_directories(
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/
           /usr/include/level_zero/
+          ${CMAKE_INSTALL_PREFIX}/include
           ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
@@ -107,6 +108,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
     PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
     PRIVATE /usr/local/include/level_zero/
             /usr/include/level_zero/
+            ${CMAKE_INSTALL_PREFIX}/include
             ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
@@ -207,6 +209,9 @@ else()
                                                 pcm-iio-gpu stdc++fs metee igsc)
   endif()
 endif()
+
+target_link_directories(xpum PRIVATE ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
+target_link_directories(test_xpum_api PRIVATE ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
 
 unset(BUILD_TEST CACHE)
 
