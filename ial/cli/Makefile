@@ -7,7 +7,7 @@ MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=
-export INCLUDES=
+export INCLUDES=-I.
 export CFLAGS=-c -Wall
 export HEADERS=$(wildcard *.h)
 export SOURCES=$(wildcard *.cpp)
@@ -28,7 +28,7 @@ $(BINNAME): $(OBJECTS)
 		strip -x $@; \
 	fi
 
-.cpp.o: $(HEADERS)
+%.o: %.cpp $(HEADERS)
 	@echo $<
 	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $< 
 
