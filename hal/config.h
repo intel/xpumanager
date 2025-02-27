@@ -8,7 +8,7 @@ class config: public cmds {
 	public:
 		config() { };
 		~config() { };
-		void help(help_cmd *help_msg, int *lines_filled);
+		void help(list<help_cmd *> *help_list);
 		int run();
 };
 #endif

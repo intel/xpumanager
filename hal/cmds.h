@@ -1,17 +1,20 @@
 #ifndef _CMDS_H
 #define _CMDS_H
 
+#include <list>
 #include "help_cmd.h"
+
+using namespace std;
 
 class cmds {
 	public:
 		cmds() { };
 		virtual ~cmds() = 0;
-		virtual void help(help_cmd *help_msg, int *lines_filled) = 0;
+		virtual void help(list<help_cmd *> *help_list) = 0;
 		virtual int run() = 0;
 };
 
-typedef void (cmds:: *help_func) (help_cmd *help_msg, int *lines_filled);
+typedef void (cmds:: *help_func) (list<help_cmd *> *help_list);
 typedef int (cmds:: *run_func) ();
 
 struct cmd_struct

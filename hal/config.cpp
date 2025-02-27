@@ -1,7 +1,7 @@
 #include <config.h>
 #include <debug.h>
 
-void config::help(help_cmd *help_msg, int *lines_filled)
+void config::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 }

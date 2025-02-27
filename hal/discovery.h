@@ -8,7 +8,7 @@ class discovery: public cmds {
 	public:
 		discovery() { };
 		~discovery() { };
-		void help(help_cmd *help_msg, int *lines_filled);
+		void help(list<help_cmd *> *help_list);
 		int run();
 };
 

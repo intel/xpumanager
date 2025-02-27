@@ -8,8 +8,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 	TRACING();
-	help_cmd msg;
-	int lines = 0;
+	list<help_cmd *> *help_list = new list<help_cmd *>;
+
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;
 
@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
 	/* Run each command */
 	for(auto& it : *cmd_list) {
-		it->help(&msg, &lines);
+		it->help(help_list);
 		it->run();
 	}
 
@@ -30,5 +30,8 @@ int main(int argc, char *argv[])
 
 	/* Delete the list itself */
 	delete cmd_list;
+
+	/* Delete the help commands list */
+	delete help_list;
 	return 0;
 }
