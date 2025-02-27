@@ -1,5 +1,14 @@
-#include <config.h>
 #include <discovery.h>
+#include <topology.h>
+#include <diag.h>
+#include <health.h>
+#include <updatefw.h>
+#include <config.h>
+#include <ps.h>
+#include <vgpu.h>
+#include <stats.h>
+#include <dump.h>
+#include <log.h>
 #include <list>
 #include <debug.h>
 #include <iostream>
@@ -8,7 +17,7 @@
 using namespace std;
 
 #define STRINGIFY(x) #x
-#define CONCATENATE_WITH_DOT(a, b) STRINGIFY(a) "." STRINGIFY(b)
+#define CONCATENATE_WITH_DOT(a, b) "v" STRINGIFY(a) "." STRINGIFY(b)
 #define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
 
 void delete_list(list<help_cmd *> *help_list)
@@ -31,7 +40,7 @@ void print_subcommands(list<cmds *> *cmd_list)
 		}
 
 		for(auto& it2 : *help_list) {
-			PRINT("%-*s%s\n", 30, it->get_name(), it2->line);
+			PRINT("  %-*s%s\n", 28, it->get_name(), it2->line);
 			break;
 		}
 
@@ -71,8 +80,17 @@ int main(int argc, char *argv[])
 	list<cmds *> *cmd_list = new list<cmds *>;
 
 	/* Add each class in this list */
-	cmd_list->push_back(new config());
 	cmd_list->push_back(new discovery());
+	cmd_list->push_back(new topology());
+	cmd_list->push_back(new diag());
+	cmd_list->push_back(new health());
+	cmd_list->push_back(new updatefw());
+	cmd_list->push_back(new config());
+	cmd_list->push_back(new ps());
+	cmd_list->push_back(new vgpu());
+	cmd_list->push_back(new stats());
+	cmd_list->push_back(new dump());
+	cmd_list->push_back(new log());
 
 	/* Run each command */
 	for(auto& it : *cmd_list) {
