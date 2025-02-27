@@ -1,15 +1,13 @@
 #include <discovery.h>
-#include <iostream>
-
-using namespace std;
+#include <debug.h>
 
 void discovery::help(help_cmd *help_msg, int *lines_filled)
 {
-	cout<<"Discovery help"<<endl;
+	TRACING();
 }
 
 int discovery::run()
 {
-	cout<<"Discovery run"<<endl;
+	TRACING();
 	return 0;
 }

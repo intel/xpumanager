@@ -1,15 +1,13 @@
 #include <config.h>
-#include <iostream>
-
-using namespace std;
+#include <debug.h>
 
 void config::help(help_cmd *help_msg, int *lines_filled)
 {
-	cout<<"Config help"<<endl;
+	TRACING();
 }
 
 int config::run()
 {
-	cout<<"Config run"<<endl;
+	TRACING();
 	return 0;
 }
