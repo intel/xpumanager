@@ -1,4 +1,4 @@
-DIRS = ial
+DIRS = hal ial
 .PHONY: $(DIRS)
 
 MAKE += --no-print-directory
