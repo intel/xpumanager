@@ -7,8 +7,12 @@
 using namespace std;
 
 class cmds {
+	protected:
+		char name[MAX_PATH];
+
 	public:
 		cmds() { };
+		char *get_name() { return name; }
 		virtual ~cmds() = 0;
 		virtual void help(list<help_cmd *> *help_list) = 0;
 		virtual int run() = 0;

@@ -2,11 +2,12 @@
 #define _DISCOVERY_H
 
 #include <cmds.h>
+#include <cstring>
 
 class discovery: public cmds {
 
 	public:
-		discovery() { };
+		discovery() { strcpy(name, "discovery"); };
 		~discovery() { };
 		void help(list<help_cmd *> *help_list);
 		int run();
