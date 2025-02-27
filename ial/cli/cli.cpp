@@ -1,5 +1,6 @@
-#include <iostream>
 #include <config.h>
+#include <discovery.h>
+#include <list>
 
 using namespace std;
 
@@ -7,11 +8,20 @@ int main(int argc, char *argv[])
 {
 	help_cmd msg;
 	int lines = 0;
-	cmds *new_cmd = new config();
+	list<cmds *> *cmd_list = new list<cmds *>;
 
-	new_cmd->help(&msg, &lines);
-	new_cmd->run();
+	cmd_list->push_back(new config());
+	cmd_list->push_back(new discovery());
 
-	delete new_cmd;
+	for(auto& it : *cmd_list) {
+		it->help(&msg, &lines);
+		it->run();
+	}
+
+	for(auto& it : *cmd_list) {
+		delete it;
+	}
+
+	delete cmd_list;
 	return 0;
 }
