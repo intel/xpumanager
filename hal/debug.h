@@ -42,7 +42,7 @@ enum {
 * 3 = Errors + Info messages + Debug messages + Trace calls
 */
 #ifdef DEBUGON
-static int dbg_lvl = TRACE;
+static int dbg_lvl = DBG;
 #else
 static int dbg_lvl = INFO;
 #endif

@@ -2,14 +2,71 @@
 #include <discovery.h>
 #include <list>
 #include <debug.h>
+#include <iostream>
+#include <version.h>
 
 using namespace std;
+
+#define STRINGIFY(x) #x
+#define CONCATENATE_WITH_DOT(a, b) STRINGIFY(a) "." STRINGIFY(b)
+#define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
+
+void delete_list(list<help_cmd *> *help_list)
+{
+	for(auto& it : *help_list) {
+		delete it;
+	}
+	delete help_list;
+}
+
+void print_subcommands(list<cmds *> *cmd_list)
+{
+	for(auto& it : *cmd_list) {
+		list<help_cmd *> *help_list = new list<help_cmd *>;
+		it->help(help_list);
+
+		if(help_list->size() < 1) {
+			ERR("No help commands found\n");
+			return;
+		}
+
+		for(auto& it2 : *help_list) {
+			PRINT("%-*s%s\n", 30, it->get_name(), it2->line);
+			break;
+		}
+
+		delete_list(help_list);
+	}
+
+}
+
+void help(list<cmds *> *cmd_list)
+{
+	PRINT("Intel XPU System Management Interface -- %s\n", GET_SHORT_VERSION());
+	PRINT("Intel XPU System Management Interface provides the Intel datacenter GPU model. "
+		"It can also be used to update the firmware.\n");
+	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero. "
+		"Before using Intel XPU System Management Interface, the GPU driver and Intel "
+		"oneAPI Level Zero should be installed rightly.\n\n");
+	PRINT("Supported devcies:\n");
+	PRINT(" - Intel Arc B series GPU\n\n");
+
+	PRINT("Usage: xpu-smi [Options]\n");
+	PRINT("  xpu-smi -v\n");
+	PRINT("  xpu-smi -h\n");
+	PRINT("  xpu-smi discovery\n\n");
+
+	PRINT("Options:\n");
+	PRINT("  -h,--help                   Print this help message and exit\n");
+	PRINT("  -v,--version                Display version information and exit\n\n");
+
+	PRINT("Subcommands:\n");
+	print_subcommands(cmd_list);
+}
 
 int main(int argc, char *argv[])
 {
 	TRACING();
-	list<help_cmd *> *help_list = new list<help_cmd *>;
-
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;
 
@@ -19,19 +76,17 @@ int main(int argc, char *argv[])
 
 	/* Run each command */
 	for(auto& it : *cmd_list) {
-		it->help(help_list);
 		it->run();
 	}
+
+	help(cmd_list);
 
 	/* Delete all commands from the class */
 	for(auto& it : *cmd_list) {
 		delete it;
 	}
 
-	/* Delete the list itself */
+	/* Delete the command list itself */
 	delete cmd_list;
-
-	/* Delete the help commands list */
-	delete help_list;
 	return 0;
 }
