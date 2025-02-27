@@ -5,11 +5,8 @@
 #define MAX_PATH 256
 #endif
 
-#define MAX_LINES 20
-
 typedef struct _help_cmd {
-	char help_line[MAX_LINES][MAX_PATH];
-	int total_lines;
+	char line[MAX_PATH];
 } help_cmd;
 
 #endif
