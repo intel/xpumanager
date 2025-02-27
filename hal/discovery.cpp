@@ -1,7 +1,7 @@
 #include <discovery.h>
 #include <debug.h>
 
-void discovery::help(help_cmd *help_msg, int *lines_filled)
+void discovery::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 }
