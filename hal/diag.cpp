@@ -1,4 +1,4 @@
-#include <discovery.h>
+#include <diag.h>
 #include <debug.h>
 #include <assert.h>
 
@@ -7,19 +7,19 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void discovery::help(list<help_cmd *> *help_list)
+void diag::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("Discover the GPU devices installed on this machine and provide the device info"));
+	help_list->push_back(new help_cmd("Run some test suites to diagnose GPU"));
 }
 
 /**
- * @brief Executes the discovery run.
+ * @brief Executes the diag run.
  *
  * @return int Returns 0 on success.
  */
-int discovery::run()
+int diag::run()
 {
 	TRACING();
 	return 0;
