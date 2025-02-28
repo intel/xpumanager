@@ -11,7 +11,7 @@ void dump::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("Dump device statistics data"));
+	help_list->push_back(new help_cmd(NO_GAP, "Dump device statistics data"));
 }
 
 /**

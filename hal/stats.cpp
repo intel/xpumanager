@@ -11,7 +11,7 @@ void stats::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("List the GPU statistics"));
+	help_list->push_back(new help_cmd(NO_GAP, "List the GPU statistics"));
 }
 
 /**

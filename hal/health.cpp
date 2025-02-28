@@ -11,7 +11,7 @@ void health::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("Get the GPU device component health status"));
+	help_list->push_back(new help_cmd(NO_GAP, "Get the GPU device component health status"));
 }
 
 /**

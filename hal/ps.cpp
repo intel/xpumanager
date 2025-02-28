@@ -11,7 +11,7 @@ void ps::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("List status of processes"));
+	help_list->push_back(new help_cmd(NO_GAP, "List status of processes"));
 }
 
 /**

@@ -11,7 +11,7 @@ void diag::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("Run some test suites to diagnose GPU"));
+	help_list->push_back(new help_cmd(NO_GAP, "Run some test suites to diagnose GPU"));
 }
 
 /**

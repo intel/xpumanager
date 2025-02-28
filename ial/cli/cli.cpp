@@ -44,6 +44,9 @@ void print_subcommands(list<cmds *> *cmd_list)
 			break;
 		}
 
+		for(auto& it2 : *help_list) {
+			PRINT("%-*s%s\n", it2->char_gap, "", it2->line);
+		}
 		delete_list(help_list);
 	}
 

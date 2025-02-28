@@ -11,7 +11,7 @@ void vgpu::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("Create and remove virtual GPUs in SRIOV configuration"));
+	help_list->push_back(new help_cmd(NO_GAP, "Create and remove virtual GPUs in SRIOV configuration"));
 }
 
 /**
