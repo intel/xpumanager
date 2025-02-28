@@ -7,8 +7,8 @@ MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=
-export INCLUDES=-I$(LEVELZERO)/include -I. -I..
-export CFLAGS=-c -Wall
+export INCLUDES=-I$(LEVELZERO)/include -I. -I../../hal
+export CFLAGS=-c -Wall -fPIC
 export HEADERS=$(wildcard *.h)
 export SOURCES=$(wildcard *.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
@@ -32,7 +32,7 @@ $(BINNAME): $(OBJECTS)
 	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $<
 
 debug:
-	@export DBG_FLAGS='-g'; \
+	@export DBG_FLAGS='-g -D DEBUGON'; \
 	$(MAKE)
 
 clean:

@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <pthread.h>
+#include <pdev.h>
 
 #define LIBXPUM_API
 #define UNUSED(x)                          (void)(x)
@@ -40,6 +41,11 @@
 #define STRCASECMP                         strcasecmp
 #define THREAD_RET                         void *
 #define GETOPT                             getopt
+#define GET_PCI_DEV(devs)                  intel_get_pci_device(devs)
+#define PCI_CLEANUP()                      intel_pci_cleanup()
+#define IS_GRAPHICS_CLASS(device_class)    (((device_class >> 16) & 0x0ff) == 3)
+#define PCI_PATH_BAR_GENERIC               "/sys/bus/pci/devices/0000:"
+
 
 typedef void* (*funcptr)(void* input_params);
 void *align_alloc(size_t size);
@@ -56,5 +62,7 @@ public:
 
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
+int intel_get_pci_device(p_dev *devs);
+void intel_pci_cleanup();
 
 #endif
