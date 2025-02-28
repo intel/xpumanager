@@ -20,6 +20,11 @@ using namespace std;
 #define CONCATENATE_WITH_DOT(a, b) "v" STRINGIFY(a) "." STRINGIFY(b)
 #define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
 
+enum HELP {
+	SHORT_HELP,
+	FULL_HELP,
+};
+
 template <typename T>
 void delete_list(list<T *> *generic_list)
 {
@@ -29,26 +34,36 @@ void delete_list(list<T *> *generic_list)
 	delete generic_list;
 }
 
-void print_subcommands(list<cmds *> *cmd_list)
+void print_subcommand(cmds *it, HELP help_type)
 {
-	for(auto& it : *cmd_list) {
-		list<help_cmd *> *help_list = new list<help_cmd *>;
-		it->help(help_list);
+	list<help_cmd *> *help_list = new list<help_cmd *>;
+	it->help(help_list);
 
-		if(help_list->size() < 1) {
-			ERR("No help commands found\n");
-			return;
-		}
+	if(help_list->size() < 1) {
+		ERR("No help commands found\n");
+		return;
+	}
 
+	if(help_type == SHORT_HELP) {
 		/* Just print the first line of each subcommand's help because it contains the description */
 		for(auto& it2 : *help_list) {
 			PRINT("  %-*s%s\n", 28, it->get_name(), it2->line);
 			break;
 		}
-
-		delete_list(help_list);
+	} else {
+		for(auto& it2 : *help_list) {
+			PRINT("%-*s%s\n", it2->char_gap, "", it2->line);
+		}
 	}
 
+	delete_list(help_list);
+}
+
+void print_subcommands(list<cmds *> *cmd_list)
+{
+	for(auto& it : *cmd_list) {
+		print_subcommand(it, SHORT_HELP);
+	}
 }
 
 void help(list<cmds *> *cmd_list)
@@ -95,21 +110,28 @@ int main(int argc, char *argv[])
 	cmd_list->push_back(new dump());
 	cmd_list->push_back(new logs());
 
-
+	/* If no command line args are provided, just print help message and exit */
 	if(argc == 1) {
 		help(cmd_list);
 		delete_list(cmd_list);
 		return 0;
 	}
 
-	/* Run each command */
+	/* Parse command line and run the command that the user wants */
 	for(auto& it : *cmd_list) {
 		if(!STRCASECMP(it->get_name(), argv[1])) {
+			if(argc == 2 || (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help")))) {
+				print_subcommand(it, FULL_HELP);
+				delete_list(cmd_list);
+				return 0;
+			}
+			/* Run the command */
 			it->run();
 			found = true;
 		}
 	}
 
+	/* If we can't parse the user's command line, then print help */
 	if(!found) {
 		help(cmd_list);
 	}
