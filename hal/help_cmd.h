@@ -11,6 +11,7 @@ enum GAP {
 	NO_GAP,
 	SMALL_GAP,
 	LARGE_GAP,
+	XLARGE_GAP,
 };
 
 struct help_cmd {
@@ -30,6 +31,9 @@ struct help_cmd {
 			break;
 			case LARGE_GAP:
 				char_gap = 30;
+			break;
+			case XLARGE_GAP:
+				char_gap = 37;
 			break;
 			case NO_GAP:
 			default:
