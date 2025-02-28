@@ -53,7 +53,13 @@ public:
 #define STRTOK_S(str, delimiters, context) strtok_s(str, delimiters, context)
 #define STRCASECMP                         _stricmp
 #define THREAD_RET                         DWORD WINAPI
-#define P2P_MEM_TEST
+<<<<<<< Updated upstream
+#define GET_PCI_DEV                        (1)
+#define PCI_CLEANUP
+=======
+#define GET_PCI_DEV(devs)                  (1)
+#define PCI_CLEANUP(devs, found_dev)
+>>>>>>> Stashed changes
 #define GETOPT                             getopt
 
 typedef DWORD(WINAPI* funcptr)(void* input_params);

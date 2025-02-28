@@ -161,6 +161,7 @@
     <ClInclude Include="log.h" />
     <ClInclude Include="ps.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="sysinfo.h" />
     <ClInclude Include="topology.h" />
     <ClInclude Include="updatefw.h" />
     <ClInclude Include="vgpu.h" />
@@ -177,6 +178,7 @@
     <ClCompile Include="log.cpp" />
     <ClCompile Include="ps.cpp" />
     <ClCompile Include="stats.cpp" />
+    <ClCompile Include="sysinfo.cpp" />
     <ClCompile Include="topology.cpp" />
     <ClCompile Include="updatefw.cpp" />
     <ClCompile Include="vgpu.cpp" />

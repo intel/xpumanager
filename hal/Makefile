@@ -19,6 +19,7 @@ SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 HEADERS := $(wildcard $(SRCDIR)/*.h ../oal/lin/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 DEPS := $(OBJECTS:.o=.d)  # Dependency files corresponding to object files
+OAL_OBJECTS := $(wildcard ../oal/lin/*.o)
 
 # Check if VERBOSE is set to 1, if not, silence the commands
 ifeq ($(VERBOSE),1)
@@ -31,11 +32,11 @@ endif
 all: $(TARGET_SHARED) $(TARGET_STATIC)
 
 # Shared library
-$(TARGET_SHARED): $(OBJECTS)
+$(TARGET_SHARED): $(OBJECTS) $(OAL_OBJECTS)
 	$(CMD_PREFIX)echo "Creating shared library..."
 	$(CMD_PREFIX)$(CXX) -Wall -shared $(DBG_FLAGS) -o $@ $^ $(LIBS)
 # Static library
-$(TARGET_STATIC): $(OBJECTS)
+$(TARGET_STATIC): $(OBJECTS) $(OAL_OBJECTS)
 	$(CMD_PREFIX)echo "Creating static library..."
 	$(CMD_PREFIX)ar rcs $@ $^
 

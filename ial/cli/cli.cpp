@@ -9,6 +9,7 @@
 #include <stats.h>
 #include <dump.h>
 #include <log.h>
+#include <sysinfo.h>
 #include <list>
 #include <debug.h>
 #include <iostream>
@@ -94,10 +95,19 @@ int main(int argc, char *argv[])
 {
 	TRACING();
 	bool found = false;
+
+	/* First and foremost, let's find out if there are any GPUs on this system */
+	sysinfo *sys = new sysinfo();
+	if(!sys->is_init()) {
+		ERR("Failed to initialize sysinfo. Couldn't find any GPUs\n");
+		delete sys;
+		return -1;
+	}
+
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;
 
-	/* Add each class in this list */
+	/* Add each command class in this list */
 	cmd_list->push_back(new discovery());
 	cmd_list->push_back(new topology());
 	cmd_list->push_back(new diag());
@@ -114,15 +124,18 @@ int main(int argc, char *argv[])
 	if(argc == 1) {
 		help(cmd_list);
 		delete_list(cmd_list);
+		delete sys;
 		return 0;
 	}
 
 	/* Parse command line and run the command that the user wants */
 	for(auto& it : *cmd_list) {
 		if(!STRCASECMP(it->get_name(), argv[1])) {
+			/* If the second argument is -h or --help, then just print their help */
 			if(argc == 2 || (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help")))) {
 				print_subcommand(it, FULL_HELP);
 				delete_list(cmd_list);
+				delete sys;
 				return 0;
 			}
 			/* Run the command */
@@ -137,5 +150,6 @@ int main(int argc, char *argv[])
 	}
 
 	delete_list(cmd_list);
+	delete sys;
 	return 0;
 }

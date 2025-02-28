@@ -23,9 +23,11 @@
  */
 
 #include "os.h"
-#include "../ptp.h"
 #include <sys/mman.h>
 #include <math.h>
+#include <pciaccess.h>
+#include <debug.h>
+#include <sysinfo.h>
 
 /**
  * @brief Allocates memory aligned to a specified boundary and advises the kernel to use huge pages.
@@ -40,17 +42,6 @@ void *align_alloc(size_t size)
 	buffer = aligned_alloc(TWO_MB, size);		  // Allocate aligned memory.
 	madvise(buffer, size, MADV_HUGEPAGE);		  // Accept huge pages.
 	return buffer;
-}
-
-/**
- * @brief Placeholder function for P2P memory test.
- *
- * @param p Pointer to the parameters for the P2P memory test.
- * @return Always returns 0.
- */
-int ptp::p2p_mem_test(params *p)
-{
-	return 0;
 }
 
 /**
@@ -81,4 +72,48 @@ void wait_for_thread(thread_id *tid)
 		DBG("%s: thread handle is %ld\n", __func__, tid->ret_thread_uid());
 		pthread_join(tid->ret_thread_uid(), NULL);
 	}
+}
+
+int intel_get_pci_device(p_dev *devs)
+{
+	struct pci_device_iterator *iter;
+	struct pci_device *pci_dev;
+	int error, found = 0;
+
+	error = pci_system_init();
+	if (error) {
+		ERR("Couldn't initialize PCI system\n");
+		return found;
+	}
+
+	iter = pci_slot_match_iterator_create(NULL);
+
+	while ((pci_dev = pci_device_next(iter)) != NULL) {
+		if (IS_GRAPHICS_CLASS(pci_dev->device_class)) {
+			DBG("Found device: %04x:%04x @ %02x:%02x.%x\n", pci_dev->vendor_id, pci_dev->device_id,
+				pci_dev->bus, pci_dev->dev, pci_dev->func);
+			error = pci_device_probe(pci_dev);
+			if (error) {
+				ERR("Couldn't probe PCI device\n");
+				break;
+			}
+			devs[found].dev = pci_dev;
+			sprintf(devs[found].resource_name, "%s%02x:%02x.%x/resource2", PCI_PATH_BAR_GENERIC,
+					pci_dev->bus, pci_dev->dev, pci_dev->func);
+			DBG("Resource name: %s\n", devs[found].resource_name);
+
+			found++;
+			if (found == MAX_DEVS) {
+				break;
+			}
+		}
+	}
+	pci_iterator_destroy(iter);
+
+	return found;
+}
+
+void intel_pci_cleanup()
+{
+	pci_system_cleanup();
 }
