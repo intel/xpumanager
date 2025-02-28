@@ -1,5 +1,5 @@
-#include <diag.h>
-#include <debug.h>
+#include "diag.h"
+#include "debug.h"
 #include <assert.h>
 
 /**

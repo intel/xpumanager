@@ -12,7 +12,7 @@
 #include <list>
 #include <debug.h>
 #include <iostream>
-#include <version.h>
+#include "version.h"
 
 using namespace std;
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 	cmd_list->push_back(new vgpu());
 	cmd_list->push_back(new stats());
 	cmd_list->push_back(new dump());
-	cmd_list->push_back(new log());
+	cmd_list->push_back(new logs());
 
 	/* Run each command */
 	for(auto& it : *cmd_list) {

@@ -6,7 +6,7 @@
 
 using namespace std;
 
-class cmds {
+class LIBXPUM_API cmds {
 	protected:
 		char name[MAX_PATH];
 

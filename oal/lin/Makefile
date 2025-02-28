@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 export PWD=$(shell pwd)
-BINNAME=xpu-smi
+BINNAME=lmem
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
-export LIBS=-L../../hal -lxpum
-export INCLUDES=-I. -I../../hal -I../../oal/lin
+export LIBS=
+export INCLUDES=-I$(LEVELZERO)/include -I. -I..
 export CFLAGS=-c -Wall
 export HEADERS=$(wildcard *.h)
 export SOURCES=$(wildcard *.cpp)
@@ -16,24 +16,23 @@ OBJECTS=$(SOURCES:.cpp=.o)
 all::
 	@echo "Compiling..."
 
-all::$(SOURCES) $(BINNAME)
+all:: $(SOURCES) $(BINNAME)
 
 all::
 	@echo "Done"
 
 $(BINNAME): $(OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@ $(OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
-%.o: %.cpp $(HEADERS)
+.cpp.o:
 	@echo $<
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $< 
+	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $<
 
 debug:
-	@export DBG_FLAGS='-g -D DEBUGON'; \
+	@export DBG_FLAGS='-g'; \
 	$(MAKE)
 
 clean:

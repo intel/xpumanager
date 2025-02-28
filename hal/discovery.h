@@ -1,13 +1,13 @@
 #ifndef _DISCOVERY_H
 #define _DISCOVERY_H
 
-#include <cmds.h>
-#include <cstring>
+#include "cmds.h"
+#include <os.h>
 
-class discovery: public cmds {
+class LIBXPUM_API discovery: public cmds {
 
 	public:
-		discovery() { strcpy(name, "discovery"); };
+		discovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 		~discovery() { };
 		void help(list<help_cmd *> *help_list);
 		int run();

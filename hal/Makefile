@@ -3,7 +3,7 @@
 
 # Compiler and Flags
 CXX := g++
-CXXFLAGS := -Wall -fPIC -I. 
+CXXFLAGS := -Wall -fPIC -I. -I../oal/lin
 LIBS :=
 # Directories
 SRCDIR := .
@@ -16,7 +16,7 @@ TARGET_STATIC := libxpum.a
 
 # Find source files, create a list of object files
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
-HEADERS := $(wildcard $(SRCDIR)/*.h ../cmn/*.h)
+HEADERS := $(wildcard $(SRCDIR)/*.h ../oal/lin/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 DEPS := $(OBJECTS:.o=.d)  # Dependency files corresponding to object files
 

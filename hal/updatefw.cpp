@@ -1,5 +1,5 @@
-#include <updatefw.h>
-#include <debug.h>
+#include "updatefw.h"
+#include "debug.h"
 #include <assert.h>
 
 /**
