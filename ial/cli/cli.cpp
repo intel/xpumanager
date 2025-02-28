@@ -20,12 +20,13 @@ using namespace std;
 #define CONCATENATE_WITH_DOT(a, b) "v" STRINGIFY(a) "." STRINGIFY(b)
 #define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
 
-void delete_list(list<help_cmd *> *help_list)
+template <typename T>
+void delete_list(list<T *> *generic_list)
 {
-	for(auto& it : *help_list) {
+	for(auto& it : *generic_list) {
 		delete it;
 	}
-	delete help_list;
+	delete generic_list;
 }
 
 void print_subcommands(list<cmds *> *cmd_list)
@@ -39,14 +40,12 @@ void print_subcommands(list<cmds *> *cmd_list)
 			return;
 		}
 
+		/* Just print the first line of each subcommand's help because it contains the description */
 		for(auto& it2 : *help_list) {
 			PRINT("  %-*s%s\n", 28, it->get_name(), it2->line);
 			break;
 		}
 
-		for(auto& it2 : *help_list) {
-			PRINT("%-*s%s\n", it2->char_gap, "", it2->line);
-		}
 		delete_list(help_list);
 	}
 
@@ -79,6 +78,7 @@ void help(list<cmds *> *cmd_list)
 int main(int argc, char *argv[])
 {
 	TRACING();
+	bool found = false;
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;
 
@@ -95,19 +95,25 @@ int main(int argc, char *argv[])
 	cmd_list->push_back(new dump());
 	cmd_list->push_back(new logs());
 
+
+	if(argc == 1) {
+		help(cmd_list);
+		delete_list(cmd_list);
+		return 0;
+	}
+
 	/* Run each command */
 	for(auto& it : *cmd_list) {
-		it->run();
+		if(!STRCASECMP(it->get_name(), argv[1])) {
+			it->run();
+			found = true;
+		}
 	}
 
-	help(cmd_list);
-
-	/* Delete all commands from the class */
-	for(auto& it : *cmd_list) {
-		delete it;
+	if(!found) {
+		help(cmd_list);
 	}
 
-	/* Delete the command list itself */
-	delete cmd_list;
+	delete_list(cmd_list);
 	return 0;
 }
