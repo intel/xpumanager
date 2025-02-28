@@ -1,5 +1,5 @@
-#include <config.h>
-#include <debug.h>
+#include "config.h"
+#include "debug.h"
 #include <assert.h>
 
 /**

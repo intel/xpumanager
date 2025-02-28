@@ -1,5 +1,5 @@
-#include <log.h>
-#include <debug.h>
+#include "log.h"
+#include "debug.h"
 #include <assert.h>
 
 /**
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void log::help(list<help_cmd *> *help_list)
+void logs::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -15,11 +15,11 @@ void log::help(list<help_cmd *> *help_list)
 }
 
 /**
- * @brief Executes the log run.
+ * @brief Executes the logs run.
  *
  * @return int Returns 0 on success.
  */
-int log::run()
+int logs::run()
 {
 	TRACING();
 	return 0;

@@ -1,7 +1,7 @@
 #ifndef _HELP_CMD_H
 #define _HELP_CMD_H
 
-#include <cstring>
+#include <os.h>
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
@@ -17,7 +17,7 @@ struct help_cmd {
 
 	// Copy constructor
 	help_cmd(const char *other) {
-		strncpy(line, other, MAX_PATH);
+		STRNCPY_S(line, other, MAX_PATH);
 	}
 };
 
