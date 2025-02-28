@@ -11,7 +11,7 @@ void logs::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
-	help_list->push_back(new help_cmd("Collect GPU debug logs"));
+	help_list->push_back(new help_cmd(NO_GAP, "Collect GPU debug logs"));
 }
 
 /**
