@@ -9,9 +9,9 @@
 
 enum GAP {
 	NO_GAP,
-	SMALL_GAP,
-	LARGE_GAP,
-	XLARGE_GAP,
+	SMALL_GAP = 2,
+	LARGE_GAP = 30,
+	XLARGE_GAP = 37,
 };
 
 struct help_cmd {
@@ -25,21 +25,7 @@ struct help_cmd {
 
 	// Copy constructor
 	help_cmd(GAP gap, const char *other) {
-		switch(gap) {
-			case SMALL_GAP:
-				char_gap = 2;
-			break;
-			case LARGE_GAP:
-				char_gap = 30;
-			break;
-			case XLARGE_GAP:
-				char_gap = 37;
-			break;
-			case NO_GAP:
-			default:
-				char_gap = gap;
-			break;
-		}
+		char_gap = (int) gap;
 		STRNCPY_S(line, other, MAX_PATH);
 	}
 };
