@@ -42,10 +42,10 @@
 #define THREAD_RET                         void *
 #define GETOPT                             getopt
 #define GET_PCI_DEV(devs)                  intel_get_pci_device(devs)
-#define PCI_CLEANUP()                      intel_pci_cleanup()
+#define PCI_CLEANUP(devs, found_dev)       intel_pci_cleanup(devs, found_dev)
 #define IS_GRAPHICS_CLASS(device_class)    (((device_class >> 16) & 0x0ff) == 3)
 #define PCI_PATH_BAR_GENERIC               "/sys/bus/pci/devices/0000:"
-
+#define MMIO_SIZE                          (2*1024*1024)
 
 typedef void* (*funcptr)(void* input_params);
 void *align_alloc(size_t size);
@@ -63,6 +63,7 @@ public:
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 int intel_get_pci_device(p_dev *devs);
-void intel_pci_cleanup();
+int intel_mmio_use_pci_bar(p_dev *dev);
+void intel_pci_cleanup(p_dev *devs, int found_dev);
 
 #endif

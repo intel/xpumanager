@@ -20,6 +20,6 @@ sysinfo::sysinfo()
 sysinfo::~sysinfo()
 {
 	TRACING();
-	PCI_CLEANUP();
+	PCI_CLEANUP(devs, found_dev);
 }
 
