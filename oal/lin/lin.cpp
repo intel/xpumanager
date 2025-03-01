@@ -96,8 +96,8 @@ int intel_get_pci_device(p_dev *devs)
 				break;
 			}
 
-			/* We only care about discrete Intel GPUs. */
-			if(pci_dev->vendor_id == 0x8086 && pci_dev->bus != 0) {
+			/* We only care about Intel GPUs. */
+			if(pci_dev->vendor_id == 0x8086) {
 				DBG("Found Intel device: %04x:%04x @ %02x:%02x.%x\n", pci_dev->vendor_id, pci_dev->device_id,
 					pci_dev->bus, pci_dev->dev, pci_dev->func);
 			} else {

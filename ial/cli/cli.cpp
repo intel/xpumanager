@@ -19,7 +19,9 @@ using namespace std;
 
 #define STRINGIFY(x) #x
 #define CONCATENATE_WITH_DOT(a, b) "v" STRINGIFY(a) "." STRINGIFY(b)
+#define CONCATENATE_WITH_DOTS(a, b, c, d) STRINGIFY(a) "." STRINGIFY(b) "." STRINGIFY(c) "." STRINGIFY(d)
 #define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
+#define GET_FULL_VERSION() CONCATENATE_WITH_DOTS(MAJOR, MINOR, PATCH, BUILD_NUMBER)
 
 enum HELP {
 	SHORT_HELP,
@@ -33,6 +35,22 @@ void delete_list(list<T *> *generic_list)
 		delete it;
 	}
 	delete generic_list;
+}
+
+void print_version()
+{
+	PRINT("%-*sCLI:\n", NO_GAP, "");
+	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
+	PRINT("%-*sBuild ID: 8389eee7\n", SMALL_GAP, "");
+	PRINT("%-*s\n", NO_GAP, "");
+	PRINT("%-*sService:\n", NO_GAP, "");
+	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
+	PRINT("%-*sBuild ID: 8389eee7\n", SMALL_GAP, "");
+
+#if 0
+    Level Zero Version: 1.17.45
+#endif
+
 }
 
 void print_subcommand(cmds *it, HELP help_type)
@@ -123,6 +141,13 @@ int main(int argc, char *argv[])
 	/* If no command line args are provided, just print help message and exit */
 	if(argc == 1) {
 		help(cmd_list);
+		delete_list(cmd_list);
+		delete sys;
+		return 0;
+	}
+
+	if(!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
+		print_version();
 		delete_list(cmd_list);
 		delete sys;
 		return 0;
