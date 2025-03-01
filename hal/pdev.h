@@ -8,7 +8,7 @@
 struct p_dev {
 	void *dev;
 	char resource_name[256];
-	uint8_t *bar;
+	uint8_t *mmio;
 };
 
 #endif
