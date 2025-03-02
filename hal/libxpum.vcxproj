@@ -71,10 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\oal\win</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\oal\win;$(LEVELZERO)\include</IncludePath>
+    <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\oal\win;$(IncludePath)</IncludePath>
+    <IncludePath>..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -125,6 +127,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -146,6 +149,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -159,6 +163,7 @@
     <ClInclude Include="health.h" />
     <ClInclude Include="help_cmd.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="lz.h" />
     <ClInclude Include="ps.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="sysinfo.h" />
@@ -176,6 +181,7 @@
     <ClCompile Include="dump.cpp" />
     <ClCompile Include="health.cpp" />
     <ClCompile Include="log.cpp" />
+    <ClCompile Include="lz.cpp" />
     <ClCompile Include="ps.cpp" />
     <ClCompile Include="stats.cpp" />
     <ClCompile Include="sysinfo.cpp" />

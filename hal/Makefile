@@ -3,8 +3,8 @@
 
 # Compiler and Flags
 CXX := g++
-CXXFLAGS := -Wall -fPIC -I. -I../oal/lin
-LIBS :=
+CXXFLAGS := -Wall -fPIC -I. -I../oal/lin -I$(LEVELZERO)/include
+LIBS :=-L$(LEVELZERO)/build/lib -lze_loader
 # Directories
 SRCDIR := .
 OBJDIR := obj

@@ -37,7 +37,7 @@ void delete_list(list<T *> *generic_list)
 	delete generic_list;
 }
 
-void print_version()
+void print_version(sysinfo *sys)
 {
 	PRINT("%-*sCLI:\n", NO_GAP, "");
 	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
@@ -46,11 +46,7 @@ void print_version()
 	PRINT("%-*sService:\n", NO_GAP, "");
 	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
 	PRINT("%-*sBuild ID: 8389eee7\n", SMALL_GAP, "");
-
-#if 0
-    Level Zero Version: 1.17.45
-#endif
-
+	sys->print_lz_version();
 }
 
 void print_subcommand(cmds *it, HELP help_type)
@@ -146,8 +142,9 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	/* Print out version info if -v command line arg specified */
 	if(!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
-		print_version();
+		print_version(sys);
 		delete_list(cmd_list);
 		delete sys;
 		return 0;
