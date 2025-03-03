@@ -27,6 +27,12 @@
 
 #include <stdio.h>
 
+#ifdef _WIN32
+static int is_windows = 1;
+#else
+static int is_windows __attribute__((unused)) = 0;
+#endif
+
 enum {
 	ERR,
 	INFO,
