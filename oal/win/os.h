@@ -46,6 +46,7 @@ public:
 
 };
 
+#define TESTING                            (1)
 #define UNUSED(x)                          (void)(x)
 #define TWO_MB                             (2 * 1024 * 1024)
 #define STRCPY_S(dest, sz, src)            strcpy_s(dest, sz, src)
