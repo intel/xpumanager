@@ -8,6 +8,13 @@ sysinfo::sysinfo()
 {
 	TRACING();
 	init = 0;
+	lz_obj = NULL;
+
+	if (TESTING) {
+		init = 1;
+		return;
+	}
+
 	found_dev = GET_PCI_DEV(devs);
 	if (found_dev) {
 		lz_obj = new lz();
@@ -17,7 +24,6 @@ sysinfo::sysinfo()
 			init = 1;
 		}
 	}
-	
 }
 
 /**
