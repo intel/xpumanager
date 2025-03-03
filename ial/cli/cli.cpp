@@ -10,6 +10,8 @@
 #include <dump.h>
 #include <log.h>
 #include <sysinfo.h>
+#include <memory>
+#include <functional>
 #include <list>
 #include <debug.h>
 #include <iostream>
@@ -105,6 +107,26 @@ void help(list<cmds *> *cmd_list)
 	print_subcommands(cmd_list);
 }
 
+// Enum to represent OS types
+enum class OSTYPE {
+	Windows,
+	Linux,
+	Both,
+};
+
+/* Function to create an instance of a class */
+template <typename T>
+cmds* create_instance()
+{
+	return new T();
+}
+
+/* Structure to hold function and OS type */
+struct function_entry {
+	std::function<cmds* ()> create_func;
+	OSTYPE os_type;
+};
+
 int main(int argc, char *argv[])
 {
 	TRACING();
@@ -121,18 +143,27 @@ int main(int argc, char *argv[])
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;
 
-	/* Add each command class in this list */
-	cmd_list->push_back(new discovery());
-	cmd_list->push_back(new topology());
-	cmd_list->push_back(new diag());
-	cmd_list->push_back(new health());
-	cmd_list->push_back(new updatefw());
-	cmd_list->push_back(new config());
-	cmd_list->push_back(new ps());
-	cmd_list->push_back(new vgpu());
-	cmd_list->push_back(new stats());
-	cmd_list->push_back(new dump());
-	cmd_list->push_back(new logs());
+	std::vector<function_entry> function_table = {
+		{ create_instance<discovery>, OSTYPE::Both  },
+		{ create_instance<topology>,  OSTYPE::Linux },
+		{ create_instance<diag>,      OSTYPE::Linux },
+		{ create_instance<health>,    OSTYPE::Linux },
+		{ create_instance<updatefw>,  OSTYPE::Both  },
+		{ create_instance<config>,    OSTYPE::Both  },
+		{ create_instance<ps>,        OSTYPE::Linux },
+		{ create_instance<vgpu>,      OSTYPE::Linux },
+		{ create_instance<stats>,     OSTYPE::Both  },
+		{ create_instance<dump>,      OSTYPE::Both  },
+		{ create_instance<logs>,      OSTYPE::Linux },
+	};
+
+	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;
+
+	for (const auto& entry : function_table) {
+		if (entry.os_type == OSTYPE::Both || entry.os_type == current_os) {
+			cmd_list->push_back(entry.create_func());
+		}
+	}
 
 	/* If no command line args are provided, just print help message and exit */
 	if(argc == 1) {
