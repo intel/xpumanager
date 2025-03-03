@@ -39,15 +39,15 @@ ze_result_t lz::initialize()
 			p_driver = drivers[driver];
 			find_dev(p_driver, type);
 		}
-	}
 
-	// Create the context
-	ze_context_desc_t context_desc = {};
-	context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-	status = zeContextCreate(p_driver, &context_desc, &context);
-	if (status != ZE_RESULT_SUCCESS) {
-		ERR("zeContextCreate Failed with return code: %s\n", to_string(status).c_str());
-		return status;
+		// Create the context
+		ze_context_desc_t context_desc = {};
+		context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+		status = zeContextCreate(p_driver, &context_desc, &context);
+		if (status != ZE_RESULT_SUCCESS) {
+			ERR("zeContextCreate Failed with return code: %s\n", to_string(status).c_str());
+			return status;
+		}
 	}
 
 	return ZE_RESULT_SUCCESS;
