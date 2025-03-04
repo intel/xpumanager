@@ -10,7 +10,7 @@ class LIBXPUM_API topology: public cmds {
 		topology() { STRCPY_S(name, MAX_PATH, "topology"); };
 		~topology() { };
 		void help(list<help_cmd *> *help_list);
-		int run();
+		int run(sysinfo *sys);
 };
 
 #endif

@@ -56,8 +56,9 @@ void config::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int config::run()
+int config::run(sysinfo *sys)
 {
 	TRACING();
+	UNUSED(sys);
 	return 0;
 }
