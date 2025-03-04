@@ -43,8 +43,9 @@ void health::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int health::run()
+int health::run(sysinfo *sys)
 {
 	TRACING();
+	UNUSED(sys);
 	return 0;
 }

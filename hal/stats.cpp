@@ -45,8 +45,9 @@ void stats::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int stats::run()
+int stats::run(sysinfo *sys)
 {
 	TRACING();
+	UNUSED(sys);
 	return 0;
 }

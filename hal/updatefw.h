@@ -10,7 +10,7 @@ class LIBXPUM_API updatefw: public cmds {
 		updatefw() { STRCPY_S(name, MAX_PATH, "updatefw"); };
 		~updatefw() { };
 		void help(list<help_cmd *> *help_list);
-		int run();
+		int run(sysinfo *sys);
 };
 
 #endif

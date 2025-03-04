@@ -10,7 +10,7 @@ class LIBXPUM_API discovery: public cmds {
 		discovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 		~discovery() { };
 		void help(list<help_cmd *> *help_list);
-		int run();
+		int run(sysinfo *sys);
 };
 
 #endif

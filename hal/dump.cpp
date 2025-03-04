@@ -78,8 +78,9 @@ void dump::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int dump::run()
+int dump::run(sysinfo *sys)
 {
 	TRACING();
+	UNUSED(sys);
 	return 0;
 }

@@ -10,7 +10,7 @@ class LIBXPUM_API vgpu: public cmds {
 		vgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
 		~vgpu() { };
 		void help(list<help_cmd *> *help_list);
-		int run();
+		int run(sysinfo *sys);
 };
 
 #endif

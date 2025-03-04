@@ -10,6 +10,6 @@ class LIBXPUM_API config: public cmds {
 		config() { STRCPY_S(name, MAX_PATH, "config"); };
 		~config() { };
 		void help(list<help_cmd *> *help_list);
-		int run();
+		int run(sysinfo *sys);
 };
 #endif
