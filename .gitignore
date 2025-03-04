@@ -3,7 +3,6 @@
 *.a
 .vscode
 *.vs
-*.filters
 *.user
 xpu-smi
 tags
