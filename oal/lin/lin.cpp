@@ -170,6 +170,23 @@ void intel_pci_cleanup(p_dev *devs, int found_dev)
 	pci_system_cleanup();
 }
 
+int intel_get_bus(void *dev)
+{
+	struct pci_device *pci_dev = (struct pci_device *) dev;
+	return pci_dev->bus;
+}
+
+int intel_get_dev(void *dev)
+{
+	struct pci_device *pci_dev = (struct pci_device *) dev;
+	return pci_dev->dev;
+}
+
+int intel_get_func(void *dev)
+{
+	struct pci_device *pci_dev = (struct pci_device *) dev;
+	return pci_dev->func;
+}
 
 int intel_get_dev_id(void *dev)
 {

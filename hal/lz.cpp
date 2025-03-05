@@ -35,8 +35,6 @@ ze_result_t lz::initialize(p_dev *devs, int found_devs)
 	context = nullptr;
 
 	if (init_ze()) {
-		print_loader_versions();
-
 		uint32_t driverCount = 0;
 		status = zeDriverGet(&driverCount, nullptr);
 		if (status != ZE_RESULT_SUCCESS) {
