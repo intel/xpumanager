@@ -40,6 +40,7 @@
 #define STRCPY_S(dest, sz, src)            strcpy(dest, src)
 #define STRNCPY_S(dest, src, sz)           strncpy(dest, src, sz)
 #define STRTOK_S(str, delimiters, context) strtok(str, delimiters)
+#define SPRINTF_S(dest, sz, fmt, ...)      snprintf(dest, sz, fmt, ##__VA_ARGS__)
 #define STRCASECMP                         strcasecmp
 #define THREAD_RET                         void *
 #define GETOPT                             getopt
@@ -49,6 +50,9 @@
 #define GET_PCI_DEV(devs)                  intel_get_pci_device(devs)
 #define PCI_CLEANUP(devs, found_dev)       intel_pci_cleanup(devs, found_dev)
 #define GET_DEV_ID(dev)                    intel_get_dev_id(dev)
+#define GET_BUS(dev)                       intel_get_bus(dev)
+#define GET_DEV(dev)                       intel_get_dev(dev)
+#define GET_FUNC(dev)                      intel_get_func(dev)
 
 typedef void* (*funcptr)(void* input_params);
 void *align_alloc(size_t size);
@@ -69,5 +73,8 @@ int intel_get_pci_device(p_dev *devs);
 int intel_mmio_use_pci_bar(p_dev *dev);
 void intel_pci_cleanup(p_dev *devs, int found_dev);
 int intel_get_dev_id(void *dev);
+int intel_get_bus(void *dev);
+int intel_get_dev(void *dev);
+int intel_get_func(void *dev);
 
 #endif
