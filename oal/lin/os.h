@@ -46,14 +46,9 @@
 #define IS_GRAPHICS_CLASS(device_class)    (((device_class >> 16) & 0x0ff) == 3)
 #define PCI_PATH_BAR_GENERIC               "/sys/bus/pci/devices/0000:"
 #define MMIO_SIZE                          (2*1024*1024)
-
-#if !TESTING
 #define GET_PCI_DEV(devs)                  intel_get_pci_device(devs)
 #define PCI_CLEANUP(devs, found_dev)       intel_pci_cleanup(devs, found_dev)
-#else
-#define GET_PCI_DEV(devs)                  (1)
-#define PCI_CLEANUP(devs, found_dev)
-#endif
+#define GET_DEV_ID(dev)                    intel_get_dev_id(dev)
 
 typedef void* (*funcptr)(void* input_params);
 void *align_alloc(size_t size);
@@ -73,5 +68,6 @@ void wait_for_thread(thread_id *tid);
 int intel_get_pci_device(p_dev *devs);
 int intel_mmio_use_pci_bar(p_dev *dev);
 void intel_pci_cleanup(p_dev *devs, int found_dev);
+int intel_get_dev_id(void *dev);
 
 #endif

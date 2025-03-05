@@ -56,6 +56,7 @@ public:
 #define THREAD_RET                         DWORD WINAPI
 #define GET_PCI_DEV(devs)                  (1)
 #define PCI_CLEANUP(devs, found_dev)
+#define GET_DEV_ID(dev)                    (0)
 #define GETOPT                             getopt
 
 typedef DWORD(WINAPI* funcptr)(void* input_params);
