@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
