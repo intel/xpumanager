@@ -3,6 +3,5 @@
 *.a
 .vscode
 *.vs
-*.user
 xpu-smi
 tags
