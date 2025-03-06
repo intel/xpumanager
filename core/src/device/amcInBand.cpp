@@ -78,7 +78,7 @@ bool getDeviceRegion(std::string bdf, std::string& region_base){
             }
         }
 
-        std::regex reg("[0-9a-fA-F]{11,16}");
+        std::regex reg("[0-9a-fA-F]{10,16}");
         std::smatch match;
         if(std::regex_search(line, match, reg)) {
             region_base = match.str();
