@@ -271,7 +271,7 @@ double getMemSizeByNativeAPI() {
                 std::wstring ws(desc.Description);
                 std::string name(ws.begin(), ws.end());
                 XPUM_LOG_DEBUG("find adapter {}", name);
-                if (name.find("Intel(R) Data Center GPU Flex Series") != name.npos || name.find("Intel(R) Iris(R) Xe Graphics") != name.npos) {
+                if (name.find("Intel(R) Data Center GPU Flex") != name.npos || name.find("Intel(R) Iris(R) Xe Graphics") != name.npos) {
                     SAFE_RELEASE(pAdapter);
                     SAFE_RELEASE(pDXGIFactory);
                     FreeLibrary(hDXGI);
