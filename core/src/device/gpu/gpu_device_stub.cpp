@@ -1192,7 +1192,7 @@ void GPUDeviceStub::logSupportedMetrics(zes_device_handle_t device, const ze_dev
     XPUM_LOG_INFO("Device {}{} has the following monitoring metric types: {}", props.name, bdf_address, log_content);
 }
 
-void static addMemUtilizationCapAndMemProperty(ze_device_handle_t& device, std::shared_ptr<Device> gpu){
+void static addMemUtilizationCapAndMemProperty(zes_device_handle_t& device, std::shared_ptr<Device> gpu){
 
     char* env = std::getenv("XPUM_INIT_GET_PHY_MEMORY");
     std::string getPhyMemory{env != NULL ? env : ""};
