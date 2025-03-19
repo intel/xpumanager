@@ -327,7 +327,7 @@ pipeline {
             }
             rtServer (
                 id: 'AF-XPUM',
-                url: 'https://ubit-artifactory-sh.intel.com/artifactory/',
+                url: 'https://ubit-artifactory-ba.intel.com/artifactory/',
                 // If you're using Credentials ID:
                 credentialsId: 'sys-xpum-credentials',
                 // If Jenkins is configured to use an http proxy, you can bypass the proxy when using this Artifactory server:
@@ -342,27 +342,27 @@ pipeline {
                   "files": [
                     {
                       "pattern": "build-deb-*/*.deb",
-                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "target": "xpumanager-ba-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                       "props": "retention.days=720;mytest=true"
                     },
                     {
                       "pattern": "build-centos*/*.rpm",
-                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "target": "xpumanager-ba-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                       "props": "retention.days=720;mytest=true"
                     },
                     {
                       "pattern": "build-sles/*.rpm",
-                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "target": "xpumanager-ba-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                       "props": "retention.days=720;mytest=true"
                     },
                     {
                       "pattern": "intel_graphics_linux_pgp.pem",
-                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "target": "xpumanager-ba-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                       "props": "retention.days=720;mytest=true"
                     },
                     {
                       "pattern": "build-centos7/amcmcli*",
-                      "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                      "target": "xpumanager-ba-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                       "props": "retention.days=720;mytest=true"
                     }
                   ]
