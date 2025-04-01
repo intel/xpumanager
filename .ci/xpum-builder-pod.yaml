@@ -16,7 +16,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-2024103"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
@@ -44,7 +44,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20241031"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-jammy"
       resources:
@@ -72,7 +72,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-ubuntu-noble:lz-1.8.5-20241031"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-ubuntu-noble:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-noble"
       resources:
@@ -100,7 +100,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-debian:lz-1.8.5-20241031"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-debian:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-debian"
       resources:
@@ -128,7 +128,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20241105"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7-6"
       resources:
@@ -154,7 +154,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-centos8-2:lz-1.8.5-20241031"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-centos8-2:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos8-2"
       resources:
@@ -180,7 +180,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "gar-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20241031"
+      image: "gar-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20250328"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos-stream9"
       resources:
