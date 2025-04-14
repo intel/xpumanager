@@ -428,10 +428,10 @@ static bool getVfEngineUtilWithSnaps(std::vector<xpum_vf_metric_t> &metrics,
                 XPUM_LOG_DEBUG("VF engine type order changed");
                 return false;
             }
-            if (vue.samplingCounterValue -
-                snaps[i].vues[j].samplingCounterValue <= 0 ||
-                vue.activeCounterValue -
-                snaps[i].vues[j].activeCounterValue < 0) {
+            if (vue.samplingCounterValue <= 
+                snaps[i].vues[j].samplingCounterValue  ||
+                vue.activeCounterValue < 
+                snaps[i].vues[j].activeCounterValue) {
                 XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns invalid values activeCounterValue {}, samplingCounterValue {} and activeCounterValue {}, samplingCounterValue {}",
                     snaps[i].vues[j].activeCounterValue,
                     snaps[i].vues[j].samplingCounterValue,
