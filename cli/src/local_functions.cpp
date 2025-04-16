@@ -587,10 +587,6 @@ static bool unloadDriver(std::string &error) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     std::vector<std::string> bdfAddrList = getBdfAddrFromIgsc();
-    if (bdfAddrList.empty()) {
-        error = "Fail to find device bdf address.";
-        return false;
-    }
 
     for (auto bdfAddr : bdfAddrList) {
         std::string unbindPath = "/sys/bus/pci/drivers/i915/unbind";
@@ -636,7 +632,6 @@ bool recoverable() {
     std::regex bdfPattern("[0-9a-f]{4}\\:[0-9a-f]{2}\\:[0-9a-f]{2}\\.[0-9a-f]");
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
-    bool find_flex = false;
     bool all_flex = true;
     std::string deviceIdStr;
 
@@ -652,9 +647,7 @@ bool recoverable() {
                     if (isATSMPlatform(tmp)) {
                         if (deviceIdStr.empty()) {
                             deviceIdStr = tmp;
-                            find_flex = true;
                         } else if (deviceIdStr == tmp) {
-                            find_flex = true;
                         } else {
                             // different model in same node
                             all_flex = false;
@@ -667,7 +660,7 @@ bool recoverable() {
         }
         closedir(pdir);
     }
-    return find_flex && all_flex;
+    return all_flex;
 }
 
 bool setSurvivabilityMode(bool enable, std::string &error, bool &modified) {
