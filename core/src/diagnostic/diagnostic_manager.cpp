@@ -3990,7 +3990,7 @@ xpum_result_t DiagnosticManager::checkStress(xpum_device_id_t deviceId, xpum_dia
         device != nullptr) {
         double mean = calculateMean(allScores);
         double variance = calcaulateVariance(allScores);
-        int ref = thresholds[device_names[device->getDeviceZeHandle()]]["REF_INT_GFLOPS"];
+        int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_INT_GFLOPS"];
         std::string msg = "Integer compute: Mean: " + roundDouble(mean, 3) + " GIOPS. Var: ";
         msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GIOPS.";
         updateMessage(resultList[0].message, msg);
