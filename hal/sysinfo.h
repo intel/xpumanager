@@ -17,7 +17,6 @@ class LIBXPUM_API sysinfo {
 		~sysinfo();
 		bool is_init() { return init; }
 		void print_lz_version() { if (lz_obj) { lz_obj->print_loader_versions(); } }
-		void print_base_discovery();
 };
 
 

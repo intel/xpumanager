@@ -67,6 +67,5 @@ int discovery::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);
-	sys->print_base_discovery();
 	return 0;
 }
