@@ -52,15 +52,11 @@ public:
 #define STRCPY_S(dest, sz, src)            strcpy_s(dest, sz, src)
 #define STRNCPY_S(dest, src, sz)           strncpy_s(dest, src, sz)
 #define STRTOK_S(str, delimiters, context) strtok_s(str, delimiters, context)
-#define SPRINTF_S(dest, sz, fmt, ...)      sprintf_s(dest, sz, fmt, ##__VA_ARGS__)
 #define STRCASECMP                         _stricmp
 #define THREAD_RET                         DWORD WINAPI
 #define GET_PCI_DEV(devs)                  (1)
 #define PCI_CLEANUP(devs, found_dev)
 #define GET_DEV_ID(dev)                    (0)
-#define GET_BUS(dev)                       (0)
-#define GET_DEV(dev)                       (0)
-#define GET_FUNC(dev)                      (0)
 #define GETOPT                             getopt
 
 typedef DWORD(WINAPI* funcptr)(void* input_params);
