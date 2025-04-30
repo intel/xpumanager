@@ -1,4 +1,4 @@
-#include "log.h"
+#include "cmd_log.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void logs::help(list<help_cmd *> *help_list)
+void cmdLogs::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -28,7 +28,7 @@ void logs::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int logs::run(sysinfo *sys)
+int cmdLogs::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

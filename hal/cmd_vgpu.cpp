@@ -1,4 +1,4 @@
-#include "vgpu.h"
+#include "cmd_vgpu.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void vgpu::help(list<help_cmd *> *help_list)
+void cmdVgpu::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -44,7 +44,7 @@ void vgpu::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int vgpu::run(sysinfo *sys)
+int cmdVgpu::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

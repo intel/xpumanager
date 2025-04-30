@@ -1,4 +1,4 @@
-#include "updatefw.h"
+#include "cmd_updatefw.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void updatefw::help(list<help_cmd *> *help_list)
+void cmdUpdateFW::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -39,7 +39,7 @@ void updatefw::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int updatefw::run(sysinfo *sys)
+int cmdUpdateFW::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

@@ -1,4 +1,4 @@
-#include "config.h"
+#include "cmd_config.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void config::help(list<help_cmd *> *help_list)
+void cmdConfig::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -56,7 +56,7 @@ void config::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int config::run(sysinfo *sys)
+int cmdConfig::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

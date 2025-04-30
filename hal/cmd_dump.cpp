@@ -1,4 +1,4 @@
-#include "dump.h"
+#include "cmd_dump.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void dump::help(list<help_cmd *> *help_list)
+void cmdDump::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -78,7 +78,7 @@ void dump::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int dump::run(sysinfo *sys)
+int cmdDump::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

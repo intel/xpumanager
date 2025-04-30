@@ -1,4 +1,4 @@
-#include "discovery.h"
+#include "cmd_discovery.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void discovery::help(list<help_cmd *> *help_list)
+void cmdDiscovery::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -63,7 +63,7 @@ void discovery::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int discovery::run(sysinfo *sys)
+int cmdDiscovery::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);
