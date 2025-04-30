@@ -1,4 +1,4 @@
-#include "stats.h"
+#include "cmd_stats.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void stats::help(list<help_cmd *> *help_list)
+void cmdStats::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -45,7 +45,7 @@ void stats::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int stats::run(sysinfo *sys)
+int cmdStats::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

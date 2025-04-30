@@ -1,14 +1,19 @@
-#include <discovery.h>
-#include <topology.h>
-#include <diag.h>
-#include <health.h>
-#include <updatefw.h>
-#include <config.h>
-#include <ps.h>
-#include <vgpu.h>
-#include <stats.h>
-#include <dump.h>
-#include <log.h>
+#include <cmd_discovery.h>
+#include <cmd_topology.h>
+#include <cmd_diag.h>
+#include <cmd_health.h>
+#include <cmd_updatefw.h>
+#include <cmd_config.h>
+#include <cmd_ps.h>
+#include <cmd_vgpu.h>
+#include <cmd_stats.h>
+#include <cmd_dump.h>
+#include <cmd_log.h>
+#include <cmd_group.h>
+#include <cmd_policy.h>
+#include <cmd_topdown.h>
+#include <cmd_sensor.h>
+#include <cmd_agentsensor.h>
 #include <sysinfo.h>
 #include <memory>
 #include <functional>
@@ -25,7 +30,8 @@ using namespace std;
 #define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
 #define GET_FULL_VERSION() CONCATENATE_WITH_DOTS(MAJOR, MINOR, PATCH, BUILD_NUMBER)
 
-enum HELP {
+enum HELP
+{
 	SHORT_HELP,
 	FULL_HELP,
 };
@@ -33,7 +39,8 @@ enum HELP {
 template <typename T>
 void delete_list(list<T *> *generic_list)
 {
-	for(auto& it : *generic_list) {
+	for (auto &it : *generic_list)
+	{
 		delete it;
 	}
 	delete generic_list;
@@ -56,19 +63,25 @@ void print_subcommand(cmds *it, HELP help_type)
 	list<help_cmd *> *help_list = new list<help_cmd *>;
 	it->help(help_list);
 
-	if(help_list->size() < 1) {
+	if (help_list->size() < 1)
+	{
 		ERR("No help commands found\n");
 		return;
 	}
 
-	if(help_type == SHORT_HELP) {
+	if (help_type == SHORT_HELP)
+	{
 		/* Just print the first line of each subcommand's help because it contains the description */
-		for(auto& it2 : *help_list) {
+		for (auto &it2 : *help_list)
+		{
 			PRINT("  %-*s%s\n", 28, it->get_name(), it2->line);
 			break;
 		}
-	} else {
-		for(auto& it2 : *help_list) {
+	}
+	else
+	{
+		for (auto &it2 : *help_list)
+		{
 			PRINT("%-*s%s\n", it2->char_gap, "", it2->line);
 		}
 	}
@@ -78,7 +91,8 @@ void print_subcommand(cmds *it, HELP help_type)
 
 void print_subcommands(list<cmds *> *cmd_list)
 {
-	for(auto& it : *cmd_list) {
+	for (auto &it : *cmd_list)
+	{
 		print_subcommand(it, SHORT_HELP);
 	}
 }
@@ -87,10 +101,10 @@ void help(list<cmds *> *cmd_list)
 {
 	PRINT("Intel XPU System Management Interface -- %s\n", GET_SHORT_VERSION());
 	PRINT("Intel XPU System Management Interface provides the Intel datacenter GPU model. "
-		"It can also be used to update the firmware.\n");
+		  "It can also be used to update the firmware.\n");
 	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero. "
-		"Before using Intel XPU System Management Interface, the GPU driver and Intel "
-		"oneAPI Level Zero should be installed rightly.\n\n");
+		  "Before using Intel XPU System Management Interface, the GPU driver and Intel "
+		  "oneAPI Level Zero should be installed rightly.\n\n");
 	PRINT("Supported devcies:\n");
 	PRINT(" - Intel Arc B series GPU\n\n");
 
@@ -108,22 +122,32 @@ void help(list<cmds *> *cmd_list)
 }
 
 // Enum to represent OS types
-enum class OSTYPE {
+enum class OSTYPE
+{
 	Windows,
 	Linux,
 	Both,
 };
 
+enum DAEMONCAP
+{
+	DAEMONLESS,
+	DAEMON,
+	BOTH,
+};
+
 /* Function to create an instance of a class */
 template <typename T>
-cmds* create_instance()
+cmds *create_instance()
 {
 	return new T();
 }
 
 /* Structure to hold function and OS type */
-struct function_entry {
-	std::function<cmds* ()> create_func;
+struct function_entry
+{
+	std::function<cmds *()> create_func;
+	DAEMONCAP daemon_cap;
 	OSTYPE os_type;
 };
 
@@ -134,7 +158,8 @@ int main(int argc, char *argv[])
 
 	/* First and foremost, let's find out if there are any GPUs on this system */
 	sysinfo *sys = new sysinfo();
-	if(!sys->is_init()) {
+	if (!sys->is_init())
+	{
 		ERR("Failed to initialize sysinfo. Couldn't find any GPUs\n");
 		delete sys;
 		return -1;
@@ -144,29 +169,37 @@ int main(int argc, char *argv[])
 	list<cmds *> *cmd_list = new list<cmds *>;
 
 	std::vector<function_entry> function_table = {
-		{ create_instance<discovery>, OSTYPE::Both  },
-		{ create_instance<topology>,  OSTYPE::Linux },
-		{ create_instance<diag>,      OSTYPE::Linux },
-		{ create_instance<health>,    OSTYPE::Linux },
-		{ create_instance<updatefw>,  OSTYPE::Both  },
-		{ create_instance<config>,    OSTYPE::Both  },
-		{ create_instance<ps>,        OSTYPE::Linux },
-		{ create_instance<vgpu>,      OSTYPE::Linux },
-		{ create_instance<stats>,     OSTYPE::Both  },
-		{ create_instance<dump>,      OSTYPE::Both  },
-		{ create_instance<logs>,      OSTYPE::Linux },
+		{create_instance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{create_instance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{create_instance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{create_instance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{create_instance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{create_instance<cmdConfig>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{create_instance<cmdPs>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{create_instance<cmdVgpu>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{create_instance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{create_instance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{create_instance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{create_instance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{create_instance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{create_instance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{create_instance<cmdSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{create_instance<cmdAgentSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 	};
 
 	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;
 
-	for (const auto& entry : function_table) {
-		if (entry.os_type == OSTYPE::Both || entry.os_type == current_os) {
+	for (const auto &entry : function_table)
+	{
+		if (entry.os_type == OSTYPE::Both || entry.os_type == current_os)
+		{
 			cmd_list->push_back(entry.create_func());
 		}
 	}
 
 	/* If no command line args are provided, just print help message and exit */
-	if(argc == 1) {
+	if (argc == 1)
+	{
 		help(cmd_list);
 		delete_list(cmd_list);
 		delete sys;
@@ -174,7 +207,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* Print out version info if -v command line arg specified */
-	if(!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
+	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version"))
+	{
 		print_version(sys);
 		delete_list(cmd_list);
 		delete sys;
@@ -182,10 +216,13 @@ int main(int argc, char *argv[])
 	}
 
 	/* Parse command line and run the command that the user wants */
-	for(auto& it : *cmd_list) {
-		if(!STRCASECMP(it->get_name(), argv[1])) {
+	for (auto &it : *cmd_list)
+	{
+		if (!STRCASECMP(it->get_name(), argv[1]))
+		{
 			/* If the second argument is -h or --help, then just print their help */
-			if(argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help"))) {
+			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help")))
+			{
 				print_subcommand(it, FULL_HELP);
 				delete_list(cmd_list);
 				delete sys;
@@ -198,7 +235,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* If we can't parse the user's command line, then print help */
-	if(!found) {
+	if (!found)
+	{
 		help(cmd_list);
 	}
 

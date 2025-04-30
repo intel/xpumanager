@@ -1,4 +1,4 @@
-#include "topology.h"
+#include "cmd_topology.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void topology::help(list<help_cmd *> *help_list)
+void cmdTopology::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -40,7 +40,7 @@ void topology::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int topology::run(sysinfo *sys)
+int cmdTopology::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

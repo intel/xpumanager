@@ -1,4 +1,4 @@
-#include "diag.h"
+#include "cmd_diag.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void diag::help(list<help_cmd *> *help_list)
+void cmdDiag::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -77,7 +77,7 @@ void diag::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int diag::run(sysinfo *sys)
+int cmdDiag::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);

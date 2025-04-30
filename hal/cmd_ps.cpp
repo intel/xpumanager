@@ -1,4 +1,4 @@
-#include "ps.h"
+#include "cmd_ps.h"
 #include "debug.h"
 #include <assert.h>
 
@@ -7,7 +7,7 @@
  *
  * @param help_list A pointer to a list of help commands.
  */
-void ps::help(list<help_cmd *> *help_list)
+void cmdPs::help(list<help_cmd *> *help_list)
 {
 	TRACING();
 	assert(help_list);
@@ -36,7 +36,7 @@ void ps::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int ps::run(sysinfo *sys)
+int cmdPs::run(sysinfo *sys)
 {
 	TRACING();
 	UNUSED(sys);
