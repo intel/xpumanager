@@ -2262,6 +2262,7 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     }
 
     if (hMetricGroup == nullptr) {
+        XPUM_LOG_ERROR("Failed to get metric groups: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
 
@@ -2275,6 +2276,7 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         };
         XPUM_ZE_HANDLE_LOCK(driver, res = zeContextCreate(driver, &context_desc, &hContext));
         if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_ERROR("Failed to create ze context: {0:x}", res);
             throw BaseException("toGetEuActiveStallIdleCore - zeContextCreate");
         }
         GPUDeviceStub::target_metric_contexts[device] = hContext;
@@ -2282,6 +2284,9 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
 
     XPUM_ZE_HANDLE_LOCK(device, res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup));
     if (res != ZE_RESULT_SUCCESS) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to activate metric groups: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore - zetContextActivateMetricGroups");
     }
     }
@@ -2289,28 +2294,49 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     metricStreamerDesc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
     XPUM_ZE_HANDLE_LOCK(device, res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer));
     if (res != ZE_RESULT_SUCCESS) {
+        zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to open metric streamer: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore - zetMetricStreamerOpen");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD));
     size_t rawSize = 0;
     res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
+        zetMetricStreamerClose(hMetricStreamer);
+        zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to get size of data from metric streamer: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
     std::vector<uint8_t> rawData(rawSize);
     res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
     if (res != ZE_RESULT_SUCCESS) {
+        zetMetricStreamerClose(hMetricStreamer);
+        zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to get data from metric streamer: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
 
     res = zetMetricStreamerClose(hMetricStreamer);
     if (res != ZE_RESULT_SUCCESS) {
+        zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to close metric streamer: {0:x}", res);
         throw BaseException("zetMetricStreamerClose");
     }
     {
     std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
     res = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to de-activate metric groups: {0:x}", res);
         throw BaseException("zetContextActivateMetricGroups");
     }
     }
@@ -2318,21 +2344,33 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     zet_metric_group_calculation_type_t calculationType = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;
     res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to get size of metric values: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
     std::vector<zet_typed_value_t> metricValues(numMetricValues);
     res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues, metricValues.data());
     if (res != ZE_RESULT_SUCCESS) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to get data of metric values: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
     uint32_t metricCount = 0;
     res = zetMetricGet(hMetricGroup, &metricCount, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to get metric counts: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
     std::vector<zet_metric_handle_t> phMetrics(metricCount);
     res = zetMetricGet(hMetricGroup, &metricCount, phMetrics.data());
     if (res != ZE_RESULT_SUCCESS) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Failed to get metric data: {0:x}", res);
         throw BaseException("toGetEuActiveStallIdleCore");
     }
 
@@ -2355,6 +2393,9 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
             metricProperties.pNext = nullptr;
             res = zetMetricGetProperties(phMetrics[metric], &metricProperties);
             if (res != ZE_RESULT_SUCCESS) {
+                zeContextDestroy(hContext);
+                GPUDeviceStub::target_metric_contexts.erase(device);
+                XPUM_LOG_ERROR("Failed to get metric properties: {0:x}", res);
                 throw BaseException("toGetEuActiveStallIdleCore");
             }
             if (std::strcmp(metricProperties.name, "GpuBusy") == 0) {
@@ -2381,6 +2422,9 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         currentEuActive = std::max(currentEuActive, currentXueActive);
         currentEuStall = std::max(currentEuStall, currentXveStall);
         if (currentEuActive > 100 || currentEuStall > 100) {
+            zeContextDestroy(hContext);
+            GPUDeviceStub::target_metric_contexts.erase(device);
+            XPUM_LOG_ERROR("Abnormal EU data: currentEuActice: {}, currentEuStall: {}", currentEuActive, currentEuStall);
             throw BaseException("toGetEuActiveStallIdleCore - abnormal EU data");
         }        
         totalGpuBusy += currentGPUElapsedTime * currentGpuBusy;
@@ -2389,6 +2433,9 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         totalGPUElapsedTime += currentGPUElapsedTime;
     }
     if (totalGPUElapsedTime == 0) {
+        zeContextDestroy(hContext);
+        GPUDeviceStub::target_metric_contexts.erase(device);
+        XPUM_LOG_ERROR("Zero GPU elapsed time");
         throw BaseException("toGetEuActiveStallIdleCore - zero GPU elapsed time");
     }
     uint64_t euActive = totalEuActive / totalGPUElapsedTime;
@@ -2421,6 +2468,8 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         else
             data->setSubdeviceDataCurrent(subdeviceId, euIdle);
     }
+    zeContextDestroy(hContext);
+    GPUDeviceStub::target_metric_contexts.erase(device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) {
