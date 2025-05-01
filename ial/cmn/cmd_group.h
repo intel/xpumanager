@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdGroup : public cmds
+class cmdGroup : public cmds
 {
 public:
 	cmdGroup() { STRCPY_S(name, MAX_PATH, "group"); };

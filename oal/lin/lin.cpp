@@ -30,21 +30,6 @@
 #include <sysinfo.h>
 
 /**
- * @brief Allocates memory aligned to a specified boundary and advises the kernel to use huge pages.
- *
- * @param size The size of the memory to allocate.
- * @return A pointer to the allocated memory.
- */
-void *align_alloc(size_t size)
-{
-	void *buffer;
-	size = ceil(size / TWO_MB) * TWO_MB + TWO_MB; // Round up size to to be even multiple of TWO_MB.
-	buffer = aligned_alloc(TWO_MB, size);		  // Allocate aligned memory.
-	madvise(buffer, size, MADV_HUGEPAGE);		  // Accept huge pages.
-	return buffer;
-}
-
-/**
  * @brief Creates a new thread.
  *
  * @param thread Function pointer to the thread function.
@@ -68,111 +53,9 @@ thread_id *create_thread(funcptr thread, void *args)
  */
 void wait_for_thread(thread_id *tid)
 {
-	if (tid->ret_thread_uid()) {
+	if (tid->ret_thread_uid())
+	{
 		DBG("%s: thread handle is %ld\n", __func__, tid->ret_thread_uid());
 		pthread_join(tid->ret_thread_uid(), NULL);
 	}
-}
-
-int intel_get_pci_device(p_dev *devs)
-{
-	struct pci_device_iterator *iter;
-	struct pci_device *pci_dev;
-	int error, found = 0;
-
-	error = pci_system_init();
-	if (error) {
-		ERR("Couldn't initialize PCI system\n");
-		return found;
-	}
-
-	iter = pci_slot_match_iterator_create(NULL);
-
-	while ((pci_dev = pci_device_next(iter)) != NULL) {
-		if (IS_GRAPHICS_CLASS(pci_dev->device_class)) {
-			error = pci_device_probe(pci_dev);
-			if (error) {
-				ERR("Couldn't probe PCI device\n");
-				break;
-			}
-
-			/* We only care about Intel GPUs. */
-			if(pci_dev->vendor_id == 0x8086) {
-				DBG("Found Intel device: %04x:%04x @ %02x:%02x.%x\n", pci_dev->vendor_id, pci_dev->device_id,
-					pci_dev->bus, pci_dev->dev, pci_dev->func);
-			} else {
-				DBG("Found non-Intel device: %04x:%04x @ %02x:%02x.%x\n", pci_dev->vendor_id, pci_dev->device_id,
-					pci_dev->bus, pci_dev->dev, pci_dev->func);
-				continue;
-			}
-
-			devs[found].dev = pci_dev;
-			sprintf(devs[found].resource_name, "%s%02x:%02x.%x/resource2", PCI_PATH_BAR_GENERIC,
-					pci_dev->bus, pci_dev->dev, pci_dev->func);
-			DBG("Resource name: %s\n", devs[found].resource_name);
-
-			/* Map MMIO for this device as well */
-			if(intel_mmio_use_pci_bar(&devs[found])) {
-				ERR("Couldn't map MMIO region\n");
-				break;
-			}
-			found++;
-			if (found == MAX_DEVS) {
-				break;
-			}
-		}
-	}
-	pci_iterator_destroy(iter);
-
-	return found;
-}
-
-/**
-* @brief
-* Fill a mmio_data stucture with igt_mmio to point at the mmio bar.
-* @param *pci_dev - intel graphics pci device
-* @return
-* - 0 = SUCCESS
-* - 1 = FAILURE
-*/
-int intel_mmio_use_pci_bar(p_dev *dev)
-{
-    int mmio_bar, mmio_size;
-    int error;
-	struct pci_device *pci_dev = (struct pci_device *) dev->dev;
-
-    mmio_bar = 0;
-    mmio_size = MMIO_SIZE;
-
-    error = pci_device_map_range(pci_dev,
-                      pci_dev->regions[mmio_bar].base_addr,
-                      mmio_size,
-                      PCI_DEV_MAP_FLAG_WRITABLE,
-                      (void **) &dev->mmio);
-
-    if(error) {
-        ERR("Couldn't map MMIO region\n");
-        return 1;
-    } else {
-		DBG("Mapped %d MB MMIO region for device %04x:%04x @ %02x:%02x.%x\n", mmio_size/(1024*1024),
-		pci_dev->vendor_id, pci_dev->device_id, pci_dev->bus, pci_dev->dev, pci_dev->func);
-	}
-    return 0;
-}
-
-void intel_pci_cleanup(p_dev *devs, int found_dev)
-{
-	for(int i = 0; i < found_dev; i++) {
-		if(devs[i].mmio) {
-			pci_device_unmap_range((struct pci_device *) devs[i].dev, devs[i].mmio, MMIO_SIZE);
-		}
-	}
-	pci_system_cleanup();
-}
-
-
-int intel_get_dev_id(void *dev)
-{
-	struct pci_device *pci_dev = (struct pci_device *) dev;
-	return pci_dev->device_id;
 }

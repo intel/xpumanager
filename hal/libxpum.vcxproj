@@ -154,48 +154,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\oal\win\os.h" />
-    <ClInclude Include="cmds.h" />
-    <ClInclude Include="cmd_agentsensor.h" />
-    <ClInclude Include="cmd_config.h" />
-    <ClInclude Include="cmd_diag.h" />
-    <ClInclude Include="cmd_discovery.h" />
-    <ClInclude Include="cmd_dump.h" />
-    <ClInclude Include="cmd_group.h" />
-    <ClInclude Include="cmd_health.h" />
-    <ClInclude Include="cmd_log.h" />
-    <ClInclude Include="cmd_policy.h" />
-    <ClInclude Include="cmd_ps.h" />
-    <ClInclude Include="cmd_sensor.h" />
-    <ClInclude Include="cmd_stats.h" />
-    <ClInclude Include="cmd_topdown.h" />
-    <ClInclude Include="cmd_topology.h" />
-    <ClInclude Include="cmd_updatefw.h" />
-    <ClInclude Include="cmd_vgpu.h" />
     <ClInclude Include="debug.h" />
-    <ClInclude Include="help_cmd.h" />
     <ClInclude Include="lz.h" />
     <ClInclude Include="sysinfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\oal\win\dllmain.cpp" />
     <ClCompile Include="..\oal\win\win.cpp" />
-    <ClCompile Include="cmds.cpp" />
-    <ClCompile Include="cmd_agentsensor.cpp" />
-    <ClCompile Include="cmd_config.cpp" />
-    <ClCompile Include="cmd_diag.cpp" />
-    <ClCompile Include="cmd_discovery.cpp" />
-    <ClCompile Include="cmd_dump.cpp" />
-    <ClCompile Include="cmd_group.cpp" />
-    <ClCompile Include="cmd_health.cpp" />
-    <ClCompile Include="cmd_log.cpp" />
-    <ClCompile Include="cmd_policy.cpp" />
-    <ClCompile Include="cmd_ps.cpp" />
-    <ClCompile Include="cmd_sensor.cpp" />
-    <ClCompile Include="cmd_stats.cpp" />
-    <ClCompile Include="cmd_topdown.cpp" />
-    <ClCompile Include="cmd_topology.cpp" />
-    <ClCompile Include="cmd_updatefw.cpp" />
-    <ClCompile Include="cmd_vgpu.cpp" />
     <ClCompile Include="lz.cpp" />
     <ClCompile Include="sysinfo.cpp" />
   </ItemGroup>

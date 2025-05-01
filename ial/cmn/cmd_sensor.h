@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdSensor : public cmds
+class cmdSensor : public cmds
 {
 public:
 	cmdSensor() { STRCPY_S(name, MAX_PATH, "sensor"); };

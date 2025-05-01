@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdAgentSensor : public cmds
+class cmdAgentSensor : public cmds
 {
 public:
 	cmdAgentSensor() { STRCPY_S(name, MAX_PATH, "agentsensor"); };

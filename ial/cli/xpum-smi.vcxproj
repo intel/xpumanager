@@ -19,9 +19,44 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\cmn\cmds.cpp" />
+    <ClCompile Include="..\cmn\cmd_agentsensor.cpp" />
+    <ClCompile Include="..\cmn\cmd_config.cpp" />
+    <ClCompile Include="..\cmn\cmd_diag.cpp" />
+    <ClCompile Include="..\cmn\cmd_discovery.cpp" />
+    <ClCompile Include="..\cmn\cmd_dump.cpp" />
+    <ClCompile Include="..\cmn\cmd_group.cpp" />
+    <ClCompile Include="..\cmn\cmd_health.cpp" />
+    <ClCompile Include="..\cmn\cmd_log.cpp" />
+    <ClCompile Include="..\cmn\cmd_policy.cpp" />
+    <ClCompile Include="..\cmn\cmd_ps.cpp" />
+    <ClCompile Include="..\cmn\cmd_sensor.cpp" />
+    <ClCompile Include="..\cmn\cmd_stats.cpp" />
+    <ClCompile Include="..\cmn\cmd_topdown.cpp" />
+    <ClCompile Include="..\cmn\cmd_topology.cpp" />
+    <ClCompile Include="..\cmn\cmd_updatefw.cpp" />
+    <ClCompile Include="..\cmn\cmd_vgpu.cpp" />
     <ClCompile Include="cli.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\cmn\cmds.h" />
+    <ClInclude Include="..\cmn\cmd_agentsensor.h" />
+    <ClInclude Include="..\cmn\cmd_config.h" />
+    <ClInclude Include="..\cmn\cmd_diag.h" />
+    <ClInclude Include="..\cmn\cmd_discovery.h" />
+    <ClInclude Include="..\cmn\cmd_dump.h" />
+    <ClInclude Include="..\cmn\cmd_group.h" />
+    <ClInclude Include="..\cmn\cmd_health.h" />
+    <ClInclude Include="..\cmn\cmd_log.h" />
+    <ClInclude Include="..\cmn\cmd_policy.h" />
+    <ClInclude Include="..\cmn\cmd_ps.h" />
+    <ClInclude Include="..\cmn\cmd_sensor.h" />
+    <ClInclude Include="..\cmn\cmd_stats.h" />
+    <ClInclude Include="..\cmn\cmd_topdown.h" />
+    <ClInclude Include="..\cmn\cmd_topology.h" />
+    <ClInclude Include="..\cmn\cmd_updatefw.h" />
+    <ClInclude Include="..\cmn\cmd_vgpu.h" />
+    <ClInclude Include="..\cmn\help_cmd.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -77,11 +112,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\hal;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\..\hal;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
