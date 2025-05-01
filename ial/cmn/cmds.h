@@ -7,20 +7,21 @@
 
 using namespace std;
 
-class cmds {
-	protected:
-		char name[MAX_PATH];
+class cmds
+{
+protected:
+	char name[MAX_PATH];
 
-	public:
-		cmds() { };
-		char *get_name() { return name; }
-		virtual ~cmds() = 0;
-		virtual void help(list<help_cmd *> *help_list) = 0;
-		virtual int run(sysinfo *sys) = 0;
+public:
+	cmds() {};
+	char *get_name() { return name; }
+	virtual ~cmds() = 0;
+	virtual void help(list<help_cmd *> *help_list) = 0;
+	virtual int run(sysinfo *sys) = 0;
 };
 
-typedef void (cmds:: *help_func) (list<help_cmd *> *help_list);
-typedef int (cmds:: *run_func) ();
+typedef void (cmds::*help_func)(list<help_cmd *> *help_list);
+typedef int (cmds::*run_func)();
 
 struct cmd_struct
 {

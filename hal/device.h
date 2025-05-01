@@ -1,0 +1,95 @@
+/*
+ * Copyright © 2025 Intel Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ *
+ */
+#ifndef _DEVICE_H
+#define _DEVICE_H
+
+#include "sysman.h"
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
+struct devProps
+{
+	ze_device_properties_t zeDeviceProperties;
+	ze_device_compute_properties_t zeComputeProperties;
+	ze_device_module_properties_t zeModuleProperties;
+	ze_device_memory_access_properties_t zeMemAccessProps;
+	ze_device_image_properties_t zeImageProps;
+	ze_device_external_memory_properties_t zeExternalMemoryProps;
+
+	ze_command_queue_group_properties_t *zeCmdQueueProps;
+	uint32_t cmdQueuePropsCount;
+	ze_device_memory_properties_t *zeMemProps;
+	uint32_t memPropsCount;
+	ze_device_cache_properties_t *zeCacheProps;
+	uint32_t cachePropsCount;
+
+	zes_device_properties_t zesDeviceProperties;
+};
+
+class LIBXPUM_API device
+{
+private:
+	ze_driver_handle_t zeDriver;
+	zes_driver_handle_t zesDriver;
+	ze_context_handle_t context;
+	ze_device_handle_t *zeDevices;
+	zes_device_handle_t *zesDevices;
+	uint32_t deviceCount;
+	devProps *deviceProperties;
+
+public:
+	device() : zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr),
+			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr) {}
+	~device();
+	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
+	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
+	void printExtMemTypeFlags(const char *flagName, ze_external_memory_type_flags_t flag);
+
+	ze_result_t zeGetDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp);
+	ze_result_t zeGetComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps);
+	ze_result_t zeGetModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps);
+	ze_result_t zeGetMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps);
+	ze_result_t zeGetImageProperties(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps);
+	ze_result_t zeGetExternalMemoryProps(ze_device_handle_t dev,
+										 ze_device_external_memory_properties_t *zeExternalMemoryProps);
+
+	ze_result_t zeGetCmdQueueProps(ze_device_handle_t dev,
+								   ze_command_queue_group_properties_t **zeCmdQueueProps,
+								   uint32_t *cmdQueuePropsCount);
+	ze_result_t zeGetMemProps(ze_device_handle_t dev,
+							  ze_device_memory_properties_t **zeMemProps,
+							  uint32_t *memPropsCount);
+	ze_result_t zeGetCacheProps(ze_device_handle_t dev,
+								ze_device_cache_properties_t **zeCacheProps,
+								uint32_t *cachePropsCount);
+
+	ze_result_t zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp);
+
+	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD);
+	ze_result_t run();
+};
+
+#endif
