@@ -4,11 +4,12 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <os.h>
 #include "pdev.h"
 
 using namespace std;
 
-class lz {
+class LIBXPUM_API lz {
 protected:
 	ze_driver_handle_t p_driver;
 	ze_context_handle_t context;

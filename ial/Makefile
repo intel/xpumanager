@@ -1,4 +1,4 @@
-DIRS = cli
+DIRS = cmn cli
 .PHONY: $(DIRS)
 
 MAKE += --no-print-directory

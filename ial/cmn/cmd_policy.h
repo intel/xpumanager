@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdPolicy : public cmds
+class cmdPolicy : public cmds
 {
 public:
 	cmdPolicy() { STRCPY_S(name, MAX_PATH, "policy"); };

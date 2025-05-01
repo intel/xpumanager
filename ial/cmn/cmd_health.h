@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdHealth : public cmds
+class cmdHealth : public cmds
 {
 
 public:

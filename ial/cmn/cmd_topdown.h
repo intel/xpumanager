@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdTopdown : public cmds
+class cmdTopdown : public cmds
 {
 public:
 	cmdTopdown() { STRCPY_S(name, MAX_PATH, "topdown"); };

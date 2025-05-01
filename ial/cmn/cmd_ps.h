@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdPs : public cmds
+class cmdPs : public cmds
 {
 
 public:

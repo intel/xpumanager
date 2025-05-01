@@ -6,23 +6,24 @@ BINNAME=xpu-smi
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
-export LIBS=-L../../hal -lxpum -lpciaccess
-export INCLUDES=-I. -I../../hal -I../../oal/lin -I$(LEVELZERO)/include
+export LIBS=-L../../hal -lxpum
+export INCLUDES=-I. -I../cmn -I../../oal/lin -I../../hal -I$(LEVELZERO)/include
 export CFLAGS=-c -Wall
 export HEADERS=$(wildcard *.h)
 export SOURCES=$(wildcard *.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
+OTHER_OBJECTS = $(wildcard ../cmn/*.o)
 
 all::
 	@echo "Compiling..."
 
-all::$(SOURCES) $(BINNAME)
+all::$(SOURCES) $(BINNAME) $(OTHER_OBJECTS)
 
 all::
 	@echo "Done"
 
-$(BINNAME): $(OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@ $(OBJECTS) $(LIBS)
+$(BINNAME): $(OBJECTS) $(OTHER_OBJECTS)
+	@$(CC) $(DBG_FLAGS) -o $@ $(OBJECTS) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \

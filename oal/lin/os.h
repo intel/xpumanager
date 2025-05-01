@@ -34,26 +34,18 @@
 #define TESTING 1
 
 #define LIBXPUM_API
-#define UNUSED(x)                          (void)(x)
-#define TWO_MB                             (2 * 1024 * 1024)
-#define P2P_MEM_TEST                       p2p_mem_test
-#define STRCPY_S(dest, sz, src)            strcpy(dest, src)
-#define STRNCPY_S(dest, src, sz)           strncpy(dest, src, sz)
+#define UNUSED(x) (void)(x)
+#define STRCPY_S(dest, sz, src) strcpy(dest, src)
+#define STRNCPY_S(dest, src, sz) strncpy(dest, src, sz)
 #define STRTOK_S(str, delimiters, context) strtok(str, delimiters)
-#define STRCASECMP                         strcasecmp
-#define THREAD_RET                         void *
-#define GETOPT                             getopt
-#define IS_GRAPHICS_CLASS(device_class)    (((device_class >> 16) & 0x0ff) == 3)
-#define PCI_PATH_BAR_GENERIC               "/sys/bus/pci/devices/0000:"
-#define MMIO_SIZE                          (2*1024*1024)
-#define GET_PCI_DEV(devs)                  intel_get_pci_device(devs)
-#define PCI_CLEANUP(devs, found_dev)       intel_pci_cleanup(devs, found_dev)
-#define GET_DEV_ID(dev)                    intel_get_dev_id(dev)
+#define STRCASECMP strcasecmp
+#define THREAD_RET void *
+#define GETOPT getopt
 
-typedef void* (*funcptr)(void* input_params);
-void *align_alloc(size_t size);
+typedef void *(*funcptr)(void *input_params);
 
-class thread_id {
+class thread_id
+{
 
 protected:
     pthread_t thread_hdl;
@@ -65,9 +57,5 @@ public:
 
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
-int intel_get_pci_device(p_dev *devs);
-int intel_mmio_use_pci_bar(p_dev *dev);
-void intel_pci_cleanup(p_dev *devs, int found_dev);
-int intel_get_dev_id(void *dev);
 
 #endif

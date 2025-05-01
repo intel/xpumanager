@@ -4,7 +4,7 @@
 #include "cmds.h"
 #include <os.h>
 
-class LIBXPUM_API cmdUpdateFW : public cmds
+class cmdUpdateFW : public cmds
 {
 
 public:
