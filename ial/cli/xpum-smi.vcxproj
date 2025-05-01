@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\cmn\cmds.cpp" />
     <ClCompile Include="..\cmn\cmd_agentsensor.cpp" />
     <ClCompile Include="..\cmn\cmd_config.cpp" />
     <ClCompile Include="..\cmn\cmd_diag.cpp" />
