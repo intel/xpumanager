@@ -21,21 +21,16 @@
 #include <debug.h>
 #include <iostream>
 #include "version.h"
+#include "cli.h"
 
-using namespace std;
-
-#define STRINGIFY(x) #x
-#define CONCATENATE_WITH_DOT(a, b) "v" STRINGIFY(a) "." STRINGIFY(b)
-#define CONCATENATE_WITH_DOTS(a, b, c, d) STRINGIFY(a) "." STRINGIFY(b) "." STRINGIFY(c) "." STRINGIFY(d)
-#define GET_SHORT_VERSION() CONCATENATE_WITH_DOT(MAJOR, MINOR)
-#define GET_FULL_VERSION() CONCATENATE_WITH_DOTS(MAJOR, MINOR, PATCH, BUILD_NUMBER)
-
-enum HELP
+/* Function to create an instance of a class */
+template <typename T>
+cmds *create_instance()
 {
-	SHORT_HELP,
-	FULL_HELP,
-};
+	return new T();
+}
 
+/* Function to delete a list of pointers */
 template <typename T>
 void delete_list(list<T *> *generic_list)
 {
@@ -66,6 +61,7 @@ void print_subcommand(cmds *it, HELP help_type)
 	if (help_list->size() < 1)
 	{
 		ERR("No help commands found\n");
+		delete_list(help_list);
 		return;
 	}
 
@@ -121,36 +117,6 @@ void help(list<cmds *> *cmd_list)
 	print_subcommands(cmd_list);
 }
 
-// Enum to represent OS types
-enum class OSTYPE
-{
-	Windows,
-	Linux,
-	Both,
-};
-
-enum DAEMONCAP
-{
-	DAEMONLESS,
-	DAEMON,
-	BOTH,
-};
-
-/* Function to create an instance of a class */
-template <typename T>
-cmds *create_instance()
-{
-	return new T();
-}
-
-/* Structure to hold function and OS type */
-struct function_entry
-{
-	std::function<cmds *()> create_func;
-	DAEMONCAP daemon_cap;
-	OSTYPE os_type;
-};
-
 int main(int argc, char *argv[])
 {
 	TRACING();
@@ -168,7 +134,7 @@ int main(int argc, char *argv[])
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;
 
-	std::vector<function_entry> function_table = {
+	vector<function_entry> function_table = {
 		{create_instance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::Both},
 		{create_instance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::Linux},
 		{create_instance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::Linux},
@@ -188,12 +154,17 @@ int main(int argc, char *argv[])
 	};
 
 	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;
+	DBG("Is Daemon mode: %s\n", (curDaemonMode == DAEMONCAP::DAEMON) ? "true" : "false");
 
 	for (const auto &entry : function_table)
 	{
-		if (entry.os_type == OSTYPE::Both || entry.os_type == current_os)
+		if ((entry.os_type == OSTYPE::Both || entry.os_type == current_os) &&
+			(entry.daemon_cap == DAEMONCAP::BOTH || entry.daemon_cap == curDaemonMode))
 		{
-			cmd_list->push_back(entry.create_func());
+			/* Create an instance of the command and add it to the list */
+			cmds *cmd = entry.create_func();
+			DBG("Adding %s to command list\n", cmd->get_name());
+			cmd_list->push_back(cmd);
 		}
 	}
 
