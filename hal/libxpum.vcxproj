@@ -165,7 +165,6 @@
     <ClInclude Include="firmware.h" />
     <ClInclude Include="frequency.h" />
     <ClInclude Include="jsonwrapper.h" />
-    <ClInclude Include="lz.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="metric.h" />
     <ClInclude Include="pci.h" />
@@ -177,7 +176,6 @@
     <ClInclude Include="ras.h" />
     <ClInclude Include="scheduler.h" />
     <ClInclude Include="standby.h" />
-    <ClInclude Include="sysinfo.h" />
     <ClInclude Include="sysman.h" />
     <ClInclude Include="temperature.h" />
     <ClInclude Include="vf.h" />
@@ -195,7 +193,6 @@
     <ClCompile Include="fan.cpp" />
     <ClCompile Include="firmware.cpp" />
     <ClCompile Include="frequency.cpp" />
-    <ClCompile Include="lz.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="metric.cpp" />
     <ClCompile Include="pci.cpp" />
@@ -206,7 +203,6 @@
     <ClCompile Include="ras.cpp" />
     <ClCompile Include="scheduler.cpp" />
     <ClCompile Include="standby.cpp" />
-    <ClCompile Include="sysinfo.cpp" />
     <ClCompile Include="sysman.cpp" />
     <ClCompile Include="temperature.cpp" />
     <ClCompile Include="vf.cpp" />

@@ -22,7 +22,8 @@
  *
  */
 
- #include <cmd_discovery.h>
+#include <driver.h>
+#include <cmd_discovery.h>
 #include <cmd_topology.h>
 #include <cmd_diag.h>
 #include <cmd_health.h>
@@ -38,14 +39,15 @@
 #include <cmd_topdown.h>
 #include <cmd_sensor.h>
 #include <cmd_agentsensor.h>
-#include <sysinfo.h>
 #include <memory>
 #include <functional>
 #include <list>
 #include <debug.h>
 #include <iostream>
+#include <vector>
 #include "version.h"
 #include "cli.h"
+
 
 /* Function to create an instance of a class */
 template <typename T>
@@ -65,7 +67,7 @@ void delete_list(list<T *> *generic_list)
 	delete generic_list;
 }
 
-void print_version(sysinfo *sys)
+void print_version()
 {
 	PRINT("%-*sCLI:\n", NO_GAP, "");
 	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
@@ -74,7 +76,7 @@ void print_version(sysinfo *sys)
 	PRINT("%-*sService:\n", NO_GAP, "");
 	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
 	PRINT("%-*sBuild ID: 8389eee7\n", SMALL_GAP, "");
-	sys->print_lz_version();
+	// sys->print_lz_version();
 }
 
 void print_subcommand(cmds *it, HELP help_type)
@@ -146,12 +148,23 @@ int main(int argc, char *argv[])
 	TRACING();
 	bool found = false;
 
-	/* First and foremost, let's find out if there are any GPUs on this system */
-	sysinfo *sys = new sysinfo();
-	if (!sys->is_init())
+	// Create sysman driver instance
+	driver sm;
+	ze_result_t result = sm.init();
+	switch (result)
 	{
-		ERR("Failed to initialize sysinfo. Couldn't find any GPUs\n");
-		delete sys;
+	case ZE_RESULT_SUCCESS:
+		PRINT("Sysman driver initialized successfully.\n");
+		break;
+	default:
+		ERR("sysman driver initialization failed.\n");
+		return -1;
+		break;
+	}
+
+	if (sm.run() != ZE_RESULT_SUCCESS)
+	{
+		ERR("sysman driver run failed.\n");
 		return -1;
 	}
 
@@ -197,16 +210,14 @@ int main(int argc, char *argv[])
 	{
 		help(cmd_list);
 		delete_list(cmd_list);
-		delete sys;
 		return 0;
 	}
 
 	/* Print out version info if -v command line arg specified */
 	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version"))
 	{
-		print_version(sys);
+		print_version();
 		delete_list(cmd_list);
-		delete sys;
 		return 0;
 	}
 
@@ -220,11 +231,10 @@ int main(int argc, char *argv[])
 			{
 				print_subcommand(it, FULL_HELP);
 				delete_list(cmd_list);
-				delete sys;
 				return 0;
 			}
 			/* Run the command */
-			it->run(sys);
+			it->run();
 			found = true;
 		}
 	}
@@ -236,6 +246,5 @@ int main(int argc, char *argv[])
 	}
 
 	delete_list(cmd_list);
-	delete sys;
 	return 0;
 }

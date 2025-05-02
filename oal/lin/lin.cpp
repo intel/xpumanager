@@ -25,9 +25,7 @@
 #include "os.h"
 #include <sys/mman.h>
 #include <math.h>
-#include <pciaccess.h>
 #include <debug.h>
-#include <sysinfo.h>
 
 /**
  * @brief Creates a new thread.

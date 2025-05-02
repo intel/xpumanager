@@ -63,9 +63,8 @@ void cmdUpdateFW::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int cmdUpdateFW::run(sysinfo *sys)
+int cmdUpdateFW::run()
 {
 	TRACING();
-	UNUSED(sys);
 	return 0;
 }

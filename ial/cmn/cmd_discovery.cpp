@@ -87,9 +87,8 @@ void cmdDiscovery::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int cmdDiscovery::run(sysinfo *sys)
+int cmdDiscovery::run()
 {
 	TRACING();
-	UNUSED(sys);
 	return 0;
 }
