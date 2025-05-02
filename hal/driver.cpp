@@ -22,6 +22,7 @@
  *
  */
 #include <vector>
+#include <loader/ze_loader.h>
 #include "driver.h"
 
 using namespace std;
@@ -278,4 +279,24 @@ ze_result_t driver::run()
 		}
 	}
 	return result;
+}
+
+void driver::print_loader_versions()
+{
+	zel_component_version_t *versions;
+	size_t size = 0;
+	zelLoaderGetVersions(&size, nullptr);
+	DBG("zelLoaderGetVersions number of components found: %zd\n", size);
+	versions = new zel_component_version_t[size];
+	zelLoaderGetVersions(&size, versions);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		PRINT("Level Zero Version: %d.%d.%d\n",
+			  versions[i].component_lib_version.major,
+			  versions[i].component_lib_version.minor,
+			  versions[i].component_lib_version.patch);
+	}
+
+	delete[] versions;
 }

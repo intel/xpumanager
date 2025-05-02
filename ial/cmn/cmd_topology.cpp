@@ -64,9 +64,8 @@ void cmdTopology::help(list<help_cmd *> *help_list)
  *
  * @return int Returns 0 on success.
  */
-int cmdTopology::run(sysinfo *sys)
+int cmdTopology::run()
 {
 	TRACING();
-	UNUSED(sys);
 	return 0;
 }

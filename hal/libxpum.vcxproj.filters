@@ -7,12 +7,6 @@
     <ClCompile Include="..\oal\win\win.cpp">
       <Filter>oal</Filter>
     </ClCompile>
-    <ClCompile Include="lz.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sysinfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -85,12 +79,6 @@
       <Filter>oal</Filter>
     </ClInclude>
     <ClInclude Include="debug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lz.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sysinfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="device.h">

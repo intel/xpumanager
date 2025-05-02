@@ -27,7 +27,6 @@
 
 #include <list>
 #include "help_cmd.h"
-#include "sysinfo.h"
 
 using namespace std;
 
@@ -41,7 +40,7 @@ public:
 	char *get_name() { return name; }
 	virtual ~cmds() {};
 	virtual void help(list<help_cmd *> *help_list) = 0;
-	virtual int run(sysinfo *sys) = 0;
+	virtual int run() = 0;
 };
 
 typedef void (cmds::*help_func)(list<help_cmd *> *help_list);
