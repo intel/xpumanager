@@ -32,7 +32,7 @@ ze_result_t driver::init()
 	ze_result_t result = zeInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		fprintf(stderr, "Failed to initialize Level Zero. Error code: %d\n", result);
+		ERR("Failed to initialize Level Zero. Error code: %d\n", result);
 		return result;
 	}
 
@@ -177,35 +177,35 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 	ze_result_t result = zeDriverGetExtensionProperties(driver, &extensionCount, NULL);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		fprintf(stderr, "Failed to get extension count. Error code: %d\n", result);
+		ERR("Failed to get extension count. Error code: %d\n", result);
 		return result;
 	}
 
 	if (extensionCount == 0)
 	{
-		printf("No extensions available for this driver.\n");
+		DBG("No extensions available for this driver.\n");
 		return ZE_RESULT_SUCCESS;
 	}
 
 	ze_driver_extension_properties_t *extensions = new ze_driver_extension_properties_t[extensionCount];
 	if (extensions == NULL)
 	{
-		fprintf(stderr, "Failed to allocate memory for extension properties.\n");
+		ERR("Failed to allocate memory for extension properties.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
 	result = zeDriverGetExtensionProperties(driver, &extensionCount, extensions);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		fprintf(stderr, "Failed to get extension properties. Error code: %d\n", result);
+		ERR("Failed to get extension properties. Error code: %d\n", result);
 		delete[] extensions;
 		return result;
 	}
 
-	printf("Extension Properties:\n");
+	DBG("Extension Properties:\n");
 	for (uint32_t i = 0; i < extensionCount; ++i)
 	{
-		printf("  Extension %u: %s, version 0x%X\n", i + 1, extensions[i].name, extensions[i].version);
+		DBG("  Extension %u: %s, version 0x%X\n", i + 1, extensions[i].name, extensions[i].version);
 	}
 
 	delete[] extensions;
@@ -218,18 +218,18 @@ ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
 	ze_result_t result = zeDriverGetProperties(driver, &driverProperties);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		fprintf(stderr, "Failed to get driver properties. Error code: %d\n", result);
+		ERR("Failed to get driver properties. Error code: %d\n", result);
 		return result;
 	}
 
-	printf("Driver Properties:\n");
-	printf("  UUID: ");
+	DBG("Driver Properties:\n");
+	DBG("  UUID: ");
 	for (int j = 0; j < ZE_MAX_DRIVER_UUID_SIZE; ++j)
 	{
-		printf("%02x", driverProperties.uuid.id[j]);
+		DBG("%02x", driverProperties.uuid.id[j]);
 	}
-	printf("\n");
-	printf("  Driver Version: 0x%X\n", driverProperties.driverVersion);
+	DBG("\n");
+	DBG("  Driver Version: 0x%X\n", driverProperties.driverVersion);
 	return result;
 }
 
@@ -239,16 +239,16 @@ ze_result_t driver::getIpcProperties(ze_driver_handle_t driver)
 	ze_result_t result = zeDriverGetIpcProperties(driver, &ipcProperties);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		fprintf(stderr, "Failed to get IPC properties. Error code: %d\n", result);
+		ERR("Failed to get IPC properties. Error code: %d\n", result);
 		return result;
 	}
 
 	// If successful, print the IPC properties
-	printf("IPC Properties:\n");
-	printf("  Supports passing memory allocations between processes: %s\n",
-		   ipcProperties.flags & ZE_IPC_PROPERTY_FLAG_MEMORY ? "Yes" : "No");
-	printf("  Supports passing event pools between processes: %s\n",
-		   ipcProperties.flags & ZE_IPC_PROPERTY_FLAG_EVENT_POOL ? "Yes" : "No");
+	DBG("IPC Properties:\n");
+	DBG("  Supports passing memory allocations between processes: %s\n",
+		ipcProperties.flags & ZE_IPC_PROPERTY_FLAG_MEMORY ? "Yes" : "No");
+	DBG("  Supports passing event pools between processes: %s\n",
+		ipcProperties.flags & ZE_IPC_PROPERTY_FLAG_EVENT_POOL ? "Yes" : "No");
 
 	return ZE_RESULT_SUCCESS;
 }
