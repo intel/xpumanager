@@ -667,7 +667,25 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		/* Note that we have to use zesDevices handle for zes functions */
 		zesGetDevProps(zesDevices[i], &deviceProperties[i].zesDeviceProperties);
 
-		zes_func_table = new std::vector<sysman*> {
+		// Get state of each device
+		zes_device_state_t deviceState = {};
+		result = zesDeviceGetState(zesDevices[i], &deviceState);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get device state: 0x%X (%s)\n", result, l0_error_to_string(result));
+			delete[] zeDevices;
+			delete[] zesDevices;
+			zeDevices = nullptr;
+			zesDevices = nullptr;
+			return result;
+		}
+
+		DBG("  - Device State:\n");
+		DBG("    - Type: %d\n", deviceState.stype);
+		DBG("    - Reset State: %d\n", deviceState.reset);
+		DBG("    - Repair State: %d\n", deviceState.repaired);
+
+		zes_func_table = new std::vector<sysman *>{
 			create_instance<pci>(),
 			create_instance<process>(),
 			create_instance<diagnostic>(),
@@ -688,7 +706,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 			create_instance<vf>(),
 		};
 
-		zet_func_table = new std::vector<sysman*> {
+		zet_func_table = new std::vector<sysman *>{
 			create_instance<metric>(),
 		};
 		PRINT("\n==============================================\n");
@@ -698,7 +716,6 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 
 ze_result_t device::run()
 {
-	ze_result_t result = ZE_RESULT_SUCCESS;
 	if (zesDevices == nullptr)
 	{
 		ERR("No zesDevices initialized.\n");
@@ -706,35 +723,19 @@ ze_result_t device::run()
 	}
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
-		zes_device_handle_t device = zesDevices[i];
-		// Get state of each device
-		zes_device_state_t deviceState = {};
-		result = zesDeviceGetState(device, &deviceState);
-		if (result != ZE_RESULT_SUCCESS)
-		{
-			ERR("Failed to get device state: 0x%X (%s)\n", result, l0_error_to_string(result));
-			continue;
-		}
-
-		DBG("  - Device State:\n");
-		DBG("    - Type: %d\n", deviceState.stype);
-		DBG("    - Reset State: %d\n", deviceState.reset);
-		DBG("    - Repair State: %d\n", deviceState.repaired);
-
 		for (auto ptr : *zes_func_table)
 		{
-			ptr->zesRun(device);
+			ptr->zesRun(zesDevices[i]);
 		}
 		PRINT("\n==============================================\n");
 	}
 
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
-		ze_device_handle_t device = zeDevices[i];
 		// Run each tool function
 		for (auto ptr : *zet_func_table)
 		{
-			ptr->zeRun(device, &context);
+			ptr->zeRun(zeDevices[i], &context);
 		}
 	}
 	return ZE_RESULT_SUCCESS;
