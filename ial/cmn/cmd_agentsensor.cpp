@@ -25,9 +25,9 @@
 #include "cmd_agentsensor.h"
 #include "debug.h"
 
-void cmdAgentSensor::help(list<help_cmd *> *help_list)
+void cmdAgentSensor::help(list<helpCmd *> *helpList)
 {
-	help_list->push_back(new help_cmd(NO_GAP, "Get or change some XPU Manager settings."));
+	helpList->push_back(new helpCmd(NO_GAP, "Get or change some XPU Manager settings."));
 }
 
 int cmdAgentSensor::run()

@@ -29,30 +29,30 @@
 /**
  * @brief Adds help commands to the provided help list.
  *
- * @param help_list A pointer to a list of help commands.
+ * @param helpList A pointer to a list of help commands.
  */
-void cmdPs::help(list<help_cmd *> *help_list)
+void cmdPs::help(list<helpCmd *> *helpList)
 {
 	TRACING();
-	assert(help_list);
-	help_list->push_back(new help_cmd(NO_GAP, "List status of processes"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(NO_GAP, "Usage: xpu-smi ps [Options]"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi ps"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi ps -d [deviceId]"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi ps -d [deviceId] -j"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(NO_GAP, "PID:      Process ID"));
-	help_list->push_back(new help_cmd(NO_GAP, "Command:  Process command name"));
-	help_list->push_back(new help_cmd(NO_GAP, "DeviceID: Device ID"));
-	help_list->push_back(new help_cmd(NO_GAP, "SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)"));
-	help_list->push_back(new help_cmd(NO_GAP, "MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(NO_GAP, "Options:"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address"));
+	assert(helpList);
+	helpList->push_back(new helpCmd(NO_GAP, "List status of processes"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi ps [Options]"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi ps"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi ps -d [deviceId]"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi ps -d [deviceId] -j"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(NO_GAP, "PID:      Process ID"));
+	helpList->push_back(new helpCmd(NO_GAP, "Command:  Process command name"));
+	helpList->push_back(new helpCmd(NO_GAP, "DeviceID: Device ID"));
+	helpList->push_back(new helpCmd(NO_GAP, "SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)"));
+	helpList->push_back(new helpCmd(NO_GAP, "MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address"));
 }
 
 /**

@@ -39,19 +39,19 @@ enum GAP
 	XLARGE_GAP = 37,
 };
 
-struct help_cmd
+struct helpCmd
 {
 	char line[MAX_PATH];
 	int char_gap;
 
 	// Default constructor
-	help_cmd()
+	helpCmd()
 	{
 		memset(line, 0, MAX_PATH);
 	}
 
 	// Copy constructor
-	help_cmd(GAP gap, const char *other)
+	helpCmd(GAP gap, const char *other)
 	{
 		char_gap = (int)gap;
 		STRNCPY_S(line, other, MAX_PATH);

@@ -116,7 +116,7 @@
     <ClInclude Include="..\cmn\cmds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\cmn\help_cmd.h">
+    <ClInclude Include="..\cmn\helpCmd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

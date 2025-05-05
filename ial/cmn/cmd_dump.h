@@ -34,7 +34,7 @@ class cmdDump : public cmds
 public:
 	cmdDump() { STRCPY_S(name, MAX_PATH, "dump"); };
 	~cmdDump() {};
-	void help(list<help_cmd *> *help_list);
+	void help(list<helpCmd *> *helpList);
 	int run();
 };
 

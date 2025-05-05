@@ -39,17 +39,17 @@ public:
 	cmds() {};
 	char *get_name() { return name; }
 	virtual ~cmds() {};
-	virtual void help(list<help_cmd *> *help_list) = 0;
+	virtual void help(list<helpCmd *> *helpList) = 0;
 	virtual int run() = 0;
 };
 
-typedef void (cmds::*help_func)(list<help_cmd *> *help_list);
-typedef int (cmds::*run_func)();
+typedef void (cmds::*helpFunc)(list<helpCmd *> *helpList);
+typedef int (cmds::*runFunc)();
 
 struct cmd_struct
 {
-	help_func hf;
-	run_func rf;
+	helpFunc hf;
+	runFunc rf;
 };
 
 #endif

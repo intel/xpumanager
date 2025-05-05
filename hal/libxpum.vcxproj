@@ -170,7 +170,6 @@
     <ClInclude Include="memory.h" />
     <ClInclude Include="metric.h" />
     <ClInclude Include="pci.h" />
-    <ClInclude Include="pdev.h" />
     <ClInclude Include="performance.h" />
     <ClInclude Include="power.h" />
     <ClInclude Include="powerlimits.h" />
@@ -181,7 +180,6 @@
     <ClInclude Include="sysman.h" />
     <ClInclude Include="temperature.h" />
     <ClInclude Include="vf.h" />
-    <ClInclude Include="zello_log.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\oal\win\dllmain.cpp" />

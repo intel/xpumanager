@@ -120,9 +120,6 @@
     <ClInclude Include="pci.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pdev.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="performance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -151,9 +148,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zello_log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

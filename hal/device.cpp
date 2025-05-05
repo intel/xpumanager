@@ -577,7 +577,7 @@ ze_result_t device::zesGetDevProps(ze_device_handle_t dev, zes_device_properties
 
 /* Function to create an instance of a class */
 template <typename T>
-sysman *create_instance()
+sysman *createInstance()
 {
 	return new T();
 }
@@ -686,28 +686,28 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		DBG("    - Repair State: %d\n", deviceState.repaired);
 
 		zes_func_table = new std::vector<sysman *>{
-			create_instance<pci>(),
-			create_instance<process>(),
-			create_instance<diagnostic>(),
-			create_instance<ecc>(),
-			create_instance<enginegroup>(),
-			create_instance<fabric>(),
-			create_instance<fan>(),
-			create_instance<firmware>(),
-			create_instance<frequency>(),
-			create_instance<memory>(),
-			create_instance<performance>(),
-			create_instance<power>(),
-			create_instance<powerlimits>(),
-			create_instance<ras>(),
-			create_instance<scheduler>(),
-			create_instance<standby>(),
-			create_instance<temperature>(),
-			create_instance<vf>(),
+			createInstance<pci>(),
+			createInstance<process>(),
+			createInstance<diagnostic>(),
+			createInstance<ecc>(),
+			createInstance<enginegroup>(),
+			createInstance<fabric>(),
+			createInstance<fan>(),
+			createInstance<firmware>(),
+			createInstance<frequency>(),
+			createInstance<memory>(),
+			createInstance<performance>(),
+			createInstance<power>(),
+			createInstance<powerlimits>(),
+			createInstance<ras>(),
+			createInstance<scheduler>(),
+			createInstance<standby>(),
+			createInstance<temperature>(),
+			createInstance<vf>(),
 		};
 
 		zet_func_table = new std::vector<sysman *>{
-			create_instance<metric>(),
+			createInstance<metric>(),
 		};
 		PRINT("\n==============================================\n");
 	}

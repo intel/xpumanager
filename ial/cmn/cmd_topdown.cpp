@@ -25,9 +25,9 @@
 #include "cmd_topdown.h"
 #include "debug.h"
 
-void cmdTopdown::help(list<help_cmd *> *help_list)
+void cmdTopdown::help(list<helpCmd *> *helpList)
 {
-	help_list->push_back(new help_cmd(NO_GAP, "Show topdown information"));
+	helpList->push_back(new helpCmd(NO_GAP, "Show topdown information"));
 }
 
 int cmdTopdown::run()

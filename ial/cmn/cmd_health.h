@@ -34,7 +34,7 @@ class cmdHealth : public cmds
 public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
-	void help(list<help_cmd *> *help_list);
+	void help(list<helpCmd *> *helpList);
 	int run();
 };
 

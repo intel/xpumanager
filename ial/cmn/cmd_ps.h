@@ -34,7 +34,7 @@ class cmdPs : public cmds
 public:
 	cmdPs() { STRCPY_S(name, MAX_PATH, "ps"); };
 	~cmdPs() {};
-	void help(list<help_cmd *> *help_list);
+	void help(list<helpCmd *> *helpList);
 	int run();
 };
 

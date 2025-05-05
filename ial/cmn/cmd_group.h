@@ -33,7 +33,7 @@ class cmdGroup : public cmds
 public:
 	cmdGroup() { STRCPY_S(name, MAX_PATH, "group"); };
 	~cmdGroup() {};
-	void help(list<help_cmd *> *help_list);
+	void help(list<helpCmd *> *helpList);
 	int run();
 };
 

@@ -29,39 +29,39 @@
 /**
  * @brief Adds help commands to the provided help list.
  *
- * @param help_list A pointer to a list of help commands.
+ * @param helpList A pointer to a list of help commands.
  */
-void cmdStats::help(list<help_cmd *> *help_list)
+void cmdStats::help(list<helpCmd *> *helpList)
 {
 	TRACING();
-	assert(help_list);
-	help_list->push_back(new help_cmd(NO_GAP, "List the GPU statistics"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(NO_GAP, "Usage: xpu-smi stats [Options]"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [deviceId]"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress]"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -j"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -j"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -e"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -e"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -e -j"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -e -j"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -r"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -r"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -r -j"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -r -j"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(NO_GAP, "Options:"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	help_list->push_back(new help_cmd(NO_GAP, ""));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address to query"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-e,--eu                     Show EU metrics"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-r,--ras                    Show RAS error metrics"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "-x                          Show Xe Link metrics"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "--xelink                    Show the all the Xe Link throughput (GB/s) matrix"));
-	help_list->push_back(new help_cmd(SMALL_GAP, "--utils                     Show the Xe Link throughput utilization"));
+	assert(helpList);
+	helpList->push_back(new helpCmd(NO_GAP, "List the GPU statistics"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi stats [Options]"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [deviceId]"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress]"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -j"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -j"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -e"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -e"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -e -j"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -e -j"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -r"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -r"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [deviceId] -r -j"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi stats -d [pciBdfAddress] -r -j"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
+	helpList->push_back(new helpCmd(NO_GAP, ""));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address to query"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-e,--eu                     Show EU metrics"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-r,--ras                    Show RAS error metrics"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "-x                          Show Xe Link metrics"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "--xelink                    Show the all the Xe Link throughput (GB/s) matrix"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "--utils                     Show the Xe Link throughput utilization"));
 }
 
 /**
