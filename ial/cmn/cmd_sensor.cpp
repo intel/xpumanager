@@ -30,8 +30,9 @@ void cmdSensor::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(NO_GAP, "Show sensor information"));
 }
 
-int cmdSensor::run()
+int cmdSensor::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

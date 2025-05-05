@@ -35,7 +35,7 @@ public:
 	cmdPs() { STRCPY_S(name, MAX_PATH, "ps"); };
 	~cmdPs() {};
 	void help(list<helpCmd *> *helpList);
-	int run();
+	int run(arg_struct *args);
 };
 
 #endif

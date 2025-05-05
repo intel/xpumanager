@@ -35,7 +35,7 @@ public:
 	cmdUpdateFW() { STRCPY_S(name, MAX_PATH, "updatefw"); };
 	~cmdUpdateFW() {};
 	void help(list<helpCmd *> *helpList);
-	int run();
+	int run(arg_struct *args);
 };
 
 #endif

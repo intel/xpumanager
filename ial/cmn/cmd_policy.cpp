@@ -30,8 +30,9 @@ void cmdPolicy::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(NO_GAP, "Show policy information"));
 }
 
-int cmdPolicy::run()
+int cmdPolicy::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

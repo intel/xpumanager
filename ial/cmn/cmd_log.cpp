@@ -52,8 +52,9 @@ void cmdLogs::help(list<helpCmd *> *helpList)
  *
  * @return int Returns 0 on success.
  */
-int cmdLogs::run()
+int cmdLogs::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }
