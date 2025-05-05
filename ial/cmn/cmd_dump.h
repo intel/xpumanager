@@ -35,7 +35,51 @@ public:
 	cmdDump() { STRCPY_S(name, MAX_PATH, "dump"); };
 	~cmdDump() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t dump1(char *subcmd, char *args);
+	ze_result_t dump2(char *subcmd, char *args);
+	ze_result_t dump3(char *subcmd, char *args);
+	ze_result_t dump4(char *subcmd, char *args);
+	ze_result_t dump5(char *subcmd, char *args);
+	ze_result_t dump6(char *subcmd, char *args);
+	ze_result_t dump7(char *subcmd, char *args);
+	ze_result_t dump8(char *subcmd, char *args);
+	ze_result_t dump9(char *subcmd, char *args);
+	ze_result_t dump10(char *subcmd, char *args);
+	ze_result_t dump11(char *subcmd, char *args);
+	ze_result_t dump12(char *subcmd, char *args);
+	ze_result_t dump13(char *subcmd, char *args);
+	ze_result_t dump14(char *subcmd, char *args);
+	ze_result_t dump15(char *subcmd, char *args);
+	ze_result_t dump16(char *subcmd, char *args);
+	ze_result_t dump17(char *subcmd, char *args);
+	ze_result_t dump18(char *subcmd, char *args);
+	ze_result_t dump19(char *subcmd, char *args);
+	ze_result_t dump20(char *subcmd, char *args);
+	ze_result_t dump21(char *subcmd, char *args);
+	ze_result_t dump22(char *subcmd, char *args);
+	ze_result_t dump23(char *subcmd, char *args);
+	ze_result_t dump24(char *subcmd, char *args);
+	ze_result_t dump25(char *subcmd, char *args);
+	ze_result_t dump26(char *subcmd, char *args);
+	ze_result_t dump27(char *subcmd, char *args);
+	ze_result_t dump28(char *subcmd, char *args);
+	ze_result_t dump29(char *subcmd, char *args);
+	ze_result_t dump30(char *subcmd, char *args);
+	ze_result_t dump31(char *subcmd, char *args);
+	ze_result_t dump32(char *subcmd, char *args);
+	ze_result_t dump33(char *subcmd, char *args);
+	ze_result_t dump34(char *subcmd, char *args);
+	ze_result_t dump35(char *subcmd, char *args);
+	ze_result_t dump36(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdDump::*dumpSubCmdFunc)(char *subcmd, char *args);
+
+struct dumpCmdStruct
+{
+	char name[MAX_PATH];
+	dumpSubCmdFunc sf;
 };
 
 #endif

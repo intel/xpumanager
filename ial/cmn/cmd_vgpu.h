@@ -35,7 +35,21 @@ public:
 	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
 	~cmdVgpu() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t precheck(char *subcmd, char *args);
+	ze_result_t addKernelParam(char *subcmd, char *args);
+	ze_result_t create(char *subcmd, char *args);
+	ze_result_t remove(char *subcmd, char *args);
+	ze_result_t listGpus(char *subcmd, char *args);
+	ze_result_t stats(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdVgpu::*vgpuSubCmdFunc)(char *subcmd, char *args);
+
+struct vgpuCmdStruct
+{
+	char name[MAX_PATH];
+	vgpuSubCmdFunc sf;
 };
 
 #endif

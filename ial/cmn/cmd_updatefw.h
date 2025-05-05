@@ -35,7 +35,20 @@ public:
 	cmdUpdateFW() { STRCPY_S(name, MAX_PATH, "updatefw"); };
 	~cmdUpdateFW() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t gfx(char *subcmd, char *args);
+	ze_result_t gfxData(char *subcmd, char *args);
+	ze_result_t gfxCodeData(char *subcmd, char *args);
+	ze_result_t gfxPscbin(char *subcmd, char *args);
+	ze_result_t amc(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdUpdateFW::*updateFWSubCmdFunc)(char *subcmd, char *args);
+
+struct updateFWCmdStruct
+{
+	char name[MAX_PATH];
+	updateFWSubCmdFunc sf;
 };
 
 #endif

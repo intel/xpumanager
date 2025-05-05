@@ -26,6 +26,14 @@
 #include "debug.h"
 #include <assert.h>
 
+updateFWCmdStruct updateFWCmds[] = {
+	{"GFX", &cmdUpdateFW::gfx},
+	{"GFX_DATA", &cmdUpdateFW::gfxData},
+	{"GFX_CODE_DATA", &cmdUpdateFW::gfxCodeData},
+	{"GFX_PSCBIN", &cmdUpdateFW::gfxPscbin},
+	{"AMC", &cmdUpdateFW::amc},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -56,6 +64,46 @@ void cmdUpdateFW::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--recovery                  Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
+}
+
+ze_result_t cmdUpdateFW::gfx(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdUpdateFW::gfxData(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdUpdateFW::gfxCodeData(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdUpdateFW::gfxPscbin(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdUpdateFW::amc(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

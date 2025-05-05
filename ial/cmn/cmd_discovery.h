@@ -35,7 +35,17 @@ public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 	~cmdDiscovery() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t dump(char *subcmd, char *args);
+	ze_result_t listamcversions(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdDiscovery::*discoverySubCmdFunc)(char *subcmd, char *args);
+
+struct discoveryCmdStruct
+{
+	char name[MAX_PATH];
+	discoverySubCmdFunc sf;
 };
 
 #endif

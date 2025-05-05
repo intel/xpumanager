@@ -35,7 +35,21 @@ public:
 	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
 	~cmdDiag() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t runPrecheck(char *subcmd, char *args);
+	ze_result_t runStress(char *subcmd, char *args);
+	ze_result_t runSingleTest(char *subcmd, char *args);
+	ze_result_t runListTypes(char *subcmd, char *args);
+	ze_result_t runGpu(char *subcmd, char *args);
+	ze_result_t runSince(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdDiag::*diagSubCmdFunc)(char *subcmd, char *args);
+
+struct diagCmdStruct
+{
+	char name[MAX_PATH];
+	diagSubCmdFunc sf;
 };
 
 #endif

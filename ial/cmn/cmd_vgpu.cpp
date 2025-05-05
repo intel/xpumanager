@@ -26,6 +26,15 @@
 #include "debug.h"
 #include <assert.h>
 
+vgpuCmdStruct vgpuCmds[] = {
+	{"precheck", &cmdVgpu::precheck},
+	{"addkernelparam", &cmdVgpu::addKernelParam},
+	{"create", &cmdVgpu::create},
+	{"remove", &cmdVgpu::remove},
+	{"list", &cmdVgpu::listGpus},
+	{"stats", &cmdVgpu::stats},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -61,6 +70,54 @@ void cmdVgpu::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "-l,--list                   List all virtual GPUs on the specified phytsical GPU"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "-s,--stats                  Show statistics data of all virtual GPUs"));
+}
+
+ze_result_t cmdVgpu::precheck(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdVgpu::addKernelParam(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdVgpu::create(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdVgpu::remove(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdVgpu::listGpus(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdVgpu::stats(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
