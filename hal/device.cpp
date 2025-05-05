@@ -75,6 +75,21 @@ device::~device()
 		delete[] deviceProperties;
 		deviceProperties = nullptr;
 	}
+	// Clean up zes_func_table
+	for (auto &func : *zes_func_table)
+	{
+		delete func;
+	}
+	zes_func_table->clear();
+	delete zes_func_table;
+	// Clean up zet_func_table
+	for (auto &func : *zet_func_table)
+	{
+		delete func;
+	}
+	zet_func_table->clear();
+	delete zet_func_table;
+
 	// Clean up zeDevices
 	if (zeDevices)
 	{
@@ -560,6 +575,13 @@ ze_result_t device::zesGetDevProps(ze_device_handle_t dev, zes_device_properties
 	return result;
 }
 
+/* Function to create an instance of a class */
+template <typename T>
+sysman *create_instance()
+{
+	return new T();
+}
+
 ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 {
 	zeDriver = zeD;
@@ -644,16 +666,34 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 
 		/* Note that we have to use zesDevices handle for zes functions */
 		zesGetDevProps(zesDevices[i], &deviceProperties[i].zesDeviceProperties);
+
+		zes_func_table = new std::vector<sysman*> {
+			create_instance<pci>(),
+			create_instance<process>(),
+			create_instance<diagnostic>(),
+			create_instance<ecc>(),
+			create_instance<enginegroup>(),
+			create_instance<fabric>(),
+			create_instance<fan>(),
+			create_instance<firmware>(),
+			create_instance<frequency>(),
+			create_instance<memory>(),
+			create_instance<performance>(),
+			create_instance<power>(),
+			create_instance<powerlimits>(),
+			create_instance<ras>(),
+			create_instance<scheduler>(),
+			create_instance<standby>(),
+			create_instance<temperature>(),
+			create_instance<vf>(),
+		};
+
+		zet_func_table = new std::vector<sysman*> {
+			create_instance<metric>(),
+		};
 		PRINT("\n==============================================\n");
 	}
 	return ZE_RESULT_SUCCESS;
-}
-
-/* Function to create an instance of a class */
-template <typename T>
-sysman *create_instance()
-{
-	return new T();
 }
 
 ze_result_t device::run()
@@ -681,37 +721,9 @@ ze_result_t device::run()
 		DBG("    - Reset State: %d\n", deviceState.reset);
 		DBG("    - Repair State: %d\n", deviceState.repaired);
 
-		sysman *zes_func_table[] =
-			{
-				create_instance<pci>(),
-				create_instance<process>(),
-				create_instance<diagnostic>(),
-				create_instance<ecc>(),
-				create_instance<enginegroup>(),
-				create_instance<fabric>(),
-				create_instance<fan>(),
-				create_instance<firmware>(),
-				create_instance<frequency>(),
-				create_instance<memory>(),
-				create_instance<performance>(),
-				create_instance<power>(),
-				create_instance<powerlimits>(),
-				create_instance<ras>(),
-				create_instance<scheduler>(),
-				create_instance<standby>(),
-				create_instance<temperature>(),
-				create_instance<vf>(),
-			};
-
-		// Run each sysman function
-		for (uint32_t j = 0; j < (int)ARRAY_SIZE(zes_func_table); j++)
+		for (auto ptr : *zes_func_table)
 		{
-			zes_func_table[j]->zesRun(device);
-		}
-
-		for (uint32_t j = 0; j < (int)ARRAY_SIZE(zes_func_table); j++)
-		{
-			delete zes_func_table[j];
+			ptr->zesRun(device);
 		}
 		PRINT("\n==============================================\n");
 	}
@@ -719,20 +731,10 @@ ze_result_t device::run()
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
 		ze_device_handle_t device = zeDevices[i];
-		sysman *zet_func_table[] =
-			{
-				create_instance<metric>(),
-			};
-
 		// Run each tool function
-		for (uint32_t j = 0; j < (int)ARRAY_SIZE(zet_func_table); j++)
+		for (auto ptr : *zet_func_table)
 		{
-			zet_func_table[j]->zeRun(device, &context);
-		}
-
-		for (uint32_t j = 0; j < (int)ARRAY_SIZE(zet_func_table); j++)
-		{
-			delete zet_func_table[j];
+			ptr->zeRun(device, &context);
 		}
 	}
 	return ZE_RESULT_SUCCESS;
