@@ -25,9 +25,9 @@
 #include "cmd_policy.h"
 #include "debug.h"
 
-void cmdPolicy::help(list<help_cmd *> *help_list)
+void cmdPolicy::help(list<helpCmd *> *helpList)
 {
-	help_list->push_back(new help_cmd(NO_GAP, "Show policy information"));
+	helpList->push_back(new helpCmd(NO_GAP, "Show policy information"));
 }
 
 int cmdPolicy::run()

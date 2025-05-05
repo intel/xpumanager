@@ -34,7 +34,7 @@ class cmdTopology : public cmds
 public:
 	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
 	~cmdTopology() {};
-	void help(list<help_cmd *> *help_list);
+	void help(list<helpCmd *> *helpList);
 	int run();
 };
 

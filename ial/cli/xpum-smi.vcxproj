@@ -55,7 +55,7 @@
     <ClInclude Include="..\cmn\cmd_topology.h" />
     <ClInclude Include="..\cmn\cmd_updatefw.h" />
     <ClInclude Include="..\cmn\cmd_vgpu.h" />
-    <ClInclude Include="..\cmn\help_cmd.h" />
+    <ClInclude Include="..\cmn\helpCmd.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

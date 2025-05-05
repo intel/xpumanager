@@ -48,17 +48,16 @@
 #include "version.h"
 #include "cli.h"
 
-
 /* Function to create an instance of a class */
 template <typename T>
-cmds *create_instance()
+cmds *createInstance()
 {
 	return new T();
 }
 
 /* Function to delete a list of pointers */
 template <typename T>
-void delete_list(list<T *> *generic_list)
+void deleteList(list<T *> *generic_list)
 {
 	for (auto &it : *generic_list)
 	{
@@ -67,7 +66,7 @@ void delete_list(list<T *> *generic_list)
 	delete generic_list;
 }
 
-void print_version()
+void printVersion()
 {
 	PRINT("%-*sCLI:\n", NO_GAP, "");
 	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
@@ -79,22 +78,22 @@ void print_version()
 	// sys->print_lz_version();
 }
 
-void print_subcommand(cmds *it, HELP help_type)
+void printSubCommand(cmds *it, HELP help_type)
 {
-	list<help_cmd *> *help_list = new list<help_cmd *>;
-	it->help(help_list);
+	list<helpCmd *> *helpList = new list<helpCmd *>;
+	it->help(helpList);
 
-	if (help_list->size() < 1)
+	if (helpList->size() < 1)
 	{
 		ERR("No help commands found\n");
-		delete_list(help_list);
+		deleteList(helpList);
 		return;
 	}
 
 	if (help_type == SHORT_HELP)
 	{
 		/* Just print the first line of each subcommand's help because it contains the description */
-		for (auto &it2 : *help_list)
+		for (auto &it2 : *helpList)
 		{
 			PRINT("  %-*s%s\n", 28, it->get_name(), it2->line);
 			break;
@@ -102,20 +101,20 @@ void print_subcommand(cmds *it, HELP help_type)
 	}
 	else
 	{
-		for (auto &it2 : *help_list)
+		for (auto &it2 : *helpList)
 		{
 			PRINT("%-*s%s\n", it2->char_gap, "", it2->line);
 		}
 	}
 
-	delete_list(help_list);
+	deleteList(helpList);
 }
 
-void print_subcommands(list<cmds *> *cmd_list)
+void printSubCommands(list<cmds *> *cmd_list)
 {
 	for (auto &it : *cmd_list)
 	{
-		print_subcommand(it, SHORT_HELP);
+		printSubCommand(it, SHORT_HELP);
 	}
 }
 
@@ -140,7 +139,7 @@ void help(list<cmds *> *cmd_list)
 	PRINT("  -v,--version                Display version information and exit\n\n");
 
 	PRINT("Subcommands:\n");
-	print_subcommands(cmd_list);
+	printSubCommands(cmd_list);
 }
 
 int main(int argc, char *argv[])
@@ -172,22 +171,22 @@ int main(int argc, char *argv[])
 	list<cmds *> *cmd_list = new list<cmds *>;
 
 	vector<function_entry> function_table = {
-		{create_instance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{create_instance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{create_instance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{create_instance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{create_instance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{create_instance<cmdConfig>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{create_instance<cmdPs>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{create_instance<cmdVgpu>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{create_instance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{create_instance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{create_instance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{create_instance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{create_instance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{create_instance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{create_instance<cmdSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{create_instance<cmdAgentSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{createInstance<cmdConfig>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{createInstance<cmdPs>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdVgpu>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{createInstance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::Both},
+		{createInstance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdAgentSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 	};
 
 	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;
@@ -209,15 +208,15 @@ int main(int argc, char *argv[])
 	if (argc == 1)
 	{
 		help(cmd_list);
-		delete_list(cmd_list);
+		deleteList(cmd_list);
 		return 0;
 	}
 
 	/* Print out version info if -v command line arg specified */
 	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version"))
 	{
-		print_version();
-		delete_list(cmd_list);
+		printVersion();
+		deleteList(cmd_list);
 		return 0;
 	}
 
@@ -229,8 +228,8 @@ int main(int argc, char *argv[])
 			/* If the second argument is -h or --help, then just print their help */
 			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help")))
 			{
-				print_subcommand(it, FULL_HELP);
-				delete_list(cmd_list);
+				printSubCommand(it, FULL_HELP);
+				deleteList(cmd_list);
 				return 0;
 			}
 			/* Run the command */
@@ -245,6 +244,6 @@ int main(int argc, char *argv[])
 		help(cmd_list);
 	}
 
-	delete_list(cmd_list);
+	deleteList(cmd_list);
 	return 0;
 }

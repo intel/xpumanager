@@ -29,8 +29,8 @@
 class LIBXPUM_API ecc : public sysman
 {
 private:
-	void print_ecc_state(const zes_device_ecc_state_t state);
-	void print_ecc_pending_action(const zes_device_action_t action);
+	void printEccState(const zes_device_ecc_state_t state);
+	void printEccPendingAction(const zes_device_action_t action);
 
 public:
 	ecc() {}

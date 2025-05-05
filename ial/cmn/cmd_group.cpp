@@ -25,9 +25,9 @@
 #include "cmd_group.h"
 #include "debug.h"
 
-void cmdGroup::help(list<help_cmd *> *help_list)
+void cmdGroup::help(list<helpCmd *> *helpList)
 {
-	help_list->push_back(new help_cmd(NO_GAP, "Manage groups of commands"));
+	helpList->push_back(new helpCmd(NO_GAP, "Manage groups of commands"));
 }
 
 /**

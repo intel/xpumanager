@@ -281,7 +281,7 @@ ze_result_t driver::run()
 	return result;
 }
 
-void driver::print_loader_versions()
+void driver::printLoaderVersions()
 {
 	zel_component_version_t *versions;
 	size_t size = 0;

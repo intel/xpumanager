@@ -29,7 +29,6 @@
 #include <unistd.h>
 #include <cstring>
 #include <pthread.h>
-#include <pdev.h>
 
 #define TESTING 1
 

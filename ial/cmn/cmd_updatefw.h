@@ -34,7 +34,7 @@ class cmdUpdateFW : public cmds
 public:
 	cmdUpdateFW() { STRCPY_S(name, MAX_PATH, "updatefw"); };
 	~cmdUpdateFW() {};
-	void help(list<help_cmd *> *help_list);
+	void help(list<helpCmd *> *helpList);
 	int run();
 };
 

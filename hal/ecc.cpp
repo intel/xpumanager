@@ -23,7 +23,7 @@
  */
 #include "ecc.h"
 
-void ecc::print_ecc_state(const zes_device_ecc_state_t state)
+void ecc::printEccState(const zes_device_ecc_state_t state)
 {
 	switch (state)
 	{
@@ -42,7 +42,7 @@ void ecc::print_ecc_state(const zes_device_ecc_state_t state)
 	}
 }
 
-void ecc::print_ecc_pending_action(const zes_device_action_t action)
+void ecc::printEccPendingAction(const zes_device_action_t action)
 {
 	switch (action)
 	{
@@ -103,11 +103,11 @@ ze_result_t ecc::getState(zes_device_handle_t device)
 	{
 		DBG("  - ECC State:\n");
 		DBG("    - Current State:\n");
-		print_ecc_state(eccState.currentState);
+		printEccState(eccState.currentState);
 		DBG("    - Pending State:\n");
-		print_ecc_state(eccState.pendingState);
+		printEccState(eccState.pendingState);
 		DBG("     - Pending Action:\n");
-		print_ecc_pending_action(eccState.pendingAction);
+		printEccPendingAction(eccState.pendingAction);
 	}
 	return result;
 }
