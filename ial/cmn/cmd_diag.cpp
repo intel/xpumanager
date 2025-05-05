@@ -26,6 +26,15 @@
 #include "debug.h"
 #include <assert.h>
 
+diagCmdStruct diagCmds[] = {
+	{"precheck", &cmdDiag::runPrecheck},
+	{"stress", &cmdDiag::runStress},
+	{"singletest", &cmdDiag::runSingleTest},
+	{"listtypes", &cmdDiag::runListTypes},
+	{"gpu", &cmdDiag::runGpu},
+	{"since", &cmdDiag::runSince},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -94,6 +103,54 @@ void cmdDiag::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(LARGE_GAP, "Note that in a multi NUMA node server, it may need to use numactl to specify which node the PCIe bandwidth test runs on"));
 	helpList->push_back(new helpCmd(LARGE_GAP, "Usage: numactl [ --membind nodes ] [ --cpunodebind nodes ] xpu-smi diag -d [deviceId] --singletest 5"));
 	helpList->push_back(new helpCmd(LARGE_GAP, "It also applies to diag level tests"));
+}
+
+ze_result_t cmdDiag::runPrecheck(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::runStress(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::runSingleTest(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::runListTypes(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::runGpu(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::runSince(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

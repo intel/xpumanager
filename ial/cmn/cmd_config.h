@@ -27,6 +27,7 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <zes_api.h>
 
 class cmdConfig : public cmds
 {
@@ -35,6 +36,26 @@ public:
 	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
 	~cmdConfig() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t setFrequencyRange(char *subcmd, char *args);
+	ze_result_t setPowerLimit(char *subcmd, char *args);
+	ze_result_t setStandby(char *subcmd, char *args);
+	ze_result_t setScheduler(char *subcmd, char *args);
+	ze_result_t setPerformanceFactor(char *subcmd, char *args);
+	ze_result_t setXeLinkPort(char *subcmd, char *args);
+	ze_result_t setXeLinkPortBeaconing(char *subcmd, char *args);
+	ze_result_t setMemoryEcc(char *subcmd, char *args);
+	ze_result_t resetDevice(char *subcmd, char *args);
+	ze_result_t applyPpr(char *subcmd, char *args);
+	ze_result_t forcePpr(char *subcmd, char *args);
 	int run(arg_struct *args);
 };
+
+typedef ze_result_t (cmdConfig::*configSubCmdFunc)(char *subcmd, char *args);
+
+struct configCmdStruct
+{
+	char name[MAX_PATH];
+	configSubCmdFunc sf;
+};
+
 #endif

@@ -26,6 +26,15 @@
 #include "debug.h"
 #include <assert.h>
 
+healthCmdStruct healthCmds[] = {
+	{"1", &cmdHealth::coreTemperature},
+	{"2", &cmdHealth::memoryTemperature},
+	{"3", &cmdHealth::power},
+	{"4", &cmdHealth::memory},
+	{"5", &cmdHealth::xeLinkPort},
+	{"6", &cmdHealth::frequency},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -60,6 +69,54 @@ void cmdHealth::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(XLARGE_GAP, "4. GPU Memory"));
 	helpList->push_back(new helpCmd(XLARGE_GAP, "5. Xe Link Port"));
 	helpList->push_back(new helpCmd(XLARGE_GAP, "6. GPU Frequency"));
+}
+
+ze_result_t cmdHealth::coreTemperature(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdHealth::memoryTemperature(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdHealth::power(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdHealth::memory(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdHealth::xeLinkPort(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdHealth::frequency(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

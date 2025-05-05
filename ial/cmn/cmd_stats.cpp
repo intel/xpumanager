@@ -26,6 +26,14 @@
 #include "debug.h"
 #include <assert.h>
 
+statsCmdStruct statsCmds[] = {
+	{"eu", &cmdStats::eu},
+	{"ras", &cmdStats::ras},
+	{"x", &cmdStats::x},
+	{"xelink", &cmdStats::xelink},
+	{"utils", &cmdStats::utils},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -62,6 +70,46 @@ void cmdStats::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "-x                          Show Xe Link metrics"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--xelink                    Show the all the Xe Link throughput (GB/s) matrix"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--utils                     Show the Xe Link throughput utilization"));
+}
+
+ze_result_t cmdStats::eu(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdStats::ras(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdStats::x(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdStats::xelink(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdStats::utils(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

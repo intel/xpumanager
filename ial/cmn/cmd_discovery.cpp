@@ -26,6 +26,11 @@
 #include "debug.h"
 #include <assert.h>
 
+discoveryCmdStruct discoveryCmds[] = {
+	{"dump", &cmdDiscovery::dump},
+	{"listamcversions", &cmdDiscovery::listamcversions},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -80,6 +85,22 @@ void cmdDiscovery::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "-u,--username               Username used to authenticate for host redfish access"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "-p,--password               Password used to authenticate for host redfish access"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+}
+
+ze_result_t cmdDiscovery::dump(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::listamcversions(char *subcmd, char *args)
+{
+	TRACING();
+	UNUSED(subcmd);
+	UNUSED(args);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

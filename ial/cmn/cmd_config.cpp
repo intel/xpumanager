@@ -26,6 +26,20 @@
 #include "debug.h"
 #include <assert.h>
 
+configCmdStruct configCmds[] = {
+	{"frequencyrange", &cmdConfig::setFrequencyRange},
+	{"powerlimit", &cmdConfig::setPowerLimit},
+	{"standby", &cmdConfig::setStandby},
+	{"scheduler", &cmdConfig::setScheduler},
+	{"performancefactor", &cmdConfig::setPerformanceFactor},
+	{"xelinkport", &cmdConfig::setXeLinkPort},
+	{"xelinkportbeaconing", &cmdConfig::setXeLinkPortBeaconing},
+	{"memoryecc", &cmdConfig::setMemoryEcc},
+	{"reset", &cmdConfig::resetDevice},
+	{"ppr", &cmdConfig::applyPpr},
+	{"force", &cmdConfig::forcePpr},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -73,6 +87,72 @@ void cmdConfig::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "--xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
+}
+
+ze_result_t cmdConfig::setFrequencyRange(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setPowerLimit(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setStandby(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setScheduler(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setPerformanceFactor(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setXeLinkPort(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setXeLinkPortBeaconing(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::setMemoryEcc(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::resetDevice(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::applyPpr(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdConfig::forcePpr(char *subcmd, char *args)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

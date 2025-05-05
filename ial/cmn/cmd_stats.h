@@ -35,7 +35,20 @@ public:
 	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); };
 	~cmdStats() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t eu(char *subcmd, char *args);
+	ze_result_t ras(char *subcmd, char *args);
+	ze_result_t x(char *subcmd, char *args);
+	ze_result_t xelink(char *subcmd, char *args);
+	ze_result_t utils(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdStats::*statsSubCmdFunc)(char *subcmd, char *args);
+
+struct statsCmdStruct
+{
+	char name[MAX_PATH];
+	statsSubCmdFunc sf;
 };
 
 #endif

@@ -35,7 +35,21 @@ public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
 	void help(list<helpCmd *> *helpList);
+	ze_result_t coreTemperature(char *subcmd, char *args);
+	ze_result_t memoryTemperature(char *subcmd, char *args);
+	ze_result_t power(char *subcmd, char *args);
+	ze_result_t memory(char *subcmd, char *args);
+	ze_result_t xeLinkPort(char *subcmd, char *args);
+	ze_result_t frequency(char *subcmd, char *args);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdHealth::*healthSubCmdFunc)(char *subcmd, char *args);
+
+struct healthCmdStruct
+{
+	char name[MAX_PATH];
+	healthSubCmdFunc sf;
 };
 
 #endif
