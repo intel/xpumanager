@@ -69,8 +69,9 @@ void cmdStats::help(list<helpCmd *> *helpList)
  *
  * @return int Returns 0 on success.
  */
-int cmdStats::run()
+int cmdStats::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

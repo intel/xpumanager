@@ -26,9 +26,17 @@
 #define _CMDS_H
 
 #include <list>
+#include <driver.h>
 #include "help_cmd.h"
 
 using namespace std;
+
+struct arg_struct
+{
+	int argc;
+	char **argv;
+	driver sm;
+};
 
 class cmds
 {
@@ -40,7 +48,7 @@ public:
 	char *get_name() { return name; }
 	virtual ~cmds() {};
 	virtual void help(list<helpCmd *> *helpList) = 0;
-	virtual int run() = 0;
+	virtual int run(arg_struct *args) = 0;
 };
 
 typedef void (cmds::*helpFunc)(list<helpCmd *> *helpList);

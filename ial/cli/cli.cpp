@@ -22,7 +22,6 @@
  *
  */
 
-#include <driver.h>
 #include <cmd_discovery.h>
 #include <cmd_topology.h>
 #include <cmd_diag.h>
@@ -146,10 +145,10 @@ int main(int argc, char *argv[])
 {
 	TRACING();
 	bool found = false;
+	arg_struct arg;
 
 	// Create sysman driver instance
-	driver sm;
-	ze_result_t result = sm.init();
+	ze_result_t result = arg.sm.init();
 	switch (result)
 	{
 	case ZE_RESULT_SUCCESS:
@@ -161,7 +160,7 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	if (sm.run() != ZE_RESULT_SUCCESS)
+	if (arg.sm.run() != ZE_RESULT_SUCCESS)
 	{
 		ERR("sysman driver run failed.\n");
 		return -1;
@@ -191,6 +190,8 @@ int main(int argc, char *argv[])
 
 	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;
 	DBG("Is Daemon mode: %s\n", (curDaemonMode == DAEMONCAP::DAEMON) ? "true" : "false");
+	arg.argc = argc;
+	arg.argv = argv;
 
 	for (const auto &entry : function_table)
 	{
@@ -233,7 +234,7 @@ int main(int argc, char *argv[])
 				return 0;
 			}
 			/* Run the command */
-			it->run();
+			it->run(&arg);
 			found = true;
 		}
 	}

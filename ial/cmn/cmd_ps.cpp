@@ -60,8 +60,9 @@ void cmdPs::help(list<helpCmd *> *helpList)
  *
  * @return int Returns 0 on success.
  */
-int cmdPs::run()
+int cmdPs::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

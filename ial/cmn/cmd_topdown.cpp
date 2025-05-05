@@ -30,8 +30,9 @@ void cmdTopdown::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(NO_GAP, "Show topdown information"));
 }
 
-int cmdTopdown::run()
+int cmdTopdown::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

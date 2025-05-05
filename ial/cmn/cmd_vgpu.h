@@ -35,7 +35,7 @@ public:
 	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
 	~cmdVgpu() {};
 	void help(list<helpCmd *> *helpList);
-	int run();
+	int run(arg_struct *args);
 };
 
 #endif

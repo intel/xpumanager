@@ -101,8 +101,9 @@ void cmdDiag::help(list<helpCmd *> *helpList)
  *
  * @return int Returns 0 on success.
  */
-int cmdDiag::run()
+int cmdDiag::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

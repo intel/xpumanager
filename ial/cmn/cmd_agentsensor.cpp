@@ -30,8 +30,9 @@ void cmdAgentSensor::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(NO_GAP, "Get or change some XPU Manager settings."));
 }
 
-int cmdAgentSensor::run()
+int cmdAgentSensor::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	return 0;
 }

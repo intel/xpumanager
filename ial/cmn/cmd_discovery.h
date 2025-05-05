@@ -35,7 +35,7 @@ public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 	~cmdDiscovery() {};
 	void help(list<helpCmd *> *helpList);
-	int run();
+	int run(arg_struct *args);
 };
 
 #endif
