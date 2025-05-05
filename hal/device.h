@@ -25,6 +25,9 @@
 #define _DEVICE_H
 
 #include "sysman.h"
+#include <vector>
+
+using namespace std;
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -59,10 +62,13 @@ private:
 	zes_device_handle_t *zesDevices;
 	uint32_t deviceCount;
 	devProps *deviceProperties;
+	vector<sysman *>* zes_func_table;
+	vector<sysman *>* zet_func_table;
 
 public:
 	device() : zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr),
-			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr) {}
+			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr), zes_func_table(nullptr),
+			   zet_func_table(nullptr) {}
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
