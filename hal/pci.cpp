@@ -22,14 +22,23 @@
  *
  */
 #include <vector>
+#include <assert.h>
+#include <regex>
+#include <string>
 #include "pci.h"
 
 using namespace std;
 
-ze_result_t pci::getProperties(zes_device_handle_t device)
+ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProps)
 {
-	zes_pci_properties_t pciProperties = {};
-	ze_result_t result = zesDevicePciGetProperties(device, &pciProperties);
+	assert(pciProps);
+	if (!pciProps)
+	{
+		ERR("Invalid argument: pciProps is null\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	ze_result_t result = zesDevicePciGetProperties(device, pciProps);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -37,18 +46,18 @@ ze_result_t pci::getProperties(zes_device_handle_t device)
 	}
 
 	DBG("  - PCI Properties:\n");
-	DBG("    - Address: %d:%d:%d.%d\n", pciProperties.address.domain,
-		pciProperties.address.bus,
-		pciProperties.address.device,
-		pciProperties.address.function);
+	DBG("    - Address: %d:%d:%d.%d\n", pciProps->address.domain,
+		pciProps->address.bus,
+		pciProps->address.device,
+		pciProps->address.function);
 	DBG("    - Max Speed: %d Gen, %d lanes, Max bandwidth: %" PRIu64 "\n",
-		pciProperties.maxSpeed.gen,
-		pciProperties.maxSpeed.width,
-		pciProperties.maxSpeed.maxBandwidth);
+		pciProps->maxSpeed.gen,
+		pciProps->maxSpeed.width,
+		pciProps->maxSpeed.maxBandwidth);
 
-	DBG("    - haveBandwidthCounters: %d\n", pciProperties.haveBandwidthCounters);
-	DBG("    - havePacketCounters: %d\n", pciProperties.havePacketCounters);
-	DBG("    - haveReplayCounters: %d\n", pciProperties.haveReplayCounters);
+	DBG("    - haveBandwidthCounters: %d\n", pciProps->haveBandwidthCounters);
+	DBG("    - havePacketCounters: %d\n", pciProps->havePacketCounters);
+	DBG("    - haveReplayCounters: %d\n", pciProps->haveReplayCounters);
 	return result;
 }
 
@@ -141,9 +150,13 @@ ze_result_t pci::getStats(zes_device_handle_t device)
 	return result;
 }
 
+ze_result_t pci::init(ze_device_handle_t device)
+{
+	return getProperties(device, &pciProperties);
+}
+
 ze_result_t pci::zesRun(zes_device_handle_t device)
 {
-	getProperties(device);
 	getState(device);
 	getBars(device);
 	getStats(device);
