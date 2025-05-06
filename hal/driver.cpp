@@ -300,3 +300,45 @@ void driver::printLoaderVersions()
 
 	delete[] versions;
 }
+
+ze_device_handle_t driver::findDeviceByBDF(const char *bdf)
+{
+	ze_device_handle_t foundDevice = nullptr;
+
+	for (uint32_t i = 0; i < driverCount; i++)
+	{
+		foundDevice = devs[i].findDeviceByBDF(bdf);
+		if (foundDevice != nullptr)
+		{
+			DBG("Found device with BDF: %s\n", bdf);
+			break;
+		}
+	}
+
+	if (foundDevice == nullptr)
+	{
+		DBG("No device found with BDF: %s\n", bdf);
+	}
+	return foundDevice;
+}
+
+ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
+{
+	ze_device_handle_t foundDevice = nullptr;
+
+	for (uint32_t i = 0; i < driverCount; i++)
+	{
+		foundDevice = devs[i].findDeviceByIndex(index);
+		if (foundDevice != nullptr)
+		{
+			DBG("Found device with index: %u\n", index);
+			break;
+		}
+	}
+
+	if (foundDevice == nullptr)
+	{
+		DBG("No device found with index: %u\n", index);
+	}
+	return foundDevice;
+}

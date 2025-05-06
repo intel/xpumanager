@@ -40,6 +40,7 @@ public:
 	ze_result_t getState(zes_device_handle_t device);
 	ze_result_t getStats(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);
+	bool isBDF(const char *bdf);
 };
 
 #endif

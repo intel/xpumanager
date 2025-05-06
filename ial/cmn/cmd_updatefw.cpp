@@ -114,6 +114,11 @@ ze_result_t cmdUpdateFW::amc(char *subcmd, char *args)
 int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
+	ze_device_handle_t device = args->sm.findDeviceByBDF(args->argv[2]);
+	if (device == nullptr)
+	{
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
 	return 0;
 }

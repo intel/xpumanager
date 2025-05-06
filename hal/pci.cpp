@@ -150,6 +150,44 @@ ze_result_t pci::getStats(zes_device_handle_t device)
 	return result;
 }
 
+bool pci::isBDF(const char *bdf)
+{
+	bool isValid = false;
+	string bdfStr(bdf);
+	regex regexPattern(R"((\d+):(\d+):(\d+)\.(\d+))");
+	smatch match;
+
+	if (regex_match(bdfStr, match, regexPattern))
+	{
+		string domain = match[1];
+		string bus = match[2];
+		string device = match[3];
+		string function = match[4];
+
+		if (domain.length() > 4 || bus.length() > 2 || device.length() > 2 || function.length() > 1)
+		{
+			ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
+		}
+		else
+		{
+			DBG("Valid PCI address format: %s\n", bdf);
+			if (pciProperties.address.domain == strtoul(domain.c_str(), nullptr, 16) &&
+				pciProperties.address.bus == strtoul(bus.c_str(), nullptr, 16) &&
+				pciProperties.address.device == strtoul(device.c_str(), nullptr, 16) &&
+				pciProperties.address.function == strtoul(function.c_str(), nullptr, 16))
+			{
+				DBG("PCI address matches the device properties.\n");
+				isValid = true;
+			}
+		}
+	}
+	else
+	{
+		ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
+	}
+	return isValid;
+}
+
 ze_result_t pci::init(ze_device_handle_t device)
 {
 	return getProperties(device, &pciProperties);
