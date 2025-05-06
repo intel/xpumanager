@@ -723,6 +723,29 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	return ZE_RESULT_SUCCESS;
 }
 
+ze_device_handle_t device::findDeviceByBDF(const char *bdf)
+{
+	for (uint32_t i = 0; i < deviceCount; ++i)
+	{
+		pci *p = (pci *)zes_func_table[PCI].func;
+		if (p->isBDF(bdf))
+		{
+			DBG("Found device with BDF: %s\n", bdf);
+			return zeDevices[i];
+		}
+	}
+	return nullptr;
+}
+
+ze_device_handle_t device::findDeviceByIndex(uint32_t index)
+{
+	if (index < deviceCount)
+	{
+		return zeDevices[index];
+	}
+	return nullptr;
+}
+
 ze_result_t device::run()
 {
 	if (zesDevices == nullptr)
