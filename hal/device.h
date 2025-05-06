@@ -33,6 +33,47 @@ using namespace std;
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+enum zesCmdType
+{
+	PCI,
+	PROCESS,
+	DIAGNOSTIC,
+	ECC,
+	ENGINEGROUP,
+	FABRIC,
+	FAN,
+	FIRMWARE,
+	FREQUENCY,
+	MEMORY,
+	PERFORMANCE,
+	POWER,
+	POWERLIMITS,
+	RAS,
+	SCHEDULER,
+	STANDBY,
+	TEMPERATURE,
+	VF,
+	TOTAL_ZES,
+};
+
+struct zesInfo
+{
+	zesCmdType type;
+	sysman *func;
+};
+
+enum zetCmdType
+{
+	METRIC,
+	TOTAL_ZET,
+};
+
+struct zetInfo
+{
+	zetCmdType type;
+	sysman *func;
+};
+
 struct devProps
 {
 	ze_device_properties_t zeDeviceProperties;
@@ -62,13 +103,13 @@ private:
 	zes_device_handle_t *zesDevices;
 	uint32_t deviceCount;
 	devProps *deviceProperties;
-	vector<sysman *>* zes_func_table;
-	vector<sysman *>* zet_func_table;
+	zesInfo *zes_func_table;
+	zetInfo *zet_func_table;
 
 public:
 	device() : zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr),
-			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr), zes_func_table(nullptr),
-			   zet_func_table(nullptr) {}
+			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr),
+			   zes_func_table(nullptr), zet_func_table(nullptr) {}
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);

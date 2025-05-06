@@ -76,18 +76,17 @@ device::~device()
 		deviceProperties = nullptr;
 	}
 	// Clean up zes_func_table
-	for (auto &func : *zes_func_table)
+	for (uint32_t i = 0; i < TOTAL_ZES; i++)
 	{
-		delete func;
+		delete zes_func_table[i].func;
 	}
-	zes_func_table->clear();
 	delete zes_func_table;
+
 	// Clean up zet_func_table
-	for (auto &func : *zet_func_table)
+	for (uint32_t i = 0; i < TOTAL_ZET; i++)
 	{
-		delete func;
+		delete zet_func_table[i].func;
 	}
-	zet_func_table->clear();
 	delete zet_func_table;
 
 	// Clean up zeDevices
@@ -685,29 +684,29 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		DBG("    - Reset State: %d\n", deviceState.reset);
 		DBG("    - Repair State: %d\n", deviceState.repaired);
 
-		zes_func_table = new std::vector<sysman *>{
-			createInstance<pci>(),
-			createInstance<process>(),
-			createInstance<diagnostic>(),
-			createInstance<ecc>(),
-			createInstance<enginegroup>(),
-			createInstance<fabric>(),
-			createInstance<fan>(),
-			createInstance<firmware>(),
-			createInstance<frequency>(),
-			createInstance<memory>(),
-			createInstance<performance>(),
-			createInstance<power>(),
-			createInstance<powerlimits>(),
-			createInstance<ras>(),
-			createInstance<scheduler>(),
-			createInstance<standby>(),
-			createInstance<temperature>(),
-			createInstance<vf>(),
+		zes_func_table = new zesInfo[TOTAL_ZES]{
+			{PCI, createInstance<pci>()},
+			{PROCESS, createInstance<process>()},
+			{DIAGNOSTIC, createInstance<diagnostic>()},
+			{ECC, createInstance<ecc>()},
+			{ENGINEGROUP, createInstance<enginegroup>()},
+			{FABRIC, createInstance<fabric>()},
+			{FAN, createInstance<fan>()},
+			{FIRMWARE, createInstance<firmware>()},
+			{FREQUENCY, createInstance<frequency>()},
+			{MEMORY, createInstance<memory>()},
+			{PERFORMANCE, createInstance<performance>()},
+			{POWER, createInstance<power>()},
+			{POWERLIMITS, createInstance<powerlimits>()},
+			{RAS, createInstance<ras>()},
+			{SCHEDULER, createInstance<scheduler>()},
+			{STANDBY, createInstance<standby>()},
+			{TEMPERATURE, createInstance<temperature>()},
+			{VF, createInstance<vf>()},
 		};
 
-		zet_func_table = new std::vector<sysman *>{
-			createInstance<metric>(),
+		zet_func_table = new zetInfo[TOTAL_ZET]{
+			{METRIC, createInstance<metric>()},
 		};
 		PRINT("\n==============================================\n");
 	}
@@ -721,11 +720,14 @@ ze_result_t device::run()
 		ERR("No zesDevices initialized.\n");
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
+
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
-		for (auto ptr : *zes_func_table)
+		for (uint32_t j = 0; j < TOTAL_ZES; ++j)
 		{
-			ptr->zesRun(zesDevices[i]);
+			// Run each tool function
+			auto ptr = &zes_func_table[j];
+			ptr->func->zesRun(zesDevices[i]);
 		}
 		PRINT("\n==============================================\n");
 	}
@@ -733,9 +735,10 @@ ze_result_t device::run()
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
 		// Run each tool function
-		for (auto ptr : *zet_func_table)
+		for (uint32_t j = 0; j < TOTAL_ZET; ++j)
 		{
-			ptr->zeRun(zeDevices[i], &context);
+			auto ptr = &zet_func_table[j];
+			ptr->func->zeRun(zeDevices[i], &context);
 		}
 	}
 	return ZE_RESULT_SUCCESS;
