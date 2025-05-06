@@ -56,7 +56,44 @@ sudo docker run --rm \
 ## ==> $PWD/build/xpu-smi*.deb generated
 ```
 
-# Build .rpm package for Redhat / CentOS 7 
+# Build .deb package for Debian 10 / 12
+
+```sh
+# in /tmp/xpum_src
+
+# Create builder
+BASE_VERSION=10 # or 12
+sudo docker build \
+--build-arg http_proxy=$http_proxy \
+--build-arg https_proxy=$https_proxy \
+--iidfile /tmp/xpum_builder_debian_$BASE_VERSION.iid \
+-f builder/Dockerfile.builder-debian$BASE_VERSION .
+
+# Build xpumanager package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_debian_$BASE_VERSION.iid) $PWD/build.sh
+
+## ==> $PWD/build/xpumanager*.deb generated
+
+# Build xpu-smi package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_debian_$BASE_VERSION.iid) $PWD/build.sh -DDAEMONLESS=ON
+
+## ==> $PWD/build/xpu-smi*.deb generated
+```
+
+# Build .rpm package for Redhat / CentOS 7
+
 ```sh
 # in /tmp/xpum_src
 
