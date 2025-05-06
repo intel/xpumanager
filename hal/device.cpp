@@ -705,6 +705,16 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 			{VF, createInstance<vf>()},
 		};
 
+		/*
+		 * For whichever inherited classes of sysman that support the init function,
+		 * call it so that their data can be used later.
+		 */
+		for (uint32_t j = 0; j < TOTAL_ZES; ++j)
+		{
+			auto ptr = &zes_func_table[j];
+			ptr->func->init(zesDevices[i]);
+		}
+
 		zet_func_table = new zetInfo[TOTAL_ZET]{
 			{METRIC, createInstance<metric>()},
 		};

@@ -29,10 +29,13 @@
 class LIBXPUM_API pci : public sysman
 {
 private:
+	zes_pci_properties_t pciProperties;
+
 public:
-	pci() {}
+	pci() : pciProperties{} {}
 	~pci() {}
-	ze_result_t getProperties(zes_device_handle_t device);
+	ze_result_t init(ze_device_handle_t device);
+	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);
 	ze_result_t getBars(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device);
 	ze_result_t getStats(zes_device_handle_t device);
