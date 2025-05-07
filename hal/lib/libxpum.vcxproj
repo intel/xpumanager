@@ -71,11 +71,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\oal\win;$(LEVELZERO)\include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\oal\win;..\..\hal\lib;$(LEVELZERO)\include</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\hal\lib;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -156,6 +156,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\oal\win\os.h" />
+    <ClInclude Include="..\fwupd\fwupd.h" />
+    <ClInclude Include="..\fwupd\gscupd.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="diagnostic.h" />
@@ -184,6 +186,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\oal\win\dllmain.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
+    <ClCompile Include="..\fwupd\gscupd.cpp" />
     <ClCompile Include="device.cpp" />
     <ClCompile Include="diagnostic.cpp" />
     <ClCompile Include="driver.cpp" />
