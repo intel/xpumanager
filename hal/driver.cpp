@@ -301,13 +301,13 @@ void driver::printLoaderVersions()
 	delete[] versions;
 }
 
-ze_device_handle_t driver::findDeviceByBDF(const char *bdf)
+ze_device_handle_t driver::findDeviceByBDF(const char *bdf, device **dev)
 {
 	ze_device_handle_t foundDevice = nullptr;
 
 	for (uint32_t i = 0; i < driverCount; i++)
 	{
-		foundDevice = devs[i].findDeviceByBDF(bdf);
+		foundDevice = devs[i].findDeviceByBDF(bdf, dev);
 		if (foundDevice != nullptr)
 		{
 			DBG("Found device with BDF: %s\n", bdf);

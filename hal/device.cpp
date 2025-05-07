@@ -723,7 +723,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_device_handle_t device::findDeviceByBDF(const char *bdf)
+ze_device_handle_t device::findDeviceByBDF(const char *bdf, device **dev)
 {
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
@@ -731,6 +731,7 @@ ze_device_handle_t device::findDeviceByBDF(const char *bdf)
 		if (p->isBDF(bdf))
 		{
 			DBG("Found device with BDF: %s\n", bdf);
+			*dev = this;
 			return zeDevices[i];
 		}
 	}
