@@ -25,6 +25,23 @@
 #define _FIRMWARE_H
 
 #include "sysman.h"
+#include <string>
+
+using namespace std;
+
+struct firmwareInfo
+{
+	bool jsonOutput;
+	bool assumeYes;
+	bool forceUpdate;
+	bool recoveryMode;
+	string deviceId;
+	string firmwareType;
+	string filePath;
+	string username;
+	string password;
+	ze_device_handle_t deviceHdl;
+};
 
 class LIBXPUM_API firmware : public sysman
 {
@@ -38,6 +55,11 @@ public:
 	ze_result_t getProperties(zes_firmware_handle_t firmwareHandle);
 	ze_result_t enumFirmwares(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);
+	ze_result_t updateAMC(firmwareInfo *fwInfo);
+	ze_result_t updateGfx(firmwareInfo *fwInfo);
+	ze_result_t updateGfxData(firmwareInfo *fwInfo);
+	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo);
+	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo);
 };
 
 #endif
