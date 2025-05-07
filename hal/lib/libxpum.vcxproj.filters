@@ -73,6 +73,9 @@
     <ClCompile Include="..\..\oal\win\win.cpp">
       <Filter>oal</Filter>
     </ClCompile>
+    <ClCompile Include="..\fwupd\gscupd.cpp">
+      <Filter>fwupd</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h">
@@ -150,6 +153,12 @@
     <ClInclude Include="..\..\oal\win\os.h">
       <Filter>oal</Filter>
     </ClInclude>
+    <ClInclude Include="..\fwupd\fwupd.h">
+      <Filter>fwupd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fwupd\gscupd.h">
+      <Filter>fwupd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="oal">
@@ -160,6 +169,9 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{10b4bbd0-c60c-4f1a-bc1b-6b06302daf4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fwupd">
+      <UniqueIdentifier>{4c71b570-9bca-4fcd-811f-ad0f342f5ae1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
