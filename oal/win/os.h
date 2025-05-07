@@ -46,6 +46,14 @@ public:
 
 };
 
+
+struct option {
+	const char* name;
+	int has_arg;
+	int* flag;
+	int val;
+};
+
 #define TESTING                            (1)
 #define UNUSED(x)                          (void)(x)
 #define TWO_MB                             (2 * 1024 * 1024)
@@ -58,11 +66,15 @@ public:
 #define PCI_CLEANUP(devs, found_dev)
 #define GET_DEV_ID(dev)                    (0)
 #define GETOPT                             getopt
+#define GETOPT_LONG                        getopt_long
+#define no_argument                        0
+#define required_argument                  1
 
 typedef DWORD(WINAPI* funcptr)(void* input_params);
-extern char* optarg;
-extern int   optind;
+extern LIBXPUM_API char* optarg;
+extern LIBXPUM_API int   optind;
 int getopt(int argc, char* argv[], char* optstring);
+LIBXPUM_API int getopt_long(int argc, char* const argv[], const char* optstring, const struct option* longopts, int* longindex);
 void *align_alloc(size_t size);
 thread_id* create_thread(funcptr thread, void* args);
 void wait_for_thread(thread_id* tid);
