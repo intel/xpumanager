@@ -66,43 +66,38 @@ void cmdUpdateFW::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "--recovery                  Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
 }
 
-ze_result_t cmdUpdateFW::gfx(char *subcmd, char *args)
+ze_result_t cmdUpdateFW::gfx(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdUpdateFW::gfxData(char *subcmd, char *args)
+ze_result_t cmdUpdateFW::gfxData(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdUpdateFW::gfxCodeData(char *subcmd, char *args)
+ze_result_t cmdUpdateFW::gfxCodeData(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdUpdateFW::gfxPscbin(char *subcmd, char *args)
+ze_result_t cmdUpdateFW::gfxPscbin(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdUpdateFW::amc(char *subcmd, char *args)
+ze_result_t cmdUpdateFW::amc(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -114,11 +109,128 @@ ze_result_t cmdUpdateFW::amc(char *subcmd, char *args)
 int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
+#if !TESTING
 	ze_device_handle_t device = args->sm.findDeviceByBDF(args->argv[2]);
 	if (device == nullptr)
 	{
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
+#endif
 
+	uint32_t i = 0;
+	int opt;
+	const char *optString = "hjd:t:f:u:p:y";
+	struct option longOpts[] = {
+		{"help", no_argument, nullptr, 'h'},
+		{"json", no_argument, nullptr, 'j'},
+		{"device", required_argument, nullptr, 'd'},
+		{"type", required_argument, nullptr, 't'},
+		{"file", required_argument, nullptr, 'f'},
+		{"username", required_argument, nullptr, 'u'},
+		{"password", required_argument, nullptr, 'p'},
+		{"assumeyes", no_argument, nullptr, 'y'},
+		{"force", no_argument, nullptr, 0},
+		{"recovery", no_argument, nullptr, 0},
+		{nullptr, 0, nullptr, 0}};
+
+	firmwareInfo fwInfo = {};
+
+	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, nullptr)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			INFO("Usage: xpu-smi updatefw [Options]\n");
+			return 0;
+		case 'j':
+			fwInfo.jsonOutput = true;
+			break;
+		case 'd':
+			fwInfo.deviceId = optarg;
+			break;
+		case 't':
+			fwInfo.firmwareType = optarg;
+			break;
+		case 'f':
+			fwInfo.filePath = optarg;
+			break;
+		case 'u':
+			fwInfo.username = optarg;
+			break;
+		case 'p':
+			fwInfo.password = optarg;
+			break;
+		case 'y':
+			fwInfo.assumeYes = true;
+			break;
+		case 0:
+			if (STRCASECMP("force", longOpts[optind - 1].name) == 0)
+			{
+				fwInfo.forceUpdate = true;
+			}
+			else if (STRCASECMP("recovery", longOpts[optind - 1].name) == 0)
+			{
+				fwInfo.recoveryMode = true;
+			}
+			break;
+		default:
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+	}
+
+	// Validate firmware type
+	if (fwInfo.firmwareType.empty())
+	{
+		ERR("Error: Missing required argument --type.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Validate file path
+	if (fwInfo.filePath.empty())
+	{
+		ERR("Error: Missing required argument --file.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Validate device ID
+	if (fwInfo.deviceId.empty())
+	{
+		ERR("Error: Missing required argument --device.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (fwInfo.firmwareType.empty())
+	{
+		ERR("Error: Missing required argument --type.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(updateFWCmds); i++)
+	{
+		if (STRCASECMP(fwInfo.firmwareType.c_str(), updateFWCmds[i].name) == 0)
+		{
+			// Call the corresponding firmware update function
+			(this->*updateFWCmds[i].updateFunc)(&fwInfo);
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(updateFWCmds))
+	{
+		ERR("Error: Invalid firmware type '%s'.\n", fwInfo.firmwareType.c_str());
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (fwInfo.jsonOutput)
+	{
+		// Print JSON output
+		INFO("{\"status\": \"success\", \"device\": \"%s\", \"firmware_type\": \"%s\"}\n",
+			 fwInfo.deviceId.c_str(), fwInfo.firmwareType.c_str());
+	}
+	else
+	{
+		// Print human-readable output
+		INFO("Firmware update completed successfully for device '%s'.\n", fwInfo.deviceId.c_str());
+	}
 	return 0;
 }

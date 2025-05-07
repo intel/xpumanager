@@ -27,8 +27,8 @@
 #include "os.h"
 #include <malloc.h>
 
-char* optarg;       // global argument pointer
-int   optind = 0;   // global argv index
+LIBXPUM_API char* optarg;       // global argument pointer
+LIBXPUM_API int   optind = 1;   // global argv index
 
 int getopt(int argc, char* argv[], char* optstring)
 {
@@ -82,6 +82,56 @@ int getopt(int argc, char* argv[], char* optstring)
 	}
 
 	return c;
+}
+
+int getopt_long(int argc, char* const argv[], const char* optstring, const struct option* longopts, int* longindex)
+{
+	if (optind >= argc) {
+		return -1;
+	}
+
+	char* current_arg = argv[optind];
+	if (current_arg[0] != '-') {
+		return -1;
+	}
+
+	// Check for long options
+	if (current_arg[1] == '-') {
+		current_arg += 2;  // Skip the '--'
+		for (int i = 0; longopts[i].name != nullptr; ++i) {
+			if (strcmp(current_arg, longopts[i].name) == 0) {
+				if (longopts[i].has_arg && optind + 1 < argc) {
+					optarg = argv[++optind];
+				}
+				if (longindex) {
+					*longindex = i;
+				}
+				++optind;
+				return longopts[i].val;
+			}
+		}
+	}
+	else
+	{
+		// Check for short options
+		current_arg += 1;  // Skip the '-'
+		char* opt_pos = strchr((char *) optstring, *current_arg);
+		if (opt_pos) {
+			if (*(opt_pos + 1) == ':') {
+				if (optind + 1 < argc) {
+					optarg = argv[++optind];
+				}
+				else {
+					return '?';  // Missing argument
+				}
+			}
+			++optind;
+			return *current_arg;
+		}
+	}
+
+	++optind;
+	return '?';  // Unknown option
 }
 
 void *align_alloc(size_t size)

@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <pthread.h>
+#include <getopt.h>
 
 #define TESTING 1
 
@@ -40,6 +41,7 @@
 #define STRCASECMP strcasecmp
 #define THREAD_RET void *
 #define GETOPT getopt
+#define GETOPT_LONG getopt_long
 
 typedef void *(*funcptr)(void *input_params);
 
