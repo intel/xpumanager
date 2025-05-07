@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 export PWD=$(shell pwd)
-BINNAME=lmem
+BINNAME=oal
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=
-export INCLUDES=-I$(LEVELZERO)/include -I. -I../../hal
+export INCLUDES=-I$(LEVELZERO)/include -I. -I../../hal/lib
 export CFLAGS=-c -Wall -fPIC
 export HEADERS=$(wildcard *.h)
 export SOURCES=$(wildcard *.cpp)
