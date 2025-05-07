@@ -71,6 +71,46 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	return result;
 }
 
+ze_result_t firmware::updateAMC(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	DBG("Updating AMC firmware...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t firmware::updateGfx(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	DBG("Updating GFX firmware...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t firmware::updateGfxData(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	DBG("Updating GFX Data firmware...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t firmware::updateGfxCodeData(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	DBG("Updating GFX Code Data firmware...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t firmware::updateGfxPscBin(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	DBG("Updating GFX PSC Bin firmware...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
 ze_result_t firmware::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = enumFirmwares(device);

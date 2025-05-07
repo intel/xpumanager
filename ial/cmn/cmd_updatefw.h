@@ -28,19 +28,8 @@
 #include "cmds.h"
 #include <os.h>
 #include <string>
-
-struct firmwareInfo
-{
-	bool jsonOutput;
-	bool assumeYes;
-	bool forceUpdate;
-	bool recoveryMode;
-	string deviceId;
-	string firmwareType;
-	string filePath;
-	string username;
-	string password;
-};
+#include <firmware.h>
+#include <device.h>
 
 class cmdUpdateFW : public cmds
 {
@@ -49,15 +38,10 @@ public:
 	cmdUpdateFW() { STRCPY_S(name, MAX_PATH, "updatefw"); };
 	~cmdUpdateFW() {};
 	void help(list<helpCmd *> *helpList);
-	ze_result_t gfx(firmwareInfo *fwInfo);
-	ze_result_t gfxData(firmwareInfo *fwInfo);
-	ze_result_t gfxCodeData(firmwareInfo *fwInfo);
-	ze_result_t gfxPscbin(firmwareInfo *fwInfo);
-	ze_result_t amc(firmwareInfo *fwInfo);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdUpdateFW::*updateFWSubCmdFunc)(firmwareInfo *fwInfo);
+typedef ze_result_t (firmware::*updateFWSubCmdFunc)(firmwareInfo *fwInfo);
 
 struct updateFWCmdStruct
 {

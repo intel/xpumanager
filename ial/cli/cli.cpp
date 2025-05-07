@@ -147,7 +147,6 @@ int main(int argc, char *argv[])
 	bool found = false;
 	arg_struct arg;
 
-#if !TESTING
 	// Create sysman driver instance
 	ze_result_t result = arg.sm.init();
 	switch (result)
@@ -166,7 +165,6 @@ int main(int argc, char *argv[])
 		ERR("sysman driver run failed.\n");
 		return -1;
 	}
-#endif
 
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;

@@ -27,11 +27,11 @@
 #include <assert.h>
 
 updateFWCmdStruct updateFWCmds[] = {
-	{"GFX", &cmdUpdateFW::gfx},
-	{"GFX_DATA", &cmdUpdateFW::gfxData},
-	{"GFX_CODE_DATA", &cmdUpdateFW::gfxCodeData},
-	{"GFX_PSCBIN", &cmdUpdateFW::gfxPscbin},
-	{"AMC", &cmdUpdateFW::amc},
+	{"GFX", &firmware::updateGfx},
+	{"GFX_DATA", &firmware::updateGfxData},
+	{"GFX_CODE_DATA", &firmware::updateGfxCodeData},
+	{"GFX_PSCBIN", &firmware::updateGfxPscBin},
+	{"AMC", &firmware::updateAMC},
 };
 
 /**
@@ -66,41 +66,6 @@ void cmdUpdateFW::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "--recovery                  Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
 }
 
-ze_result_t cmdUpdateFW::gfx(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	return ZE_RESULT_SUCCESS;
-}
-
-ze_result_t cmdUpdateFW::gfxData(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	return ZE_RESULT_SUCCESS;
-}
-
-ze_result_t cmdUpdateFW::gfxCodeData(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	return ZE_RESULT_SUCCESS;
-}
-
-ze_result_t cmdUpdateFW::gfxPscbin(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	return ZE_RESULT_SUCCESS;
-}
-
-ze_result_t cmdUpdateFW::amc(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	return ZE_RESULT_SUCCESS;
-}
-
 /**
  * @brief Executes the updatefw run.
  *
@@ -109,14 +74,8 @@ ze_result_t cmdUpdateFW::amc(firmwareInfo *fwInfo)
 int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
-#if !TESTING
+	firmwareInfo fwInfo = {};
 	device *dev;
-	ze_device_handle_t device = args->sm.findDeviceByBDF(args->argv[2], &dev);
-	if (device == nullptr)
-	{
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-#endif
 
 	uint32_t i = 0;
 	int opt;
@@ -133,8 +92,6 @@ int cmdUpdateFW::run(arg_struct *args)
 		{"force", no_argument, nullptr, 0},
 		{"recovery", no_argument, nullptr, 0},
 		{nullptr, 0, nullptr, 0}};
-
-	firmwareInfo fwInfo = {};
 
 	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, nullptr)) != -1)
 	{
@@ -206,12 +163,26 @@ int cmdUpdateFW::run(arg_struct *args)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
+	fwInfo.deviceHdl = args->sm.findDeviceByBDF(fwInfo.deviceId.c_str(), &dev);
+	if (fwInfo.deviceHdl == nullptr)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", fwInfo.deviceId.c_str());
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	firmware *fw = (firmware *)dev->getFirmware();
+	if (fw == nullptr)
+	{
+		ERR("Error: Firmware pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(updateFWCmds); i++)
 	{
 		if (STRCASECMP(fwInfo.firmwareType.c_str(), updateFWCmds[i].name) == 0)
 		{
-			// Call the corresponding firmware update function
-			(this->*updateFWCmds[i].updateFunc)(&fwInfo);
+			// Call the corresponding firmware update function in the hal
+			(fw->*updateFWCmds[i].updateFunc)(&fwInfo);
 			break;
 		}
 	}
