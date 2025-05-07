@@ -1,64 +1,23 @@
-# Copyright (C) 2024 Intel Corporation
-# SPDX-License-Identifier: MIT
+DIRS = lib
+.PHONY: $(DIRS)
 
-# Compiler and Flags
-CXX := g++
-CXXFLAGS := -Wall -fPIC -I. -I../oal/lin -I$(LEVELZERO)/include
-LIBS :=-L$(LEVELZERO)/build/lib -lze_loader
-# Directories
-SRCDIR := .
-OBJDIR := obj
-INCLUDEDIR := include
+MAKE += --no-print-directory
 
-# Target libraries
-TARGET_SHARED := libxpum.so
-TARGET_STATIC := libxpum.a
-
-# Find source files, create a list of object files
-SOURCES := $(wildcard $(SRCDIR)/*.cpp)
-HEADERS := $(wildcard $(SRCDIR)/*.h ../oal/lin/*.h)
-OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-DEPS := $(OBJECTS:.o=.d)  # Dependency files corresponding to object files
-OAL_OBJECTS := $(wildcard ../oal/lin/*.o)
-
-# Check if VERBOSE is set to 1, if not, silence the commands
-ifeq ($(VERBOSE),1)
-CMD_PREFIX=
-else
-CMD_PREFIX=@
-endif
-
-# Default target
-all: $(TARGET_SHARED) $(TARGET_STATIC)
-
-# Shared library
-$(TARGET_SHARED): $(OBJECTS) $(OAL_OBJECTS)
-	$(CMD_PREFIX)echo "Creating shared library..."
-	$(CMD_PREFIX)$(CXX) -Wall -shared $(DBG_FLAGS) -o $@ $^ $(LIBS)
-# Static library
-$(TARGET_STATIC): $(OBJECTS) $(OAL_OBJECTS)
-	$(CMD_PREFIX)echo "Creating static library..."
-	$(CMD_PREFIX)ar rcs $@ $^
-
-# Compile source files into object files
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS)
-	$(CMD_PREFIX)echo "Compiling $<"
-	$(CMD_PREFIX)mkdir -p $(OBJDIR)
-	$(CMD_PREFIX)$(CXX) $(CXXFLAGS) $(DBG_FLAGS) -c $< -o $@
-
-# Include the .d files
--include $(DEPS)
+all:
+	@for dir in $(DIRS); do \
+		$(MAKE) -C $$dir; \
+	done
 
 debug:
-	@export DBG_FLAGS='-g -D DEBUGON'; \
-	$(MAKE)
+	@for dir in $(DIRS); do \
+		$(MAKE) -C $$dir debug; \
+	done
 
-# Clean up build artifacts
 clean:
-	$(CMD_PREFIX)echo "Cleaning..."
-	$(CMD_PREFIX)rm -f $(TARGET_SHARED) $(TARGET_STATIC) $(OBJECTS) $(DEPS)
-	$(CMD_PREFIX)rm -rf $(OBJDIR)
+	@for dir in $(DIRS); do \
+		$(MAKE) -C $$dir clean; \
+	done
 
+distclean:
+	@rm -rf output
 
-# Phony targets
-.PHONY: all clean
