@@ -134,11 +134,30 @@ public:
 								uint32_t *cachePropsCount);
 
 	ze_result_t zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp);
-	ze_device_handle_t findDeviceByBDF(const char *bdf);
+	ze_device_handle_t findDeviceByBDF(const char *bdf, device **dev);
 	ze_device_handle_t findDeviceByIndex(uint32_t index);
 
 	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD);
 	ze_result_t run();
+
+	sysman *getPCI() { return zes_func_table[PCI].func; }
+	sysman *getProcess() { return zes_func_table[PROCESS].func; }
+	sysman *getDiagnostic() { return zes_func_table[DIAGNOSTIC].func; }
+	sysman *getECC() { return zes_func_table[ECC].func; }
+	sysman *getEngineGroup() { return zes_func_table[ENGINEGROUP].func; }
+	sysman *getFabric() { return zes_func_table[FABRIC].func; }
+	sysman *getFan() { return zes_func_table[FAN].func; }
+	sysman *getFirmware() { return zes_func_table[FIRMWARE].func; }
+	sysman *getFrequency() { return zes_func_table[FREQUENCY].func; }
+	sysman *getMemory() { return zes_func_table[MEMORY].func; }
+	sysman *getPerformance() { return zes_func_table[PERFORMANCE].func; }
+	sysman *getPower() { return zes_func_table[POWER].func; }
+	sysman *getPowerLimits() { return zes_func_table[POWERLIMITS].func; }
+	sysman *getRAS() { return zes_func_table[RAS].func; }
+	sysman *getScheduler() { return zes_func_table[SCHEDULER].func; }
+	sysman *getStandby() { return zes_func_table[STANDBY].func; }
+	sysman *getTemperature() { return zes_func_table[TEMPERATURE].func; }
+	sysman *getVF() { return zes_func_table[VF].func; }
 };
 
 #endif

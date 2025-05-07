@@ -43,7 +43,7 @@ public:
 	ze_result_t getIpcProperties(ze_driver_handle_t driver);
 	ze_result_t getExtensionProperties(ze_driver_handle_t driver);
 	void printLoaderVersions();
-	ze_device_handle_t findDeviceByBDF(const char *bdf);
+	ze_device_handle_t findDeviceByBDF(const char *bdf, device **dev);
 	ze_device_handle_t findDeviceByIndex(uint32_t index);
 	ze_result_t run();
 };

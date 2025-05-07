@@ -110,7 +110,8 @@ int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
 #if !TESTING
-	ze_device_handle_t device = args->sm.findDeviceByBDF(args->argv[2]);
+	device *dev;
+	ze_device_handle_t device = args->sm.findDeviceByBDF(args->argv[2], &dev);
 	if (device == nullptr)
 	{
 		return ZE_RESULT_ERROR_UNKNOWN;
