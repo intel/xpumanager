@@ -76,6 +76,12 @@
     <ClCompile Include="..\fwupd\gscupd.cpp">
       <Filter>fwupd</Filter>
     </ClCompile>
+    <ClCompile Include="..\fwupd\amcupd.cpp">
+      <Filter>fwupd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fwupd\sysmanupd.cpp">
+      <Filter>fwupd</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h">
@@ -157,6 +163,12 @@
       <Filter>fwupd</Filter>
     </ClInclude>
     <ClInclude Include="..\fwupd\gscupd.h">
+      <Filter>fwupd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fwupd\amcupd.h">
+      <Filter>fwupd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fwupd\sysmanupd.h">
       <Filter>fwupd</Filter>
     </ClInclude>
   </ItemGroup>

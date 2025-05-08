@@ -41,12 +41,4 @@ public:
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (firmware::*updateFWSubCmdFunc)(firmwareInfo *fwInfo);
-
-struct updateFWCmdStruct
-{
-	char name[MAX_PATH];
-	updateFWSubCmdFunc updateFunc;
-};
-
 #endif

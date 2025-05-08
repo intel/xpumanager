@@ -26,14 +26,6 @@
 #include "debug.h"
 #include <assert.h>
 
-updateFWCmdStruct updateFWCmds[] = {
-	{"GFX", &firmware::updateGfx},
-	{"GFX_DATA", &firmware::updateGfxData},
-	{"GFX_CODE_DATA", &firmware::updateGfxCodeData},
-	{"GFX_PSCBIN", &firmware::updateGfxPscBin},
-	{"AMC", &firmware::updateAMC},
-};
-
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -77,7 +69,6 @@ int cmdUpdateFW::run(arg_struct *args)
 	firmwareInfo fwInfo = {};
 	device *dev;
 
-	uint32_t i = 0;
 	int opt;
 	const char *optString = "hjd:t:f:u:p:y";
 	struct option longOpts[] = {
@@ -177,19 +168,10 @@ int cmdUpdateFW::run(arg_struct *args)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(updateFWCmds); i++)
+	// Call the hal to update the firmware
+	if (fw->updateFW(&fwInfo) != ZE_RESULT_SUCCESS)
 	{
-		if (STRCASECMP(fwInfo.firmwareType.c_str(), updateFWCmds[i].name) == 0)
-		{
-			// Call the corresponding firmware update function in the hal
-			(fw->*updateFWCmds[i].updateFunc)(&fwInfo);
-			break;
-		}
-	}
-
-	if (i == ARRAY_SIZE(updateFWCmds))
-	{
-		ERR("Error: Invalid firmware type '%s'.\n", fwInfo.firmwareType.c_str());
+		ERR("Error: Failed to update firmware.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
