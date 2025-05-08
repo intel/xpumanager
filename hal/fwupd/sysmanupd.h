@@ -1,13 +1,13 @@
-#ifndef _GSCUPD_H
-#define _GSCUPD_H
+#ifndef _SYSMANUPD_H
+#define _SYSMANUPD_H
 
 #include "fwupd.h"
 
-class gscupd : public fwupd
+class sysmanupd : public fwupd
 {
 public:
-	gscupd() {}
-	~gscupd() {}
+	sysmanupd() {}
+	~sysmanupd() {}
 	ze_result_t updateGfx(firmwareInfo *fwInfo);
 	ze_result_t updateGfxData(firmwareInfo *fwInfo);
 	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo);

@@ -54,6 +54,13 @@ struct option {
 	int val;
 };
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
+#ifndef MAX_PATH
+#define MAX_PATH 256
+#endif
 #define TESTING                            (1)
 #define UNUSED(x)                          (void)(x)
 #define TWO_MB                             (2 * 1024 * 1024)

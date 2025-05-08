@@ -111,11 +111,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\cmn;..\..\hal\lib;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\lib;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\cmn;..\..\hal\lib;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\lib;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

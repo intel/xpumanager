@@ -33,6 +33,13 @@
 
 #define TESTING 1
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
+#ifndef MAX_PATH
+#define MAX_PATH 256
+#endif
 #define LIBXPUM_API
 #define UNUSED(x) (void)(x)
 #define STRCPY_S(dest, sz, src) strcpy(dest, src)

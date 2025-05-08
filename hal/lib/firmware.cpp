@@ -23,6 +23,17 @@
  */
 
 #include "firmware.h"
+#include <gscupd.h>
+#include <sysmanupd.h>
+#include <amcupd.h>
+
+updateFWCmdStruct updateFWCmds[] = {
+	{"GFX", FWUPD_PREFERENCE_GSC, &fwupd::updateGfx},
+	{"GFX_DATA", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxData},
+	{"GFX_CODE_DATA", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxCodeData},
+	{"GFX_PSCBIN", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxPscBin},
+	{"AMC", FWUPD_PREFERENCE_AMC, &fwupd::updateAMC},
+};
 
 firmware::~firmware()
 {
@@ -71,44 +82,44 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	return result;
 }
 
-ze_result_t firmware::updateAMC(firmwareInfo *fwInfo)
+ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
-	DBG("Updating AMC firmware...\n");
-	return ZE_RESULT_SUCCESS;
-}
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t i;
+	fwupd *fw = nullptr;
 
-ze_result_t firmware::updateGfx(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	DBG("Updating GFX firmware...\n");
-	return ZE_RESULT_SUCCESS;
-}
+	for (i = 0; i < ARRAY_SIZE(updateFWCmds); i++)
+	{
+		// Find the matching firmware type
+		if (STRCASECMP(fwInfo->firmwareType.c_str(), updateFWCmds[i].name) == 0)
+		{
+			// Allocate the appropriate firmware update class based on the update preference
+			switch (updateFWCmds[i].preference)
+			{
+			case FWUPD_PREFERENCE_GSC:
+				fw = new gscupd();
+				break;
+			case FWUPD_PREFERENCE_SYSMAN:
+				fw = new sysmanupd();
+				break;
+			case FWUPD_PREFERENCE_AMC:
+				fw = new amcupd();
+				break;
+			default:
+				ERR("Invalid firmware update preference.\n");
+				return ZE_RESULT_ERROR_UNKNOWN;
+			}
 
-ze_result_t firmware::updateGfxData(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	DBG("Updating GFX Data firmware...\n");
-	return ZE_RESULT_SUCCESS;
-}
+			// Call the corresponding firmware update function in the hal
+			result = (fw->*updateFWCmds[i].updateFunc)(fwInfo);
 
-ze_result_t firmware::updateGfxCodeData(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	DBG("Updating GFX Code Data firmware...\n");
-	return ZE_RESULT_SUCCESS;
-}
+			delete fw;
+			break;
+		}
+	}
 
-ze_result_t firmware::updateGfxPscBin(firmwareInfo *fwInfo)
-{
-	TRACING();
-	UNUSED(fwInfo);
-	DBG("Updating GFX PSC Bin firmware...\n");
-	return ZE_RESULT_SUCCESS;
+	return result;
 }
 
 ze_result_t firmware::zesRun(zes_device_handle_t device)

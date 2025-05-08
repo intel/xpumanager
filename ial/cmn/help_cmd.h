@@ -27,10 +27,6 @@
 
 #include <os.h>
 
-#ifndef MAX_PATH
-#define MAX_PATH 256
-#endif
-
 enum GAP
 {
 	NO_GAP,
