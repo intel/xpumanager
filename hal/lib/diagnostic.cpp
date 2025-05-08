@@ -21,6 +21,7 @@
  * IN THE SOFTWARE.
  *
  */
+
 #include <vector>
 #include "diagnostic.h"
 

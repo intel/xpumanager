@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Intel Corporation
+ * Copyright Â© 2025 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,29 +27,32 @@
 #include "os.h"
 #include <malloc.h>
 
-LIBXPUM_API char* optarg;       // global argument pointer
-LIBXPUM_API int   optind = 1;   // global argv index
+LIBXPUM_API char *optarg;	// global argument pointer
+LIBXPUM_API int optind = 1; // global argv index
 
-int getopt(int argc, char* argv[], char* optstring)
+int getopt(int argc, char *argv[], char *optstring)
 {
-	static char* next = NULL;
+	static char *next = NULL;
 	if (optind == 0)
 		next = NULL;
 
 	optarg = NULL;
 
-	if (next == NULL || *next == '\0') {
+	if (next == NULL || *next == '\0')
+	{
 		if (optind == 0)
 			optind++;
 
-		if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0') {
+		if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0')
+		{
 			optarg = NULL;
 			if (optind < argc)
 				optarg = argv[optind];
 			return EOF;
 		}
 
-		if (strcmp(argv[optind], "--") == 0) {
+		if (strcmp(argv[optind], "--") == 0)
+		{
 			optind++;
 			optarg = NULL;
 			if (optind < argc)
@@ -58,25 +61,31 @@ int getopt(int argc, char* argv[], char* optstring)
 		}
 
 		next = argv[optind];
-		next++;		// skip past -
+		next++; // skip past -
 		optind++;
 	}
 
 	char c = *next++;
-	char* cp = strchr(optstring, c);
+	char *cp = strchr(optstring, c);
 
 	if (cp == NULL || c == ':')
 		return '?';
 
 	cp++;
-	if (*cp == ':') {
-		if (*next != '\0') {
+	if (*cp == ':')
+	{
+		if (*next != '\0')
+		{
 			optarg = next;
 			next = NULL;
-		} else if (optind < argc) {
+		}
+		else if (optind < argc)
+		{
 			optarg = argv[optind];
 			optind++;
-		} else {
+		}
+		else
+		{
 			return '?';
 		}
 	}
@@ -84,26 +93,33 @@ int getopt(int argc, char* argv[], char* optstring)
 	return c;
 }
 
-int getopt_long(int argc, char* const argv[], const char* optstring, const struct option* longopts, int* longindex)
+int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex)
 {
-	if (optind >= argc) {
+	if (optind >= argc)
+	{
 		return -1;
 	}
 
-	char* current_arg = argv[optind];
-	if (current_arg[0] != '-') {
+	char *current_arg = argv[optind];
+	if (current_arg[0] != '-')
+	{
 		return -1;
 	}
 
 	// Check for long options
-	if (current_arg[1] == '-') {
-		current_arg += 2;  // Skip the '--'
-		for (int i = 0; longopts[i].name != nullptr; ++i) {
-			if (strcmp(current_arg, longopts[i].name) == 0) {
-				if (longopts[i].has_arg && optind + 1 < argc) {
+	if (current_arg[1] == '-')
+	{
+		current_arg += 2; // Skip the '--'
+		for (int i = 0; longopts[i].name != nullptr; ++i)
+		{
+			if (strcmp(current_arg, longopts[i].name) == 0)
+			{
+				if (longopts[i].has_arg && optind + 1 < argc)
+				{
 					optarg = argv[++optind];
 				}
-				if (longindex) {
+				if (longindex)
+				{
 					*longindex = i;
 				}
 				++optind;
@@ -114,15 +130,19 @@ int getopt_long(int argc, char* const argv[], const char* optstring, const struc
 	else
 	{
 		// Check for short options
-		current_arg += 1;  // Skip the '-'
-		char* opt_pos = strchr((char *) optstring, *current_arg);
-		if (opt_pos) {
-			if (*(opt_pos + 1) == ':') {
-				if (optind + 1 < argc) {
+		current_arg += 1; // Skip the '-'
+		char *opt_pos = strchr((char *)optstring, *current_arg);
+		if (opt_pos)
+		{
+			if (*(opt_pos + 1) == ':')
+			{
+				if (optind + 1 < argc)
+				{
 					optarg = argv[++optind];
 				}
-				else {
-					return '?';  // Missing argument
+				else
+				{
+					return '?'; // Missing argument
 				}
 			}
 			++optind;
@@ -131,7 +151,7 @@ int getopt_long(int argc, char* const argv[], const char* optstring, const struc
 	}
 
 	++optind;
-	return '?';  // Unknown option
+	return '?'; // Unknown option
 }
 
 void *align_alloc(size_t size)
@@ -139,18 +159,18 @@ void *align_alloc(size_t size)
 	return malloc(size);
 }
 
-thread_id* create_thread(funcptr thread, void* args)
+thread_id *create_thread(funcptr thread, void *args)
 {
 	HANDLE thread_hdl;
 
 	thread_hdl = CreateThread(NULL,
-		NULL,
-		*thread,
-		args,
-		NULL,
-		NULL);
+							  NULL,
+							  *thread,
+							  args,
+							  NULL,
+							  NULL);
 
-	thread_id* new_thread_id = new thread_id(thread_hdl);
+	thread_id *new_thread_id = new thread_id(thread_hdl);
 
 	return new_thread_id;
 }
@@ -159,4 +179,3 @@ void wait_for_thread(thread_id *tid)
 {
 	WaitForSingleObject(tid->ret_thread_uid(), INFINITE);
 }
-
