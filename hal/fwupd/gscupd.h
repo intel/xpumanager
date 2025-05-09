@@ -26,6 +26,11 @@
 #define _GSCUPD_H
 
 #include "fwupd.h"
+#include <zes_api.h>
+#include <vector>
+#include <pci.h>
+
+using namespace std;
 
 class gscupd : public fwupd
 {
@@ -36,6 +41,9 @@ public:
 	ze_result_t updateGfxData(firmwareInfo *fwInfo);
 	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo);
 	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo);
+	vector<char> readImageContent(const char *filePath);
+	bool isGscFwImage(vector<char> &buffer);
+	vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
 };
 
 #endif

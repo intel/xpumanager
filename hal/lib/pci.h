@@ -25,14 +25,23 @@
 #define PCI_H
 
 #include "sysman.h"
+#include <string>
+
+using namespace std;
+
+typedef struct pci_addr_mei_device
+{
+	zes_pci_properties_t pciProps;
+	std::string meiDevicePath;
+} pci_addr_mei_device;
 
 class LIBXPUM_API pci : public sysman
 {
 private:
-	zes_pci_properties_t pciProperties;
+	pci_addr_mei_device deviceProperties;
 
 public:
-	pci() : pciProperties{} {}
+	pci() : deviceProperties{} {}
 	~pci() {}
 	ze_result_t init(ze_device_handle_t device);
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);

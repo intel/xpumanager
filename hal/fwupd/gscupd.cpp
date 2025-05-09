@@ -25,11 +25,45 @@
 #include "gscupd.h"
 #include <debug.h>
 #include <os.h>
+#include <sys/stat.h>
+#include <fstream>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4200)
+#endif
+
+#include <igsc_lib.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+using namespace std;
 
 ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
+
+	// read image file
+	auto buffer = readImageContent(fwInfo->filePath.c_str());
+
+	// validate the image file
+	if (!isGscFwImage(buffer))
+	{
+		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+	}
+
+#if 0
+	// check GFX fw_status
+	auto fw_status = getGfxFwStatus(fwInfo->deviceId);
+	if (!forceUpdate->forceUpdate && fw_status != gfx_fw_status::GfxFwStatus::NORMAL)
+	{
+		flashFwErrMsg = "Fail to flash, GFX firmware status is " + transGfxFwStatusToString(fw_status);
+		return XPUM_GENERIC_ERROR;
+	}
+#endif
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -52,4 +86,77 @@ ze_result_t gscupd::updateGfxPscBin(firmwareInfo *fwInfo)
 	TRACING();
 	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
+}
+
+std::vector<char> gscupd::readImageContent(const char *filePath)
+{
+	struct stat s;
+	if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))
+		return std::vector<char>();
+	std::ifstream is(std::string(filePath), std::ifstream::binary);
+	if (!is)
+	{
+		return std::vector<char>();
+	}
+	// get length of file:
+	is.seekg(0, is.end);
+	int length = (int)is.tellg();
+	is.seekg(0, is.beg);
+
+	std::vector<char> buffer(length);
+
+	is.read(buffer.data(), length);
+	is.close();
+	return buffer;
+}
+
+bool gscupd::isGscFwImage(std::vector<char> &buffer)
+{
+	uint8_t type;
+	int ret;
+	ret = igsc_image_get_type((const uint8_t *)buffer.data(), (uint32_t)buffer.size(), &type);
+	if (ret != IGSC_SUCCESS)
+	{
+		return false;
+	}
+	return type == IGSC_IMAGE_TYPE_GFX_FW;
+}
+
+vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
+{
+	std::vector<pci_addr_mei_device> devicesVec = {};
+	struct igsc_device_iterator *iter;
+	struct igsc_device_info info;
+	int ret;
+	struct igsc_device_handle handle;
+
+	memset(&handle, 0, sizeof(handle));
+	ret = igsc_device_iterator_create(&iter);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Cannot create device iterator %d\n", ret);
+		return devicesVec;
+	}
+	info.name[0] = '\0';
+	while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS)
+	{
+		ret = igsc_device_init_by_device_info(&handle, &info);
+		if (ret != IGSC_SUCCESS)
+		{
+			/* make sure we have a printable name */
+			info.name[0] = '\0';
+			continue;
+		}
+		(void)igsc_device_close(&handle);
+
+		pci_addr_mei_device pciAddrMeiDevice;
+		pciAddrMeiDevice.pciProps.address.domain = info.domain;
+		pciAddrMeiDevice.pciProps.address.bus = info.bus;
+		pciAddrMeiDevice.pciProps.address.device = info.dev;
+		pciAddrMeiDevice.pciProps.address.function = info.func;
+		pciAddrMeiDevice.meiDevicePath = info.name;
+		devicesVec.push_back(pciAddrMeiDevice);
+	}
+	igsc_device_iterator_destroy(iter);
+	return devicesVec;
 }

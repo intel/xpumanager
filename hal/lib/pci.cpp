@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <regex>
 #include <string>
+#include <gscupd.h>
 #include "pci.h"
 
 using namespace std;
@@ -171,10 +172,10 @@ bool pci::isBDF(const char *bdf)
 		else
 		{
 			DBG("Valid PCI address format: %s\n", bdf);
-			if (pciProperties.address.domain == strtoul(domain.c_str(), nullptr, 16) &&
-				pciProperties.address.bus == strtoul(bus.c_str(), nullptr, 16) &&
-				pciProperties.address.device == strtoul(device.c_str(), nullptr, 16) &&
-				pciProperties.address.function == strtoul(function.c_str(), nullptr, 16))
+			if (deviceProperties.pciProps.address.domain == strtoul(domain.c_str(), nullptr, 16) &&
+				deviceProperties.pciProps.address.bus == strtoul(bus.c_str(), nullptr, 16) &&
+				deviceProperties.pciProps.address.device == strtoul(device.c_str(), nullptr, 16) &&
+				deviceProperties.pciProps.address.function == strtoul(function.c_str(), nullptr, 16))
 			{
 				DBG("PCI address matches the device properties.\n");
 				isValid = true;
@@ -190,7 +191,33 @@ bool pci::isBDF(const char *bdf)
 
 ze_result_t pci::init(ze_device_handle_t device)
 {
-	return getProperties(device, &pciProperties);
+	ze_result_t result;
+	result = getProperties(device, &deviceProperties.pciProps);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	gscupd gsc;
+	vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
+
+	for (const auto &dev : devicesVec)
+	{
+		if (dev.pciProps.address.domain == deviceProperties.pciProps.address.domain &&
+			dev.pciProps.address.bus == deviceProperties.pciProps.address.bus &&
+			dev.pciProps.address.device == deviceProperties.pciProps.address.device &&
+			dev.pciProps.address.function == deviceProperties.pciProps.address.function)
+		{
+			DBG("Found matching device: %s\n", dev.meiDevicePath.c_str());
+
+			// Found a matching device so copy the meiDevicePath
+			deviceProperties.meiDevicePath = dev.meiDevicePath;
+			break;
+		}
+	}
+
+	return result;
 }
 
 ze_result_t pci::zesRun(zes_device_handle_t device)
