@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\oal\win;..\..\hal\fwupd;..\..\hal\lib;$(LEVELZERO)\include</IncludePath>
-    <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\oal\win;..\..\hal\fwupd;..\..\hal\lib;$(IGSC)\include;$(LEVELZERO)\include</IncludePath>
+    <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(IGSC)\build\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\hal\lib;..\..\hal\fwupd;..\..\oal\win;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\hal\lib;..\..\hal\fwupd;..\..\oal\win;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(IGSC)\build\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -128,7 +128,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ze_loader.lib;igsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,7 +151,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ze_loader.lib;igsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

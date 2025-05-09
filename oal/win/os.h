@@ -61,6 +61,7 @@ struct option
 #ifndef MAX_PATH
 #define MAX_PATH 256
 #endif
+
 #define TESTING (1)
 #define UNUSED(x) (void)(x)
 #define TWO_MB (2 * 1024 * 1024)

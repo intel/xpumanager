@@ -148,12 +148,6 @@ int cmdUpdateFW::run(arg_struct *args)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	if (fwInfo.firmwareType.empty())
-	{
-		ERR("Error: Missing required argument --type.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
 	fwInfo.deviceHdl = args->sm.findDeviceByBDF(fwInfo.deviceId.c_str(), &dev);
 	if (fwInfo.deviceHdl == nullptr)
 	{
