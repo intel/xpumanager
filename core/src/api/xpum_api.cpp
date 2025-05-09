@@ -635,7 +635,9 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
         // even L0 is not initialized (DeviceManager is not involved)
         if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES &&
             (job->type == XPUM_DEVICE_FIRMWARE_GFX ||
-             job->type == XPUM_DEVICE_FIRMWARE_GFX_DATA)) {
+             job->type == XPUM_DEVICE_FIRMWARE_GFX_DATA ||
+             job->type == XPUM_DEVICE_FIRMWARE_FAN_TABLE ||
+             job->type == XPUM_DEVICE_FIRMWARE_VR_CONFIG)) {
             igscOnly = true;
         } else {
             return res;
@@ -709,6 +711,10 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
                 return res;
             res = Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState);
             break;
+        case XPUM_DEVICE_FIRMWARE_FAN_TABLE:
+        case XPUM_DEVICE_FIRMWARE_VR_CONFIG:
+            res = Core::instance().getFirmwareManager()->runGSCLateBindingFlash(deviceId, job->filePath, job->type, igscOnly);
+            break;
         default:
             break;
     }
@@ -727,7 +733,9 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         // even L0 is not initialized (DeviceManager is not involved)
         if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES &&
             (firmwareType == XPUM_DEVICE_FIRMWARE_GFX ||
-             firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA)) {
+             firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA ||
+             firmwareType == XPUM_DEVICE_FIRMWARE_FAN_TABLE ||
+             firmwareType == XPUM_DEVICE_FIRMWARE_VR_CONFIG)) {
             igscOnly = true;
             ret = XPUM_OK;
         } else {
@@ -773,6 +781,10 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
             break;
         case XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA:
             Core::instance().getFirmwareManager()->getFwCodeDataFlashResult(deviceId, result);
+            break;
+        case XPUM_DEVICE_FIRMWARE_FAN_TABLE:
+        case XPUM_DEVICE_FIRMWARE_VR_CONFIG:
+            Core::instance().getFirmwareManager()->getGSCLateBindingFlashResult(deviceId, result, firmwareType, igscOnly);
             break;
         default:
             break;

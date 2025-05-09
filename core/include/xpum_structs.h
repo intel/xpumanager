@@ -387,6 +387,8 @@ typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GFX_DATA = 2,      ///< GFX_DATA firmware
     XPUM_DEVICE_FIRMWARE_GFX_PSCBIN = 3,    ///< GFX_PSCBIN firmware
     XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA = 4, ///< GFX_CODE_DATA firmware
+    XPUM_DEVICE_FIRMWARE_FAN_TABLE = 5,     ///< FAN_TABLE firmware
+    XPUM_DEVICE_FIRMWARE_VR_CONFIG = 6,     ///< VR_CONFIG firmware
 } xpum_firmware_type_t;
 
 /**
