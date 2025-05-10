@@ -47,6 +47,12 @@ enum GfxFwStatus
 	UNKNOWN
 };
 
+struct img
+{
+	uint32_t size;
+	uint8_t blob[1];
+};
+
 class gscupd : public fwupd
 {
 public:
@@ -59,9 +65,10 @@ public:
 	ze_result_t updateFanTable(firmwareInfo *fwInfo) override;
 	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
 	vector<char> readImageContent(const char *filePath);
-	bool isGscFwImage(vector<char> &buffer);
+	bool isGscFwImage(std::vector<char> &buffer);
 	vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
-	GfxFwStatus getGfxFwStatus(device *dev);
+	GfxFwStatus getGfxFwStatus(string meiPath);
+	int firmware_check_hw_config(struct igsc_device_handle *handle, vector<char> &buffer);
 	const char *transGfxFwStatusToString(GfxFwStatus status);
 };
 

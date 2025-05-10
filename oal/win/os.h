@@ -77,7 +77,7 @@ struct option
 #define GETOPT_LONG getopt_long
 #define no_argument 0
 #define required_argument 1
-#define GETGFXFWSTATUS(dev) GfxFwStatus::NORMAL
+#define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;

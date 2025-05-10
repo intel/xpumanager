@@ -101,11 +101,12 @@ private:
 	devProps *deviceProperties;
 	zesInfo *zes_func_table;
 	zetInfo *zet_func_table;
+	uint32_t fwupdateProgress;
 
 public:
 	device() : zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr),
 			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr),
-			   zes_func_table(nullptr), zet_func_table(nullptr) {}
+			   zes_func_table(nullptr), zet_func_table(nullptr), fwupdateProgress(0) {}
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
@@ -154,6 +155,8 @@ public:
 	sysman *getStandby() { return zes_func_table[STANDBY].func; }
 	sysman *getTemperature() { return zes_func_table[TEMPERATURE].func; }
 	sysman *getVF() { return zes_func_table[VF].func; }
+
+	void setProgress(uint32_t progress) { fwupdateProgress = progress; }
 };
 
 #endif
