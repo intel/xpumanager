@@ -301,27 +301,6 @@ void driver::printLoaderVersions()
 	delete[] versions;
 }
 
-ze_device_handle_t driver::findDeviceByBDF(const char *bdf, device **dev)
-{
-	ze_device_handle_t foundDevice = nullptr;
-
-	for (uint32_t i = 0; i < driverCount; i++)
-	{
-		foundDevice = devs[i].findDeviceByBDF(bdf, dev);
-		if (foundDevice != nullptr)
-		{
-			DBG("Found device with BDF: %s\n", bdf);
-			break;
-		}
-	}
-
-	if (foundDevice == nullptr)
-	{
-		DBG("No device found with BDF: %s\n", bdf);
-	}
-	return foundDevice;
-}
-
 ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
 {
 	ze_device_handle_t foundDevice = nullptr;
@@ -341,4 +320,31 @@ ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
 		DBG("No device found with index: %u\n", index);
 	}
 	return foundDevice;
+}
+
+ze_result_t driver::findDeviceByBDF(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	for (uint32_t i = 0; i < driverCount; i++)
+	{
+		result = devs[i].findDeviceByBDF(bdf, devList, devHdlList);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to find device by BDF: %s. Error code: %d\n", bdf, result);
+			return result;
+		}
+		else
+		{
+			DBG("Found device with BDF: %s\n", bdf);
+		}
+
+		// If a bdf length was not empty, that means the user provided a bdf, then we should break
+		if (strlen(bdf))
+		{
+			break;
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
 }

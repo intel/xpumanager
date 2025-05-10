@@ -723,19 +723,36 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_device_handle_t device::findDeviceByBDF(const char *bdf, device **dev)
+ze_result_t device::findDeviceByBDF(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
 {
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
-		pci *p = (pci *)zes_func_table[PCI].func;
-		if (p->isBDF(bdf))
+		if (!strlen(bdf))
 		{
-			DBG("Found device with BDF: %s\n", bdf);
-			*dev = this;
-			return zeDevices[i];
+			// If no BDF is provided, add all devices to the list
+			DBG("No BDF provided, adding all devices.\n");
+			devList->push_back(this);
+			devHdlList->push_back(zeDevices[i]);
+		}
+		else
+		{
+			// BDF is stored in the PCI device properties so get it from there
+			pci *p = (pci *)zes_func_table[PCI].func;
+			if (p->isBDF(bdf))
+			{
+				DBG("Found device with BDF: %s\n", bdf);
+				devList->push_back(this);
+				devHdlList->push_back(zeDevices[i]);
+				return ZE_RESULT_SUCCESS;
+			}
+			else
+			{
+				DBG("Device with BDF %s not found.\n", bdf);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
 		}
 	}
-	return nullptr;
+	return ZE_RESULT_SUCCESS;
 }
 
 ze_device_handle_t device::findDeviceByIndex(uint32_t index)
