@@ -236,6 +236,8 @@ int main(int argc, char *argv[])
 			/* Run the command */
 			it->run(&arg);
 			found = true;
+			/* Exit the loop once the command is found */
+			break;
 		}
 	}
 
