@@ -1,4 +1,4 @@
-DIRS = fwupd lib
+DIRS = fwupd core
 .PHONY: $(DIRS)
 
 MAKE += --no-print-directory

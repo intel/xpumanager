@@ -8,7 +8,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xpum-smi", "ial\cli\xpum-sm
 		{148AD2BE-B229-4F5D-B048-F693A87C8E85} = {148AD2BE-B229-4F5D-B048-F693A87C8E85}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxpum", "hal\lib\libxpum.vcxproj", "{148AD2BE-B229-4F5D-B048-F693A87C8E85}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxpum", "hal\core\libxpum.vcxproj", "{148AD2BE-B229-4F5D-B048-F693A87C8E85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
