@@ -37,10 +37,12 @@ class gscupd : public fwupd
 public:
 	gscupd() {}
 	~gscupd() {}
-	ze_result_t updateGfx(firmwareInfo *fwInfo);
-	ze_result_t updateGfxData(firmwareInfo *fwInfo);
-	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo);
-	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo);
+	ze_result_t updateGfx(firmwareInfo *fwInfo) override;
+	ze_result_t updateGfxData(firmwareInfo *fwInfo) override;
+	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo) override;
+	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo) override;
+	ze_result_t updateFanTable(firmwareInfo *fwInfo) override;
+	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
 	vector<char> readImageContent(const char *filePath);
 	bool isGscFwImage(vector<char> &buffer);
 	vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();

@@ -88,6 +88,20 @@ ze_result_t gscupd::updateGfxPscBin(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+ze_result_t gscupd::updateFanTable(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::updateVrConfig(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	return ZE_RESULT_SUCCESS;
+}
+
 std::vector<char> gscupd::readImageContent(const char *filePath)
 {
 	struct stat s;
