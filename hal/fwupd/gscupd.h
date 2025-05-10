@@ -29,8 +29,23 @@
 #include <zes_api.h>
 #include <vector>
 #include <pci.h>
+#include <device.h>
 
 using namespace std;
+
+enum GfxFwStatus
+{
+	RESET,
+	INIT,
+	RECOVERY,
+	TEST,
+	FW_DISABLED,
+	NORMAL,
+	DISABLE_WAIT,
+	OP_STATE_TRANS,
+	INVALID_CPU_PLUGGED_IN,
+	UNKNOWN
+};
 
 class gscupd : public fwupd
 {
@@ -46,6 +61,8 @@ public:
 	vector<char> readImageContent(const char *filePath);
 	bool isGscFwImage(vector<char> &buffer);
 	vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
+	GfxFwStatus getGfxFwStatus(device *dev);
+	const char *transGfxFwStatusToString(GfxFwStatus status);
 };
 
 #endif

@@ -41,6 +41,28 @@
 
 using namespace std;
 
+const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
+{
+#define CASE(x) \
+	case x:     \
+		return #x;
+
+	switch (status)
+	{
+		CASE(RESET);
+		CASE(INIT);
+		CASE(RECOVERY);
+		CASE(TEST);
+		CASE(FW_DISABLED);
+		CASE(NORMAL);
+		CASE(DISABLE_WAIT);
+		CASE(OP_STATE_TRANS);
+		CASE(INVALID_CPU_PLUGGED_IN);
+	default:
+		return "unknown";
+	}
+}
+
 ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -54,15 +76,14 @@ ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
 	}
 
-#if 0
-	// check GFX fw_status
-	auto fw_status = getGfxFwStatus(fwInfo->deviceId);
-	if (!forceUpdate->forceUpdate && fw_status != gfx_fw_status::GfxFwStatus::NORMAL)
+	// Check GFX fw_status. This is a macro because it is only available on Linux and
+	// not on Windows. On Windows, we simply return GfxFwStatus::NORMAL.
+	auto fw_status = GETGFXFWSTATUS(fwInfo->dev);
+	if (!fwInfo->forceUpdate && fw_status != GfxFwStatus::NORMAL)
 	{
-		flashFwErrMsg = "Fail to flash, GFX firmware status is " + transGfxFwStatusToString(fw_status);
-		return XPUM_GENERIC_ERROR;
+		ERR("Fail to flash, GFX firmware status is %s\n", transGfxFwStatusToString(fw_status));
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
-#endif
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -173,4 +194,42 @@ vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 	}
 	igsc_device_iterator_destroy(iter);
 	return devicesVec;
+}
+
+GfxFwStatus gscupd::getGfxFwStatus(device *dev)
+{
+	pci *p = (pci *)dev->getPCI();
+	if (p == nullptr)
+	{
+		ERR("Failed to get PCI device properties.\n");
+		return GfxFwStatus::UNKNOWN;
+	}
+
+	uint32_t status = 0x10;
+	auto meiPath = p->getMeiDevicePath();
+	auto idx = meiPath.find("mei");
+	if (idx != meiPath.npos)
+	{
+		std::string meiName = meiPath.substr(idx);
+		std::string sysfs_path = "/sys/class/mei/" + meiName + "/fw_status";
+		std::string val;
+		std::ifstream ifile(sysfs_path);
+		if (ifile.is_open() == false)
+		{
+			return GfxFwStatus::UNKNOWN;
+		}
+		ifile >> val;
+		ifile.close();
+		uint32_t reg_status = std::stoi(val, 0, 16);
+		status = reg_status & 0xf;
+	}
+
+	if (status >= GfxFwStatus::UNKNOWN)
+	{
+		return GfxFwStatus::UNKNOWN;
+	}
+	else
+	{
+		return (GfxFwStatus)status;
+	}
 }

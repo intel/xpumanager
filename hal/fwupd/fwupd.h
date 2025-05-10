@@ -28,6 +28,7 @@
 #include <zes_api.h>
 #include <string>
 #include <os.h>
+#include <device.h>
 
 using namespace std;
 
@@ -49,6 +50,7 @@ struct firmwareInfo
 	string filePath;
 	string username;
 	string password;
+	device *dev;
 	ze_device_handle_t deviceHdl;
 	fwupdPreference preference;
 };
