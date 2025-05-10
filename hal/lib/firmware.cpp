@@ -32,6 +32,8 @@ updateFWCmdStruct updateFWCmds[] = {
 	{"GFX_DATA", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxData},
 	{"GFX_CODE_DATA", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxCodeData},
 	{"GFX_PSCBIN", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxPscBin},
+	{"FAN_TABLE", FWUPD_PREFERENCE_GSC, &fwupd::updateFanTable},
+	{"VR_CONFIG", FWUPD_PREFERENCE_GSC, &fwupd::updateVrConfig},
 	{"AMC", FWUPD_PREFERENCE_AMC, &fwupd::updateAMC},
 };
 
@@ -117,6 +119,12 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			delete fw;
 			break;
 		}
+	}
+
+	if (i == ARRAY_SIZE(updateFWCmds))
+	{
+		ERR("Invalid firmware type: %s\n", fwInfo->firmwareType.c_str());
+		result = ZE_RESULT_ERROR_UNKNOWN;
 	}
 
 	return result;

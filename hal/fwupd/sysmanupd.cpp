@@ -53,3 +53,17 @@ ze_result_t sysmanupd::updateGfxPscBin(firmwareInfo *fwInfo)
 	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
+
+ze_result_t sysmanupd::updateFanTable(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t sysmanupd::updateVrConfig(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	return ZE_RESULT_SUCCESS;
+}

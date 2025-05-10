@@ -84,6 +84,16 @@ public:
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
+	virtual ze_result_t updateFanTable(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t updateVrConfig(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
 };
 
 #endif
