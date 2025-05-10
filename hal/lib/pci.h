@@ -32,7 +32,7 @@ using namespace std;
 typedef struct pci_addr_mei_device
 {
 	zes_pci_properties_t pciProps;
-	std::string meiDevicePath;
+	string meiDevicePath;
 } pci_addr_mei_device;
 
 class LIBXPUM_API pci : public sysman
@@ -50,6 +50,7 @@ public:
 	ze_result_t getStats(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);
 	bool isBDF(const char *bdf);
+	string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
 };
 
 #endif
