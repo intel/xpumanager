@@ -67,7 +67,9 @@ int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
 	firmwareInfo fwInfo = {};
-	device *dev;
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
 
 	int opt;
 	const char *optString = "hjd:t:f:u:p:y";
@@ -131,42 +133,41 @@ int cmdUpdateFW::run(arg_struct *args)
 	if (fwInfo.firmwareType.empty())
 	{
 		ERR("Error: Missing required argument --type.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Validate file path
 	if (fwInfo.filePath.empty())
 	{
 		ERR("Error: Missing required argument --file.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	// Validate device ID
-	if (fwInfo.deviceId.empty())
-	{
-		ERR("Error: Missing required argument --device.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	fwInfo.deviceHdl = args->sm.findDeviceByBDF(fwInfo.deviceId.c_str(), &dev);
-	if (fwInfo.deviceHdl == nullptr)
+	result = args->sm.findDeviceByBDF(fwInfo.deviceId.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", fwInfo.deviceId.c_str());
-		return ZE_RESULT_ERROR_UNKNOWN;
+		return result;
 	}
 
-	firmware *fw = (firmware *)dev->getFirmware();
-	if (fw == nullptr)
+	int i = 0;
+	for (auto &device : deviceList)
 	{
-		ERR("Error: Firmware pointer not found.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
+		fwInfo.dev = device;
+		fwInfo.deviceHdl = deviceHandleList[i++];
+		firmware *fw = (firmware *)device->getFirmware();
+		if (fw == nullptr)
+		{
+			ERR("Error: Firmware pointer not found.\n");
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
 
-	// Call the hal to update the firmware
-	if (fw->updateFW(&fwInfo) != ZE_RESULT_SUCCESS)
-	{
-		ERR("Error: Failed to update firmware.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
+		// Call the hal to update the firmware
+		if (fw->updateFW(&fwInfo) != ZE_RESULT_SUCCESS)
+		{
+			ERR("Error: Failed to update firmware.\n");
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
 	}
 
 	if (fwInfo.jsonOutput)
