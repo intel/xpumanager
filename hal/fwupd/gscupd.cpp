@@ -63,9 +63,32 @@ const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
 	}
 }
 
+static void progPercentFunc(uint32_t done, uint32_t total, void *ctx)
+{
+	uint32_t percent = (done * 100) / total;
+
+	DBG("Firmware update progress: %d%%\n", percent);
+	// store percent
+	firmwareInfo *fwInfo = (firmwareInfo *)ctx;
+	fwInfo->dev->setProgress(percent);
+}
+
 ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 {
 	TRACING();
+	struct igsc_device_handle handle;
+	struct igsc_fw_version device_fw_version;
+	struct igsc_fw_version image_fw_version;
+	int ret;
+	uint8_t cmp;
+	struct igsc_fw_update_flags flags = {0};
+	pci *p = (pci *)fwInfo->dev->getPCI();
+	if (p == nullptr)
+	{
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	auto meiPath = p->getMeiDevicePath();
 
 	// read image file
 	auto buffer = readImageContent(fwInfo->filePath.c_str());
@@ -78,14 +101,91 @@ ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 
 	// Check GFX fw_status. This is a macro because it is only available on Linux and
 	// not on Windows. On Windows, we simply return GfxFwStatus::NORMAL.
-	auto fw_status = GETGFXFWSTATUS(fwInfo->dev);
+	auto fw_status = GETGFXFWSTATUS(meiPath);
 	if (!fwInfo->forceUpdate && fw_status != GfxFwStatus::NORMAL)
 	{
 		ERR("Fail to flash, GFX firmware status is %s\n", transGfxFwStatusToString(fw_status));
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
+	// Check if the image is valid
+	memset(&image_fw_version, 0, sizeof(image_fw_version));
+	ret = igsc_image_fw_version((const uint8_t *)buffer.data(), (uint32_t)buffer.size(), &image_fw_version);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to get image firmware version %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	ret = igsc_device_init_by_device(&handle, meiPath.c_str());
+	if (ret)
+	{
+		ERR("Failed to initialize device %d\n", ret);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	memset(&device_fw_version, 0, sizeof(device_fw_version));
+	ret = igsc_device_fw_version(&handle, &device_fw_version);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to get device firmware version %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	cmp = igsc_fw_version_compare(&image_fw_version, &device_fw_version);
+	switch (cmp)
+	{
+	case IGSC_VERSION_NEWER:
+		break;
+	case IGSC_VERSION_NOT_COMPATIBLE:
+		ERR("Image is not compatible with device %d\n", ret);
+		igsc_device_close(&handle);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	default:
+		igsc_device_close(&handle);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (!fwInfo->forceUpdate)
+	{
+		ret = firmware_check_hw_config(&handle, buffer);
+		if (ret != IGSC_SUCCESS)
+		{
+			ERR("Failed to check hardware configuration %d\n", ret);
+			igsc_device_close(&handle);
+			return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+		}
+	}
+
+	flags.force_update = fwInfo->forceUpdate ? 1 : 0;
+	ret = igsc_device_fw_update_ex(&handle, (const uint8_t *)buffer.data(), (uint32_t)buffer.size(),
+								   progPercentFunc, fwInfo, flags);
+	igsc_device_close(&handle);
 	return ZE_RESULT_SUCCESS;
+}
+
+int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, vector<char> &buffer)
+{
+	struct igsc_hw_config device_hw_config;
+	struct igsc_hw_config image_hw_config;
+	int ret;
+
+	memset(&device_hw_config, 0, sizeof(device_hw_config));
+	memset(&image_hw_config, 0, sizeof(image_hw_config));
+
+	ret = igsc_device_hw_config(handle, &device_hw_config);
+	if (ret != IGSC_SUCCESS && ret != IGSC_ERROR_NOT_SUPPORTED)
+	{
+		return ret;
+	}
+
+	ret = igsc_image_hw_config((const uint8_t *)buffer.data(), (uint32_t)buffer.size(), &image_hw_config);
+	if (ret != IGSC_SUCCESS && ret != IGSC_ERROR_NOT_SUPPORTED)
+	{
+		return ret;
+	}
+
+	return igsc_hw_config_compatible(&image_hw_config, &device_hw_config);
 }
 
 ze_result_t gscupd::updateGfxData(firmwareInfo *fwInfo)
@@ -123,7 +223,7 @@ ze_result_t gscupd::updateVrConfig(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
-std::vector<char> gscupd::readImageContent(const char *filePath)
+vector<char> gscupd::readImageContent(const char *filePath)
 {
 	struct stat s;
 	if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))
@@ -196,17 +296,10 @@ vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 	return devicesVec;
 }
 
-GfxFwStatus gscupd::getGfxFwStatus(device *dev)
+GfxFwStatus gscupd::getGfxFwStatus(string meiPath)
 {
-	pci *p = (pci *)dev->getPCI();
-	if (p == nullptr)
-	{
-		ERR("Failed to get PCI device properties.\n");
-		return GfxFwStatus::UNKNOWN;
-	}
-
+	TRACING();
 	uint32_t status = 0x10;
-	auto meiPath = p->getMeiDevicePath();
 	auto idx = meiPath.find("mei");
 	if (idx != meiPath.npos)
 	{

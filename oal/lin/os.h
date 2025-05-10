@@ -49,7 +49,7 @@
 #define THREAD_RET void *
 #define GETOPT getopt
 #define GETOPT_LONG getopt_long
-#define GETGFXFWSTATUS(dev) getGfxFwStatus(dev)
+#define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
 
 typedef void *(*funcptr)(void *input_params);
 
