@@ -43,6 +43,11 @@ public:
 	ze_result_t portGetThroughput(zes_fabric_port_handle_t hFabricPort);
 	ze_result_t portGetFabricErrorCounters(zes_fabric_port_handle_t hFabricPort);
 	ze_result_t portGetMultiPortThroughput(zes_device_handle_t device, uint32_t count);
+
+	ze_result_t setPortConfig(bool enabled);
+	ze_result_t setPortBeaconing(bool enabled);
+
+	ze_result_t init(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);
 };
 

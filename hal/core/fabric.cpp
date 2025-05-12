@@ -209,11 +209,68 @@ ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint3
 	return result;
 }
 
+ze_result_t fabric::setPortConfig(bool enabled)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_fabric_port_config_t config;
+
+	for (uint32_t i = 0; i < portCount; i++)
+	{
+		result = zesFabricPortGetConfig(ports[i], &config);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		config.enabled = enabled;
+
+		result = zesFabricPortSetConfig(ports[i], &config);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+		DBG("Fabric Port %d configuration set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
+	}
+	return result;
+}
+
+ze_result_t fabric::setPortBeaconing(bool enabled)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_fabric_port_config_t config;
+
+	for (uint32_t i = 0; i < portCount; i++)
+	{
+		result = zesFabricPortGetConfig(ports[i], &config);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		config.beaconing = enabled;
+
+		result = zesFabricPortSetConfig(ports[i], &config);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set fabric port beaconing: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+		DBG("Fabric Port %d beaconing set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
+	}
+	return result;
+}
+
+ze_result_t fabric::init(zes_device_handle_t device)
+{
+	return enumFabricPorts(device);
+}
+
 ze_result_t fabric::zesRun(zes_device_handle_t device)
 {
-	ze_result_t result = enumFabricPorts(device);
-	if (result != ZE_RESULT_SUCCESS)
-		return result;
+	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < portCount; i++)
 	{
