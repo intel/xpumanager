@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <frequency.h>
 #include <power.h>
+#include <frequency.h>
 
 configCmdStruct configCmds[] = {
 	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
@@ -94,7 +95,41 @@ void cmdConfig::help(list<helpCmd *> *helpList)
 ze_result_t cmdConfig::setFrequencyRange(configInfo *cfgInfo)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	ze_result_t result;
+
+	// Parse the frequency range from the option string
+	string rangeStr = cfgInfo->option[configCmdType::FREQUENCYRANGE];
+	size_t commaPos = rangeStr.find(',');
+
+	if (commaPos == string::npos)
+	{
+		ERR("Invalid frequency range format. Expected format: minFrequency,maxFrequency\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	string minFreqStr = rangeStr.substr(0, commaPos);
+	string maxFreqStr = rangeStr.substr(commaPos + 1);
+	float minFreq = stof(minFreqStr);
+	float maxFreq = stof(maxFreqStr);
+
+	if (minFreq < 0 || maxFreq < 0 || minFreq >= maxFreq)
+	{
+		ERR("Invalid frequency range values. Min frequency must be less than max frequency"
+			" and both must be non-negative.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	frequency *fq = (frequency *)cfgInfo->dev->getFrequency();
+	if (fq == nullptr)
+	{
+		ERR("Error: Frequency pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	result = fq->setRange(minFreq, maxFreq);
+
+	return result;
 }
 
 ze_result_t cmdConfig::setPowerLimit(configInfo *cfgInfo)
