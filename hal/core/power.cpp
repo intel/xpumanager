@@ -105,15 +105,109 @@ ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle)
 
 	DBG("Energy Counter:\n");
 	DBG("  Energy: %" PRIu64 "J\n", energyCounter.energy);
-	DBG("  Timestamp: %" PRIu64 "\n", energyCounter.timestamp);
+	DBG("  Timestamp: %" PRIu64 "us\n", energyCounter.timestamp);
 
+	return result;
+}
+
+ze_result_t power::getPowerLimits(zes_pwr_handle_t powerHandle)
+{
+	uint32_t powerLimitsCount;
+	ze_result_t result = zesPowerGetLimitsExt(powerHandle, &powerLimitsCount, NULL);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get extended power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	zes_power_limit_ext_desc_t *powerLimits = new zes_power_limit_ext_desc_t[powerLimitsCount];
+	result = zesPowerGetLimitsExt(powerHandle, &powerLimitsCount, powerLimits);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
+		delete[] powerLimits;
+		return result;
+	}
+
+	DBG("Power Limits Count: %d\n", powerLimitsCount);
+	DBG("Power Limits:\n");
+	for (uint32_t i = 0; i < powerLimitsCount; ++i)
+	{
+		DBG("  Limit %d:\n", i);
+		DBG("    Source: %d\n", powerLimits[i].source);
+		DBG("    Limit: %d mW\n", powerLimits[i].limit);
+		DBG("    Interval: %d ms\n", powerLimits[i].interval);
+	}
+
+	delete[] powerLimits;
+
+	return result;
+}
+
+ze_result_t power::setPowerLimit(double powerLimit)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t powerLimitsCount;
+
+	for (uint32_t i = 0; i < powerCount; ++i)
+	{
+		result = zesPowerGetLimitsExt(powerHandles[i], &powerLimitsCount, NULL);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get extended power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		zes_power_limit_ext_desc_t *powerLimits = new zes_power_limit_ext_desc_t[powerLimitsCount];
+		result = zesPowerGetLimitsExt(powerHandles[i], &powerLimitsCount, powerLimits);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
+			delete[] powerLimits;
+			return result;
+		}
+
+		for (uint32_t j = 0; j < powerLimitsCount; ++j)
+		{
+			powerLimits[j].limit = static_cast<uint32_t>(powerLimit * 1000); // Convert to mW
+		}
+
+		result = zesPowerSetLimitsExt(powerHandles[i], &powerLimitsCount, powerLimits);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
+			delete[] powerLimits;
+			return result;
+		}
+		DBG("Successfully set power limits:\n");
+		delete[] powerLimits;
+	}
+	return result;
+}
+
+ze_result_t power::init(zes_device_handle_t device)
+{
+	ze_result_t result = enumPowerDomains(device);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		return result;
+	}
+
+	for (uint32_t i = 0; i < powerCount; ++i)
+	{
+		result = getPowerLimits(powerHandles[i]);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			return result;
+		}
+	}
 	return result;
 }
 
 ze_result_t power::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	enumPowerDomains(device);
+	UNUSED(device);
 
 	for (uint32_t i = 0; i < powerCount; ++i)
 	{
@@ -128,6 +222,11 @@ ze_result_t power::zesRun(zes_device_handle_t device)
 			return result;
 		}
 		result = getEnergyThreshold(powerHandles[i]);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			return result;
+		}
+		result = getPowerLimits(powerHandles[i]);
 		if (result != ZE_RESULT_SUCCESS)
 		{
 			return result;

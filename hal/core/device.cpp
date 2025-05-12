@@ -38,7 +38,6 @@
 #include "memory.h"
 #include "performance.h"
 #include "power.h"
-#include "powerlimits.h"
 #include "ras.h"
 #include "scheduler.h"
 #include "standby.h"
@@ -697,7 +696,6 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 			{MEMORY, createInstance<memory>()},
 			{PERFORMANCE, createInstance<performance>()},
 			{POWER, createInstance<power>()},
-			{POWERLIMITS, createInstance<powerlimits>()},
 			{RAS, createInstance<ras>()},
 			{SCHEDULER, createInstance<scheduler>()},
 			{STANDBY, createInstance<standby>()},

@@ -39,7 +39,11 @@ public:
 	ze_result_t getProperties(zes_pwr_handle_t powerHandle);
 	ze_result_t getEnergyCounter(zes_pwr_handle_t powerHandle);
 	ze_result_t getEnergyThreshold(zes_pwr_handle_t powerHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+	ze_result_t getPowerLimits(zes_pwr_handle_t powerHandle);
+
+	ze_result_t setPowerLimit(double powerLimit);
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif

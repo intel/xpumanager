@@ -43,7 +43,6 @@ enum zesCmdType
 	MEMORY,
 	PERFORMANCE,
 	POWER,
-	POWERLIMITS,
 	RAS,
 	SCHEDULER,
 	STANDBY,
@@ -149,7 +148,6 @@ public:
 	sysman *getMemory() { return zes_func_table[MEMORY].func; }
 	sysman *getPerformance() { return zes_func_table[PERFORMANCE].func; }
 	sysman *getPower() { return zes_func_table[POWER].func; }
-	sysman *getPowerLimits() { return zes_func_table[POWERLIMITS].func; }
 	sysman *getRAS() { return zes_func_table[RAS].func; }
 	sysman *getScheduler() { return zes_func_table[SCHEDULER].func; }
 	sysman *getStandby() { return zes_func_table[STANDBY].func; }
