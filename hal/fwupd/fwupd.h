@@ -30,7 +30,29 @@
 #include <os.h>
 #include <device.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4200)
+#endif
+
+#include <igsc_lib.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 using namespace std;
+
+enum fwType
+{
+	GFX,
+	GFX_DATA,
+	GFX_CODE_DATA,
+	GFX_PSCBIN,
+	FAN_TABLE,
+	VR_CONFIG,
+	AMC,
+};
 
 enum fwupdPreference
 {
@@ -46,13 +68,18 @@ struct firmwareInfo
 	bool forceUpdate;
 	bool recoveryMode;
 	string deviceId;
-	string firmwareType;
+	int fwType;			 // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
+	string firmwareType; // This is the string representation of fwType
 	string filePath;
 	string username;
 	string password;
 	device *dev;
 	ze_device_handle_t deviceHdl;
 	fwupdPreference preference;
+
+	igsc_device_handle handle;
+	vector<char> buffer;
+	igsc_fwdata_image *oimg;
 };
 
 class fwupd
@@ -61,7 +88,22 @@ class fwupd
 public:
 	fwupd() {}
 	virtual ~fwupd() {}
+	virtual ze_result_t preUpdateAMC(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
 	virtual ze_result_t updateAMC(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t postUpdateAMC(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t preUpdateGfx(firmwareInfo *fwInfo)
 	{
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
@@ -71,7 +113,27 @@ public:
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
+	virtual ze_result_t postUpdateGfx(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t preUpdateGfxData(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
 	virtual ze_result_t updateGfxData(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t postUpdateGfxData(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t preUpdateGfxCodeData(firmwareInfo *fwInfo)
 	{
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
@@ -81,7 +143,27 @@ public:
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
+	virtual ze_result_t postUpdateGfxCodeData(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t preUpdateGfxPscBin(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
 	virtual ze_result_t updateGfxPscBin(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t postUpdateGfxPscBin(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t preUpdateFanTable(firmwareInfo *fwInfo)
 	{
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
@@ -91,11 +173,37 @@ public:
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
+	virtual ze_result_t postUpdateFanTable(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t preUpdateVrConfig(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
 	virtual ze_result_t updateVrConfig(firmwareInfo *fwInfo)
 	{
 		UNUSED(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
+	virtual ze_result_t postUpdateVrConfig(firmwareInfo *fwInfo)
+	{
+		UNUSED(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+};
+
+typedef ze_result_t (fwupd::*updateFW)(firmwareInfo *fwInfo);
+
+struct updateFWCmdStruct
+{
+	int fw;
+	fwupdPreference preference;
+	updateFW preUpdateFunc;
+	updateFW updateFunc;
+	updateFW postUpdateFunc;
 };
 
 #endif
