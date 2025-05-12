@@ -31,6 +31,7 @@
 #include <power.h>
 #include <standby.h>
 #include <scheduler.h>
+#include <ecc.h>
 
 configCmdStruct configCmds[] = {
 	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
@@ -259,6 +260,27 @@ ze_result_t cmdConfig::setXeLinkPortBeaconing(configInfo *cfgInfo)
 ze_result_t cmdConfig::setMemoryEcc(configInfo *cfgInfo)
 {
 	TRACING();
+	// Set memory ECC. Valid options are 0:disable; 1:enable
+	int memoryEcc = stoi(cfgInfo->option[configCmdType::MEMORYECC]);
+	if (memoryEcc != 0 && memoryEcc != 1)
+	{
+		ERR("Invalid memory ECC value. Valid options are 0:disable; 1:enable\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	// Set the memory ECC using the device class
+	ecc *e = (ecc *)cfgInfo->dev->getECC();
+	if (e == nullptr)
+	{
+		ERR("Error: ECC pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ze_result_t result = e->setState(cfgInfo->deviceHdl, memoryEcc);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to set memory ECC state: 0x%X\n", result);
+		return result;
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
