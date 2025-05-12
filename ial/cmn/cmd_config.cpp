@@ -29,6 +29,7 @@
 #include <power.h>
 #include <frequency.h>
 #include <power.h>
+#include <standby.h>
 
 configCmdStruct configCmds[] = {
 	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
@@ -161,7 +162,27 @@ ze_result_t cmdConfig::setPowerLimit(configInfo *cfgInfo)
 ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	// Set standby mode. Valid options are default and never
+	string standbyMode = cfgInfo->option[configCmdType::STANDBYMODE];
+	if (standbyMode != "default" && standbyMode != "never")
+	{
+		ERR("Invalid standby mode. Valid options are default and never.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Set the standby mode using the device class
+	standby *stby = (standby *)cfgInfo->dev->getStandby();
+	if (stby == nullptr)
+	{
+		ERR("Error: Standby pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ze_result_t result = stby->setMode(standbyMode == "default"
+										   ? ZES_STANDBY_PROMO_MODE_DEFAULT
+										   : ZES_STANDBY_PROMO_MODE_NEVER);
+	return result;
 }
 
 ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
