@@ -27,9 +27,7 @@
 
 #include "cmds.h"
 #include <os.h>
-#include <string>
 #include <firmware.h>
-#include <device.h>
 
 class cmdUpdateFW : public cmds
 {
