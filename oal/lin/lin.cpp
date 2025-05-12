@@ -26,6 +26,9 @@
 #include <sys/mman.h>
 #include <math.h>
 #include <debug.h>
+#include <string>
+#include <grp.h>
+#include <pwd.h>
 
 /**
  * @brief Creates a new thread.
@@ -56,4 +59,45 @@ void wait_for_thread(thread_id *tid)
 		DBG("%s: thread handle is %ld\n", __func__, tid->ret_thread_uid());
 		pthread_join(tid->ret_thread_uid(), NULL);
 	}
+}
+
+bool privilegeCheck()
+{
+	uid_t uid = getuid();
+	if (uid == 0)
+	{
+		return true;
+	}
+	struct passwd *pw = getpwuid(uid);
+	if (pw == NULL)
+	{
+		ERR("getpwuid error\n");
+		return false;
+	}
+	int ngroups = 0;
+	getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
+	if (ngroups == 0)
+	{
+		return false;
+	}
+	gid_t groups[ngroups];
+	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
+	std::string xpum_grp("xpum");
+	bool has_privilege = false;
+	for (int i = 0; i < ngroups; i++)
+	{
+		struct group *gr = getgrgid(groups[i]);
+		if (gr == NULL)
+		{
+			ERR("getgrgid error\n");
+			return false;
+		}
+		std::string grp_name(gr->gr_name);
+		if (grp_name == xpum_grp)
+		{
+			has_privilege = true;
+		}
+	}
+
+	return has_privilege;
 }
