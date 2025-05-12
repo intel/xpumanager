@@ -40,7 +40,13 @@ public:
 	ze_result_t getCurrentMode(zes_sched_handle_t schedulerHandle);
 	ze_result_t getTimeoutModeProperties(zes_sched_handle_t schedulerHandle);
 	ze_result_t getTimesliceProperties(zes_sched_handle_t schedulerHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+
+	ze_result_t setTimeoutMode(float timeoutValue);
+	ze_result_t setTimesliceMode(float timesliceValue, float yieldTimeoutValue);
+	ze_result_t setExclusiveMode();
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif

@@ -30,6 +30,7 @@
 #include <frequency.h>
 #include <power.h>
 #include <standby.h>
+#include <scheduler.h>
 
 configCmdStruct configCmds[] = {
 	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
@@ -188,7 +189,53 @@ ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
 ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	// Set scheduler mode. Valid options are  \"timeout\",timeoutValue (us) or
+	// \"timeslice\",interval (us),yieldtimeout (us) or \"exclusive\"
+	string schedulerMode = cfgInfo->option[configCmdType::SCHEDULERMODE];
+	size_t commaPos = schedulerMode.find(',');
+	if (commaPos == string::npos && schedulerMode != "exclusive")
+	{
+		ERR("Invalid scheduler mode format. Expected format: mode,timeoutValue (us)\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	scheduler *sched = (scheduler *)cfgInfo->dev->getScheduler();
+	if (sched == nullptr)
+	{
+		ERR("Error: Scheduler pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	string timeoutValueStr = schedulerMode.substr(commaPos + 1);
+	float timeoutValue = stof(timeoutValueStr);
+
+	if (schedulerMode == "timeout")
+	{
+		result = sched->setTimeoutMode(timeoutValue);
+	}
+	else if (schedulerMode == "timeslice")
+	{
+		size_t secondCommaPos = timeoutValueStr.find(',', commaPos + 1);
+		if (secondCommaPos == string::npos)
+		{
+			ERR("Invalid scheduler mode format. Expected format: mode,timeoutValue (us)\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		string intervalStr = timeoutValueStr.substr(0, secondCommaPos);
+		string yieldTimeoutStr = timeoutValueStr.substr(secondCommaPos + 1);
+		float interval = stof(intervalStr);
+		float yieldTimeout = stof(yieldTimeoutStr);
+		result = sched->setTimesliceMode(interval, yieldTimeout);
+	}
+	else
+	{
+		result = sched->setExclusiveMode();
+	}
+
+	return result;
 }
 
 ze_result_t cmdConfig::setPerformanceFactor(configInfo *cfgInfo)
