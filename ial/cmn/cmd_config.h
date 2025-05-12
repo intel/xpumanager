@@ -28,6 +28,37 @@
 #include "cmds.h"
 #include <os.h>
 #include <zes_api.h>
+#include <string>
+
+enum configCmdType
+{
+	FREQUENCYRANGE,
+	POWERLIMIT,
+	STANDBYMODE,
+	SCHEDULERMODE,
+	PERFORMANCEFACTOR,
+	XELINKPORT,
+	XELINKPORTBEACONING,
+	MEMORYECC,
+	RESET,
+	PPR,
+	FORCE,
+	TOTAL_CONFIG,
+};
+
+struct configInfo
+{
+	bool jsonOutput;
+	string deviceId;
+	string tileId;
+	string option[TOTAL_CONFIG];
+	bool resetDevice;
+	bool applyPpr;
+	bool forcePpr;
+
+	device *dev;
+	ze_device_handle_t deviceHdl;
+};
 
 class cmdConfig : public cmds
 {
@@ -36,24 +67,25 @@ public:
 	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
 	~cmdConfig() {};
 	void help(list<helpCmd *> *helpList);
-	ze_result_t setFrequencyRange(char *subcmd, char *args);
-	ze_result_t setPowerLimit(char *subcmd, char *args);
-	ze_result_t setStandby(char *subcmd, char *args);
-	ze_result_t setScheduler(char *subcmd, char *args);
-	ze_result_t setPerformanceFactor(char *subcmd, char *args);
-	ze_result_t setXeLinkPort(char *subcmd, char *args);
-	ze_result_t setXeLinkPortBeaconing(char *subcmd, char *args);
-	ze_result_t setMemoryEcc(char *subcmd, char *args);
-	ze_result_t resetDevice(char *subcmd, char *args);
-	ze_result_t applyPpr(char *subcmd, char *args);
-	ze_result_t forcePpr(char *subcmd, char *args);
+	ze_result_t setFrequencyRange(configInfo *cfgInfo);
+	ze_result_t setPowerLimit(configInfo *cfgInfo);
+	ze_result_t setStandby(configInfo *cfgInfo);
+	ze_result_t setScheduler(configInfo *cfgInfo);
+	ze_result_t setPerformanceFactor(configInfo *cfgInfo);
+	ze_result_t setXeLinkPort(configInfo *cfgInfo);
+	ze_result_t setXeLinkPortBeaconing(configInfo *cfgInfo);
+	ze_result_t setMemoryEcc(configInfo *cfgInfo);
+	ze_result_t resetDevice(configInfo *cfgInfo);
+	ze_result_t applyPpr(configInfo *cfgInfo);
+	ze_result_t forcePpr(configInfo *cfgInfo);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdConfig::*configSubCmdFunc)(char *subcmd, char *args);
+typedef ze_result_t (cmdConfig::*configSubCmdFunc)(configInfo *cfgInfo);
 
 struct configCmdStruct
 {
+	configCmdType type;
 	char name[MAX_PATH];
 	configSubCmdFunc sf;
 };

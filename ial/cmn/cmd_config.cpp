@@ -25,19 +25,21 @@
 #include "cmd_config.h"
 #include "debug.h"
 #include <assert.h>
+#include <frequency.h>
+#include <power.h>
 
 configCmdStruct configCmds[] = {
-	{"frequencyrange", &cmdConfig::setFrequencyRange},
-	{"powerlimit", &cmdConfig::setPowerLimit},
-	{"standby", &cmdConfig::setStandby},
-	{"scheduler", &cmdConfig::setScheduler},
-	{"performancefactor", &cmdConfig::setPerformanceFactor},
-	{"xelinkport", &cmdConfig::setXeLinkPort},
-	{"xelinkportbeaconing", &cmdConfig::setXeLinkPortBeaconing},
-	{"memoryecc", &cmdConfig::setMemoryEcc},
-	{"reset", &cmdConfig::resetDevice},
-	{"ppr", &cmdConfig::applyPpr},
-	{"force", &cmdConfig::forcePpr},
+	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
+	{configCmdType::POWERLIMIT, "powerlimit", &cmdConfig::setPowerLimit},
+	{configCmdType::STANDBYMODE, "standby", &cmdConfig::setStandby},
+	{configCmdType::SCHEDULERMODE, "scheduler", &cmdConfig::setScheduler},
+	{configCmdType::PERFORMANCEFACTOR, "performancefactor", &cmdConfig::setPerformanceFactor},
+	{configCmdType::XELINKPORT, "xelinkport", &cmdConfig::setXeLinkPort},
+	{configCmdType::XELINKPORTBEACONING, "xelinkportbeaconing", &cmdConfig::setXeLinkPortBeaconing},
+	{configCmdType::MEMORYECC, "memoryecc", &cmdConfig::setMemoryEcc},
+	{configCmdType::RESET, "reset", &cmdConfig::resetDevice},
+	{configCmdType::PPR, "ppr", &cmdConfig::applyPpr},
+	{configCmdType::FORCE, "force", &cmdConfig::forcePpr},
 };
 
 /**
@@ -89,67 +91,67 @@ void cmdConfig::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
 }
 
-ze_result_t cmdConfig::setFrequencyRange(char *subcmd, char *args)
+ze_result_t cmdConfig::setFrequencyRange(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setPowerLimit(char *subcmd, char *args)
+ze_result_t cmdConfig::setPowerLimit(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setStandby(char *subcmd, char *args)
+ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setScheduler(char *subcmd, char *args)
+ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setPerformanceFactor(char *subcmd, char *args)
+ze_result_t cmdConfig::setPerformanceFactor(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setXeLinkPort(char *subcmd, char *args)
+ze_result_t cmdConfig::setXeLinkPort(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setXeLinkPortBeaconing(char *subcmd, char *args)
+ze_result_t cmdConfig::setXeLinkPortBeaconing(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setMemoryEcc(char *subcmd, char *args)
+ze_result_t cmdConfig::setMemoryEcc(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::resetDevice(char *subcmd, char *args)
+ze_result_t cmdConfig::resetDevice(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::applyPpr(char *subcmd, char *args)
+ze_result_t cmdConfig::applyPpr(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::forcePpr(char *subcmd, char *args)
+ze_result_t cmdConfig::forcePpr(configInfo *cfgInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -163,6 +165,103 @@ ze_result_t cmdConfig::forcePpr(char *subcmd, char *args)
 int cmdConfig::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
+	configInfo cfgInfo = {};
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	configCmdType cmdType = configCmdType::TOTAL_CONFIG;
+	ze_result_t result;
+
+	int opt;
+	bool found = false;
+	const char *optString = "hjd:t:";
+	struct option longOpts[] = {
+		{"help", no_argument, 0, 'h'},
+		{"json", no_argument, 0, 'j'},
+		{"device", required_argument, 0, 'd'},
+		{"tile", required_argument, 0, 't'},
+		{"frequencyrange", required_argument, 0, 0},
+		{"powerlimit", required_argument, 0, 0},
+		{"standby", required_argument, 0, 0},
+		{"scheduler", required_argument, 0, 0},
+		{"performancefactor", required_argument, 0, 0},
+		{"xelinkport", required_argument, 0, 0},
+		{"xelinkportbeaconing", required_argument, 0, 0},
+		{"memoryecc", required_argument, 0, 0},
+		{"reset", no_argument, 0, 0},
+		{"ppr", no_argument, 0, 0},
+		{"force", no_argument, 0, 0},
+	};
+
+	// Parse command line arguments
+	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, nullptr)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help(nullptr);
+			return 0;
+		case 'j':
+			cfgInfo.jsonOutput = true;
+			break;
+		case 'd':
+			cfgInfo.deviceId = optarg;
+			break;
+		case 't':
+			cfgInfo.tileId = optarg;
+			break;
+		case 0:
+			for (auto &cmd : configCmds)
+			{
+				if (STRCASECMP(longOpts[optind - 1].name, cmd.name) == 0)
+				{
+					cmdType = cmd.type;
+					cfgInfo.option[cmd.type] = optarg;
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ERR("Unknown command: %s\n", longOpts[optind - 1].name);
+				return -1;
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
+
+	// Check if the device ID is provided
+	if (cfgInfo.deviceId.empty())
+	{
+		ERR("Device ID is required.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	result = args->sm.findDeviceByBDF(cfgInfo.deviceId.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", cfgInfo.deviceId.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		cfgInfo.dev = device;
+		cfgInfo.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : configCmds)
+		{
+			if (cmd.type == cmdType)
+			{
+				(this->*cmd.sf)(&cfgInfo);
+				break;
+			}
+		}
+	}
+
 	return 0;
 }
