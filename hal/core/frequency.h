@@ -41,7 +41,10 @@ public:
 	ze_result_t getRange(zes_freq_handle_t frequencyHandle);
 	ze_result_t getState(zes_freq_handle_t frequencyHandle);
 	ze_result_t getThrottleTime(zes_freq_handle_t frequencyHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+
+	ze_result_t setRange(double minFreq, double maxFreq);
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif
