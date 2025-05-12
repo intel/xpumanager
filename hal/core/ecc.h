@@ -38,6 +38,8 @@ public:
 	bool available(zes_device_handle_t device);
 	bool configurable(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device);
+
+	ze_result_t setState(zes_device_handle_t device, bool enable);
 	ze_result_t zesRun(zes_device_handle_t device);
 };
 

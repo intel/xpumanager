@@ -112,6 +112,28 @@ ze_result_t ecc::getState(zes_device_handle_t device)
 	return result;
 }
 
+ze_result_t ecc::setState(zes_device_handle_t device, bool enable)
+{
+	zes_device_ecc_desc_t newState = {};
+	zes_device_ecc_properties_t pState = {};
+	newState.state = enable ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
+
+	ze_result_t result = zesDeviceSetEccState(device, &newState, &pState);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to set ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - ECC State:\n");
+	DBG("    - Current State:\n");
+	printEccState(pState.currentState);
+	DBG("    - Pending State:\n");
+	printEccState(pState.pendingState);
+	DBG("     - Pending Action:\n");
+	printEccPendingAction(pState.pendingAction);
+	return result;
+}
+
 ze_result_t ecc::zesRun(zes_device_handle_t device)
 {
 	if (!available(device))
