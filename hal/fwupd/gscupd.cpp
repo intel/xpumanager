@@ -86,7 +86,7 @@ int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, vector<c
 	return igsc_hw_config_compatible(&image_hw_config, &device_hw_config);
 }
 
-ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo)
+ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo, bool checkType)
 {
 	TRACING();
 	int ret;
@@ -108,6 +108,13 @@ ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo)
 
 	// read image file
 	fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
+
+	// If the caller didn't specify file type checks, then skip any further checks and return success.
+	if (!checkType)
+	{
+		return ZE_RESULT_SUCCESS;
+	}
+
 	int igscFwType = (fwInfo->fwType == FWUPD_PREFERENCE_GSC) ? IGSC_IMAGE_TYPE_GFX_FW : IGSC_IMAGE_TYPE_FW_DATA;
 
 	// validate the image file type
@@ -310,17 +317,70 @@ ze_result_t gscupd::updateGfxPscBin(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+ze_result_t gscupd::updateLateBinding(firmwareInfo *fwInfo)
+{
+	TRACING();
+	csc_late_binding_flags late_binding_flags = {};
+	uint32_t late_binding_status = {};
+	csc_late_binding_type late_binding_type;
+	int ret;
+
+	switch (fwInfo->fwType)
+	{
+	case FAN_TABLE:
+		late_binding_type = CSC_LATE_BINDING_TYPE_FAN_TABLE;
+		break;
+	case VR_CONFIG:
+		late_binding_type = CSC_LATE_BINDING_TYPE_VR_CONFIG;
+		break;
+	default:
+		late_binding_type = CSC_LATE_BINDING_TYPE_INVALID;
+	}
+
+	ret = igsc_device_update_late_binding_config(&fwInfo->handle,
+												 late_binding_type, late_binding_flags,
+												 (uint8_t *)fwInfo->buffer.data(),
+												 fwInfo->buffer.size(), &late_binding_status);
+
+	if (ret)
+	{
+		ERR("GSC late binding update failed on device. %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::preUpdateFanTable(firmwareInfo *fwInfo)
+{
+	TRACING();
+	ze_result_t result;
+
+	// First do the common pre update
+	result = cmnPreUpdate(fwInfo, false);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		return result;
+	}
+
+	return result;
+}
+
 ze_result_t gscupd::updateFanTable(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
-	return ZE_RESULT_SUCCESS;
+	return updateLateBinding(fwInfo);
 }
 
 ze_result_t gscupd::updateVrConfig(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
+	return updateLateBinding(fwInfo);
+}
+
+ze_result_t gscupd::postUpdateFanTable(firmwareInfo *fwInfo)
+{
+	TRACING();
+	igsc_device_close(&fwInfo->handle);
 	return ZE_RESULT_SUCCESS;
 }
 
