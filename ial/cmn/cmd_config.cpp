@@ -28,6 +28,7 @@
 #include <frequency.h>
 #include <power.h>
 #include <frequency.h>
+#include <power.h>
 
 configCmdStruct configCmds[] = {
 	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
@@ -135,7 +136,26 @@ ze_result_t cmdConfig::setFrequencyRange(configInfo *cfgInfo)
 ze_result_t cmdConfig::setPowerLimit(configInfo *cfgInfo)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	ze_result_t result;
+	// Parse the power limit from the option string.
+	float powerLimit = stof(cfgInfo->option[configCmdType::POWERLIMIT]);
+	if (powerLimit < 0)
+	{
+		ERR("Invalid power limit value. Power limit must be non-negative.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	power *pwr = (power *)cfgInfo->dev->getPower();
+	if (pwr == nullptr)
+	{
+		ERR("Error: Power pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Set the power limit using the power class
+	result = pwr->setPowerLimit(powerLimit);
+
+	return result;
 }
 
 ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
