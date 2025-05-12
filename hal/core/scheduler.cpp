@@ -121,13 +121,101 @@ ze_result_t scheduler::getTimesliceProperties(zes_sched_handle_t schedulerHandle
 	return result;
 }
 
+ze_result_t scheduler::setTimeoutMode(float timeoutValue)
+{
+	zes_sched_timeout_properties_t timeoutProperties = {};
+	timeoutProperties.watchdogTimeout = static_cast<uint64_t>(timeoutValue);
+	ze_bool_t pNeedReload;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	for (uint32_t i = 0; i < schedulerCount; ++i)
+	{
+		result = zesSchedulerSetTimeoutMode(schedulerHandles[i], &timeoutProperties, &pNeedReload);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set scheduler mode. 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (pNeedReload)
+		{
+			INFO("Scheduler mode set successfully. Device driver reload is needed to take effect.\n");
+		}
+		else
+		{
+			INFO("Scheduler mode set successfully. No device driver reload needed to take effect.\n");
+		}
+	}
+
+	return result;
+}
+
+ze_result_t scheduler::setTimesliceMode(float timesliceValue, float yieldTimeoutValue)
+{
+	zes_sched_timeslice_properties_t timesliceProperties = {};
+	timesliceProperties.interval = static_cast<uint64_t>(timesliceValue);
+	timesliceProperties.yieldTimeout = static_cast<uint64_t>(yieldTimeoutValue);
+	ze_bool_t pNeedReload;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	for (uint32_t i = 0; i < schedulerCount; ++i)
+	{
+		result = zesSchedulerSetTimesliceMode(schedulerHandles[i], &timesliceProperties, &pNeedReload);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set scheduler mode. 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (pNeedReload)
+		{
+			INFO("Scheduler mode set successfully. Device driver reload is needed to take effect.\n");
+		}
+		else
+		{
+			INFO("Scheduler mode set successfully. No device driver reload needed to take effect.\n");
+		}
+	}
+
+	return result;
+}
+
+ze_result_t scheduler::setExclusiveMode()
+{
+	ze_bool_t pNeedReload;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	for (uint32_t i = 0; i < schedulerCount; ++i)
+	{
+		result = zesSchedulerSetExclusiveMode(schedulerHandles[i], &pNeedReload);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set scheduler mode. 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (pNeedReload)
+		{
+			INFO("Scheduler mode set successfully. Device driver reload is needed to take effect.\n");
+		}
+		else
+		{
+			INFO("Scheduler mode set successfully. No device driver reload needed to take effect.\n");
+		}
+	}
+
+	return result;
+}
+
+ze_result_t scheduler::init(zes_device_handle_t device)
+{
+	return enumSchedulers(device);
+}
+
 ze_result_t scheduler::zesRun(zes_device_handle_t device)
 {
-	ze_result_t result = enumSchedulers(device);
-	if (result != ZE_RESULT_SUCCESS)
-	{
-		return result;
-	}
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	UNUSED(device);
 
 	for (uint32_t i = 0; i < schedulerCount; ++i)
 	{
