@@ -710,6 +710,9 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		for (uint32_t j = 0; j < TOTAL_ZES; ++j)
 		{
 			auto ptr = &zes_func_table[j];
+			// Don't check the return value of init, as they may not all return success
+			// and we don't want to fail the entire initialization process for the rest
+			// of the classes
 			ptr->func->init(zesDevices[i]);
 		}
 

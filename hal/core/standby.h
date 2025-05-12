@@ -38,7 +38,10 @@ public:
 	ze_result_t enumStandbyDomains(zes_device_handle_t device);
 	ze_result_t getProperties(zes_standby_handle_t standbyHandle);
 	ze_result_t getMode(zes_standby_handle_t standbyHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+	ze_result_t setMode(zes_standby_promo_mode_t mode);
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif
