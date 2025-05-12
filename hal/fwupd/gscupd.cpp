@@ -28,17 +28,6 @@
 #include <sys/stat.h>
 #include <fstream>
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4200)
-#endif
-
-#include <igsc_lib.h>
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 using namespace std;
 
 const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
@@ -73,97 +62,6 @@ static void progPercentFunc(uint32_t done, uint32_t total, void *ctx)
 	fwInfo->dev->setProgress(percent);
 }
 
-ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
-{
-	TRACING();
-	struct igsc_device_handle handle;
-	struct igsc_fw_version device_fw_version;
-	struct igsc_fw_version image_fw_version;
-	int ret;
-	uint8_t cmp;
-	struct igsc_fw_update_flags flags = {0};
-	pci *p = (pci *)fwInfo->dev->getPCI();
-	if (p == nullptr)
-	{
-		ERR("Failed to get PCI device properties.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-	auto meiPath = p->getMeiDevicePath();
-
-	// read image file
-	auto buffer = readImageContent(fwInfo->filePath.c_str());
-
-	// validate the image file
-	if (!isGscFwImage(buffer))
-	{
-		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
-	}
-
-	// Check GFX fw_status. This is a macro because it is only available on Linux and
-	// not on Windows. On Windows, we simply return GfxFwStatus::NORMAL.
-	auto fw_status = GETGFXFWSTATUS(meiPath);
-	if (!fwInfo->forceUpdate && fw_status != GfxFwStatus::NORMAL)
-	{
-		ERR("Fail to flash, GFX firmware status is %s\n", transGfxFwStatusToString(fw_status));
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// Check if the image is valid
-	memset(&image_fw_version, 0, sizeof(image_fw_version));
-	ret = igsc_image_fw_version((const uint8_t *)buffer.data(), (uint32_t)buffer.size(), &image_fw_version);
-	if (ret != IGSC_SUCCESS)
-	{
-		ERR("Failed to get image firmware version %d\n", ret);
-		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
-	}
-
-	ret = igsc_device_init_by_device(&handle, meiPath.c_str());
-	if (ret)
-	{
-		ERR("Failed to initialize device %d\n", ret);
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	memset(&device_fw_version, 0, sizeof(device_fw_version));
-	ret = igsc_device_fw_version(&handle, &device_fw_version);
-	if (ret != IGSC_SUCCESS)
-	{
-		ERR("Failed to get device firmware version %d\n", ret);
-		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
-	}
-
-	cmp = igsc_fw_version_compare(&image_fw_version, &device_fw_version);
-	switch (cmp)
-	{
-	case IGSC_VERSION_NEWER:
-		break;
-	case IGSC_VERSION_NOT_COMPATIBLE:
-		ERR("Image is not compatible with device %d\n", ret);
-		igsc_device_close(&handle);
-		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
-	default:
-		igsc_device_close(&handle);
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	if (!fwInfo->forceUpdate)
-	{
-		ret = firmware_check_hw_config(&handle, buffer);
-		if (ret != IGSC_SUCCESS)
-		{
-			ERR("Failed to check hardware configuration %d\n", ret);
-			igsc_device_close(&handle);
-			return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
-		}
-	}
-
-	flags.force_update = fwInfo->forceUpdate ? 1 : 0;
-	ret = igsc_device_fw_update_ex(&handle, (const uint8_t *)buffer.data(), (uint32_t)buffer.size(),
-								   progPercentFunc, fwInfo, flags);
-	igsc_device_close(&handle);
-	return ZE_RESULT_SUCCESS;
-}
-
 int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, vector<char> &buffer)
 {
 	struct igsc_hw_config device_hw_config;
@@ -188,10 +86,213 @@ int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, vector<c
 	return igsc_hw_config_compatible(&image_hw_config, &device_hw_config);
 }
 
+ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo)
+{
+	TRACING();
+	int ret;
+
+	pci *p = (pci *)fwInfo->dev->getPCI();
+	if (p == nullptr)
+	{
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	auto meiPath = p->getMeiDevicePath();
+
+	ret = igsc_device_init_by_device(&fwInfo->handle, meiPath.c_str());
+	if (ret)
+	{
+		ERR("Failed to initialize device %d\n", ret);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// read image file
+	fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
+	int igscFwType = (fwInfo->fwType == FWUPD_PREFERENCE_GSC) ? IGSC_IMAGE_TYPE_GFX_FW : IGSC_IMAGE_TYPE_FW_DATA;
+
+	// validate the image file type
+	if (!isGscRightType(fwInfo->buffer, igscFwType))
+	{
+		ERR("Invalid image type %d\n", igscFwType);
+		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+	}
+
+	// Check GFX fw_status. This is a macro because it is only available on Linux and
+	// not on Windows. On Windows, we simply return GfxFwStatus::NORMAL.
+	auto fw_status = GETGFXFWSTATUS(meiPath);
+	if (!fwInfo->forceUpdate && fw_status != GfxFwStatus::NORMAL)
+	{
+		ERR("Fail to flash, GFX firmware status is %s\n", transGfxFwStatusToString(fw_status));
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::preUpdateGfx(firmwareInfo *fwInfo)
+{
+	struct igsc_fw_version device_fw_version;
+	struct igsc_fw_version image_fw_version;
+	ze_result_t result;
+	int ret;
+	uint8_t cmp;
+
+	TRACING();
+
+	// First do the common pre-update
+	result = cmnPreUpdate(fwInfo);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		return result;
+	}
+
+	// Check if the image is valid
+	memset(&image_fw_version, 0, sizeof(image_fw_version));
+	ret = igsc_image_fw_version((const uint8_t *)fwInfo->buffer.data(),
+								(uint32_t)fwInfo->buffer.size(), &image_fw_version);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to get image firmware version %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	memset(&device_fw_version, 0, sizeof(device_fw_version));
+	ret = igsc_device_fw_version(&fwInfo->handle, &device_fw_version);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to get device firmware version %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	cmp = igsc_fw_version_compare(&image_fw_version, &device_fw_version);
+	switch (cmp)
+	{
+	case IGSC_VERSION_NEWER:
+		break;
+	case IGSC_VERSION_NOT_COMPATIBLE:
+		ERR("Image is not compatible with device %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	default:
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
+{
+	TRACING();
+	int ret;
+	struct igsc_fw_update_flags flags = {0};
+
+	if (!fwInfo->forceUpdate)
+	{
+		ret = firmware_check_hw_config(&fwInfo->handle, fwInfo->buffer);
+		if (ret != IGSC_SUCCESS)
+		{
+			ERR("Failed to check hardware configuration %d\n", ret);
+			return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+		}
+	}
+
+	flags.force_update = fwInfo->forceUpdate ? 1 : 0;
+	ret = igsc_device_fw_update_ex(&fwInfo->handle, (const uint8_t *)fwInfo->buffer.data(),
+								   (uint32_t)fwInfo->buffer.size(), progPercentFunc, fwInfo, flags);
+
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::postUpdateGfx(firmwareInfo *fwInfo)
+{
+	TRACING();
+	igsc_device_close(&fwInfo->handle);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::preUpdateGfxData(firmwareInfo *fwInfo)
+{
+	struct igsc_fwdata_version dev_version;
+	struct igsc_fwdata_version img_version;
+	ze_result_t result;
+	int ret;
+	uint8_t cmp;
+
+	TRACING();
+
+	// First do the common pre-update
+	result = cmnPreUpdate(fwInfo);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		return result;
+	}
+
+	ret = igsc_image_fwdata_init(&fwInfo->oimg, (const uint8_t *)fwInfo->buffer.data(),
+								 (uint32_t)fwInfo->buffer.size());
+	if (ret == IGSC_ERROR_BAD_IMAGE)
+	{
+		ERR("FWdata init failed with error: %d\n", ret);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	ret = igsc_image_fwdata_version(fwInfo->oimg, &img_version);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to get image firmware version %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	ret = igsc_device_fwdata_version(&fwInfo->handle, &dev_version);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to get device firmware version %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	cmp = igsc_fwdata_version_compare(&img_version, &dev_version);
+	switch (cmp)
+	{
+	case IGSC_FWDATA_VERSION_ACCEPT:
+	case IGSC_FWDATA_VERSION_OLDER_VCN:
+		break;
+	default:
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
 ze_result_t gscupd::updateGfxData(firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
+	struct igsc_device_info dev_info;
+	int ret;
+
+	ret = igsc_device_get_device_info(&fwInfo->handle, &dev_info);
+	if (ret != IGSC_SUCCESS)
+	{
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	ret = igsc_image_fwdata_match_device(fwInfo->oimg, &dev_info);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to match image with device %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
+	ret = igsc_device_fwdata_image_update(&fwInfo->handle, fwInfo->oimg, progPercentFunc, fwInfo);
+	if (ret != IGSC_SUCCESS)
+	{
+		ERR("Failed to update firmware %d\n", ret);
+		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t gscupd::postUpdateGfxData(firmwareInfo *fwInfo)
+{
+	TRACING();
+	igsc_image_fwdata_release(fwInfo->oimg);
+	postUpdateGfx(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -245,8 +346,9 @@ vector<char> gscupd::readImageContent(const char *filePath)
 	return buffer;
 }
 
-bool gscupd::isGscFwImage(std::vector<char> &buffer)
+bool gscupd::isGscRightType(std::vector<char> &buffer, int expectedType)
 {
+	TRACING();
 	uint8_t type;
 	int ret;
 	ret = igsc_image_get_type((const uint8_t *)buffer.data(), (uint32_t)buffer.size(), &type);
@@ -254,7 +356,7 @@ bool gscupd::isGscFwImage(std::vector<char> &buffer)
 	{
 		return false;
 	}
-	return type == IGSC_IMAGE_TYPE_GFX_FW;
+	return type == expectedType;
 }
 
 vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()

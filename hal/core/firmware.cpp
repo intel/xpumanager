@@ -28,13 +28,13 @@
 #include <amcupd.h>
 
 updateFWCmdStruct updateFWCmds[] = {
-	{"GFX", FWUPD_PREFERENCE_GSC, &fwupd::updateGfx},
-	{"GFX_DATA", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxData},
-	{"GFX_CODE_DATA", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxCodeData},
-	{"GFX_PSCBIN", FWUPD_PREFERENCE_GSC, &fwupd::updateGfxPscBin},
-	{"FAN_TABLE", FWUPD_PREFERENCE_GSC, &fwupd::updateFanTable},
-	{"VR_CONFIG", FWUPD_PREFERENCE_GSC, &fwupd::updateVrConfig},
-	{"AMC", FWUPD_PREFERENCE_AMC, &fwupd::updateAMC},
+	{GFX, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx},
+	{GFX_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData, &fwupd::postUpdateGfxData},
+	{GFX_CODE_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxCodeData, &fwupd::updateGfxCodeData, &fwupd::postUpdateGfxCodeData},
+	{GFX_PSCBIN, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin, &fwupd::postUpdateGfxPscBin},
+	{FAN_TABLE, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable, &fwupd::postUpdateFanTable},
+	{VR_CONFIG, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig, &fwupd::postUpdateVrConfig},
+	{AMC, FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC},
 };
 
 firmware::~firmware()
@@ -94,7 +94,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	for (i = 0; i < ARRAY_SIZE(updateFWCmds); i++)
 	{
 		// Find the matching firmware type
-		if (STRCASECMP(fwInfo->firmwareType.c_str(), updateFWCmds[i].name) == 0)
+		if (!STRCASECMP(fwInfo->firmwareType.c_str(), TOSTR(updateFWCmds[i].fw)))
 		{
 			// Allocate the appropriate firmware update class based on the update preference
 			switch (updateFWCmds[i].preference)
@@ -113,8 +113,31 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 				return ZE_RESULT_ERROR_UNKNOWN;
 			}
 
-			// Call the corresponding firmware update function in the hal
+			fwInfo->fwType = updateFWCmds[i].fw;
+
+			// Call the corresponding pre-update, firmware update and post-update functions in the hal
+			result = (fw->*updateFWCmds[i].preUpdateFunc)(fwInfo);
+			if (result != ZE_RESULT_SUCCESS)
+			{
+				ERR("Failed to pre-update firmware %d\n", result);
+				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
+				delete fw;
+				return result;
+			}
 			result = (fw->*updateFWCmds[i].updateFunc)(fwInfo);
+			if (result != ZE_RESULT_SUCCESS)
+			{
+				ERR("Failed to update firmware %d\n", result);
+				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
+				delete fw;
+				return result;
+			}
+			result = (fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
+			if (result != ZE_RESULT_SUCCESS)
+			{
+				delete fw;
+				return result;
+			}
 
 			delete fw;
 			break;

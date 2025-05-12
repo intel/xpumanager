@@ -28,6 +28,8 @@
 #include <fwupd.h>
 #include <os.h>
 
+#define TOSTR(x) #x
+
 class LIBXPUM_API firmware : public sysman
 {
 private:
@@ -41,15 +43,6 @@ public:
 	ze_result_t enumFirmwares(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);
 	ze_result_t updateFW(firmwareInfo *fwInfo);
-};
-
-typedef ze_result_t (fwupd::*updateFW)(firmwareInfo *fwInfo);
-
-struct updateFWCmdStruct
-{
-	char name[MAX_PATH];
-	fwupdPreference preference;
-	updateFW updateFunc;
 };
 
 #endif
