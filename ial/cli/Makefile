@@ -16,24 +16,25 @@ export DEFINES_DMN = -DDAEMONMODE
 OBJECTS_BIN=$(SOURCES:.cpp=.bin.o)
 OBJECTS_DMN=$(SOURCES:.cpp=.dmn.o)
 OTHER_OBJECTS = $(wildcard ../cmn/*.o)
+OAL_OBJECTS = $(wildcard ../../oal/lin/*.o)
 
 all::
 	@echo "Compiling..."
 
-all::$(SOURCES) $(BINNAME) $(DMNNAME) $(OTHER_OBJECTS)
+all::$(SOURCES) $(BINNAME) $(DMNNAME) $(OTHER_OBJECTS) $(OAL_OBJECTS)
 
 all::
 	@echo "Done"
 
-$(BINNAME): $(OBJECTS_BIN) $(OTHER_OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@ $(OBJECTS_BIN) $(OTHER_OBJECTS) $(LIBS)
+$(BINNAME):  $(OAL_OBJECTS) $(OBJECTS_BIN) $(OTHER_OBJECTS)
+	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_BIN) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
-$(DMNNAME): $(OBJECTS_DMN) $(OTHER_OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@ $(OBJECTS_DMN) $(OTHER_OBJECTS) $(LIBS)
+$(DMNNAME):  $(OAL_OBJECTS) $(OBJECTS_DMN) $(OTHER_OBJECTS)
+	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_DMN) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \

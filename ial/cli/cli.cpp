@@ -42,6 +42,7 @@
 #include <functional>
 #include <list>
 #include <debug.h>
+#include <os.h>
 #include <iostream>
 #include <vector>
 #include "version.h"
@@ -146,6 +147,8 @@ int main(int argc, char *argv[])
 	TRACING();
 	bool found = false;
 	arg_struct arg;
+	bool priv = PRIVILEGECHECK();
+	UNUSED(priv);
 
 	// Create sysman driver instance
 	ze_result_t result = arg.sm.init();

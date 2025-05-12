@@ -62,7 +62,6 @@ struct option
 #define MAX_PATH 256
 #endif
 
-#define TESTING (1)
 #define UNUSED(x) (void)(x)
 #define TWO_MB (2 * 1024 * 1024)
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
@@ -78,6 +77,7 @@ struct option
 #define no_argument 0
 #define required_argument 1
 #define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
+#define PRIVILEGECHECK() true
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;

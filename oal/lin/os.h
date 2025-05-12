@@ -31,8 +31,6 @@
 #include <pthread.h>
 #include <getopt.h>
 
-#define TESTING 1
-
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
@@ -50,6 +48,7 @@
 #define GETOPT getopt
 #define GETOPT_LONG getopt_long
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
+#define PRIVILEGECHECK() privilegeCheck()
 
 typedef void *(*funcptr)(void *input_params);
 
@@ -66,5 +65,6 @@ public:
 
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
+bool privilegeCheck();
 
 #endif
