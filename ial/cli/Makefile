@@ -21,7 +21,7 @@ OAL_OBJECTS = $(wildcard ../../oal/lin/*.o)
 all::
 	@echo "Compiling..."
 
-all::$(SOURCES) $(BINNAME) $(DMNNAME) $(OTHER_OBJECTS) $(OAL_OBJECTS)
+all::$(OAL_OBJECTS) $(SOURCES) $(BINNAME) $(DMNNAME) $(OTHER_OBJECTS)
 
 all::
 	@echo "Done"

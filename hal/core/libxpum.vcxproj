@@ -176,7 +176,6 @@
     <ClInclude Include="pci.h" />
     <ClInclude Include="performance.h" />
     <ClInclude Include="power.h" />
-    <ClInclude Include="powerlimits.h" />
     <ClInclude Include="process.h" />
     <ClInclude Include="ras.h" />
     <ClInclude Include="scheduler.h" />
@@ -205,7 +204,6 @@
     <ClCompile Include="pci.cpp" />
     <ClCompile Include="performance.cpp" />
     <ClCompile Include="power.cpp" />
-    <ClCompile Include="powerlimits.cpp" />
     <ClCompile Include="process.cpp" />
     <ClCompile Include="ras.cpp" />
     <ClCompile Include="scheduler.cpp" />

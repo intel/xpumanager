@@ -43,9 +43,6 @@
     <ClCompile Include="power.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="powerlimits.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="process.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -130,9 +127,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="power.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="powerlimits.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="process.h">
