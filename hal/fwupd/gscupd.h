@@ -59,7 +59,7 @@ public:
 	gscupd() {}
 	~gscupd() {}
 
-	ze_result_t cmnPreUpdate(firmwareInfo *fwInfo);
+	ze_result_t cmnPreUpdate(firmwareInfo *fwInfo, bool checkType = true);
 
 	ze_result_t preUpdateGfx(firmwareInfo *fwInfo) override;
 	ze_result_t updateGfx(firmwareInfo *fwInfo) override;
@@ -71,7 +71,13 @@ public:
 
 	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo) override;
 	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo) override;
+
+	ze_result_t preUpdateFanTable(firmwareInfo *fwInfo) override;
 	ze_result_t updateFanTable(firmwareInfo *fwInfo) override;
+	ze_result_t postUpdateFanTable(firmwareInfo *fwInfo) override;
+
+	ze_result_t updateLateBinding(firmwareInfo *fwInfo);
+
 	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
 	vector<char> readImageContent(const char *filePath);
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
