@@ -127,6 +127,30 @@ ze_result_t frequency::getRange(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+ze_result_t frequency::setRange(double minFreq, double maxFreq)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_freq_range_t range = {};
+	range.min = minFreq;
+	range.max = maxFreq;
+
+	for (uint32_t i = 0; i < frequencyCount; ++i)
+	{
+		result = zesFrequencySetRange(frequencyHandles[i], &range);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to set frequency range. 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		DBG("Successfully set frequency range:\n");
+		DBG("  Min Frequency: %f MHz\n", range.min);
+		DBG("  Max Frequency: %f MHz\n", range.max);
+	}
+
+	return result;
+}
+
 ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle)
 {
 	zes_freq_state_t state;
@@ -165,13 +189,15 @@ ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+ze_result_t frequency::init(zes_device_handle_t device)
+{
+	return enumFrequencies(device);
+}
+
 ze_result_t frequency::zesRun(zes_device_handle_t device)
 {
-	ze_result_t result = enumFrequencies(device);
-	if (result != ZE_RESULT_SUCCESS)
-	{
-		return result;
-	}
+	UNUSED(device);
+	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < frequencyCount; ++i)
 	{
