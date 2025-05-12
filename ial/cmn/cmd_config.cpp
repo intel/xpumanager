@@ -32,6 +32,7 @@
 #include <standby.h>
 #include <scheduler.h>
 #include <ecc.h>
+#include <fabric.h>
 
 configCmdStruct configCmds[] = {
 	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
@@ -248,13 +249,47 @@ ze_result_t cmdConfig::setPerformanceFactor(configInfo *cfgInfo)
 ze_result_t cmdConfig::setXeLinkPort(configInfo *cfgInfo)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	// Set Xe Link port. Valid options are 0:disable; 1:enable
+	int enable = stoi(cfgInfo->option[configCmdType::XELINKPORT]);
+	if (enable != 0 && enable != 1)
+	{
+		ERR("Invalid Xe Link port value. Valid options are 0:disable; 1:enable\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	// Set the Xe Link port using the device class
+	fabric *f = (fabric *)cfgInfo->dev->getFabric();
+	if (f == nullptr)
+	{
+		ERR("Error: Fabric pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ze_result_t result = f->setPortConfig(enable == 1 ? true : false);
+
+	return result;
 }
 
 ze_result_t cmdConfig::setXeLinkPortBeaconing(configInfo *cfgInfo)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	// Set Xe Link port beaconing. Valid options are 0:disable; 1:enable
+	int enable = stoi(cfgInfo->option[configCmdType::XELINKPORTBEACONING]);
+	if (enable != 0 && enable != 1)
+	{
+		ERR("Invalid Xe Link port beaconing value. Valid options are 0:disable; 1:enable\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	// Set the Xe Link port beaconing using the device class
+	fabric *f = (fabric *)cfgInfo->dev->getFabric();
+	if (f == nullptr)
+	{
+		ERR("Error: Fabric pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ze_result_t result = f->setPortBeaconing(enable == 1 ? true : false);
+
+	return result;
 }
 
 ze_result_t cmdConfig::setMemoryEcc(configInfo *cfgInfo)
