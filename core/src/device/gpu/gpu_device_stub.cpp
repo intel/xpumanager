@@ -49,6 +49,7 @@
 #include "firmware/psc_txcal_blob.h"
 
 #define MAX_SUB_DEVICE 256
+#define INTEL_VENDOR_ID 0x8086
 
 namespace xpum {
 
@@ -332,9 +333,114 @@ void GPUDeviceStub::init() {
         throw LevelZeroInitializationException("zeInit error");
     }
 
+    if (isBmgOrNewer()) {
+        bool initialized = initSysmanWithZesInit();
+        if (!initialized) {
+            XPUM_LOG_ERROR("GPUDeviceStub::init zesInit error: {0:x}", ret);
+            throw LevelZeroInitializationException("zesInit error");
+        }
+    }
+
     if (Configuration::INITIALIZE_PCIE_MANAGER) {
         pcie_manager.init();
     }
+}
+
+bool GPUDeviceStub::initSysmanWithZesInit() {
+   typedef uint32_t zes_init_flags_t;
+   typedef ze_result_t (ZE_APICALL *pfnZesInit_t)(
+   		zes_init_flags_t
+    	);
+    pfnZesInit_t pfnZesInit;
+    void *dlHandle = dlopen("libze_loader.so.1", RTLD_NOW);
+    if (dlHandle == nullptr) {
+        return false;
+    }
+    pfnZesInit =
+        reinterpret_cast<pfnZesInit_t>(dlsym(dlHandle,
+        "zesInit"));
+    if (pfnZesInit == nullptr) {
+        dlclose(dlHandle);
+        return false;
+    }
+    ze_result_t result = pfnZesInit(0);
+    if(result == ZE_RESULT_SUCCESS){
+        dlclose(dlHandle);
+	return true;
+    }
+
+    dlclose(dlHandle);
+    return false;
+}
+
+bool GPUDeviceStub::isLegacyPlatform(int deviceId) {
+    switch (deviceId) {
+	//ATS_P    
+        case 0x0205:
+        case 0x020A:
+	//ATS_M_1
+        case 0x56c0:
+	//ATS_M_3
+        case 0x56c1:
+	//ATS_M_1G
+        case 0x56c2:
+	//PVC	
+        case 0x0b69:
+        case 0x0bd0:
+        case 0x0bd4:
+        case 0x0bd5:
+        case 0x0bd6:
+        case 0x0bd7:
+        case 0x0bd8:
+        case 0x0bd9:
+        case 0x0bda:
+        case 0x0bdb:
+        case 0x0be5:
+        case 0x0b6e:
+        //SG1    
+        case 0x4907:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool GPUDeviceStub::isBmgOrNewer() {
+    uint32_t driverCount = 0;
+    ze_result_t ret = zeDriverGet(&driverCount, nullptr);
+    if (driverCount == 0) {
+        return false;
+    }
+    std::vector<ze_driver_handle_t> allDrivers;
+    allDrivers.resize(driverCount);
+    ret = zeDriverGet(&driverCount, allDrivers.data());
+    if (ret != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    for (uint32_t it = 0; it < driverCount; it++) {
+        uint32_t deviceCount = 0;
+        ret = zeDeviceGet(allDrivers[it], &deviceCount, nullptr);
+        if ((ret != ZE_RESULT_SUCCESS) || (deviceCount == 0)) {
+            return false;
+        }
+        std::vector<ze_device_handle_t> devices;
+        devices.resize(deviceCount);
+        ret = zeDeviceGet(allDrivers[it], &deviceCount, devices.data());
+        if (ret != ZE_RESULT_SUCCESS) {
+            return false;
+        }
+        for (const auto& device : devices) {
+            ze_device_properties_t properties = {};
+	    properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	     ret = zeDeviceGetProperties(device, &properties);
+            if (properties.type == ZE_DEVICE_TYPE_GPU && properties.vendorId == INTEL_VENDOR_ID) {
+		if(!isLegacyPlatform(properties.deviceId)){
+			return true;
+		}	
+            }
+        }
+    }
+    return false;
 }
 
 void GPUDeviceStub::checkInitDependency() {

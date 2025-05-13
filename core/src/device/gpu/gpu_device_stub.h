@@ -210,6 +210,10 @@ private:
 
     void init();
 
+    bool initSysmanWithZesInit();
+    bool isBmgOrNewer();
+    bool isLegacyPlatform(int deviceId);
+
     static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
 
     static std::shared_ptr<MeasurementData> toGetActuralRequestFrequency(const zes_device_handle_t& device);
