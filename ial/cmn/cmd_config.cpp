@@ -230,6 +230,14 @@ ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
 		string yieldTimeoutStr = timeoutValueStr.substr(secondCommaPos + 1);
 		float interval = stof(intervalStr);
 		float yieldTimeout = stof(yieldTimeoutStr);
+
+		// Valid values are between 5000 to 100,000,000.
+		if (interval < 5000 || yieldTimeout < 5000 || interval > 100000000 || yieldTimeout > 100000000)
+		{
+			ERR("Invalid scheduler mode values. Valid range is between 5000 to 100,000,000.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
 		result = sched->setTimesliceMode(interval, yieldTimeout);
 	}
 	else
