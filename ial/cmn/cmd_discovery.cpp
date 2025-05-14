@@ -26,9 +26,17 @@
 #include "debug.h"
 #include <assert.h>
 
-discoveryCmdStruct discoveryCmds[] = {
-	{"dump", &cmdDiscovery::dump},
-	{"listamcversions", &cmdDiscovery::listamcversions},
+discoveryCmdStruct discCmds[] = {
+	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}, nullptr},
+	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}, nullptr},
+	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dev},
+	{discCmdType::DISC_PHYSICALFUNCTION, {"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
+	{discCmdType::DISC_VIRTUALFUNCTION, {"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
+	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump},
+	{discCmdType::DISC_LISTAMCVERSIONS, {"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions},
+	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}, nullptr},
+	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}, nullptr},
+	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}, nullptr},
 };
 
 /**
@@ -54,8 +62,8 @@ void cmdDiscovery::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
 	helpList->push_back(new helpCmd(NO_GAP, ""));
 	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--pf,--physicalfunction     Display the physical functions only"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--vf,--virtualfunction      Display the virtual functions only"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "--pf,--physicalFunction     Display the physical functions only"));
+	helpList->push_back(new helpCmd(SMALL_GAP, "--vf,--virtualFunction      Display the virtual functions only"));
 	helpList->push_back(new helpCmd(SMALL_GAP, "--dump                      Property ID to dump device properties in CSV format. Separated by the comma. \"-1\" means all properties"));
 	helpList->push_back(new helpCmd(LARGE_GAP, "1. Device ID"));
 	helpList->push_back(new helpCmd(LARGE_GAP, "2. Device Name"));
@@ -87,19 +95,271 @@ void cmdDiscovery::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 }
 
-ze_result_t cmdDiscovery::dump(char *subcmd, char *args)
+ze_result_t cmdDiscovery::dev(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(discCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiscovery::listamcversions(char *subcmd, char *args)
+ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(discCmds);
+	UNUSED(d);
+	discoveryDumpStruct dumpCmds[] = {
+		{DUMP_DEVICEID, &cmdDiscovery::deviceID},
+		{DUMP_DEVICENAME, &cmdDiscovery::deviceName},
+		{DUMP_VENDORNAME, &cmdDiscovery::vendorName},
+		{DUMP_SOCUUID, &cmdDiscovery::socUuid},
+		{DUMP_SERIALNUMBER, &cmdDiscovery::serialNumber},
+		{DUMP_CORECLOCKRATE, &cmdDiscovery::coreClockRate},
+		{DUMP_STEPPING, &cmdDiscovery::stepping},
+		{DUMP_DRIVERVERSION, &cmdDiscovery::driverVersion},
+		{DUMP_GFXFIRMWAREVERSION, &cmdDiscovery::gfxFirmwareVersion},
+		{DUMP_GFXDATAFIRMWAREVERSION, &cmdDiscovery::gfxDataFirmwareVersion},
+		{DUMP_PCIBDFADDRESS, &cmdDiscovery::pciBDFAddress},
+		{DUMP_PCISLOT, &cmdDiscovery::pciSlot},
+		{DUMP_PCIEGENERATION, &cmdDiscovery::pcieGeneration},
+		{DUMP_PCIEMAXLINKWIDTH, &cmdDiscovery::pcieMaxLinkWidth},
+		{DUMP_OAMSOCID, &cmdDiscovery::oamSocketID},
+		{DUMP_MEMORYPHYSICALSIZE, &cmdDiscovery::memoryPhysicalSize},
+		{DUMP_MEMORYCHANNELS, &cmdDiscovery::memoryChannels},
+		{DUMP_MEMORYBUSWIDTH, &cmdDiscovery::memoryBusWidth},
+		{DUMP_EUS, &cmdDiscovery::eus},
+		{DUMP_MEDIAENGINES, &cmdDiscovery::mediaEngines},
+		{DUMP_MEDIAENHANCEMENTENGINES, &cmdDiscovery::mediaEnhancementEngines},
+		{DUMP_GFXFIRMWARESTATUS, &cmdDiscovery::gfxFirmwareStatus},
+		{DUMP_PCIVENDORID, &cmdDiscovery::pciVendorID},
+		{DUMP_PCIDEVICEID, &cmdDiscovery::pciDeviceID},
+	};
+
+	for (auto &cmd : dumpCmds)
+	{
+		if (cmd.type == discCmds[discCmdType::DISC_DUMP].type)
+		{
+			DBG("Running command: %d\n", cmd.type);
+			(this->*cmd.func)(discCmds, d);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::stepping(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::physicalFunction(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::virtualFunction(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiscovery::listamcversions(discoveryCmdStruct *discCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(discCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -111,6 +371,92 @@ ze_result_t cmdDiscovery::listamcversions(char *subcmd, char *args)
 int cmdDiscovery::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
+	devInfo d = {};
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
+	bool found = false;
+	int opt;
+	int optionIndex = 0;
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(discCmds, ARRAY_SIZE(discCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			return 0;
+		case 'j':
+			discCmds[discCmdType::DISC_JSON].enabled = true;
+			break;
+		case 'd':
+			discCmds[discCmdType::DISC_DEVICE].enabled = true;
+			discCmds[discCmdType::DISC_DEVICE].val = optarg;
+			break;
+		case 'u':
+			discCmds[discCmdType::DISC_USERNAME].enabled = true;
+			discCmds[discCmdType::DISC_USERNAME].val = optarg;
+			break;
+		case 'p':
+			discCmds[discCmdType::DISC_PASSWORD].enabled = true;
+			discCmds[discCmdType::DISC_PASSWORD].val = optarg;
+			break;
+		case 'y':
+			discCmds[discCmdType::DISC_ASSUMEYES].enabled = true;
+			break;
+		case 0:
+			for (auto &cmd : discCmds)
+			{
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
+				{
+					discCmds[cmd.type].enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument)
+					{
+						discCmds[cmd.type].val = optarg;
+					}
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			break;
+		default:
+			// Handle invalid options
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	result = args->sm.findDeviceByBDF(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : discCmds)
+		{
+			if (cmd.enabled && cmd.func != nullptr)
+			{
+				DBG("Running command: %s\n", cmd.opt.name);
+				(this->*cmd.func)(discCmds, &d);
+			}
+		}
+	}
 	return 0;
 }
