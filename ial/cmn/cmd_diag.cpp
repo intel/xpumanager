@@ -45,17 +45,17 @@
  */
 
 diagCmdStruct diagCmds[] = {
-	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}, nullptr},
-	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}, nullptr},
-	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}, nullptr},
-	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, nullptr},
+	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}},
+	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}},
+	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}},
+	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}},
 	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::runPrecheck},
 	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::runStress},
 	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest},
 	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::runListTypes},
 	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::runGpu},
 	{diagCmdType::SINCE, {"since", required_argument, 0, 0}, &cmdDiag::runSince},
-	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}, nullptr},
+	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}},
 };
 
 /**
