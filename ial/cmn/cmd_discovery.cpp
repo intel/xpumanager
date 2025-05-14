@@ -27,16 +27,16 @@
 #include <assert.h>
 
 discoveryCmdStruct discCmds[] = {
-	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}, nullptr},
-	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}, nullptr},
+	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
+	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}},
 	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dev},
 	{discCmdType::DISC_PHYSICALFUNCTION, {"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
 	{discCmdType::DISC_VIRTUALFUNCTION, {"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
 	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump},
 	{discCmdType::DISC_LISTAMCVERSIONS, {"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions},
-	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}, nullptr},
-	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}, nullptr},
-	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}, nullptr},
+	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}},
+	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}},
+	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}},
 };
 
 /**

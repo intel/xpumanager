@@ -35,10 +35,10 @@
 #include <fabric.h>
 
 configCmdStruct configCmds[] = {
-	{configCmdType::CONFIGHELP, {"help", no_argument, 0, 'h'}, nullptr},
-	{configCmdType::CONFIGJSON, {"json", no_argument, 0, 'j'}, nullptr},
-	{configCmdType::CONFIGDEVICE, {"device", required_argument, 0, 'd'}, nullptr},
-	{configCmdType::TILE, {"tile", required_argument, 0, 't'}, nullptr},
+	{configCmdType::CONFIGHELP, {"help", no_argument, 0, 'h'}},
+	{configCmdType::CONFIGJSON, {"json", no_argument, 0, 'j'}},
+	{configCmdType::CONFIGDEVICE, {"device", required_argument, 0, 'd'}},
+	{configCmdType::TILE, {"tile", required_argument, 0, 't'}},
 	{configCmdType::FREQUENCYRANGE, {"frequencyrange", required_argument, 0, 0}, &cmdConfig::setFrequencyRange},
 	{configCmdType::POWERLIMIT, {"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit},
 	{configCmdType::STANDBYMODE, {"standby", required_argument, 0, 0}, &cmdConfig::setStandby},
