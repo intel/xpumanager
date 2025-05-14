@@ -46,8 +46,8 @@
 
 diagCmdStruct diagCmds[] = {
 	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}, nullptr},
-	{diagCmdType::JSON, {"json", no_argument, 0, 'j'}, nullptr},
-	{diagCmdType::DEVICE, {"device", required_argument, 0, 'd'}, nullptr},
+	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}, nullptr},
+	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}, nullptr},
 	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, nullptr},
 	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::runPrecheck},
 	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::runStress},
@@ -184,13 +184,13 @@ ze_result_t cmdDiag::runSince(diagCmdStruct *diagCmds, devInfo *d)
 int cmdDiag::run(arg_struct *args)
 {
 	TRACING();
-	int opt;
-	int optionIndex = 0;
-	bool found = false;
+	devInfo d = {};
 	vector<device *> deviceList;
 	vector<ze_device_handle_t> deviceHandleList;
 	ze_result_t result;
-	devInfo d = {};
+	bool found = false;
+	int opt;
+	int optionIndex = 0;
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
@@ -205,11 +205,11 @@ int cmdDiag::run(arg_struct *args)
 			// diagCmds[diagCmdType::DIAGHELP].sf()
 			return 0;
 		case 'j':
-			diagCmds[diagCmdType::JSON].enabled = true;
+			diagCmds[diagCmdType::DIAGJSON].enabled = true;
 			break;
 		case 'd':
-			diagCmds[diagCmdType::DEVICE].enabled = true;
-			diagCmds[diagCmdType::DEVICE].val = optarg;
+			diagCmds[diagCmdType::DIAGDEVICE].enabled = true;
+			diagCmds[diagCmdType::DIAGDEVICE].val = optarg;
 			break;
 		case 'l':
 			diagCmds[diagCmdType::LEVEL].enabled = true;
@@ -245,10 +245,10 @@ int cmdDiag::run(arg_struct *args)
 		}
 	}
 
-	result = args->sm.findDeviceByBDF(diagCmds[diagCmdType::DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDeviceByBDF(diagCmds[diagCmdType::DIAGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Error: Device handle not found for device ID '%s'.\n", diagCmds[diagCmdType::DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '%s'.\n", diagCmds[diagCmdType::DIAGDEVICE].val.c_str());
 		return result;
 	}
 

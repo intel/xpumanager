@@ -32,8 +32,8 @@
 enum diagCmdType
 {
 	DIAGHELP,
-	JSON,
-	DEVICE,
+	DIAGJSON,
+	DIAGDEVICE,
 	LEVEL,
 	PRECHECK,
 	STRESS,
