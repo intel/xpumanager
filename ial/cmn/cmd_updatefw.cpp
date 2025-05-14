@@ -72,6 +72,7 @@ int cmdUpdateFW::run(arg_struct *args)
 	ze_result_t result;
 
 	int opt;
+	int optionIndex = 0;
 	const char *optString = "hjd:t:f:u:p:y";
 	struct option longOpts[] = {
 		{"help", no_argument, nullptr, 'h'},
@@ -86,7 +87,7 @@ int cmdUpdateFW::run(arg_struct *args)
 		{"recovery", no_argument, nullptr, 0},
 		{nullptr, 0, nullptr, 0}};
 
-	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, nullptr)) != -1)
+	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, &optionIndex)) != -1)
 	{
 		switch (opt)
 		{
@@ -115,17 +116,22 @@ int cmdUpdateFW::run(arg_struct *args)
 			fwInfo.assumeYes = true;
 			break;
 		case 0:
-			if (STRCASECMP("force", longOpts[optind - 1].name) == 0)
+			if (STRCASECMP("force", longOpts[optionIndex].name) == 0)
 			{
 				fwInfo.forceUpdate = true;
 			}
-			else if (STRCASECMP("recovery", longOpts[optind - 1].name) == 0)
+			else if (STRCASECMP("recovery", longOpts[optionIndex].name) == 0)
 			{
 				fwInfo.recoveryMode = true;
 			}
+			else
+			{
+				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
 			break;
 		default:
-			return ZE_RESULT_ERROR_UNKNOWN;
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
 

@@ -35,17 +35,21 @@
 #include <fabric.h>
 
 configCmdStruct configCmds[] = {
-	{configCmdType::FREQUENCYRANGE, "frequencyrange", &cmdConfig::setFrequencyRange},
-	{configCmdType::POWERLIMIT, "powerlimit", &cmdConfig::setPowerLimit},
-	{configCmdType::STANDBYMODE, "standby", &cmdConfig::setStandby},
-	{configCmdType::SCHEDULERMODE, "scheduler", &cmdConfig::setScheduler},
-	{configCmdType::PERFORMANCEFACTOR, "performancefactor", &cmdConfig::setPerformanceFactor},
-	{configCmdType::XELINKPORT, "xelinkport", &cmdConfig::setXeLinkPort},
-	{configCmdType::XELINKPORTBEACONING, "xelinkportbeaconing", &cmdConfig::setXeLinkPortBeaconing},
-	{configCmdType::MEMORYECC, "memoryecc", &cmdConfig::setMemoryEcc},
-	{configCmdType::RESET, "reset", &cmdConfig::resetDevice},
-	{configCmdType::PPR, "ppr", &cmdConfig::applyPpr},
-	{configCmdType::FORCE, "force", &cmdConfig::forcePpr},
+	{configCmdType::CONFIGHELP, {"help", no_argument, 0, 'h'}, nullptr},
+	{configCmdType::CONFIGJSON, {"json", no_argument, 0, 'j'}, nullptr},
+	{configCmdType::CONFIGDEVICE, {"device", required_argument, 0, 'd'}, nullptr},
+	{configCmdType::TILE, {"tile", required_argument, 0, 't'}, nullptr},
+	{configCmdType::FREQUENCYRANGE, {"frequencyrange", required_argument, 0, 0}, &cmdConfig::setFrequencyRange},
+	{configCmdType::POWERLIMIT, {"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit},
+	{configCmdType::STANDBYMODE, {"standby", required_argument, 0, 0}, &cmdConfig::setStandby},
+	{configCmdType::SCHEDULERMODE, {"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler},
+	{configCmdType::PERFORMANCEFACTOR, {"performancefactor", required_argument, 0, 0}, &cmdConfig::setPerformanceFactor},
+	{configCmdType::XELINKPORT, {"xelinkport", required_argument, 0, 0}, &cmdConfig::setXeLinkPort},
+	{configCmdType::XELINKPORTBEACONING, {"xelinkportbeaconing", required_argument, 0, 0}, &cmdConfig::setXeLinkPortBeaconing},
+	{configCmdType::MEMORYECC, {"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc},
+	{configCmdType::RESET, {"reset", no_argument, 0, 0}, &cmdConfig::resetDevice},
+	{configCmdType::PPR, {"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr},
+	{configCmdType::FORCE, {"force", no_argument, 0, 0}, &cmdConfig::forcePpr},
 };
 
 /**
@@ -97,14 +101,14 @@ void cmdConfig::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
 }
 
-ze_result_t cmdConfig::setFrequencyRange(configInfo *cfgInfo)
+ze_result_t cmdConfig::setFrequencyRange(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 
 	ze_result_t result;
 
 	// Parse the frequency range from the option string
-	string rangeStr = cfgInfo->option[configCmdType::FREQUENCYRANGE];
+	string rangeStr = configCmds[configCmdType::FREQUENCYRANGE].val;
 	size_t commaPos = rangeStr.find(',');
 
 	if (commaPos == string::npos)
@@ -125,7 +129,7 @@ ze_result_t cmdConfig::setFrequencyRange(configInfo *cfgInfo)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	frequency *fq = (frequency *)cfgInfo->dev->getFrequency();
+	frequency *fq = (frequency *)d->dev->getFrequency();
 	if (fq == nullptr)
 	{
 		ERR("Error: Frequency pointer not found.\n");
@@ -137,19 +141,19 @@ ze_result_t cmdConfig::setFrequencyRange(configInfo *cfgInfo)
 	return result;
 }
 
-ze_result_t cmdConfig::setPowerLimit(configInfo *cfgInfo)
+ze_result_t cmdConfig::setPowerLimit(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	ze_result_t result;
 	// Parse the power limit from the option string.
-	float powerLimit = stof(cfgInfo->option[configCmdType::POWERLIMIT]);
+	float powerLimit = stof(configCmds[configCmdType::POWERLIMIT].val);
 	if (powerLimit < 0)
 	{
 		ERR("Invalid power limit value. Power limit must be non-negative.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	power *pwr = (power *)cfgInfo->dev->getPower();
+	power *pwr = (power *)d->dev->getPower();
 	if (pwr == nullptr)
 	{
 		ERR("Error: Power pointer not found.\n");
@@ -162,12 +166,12 @@ ze_result_t cmdConfig::setPowerLimit(configInfo *cfgInfo)
 	return result;
 }
 
-ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
+ze_result_t cmdConfig::setStandby(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 
 	// Set standby mode. Valid options are default and never
-	string standbyMode = cfgInfo->option[configCmdType::STANDBYMODE];
+	string standbyMode = configCmds[configCmdType::STANDBYMODE].val;
 	if (standbyMode != "default" && standbyMode != "never")
 	{
 		ERR("Invalid standby mode. Valid options are default and never.\n");
@@ -175,7 +179,7 @@ ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
 	}
 
 	// Set the standby mode using the device class
-	standby *stby = (standby *)cfgInfo->dev->getStandby();
+	standby *stby = (standby *)d->dev->getStandby();
 	if (stby == nullptr)
 	{
 		ERR("Error: Standby pointer not found.\n");
@@ -188,14 +192,14 @@ ze_result_t cmdConfig::setStandby(configInfo *cfgInfo)
 	return result;
 }
 
-ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
+ze_result_t cmdConfig::setScheduler(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	// Set scheduler mode. Valid options are  \"timeout\",timeoutValue (us) or
 	// \"timeslice\",interval (us),yieldtimeout (us) or \"exclusive\"
-	string schedulerMode = cfgInfo->option[configCmdType::SCHEDULERMODE];
+	string schedulerMode = configCmds[configCmdType::SCHEDULERMODE].val;
 	size_t commaPos = schedulerMode.find(',');
 	if (commaPos == string::npos && schedulerMode != "exclusive")
 	{
@@ -203,7 +207,7 @@ ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	scheduler *sched = (scheduler *)cfgInfo->dev->getScheduler();
+	scheduler *sched = (scheduler *)d->dev->getScheduler();
 	if (sched == nullptr)
 	{
 		ERR("Error: Scheduler pointer not found.\n");
@@ -248,24 +252,24 @@ ze_result_t cmdConfig::setScheduler(configInfo *cfgInfo)
 	return result;
 }
 
-ze_result_t cmdConfig::setPerformanceFactor(configInfo *cfgInfo)
+ze_result_t cmdConfig::setPerformanceFactor(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::setXeLinkPort(configInfo *cfgInfo)
+ze_result_t cmdConfig::setXeLinkPort(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	// Set Xe Link port. Valid options are 0:disable; 1:enable
-	int enable = stoi(cfgInfo->option[configCmdType::XELINKPORT]);
+	int enable = stoi(configCmds[configCmdType::XELINKPORT].val);
 	if (enable != 0 && enable != 1)
 	{
 		ERR("Invalid Xe Link port value. Valid options are 0:disable; 1:enable\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	// Set the Xe Link port using the device class
-	fabric *f = (fabric *)cfgInfo->dev->getFabric();
+	fabric *f = (fabric *)d->dev->getFabric();
 	if (f == nullptr)
 	{
 		ERR("Error: Fabric pointer not found.\n");
@@ -277,18 +281,18 @@ ze_result_t cmdConfig::setXeLinkPort(configInfo *cfgInfo)
 	return result;
 }
 
-ze_result_t cmdConfig::setXeLinkPortBeaconing(configInfo *cfgInfo)
+ze_result_t cmdConfig::setXeLinkPortBeaconing(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	// Set Xe Link port beaconing. Valid options are 0:disable; 1:enable
-	int enable = stoi(cfgInfo->option[configCmdType::XELINKPORTBEACONING]);
+	int enable = stoi(configCmds[configCmdType::XELINKPORTBEACONING].val);
 	if (enable != 0 && enable != 1)
 	{
 		ERR("Invalid Xe Link port beaconing value. Valid options are 0:disable; 1:enable\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	// Set the Xe Link port beaconing using the device class
-	fabric *f = (fabric *)cfgInfo->dev->getFabric();
+	fabric *f = (fabric *)d->dev->getFabric();
 	if (f == nullptr)
 	{
 		ERR("Error: Fabric pointer not found.\n");
@@ -300,25 +304,25 @@ ze_result_t cmdConfig::setXeLinkPortBeaconing(configInfo *cfgInfo)
 	return result;
 }
 
-ze_result_t cmdConfig::setMemoryEcc(configInfo *cfgInfo)
+ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	// Set memory ECC. Valid options are 0:disable; 1:enable
-	int memoryEcc = stoi(cfgInfo->option[configCmdType::MEMORYECC]);
+	int memoryEcc = stoi(configCmds[configCmdType::MEMORYECC].val);
 	if (memoryEcc != 0 && memoryEcc != 1)
 	{
 		ERR("Invalid memory ECC value. Valid options are 0:disable; 1:enable\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	// Set the memory ECC using the device class
-	ecc *e = (ecc *)cfgInfo->dev->getECC();
+	ecc *e = (ecc *)d->dev->getECC();
 	if (e == nullptr)
 	{
 		ERR("Error: ECC pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	ze_result_t result = e->setState(cfgInfo->deviceHdl, memoryEcc);
+	ze_result_t result = e->setState(d->deviceHdl, memoryEcc);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Failed to set memory ECC state: 0x%X\n", result);
@@ -327,19 +331,19 @@ ze_result_t cmdConfig::setMemoryEcc(configInfo *cfgInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::resetDevice(configInfo *cfgInfo)
+ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::applyPpr(configInfo *cfgInfo)
+ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdConfig::forcePpr(configInfo *cfgInfo)
+ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -353,35 +357,22 @@ ze_result_t cmdConfig::forcePpr(configInfo *cfgInfo)
 int cmdConfig::run(arg_struct *args)
 {
 	TRACING();
-	configInfo cfgInfo = {};
+	devInfo d = {};
 	vector<device *> deviceList;
 	vector<ze_device_handle_t> deviceHandleList;
 	configCmdType cmdType = configCmdType::TOTAL_CONFIG;
 	ze_result_t result;
-
 	int opt;
+	int optionIndex = 0;
 	bool found = false;
-	const char *optString = "hjd:t:";
-	struct option longOpts[] = {
-		{"help", no_argument, 0, 'h'},
-		{"json", no_argument, 0, 'j'},
-		{"device", required_argument, 0, 'd'},
-		{"tile", required_argument, 0, 't'},
-		{"frequencyrange", required_argument, 0, 0},
-		{"powerlimit", required_argument, 0, 0},
-		{"standby", required_argument, 0, 0},
-		{"scheduler", required_argument, 0, 0},
-		{"performancefactor", required_argument, 0, 0},
-		{"xelinkport", required_argument, 0, 0},
-		{"xelinkportbeaconing", required_argument, 0, 0},
-		{"memoryecc", required_argument, 0, 0},
-		{"reset", no_argument, 0, 0},
-		{"ppr", no_argument, 0, 0},
-		{"force", no_argument, 0, 0},
-	};
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(configCmds, ARRAY_SIZE(configCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
 
 	// Parse command line arguments
-	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, nullptr)) != -1)
+	while ((opt = GETOPT_LONG(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
 	{
 		switch (opt)
 		{
@@ -389,21 +380,26 @@ int cmdConfig::run(arg_struct *args)
 			help(nullptr);
 			return 0;
 		case 'j':
-			cfgInfo.jsonOutput = true;
+			configCmds[configCmdType::CONFIGJSON].enabled = true;
 			break;
 		case 'd':
-			cfgInfo.deviceId = optarg;
+			configCmds[configCmdType::CONFIGDEVICE].enabled = true;
+			configCmds[configCmdType::CONFIGDEVICE].val = optarg;
 			break;
 		case 't':
-			cfgInfo.tileId = optarg;
+			configCmds[configCmdType::TILE].enabled = true;
+			configCmds[configCmdType::TILE].val = optarg;
 			break;
 		case 0:
 			for (auto &cmd : configCmds)
 			{
-				if (STRCASECMP(longOpts[optind - 1].name, cmd.name) == 0)
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
 				{
-					cmdType = cmd.type;
-					cfgInfo.option[cmd.type] = optarg;
+					configCmds[cmd.type].enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument)
+					{
+						configCmds[cmd.type].val = optarg;
+					}
 					found = true;
 					break;
 				}
@@ -411,41 +407,41 @@ int cmdConfig::run(arg_struct *args)
 
 			if (!found)
 			{
-				ERR("Unknown command: %s\n", longOpts[optind - 1].name);
-				return -1;
+				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			break;
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
 
 	// Check if the device ID is provided
-	if (cfgInfo.deviceId.empty())
+	if (configCmds[configCmdType::CONFIGDEVICE].val.empty())
 	{
 		ERR("Device ID is required.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDeviceByBDF(cfgInfo.deviceId.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDeviceByBDF(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Error: Device handle not found for device ID '%s'.\n", cfgInfo.deviceId.c_str());
+		ERR("Error: Device handle not found for device ID '%s'.\n", configCmds[configCmdType::CONFIGDEVICE].val.c_str());
 		return result;
 	}
 
 	int i = 0;
 	for (auto &device : deviceList)
 	{
-		cfgInfo.dev = device;
-		cfgInfo.deviceHdl = deviceHandleList[i++];
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : configCmds)
 		{
 			if (cmd.type == cmdType)
 			{
-				(this->*cmd.sf)(&cfgInfo);
+				(this->*cmd.sf)(configCmds, &d);
 				break;
 			}
 		}

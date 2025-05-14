@@ -32,6 +32,10 @@
 
 enum configCmdType
 {
+	CONFIGHELP,
+	CONFIGJSON,
+	CONFIGDEVICE,
+	TILE,
 	FREQUENCYRANGE,
 	POWERLIMIT,
 	STANDBYMODE,
@@ -46,19 +50,7 @@ enum configCmdType
 	TOTAL_CONFIG,
 };
 
-struct configInfo
-{
-	bool jsonOutput;
-	string deviceId;
-	string tileId;
-	string option[TOTAL_CONFIG];
-	bool resetDevice;
-	bool applyPpr;
-	bool forcePpr;
-
-	device *dev;
-	ze_device_handle_t deviceHdl;
-};
+struct configCmdStruct;
 
 class cmdConfig : public cmds
 {
@@ -67,27 +59,29 @@ public:
 	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
 	~cmdConfig() {};
 	void help(list<helpCmd *> *helpList);
-	ze_result_t setFrequencyRange(configInfo *cfgInfo);
-	ze_result_t setPowerLimit(configInfo *cfgInfo);
-	ze_result_t setStandby(configInfo *cfgInfo);
-	ze_result_t setScheduler(configInfo *cfgInfo);
-	ze_result_t setPerformanceFactor(configInfo *cfgInfo);
-	ze_result_t setXeLinkPort(configInfo *cfgInfo);
-	ze_result_t setXeLinkPortBeaconing(configInfo *cfgInfo);
-	ze_result_t setMemoryEcc(configInfo *cfgInfo);
-	ze_result_t resetDevice(configInfo *cfgInfo);
-	ze_result_t applyPpr(configInfo *cfgInfo);
-	ze_result_t forcePpr(configInfo *cfgInfo);
+	ze_result_t setFrequencyRange(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setPowerLimit(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setStandby(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setScheduler(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setPerformanceFactor(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setXeLinkPort(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setXeLinkPortBeaconing(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setMemoryEcc(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t resetDevice(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t applyPpr(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t forcePpr(configCmdStruct *configCmds, devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdConfig::*configSubCmdFunc)(configInfo *cfgInfo);
+typedef ze_result_t (cmdConfig::*configSubCmdFunc)(configCmdStruct *configCmds, devInfo *d);
 
 struct configCmdStruct
 {
 	configCmdType type;
-	char name[MAX_PATH];
+	option opt;
 	configSubCmdFunc sf;
+	bool enabled;
+	string val;
 };
 
 #endif
