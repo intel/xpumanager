@@ -338,7 +338,7 @@ int cmdDiag::run(arg_struct *args)
 			if (!found)
 			{
 				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
-				return -1;
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
@@ -362,10 +362,10 @@ int cmdDiag::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : diagCmds)
 		{
-			if (cmd.enabled && cmd.sf != nullptr)
+			if (cmd.enabled && cmd.func != nullptr)
 			{
 				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.sf)(diagCmds, &d);
+				(this->*cmd.func)(diagCmds, &d);
 			}
 		}
 	}

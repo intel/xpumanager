@@ -96,7 +96,7 @@ struct diagCmdStruct
 {
 	diagCmdType type;
 	option opt;
-	diagSubCmdFunc sf;
+	diagSubCmdFunc func;
 	bool enabled;
 	string val;
 };
