@@ -49,11 +49,11 @@ diagCmdStruct diagCmds[] = {
 	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}},
 	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}},
 	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}},
-	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::runPrecheck},
-	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::runStress},
+	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::precheck},
+	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::stress},
 	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest},
-	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::runListTypes},
-	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::runGpu},
+	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::listTypes},
+	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::gpu},
 	{diagCmdType::SINCE, {"since", required_argument, 0, 0}, &cmdDiag::runSince},
 	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}},
 };
@@ -128,7 +128,7 @@ void cmdDiag::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(LARGE_GAP, "It also applies to diag level tests"));
 }
 
-ze_result_t cmdDiag::runPrecheck(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::precheck(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(diagCmds);
@@ -136,7 +136,7 @@ ze_result_t cmdDiag::runPrecheck(diagCmdStruct *diagCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runStress(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::stress(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(diagCmds);
@@ -149,10 +149,32 @@ ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 	TRACING();
 	UNUSED(diagCmds);
 	UNUSED(d);
+	diagSubCmdStruct diagSingleTests[] = {
+		{DIAG_COMPUTATION, &cmdDiag::computation},
+		{DIAG_MEMORYERROR, &cmdDiag::memoryError},
+		{DIAG_MEMORYBANDWIDTH, &cmdDiag::memoryBandwidth},
+		{DIAG_MEDIA, &cmdDiag::mediaCodec},
+		{DIAG_PCIEBANDWIDTH, &cmdDiag::pcieBandwidth},
+		{DIAG_POWER, &cmdDiag::power},
+		{DIAG_COMPUTATIONFUNCTEST, &cmdDiag::computationFuncTest},
+		{DIAG_MEDIAFUNCTEST, &cmdDiag::mediaFuncTest},
+		{DIAG_XELINKTHROUGHPUT, &cmdDiag::xeLinkThroughput},
+		{DIAG_XELINKALLTOALLTHROUGHPUT, &cmdDiag::xeLinkAllToAllThroughput},
+	};
+
+	for (auto &test : diagSingleTests)
+	{
+		if (test.type == diagCmds[diagCmdType::SINGLETEST].type)
+		{
+			DBG("Running test: %d\n", test.type);
+			(this->*test.func)(diagCmds, d);
+		}
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runListTypes(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::computation(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(diagCmds);
@@ -160,7 +182,87 @@ ze_result_t cmdDiag::runListTypes(diagCmdStruct *diagCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runGpu(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::memoryError(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::memoryBandwidth(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::mediaCodec(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::pcieBandwidth(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::power(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::computationFuncTest(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::mediaFuncTest(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::xeLinkThroughput(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::xeLinkAllToAllThroughput(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::listTypes(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::gpu(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(diagCmds);

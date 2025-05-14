@@ -45,6 +45,21 @@ enum diagCmdType
 	TOTAL_DIAG,
 };
 
+enum diagSubCmdType
+{
+	DIAG_COMPUTATION = 1,
+	DIAG_MEMORYERROR,
+	DIAG_MEMORYBANDWIDTH,
+	DIAG_MEDIA,
+	DIAG_PCIEBANDWIDTH,
+	DIAG_POWER,
+	DIAG_COMPUTATIONFUNCTEST,
+	DIAG_MEDIAFUNCTEST,
+	DIAG_XELINKTHROUGHPUT,
+	DIAG_XELINKALLTOALLTHROUGHPUT,
+	TOTAL_DIAG_SUBCMD
+};
+
 struct diagCmdStruct;
 
 class cmdDiag : public cmds
@@ -54,12 +69,24 @@ public:
 	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
 	~cmdDiag() {};
 	void help(list<helpCmd *> *helpList);
-	ze_result_t runPrecheck(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t runStress(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t precheck(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t stress(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t runSingleTest(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t runListTypes(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t runGpu(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t listTypes(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t gpu(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t runSince(diagCmdStruct *diagCmds, devInfo *d);
+
+	ze_result_t computation(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t memoryError(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t memoryBandwidth(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t mediaCodec(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t pcieBandwidth(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t power(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t computationFuncTest(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t mediaFuncTest(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t xeLinkThroughput(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t xeLinkAllToAllThroughput(diagCmdStruct *diagCmds, devInfo *d);
+
 	int run(arg_struct *args);
 };
 
@@ -72,6 +99,12 @@ struct diagCmdStruct
 	diagSubCmdFunc sf;
 	bool enabled;
 	string val;
+};
+
+struct diagSubCmdStruct
+{
+	int type;
+	diagSubCmdFunc func;
 };
 
 #endif
