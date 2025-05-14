@@ -79,7 +79,7 @@ struct configCmdStruct
 {
 	configCmdType type;
 	option opt;
-	configSubCmdFunc sf;
+	configSubCmdFunc func;
 	bool enabled;
 	string val;
 };

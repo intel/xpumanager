@@ -439,9 +439,9 @@ int cmdConfig::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : configCmds)
 		{
-			if (cmd.type == cmdType)
+			if (cmd.type == cmdType && cmd.func != nullptr)
 			{
-				(this->*cmd.sf)(configCmds, &d);
+				(this->*cmd.func)(configCmds, &d);
 				break;
 			}
 		}

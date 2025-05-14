@@ -27,42 +27,17 @@
 #include <assert.h>
 
 dumpCmdStruct dumpCmds[] = {
-	{"1", &cmdDump::dump1},
-	{"2", &cmdDump::dump2},
-	{"3", &cmdDump::dump3},
-	{"4", &cmdDump::dump4},
-	{"5", &cmdDump::dump5},
-	{"6", &cmdDump::dump6},
-	{"7", &cmdDump::dump7},
-	{"8", &cmdDump::dump8},
-	{"9", &cmdDump::dump9},
-	{"10", &cmdDump::dump10},
-	{"11", &cmdDump::dump11},
-	{"12", &cmdDump::dump12},
-	{"13", &cmdDump::dump13},
-	{"14", &cmdDump::dump14},
-	{"15", &cmdDump::dump15},
-	{"16", &cmdDump::dump16},
-	{"17", &cmdDump::dump17},
-	{"18", &cmdDump::dump18},
-	{"19", &cmdDump::dump19},
-	{"20", &cmdDump::dump20},
-	{"21", &cmdDump::dump21},
-	{"22", &cmdDump::dump22},
-	{"23", &cmdDump::dump23},
-	{"24", &cmdDump::dump24},
-	{"25", &cmdDump::dump25},
-	{"26", &cmdDump::dump26},
-	{"27", &cmdDump::dump27},
-	{"28", &cmdDump::dump28},
-	{"29", &cmdDump::dump29},
-	{"30", &cmdDump::dump30},
-	{"31", &cmdDump::dump31},
-	{"32", &cmdDump::dump32},
-	{"33", &cmdDump::dump33},
-	{"34", &cmdDump::dump34},
-	{"35", &cmdDump::dump35},
-	{"36", &cmdDump::dump36},
+	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
+	{dumpCmdType::DUMP_JSON, {"json", no_argument, 0, 'j'}},
+	{dumpCmdType::DUMP_DEVICE, {"device", required_argument, 0, 'd'}},
+	{dumpCmdType::DUMP_TILE, {"tile", required_argument, 0, 't'}},
+	{dumpCmdType::DUMP_METRICS, {"metrics", required_argument, 0, 'm'}, &cmdDump::metrics},
+	{dumpCmdType::DUMP_FILE, {"file", required_argument, 0, 'f'}},
+	{dumpCmdType::DUMP_IMS, {"ims", no_argument, 0, 'i'}},
+	{dumpCmdType::DUMP_TIME, {"time", no_argument, 0, 'T'}},
+	{dumpCmdType::DUMP_DATE, {"date", no_argument, 0, 'D'}},
+	{dumpCmdType::DUMP_INTERVAL, {"interval", required_argument, 0, 'i'}},
+	{dumpCmdType::DUMP_NUMBER, {"number", required_argument, 0, 'n'}},
 };
 
 /**
@@ -136,291 +111,352 @@ void cmdDump::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(SMALL_GAP, "--date                      Show date in timestamp"));
 }
 
-ze_result_t cmdDump::dump1(char *subcmd, char *args)
+ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	dumpCmdSubStruct dumpMetrics[] = {
+		{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization},
+		{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower},
+		{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency},
+		{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite},
+		{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, &cmdDump::gpuEuArrayIdle},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER, &cmdDump::gpuEuArrayResetCounter},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS, &cmdDump::gpuEuArrayProgrammingErrors},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS, &cmdDump::gpuEuArrayDriverErrors},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsCorrectable},
+		{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsUncorrectable},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION, &cmdDump::gpuMemoryBandwidthUtilization},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_USED, &cmdDump::gpuMemoryUsed},
+		{dumpCmdSubType::DUMP_PCIE_READ, &cmdDump::pcieRead},
+		{dumpCmdSubType::DUMP_PCIE_WRITE, &cmdDump::pcieWrite},
+		{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, &cmdDump::xeLinkThroughput},
+		{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION, &cmdDump::computeEngineUtilization},
+		{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION, &cmdDump::renderEngineUtilization},
+		{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION, &cmdDump::mediaDecoderEngineUtilization},
+		{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION, &cmdDump::mediaEncoderEngineUtilization},
+		{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION, &cmdDump::copyEngineUtilization},
+		{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, &cmdDump::mediaEnhancementEngineUtilization},
+		{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, &cmdDump::engineUtilization},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE, &cmdDump::gpuMemoryErrorsCorrectable},
+		{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE, &cmdDump::gpuMemoryErrorsUncorrectable},
+		{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION, &cmdDump::computeEngineGroupUtilization},
+		{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION, &cmdDump::renderEngineGroupUtilization},
+		{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION, &cmdDump::mediaEngineGroupUtilization},
+		{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION, &cmdDump::copyEngineGroupUtilization},
+		{dumpCmdSubType::DUMP_THROTTLE_REASON, &cmdDump::throttleReason},
+	};
+
+	// Iterate through the dump commands and execute the metrics function for each
+	for (auto &cmd : dumpMetrics)
+	{
+		if (cmd.type == dumpCmdType::DUMP_METRICS && cmd.func != nullptr)
+		{
+			result = (this->*cmd.func)(dumpCmds, d);
+			if (result != ZE_RESULT_SUCCESS)
+			{
+				ERR("Failed to execute metrics command\n");
+				break;
+			}
+		}
+	}
+
+	return result;
+}
+
+ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump2(char *subcmd, char *args)
+ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump3(char *subcmd, char *args)
+ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump4(char *subcmd, char *args)
+ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump5(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump6(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump7(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump8(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump9(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump10(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump11(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump12(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump13(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump14(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump15(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump16(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump17(char *subcmd, char *args)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump18(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump19(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump20(char *subcmd, char *args)
+ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump21(char *subcmd, char *args)
+ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump22(char *subcmd, char *args)
+ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump23(char *subcmd, char *args)
+ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump24(char *subcmd, char *args)
+ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump25(char *subcmd, char *args)
+ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump26(char *subcmd, char *args)
+ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump27(char *subcmd, char *args)
+ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump28(char *subcmd, char *args)
+ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump29(char *subcmd, char *args)
+ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump30(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump31(char *subcmd, char *args)
+ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump32(char *subcmd, char *args)
+ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump33(char *subcmd, char *args)
+ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump34(char *subcmd, char *args)
+ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump35(char *subcmd, char *args)
+ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::dump36(char *subcmd, char *args)
+ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(dumpCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -433,5 +469,98 @@ int cmdDump::run(arg_struct *args)
 {
 	TRACING();
 	UNUSED(args);
-	return 0;
+	devInfo d = {};
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
+	bool found = false;
+	int opt;
+	int optionIndex = 0;
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(dumpCmds, ARRAY_SIZE(dumpCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help(nullptr);
+			return ZE_RESULT_SUCCESS;
+		case 'j':
+			dumpCmds[dumpCmdType::DUMP_JSON].enabled = true;
+			break;
+		case 'd':
+			dumpCmds[dumpCmdType::DUMP_DEVICE].enabled = true;
+			dumpCmds[dumpCmdType::DUMP_DEVICE].val = optarg;
+			break;
+		case 't':
+			dumpCmds[dumpCmdType::DUMP_TILE].enabled = true;
+			dumpCmds[dumpCmdType::DUMP_TILE].val = optarg;
+			break;
+		case 'm':
+			dumpCmds[dumpCmdType::DUMP_METRICS].enabled = true;
+			dumpCmds[dumpCmdType::DUMP_METRICS].val = optarg;
+			break;
+		case 'i':
+			dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled = true;
+			dumpCmds[dumpCmdType::DUMP_INTERVAL].val = optarg;
+			break;
+		case 'n':
+			dumpCmds[dumpCmdType::DUMP_NUMBER].enabled = true;
+			dumpCmds[dumpCmdType::DUMP_NUMBER].val = optarg;
+			break;
+		case 0:
+			for (auto &cmd : dumpCmds)
+			{
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
+				{
+					dumpCmds[cmd.type].enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument)
+					{
+						dumpCmds[cmd.type].val = optarg;
+					}
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			break;
+		default:
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	result = args->sm.findDeviceByBDF(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : dumpCmds)
+		{
+			if (cmd.enabled && cmd.func != nullptr)
+			{
+				DBG("Running command: %s\n", cmd.opt.name);
+				(this->*cmd.func)(dumpCmds, &d);
+			}
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
