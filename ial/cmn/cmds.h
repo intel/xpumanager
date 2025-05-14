@@ -27,6 +27,7 @@
 
 #include <list>
 #include <driver.h>
+#include <string>
 #include "help_cmd.h"
 
 using namespace std;
@@ -59,5 +60,30 @@ struct cmd_struct
 	helpFunc hf;
 	runFunc rf;
 };
+
+struct devInfo
+{
+	device *dev;
+	ze_device_handle_t deviceHdl;
+};
+
+template <typename T>
+void processOptions(T *data, uint32_t size, string &shortOpts, vector<struct option> &longOptsVec)
+{
+	for (uint32_t i = 0; i < size; ++i)
+	{
+		longOptsVec.push_back(data[i].opt);
+
+		char val = data[i].opt.val;
+		if (val == 0)
+			continue; // skip if no short option
+		shortOpts += val;
+		if (data[i].opt.has_arg == required_argument)
+			shortOpts += ":";
+		else if (data[i].opt.has_arg == optional_argument)
+			shortOpts += "::";
+	}
+	longOptsVec.push_back({0, 0, 0, 0}); // Null-terminate the array
+}
 
 #endif

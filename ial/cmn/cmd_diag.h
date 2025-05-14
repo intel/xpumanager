@@ -27,6 +27,25 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <string>
+
+enum diagCmdType
+{
+	DIAGHELP,
+	JSON,
+	DEVICE,
+	LEVEL,
+	PRECHECK,
+	STRESS,
+	SINGLETEST,
+	LISTTYPES,
+	GPU,
+	SINCE,
+	STRESSTIME,
+	TOTAL_DIAG,
+};
+
+struct diagCmdStruct;
 
 class cmdDiag : public cmds
 {
@@ -35,21 +54,24 @@ public:
 	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
 	~cmdDiag() {};
 	void help(list<helpCmd *> *helpList);
-	ze_result_t runPrecheck(char *subcmd, char *args);
-	ze_result_t runStress(char *subcmd, char *args);
-	ze_result_t runSingleTest(char *subcmd, char *args);
-	ze_result_t runListTypes(char *subcmd, char *args);
-	ze_result_t runGpu(char *subcmd, char *args);
-	ze_result_t runSince(char *subcmd, char *args);
+	ze_result_t runPrecheck(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t runStress(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t runSingleTest(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t runListTypes(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t runGpu(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t runSince(diagCmdStruct *diagCmds, devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdDiag::*diagSubCmdFunc)(char *subcmd, char *args);
+typedef ze_result_t (cmdDiag::*diagSubCmdFunc)(diagCmdStruct *diagCmds, devInfo *d);
 
 struct diagCmdStruct
 {
-	char name[MAX_PATH];
+	diagCmdType type;
+	option opt;
 	diagSubCmdFunc sf;
+	bool enabled;
+	string val;
 };
 
 #endif

@@ -26,13 +26,36 @@
 #include "debug.h"
 #include <assert.h>
 
+/*
+ * @brief Command structure for diagnostic commands.
+ * The way that this structure is defined allows for easy addition of new commands
+ * by simply adding a new entry to the diagCmds array.
+ * The command type is defined in the diagCmdType enum. It allows for easy
+ * identification of the command type when requiring a specific command.
+ * Next comes the option structure, which defines the command line options for the command.
+ * The option structure is defined in the getopt.h header file. It allows for easy parsing
+ * of command line options.
+ * The next field is a pointer to the function that will be called when the command is executed.
+ * This function is defined in the cmd_diag class. It doesn't have to be defined if a particular
+ * command doesn't require a function to be called.
+ * The next field is a boolean that indicates whether the command line option has been specified
+ * by the user.
+ * The last field is the value of the command line option (if any). This is simply stored as a
+ * string. It is required to convert it to the appropriate type when the command is executed.
+ */
+
 diagCmdStruct diagCmds[] = {
-	{"precheck", &cmdDiag::runPrecheck},
-	{"stress", &cmdDiag::runStress},
-	{"singletest", &cmdDiag::runSingleTest},
-	{"listtypes", &cmdDiag::runListTypes},
-	{"gpu", &cmdDiag::runGpu},
-	{"since", &cmdDiag::runSince},
+	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}, nullptr},
+	{diagCmdType::JSON, {"json", no_argument, 0, 'j'}, nullptr},
+	{diagCmdType::DEVICE, {"device", required_argument, 0, 'd'}, nullptr},
+	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, nullptr},
+	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::runPrecheck},
+	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::runStress},
+	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest},
+	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::runListTypes},
+	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::runGpu},
+	{diagCmdType::SINCE, {"since", required_argument, 0, 0}, &cmdDiag::runSince},
+	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}, nullptr},
 };
 
 /**
@@ -105,51 +128,51 @@ void cmdDiag::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(LARGE_GAP, "It also applies to diag level tests"));
 }
 
-ze_result_t cmdDiag::runPrecheck(char *subcmd, char *args)
+ze_result_t cmdDiag::runPrecheck(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(diagCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runStress(char *subcmd, char *args)
+ze_result_t cmdDiag::runStress(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(diagCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runSingleTest(char *subcmd, char *args)
+ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(diagCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runListTypes(char *subcmd, char *args)
+ze_result_t cmdDiag::runListTypes(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(diagCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runGpu(char *subcmd, char *args)
+ze_result_t cmdDiag::runGpu(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(diagCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runSince(char *subcmd, char *args)
+ze_result_t cmdDiag::runSince(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(diagCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -161,6 +184,89 @@ ze_result_t cmdDiag::runSince(char *subcmd, char *args)
 int cmdDiag::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
-	return 0;
+	int opt;
+	int optionIndex = 0;
+	bool found = false;
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
+	devInfo d = {};
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(diagCmds, ARRAY_SIZE(diagCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			// diagCmds[diagCmdType::DIAGHELP].sf()
+			return 0;
+		case 'j':
+			diagCmds[diagCmdType::JSON].enabled = true;
+			break;
+		case 'd':
+			diagCmds[diagCmdType::DEVICE].enabled = true;
+			diagCmds[diagCmdType::DEVICE].val = optarg;
+			break;
+		case 'l':
+			diagCmds[diagCmdType::LEVEL].enabled = true;
+			diagCmds[diagCmdType::LEVEL].val = optarg;
+			break;
+		case 's':
+			diagCmds[diagCmdType::STRESS].enabled = true;
+			break;
+		case 0:
+			for (auto &cmd : diagCmds)
+			{
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
+				{
+					diagCmds[cmd.type].enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument)
+					{
+						diagCmds[cmd.type].val = optarg;
+					}
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				return -1;
+			}
+
+			break;
+		default:
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	result = args->sm.findDeviceByBDF(diagCmds[diagCmdType::DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", diagCmds[diagCmdType::DEVICE].val.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : diagCmds)
+		{
+			if (cmd.enabled && cmd.sf != nullptr)
+			{
+				DBG("Running command: %s\n", cmd.opt.name);
+				(this->*cmd.sf)(diagCmds, &d);
+			}
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
 }

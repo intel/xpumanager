@@ -76,6 +76,7 @@ struct option
 #define GETOPT_LONG getopt_long
 #define no_argument 0
 #define required_argument 1
+#define optional_argument 2
 #define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
 #define PRIVILEGECHECK() true
 
