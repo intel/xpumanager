@@ -211,11 +211,27 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 	return result;
 }
 
+ze_result_t vf::init(zes_device_handle_t device)
+{
+	ze_result_t result = enumActiveVF(device);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		return result;
+	}
+
+	result = enumEnabledVF(device);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		return result;
+	}
+
+	DBG("Successfully initialized VF.\n");
+	return result;
+}
+
 ze_result_t vf::zesRun(zes_device_handle_t device)
 {
-	enumActiveVF(device);
-	enumEnabledVF(device);
-
+	UNUSED(device);
 	for (uint32_t i = 0; i < vfActiveCount; i++)
 	{
 		zes_vf_handle_t vf = vfActiveHandles[i];
