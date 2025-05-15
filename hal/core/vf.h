@@ -40,7 +40,9 @@ public:
 	ze_result_t getVFCapabilities(zes_vf_handle_t vfHandle);
 	ze_result_t getVFMemoryUtilization(zes_vf_handle_t vfHandle);
 	ze_result_t getVFEngineUtilization(zes_vf_handle_t vfHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif
