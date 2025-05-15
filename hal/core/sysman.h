@@ -29,7 +29,7 @@
 #include "debug.h"
 #include <os.h>
 
-const char *l0_error_to_string(ze_result_t ret_val);
+LIBXPUM_API const char *l0_error_to_string(ze_result_t ret_val);
 
 class LIBXPUM_API sysman
 {

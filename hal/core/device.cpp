@@ -724,7 +724,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::findDeviceByBDF(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
+ze_result_t device::findDevice(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
 {
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
@@ -745,6 +745,29 @@ ze_result_t device::findDeviceByBDF(const char *bdf, vector<device *> *devList, 
 				devList->push_back(this);
 				devHdlList->push_back(zeDevices[i]);
 				return ZE_RESULT_SUCCESS;
+			}
+			else if (bdf && strlen(bdf) == 1)
+			{
+				// Maybe the user provided a device index instead of BDF
+				// Check if the index is a digit
+				if (!isdigit(bdf[0]))
+				{
+					ERR("Invalid device index: %s\n", bdf);
+					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+				}
+				uint32_t deviceIndex = bdf[0] - '0';
+				if (deviceIndex < deviceCount)
+				{
+					DBG("Found device with index: %d\n", deviceIndex);
+					devList->push_back(this);
+					devHdlList->push_back(zeDevices[deviceIndex]);
+					return ZE_RESULT_SUCCESS;
+				}
+				else
+				{
+					ERR("Invalid device index: %s\n", bdf);
+					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+				}
 			}
 			else
 			{

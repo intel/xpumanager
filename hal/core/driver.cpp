@@ -33,7 +33,7 @@ ze_result_t driver::init()
 	ze_result_t result = zeInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Failed to initialize Level Zero. Error code: %d\n", result);
+		ERR("Failed to initialize Level Zero. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -178,7 +178,7 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 	ze_result_t result = zeDriverGetExtensionProperties(driver, &extensionCount, NULL);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Failed to get extension count. Error code: %d\n", result);
+		ERR("Failed to get extension count. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -198,7 +198,7 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 	result = zeDriverGetExtensionProperties(driver, &extensionCount, extensions);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Failed to get extension properties. Error code: %d\n", result);
+		ERR("Failed to get extension properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] extensions;
 		return result;
 	}
@@ -219,7 +219,7 @@ ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
 	ze_result_t result = zeDriverGetProperties(driver, &driverProperties);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Failed to get driver properties. Error code: %d\n", result);
+		ERR("Failed to get driver properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -240,7 +240,7 @@ ze_result_t driver::getIpcProperties(ze_driver_handle_t driver)
 	ze_result_t result = zeDriverGetIpcProperties(driver, &ipcProperties);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Failed to get IPC properties. Error code: %d\n", result);
+		ERR("Failed to get IPC properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -322,16 +322,16 @@ ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
 	return foundDevice;
 }
 
-ze_result_t driver::findDeviceByBDF(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
+ze_result_t driver::findDevice(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < driverCount; i++)
 	{
-		result = devs[i].findDeviceByBDF(bdf, devList, devHdlList);
+		result = devs[i].findDevice(bdf, devList, devHdlList);
 		if (result != ZE_RESULT_SUCCESS)
 		{
-			ERR("Failed to find device by BDF: %s. Error code: %d\n", bdf, result);
+			ERR("Failed to find device by BDF: %s. Error code: 0x%X (%s) \n", bdf, result, l0_error_to_string(result));
 			return result;
 		}
 		else

@@ -348,7 +348,7 @@ int cmdDiag::run(arg_struct *args)
 		}
 	}
 
-	result = args->sm.findDeviceByBDF(diagCmds[diagCmdType::DIAGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(diagCmds[diagCmdType::DIAGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", diagCmds[diagCmdType::DIAGDEVICE].val.c_str());

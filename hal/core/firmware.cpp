@@ -119,7 +119,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			result = (fw->*updateFWCmds[i].preUpdateFunc)(fwInfo);
 			if (result != ZE_RESULT_SUCCESS)
 			{
-				ERR("Failed to pre-update firmware %d\n", result);
+				ERR("Failed to pre-update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
 				delete fw;
 				return result;
@@ -127,7 +127,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			result = (fw->*updateFWCmds[i].updateFunc)(fwInfo);
 			if (result != ZE_RESULT_SUCCESS)
 			{
-				ERR("Failed to update firmware %d\n", result);
+				ERR("Failed to update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
 				delete fw;
 				return result;
