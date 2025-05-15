@@ -441,11 +441,11 @@ int cmdConfig::run(arg_struct *args)
 		{
 			if (cmd.type == cmdType && cmd.func != nullptr)
 			{
-				(this->*cmd.func)(configCmds, &d);
+				result = (this->*cmd.func)(configCmds, &d);
 				break;
 			}
 		}
 	}
 
-	return 0;
+	return result;
 }

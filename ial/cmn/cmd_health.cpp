@@ -27,12 +27,11 @@
 #include <assert.h>
 
 healthCmdStruct healthCmds[] = {
-	{"1", &cmdHealth::coreTemperature},
-	{"2", &cmdHealth::memoryTemperature},
-	{"3", &cmdHealth::power},
-	{"4", &cmdHealth::memory},
-	{"5", &cmdHealth::xeLinkPort},
-	{"6", &cmdHealth::frequency},
+	{healthCmdType::HEALTH_HELP, {"help", no_argument, 0, 'h'}},
+	{healthCmdType::HEALTH_JSON, {"json", no_argument, 0, 'j'}},
+	{healthCmdType::HEALTH_LIST, {"list", no_argument, 0, 'l'}},
+	{healthCmdType::HEALTH_DEVICE, {"device", required_argument, 0, 'd'}},
+	{healthCmdType::HEALTH_COMPONENT, {"component", required_argument, 0, 'c'}, &cmdHealth::component},
 };
 
 /**
@@ -71,51 +70,78 @@ void cmdHealth::help(list<helpCmd *> *helpList)
 	helpList->push_back(new helpCmd(XLARGE_GAP, "6. GPU Frequency"));
 }
 
-ze_result_t cmdHealth::coreTemperature(char *subcmd, char *args)
+ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	healthSubCmdStruct componentCmds[] = {
+		{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
+		{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
+		{healthSubCmdType::HEALTH_POWER, &cmdHealth::power},
+		{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::memory},
+		{healthSubCmdType::HEALTH_XELINKPORT, &cmdHealth::xeLinkPort},
+		{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
+	};
+
+	for (auto &test : componentCmds)
+	{
+		if (test.type == healthCmds[healthCmdType::HEALTH_COMPONENT].type)
+		{
+			DBG("Running test: %d\n", test.type);
+			result = (this->*test.func)(healthCmds, d);
+			break;
+		}
+	}
+
+	return result;
+}
+
+ze_result_t cmdHealth::coreTemperature(healthCmdStruct *healthCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(healthCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::memoryTemperature(char *subcmd, char *args)
+ze_result_t cmdHealth::memoryTemperature(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(healthCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::power(char *subcmd, char *args)
+ze_result_t cmdHealth::power(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(healthCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::memory(char *subcmd, char *args)
+ze_result_t cmdHealth::memory(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(healthCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::xeLinkPort(char *subcmd, char *args)
+ze_result_t cmdHealth::xeLinkPort(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(healthCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::frequency(char *subcmd, char *args)
+ze_result_t cmdHealth::frequency(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(healthCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -128,5 +154,70 @@ int cmdHealth::run(arg_struct *args)
 {
 	TRACING();
 	UNUSED(args);
-	return 0;
+	devInfo d = {};
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
+	int opt;
+	int optionIndex = 0;
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(healthCmds, ARRAY_SIZE(healthCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help(nullptr);
+			return 0;
+		case 'j':
+			healthCmds[healthCmdType::HEALTH_JSON].enabled = true;
+			break;
+		case 'l':
+			healthCmds[healthCmdType::HEALTH_LIST].enabled = true;
+			return 0;
+		case 'd':
+			healthCmds[healthCmdType::HEALTH_DEVICE].enabled = true;
+			healthCmds[healthCmdType::HEALTH_DEVICE].val = optarg;
+			break;
+		case 'c':
+			healthCmds[healthCmdType::HEALTH_COMPONENT].enabled = true;
+			healthCmds[healthCmdType::HEALTH_COMPONENT].val = optarg;
+			break;
+		default:
+			ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	result = args->sm.findDeviceByBDF(healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str(),
+									  &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n",
+			healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : healthCmds)
+		{
+			if (cmd.enabled && cmd.func != nullptr)
+			{
+				DBG("Running command: %s\n", cmd.opt.name);
+				result = (this->*cmd.func)(healthCmds, &d);
+				break;
+			}
+		}
+	}
+
+	return result;
 }

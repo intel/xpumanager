@@ -147,8 +147,8 @@ ze_result_t cmdDiag::stress(diagCmdStruct *diagCmds, devInfo *d)
 ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
-	UNUSED(d);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
 	diagSubCmdStruct diagSingleTests[] = {
 		{DIAG_COMPUTATION, &cmdDiag::computation},
 		{DIAG_MEMORYERROR, &cmdDiag::memoryError},
@@ -167,11 +167,12 @@ ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 		if (test.type == diagCmds[diagCmdType::SINGLETEST].type)
 		{
 			DBG("Running test: %d\n", test.type);
-			(this->*test.func)(diagCmds, d);
+			result = (this->*test.func)(diagCmds, d);
+			break;
 		}
 	}
 
-	return ZE_RESULT_SUCCESS;
+	return result;
 }
 
 ze_result_t cmdDiag::computation(diagCmdStruct *diagCmds, devInfo *d)
@@ -365,10 +366,11 @@ int cmdDiag::run(arg_struct *args)
 			if (cmd.enabled && cmd.func != nullptr)
 			{
 				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.func)(diagCmds, &d);
+				result = (this->*cmd.func)(diagCmds, &d);
+				break;
 			}
 		}
 	}
 
-	return ZE_RESULT_SUCCESS;
+	return result;
 }
