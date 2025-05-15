@@ -106,8 +106,8 @@ ze_result_t cmdDiscovery::dev(discoveryCmdStruct *discCmds, devInfo *d)
 ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(discCmds);
-	UNUSED(d);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
 	discoveryDumpStruct dumpCmds[] = {
 		{DUMP_DEVICEID, &cmdDiscovery::deviceID},
 		{DUMP_DEVICENAME, &cmdDiscovery::deviceName},
@@ -140,11 +140,12 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 		if (cmd.type == discCmds[discCmdType::DISC_DUMP].type)
 		{
 			DBG("Running command: %d\n", cmd.type);
-			(this->*cmd.func)(discCmds, d);
+			result = (this->*cmd.func)(discCmds, d);
+			break;
 		}
 	}
 
-	return ZE_RESULT_SUCCESS;
+	return result;
 }
 
 ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)

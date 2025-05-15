@@ -161,11 +161,7 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 		if (cmd.type == dumpCmdType::DUMP_METRICS && cmd.func != nullptr)
 		{
 			result = (this->*cmd.func)(dumpCmds, d);
-			if (result != ZE_RESULT_SUCCESS)
-			{
-				ERR("Failed to execute metrics command\n");
-				break;
-			}
+			break;
 		}
 	}
 
@@ -557,10 +553,11 @@ int cmdDump::run(arg_struct *args)
 			if (cmd.enabled && cmd.func != nullptr)
 			{
 				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.func)(dumpCmds, &d);
+				result = (this->*cmd.func)(dumpCmds, &d);
+				break;
 			}
 		}
 	}
 
-	return ZE_RESULT_SUCCESS;
+	return result;
 }

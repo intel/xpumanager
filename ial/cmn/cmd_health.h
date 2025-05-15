@@ -28,6 +28,30 @@
 #include "cmds.h"
 #include <os.h>
 
+enum healthCmdType
+{
+	HEALTH_HELP,
+	HEALTH_JSON,
+	HEALTH_LIST,
+	HEALTH_DEVICE,
+	HEALTH_COMPONENT,
+	TOTAL_HEALTH,
+};
+
+enum healthSubCmdType
+{
+	HEALTH_CORETEMPERATURE = 0,
+	HEALTH_MEMORYTEMPERATURE,
+	HEALTH_MEMORYBANDWIDTH,
+	HEALTH_POWER,
+	HEALTH_MEMORY,
+	HEALTH_XELINKPORT,
+	HEALTH_FREQUENCY,
+	TOTAL_HEALTH_SUBCMD
+};
+
+struct healthCmdStruct;
+
 class cmdHealth : public cmds
 {
 
@@ -35,21 +59,32 @@ public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
 	void help(list<helpCmd *> *helpList);
-	ze_result_t coreTemperature(char *subcmd, char *args);
-	ze_result_t memoryTemperature(char *subcmd, char *args);
-	ze_result_t power(char *subcmd, char *args);
-	ze_result_t memory(char *subcmd, char *args);
-	ze_result_t xeLinkPort(char *subcmd, char *args);
-	ze_result_t frequency(char *subcmd, char *args);
+	ze_result_t coreTemperature(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t memoryTemperature(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t power(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t memory(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t xeLinkPort(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t frequency(healthCmdStruct *healthCmds, devInfo *d);
+
+	ze_result_t component(healthCmdStruct *healthCmds, devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdHealth::*healthSubCmdFunc)(char *subcmd, char *args);
+typedef ze_result_t (cmdHealth::*healthSubCmdFunc)(healthCmdStruct *healthCmds, devInfo *d);
 
 struct healthCmdStruct
 {
-	char name[MAX_PATH];
-	healthSubCmdFunc sf;
+	healthCmdType type;
+	option opt;
+	healthSubCmdFunc func;
+	bool enabled;
+	string val;
+};
+
+struct healthSubCmdStruct
+{
+	int type;
+	healthSubCmdFunc func;
 };
 
 #endif
