@@ -728,7 +728,7 @@ ze_result_t device::findDeviceByBDF(const char *bdf, vector<device *> *devList, 
 {
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
-		if (!strlen(bdf))
+		if (!bdf || !strlen(bdf))
 		{
 			// If no BDF is provided, add all devices to the list
 			DBG("No BDF provided, adding all devices.\n");
