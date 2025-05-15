@@ -25,6 +25,7 @@
 #include "cmd_ps.h"
 #include "debug.h"
 #include <assert.h>
+#include <process.h>
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -63,6 +64,64 @@ void cmdPs::help(list<helpCmd *> *helpList)
 int cmdPs::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
-	return 0;
+	ze_result_t result;
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	int opt;
+	int optionIndex = 0;
+	bool json = false;
+	string deviceId;
+	UNUSED(json);
+
+	static struct option long_options[] = {
+		{"help", no_argument, 0, 'h'},
+		{"json", no_argument, 0, 'j'},
+		{"device", required_argument, 0, 'd'},
+		{0, 0, 0, 0}};
+
+	while ((opt = getopt_long(args->argc, args->argv, "hjd:", long_options, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help(nullptr);
+			return 0;
+		case 'j':
+			json = true;
+			break;
+		case 'd':
+			deviceId = optarg;
+			break;
+		default:
+			ERR("Invalid option. Use -h or --help for usage information.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	result = args->sm.findDeviceByBDF(deviceId.c_str(),
+									  &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n",
+			deviceId.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &dev : deviceList)
+	{
+		DBG("Running ps command on device %d\n", i);
+		process *ps = (process *)dev->getProcess();
+		if (ps == nullptr)
+		{
+			ERR("Error: Process pointer not found.\n");
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+
+		ps->getState(deviceHandleList[i]);
+
+		i++;
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
