@@ -26,9 +26,9 @@
 #include <sys/mman.h>
 #include <math.h>
 #include <debug.h>
-#include <string>
 #include <grp.h>
 #include <pwd.h>
+#include <fstream>
 
 /**
  * @brief Creates a new thread.
@@ -100,4 +100,19 @@ bool privilegeCheck()
 	}
 
 	return has_privilege;
+}
+
+string getProcessName(uint32_t processId)
+{
+	string processName = "";
+	ifstream pinfo;
+	char path[255];
+	sprintf(path, "/proc/%d/cmdline", processId);
+	pinfo.open(path);
+	if (pinfo.is_open())
+	{
+		getline(pinfo, processName);
+		pinfo.close();
+	}
+	return processName;
 }
