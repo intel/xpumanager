@@ -193,8 +193,8 @@ int cmdHealth::run(arg_struct *args)
 		}
 	}
 
-	result = args->sm.findDeviceByBDF(healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str(),
-									  &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str(),
+								 &deviceList, &deviceHandleList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n",

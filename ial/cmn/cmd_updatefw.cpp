@@ -149,7 +149,7 @@ int cmdUpdateFW::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDeviceByBDF(fwInfo.deviceId.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(fwInfo.deviceId.c_str(), &deviceList, &deviceHandleList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", fwInfo.deviceId.c_str());

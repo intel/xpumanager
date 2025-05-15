@@ -325,7 +325,7 @@ ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 	ze_result_t result = e->setState(d->deviceHdl, memoryEcc);
 	if (result != ZE_RESULT_SUCCESS)
 	{
-		ERR("Failed to set memory ECC state: 0x%X\n", result);
+		ERR("Failed to set memory ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 	return ZE_RESULT_SUCCESS;
@@ -424,7 +424,7 @@ int cmdConfig::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDeviceByBDF(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", configCmds[configCmdType::CONFIGDEVICE].val.c_str());
