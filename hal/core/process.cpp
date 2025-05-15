@@ -50,8 +50,9 @@ ze_result_t process::getState(zes_device_handle_t device)
 	for (const auto &process : processes)
 	{
 		DBG("    - Process ID: %d\n", process.processId);
-		DBG("    - Memory Size: %" PRIu64 " bytes\n", process.memSize);
-		DBG("    - Shared Size: %" PRIu64 " bytes\n", process.sharedSize);
+		DBG("    - Name: %s\n", GETPROCESSNAME(process.processId).c_str());
+		DBG("    - Shared Size: %" PRIu64 " KB\n", (process.sharedSize / 1024));
+		DBG("    - Memory Size: %" PRIu64 " KB\n", (process.memSize / 1024));
 		DBG("    - Engines: %d\n", process.engines);
 		printEngines(process.engines);
 	}

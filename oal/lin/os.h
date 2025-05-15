@@ -30,6 +30,10 @@
 #include <cstring>
 #include <pthread.h>
 #include <getopt.h>
+#include <string>
+#include <cstdint>
+
+using namespace std;
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -49,6 +53,7 @@
 #define GETOPT_LONG getopt_long
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
 #define PRIVILEGECHECK() privilegeCheck()
+#define GETPROCESSNAME(processId) getProcessName(processId)
 
 typedef void *(*funcptr)(void *input_params);
 
@@ -66,5 +71,6 @@ public:
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 bool privilegeCheck();
+string getProcessName(uint32_t processId);
 
 #endif

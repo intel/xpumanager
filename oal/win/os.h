@@ -28,6 +28,9 @@
 #include <cstddef>
 #define NOMINMAX
 #include <windows.h>
+#include <string>
+
+using namespace std;
 
 #ifdef LIBXPUM_EXPORTS
 #define LIBXPUM_API __declspec(dllexport)
@@ -79,6 +82,7 @@ struct option
 #define optional_argument 2
 #define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
 #define PRIVILEGECHECK() true
+#define GETPROCESSNAME(processId) getProcessName(processId)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;
@@ -88,5 +92,6 @@ LIBXPUM_API int getopt_long(int argc, char *const argv[], const char *optstring,
 void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
+string getProcessName(uint32_t processId);
 
 #endif
