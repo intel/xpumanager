@@ -38,7 +38,10 @@ public:
 	void printSupportedModes(const uint32_t mode);
 	ze_result_t enumFans(zes_device_handle_t device);
 	ze_result_t getProperties(zes_fan_handle_t fanHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+	ze_result_t getConfig(zes_fan_handle_t fanHandle);
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif

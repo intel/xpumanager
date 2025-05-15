@@ -88,15 +88,57 @@ ze_result_t fan::getProperties(zes_fan_handle_t fanHandle)
 	return result;
 }
 
+ze_result_t fan::getConfig(zes_fan_handle_t fanHandle)
+{
+	zes_fan_config_t config = {};
+	ze_result_t result = zesFanGetConfig(fanHandle, &config);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get fan configuration.\n");
+		return result;
+	}
+	DBG("  - Fan Configuration:\n");
+	DBG("    - Fan Speed Mode: %d\n", config.mode);
+	if (config.mode == ZES_FAN_SPEED_MODE_FIXED)
+	{
+		DBG("    - Fixed Speed (RPM): %d %s\n", config.speedFixed.speed,
+			config.speedFixed.units == ZES_FAN_SPEED_UNITS_PERCENT ? "%" : "RPM");
+	}
+	else if (config.mode == ZES_FAN_SPEED_MODE_TABLE)
+	{
+		DBG("    - Table Points Count: %d\n", config.speedTable.numPoints);
+		for (int32_t i = 0; i < config.speedTable.numPoints; i++)
+		{
+			DBG("      - Point %d: Temperature: %d, Speed: %d %s\n", i,
+				config.speedTable.table[i].temperature,
+				config.speedTable.table[i].speed.speed,
+				config.speedTable.table[i].speed.units == ZES_FAN_SPEED_UNITS_PERCENT ? "%" : "RPM");
+		}
+	}
+
+	return result;
+}
+
+ze_result_t fan::init(zes_device_handle_t device)
+{
+	return enumFans(device);
+}
+
 ze_result_t fan::zesRun(zes_device_handle_t device)
 {
-	ze_result_t result = enumFans(device);
-	if (result != ZE_RESULT_SUCCESS)
-		return result;
+	UNUSED(device);
+	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < fanCount; i++)
 	{
-		if (getProperties(fanHandles[i]) != ZE_RESULT_SUCCESS)
+		result = getProperties(fanHandles[i]);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			return result;
+		}
+
+		result = getConfig(fanHandles[i]);
+		if (result != ZE_RESULT_SUCCESS)
 		{
 			return result;
 		}
