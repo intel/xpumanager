@@ -81,6 +81,34 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 
 	DBG("Firmware Name: %s, Version: %s\n", properties.name, properties.version);
 	DBG("Can control: %d\n", properties.canControl);
+	if (STRCASECMP(properties.name, "GFX") == 0)
+	{
+		updateFWCmds[GFX].firmwareHandle = firmwareHandle;
+	}
+	else if (STRCASECMP(properties.name, "AMC") == 0)
+	{
+		updateFWCmds[AMC].firmwareHandle = firmwareHandle;
+	}
+	else if (STRCASECMP(properties.name, "GFX_DATA") == 0)
+	{
+		updateFWCmds[GFX_DATA].firmwareHandle = firmwareHandle;
+	}
+	else if (STRCASECMP(properties.name, "GFX_PSCBIN") == 0)
+	{
+		updateFWCmds[GFX_PSCBIN].firmwareHandle = firmwareHandle;
+	}
+	else if (STRCASECMP(properties.name, "FANCONTROL") == 0)
+	{
+		updateFWCmds[FAN_TABLE].firmwareHandle = firmwareHandle;
+	}
+	else if (STRCASECMP(properties.name, "VRCONFIG") == 0)
+	{
+		updateFWCmds[VR_CONFIG].firmwareHandle = firmwareHandle;
+	}
+	else
+	{
+		DBG("Firmware Type: Unknown\n");
+	}
 	return result;
 }
 
@@ -114,6 +142,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			}
 
 			fwInfo->fwType = updateFWCmds[i].fw;
+			fwInfo->firmwareHandle = updateFWCmds[i].firmwareHandle;
 
 			// Call the corresponding pre-update, firmware update and post-update functions in the hal
 			result = (fw->*updateFWCmds[i].preUpdateFunc)(fwInfo);
@@ -153,7 +182,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	return result;
 }
 
-ze_result_t firmware::zesRun(zes_device_handle_t device)
+ze_result_t firmware::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumFirmwares(device);
 
@@ -166,4 +195,10 @@ ze_result_t firmware::zesRun(zes_device_handle_t device)
 		}
 	}
 	return result;
+}
+
+ze_result_t firmware::zesRun(zes_device_handle_t device)
+{
+	UNUSED(device);
+	return ZE_RESULT_SUCCESS;
 }

@@ -76,7 +76,7 @@
     <ClCompile Include="..\fwupd\amcupd.cpp">
       <Filter>fwupd</Filter>
     </ClCompile>
-    <ClCompile Include="..\fwupd\sysmanupd.cpp">
+    <ClCompile Include="..\fwupd\fwupd.cpp">
       <Filter>fwupd</Filter>
     </ClCompile>
   </ItemGroup>

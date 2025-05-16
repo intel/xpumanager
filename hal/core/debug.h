@@ -75,27 +75,6 @@ static int dbg_lvl = INFO;
 	if (dbg_lvl >= TRACE) \
 	PRINT(fmt, ##__VA_ARGS__)
 
-#define ZE_RESULT_SUCCESS_OR_RETURN_VALUE(retVal, value) \
-	if ((retVal) != ZE_RESULT_SUCCESS)                   \
-	{                                                    \
-		return (value);                                  \
-	}
-
-#define ZE_RESULT_SUCCESS_OR_RETURN(retVal)                                    \
-	{                                                                          \
-		const auto tempVarForDefine = (retVal);                                \
-		ZE_RESULT_SUCCESS_OR_RETURN_VALUE(tempVarForDefine, tempVarForDefine); \
-	}
-
-#define EXPECT_ZE_RESULT_SUCCESS(retVal)                                                                                                          \
-	{                                                                                                                                             \
-		const ze_result_t tempVarForDefine = (retVal);                                                                                            \
-		if (tempVarForDefine != ZE_RESULT_SUCCESS)                                                                                                \
-		{                                                                                                                                         \
-			ERR("EXPECT_ZE_RESULT_SUCCESS: %s %s %s\n", #retVal, std::to_string(tempVarForDefine).c_str(), l0_error_to_string(tempVarForDefine)); \
-		}                                                                                                                                         \
-	}
-
 #ifdef __cplusplus
 #define TRACING() tracer trace(__FUNCTION__);
 #else

@@ -80,6 +80,8 @@ struct firmwareInfo
 	igsc_device_handle handle;
 	vector<char> buffer;
 	igsc_fwdata_image *oimg;
+
+	zes_firmware_handle_t firmwareHandle;
 };
 
 class fwupd
@@ -88,6 +90,8 @@ class fwupd
 public:
 	fwupd() {}
 	virtual ~fwupd() {}
+	vector<char> readImageContent(const char *filePath);
+	ze_result_t updateFW(firmwareInfo *fwInfo);
 	virtual ze_result_t preUpdateAMC(firmwareInfo *fwInfo)
 	{
 		UNUSED(fwInfo);
@@ -110,7 +114,7 @@ public:
 	};
 	virtual ze_result_t updateGfx(firmwareInfo *fwInfo)
 	{
-		UNUSED(fwInfo);
+		updateFW(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
 	virtual ze_result_t postUpdateGfx(firmwareInfo *fwInfo)
@@ -125,7 +129,7 @@ public:
 	};
 	virtual ze_result_t updateGfxData(firmwareInfo *fwInfo)
 	{
-		UNUSED(fwInfo);
+		updateFW(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
 	virtual ze_result_t postUpdateGfxData(firmwareInfo *fwInfo)
@@ -155,7 +159,7 @@ public:
 	};
 	virtual ze_result_t updateGfxPscBin(firmwareInfo *fwInfo)
 	{
-		UNUSED(fwInfo);
+		updateFW(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
 	virtual ze_result_t postUpdateGfxPscBin(firmwareInfo *fwInfo)
@@ -170,7 +174,7 @@ public:
 	};
 	virtual ze_result_t updateFanTable(firmwareInfo *fwInfo)
 	{
-		UNUSED(fwInfo);
+		updateFW(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
 	virtual ze_result_t postUpdateFanTable(firmwareInfo *fwInfo)
@@ -185,7 +189,7 @@ public:
 	};
 	virtual ze_result_t updateVrConfig(firmwareInfo *fwInfo)
 	{
-		UNUSED(fwInfo);
+		updateFW(fwInfo);
 		return ZE_RESULT_SUCCESS;
 	};
 	virtual ze_result_t postUpdateVrConfig(firmwareInfo *fwInfo)
@@ -204,6 +208,7 @@ struct updateFWCmdStruct
 	updateFW preUpdateFunc;
 	updateFW updateFunc;
 	updateFW postUpdateFunc;
+	zes_firmware_handle_t firmwareHandle;
 };
 
 #endif

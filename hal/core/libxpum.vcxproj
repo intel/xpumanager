@@ -188,8 +188,8 @@
     <ClCompile Include="..\..\oal\win\dllmain.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\fwupd\amcupd.cpp" />
+    <ClCompile Include="..\fwupd\fwupd.cpp" />
     <ClCompile Include="..\fwupd\gscupd.cpp" />
-    <ClCompile Include="..\fwupd\sysmanupd.cpp" />
     <ClCompile Include="device.cpp" />
     <ClCompile Include="diagnostic.cpp" />
     <ClCompile Include="driver.cpp" />

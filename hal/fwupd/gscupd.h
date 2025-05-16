@@ -79,7 +79,6 @@ public:
 	ze_result_t updateLateBinding(firmwareInfo *fwInfo);
 
 	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
-	vector<char> readImageContent(const char *filePath);
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
 	vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
 	GfxFwStatus getGfxFwStatus(string meiPath);

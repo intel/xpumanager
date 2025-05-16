@@ -41,8 +41,10 @@ public:
 	~firmware();
 	ze_result_t getProperties(zes_firmware_handle_t firmwareHandle);
 	ze_result_t enumFirmwares(zes_device_handle_t device);
-	ze_result_t zesRun(zes_device_handle_t device);
 	ze_result_t updateFW(firmwareInfo *fwInfo);
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif
