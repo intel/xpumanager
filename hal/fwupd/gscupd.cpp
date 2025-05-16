@@ -384,28 +384,6 @@ ze_result_t gscupd::postUpdateFanTable(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
-vector<char> gscupd::readImageContent(const char *filePath)
-{
-	struct stat s;
-	if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))
-		return std::vector<char>();
-	std::ifstream is(std::string(filePath), std::ifstream::binary);
-	if (!is)
-	{
-		return std::vector<char>();
-	}
-	// get length of file:
-	is.seekg(0, is.end);
-	int length = (int)is.tellg();
-	is.seekg(0, is.beg);
-
-	std::vector<char> buffer(length);
-
-	is.read(buffer.data(), length);
-	is.close();
-	return buffer;
-}
-
 bool gscupd::isGscRightType(std::vector<char> &buffer, int expectedType)
 {
 	TRACING();

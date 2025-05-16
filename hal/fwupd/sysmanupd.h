@@ -32,12 +32,6 @@ class sysmanupd : public fwupd
 public:
 	sysmanupd() {}
 	~sysmanupd() {}
-	ze_result_t updateGfx(firmwareInfo *fwInfo) override;
-	ze_result_t updateGfxData(firmwareInfo *fwInfo) override;
-	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo) override;
-	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo) override;
-	ze_result_t updateFanTable(firmwareInfo *fwInfo) override;
-	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
 };
 
 #endif
