@@ -34,7 +34,7 @@ class cmdStats : public cmds
 public:
 	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); };
 	~cmdStats() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	ze_result_t eu(char *subcmd, char *args);
 	ze_result_t ras(char *subcmd, char *args);
 	ze_result_t x(char *subcmd, char *args);

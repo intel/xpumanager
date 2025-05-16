@@ -44,55 +44,59 @@ discoveryCmdStruct discCmds[] = {
  *
  * @param helpList A pointer to a list of help commands.
  */
-void cmdDiscovery::help(list<helpCmd *> *helpList)
+void cmdDiscovery::help(HELP helpType)
 {
 	TRACING();
-	assert(helpList);
-	helpList->push_back(new helpCmd(NO_GAP, "Discover the GPU devices installed on this machine and provide the device info"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi discovery [Options]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi discovery"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi discovery -d [deviceId]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi discovery -d [pciBdfAddress]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi discovery -d [deviceId] -j"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi discovery --dump [propertyIds]"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--pf,--physicalFunction     Display the physical functions only"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--vf,--virtualFunction      Display the virtual functions only"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--dump                      Property ID to dump device properties in CSV format. Separated by the comma. \"-1\" means all properties"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "1. Device ID"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "2. Device Name"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "3. Vendor Name"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "4. SOC UUID"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "5. Serial Number"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "6. Core Clock Rate"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "7. Stepping"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "8. Driver Version"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "9. GFX Firmware Version"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "10. GFX Data Firmware Version"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "11. PCI BDF Address"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "12. PCI Slot"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "13. PCIe Generation"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "14. PCIe Max Link Width"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "15. OAM Socket ID"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "16. Memory Physical Size"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "17. Number of Memory Channels"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "18. Memory Bus Width"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "19. Number of EUs"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "20. Number of Media Engines"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "21. Number of Media Enhancement Engines"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "22. GFX Firmware Status"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "23. PCI Vendor ID"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "24. PCI Device ID"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--listamcversions           Show all AMC firmware versions"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-u,--username               Username used to authenticate for host redfish access"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-p,--password               Password used to authenticate for host redfish access"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+	vector<helpCmd> helpList;
+
+	helpList.push_back(helpCmd(TITLE, "Discover the GPU devices installed on this machine and provide the device info"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi discovery [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [deviceId]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [pciBdfAddress]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [deviceId] -j"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery --dump [propertyIds]"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
+	helpList.push_back(helpCmd(HEADING, "--pf,--physicalFunction     Display the physical functions only"));
+	helpList.push_back(helpCmd(HEADING, "--vf,--virtualFunction      Display the virtual functions only"));
+	helpList.push_back(helpCmd(HEADING, "--dump                      Property ID to dump device properties in CSV format. Separated by the comma. \"-1\" means all properties"));
+	helpList.push_back(helpCmd(SUB_HEADING, "1. Device ID"));
+	helpList.push_back(helpCmd(SUB_HEADING, "2. Device Name"));
+	helpList.push_back(helpCmd(SUB_HEADING, "3. Vendor Name"));
+	helpList.push_back(helpCmd(SUB_HEADING, "4. SOC UUID"));
+	helpList.push_back(helpCmd(SUB_HEADING, "5. Serial Number"));
+	helpList.push_back(helpCmd(SUB_HEADING, "6. Core Clock Rate"));
+	helpList.push_back(helpCmd(SUB_HEADING, "7. Stepping"));
+	helpList.push_back(helpCmd(SUB_HEADING, "8. Driver Version"));
+	helpList.push_back(helpCmd(SUB_HEADING, "9. GFX Firmware Version"));
+	helpList.push_back(helpCmd(SUB_HEADING, "10. GFX Data Firmware Version"));
+	helpList.push_back(helpCmd(SUB_HEADING, "11. PCI BDF Address"));
+	helpList.push_back(helpCmd(SUB_HEADING, "12. PCI Slot"));
+	helpList.push_back(helpCmd(SUB_HEADING, "13. PCIe Generation"));
+	helpList.push_back(helpCmd(SUB_HEADING, "14. PCIe Max Link Width"));
+	helpList.push_back(helpCmd(SUB_HEADING, "15. OAM Socket ID"));
+	helpList.push_back(helpCmd(SUB_HEADING, "16. Memory Physical Size"));
+	helpList.push_back(helpCmd(SUB_HEADING, "17. Number of Memory Channels"));
+	helpList.push_back(helpCmd(SUB_HEADING, "18. Memory Bus Width"));
+	helpList.push_back(helpCmd(SUB_HEADING, "19. Number of EUs"));
+	helpList.push_back(helpCmd(SUB_HEADING, "20. Number of Media Engines"));
+	helpList.push_back(helpCmd(SUB_HEADING, "21. Number of Media Enhancement Engines"));
+	helpList.push_back(helpCmd(SUB_HEADING, "22. GFX Firmware Status"));
+	helpList.push_back(helpCmd(SUB_HEADING, "23. PCI Vendor ID"));
+	helpList.push_back(helpCmd(SUB_HEADING, "24. PCI Device ID"));
+	helpList.push_back(helpCmd(HEADING, "--listamcversions           Show all AMC firmware versions"));
+	helpList.push_back(helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
+	helpList.push_back(helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
+	helpList.push_back(helpCmd(HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 ze_result_t cmdDiscovery::dev(discoveryCmdStruct *discCmds, devInfo *d)
@@ -390,6 +394,7 @@ int cmdDiscovery::run(arg_struct *args)
 		switch (opt)
 		{
 		case 'h':
+			help();
 			return 0;
 		case 'j':
 			discCmds[discCmdType::DISC_JSON].enabled = true;

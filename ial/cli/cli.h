@@ -45,12 +45,6 @@ DAEMONCAP curDaemonMode = DAEMON;
 DAEMONCAP curDaemonMode = DAEMONLESS;
 #endif
 
-enum HELP
-{
-	SHORT_HELP,
-	FULL_HELP,
-};
-
 // Enum to represent OS types
 enum class OSTYPE
 {

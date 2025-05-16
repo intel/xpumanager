@@ -25,9 +25,14 @@
 #include "cmd_agentsensor.h"
 #include "debug.h"
 
-void cmdAgentSensor::help(list<helpCmd *> *helpList)
+void cmdAgentSensor::help(HELP helpType)
 {
-	helpList->push_back(new helpCmd(NO_GAP, "Get or change some XPU Manager settings."));
+	vector<helpCmd> helpList;
+
+	helpList.push_back(helpCmd(TITLE, "Get or change some XPU Manager settings."));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 int cmdAgentSensor::run(arg_struct *args)

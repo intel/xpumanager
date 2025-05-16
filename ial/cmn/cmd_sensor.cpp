@@ -25,9 +25,14 @@
 #include "cmd_sensor.h"
 #include "debug.h"
 
-void cmdSensor::help(list<helpCmd *> *helpList)
+void cmdSensor::help(HELP helpType)
 {
-	helpList->push_back(new helpCmd(NO_GAP, "Show sensor information"));
+	TRACING();
+	vector<helpCmd> helpList;
+	helpList.push_back(helpCmd(TITLE, "Show sensor information"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 int cmdSensor::run(arg_struct *args)

@@ -28,9 +28,41 @@
 #include <list>
 #include <driver.h>
 #include <string>
-#include "help_cmd.h"
 
 using namespace std;
+
+enum GAP
+{
+	TITLE,
+	HEADING = 2,
+	SUB_HEADING = 30,
+	SUB_HEADING2 = 37,
+};
+
+enum HELP
+{
+	SHORT_HELP,
+	FULL_HELP,
+};
+
+struct helpCmd
+{
+	char line[MAX_PATH];
+	int char_gap;
+
+	// Default constructor
+	helpCmd()
+	{
+		memset(line, 0, MAX_PATH);
+	}
+
+	// Copy constructor
+	helpCmd(GAP gap, const char *other)
+	{
+		char_gap = (int)gap;
+		STRNCPY_S(line, other, MAX_PATH);
+	}
+};
 
 struct arg_struct
 {
@@ -48,11 +80,12 @@ public:
 	cmds() {};
 	char *get_name() { return name; }
 	virtual ~cmds() {};
-	virtual void help(list<helpCmd *> *helpList) = 0;
+	void printHelp(vector<helpCmd> helpList, HELP helpType = FULL_HELP);
+	virtual void help(HELP helpType = FULL_HELP) = 0;
 	virtual int run(arg_struct *args) = 0;
 };
 
-typedef void (cmds::*helpFunc)(list<helpCmd *> *helpList);
+typedef void (cmds::*helpFunc)(HELP helpType);
 typedef int (cmds::*runFunc)();
 
 struct cmd_struct
@@ -85,5 +118,4 @@ void processOptions(T *data, uint32_t size, string &shortOpts, vector<struct opt
 	}
 	longOptsVec.push_back({0, 0, 0, 0}); // Null-terminate the array
 }
-
 #endif

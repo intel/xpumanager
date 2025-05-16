@@ -31,32 +31,36 @@
  *
  * @param helpList A pointer to a list of help commands.
  */
-void cmdTopology::help(list<helpCmd *> *helpList)
+void cmdTopology::help(HELP helpType)
 {
 	TRACING();
-	assert(helpList);
-	helpList->push_back(new helpCmd(NO_GAP, "Get the system topology"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi topology [Options]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi topology -d [deviceId]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi topology -d [pciBdfAddress]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi topology -d [deviceId] -j"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi topology -f [filename]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi topology -m"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address to query"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-m,--matrix                 Print the CPU/GPU topology matrix"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "S: Self"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link LAN count is also provided"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "XL*: Two tiles on the different cards are connected by Xe Link + MDF. They are not directly connected by Xe Link"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "SYS: Connected with PCIe between NUMA nodes"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "NODE: Connected with PCIe within a NUMA node"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "MDF: Connected with Multi-Die Fabric Interface"));
+	vector<helpCmd> helpList;
+
+	helpList.push_back(helpCmd(TITLE, "Get the system topology"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi topology [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [deviceId]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [pciBdfAddress]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [deviceId] -j"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -f [filename]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -m"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
+	helpList.push_back(helpCmd(HEADING, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
+	helpList.push_back(helpCmd(HEADING, "-m,--matrix                 Print the CPU/GPU topology matrix"));
+	helpList.push_back(helpCmd(SUB_HEADING, "S: Self"));
+	helpList.push_back(helpCmd(SUB_HEADING, "XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link LAN count is also provided"));
+	helpList.push_back(helpCmd(SUB_HEADING, "XL*: Two tiles on the different cards are connected by Xe Link + MDF. They are not directly connected by Xe Link"));
+	helpList.push_back(helpCmd(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes"));
+	helpList.push_back(helpCmd(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node"));
+	helpList.push_back(helpCmd(SUB_HEADING, "MDF: Connected with Multi-Die Fabric Interface"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 /**

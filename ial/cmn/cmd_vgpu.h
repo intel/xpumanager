@@ -34,7 +34,7 @@ class cmdVgpu : public cmds
 public:
 	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
 	~cmdVgpu() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(char *subcmd, char *args);
 	ze_result_t addKernelParam(char *subcmd, char *args);
 	ze_result_t create(char *subcmd, char *args);

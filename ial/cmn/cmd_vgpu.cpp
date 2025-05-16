@@ -40,36 +40,41 @@ vgpuCmdStruct vgpuCmds[] = {
  *
  * @param helpList A pointer to a list of help commands.
  */
-void cmdVgpu::help(list<helpCmd *> *helpList)
+void cmdVgpu::help(HELP helpType)
 {
 	TRACING();
-	assert(helpList);
-	helpList->push_back(new helpCmd(NO_GAP, "Create and remove virtual GPUs in SRIOV configuration"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi vgpu [Options]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu --precheck"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu --addkernelparam"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu -d [deviceId] -r"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu -d [pciBdfAddress] -r"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu -d [deviceId] -l"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi vgpu -d [pciBdfAddress] -l"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 Device ID or PCI BDF address"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--addkernelparam            Add the kernel command line parameters for the virtual GPUs"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-c,--create                 Create the virtual GPUs"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-n                          The number of virtual GPUs to create"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-r,--remove                 Remove all virtual GPUs on the specified physical GPU"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-l,--list                   List all virtual GPUs on the specified phytsical GPU"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-s,--stats                  Show statistics data of all virtual GPUs"));
+	vector<helpCmd> helpList;
+
+	helpList.push_back(helpCmd(TITLE, "Create and remove virtual GPUs in SRIOV configuration"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi vgpu [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu --precheck"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu --addkernelparam"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -r"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -r"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -l"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -l"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -s"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address"));
+	helpList.push_back(helpCmd(HEADING, "--addkernelparam            Add the kernel command line parameters for the virtual GPUs"));
+	helpList.push_back(helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
+	helpList.push_back(helpCmd(HEADING, "-c,--create                 Create the virtual GPUs"));
+	helpList.push_back(helpCmd(HEADING, "-n                          The number of virtual GPUs to create"));
+	helpList.push_back(helpCmd(HEADING, "--lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500"));
+	helpList.push_back(helpCmd(HEADING, "-r,--remove                 Remove all virtual GPUs on the specified physical GPU"));
+	helpList.push_back(helpCmd(HEADING, "-l,--list                   List all virtual GPUs on the specified phytsical GPU"));
+	helpList.push_back(helpCmd(HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+	helpList.push_back(helpCmd(HEADING, "-s,--stats                  Show statistics data of all virtual GPUs"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 ze_result_t cmdVgpu::precheck(char *subcmd, char *args)

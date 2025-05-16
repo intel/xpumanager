@@ -57,48 +57,51 @@ configCmdStruct configCmds[] = {
  *
  * @param helpList A pointer to a list of help commands.
  */
-void cmdConfig::help(list<helpCmd *> *helpList)
+void cmdConfig::help(HELP helpType)
 {
 	TRACING();
-	assert(helpList);
+	vector<helpCmd> helpList;
 
-	helpList->push_back(new helpCmd(NO_GAP, "Get and change the GPU settings"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi config [Options]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] --powerlimit [powerValue]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] -t [tileId] --standby [standbyMode]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] -t [tileId] --scheduler [schedulerMode]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] --reset"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi config -d [deviceId] --ppr"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address to query"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-t,--tile                   The tile ID"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--frequencyrange            GPU tile-level core frequency range"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--powerlimit                Device-level power limit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--standby                   Tile-level standby mode. Valid options: \"default\"; \"never\""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--scheduler                 Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\""));
-	helpList->push_back(new helpCmd(LARGE_GAP, "The valid range of all time values (us) is from 5000 to 100,000,000."));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--reset                     Reset device by SBR (Secondary Bus Reset)"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "For Intel(R) Max Series GPU, when SR-IOV is enabled, please add \"pci=realloc=off\" into Linux kernel command line parameters"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--ppr                       Apply ppr to the device"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--force                     Force PPR to run"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--performancefactor         Set the tile-level performance factor. Valid options: \"compute/media\";factorValue. The factor value should be"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "0 means that the workload is completely memory bounded and the performance of the memory controller needs to be increased"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
+	helpList.push_back(helpCmd(TITLE, "Get and change the GPU settings"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi config [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --powerlimit [powerValue]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --standby [standbyMode]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --scheduler [schedulerMode]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --reset"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --ppr"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
+	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
+	helpList.push_back(helpCmd(HEADING, "--frequencyrange            GPU tile-level core frequency range"));
+	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));
+	helpList.push_back(helpCmd(HEADING, "--standby                   Tile-level standby mode. Valid options: \"default\"; \"never\""));
+	helpList.push_back(helpCmd(HEADING, "--scheduler                 Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\""));
+	helpList.push_back(helpCmd(SUB_HEADING, "The valid range of all time values (us) is from 5000 to 100,000,000."));
+	helpList.push_back(helpCmd(HEADING, "--reset                     Reset device by SBR (Secondary Bus Reset)"));
+	helpList.push_back(helpCmd(SUB_HEADING, "For Intel(R) Max Series GPU, when SR-IOV is enabled, please add \"pci=realloc=off\" into Linux kernel command line parameters"));
+	helpList.push_back(helpCmd(SUB_HEADING, "When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters"));
+	helpList.push_back(helpCmd(HEADING, "--ppr                       Apply ppr to the device"));
+	helpList.push_back(helpCmd(HEADING, "--force                     Force PPR to run"));
+	helpList.push_back(helpCmd(HEADING, "--performancefactor         Set the tile-level performance factor. Valid options: \"compute/media\";factorValue. The factor value should be"));
+	helpList.push_back(helpCmd(SUB_HEADING, "between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support"));
+	helpList.push_back(helpCmd(SUB_HEADING, "0 means that the workload is completely memory bounded and the performance of the memory controller needs to be increased"));
+	helpList.push_back(helpCmd(HEADING, "--xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up"));
+	helpList.push_back(helpCmd(HEADING, "--xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on"));
+	helpList.push_back(helpCmd(HEADING, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 ze_result_t cmdConfig::setFrequencyRange(configCmdStruct *configCmds, devInfo *d)
@@ -377,7 +380,7 @@ int cmdConfig::run(arg_struct *args)
 		switch (opt)
 		{
 		case 'h':
-			help(nullptr);
+			help();
 			return 0;
 		case 'j':
 			configCmds[configCmdType::CONFIGJSON].enabled = true;

@@ -93,7 +93,7 @@ class cmdDump : public cmds
 public:
 	cmdDump() { STRCPY_S(name, MAX_PATH, "dump"); };
 	~cmdDump() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 
 	ze_result_t gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d);
 	ze_result_t gpuPower(dumpCmdStruct *dumpCmds, devInfo *d);

@@ -58,7 +58,7 @@ class cmdHealth : public cmds
 public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	ze_result_t coreTemperature(healthCmdStruct *healthCmds, devInfo *d);
 	ze_result_t memoryTemperature(healthCmdStruct *healthCmds, devInfo *d);
 	ze_result_t power(healthCmdStruct *healthCmds, devInfo *d);
