@@ -33,7 +33,7 @@ class cmdAgentSensor : public cmds
 public:
 	cmdAgentSensor() { STRCPY_S(name, MAX_PATH, "agentsensor"); };
 	~cmdAgentSensor() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 };
 

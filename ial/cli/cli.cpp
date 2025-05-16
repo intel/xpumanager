@@ -68,53 +68,21 @@ void deleteList(list<T *> *generic_list)
 
 void printVersion()
 {
-	PRINT("%-*sCLI:\n", NO_GAP, "");
-	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
-	PRINT("%-*sBuild ID: 8389eee7\n", SMALL_GAP, "");
-	PRINT("%-*s\n", NO_GAP, "");
-	PRINT("%-*sService:\n", NO_GAP, "");
-	PRINT("%-*sVersion: %s\n", SMALL_GAP, "", GET_FULL_VERSION());
-	PRINT("%-*sBuild ID: 8389eee7\n", SMALL_GAP, "");
+	PRINT("%-*sCLI:\n", TITLE, "");
+	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
+	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
+	PRINT("%-*s\n", TITLE, "");
+	PRINT("%-*sService:\n", TITLE, "");
+	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
+	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
 	// sys->print_lz_version();
-}
-
-void printSubCommand(cmds *it, HELP help_type)
-{
-	list<helpCmd *> *helpList = new list<helpCmd *>;
-	it->help(helpList);
-
-	if (helpList->size() < 1)
-	{
-		ERR("No help commands found\n");
-		deleteList(helpList);
-		return;
-	}
-
-	if (help_type == SHORT_HELP)
-	{
-		/* Just print the first line of each subcommand's help because it contains the description */
-		for (auto &it2 : *helpList)
-		{
-			PRINT("  %-*s%s\n", 28, it->get_name(), it2->line);
-			break;
-		}
-	}
-	else
-	{
-		for (auto &it2 : *helpList)
-		{
-			PRINT("%-*s%s\n", it2->char_gap, "", it2->line);
-		}
-	}
-
-	deleteList(helpList);
 }
 
 void printSubCommands(list<cmds *> *cmd_list)
 {
 	for (auto &it : *cmd_list)
 	{
-		printSubCommand(it, SHORT_HELP);
+		it->help(SHORT_HELP);
 	}
 }
 
@@ -232,7 +200,7 @@ int main(int argc, char *argv[])
 			/* If the second argument is -h or --help, then just print their help */
 			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help")))
 			{
-				printSubCommand(it, FULL_HELP);
+				it->help(FULL_HELP);
 				deleteList(cmd_list);
 				return 0;
 			}

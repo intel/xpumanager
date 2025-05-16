@@ -31,20 +31,24 @@
  *
  * @param helpList A pointer to a list of help commands.
  */
-void cmdLogs::help(list<helpCmd *> *helpList)
+void cmdLogs::help(HELP helpType)
 {
 	TRACING();
-	assert(helpList);
-	helpList->push_back(new helpCmd(NO_GAP, "Collect GPU debug logs"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi log [Options]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi log -f [tarGzipFileName]"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-f,--file                   The file (a tar.gz) to archive all the debug logs"));
+	vector<helpCmd> helpList;
+
+	helpList.push_back(helpCmd(TITLE, "Collect GPU debug logs"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi log [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi log -f [tarGzipFileName]"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(HEADING, "-f,--file                   The file (a tar.gz) to archive all the debug logs"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 /**

@@ -31,31 +31,35 @@
  *
  * @param helpList A pointer to a list of help commands.
  */
-void cmdUpdateFW::help(list<helpCmd *> *helpList)
+void cmdUpdateFW::help(HELP helpType)
 {
 	TRACING();
-	assert(helpList);
-	helpList->push_back(new helpCmd(NO_GAP, "Update GPU firmware"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Usage: xpu-smi updatefw [Options]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi updatefw -d [deviceId] -t GFX -f [imageFilePath]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "xpu-smi updatefw -t AMC -f [imageFilePath]"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(NO_GAP, "Options:"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-h,--help                   Print this help message and exit"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-j,--json                   Print result in JSON format"));
-	helpList->push_back(new helpCmd(NO_GAP, ""));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-d,--device                 The device ID or PCI BDF address. If it is not specified, all devices will be updated"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC."));
-	helpList->push_back(new helpCmd(LARGE_GAP, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
-	helpList->push_back(new helpCmd(LARGE_GAP, "and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer)"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-f,--file                   The firmware image file path on this server"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-u,--username               Username used to authenticate for host redfish access"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-p,--password               Password used to authenticate for host redfish access"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
-	helpList->push_back(new helpCmd(SMALL_GAP, "--recovery                  Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
+	vector<helpCmd> helpList;
+
+	helpList.push_back(helpCmd(TITLE, "Update GPU firmware"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi updatefw [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi updatefw -d [deviceId] -t GFX -f [imageFilePath]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]"));
+	helpList.push_back(helpCmd(HEADING, "xpu-smi updatefw -t AMC -f [imageFilePath]"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address. If it is not specified, all devices will be updated"));
+	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC."));
+	helpList.push_back(helpCmd(SUB_HEADING, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
+	helpList.push_back(helpCmd(SUB_HEADING, "and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer)"));
+	helpList.push_back(helpCmd(HEADING, "-f,--file                   The firmware image file path on this server"));
+	helpList.push_back(helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
+	helpList.push_back(helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
+	helpList.push_back(helpCmd(HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+	helpList.push_back(helpCmd(HEADING, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
+	helpList.push_back(helpCmd(HEADING, "--recovery                  Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
+
+	printHelp(helpList, helpType);
+	helpList.clear();
 }
 
 /**
@@ -92,7 +96,7 @@ int cmdUpdateFW::run(arg_struct *args)
 		switch (opt)
 		{
 		case 'h':
-			INFO("Usage: xpu-smi updatefw [Options]\n");
+			help();
 			return 0;
 		case 'j':
 			fwInfo.jsonOutput = true;

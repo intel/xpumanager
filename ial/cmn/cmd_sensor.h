@@ -33,7 +33,7 @@ class cmdSensor : public cmds
 public:
 	cmdSensor() { STRCPY_S(name, MAX_PATH, "sensor"); };
 	~cmdSensor() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 };
 

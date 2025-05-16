@@ -33,7 +33,7 @@ class cmdPolicy : public cmds
 public:
 	cmdPolicy() { STRCPY_S(name, MAX_PATH, "policy"); };
 	~cmdPolicy() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 };
 

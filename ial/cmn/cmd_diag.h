@@ -68,7 +68,7 @@ class cmdDiag : public cmds
 public:
 	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
 	~cmdDiag() {};
-	void help(list<helpCmd *> *helpList);
+	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t stress(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t runSingleTest(diagCmdStruct *diagCmds, devInfo *d);
