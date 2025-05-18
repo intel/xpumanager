@@ -193,7 +193,6 @@ int cmdPolicy::run(arg_struct *args)
 			}
 			break;
 		default:
-			help();
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
