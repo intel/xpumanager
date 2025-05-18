@@ -388,6 +388,9 @@ int cmdDiscovery::run(arg_struct *args)
 
 	processOptions(discCmds, ARRAY_SIZE(discCmds), shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
 
 	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
 	{
@@ -431,15 +434,27 @@ int cmdDiscovery::run(arg_struct *args)
 
 			if (!found)
 			{
-				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			// Handle invalid options
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc)
+	{
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList, &deviceHandleList);

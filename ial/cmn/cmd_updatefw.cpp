@@ -91,6 +91,10 @@ int cmdUpdateFW::run(arg_struct *args)
 		{"recovery", no_argument, nullptr, 0},
 		{nullptr, 0, nullptr, 0}};
 
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
+
 	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, &optionIndex)) != -1)
 	{
 		switch (opt)
@@ -135,8 +139,20 @@ int cmdUpdateFW::run(arg_struct *args)
 			}
 			break;
 		default:
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc)
+	{
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Validate firmware type
