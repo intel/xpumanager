@@ -31,6 +31,40 @@ void cmdTopdown::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Show topdown information"));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli topdown [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId]"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId] -j"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId] -t [tileId]"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId] -t [tileId] -j"));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "EU in Use:               Contribution to throughput (observed) when EUs are in use with EU threads placed (higher is better)"));
+	helpList.push_back(helpCmd(TITLE, "EU Active:               Contribution to throughput (observed) when EUs are processing instructions from some EU threads (higher is better)"));
+	helpList.push_back(helpCmd(TITLE, "ALU Active:              Contribution to throughput (estimated) with ALU instructions being processed (higher is better)"));
+	helpList.push_back(helpCmd(TITLE, "FPU Active:              Contribution to throughput (estimated) with floating-point or int64 instructions being processed (higher is better)"));
+	helpList.push_back(helpCmd(TITLE, "Em Int Only:             Contribution to throughput (estimated) with extended math or integer instructions being processed (higher is better)"));
+	helpList.push_back(helpCmd(TITLE, "Xmx Active:              Contribution to throughput (estimated) with Xe Matrix Extension (i.e., systolic array) instructions being processed (higher is better)"));
+	helpList.push_back(helpCmd(TITLE, "FPU Idle:                Loss of throughput (estimated) without floating-point or int64 instructions being processed (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Em Int Idle:             Loss of throughput (estimated) without extended math or integer instructions being processed (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Xmx Idle:                Loss of throughput (estimated) without Xe Matrix Extension (systolic array) instructions being processed (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Other Instructions:      Loss of throughput (estimated) without ALU instructions being processed (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "EU Stall:                Loss of throughput (observed) when EUs are not actively processing instructions from any EU threads (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Low Occupancy:           Loss of throughput (estimated) when there are not enough EU threads on EUs to hide stalls from long-latency instructions, degrading EU active percentage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "ALU Dep.:                Loss of throughput (estimated) when some EU threads stall due to the dependency from ALU operations, degrading EU active percentage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Barrier:                 Loss of throughput (estimated) when some EU threads stall due to synchronization barriers, degrading EU active percentage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Dependency/SFU/SBID:     Loss of throughput (estimated) when some EU threads stall due to different internal dependencies (e.g., memory, shared function unit, sampler, etc.), degrading EU active percentage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Other(EoT):              Loss of throughput (estimated) when some EU threads stall due to other reasons such as conditional flags or End-of-Thread signals degrading EU percentage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Instruction Fetch:       Loss of throughput (estimated) when some EU threads stall due to the fetch of instructions, degrading EU percentage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "EU Not In Use:           Loss of throughput (observed) due to the case that EUs are not used at all without EU threads placed (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Workload Parallelism:    Loss of throughput (estimated) due to the lack of concurrency of a workload at a time, degrading the EU usage (lower is better)"));
+	helpList.push_back(helpCmd(TITLE, "Engine Inefficiency:     Loss of throughput (estimated) due to the inefficiency use of computer/render engines, degrading the EU usage (lower is better)"));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address"));
+	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified."));
+	helpList.push_back(helpCmd(HEADING, "-s,--samplingInterval       Set the time interval (in milliseconds) by which XPU Manager daemon monitors gpu component utilization statistics."));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -39,6 +73,74 @@ void cmdTopdown::help(HELP helpType)
 int cmdTopdown::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
-	return 0;
+	static struct option long_options[] = {
+		{"help", no_argument, 0, 'h'},
+		{"json", no_argument, 0, 'j'},
+		{"device", required_argument, 0, 'd'},
+		{"tile", required_argument, 0, 't'},
+		{"samplingInterval", required_argument, 0, 's'},
+		{0, 0, 0, 0}};
+
+	ze_result_t result;
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	int opt;
+	int option_index = 0;
+	string deviceId;
+	string tileId;
+	string samplingInterval;
+	bool jsonOutput = false;
+
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
+
+	while ((opt = getopt_long(args->argc, args->argv, "hjd:t:s:", long_options, &option_index)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help();
+			return ZE_RESULT_SUCCESS;
+		case 'j':
+			jsonOutput = true;
+			break;
+		case 'd':
+			deviceId = optarg;
+			break;
+		case 't':
+			tileId = optarg;
+			break;
+		case 's':
+			samplingInterval = optarg;
+			break;
+		default:
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc)
+	{
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	result = args->sm.findDevice(deviceId.c_str(),
+								 &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n",
+			deviceId.c_str());
+		return result;
+	}
+
+	UNUSED(jsonOutput);
+
+	return ZE_RESULT_SUCCESS;
 }
