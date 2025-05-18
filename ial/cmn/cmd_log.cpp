@@ -79,7 +79,7 @@ int cmdLogs::run(arg_struct *args)
 		{
 		case 'h':
 			help();
-			return 0;
+			return ZE_RESULT_SUCCESS;
 		case 'j':
 			jsonOutput = true;
 			break;

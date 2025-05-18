@@ -153,7 +153,7 @@ int cmdPolicy::run(arg_struct *args)
 		{
 		case 'h':
 			help();
-			return 0;
+			return ZE_RESULT_SUCCESS;
 		case 'j':
 			policyCmds[POLICY_JSON].enabled = true;
 			break;

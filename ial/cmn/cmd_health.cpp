@@ -179,13 +179,13 @@ int cmdHealth::run(arg_struct *args)
 		{
 		case 'h':
 			help();
-			return 0;
+			return ZE_RESULT_SUCCESS;
 		case 'j':
 			healthCmds[healthCmdType::HEALTH_JSON].enabled = true;
 			break;
 		case 'l':
 			healthCmds[healthCmdType::HEALTH_LIST].enabled = true;
-			return 0;
+			break;
 		case 'd':
 			healthCmds[healthCmdType::HEALTH_DEVICE].enabled = true;
 			healthCmds[healthCmdType::HEALTH_DEVICE].val = optarg;

@@ -149,7 +149,7 @@ int cmdStats::run(arg_struct *args)
 		{
 		case 'h':
 			help();
-			return 0;
+			return ZE_RESULT_SUCCESS;
 		case 'j':
 			statsCmds[STATS_JSON].enabled = true;
 			break;
