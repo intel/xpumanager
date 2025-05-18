@@ -27,12 +27,18 @@
 #include <assert.h>
 
 vgpuCmdStruct vgpuCmds[] = {
-	{"precheck", &cmdVgpu::precheck},
-	{"addkernelparam", &cmdVgpu::addKernelParam},
-	{"create", &cmdVgpu::create},
-	{"remove", &cmdVgpu::remove},
-	{"list", &cmdVgpu::listGpus},
-	{"stats", &cmdVgpu::stats},
+	{VGPU_HELP, {"help", no_argument, 0, 'h'}},
+	{VGPU_JSON, {"json", no_argument, 0, 'j'}},
+	{VGPU_DEVICE, {"device", required_argument, 0, 'd'}},
+	{VGPU_ADDKERNELPARAM, {"addkernelparam", no_argument, 0, 0}, &cmdVgpu::addKernelParam},
+	{VGPU_PRECHECK, {"precheck", no_argument, 0, 0}, &cmdVgpu::precheck},
+	{VGPU_NUMBER, {"number", required_argument, 0, 'n'}},
+	{VGPU_CREATE, {"create", no_argument, 0, 'c'}, &cmdVgpu::create},
+	{VGPU_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdVgpu::remove},
+	{VGPU_LIST, {"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus},
+	{VGPU_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}},
+	{VGPU_STATS, {"stats", no_argument, 0, 's'}, &cmdVgpu::stats},
+	{VGPU_LMEM, {"lmem", required_argument, 0, 0}, &cmdVgpu::lmem},
 };
 
 /**
@@ -77,51 +83,60 @@ void cmdVgpu::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdVgpu::precheck(char *subcmd, char *args)
+ze_result_t cmdVgpu::precheck(vgpuCmdStruct *vgpuCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(vgpuCmds);
+	UNUSED(d);
+	DBG("Precheck vGPU...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::addKernelParam(char *subcmd, char *args)
+ze_result_t cmdVgpu::addKernelParam(vgpuCmdStruct *vgpuCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(vgpuCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::create(char *subcmd, char *args)
+ze_result_t cmdVgpu::create(vgpuCmdStruct *vgpuCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(vgpuCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::remove(char *subcmd, char *args)
+ze_result_t cmdVgpu::remove(vgpuCmdStruct *vgpuCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(vgpuCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::listGpus(char *subcmd, char *args)
+ze_result_t cmdVgpu::listGpus(vgpuCmdStruct *vgpuCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(vgpuCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::stats(char *subcmd, char *args)
+ze_result_t cmdVgpu::stats(vgpuCmdStruct *vgpuCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(vgpuCmds);
+	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdVgpu::lmem(vgpuCmdStruct *vgpuCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(vgpuCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -133,6 +148,116 @@ ze_result_t cmdVgpu::stats(char *subcmd, char *args)
 int cmdVgpu::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
+	devInfo d = {};
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
+	bool found = false;
+	int opt;
+	int optionIndex = 0;
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(vgpuCmds, ARRAY_SIZE(vgpuCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help();
+			return ZE_RESULT_SUCCESS;
+		case 'j':
+			vgpuCmds[vgpuCmdType::VGPU_JSON].enabled = true;
+			break;
+		case 'd':
+			vgpuCmds[vgpuCmdType::VGPU_DEVICE].val = optarg;
+			vgpuCmds[vgpuCmdType::VGPU_DEVICE].enabled = true;
+			break;
+		case 'c':
+			vgpuCmds[vgpuCmdType::VGPU_CREATE].enabled = true;
+			break;
+		case 'r':
+			vgpuCmds[vgpuCmdType::VGPU_REMOVE].enabled = true;
+			break;
+		case 'l':
+			vgpuCmds[vgpuCmdType::VGPU_LIST].enabled = true;
+			break;
+		case 'n':
+			vgpuCmds[vgpuCmdType::VGPU_NUMBER].enabled = true;
+			vgpuCmds[vgpuCmdType::VGPU_NUMBER].val = optarg;
+			break;
+		case 'y':
+			vgpuCmds[vgpuCmdType::VGPU_ASSUMEYES].enabled = true;
+			break;
+		case 's':
+			vgpuCmds[vgpuCmdType::VGPU_STATS].enabled = true;
+			break;
+		case 0:
+			for (auto &cmd : vgpuCmds)
+			{
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
+				{
+					vgpuCmds[cmd.type].enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument)
+					{
+						vgpuCmds[cmd.type].val = optarg;
+					}
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("Run with --help for more information.\n");
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			break;
+		default:
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
+			break;
+		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc)
+	{
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	result = args->sm.findDevice(vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : vgpuCmds)
+		{
+			if (cmd.enabled && cmd.func != nullptr)
+			{
+				DBG("Running command: %s\n", cmd.opt.name);
+				(this->*cmd.func)(vgpuCmds, &d);
+			}
+		}
+	}
 	return 0;
 }
