@@ -59,6 +59,40 @@ void cmdLogs::help(HELP helpType)
 int cmdLogs::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
-	return 0;
+	static struct option longOpts[] = {
+		{"help", no_argument, 0, 'h'},
+		{"json", no_argument, 0, 'j'},
+		{"file", required_argument, 0, 'f'},
+		{0, 0, 0, 0}};
+
+	int opt;
+	int optionIndex = 0;
+	std::string fileName;
+	bool jsonOutput = false;
+
+	optind = 1; // reset getopt state in case of multiple calls
+
+	while ((opt = getopt_long(args->argc, args->argv, "hjf:", longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help();
+			return 0;
+		case 'j':
+			jsonOutput = true;
+			break;
+		case 'f':
+			if (optarg)
+				fileName = optarg;
+			break;
+		default:
+			help();
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	// Your logic to handle fileName and jsonOutput goes here
+	DBG("fileName: %s, jsonOutput: %d", fileName.c_str(), jsonOutput);
+	return ZE_RESULT_SUCCESS;
 }
