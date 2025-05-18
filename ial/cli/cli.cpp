@@ -36,7 +36,7 @@
 #include <cmd_group.h>
 #include <cmd_policy.h>
 #include <cmd_topdown.h>
-#include <cmd_sensor.h>
+#include <cmd_agentset.h>
 #include <cmd_agentsensor.h>
 #include <memory>
 #include <functional>
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 		{createInstance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{createInstance<cmdSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdAgentSet>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdAgentSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 	};
 
