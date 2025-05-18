@@ -29,7 +29,21 @@ void cmdAgentSet::help(HELP helpType)
 {
 	TRACING();
 	vector<helpCmd> helpList;
-	helpList.push_back(helpCmd(TITLE, "Show sensor information"));
+	helpList.push_back(helpCmd(TITLE, "Get or change some XPU Manager settings."));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli agentset [Options]"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli agentset -l"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli agentset -l -j"));
+	helpList.push_back(helpCmd(HEADING, "xpumcli agentset -t 200"));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "Options:"));
+	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(HEADING, "-l, --list                  Display all agent settings"));
+	helpList.push_back(helpCmd(HEADING, "-t, --time                  Set the time interval(in milliseconds) by which"
+										" XPU Manager daemon retrieve raw gpu statistics."
+										" Valid values include 100, 200, 500, 1000."));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -38,6 +52,77 @@ void cmdAgentSet::help(HELP helpType)
 int cmdAgentSet::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
-	return 0;
+	static struct option longOptions[] = {
+		{"help", no_argument, 0, 'h'},
+		{"json", no_argument, 0, 'j'},
+		{"list", no_argument, 0, 'l'},
+		{"time", required_argument, 0, 't'},
+		{0, 0, 0, 0},
+	};
+
+	int opt;
+	int optionIndex = 0;
+	bool showJson = false;
+	bool showList = false;
+	int timeInterval = -1;
+
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
+
+	while ((opt = getopt_long(args->argc, args->argv, "hjlt:", longOptions, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help();
+			return 0;
+		case 'j':
+			showJson = true;
+			break;
+		case 'l':
+			showList = true;
+			break;
+		case 't':
+			if (optarg)
+			{
+				timeInterval = atoi(optarg);
+			}
+			break;
+		default:
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc)
+	{
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (showJson)
+	{
+		// handle json output logic
+	}
+
+	if (showList)
+	{
+		// handle list logic
+	}
+	else if (timeInterval != 100 && timeInterval != 200 &&
+			 timeInterval != 500 && timeInterval != 1000)
+	{
+		ERR("Invalid time interval. Valid values include 100, 200, 500, 1000.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// handle time interval logic
+
+	return ZE_RESULT_SUCCESS;
 }
