@@ -37,7 +37,7 @@
 #include <cmd_policy.h>
 #include <cmd_topdown.h>
 #include <cmd_agentset.h>
-#include <cmd_agentsensor.h>
+#include <cmd_amcsensor.h>
 #include <memory>
 #include <functional>
 #include <list>
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdAgentSet>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{createInstance<cmdAgentSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+		{createInstance<cmdAmcSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 	};
 
 	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;

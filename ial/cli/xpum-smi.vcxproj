@@ -20,8 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\cmn\cmds.cpp" />
-    <ClCompile Include="..\cmn\cmd_agentsensor.cpp" />
     <ClCompile Include="..\cmn\cmd_agentset.cpp" />
+    <ClCompile Include="..\cmn\cmd_amcsensor.cpp" />
     <ClCompile Include="..\cmn\cmd_config.cpp" />
     <ClCompile Include="..\cmn\cmd_diag.cpp" />
     <ClCompile Include="..\cmn\cmd_discovery.cpp" />
@@ -40,8 +40,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\cmn\cmds.h" />
-    <ClInclude Include="..\cmn\cmd_agentsensor.h" />
     <ClInclude Include="..\cmn\cmd_agentset.h" />
+    <ClInclude Include="..\cmn\cmd_amcsensor.h" />
     <ClInclude Include="..\cmn\cmd_config.h" />
     <ClInclude Include="..\cmn\cmd_diag.h" />
     <ClInclude Include="..\cmn\cmd_discovery.h" />
