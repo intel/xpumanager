@@ -101,7 +101,7 @@ int cmdUpdateFW::run(arg_struct *args)
 		{
 		case 'h':
 			help();
-			return 0;
+			return ZE_RESULT_SUCCESS;
 		case 'j':
 			fwInfo.jsonOutput = true;
 			break;
