@@ -28,6 +28,25 @@
 #include "cmds.h"
 #include <os.h>
 
+enum vgpuCmdType
+{
+	VGPU_HELP,
+	VGPU_JSON,
+	VGPU_DEVICE,
+	VGPU_ADDKERNELPARAM,
+	VGPU_PRECHECK,
+	VGPU_CREATE,
+	VGPU_REMOVE,
+	VGPU_LIST,
+	VGPU_NUMBER,
+	VGPU_ASSUMEYES,
+	VGPU_STATS,
+	VGPU_LMEM,
+	TOTAL_VGPU,
+};
+
+struct vgpuCmdStruct;
+
 class cmdVgpu : public cmds
 {
 
@@ -35,21 +54,25 @@ public:
 	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
 	~cmdVgpu() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t precheck(char *subcmd, char *args);
-	ze_result_t addKernelParam(char *subcmd, char *args);
-	ze_result_t create(char *subcmd, char *args);
-	ze_result_t remove(char *subcmd, char *args);
-	ze_result_t listGpus(char *subcmd, char *args);
-	ze_result_t stats(char *subcmd, char *args);
+	ze_result_t precheck(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t addKernelParam(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t create(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t remove(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t listGpus(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t stats(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t lmem(vgpuCmdStruct *vgpuCmds, devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdVgpu::*vgpuSubCmdFunc)(char *subcmd, char *args);
+typedef ze_result_t (cmdVgpu::*vgpuSubCmdFunc)(vgpuCmdStruct *vgpuCmds, devInfo *d);
 
 struct vgpuCmdStruct
 {
-	char name[MAX_PATH];
-	vgpuSubCmdFunc sf;
+	vgpuCmdType type;
+	option opt;
+	vgpuSubCmdFunc func;
+	bool enabled;
+	string val;
 };
 
 #endif
