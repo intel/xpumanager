@@ -28,13 +28,49 @@
 #include "cmds.h"
 #include <os.h>
 
+enum policyCmdType
+{
+	POLICY_HELP,
+	POLICY_JSON,
+	POLICY_DEVICE,
+	POLICY_GROUP,
+	POLICY_LIST,
+	POLICY_LISTALLTYPES,
+	POLICY_CREATE,
+	POLICY_REMOVE,
+	POLICY_TYPE,
+	POLICY_CONDITION,
+	POLICY_THRESHOLD,
+	POLICY_ACTION,
+	POLICY_THROTTLEFREQUENCYMIN,
+	POLICY_THROTTLEFREQUENCYMAX,
+	TOTAL_POLICY,
+};
+
+struct policyCmdStruct;
+
 class cmdPolicy : public cmds
 {
 public:
 	cmdPolicy() { STRCPY_S(name, MAX_PATH, "policy"); };
 	~cmdPolicy() {};
 	void help(HELP helpType = FULL_HELP);
+	ze_result_t create(policyCmdStruct *policyCmds, devInfo *d);
+	ze_result_t listPolicies(policyCmdStruct *policyCmds, devInfo *d);
+	ze_result_t listTypes(policyCmdStruct *policyCmds, devInfo *d);
+	ze_result_t remove(policyCmdStruct *policyCmds, devInfo *d);
 	int run(arg_struct *args);
+};
+
+typedef ze_result_t (cmdPolicy::*policySubCmdFunc)(policyCmdStruct *policyCmds, devInfo *d);
+
+struct policyCmdStruct
+{
+	policyCmdType type;
+	option opt;
+	policySubCmdFunc func;
+	bool enabled;
+	string val;
 };
 
 #endif
