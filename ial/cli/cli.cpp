@@ -86,7 +86,16 @@ void printSubCommands(list<cmds *> *cmd_list)
 	}
 }
 
-void help(list<cmds *> *cmd_list)
+void helpcli()
+{
+	PRINT("Intel XPU Manager Command Line Interface -- %s\n", GET_SHORT_VERSION());
+	PRINT("Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities."
+		  " It can also be used to change the Intel data center GPU settings and update the firmware.\n");
+	PRINT("Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager,"
+		  " the GPU driver and Intel oneAPI Level Zero should be correctly installed.\n\n");
+}
+
+void helpsmi()
 {
 	PRINT("Intel XPU System Management Interface -- %s\n", GET_SHORT_VERSION());
 	PRINT("Intel XPU System Management Interface provides the Intel datacenter GPU model. "
@@ -101,6 +110,29 @@ void help(list<cmds *> *cmd_list)
 	PRINT("  xpu-smi -v\n");
 	PRINT("  xpu-smi -h\n");
 	PRINT("  xpu-smi discovery\n\n");
+}
+
+void help(list<cmds *> *cmd_list)
+{
+	string name;
+	if (curDaemonMode == DAEMONCAP::DAEMON)
+	{
+		name = "xpumcli";
+		helpcli();
+	}
+	else
+	{
+		name = "xpu-smi";
+		helpsmi();
+	}
+
+	PRINT("Supported devcies:\n");
+	PRINT(" - Intel Arc B series GPU\n\n");
+
+	PRINT("Usage: %s [Options]\n", name.c_str());
+	PRINT("  %s -v\n", name.c_str());
+	PRINT("  %s -h\n", name.c_str());
+	PRINT("  %s discovery\n\n", name.c_str());
 
 	PRINT("Options:\n");
 	PRINT("  -h,--help                   Print this help message and exit\n");
@@ -126,14 +158,14 @@ int main(int argc, char *argv[])
 		PRINT("Sysman driver initialized successfully.\n");
 		break;
 	default:
-		ERR("sysman driver initialization failed.\n");
+		ERR("Sysman driver initialization failed.\n");
 		return -1;
 		break;
 	}
 
 	if (arg.sm.run() != ZE_RESULT_SUCCESS)
 	{
-		ERR("sysman driver run failed.\n");
+		ERR("Sysman driver run failed.\n");
 		return -1;
 	}
 
