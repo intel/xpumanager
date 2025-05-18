@@ -69,8 +69,9 @@ int cmdLogs::run(arg_struct *args)
 	int optionIndex = 0;
 	std::string fileName;
 	bool jsonOutput = false;
-
-	optind = 1; // reset getopt state in case of multiple calls
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
 
 	while ((opt = getopt_long(args->argc, args->argv, "hjf:", longOpts, &optionIndex)) != -1)
 	{
@@ -87,9 +88,20 @@ int cmdLogs::run(arg_struct *args)
 				fileName = optarg;
 			break;
 		default:
-			help();
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc)
+	{
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Your logic to handle fileName and jsonOutput goes here
