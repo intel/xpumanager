@@ -4,6 +4,6 @@
 .vscode
 *.vs
 xpu-smi
-xpu-cli
+xpumcli
 daemon
 tags

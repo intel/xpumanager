@@ -3,7 +3,7 @@
 
 export PWD=$(shell pwd)
 SMINAME=xpu-smi
-CLINAME=xpu-cli
+CLINAME=xpumcli
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
