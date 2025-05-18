@@ -27,11 +27,14 @@
 #include <assert.h>
 
 statsCmdStruct statsCmds[] = {
-	{"eu", &cmdStats::eu},
-	{"ras", &cmdStats::ras},
-	{"x", &cmdStats::x},
-	{"xelink", &cmdStats::xelink},
-	{"utils", &cmdStats::utils},
+	{STATS_HELP, {"help", no_argument, 0, 'h'}},
+	{STATS_JSON, {"json", no_argument, 0, 'j'}},
+	{STATS_DEVICE, {"device", required_argument, 0, 'd'}},
+	{STATS_EU, {"eu", no_argument, 0, 'e'}, &cmdStats::eu},
+	{STATS_RAS, {"ras", no_argument, 0, 'r'}, &cmdStats::ras},
+	{STATS_X, {"x", no_argument, 0, 'x'}, &cmdStats::x},
+	{STATS_XELINK, {"xelink", no_argument, 0, 0}, &cmdStats::xelink},
+	{STATS_UTILS, {"utils", no_argument, 0, 0}, &cmdStats::utils},
 };
 
 /**
@@ -76,43 +79,43 @@ void cmdStats::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdStats::eu(char *subcmd, char *args)
+ze_result_t cmdStats::eu(statsCmdStruct *statsCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(statsCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::ras(char *subcmd, char *args)
+ze_result_t cmdStats::ras(statsCmdStruct *statsCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(statsCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::x(char *subcmd, char *args)
+ze_result_t cmdStats::x(statsCmdStruct *statsCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(statsCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::xelink(char *subcmd, char *args)
+ze_result_t cmdStats::xelink(statsCmdStruct *statsCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(statsCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::utils(char *subcmd, char *args)
+ze_result_t cmdStats::utils(statsCmdStruct *statsCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(subcmd);
-	UNUSED(args);
+	UNUSED(statsCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -124,6 +127,90 @@ ze_result_t cmdStats::utils(char *subcmd, char *args)
 int cmdStats::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
-	return 0;
+	devInfo d = {};
+	vector<device *> deviceList;
+	vector<ze_device_handle_t> deviceHandleList;
+	ze_result_t result;
+	bool found = false;
+	int opt;
+	int optionIndex = 0;
+	string shortOpts;
+	vector<struct option> longOptsVec;
+
+	processOptions(statsCmds, ARRAY_SIZE(statsCmds), shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
+	{
+		switch (opt)
+		{
+		case 'h':
+			help();
+			return 0;
+		case 'j':
+			statsCmds[STATS_JSON].enabled = true;
+			break;
+		case 'd':
+			statsCmds[STATS_DEVICE].enabled = true;
+			statsCmds[STATS_DEVICE].val = optarg;
+			break;
+		case 'e':
+			statsCmds[STATS_EU].enabled = true;
+			break;
+		case 'r':
+			statsCmds[STATS_RAS].enabled = true;
+			break;
+		case 'x':
+			statsCmds[STATS_X].enabled = true;
+			break;
+		case 0:
+			for (auto &cmd : statsCmds)
+			{
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
+				{
+					statsCmds[cmd.type].enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument)
+					{
+						statsCmds[cmd.type].val = optarg;
+					}
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			break;
+		default:
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	result = args->sm.findDevice(statsCmds[STATS_DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Error: Device handle not found for device ID '%s'.\n", statsCmds[STATS_DEVICE].val.c_str());
+		return result;
+	}
+
+	int i = 0;
+	for (auto &device : deviceList)
+	{
+		d.dev = device;
+		d.deviceHdl = deviceHandleList[i++];
+		// Call the appropriate command function based on the command type
+		for (auto &cmd : statsCmds)
+		{
+			if (cmd.enabled && cmd.func != nullptr)
+			{
+				DBG("Running command: %s\n", cmd.opt.name);
+				result = (this->*cmd.func)(statsCmds, &d);
+				break;
+			}
+		}
+	}
+	return result;
 }

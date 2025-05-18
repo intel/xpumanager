@@ -28,6 +28,21 @@
 #include "cmds.h"
 #include <os.h>
 
+enum statsCmdType
+{
+	STATS_HELP,
+	STATS_JSON,
+	STATS_DEVICE,
+	STATS_EU,
+	STATS_RAS,
+	STATS_X,
+	STATS_XELINK,
+	STATS_UTILS,
+	TOTAL_STATS,
+};
+
+struct statsCmdStruct;
+
 class cmdStats : public cmds
 {
 
@@ -35,20 +50,23 @@ public:
 	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); };
 	~cmdStats() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t eu(char *subcmd, char *args);
-	ze_result_t ras(char *subcmd, char *args);
-	ze_result_t x(char *subcmd, char *args);
-	ze_result_t xelink(char *subcmd, char *args);
-	ze_result_t utils(char *subcmd, char *args);
+	ze_result_t eu(statsCmdStruct *statsCmds, devInfo *d);
+	ze_result_t ras(statsCmdStruct *statsCmds, devInfo *d);
+	ze_result_t x(statsCmdStruct *statsCmds, devInfo *d);
+	ze_result_t xelink(statsCmdStruct *statsCmds, devInfo *d);
+	ze_result_t utils(statsCmdStruct *statsCmds, devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdStats::*statsSubCmdFunc)(char *subcmd, char *args);
+typedef ze_result_t (cmdStats::*statsSubCmdFunc)(statsCmdStruct *statsCmds, devInfo *d);
 
 struct statsCmdStruct
 {
-	char name[MAX_PATH];
-	statsSubCmdFunc sf;
+	statsCmdType type;
+	option opt;
+	statsSubCmdFunc func;
+	bool enabled;
+	string val;
 };
 
 #endif
