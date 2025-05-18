@@ -22,22 +22,19 @@
  *
  */
 
-#include "cmd_agentsensor.h"
-#include "debug.h"
+#ifndef _CMD_AMCSENSOR_H
+#define _CMD_AMCSENSOR_H
 
-void cmdAgentSensor::help(HELP helpType)
+#include "cmds.h"
+#include <os.h>
+
+class cmdAmcSensor : public cmds
 {
-	vector<helpCmd> helpList;
+public:
+	cmdAmcSensor() { STRCPY_S(name, MAX_PATH, "amcsensor"); };
+	~cmdAmcSensor() {};
+	void help(HELP helpType = FULL_HELP);
+	int run(arg_struct *args);
+};
 
-	helpList.push_back(helpCmd(TITLE, "Get or change some XPU Manager settings."));
-
-	printHelp(helpList, helpType);
-	helpList.clear();
-}
-
-int cmdAgentSensor::run(arg_struct *args)
-{
-	TRACING();
-	UNUSED(args);
-	return 0;
-}
+#endif
