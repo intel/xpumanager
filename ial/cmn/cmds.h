@@ -33,7 +33,8 @@ using namespace std;
 
 enum GAP
 {
-	TITLE,
+	TITLE = 0,
+	BLANK = 0,
 	HEADING = 2,
 	SUB_HEADING = 30,
 	SUB_HEADING2 = 37,
@@ -61,6 +62,12 @@ struct helpCmd
 	{
 		char_gap = (int)gap;
 		STRNCPY_S(line, other, MAX_PATH);
+	}
+
+	helpCmd(GAP gap)
+	{
+		char_gap = (int)gap;
+		STRNCPY_S(line, "", MAX_PATH);
 	}
 };
 
