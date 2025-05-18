@@ -22,19 +22,22 @@
  *
  */
 
-#ifndef _CMD_SENSOR_H
-#define _CMD_SENSOR_H
+#include "cmd_agentset.h"
+#include "debug.h"
 
-#include "cmds.h"
-#include <os.h>
-
-class cmdSensor : public cmds
+void cmdAgentSet::help(HELP helpType)
 {
-public:
-	cmdSensor() { STRCPY_S(name, MAX_PATH, "sensor"); };
-	~cmdSensor() {};
-	void help(HELP helpType = FULL_HELP);
-	int run(arg_struct *args);
-};
+	TRACING();
+	vector<helpCmd> helpList;
+	helpList.push_back(helpCmd(TITLE, "Show sensor information"));
 
-#endif
+	printHelp(helpList, helpType);
+	helpList.clear();
+}
+
+int cmdAgentSet::run(arg_struct *args)
+{
+	TRACING();
+	UNUSED(args);
+	return 0;
+}

@@ -42,9 +42,6 @@
     <ClCompile Include="..\cmn\cmd_ps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\cmn\cmd_sensor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\cmn\cmd_stats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -61,6 +58,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\cmn\cmds.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cmn\cmd_agentset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,9 +98,6 @@
     <ClInclude Include="..\cmn\cmd_ps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\cmn\cmd_sensor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\cmn\cmd_stats.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -120,6 +117,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\cmn\helpCmd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cmn\cmd_agentset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

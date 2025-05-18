@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\cmn\cmds.cpp" />
     <ClCompile Include="..\cmn\cmd_agentsensor.cpp" />
+    <ClCompile Include="..\cmn\cmd_agentset.cpp" />
     <ClCompile Include="..\cmn\cmd_config.cpp" />
     <ClCompile Include="..\cmn\cmd_diag.cpp" />
     <ClCompile Include="..\cmn\cmd_discovery.cpp" />
@@ -30,7 +31,6 @@
     <ClCompile Include="..\cmn\cmd_log.cpp" />
     <ClCompile Include="..\cmn\cmd_policy.cpp" />
     <ClCompile Include="..\cmn\cmd_ps.cpp" />
-    <ClCompile Include="..\cmn\cmd_sensor.cpp" />
     <ClCompile Include="..\cmn\cmd_stats.cpp" />
     <ClCompile Include="..\cmn\cmd_topdown.cpp" />
     <ClCompile Include="..\cmn\cmd_topology.cpp" />
@@ -41,6 +41,7 @@
   <ItemGroup>
     <ClInclude Include="..\cmn\cmds.h" />
     <ClInclude Include="..\cmn\cmd_agentsensor.h" />
+    <ClInclude Include="..\cmn\cmd_agentset.h" />
     <ClInclude Include="..\cmn\cmd_config.h" />
     <ClInclude Include="..\cmn\cmd_diag.h" />
     <ClInclude Include="..\cmn\cmd_discovery.h" />
@@ -50,7 +51,6 @@
     <ClInclude Include="..\cmn\cmd_log.h" />
     <ClInclude Include="..\cmn\cmd_policy.h" />
     <ClInclude Include="..\cmn\cmd_ps.h" />
-    <ClInclude Include="..\cmn\cmd_sensor.h" />
     <ClInclude Include="..\cmn\cmd_stats.h" />
     <ClInclude Include="..\cmn\cmd_topdown.h" />
     <ClInclude Include="..\cmn\cmd_topology.h" />
