@@ -7,9 +7,11 @@ export CC=g++
 export DBG_FLAGS?=-Ofast
 export INCLUDES=-I. -I../../oal/lin -I../core -I$(LEVELZERO)/include -I$(IGSC)/include
 export CFLAGS=-c -Wall -fPIC
-export HEADERS=$(wildcard *.h)
-export SOURCES=$(wildcard *.cpp)
-OBJECTS=$(SOURCES:.cpp=.o)
+SRCDIR := .
+OBJDIR := obj
+export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
+export HEADERS := $(wildcard $(SRCDIR)/*.h)
+OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 all::
 	@echo "Compiling..."
@@ -19,9 +21,10 @@ all::$(OBJECTS)
 all::
 	@echo "Done"
 
-%.o: %.cpp $(HEADERS)
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS)
 	@echo $<
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $<
+	@mkdir -p $(OBJDIR)
+	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 debug:
 	@export DBG_FLAGS='-g -D DEBUGON'; \
@@ -29,5 +32,5 @@ debug:
 
 clean:
 	@echo "Cleaning..."
-	@rm -f *.o
+	@rm -rf $(OBJDIR)
 

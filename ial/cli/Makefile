@@ -1,22 +1,30 @@
 # Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: MIT
 
+# Directories
+SRCDIR := .
+OBJDIR := obj
+CMNDIR := ../cmn
+OALDIR := ../../oal/lin
+HALCORE := ../../hal/core
+FWDIR  := ../../hal/fwupd
+
 export PWD=$(shell pwd)
 SMINAME=xpu-smi
 CLINAME=xpumcli
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
-export LIBS=-L../../hal/core -lxpum -L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc
-export INCLUDES=-I. -I../cmn -I../../oal/lin -I../../hal/core -I../../hal/fwupd -I$(LEVELZERO)/include -I$(IGSC)/include
+export LIBS=-L$(HALCORE) -lxpum -L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc
+export INCLUDES=-I. -I$(CMNDIR) -I$(OALDIR) -I$(HALCORE) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
 export CFLAGS=-c -Wall
-export HEADERS=$(wildcard *.h)
-export SOURCES=$(wildcard *.cpp)
+export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
+export HEADERS := $(wildcard $(SRCDIR)/*.h)
 export DEFINES_DMN = -DDAEMONMODE
-OBJECTS_SMI=$(SOURCES:.cpp=.smi.o)
-OBJECTS_CLI=$(SOURCES:.cpp=.cli.o)
-OTHER_OBJECTS = $(wildcard ../cmn/*.o)
-OAL_OBJECTS = $(wildcard ../../oal/lin/*.o)
+OBJECTS_SMI := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.smi.o)
+OBJECTS_CLI := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.cli.o)
+OTHER_OBJECTS = $(wildcard $(CMNDIR)/$(OBJDIR)/*.o)
+OAL_OBJECTS = $(wildcard $(OALDIR)/$(OBJDIR)/*.o)
 
 all::
 	@echo "Compiling..."
@@ -28,25 +36,27 @@ all::
 
 $(SMINAME):  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS)
 	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS) $(LIBS)
-	@if [ "$(DBG_FLAGS)" = "" ]; then \
+	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
 $(CLINAME):  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS)
 	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS) $(LIBS)
-	@if [ "$(DBG_FLAGS)" = "" ]; then \
+	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
-%.smi.o: %.cpp $(HEADERS)
+$(OBJDIR)/%.smi.o: %.cpp $(HEADERS)
 	@echo $<
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $< -o $@
+	@mkdir -p $(OBJDIR)
+	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-%.cli.o: %.cpp $(HEADERS)
+$(OBJDIR)/%.cli.o: %.cpp $(HEADERS)
 	@echo $<
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $(DEFINES_DMN) $< -o $@
+	@mkdir -p $(OBJDIR)
+	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $(DEFINES_DMN) -c $< -o $@
 
 debug:
 	@export DBG_FLAGS='-g -D DEBUGON'; \
@@ -54,5 +64,6 @@ debug:
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(SMINAME) $(CLINAME) *.o
+	@rm -f $(SMINAME) $(CLINAME) $(OBJDIR)/*.o
+	@rm -rf $(OBJDIR)
 
