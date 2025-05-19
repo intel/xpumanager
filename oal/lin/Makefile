@@ -1,17 +1,22 @@
 # Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: MIT
 
+# Directories
+SRCDIR := .
+OBJDIR := obj
+HALCORE := ../../hal/core
+
 export PWD=$(shell pwd)
 BINNAME=oal
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=
-export INCLUDES=-I$(LEVELZERO)/include -I. -I../../hal/core
+export INCLUDES=-I$(LEVELZERO)/include -I. -I$(HALCORE)
 export CFLAGS=-c -Wall -fPIC
-export HEADERS=$(wildcard *.h)
-export SOURCES=$(wildcard *.cpp)
-OBJECTS=$(SOURCES:.cpp=.o)
+export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
+export HEADERS := $(wildcard $(SRCDIR)/*.h)
+OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 all::
 	@echo "Compiling..."
@@ -27,9 +32,10 @@ $(BINNAME): $(OBJECTS)
 		strip -x $@; \
 	fi
 
-.cpp.o:
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS)
 	@echo $<
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $<
+	@mkdir -p $(OBJDIR)
+	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 debug:
 	@export DBG_FLAGS='-g -D DEBUGON'; \
@@ -37,5 +43,6 @@ debug:
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(BINNAME) *.o
+	@rm -f $(BINNAME) $(OBJECTS)
+	@rm -rf $(OBJDIR)
 
