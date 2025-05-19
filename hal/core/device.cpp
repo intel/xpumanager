@@ -102,7 +102,7 @@ device::~device()
 	}
 }
 
-ze_result_t device::zeGetDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp)
+ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp)
 {
 	ze_result_t result = zeDeviceGetProperties(dev, zeDevProp);
 	if (result != ZE_RESULT_SUCCESS)
@@ -176,7 +176,7 @@ ze_result_t device::zeGetDevProps(ze_device_handle_t dev, ze_device_properties_t
 	return result;
 }
 
-ze_result_t device::zeGetComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps)
+ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps)
 {
 	ze_result_t result = zeDeviceGetComputeProperties(dev, zeComputeProps);
 	if (result != ZE_RESULT_SUCCESS)
@@ -311,7 +311,7 @@ void device::printExtMemTypeFlags(const char *flagName, ze_external_memory_type_
 	}
 }
 
-ze_result_t device::zeGetModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps)
+ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps)
 {
 	ze_result_t result = zeDeviceGetModuleProperties(dev, zeModuleProps);
 	if (result != ZE_RESULT_SUCCESS)
@@ -349,7 +349,7 @@ ze_result_t device::zeGetModuleProps(ze_device_handle_t dev, ze_device_module_pr
 	return result;
 }
 
-ze_result_t device::zeGetMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps)
+ze_result_t device::getMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps)
 {
 	ze_result_t result = zeDeviceGetMemoryAccessProperties(dev, zeMemAccessProps);
 	if (result != ZE_RESULT_SUCCESS)
@@ -370,7 +370,7 @@ ze_result_t device::zeGetMemAccessProps(ze_device_handle_t dev, ze_device_memory
 	return result;
 }
 
-ze_result_t device::zeGetImageProperties(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps)
+ze_result_t device::getImageProps(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps)
 {
 	ze_result_t result = zeDeviceGetImageProperties(dev, zeImageProps);
 	if (result != ZE_RESULT_SUCCESS)
@@ -394,8 +394,8 @@ ze_result_t device::zeGetImageProperties(ze_device_handle_t dev, ze_device_image
 	return result;
 }
 
-ze_result_t device::zeGetExternalMemoryProps(ze_device_handle_t dev,
-											 ze_device_external_memory_properties_t *zeExternalMemoryProps)
+ze_result_t device::getExtMemProps(ze_device_handle_t dev,
+								   ze_device_external_memory_properties_t *zeExternalMemoryProps)
 {
 	ze_result_t result = zeDeviceGetExternalMemoryProperties(dev, zeExternalMemoryProps);
 	if (result != ZE_RESULT_SUCCESS)
@@ -413,9 +413,9 @@ ze_result_t device::zeGetExternalMemoryProps(ze_device_handle_t dev,
 	return result;
 }
 
-ze_result_t device::zeGetCmdQueueProps(ze_device_handle_t dev,
-									   ze_command_queue_group_properties_t **zeCmdQueueProps,
-									   uint32_t *cmdQueuePropsCount)
+ze_result_t device::getCmdQueueProps(ze_device_handle_t dev,
+									 ze_command_queue_group_properties_t **zeCmdQueueProps,
+									 uint32_t *cmdQueuePropsCount)
 {
 	ze_result_t result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS)
@@ -461,9 +461,9 @@ ze_result_t device::zeGetCmdQueueProps(ze_device_handle_t dev,
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::zeGetMemProps(ze_device_handle_t dev,
-								  ze_device_memory_properties_t **zeMemProps,
-								  uint32_t *memPropsCount)
+ze_result_t device::getMemProps(ze_device_handle_t dev,
+								ze_device_memory_properties_t **zeMemProps,
+								uint32_t *memPropsCount)
 {
 	ze_result_t result = zeDeviceGetMemoryProperties(dev, memPropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS)
@@ -510,9 +510,9 @@ ze_result_t device::zeGetMemProps(ze_device_handle_t dev,
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::zeGetCacheProps(ze_device_handle_t dev,
-									ze_device_cache_properties_t **zeCacheProps,
-									uint32_t *cachePropsCount)
+ze_result_t device::getCacheProps(ze_device_handle_t dev,
+								  ze_device_cache_properties_t **zeCacheProps,
+								  uint32_t *cachePropsCount)
 {
 	ze_result_t result = zeDeviceGetCacheProperties(dev, cachePropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS)
@@ -649,18 +649,18 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
 		/* Note that we have to use zeDevices handle for ze functions */
-		zeGetDevProps(zeDevices[i], &deviceProperties[i].zeDeviceProperties);
-		zeGetComputeProps(zeDevices[i], &deviceProperties[i].zeComputeProperties);
-		zeGetModuleProps(zeDevices[i], &deviceProperties[i].zeModuleProperties);
-		zeGetCmdQueueProps(zeDevices[i], &deviceProperties[i].zeCmdQueueProps,
-						   &deviceProperties[i].cmdQueuePropsCount);
-		zeGetMemProps(zeDevices[i], &deviceProperties[i].zeMemProps,
-					  &deviceProperties[i].memPropsCount);
-		zeGetMemAccessProps(zeDevices[i], &deviceProperties[i].zeMemAccessProps);
-		zeGetCacheProps(zeDevices[i], &deviceProperties[i].zeCacheProps,
-						&deviceProperties[i].cachePropsCount);
-		zeGetImageProperties(zeDevices[i], &deviceProperties[i].zeImageProps);
-		zeGetExternalMemoryProps(zeDevices[i], &deviceProperties[i].zeExternalMemoryProps);
+		getDevProps(zeDevices[i], &deviceProperties[i].zeDeviceProperties);
+		getComputeProps(zeDevices[i], &deviceProperties[i].zeComputeProperties);
+		getModuleProps(zeDevices[i], &deviceProperties[i].zeModuleProperties);
+		getCmdQueueProps(zeDevices[i], &deviceProperties[i].zeCmdQueueProps,
+						 &deviceProperties[i].cmdQueuePropsCount);
+		getMemProps(zeDevices[i], &deviceProperties[i].zeMemProps,
+					&deviceProperties[i].memPropsCount);
+		getMemAccessProps(zeDevices[i], &deviceProperties[i].zeMemAccessProps);
+		getCacheProps(zeDevices[i], &deviceProperties[i].zeCacheProps,
+					  &deviceProperties[i].cachePropsCount);
+		getImageProps(zeDevices[i], &deviceProperties[i].zeImageProps);
+		getExtMemProps(zeDevices[i], &deviceProperties[i].zeExternalMemoryProps);
 
 		/* Note that we have to use zesDevices handle for zes functions */
 		zesGetDevProps(zesDevices[i], &deviceProperties[i].zesDeviceProperties);

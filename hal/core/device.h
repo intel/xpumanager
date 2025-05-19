@@ -111,23 +111,23 @@ public:
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
 	void printExtMemTypeFlags(const char *flagName, ze_external_memory_type_flags_t flag);
 
-	ze_result_t zeGetDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp);
-	ze_result_t zeGetComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps);
-	ze_result_t zeGetModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps);
-	ze_result_t zeGetMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps);
-	ze_result_t zeGetImageProperties(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps);
-	ze_result_t zeGetExternalMemoryProps(ze_device_handle_t dev,
-										 ze_device_external_memory_properties_t *zeExternalMemoryProps);
+	ze_result_t getDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp);
+	ze_result_t getComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps);
+	ze_result_t getModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps);
+	ze_result_t getMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps);
+	ze_result_t getImageProps(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps);
+	ze_result_t getExtMemProps(ze_device_handle_t dev,
+							   ze_device_external_memory_properties_t *zeExternalMemoryProps);
 
-	ze_result_t zeGetCmdQueueProps(ze_device_handle_t dev,
-								   ze_command_queue_group_properties_t **zeCmdQueueProps,
-								   uint32_t *cmdQueuePropsCount);
-	ze_result_t zeGetMemProps(ze_device_handle_t dev,
-							  ze_device_memory_properties_t **zeMemProps,
-							  uint32_t *memPropsCount);
-	ze_result_t zeGetCacheProps(ze_device_handle_t dev,
-								ze_device_cache_properties_t **zeCacheProps,
-								uint32_t *cachePropsCount);
+	ze_result_t getCmdQueueProps(ze_device_handle_t dev,
+								 ze_command_queue_group_properties_t **zeCmdQueueProps,
+								 uint32_t *cmdQueuePropsCount);
+	ze_result_t getMemProps(ze_device_handle_t dev,
+							ze_device_memory_properties_t **zeMemProps,
+							uint32_t *memPropsCount);
+	ze_result_t getCacheProps(ze_device_handle_t dev,
+							  ze_device_cache_properties_t **zeCacheProps,
+							  uint32_t *cachePropsCount);
 
 	ze_result_t zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp);
 	ze_result_t findDevice(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList);
