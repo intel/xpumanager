@@ -337,6 +337,12 @@ ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
+	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
