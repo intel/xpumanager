@@ -39,10 +39,10 @@ void cmdPs::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "List status of processes"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi ps [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi ps"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi ps -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi ps -d [deviceId] -j"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s ps [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s ps", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s ps -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s ps -d [deviceId] -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "PID:      Process ID"));
 	helpList.push_back(helpCmd(TITLE, "Command:  Process command name"));

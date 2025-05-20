@@ -49,20 +49,20 @@ void cmdStats::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "List the GPU statistics"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi stats [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId] -e"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -e"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId] -e -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -e -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId] -r"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -r"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId] -r -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -r -j"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s stats [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [pciBdfAddress]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [deviceId] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [pciBdfAddress] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [deviceId] -e", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [pciBdfAddress] -e", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [deviceId] -e -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [pciBdfAddress] -e -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [deviceId] -r", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [pciBdfAddress] -r", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [deviceId] -r -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s stats -d [pciBdfAddress] -r -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -210,6 +210,7 @@ int cmdStats::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

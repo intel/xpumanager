@@ -48,7 +48,7 @@ diagCmdStruct diagCmds[] = {
 	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}},
 	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}},
 	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}},
-	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}},
+	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, &cmdDiag::level},
 	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::precheck},
 	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::stress},
 	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest},
@@ -70,29 +70,29 @@ void cmdDiag::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Run some test suites to diagnose GPU"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi diag [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceId] -l [level]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [pciBdfAddress] -l [level]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceId] -l [level] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [pciBdfAddress] -l [level] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceId] --singletest [testIds]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [pciBdfAddress] --singletest [testIds]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceId] --singletest [testIds] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [pciBdfAddress] --singletest [testIds] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceIds] --stress"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceIds] --stress --stresstime [time]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --listtypes"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --listtypes -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --gpu"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --gpu -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --since [startTime]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --since [startTime] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --gpu --since [startTime]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --gpu --since [startTime] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --stress"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --stress --stresstime [time]"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s diag [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [deviceId] -l [level]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [pciBdfAddress] -l [level]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [deviceId] -l [level] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [pciBdfAddress] -l [level] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [deviceId] --singletest [testIds]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [pciBdfAddress] --singletest [testIds]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [deviceId] --singletest [testIds] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [pciBdfAddress] --singletest [testIds] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [deviceIds] --stress", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag -d [deviceIds] --stress --stresstime [time]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --listtypes", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --listtypes -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --gpu", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --gpu -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --since [startTime]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --since [startTime] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --gpu --since [startTime]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --precheck --gpu --since [startTime] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --stress", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s diag --stress --stresstime [time]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -145,6 +145,30 @@ ze_result_t cmdDiag::stress(diagCmdStruct *diagCmds, devInfo *d)
 	TRACING();
 	UNUSED(diagCmds);
 	UNUSED(d);
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDiag::level(diagCmdStruct *diagCmds, devInfo *d)
+{
+	TRACING();
+	UNUSED(diagCmds);
+	UNUSED(d);
+
+	// Check if the level is valid
+	if (diagCmds[diagCmdType::LEVEL].val.empty())
+	{
+		ERR("Level is required.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Convert the level string to an integer
+	int level = stoi(diagCmds[diagCmdType::LEVEL].val);
+	if (level < 1 || level > 3)
+	{
+		ERR("Invalid level. Valid options are 1, 2, or 3.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -373,6 +397,7 @@ int cmdDiag::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

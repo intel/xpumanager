@@ -38,12 +38,12 @@ void cmdTopology::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Get the system topology"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi topology [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [pciBdfAddress]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [deviceId] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -f [filename]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -m"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s topology [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topology -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topology -d [pciBdfAddress]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topology -d [deviceId] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topology -f [filename]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topology -m", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));

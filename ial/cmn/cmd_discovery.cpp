@@ -51,12 +51,12 @@ void cmdDiscovery::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Discover the GPU devices installed on this machine and provide the device info"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi discovery [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [pciBdfAddress]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [deviceId] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery --dump [propertyIds]"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s discovery [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s discovery", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s discovery -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s discovery -d [pciBdfAddress]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s discovery -d [deviceId] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s discovery --dump [propertyIds]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -462,6 +462,7 @@ int cmdDiscovery::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

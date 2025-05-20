@@ -48,6 +48,14 @@
 #include "version.h"
 #include "cli.h"
 
+#ifdef DAEMONMODE
+DAEMONCAP curDaemonMode = DAEMON;
+string progName = "xpumcli";
+#else
+DAEMONCAP curDaemonMode = DAEMONLESS;
+string progName = "xpu-smi";
+#endif
+
 /* Function to create an instance of a class */
 template <typename T>
 cmds *createInstance()
@@ -103,36 +111,26 @@ void helpsmi()
 	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero. "
 		  "Before using Intel XPU System Management Interface, the GPU driver and Intel "
 		  "oneAPI Level Zero should be installed rightly.\n\n");
-	PRINT("Supported devcies:\n");
-	PRINT(" - Intel Arc B series GPU\n\n");
-
-	PRINT("Usage: xpu-smi [Options]\n");
-	PRINT("  xpu-smi -v\n");
-	PRINT("  xpu-smi -h\n");
-	PRINT("  xpu-smi discovery\n\n");
 }
 
 void help(list<cmds *> *cmd_list)
 {
-	string name;
 	if (curDaemonMode == DAEMONCAP::DAEMON)
 	{
-		name = "xpumcli";
 		helpcli();
 	}
 	else
 	{
-		name = "xpu-smi";
 		helpsmi();
 	}
 
 	PRINT("Supported devcies:\n");
 	PRINT(" - Intel Arc B series GPU\n\n");
 
-	PRINT("Usage: %s [Options]\n", name.c_str());
-	PRINT("  %s -v\n", name.c_str());
-	PRINT("  %s -h\n", name.c_str());
-	PRINT("  %s discovery\n\n", name.c_str());
+	PRINT("Usage: %s [Options]\n", progName.c_str());
+	PRINT("  %s -v\n", progName.c_str());
+	PRINT("  %s -h\n", progName.c_str());
+	PRINT("  %s discovery\n\n", progName.c_str());
 
 	PRINT("Options:\n");
 	PRINT("  -h,--help                   Print this help message and exit\n");

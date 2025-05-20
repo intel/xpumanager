@@ -31,10 +31,10 @@ void cmdAgentSet::help(HELP helpType)
 	vector<helpCmd> helpList;
 	helpList.push_back(helpCmd(TITLE, "Get or change some XPU Manager settings."));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli agentset [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli agentset -l"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli agentset -l -j"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli agentset -t 200"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s agentset [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s agentset -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s agentset -l -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s agentset -t 200", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));

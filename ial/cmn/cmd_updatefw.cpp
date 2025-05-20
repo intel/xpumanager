@@ -38,10 +38,10 @@ void cmdUpdateFW::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Update GPU firmware"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi updatefw [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi updatefw -d [deviceId] -t GFX -f [imageFilePath]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi updatefw -t AMC -f [imageFilePath]"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s updatefw [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [deviceId] -t GFX -f [imageFilePath]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s updatefw -t AMC -f [imageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -175,6 +175,7 @@ int cmdUpdateFW::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		fwInfo.dev = device.dev;

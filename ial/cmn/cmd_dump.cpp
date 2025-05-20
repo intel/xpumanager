@@ -51,9 +51,11 @@ void cmdDump::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Dump device statistics data"));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi dump [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s dump [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
+							   progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
+							   progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -560,6 +562,7 @@ int cmdDump::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

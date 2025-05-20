@@ -53,16 +53,16 @@ void cmdVgpu::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Create and remove virtual GPUs in SRIOV configuration"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi vgpu [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu --precheck"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu --addkernelparam"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -r"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -r"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -l"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -l"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -s"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s vgpu [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu --precheck", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu --addkernelparam", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -r", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -r", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -s", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -242,6 +242,7 @@ int cmdVgpu::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

@@ -45,13 +45,13 @@ void cmdGroup::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Group the managed GPU devices"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli group [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli group -c -n [groupName]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli group -a -g [groupId] -d [deviceIds]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli group -r -d [deviceIds] -g [groupId]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli group -D -g [groupId]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli group -l"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli group -l -g [groupId]"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s group [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s group -c -n [groupName]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s group -a -g [groupId] -d [deviceIds]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s group -r -d [deviceIds] -g [groupId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s group -D -g [groupId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s group -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s group -l -g [groupId]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -197,6 +197,7 @@ int cmdGroup::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type
