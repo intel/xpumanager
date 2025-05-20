@@ -48,7 +48,7 @@ void cmdStats::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "List the GPU statistics"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi stats [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi stats"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId]"));
@@ -63,11 +63,11 @@ void cmdStats::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -r"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [deviceId] -r -j"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi stats -d [pciBdfAddress] -r -j"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-e,--eu                     Show EU metrics"));
 	helpList.push_back(helpCmd(HEADING, "-r,--ras                    Show RAS error metrics"));

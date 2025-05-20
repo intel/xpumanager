@@ -37,18 +37,18 @@ void cmdTopology::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Get the system topology"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi topology [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [deviceId]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [pciBdfAddress]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -d [deviceId] -j"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -f [filename]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi topology -m"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
 	helpList.push_back(helpCmd(HEADING, "-m,--matrix                 Print the CPU/GPU topology matrix"));

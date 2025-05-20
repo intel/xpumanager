@@ -45,7 +45,7 @@ void cmdHealth::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Get the GPU device component health status"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi health [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi health -l"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi health -l -j"));
@@ -55,11 +55,11 @@ void cmdHealth::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [pciBdfAddress] -j"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [deviceId] -c [componentTypeId]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [pciBdfAddress] -c [componentTypeId] -j"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-l,--list                   Display health info for all devices"));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address"));
 	helpList.push_back(helpCmd(HEADING, "-c,--component              Component types"));

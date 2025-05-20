@@ -50,18 +50,18 @@ void cmdDiscovery::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Discover the GPU devices installed on this machine and provide the device info"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi discovery [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [deviceId]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [pciBdfAddress]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery -d [deviceId] -j"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi discovery --dump [propertyIds]"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
 	helpList.push_back(helpCmd(HEADING, "--pf,--physicalFunction     Display the physical functions only"));
 	helpList.push_back(helpCmd(HEADING, "--vf,--virtualFunction      Display the virtual functions only"));
