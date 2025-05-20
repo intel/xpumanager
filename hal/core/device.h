@@ -88,6 +88,15 @@ struct devProps
 	zes_device_properties_t zesDeviceProperties;
 };
 
+class device;
+
+struct devInfo
+{
+	device *dev;
+	ze_device_handle_t deviceHdl;
+	zes_device_handle_t zesDeviceHdl;
+};
+
 class LIBXPUM_API device
 {
 private:
@@ -128,9 +137,10 @@ public:
 	ze_result_t getCacheProps(ze_device_handle_t dev,
 							  ze_device_cache_properties_t **zeCacheProps,
 							  uint32_t *cachePropsCount);
+	ze_result_t resetDevice(ze_device_handle_t dev);
 
 	ze_result_t zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp);
-	ze_result_t findDevice(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList);
+	ze_result_t findDevice(const char *bdf, vector<devInfo> *devList);
 	ze_device_handle_t findDeviceByIndex(uint32_t index);
 
 	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD);

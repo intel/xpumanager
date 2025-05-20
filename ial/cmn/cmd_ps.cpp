@@ -69,8 +69,7 @@ int cmdPs::run(arg_struct *args)
 {
 	TRACING();
 	ze_result_t result;
-	vector<device *> deviceList;
-	vector<ze_device_handle_t> deviceHandleList;
+	vector<devInfo> deviceList;
 	int opt;
 	int optionIndex = 0;
 	bool json = false;
@@ -117,8 +116,7 @@ int cmdPs::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(deviceId.c_str(),
-								 &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(deviceId.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n",
@@ -130,14 +128,14 @@ int cmdPs::run(arg_struct *args)
 	for (auto &dev : deviceList)
 	{
 		DBG("Running ps command on device %d\n", i);
-		process *ps = (process *)dev->getProcess();
+		process *ps = (process *)dev.dev->getProcess();
 		if (ps == nullptr)
 		{
 			ERR("Error: Process pointer not found.\n");
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 
-		ps->getState(deviceHandleList[i]);
+		ps->getState(dev.deviceHdl);
 
 		i++;
 	}

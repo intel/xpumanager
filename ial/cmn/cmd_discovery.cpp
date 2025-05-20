@@ -376,9 +376,7 @@ ze_result_t cmdDiscovery::listamcversions(discoveryCmdStruct *discCmds, devInfo 
 int cmdDiscovery::run(arg_struct *args)
 {
 	TRACING();
-	devInfo d = {};
-	vector<device *> deviceList;
-	vector<ze_device_handle_t> deviceHandleList;
+	vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
 	int opt;
@@ -457,25 +455,22 @@ int cmdDiscovery::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
 		return result;
 	}
 
-	int i = 0;
 	for (auto &device : deviceList)
 	{
-		d.dev = device;
-		d.deviceHdl = deviceHandleList[i++];
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : discCmds)
 		{
 			if (cmd.enabled && cmd.func != nullptr)
 			{
 				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.func)(discCmds, &d);
+				(this->*cmd.func)(discCmds, &device);
 			}
 		}
 	}

@@ -555,6 +555,19 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev,
 	return ZE_RESULT_SUCCESS;
 }
 
+ze_result_t device::resetDevice(zes_device_handle_t dev)
+{
+	ze_result_t result = zesDeviceReset(dev, true);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Device reset successfully.\n");
+	return result;
+}
+
 ze_result_t device::zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp)
 {
 	ze_result_t result = zesDeviceGetProperties(dev, zesDevProp);
@@ -724,16 +737,19 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::findDevice(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
+ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList)
 {
+	devInfo d;
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
 		if (!bdf || !strlen(bdf))
 		{
 			// If no BDF is provided, add all devices to the list
 			DBG("No BDF provided, adding all devices.\n");
-			devList->push_back(this);
-			devHdlList->push_back(zeDevices[i]);
+			d.dev = this;
+			d.deviceHdl = zeDevices[i];
+			d.zesDeviceHdl = zesDevices[i];
+			devList->push_back(d);
 		}
 		else
 		{
@@ -742,8 +758,10 @@ ze_result_t device::findDevice(const char *bdf, vector<device *> *devList, vecto
 			if (p->isBDF(bdf))
 			{
 				DBG("Found device with BDF: %s\n", bdf);
-				devList->push_back(this);
-				devHdlList->push_back(zeDevices[i]);
+				d.dev = this;
+				d.deviceHdl = zeDevices[i];
+				d.zesDeviceHdl = zesDevices[i];
+				devList->push_back(d);
 				return ZE_RESULT_SUCCESS;
 			}
 			else if (bdf && strlen(bdf) == 1)
@@ -759,8 +777,10 @@ ze_result_t device::findDevice(const char *bdf, vector<device *> *devList, vecto
 				if (deviceIndex < deviceCount)
 				{
 					DBG("Found device with index: %d\n", deviceIndex);
-					devList->push_back(this);
-					devHdlList->push_back(zeDevices[deviceIndex]);
+					d.dev = this;
+					d.deviceHdl = zeDevices[deviceIndex];
+					d.zesDeviceHdl = zesDevices[deviceIndex];
+					devList->emplace_back(d);
 					return ZE_RESULT_SUCCESS;
 				}
 				else

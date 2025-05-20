@@ -322,13 +322,13 @@ ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
 	return foundDevice;
 }
 
-ze_result_t driver::findDevice(const char *bdf, vector<device *> *devList, vector<ze_device_handle_t> *devHdlList)
+ze_result_t driver::findDevice(const char *bdf, vector<devInfo> *devList)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < driverCount; i++)
 	{
-		result = devs[i].findDevice(bdf, devList, devHdlList);
+		result = devs[i].findDevice(bdf, devList);
 		if (result != ZE_RESULT_SUCCESS)
 		{
 			ERR("Failed to find device by BDF: %s. Error code: 0x%X (%s) \n", bdf, result, l0_error_to_string(result));
