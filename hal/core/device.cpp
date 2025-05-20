@@ -568,7 +568,7 @@ ze_result_t device::resetDevice(zes_device_handle_t dev)
 	return result;
 }
 
-ze_result_t device::zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp)
+ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp)
 {
 	ze_result_t result = zesDeviceGetProperties(dev, zesDevProp);
 	if (result != ZE_RESULT_SUCCESS)

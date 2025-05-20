@@ -139,7 +139,7 @@ public:
 							  uint32_t *cachePropsCount);
 	ze_result_t resetDevice(ze_device_handle_t dev);
 
-	ze_result_t zesGetDevProps(ze_device_handle_t dev, zes_device_properties_t *zesDevProp);
+	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
 	ze_result_t findDevice(const char *bdf, vector<devInfo> *devList);
 	ze_device_handle_t findDeviceByIndex(uint32_t index);
 
