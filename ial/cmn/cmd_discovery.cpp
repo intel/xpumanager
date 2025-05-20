@@ -25,6 +25,8 @@
 #include "cmd_discovery.h"
 #include "debug.h"
 #include <assert.h>
+#include <sstream>
+#include <pci.h>
 
 discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
@@ -111,6 +113,44 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	vector<string> dumpArgs;
+	string val = discCmds[discCmdType::DISC_DUMP].val;
+	bool found = false;
+
+	// Check if the dump command argument is valid
+	if (val.empty())
+	{
+		ERR("Dump command argument is required\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Dump command argument is a comma-separated list of numbers, with -1 being show all properties
+	if (val == "-1")
+	{
+		// push all dump command types to the vector
+		for (int i = 1; i < TOTAL_DISC_DUMPS; i++)
+		{
+			dumpArgs.push_back(to_string(i));
+		}
+	}
+	else
+	{
+		// Split the dump command argument by commas
+		stringstream ss(val.c_str());
+		string token;
+		while (getline(ss, token, ','))
+		{
+			dumpArgs.push_back(token);
+		}
+	}
+
+	// Check if the dump command argument is a number between 1 and TOTAL_DISC_DUMPS
+	int dumpArg = atoi(val.c_str());
+	if (dumpArg < 1 || dumpArg > TOTAL_DISC_DUMPS)
+	{
+		ERR("Invalid dump command argument. It must be between 1 and %d\n", TOTAL_DISC_DUMPS);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 
 	discoveryDumpStruct dumpCmds[] = {
 		{DUMP_DEVICEID, &cmdDiscovery::deviceID},
@@ -139,14 +179,24 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 		{DUMP_PCIDEVICEID, &cmdDiscovery::pciDeviceID},
 	};
 
-	for (auto &cmd : dumpCmds)
+	for (auto &arg : dumpArgs)
 	{
-		if (cmd.type == discCmds[discCmdType::DISC_DUMP].type)
+		for (auto &cmd : dumpCmds)
 		{
-			DBG("Running command: %d\n", cmd.type);
-			result = (this->*cmd.func)(discCmds, d);
-			break;
+			if (cmd.type == atoi(arg.c_str()))
+			{
+				found = true;
+				DBG("Running command: %d\n", cmd.type);
+				result = (this->*cmd.func)(discCmds, d);
+			}
 		}
+	}
+
+	if (!found)
+	{
+		ERR("The following argument was not expected: '%s'.\n", val.c_str());
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	return result;
@@ -156,7 +206,17 @@ ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Device ID: 0x%X\n", zeDevProp.deviceId);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -164,7 +224,17 @@ ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Device Name: %s\n", zeDevProp.name);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -172,7 +242,18 @@ ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	zes_device_properties_t zesDevProp;
+	ze_result_t result;
+
+	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Vendor Name: %s\n", zesDevProp.vendorName);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -188,7 +269,18 @@ ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	zes_device_properties_t zesDevProp;
+	ze_result_t result;
+
+	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Serial Number: %s\n", zesDevProp.serialNumber);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -212,7 +304,17 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	zes_device_properties_t zesDevProp;
+	ze_result_t result;
+
+	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Driver Version: %s\n", zesDevProp.driverVersion);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -236,7 +338,18 @@ ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	zes_pci_properties_t pciProps;
+	ze_result_t result;
+
+	pci *p = (pci *)d->dev->getPCI();
+	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - PCI BDF Address: %04x:%02x:%02x.%01x\n", pciProps.address.domain, pciProps.address.bus,
+		pciProps.address.device, pciProps.address.function);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -252,7 +365,17 @@ ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	zes_pci_properties_t pciProps;
+	ze_result_t result;
+
+	pci *p = (pci *)d->dev->getPCI();
+	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - PCIe Generation: %d\n", pciProps.maxSpeed.gen);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -260,7 +383,18 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	zes_pci_properties_t pciProps;
+	ze_result_t result;
+
+	pci *p = (pci *)d->dev->getPCI();
+	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Max link width: %d\n", pciProps.maxSpeed.width);
+
 	return ZE_RESULT_SUCCESS;
 }
 
