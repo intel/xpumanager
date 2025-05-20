@@ -101,12 +101,6 @@ struct cmd_struct
 	runFunc rf;
 };
 
-struct devInfo
-{
-	device *dev;
-	ze_device_handle_t deviceHdl;
-};
-
 template <typename T>
 void processOptions(T *data, uint32_t size, string &shortOpts, vector<struct option> &longOptsVec)
 {

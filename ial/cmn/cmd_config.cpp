@@ -360,9 +360,7 @@ ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
 int cmdConfig::run(arg_struct *args)
 {
 	TRACING();
-	devInfo d = {};
-	vector<device *> deviceList;
-	vector<ze_device_handle_t> deviceHandleList;
+	vector<devInfo> deviceList;
 	configCmdType cmdType = configCmdType::TOTAL_CONFIG;
 	ze_result_t result;
 	int opt;
@@ -443,24 +441,21 @@ int cmdConfig::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", configCmds[configCmdType::CONFIGDEVICE].val.c_str());
 		return result;
 	}
 
-	int i = 0;
 	for (auto &device : deviceList)
 	{
-		d.dev = device;
-		d.deviceHdl = deviceHandleList[i++];
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : configCmds)
 		{
 			if (cmd.type == cmdType && cmd.func != nullptr)
 			{
-				result = (this->*cmd.func)(configCmds, &d);
+				result = (this->*cmd.func)(configCmds, &device);
 				break;
 			}
 		}

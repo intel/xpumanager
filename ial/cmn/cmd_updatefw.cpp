@@ -71,8 +71,7 @@ int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
 	firmwareInfo fwInfo = {};
-	vector<device *> deviceList;
-	vector<ze_device_handle_t> deviceHandleList;
+	vector<devInfo> deviceList;
 	ze_result_t result;
 
 	int opt;
@@ -169,19 +168,18 @@ int cmdUpdateFW::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(fwInfo.deviceId.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(fwInfo.deviceId.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", fwInfo.deviceId.c_str());
 		return result;
 	}
 
-	int i = 0;
 	for (auto &device : deviceList)
 	{
-		fwInfo.dev = device;
-		fwInfo.deviceHdl = deviceHandleList[i++];
-		firmware *fw = (firmware *)device->getFirmware();
+		fwInfo.dev = device.dev;
+		fwInfo.deviceHdl = device.deviceHdl;
+		firmware *fw = (firmware *)device.dev->getFirmware();
 		if (fw == nullptr)
 		{
 			ERR("Error: Firmware pointer not found.\n");

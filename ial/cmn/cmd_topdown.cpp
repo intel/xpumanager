@@ -82,8 +82,7 @@ int cmdTopdown::run(arg_struct *args)
 		{0, 0, 0, 0}};
 
 	ze_result_t result;
-	vector<device *> deviceList;
-	vector<ze_device_handle_t> deviceHandleList;
+	vector<devInfo> deviceList;
 	int opt;
 	int option_index = 0;
 	string deviceId;
@@ -131,8 +130,7 @@ int cmdTopdown::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(deviceId.c_str(),
-								 &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(deviceId.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n",

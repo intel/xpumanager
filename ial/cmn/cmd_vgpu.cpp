@@ -148,9 +148,7 @@ ze_result_t cmdVgpu::lmem(vgpuCmdStruct *vgpuCmds, devInfo *d)
 int cmdVgpu::run(arg_struct *args)
 {
 	TRACING();
-	devInfo d = {};
-	vector<device *> deviceList;
-	vector<ze_device_handle_t> deviceHandleList;
+	vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
 	int opt;
@@ -237,25 +235,22 @@ int cmdVgpu::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str(), &deviceList, &deviceHandleList);
+	result = args->sm.findDevice(vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Error: Device handle not found for device ID '%s'.\n", vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str());
 		return result;
 	}
 
-	int i = 0;
 	for (auto &device : deviceList)
 	{
-		d.dev = device;
-		d.deviceHdl = deviceHandleList[i++];
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : vgpuCmds)
 		{
 			if (cmd.enabled && cmd.func != nullptr)
 			{
 				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.func)(vgpuCmds, &d);
+				(this->*cmd.func)(vgpuCmds, &device);
 			}
 		}
 	}
