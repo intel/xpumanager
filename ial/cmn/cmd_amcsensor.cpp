@@ -31,9 +31,9 @@ void cmdAmcSensor::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "List the AMC real-time sensor readings."));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli amcsensor [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli amcsensor"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli amcsensor -j"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s amcsensor [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amcsensor", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amcsensor -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));

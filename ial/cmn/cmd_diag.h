@@ -71,6 +71,7 @@ public:
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t stress(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t level(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t runSingleTest(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t listTypes(diagCmdStruct *diagCmds, devInfo *d);
 	ze_result_t gpu(diagCmdStruct *diagCmds, devInfo *d);

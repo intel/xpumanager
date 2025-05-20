@@ -46,15 +46,15 @@ void cmdHealth::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Get the GPU device component health status"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi health [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -l"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -l -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [pciBdfAddress]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [deviceId] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [pciBdfAddress] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [deviceId] -c [componentTypeId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi health -d [pciBdfAddress] -c [componentTypeId] -j"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s health [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -l -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -d [pciBdfAddress]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -d [deviceId] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -d [pciBdfAddress] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -d [deviceId] -c [componentTypeId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s health -d [pciBdfAddress] -c [componentTypeId] -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -217,6 +217,7 @@ int cmdHealth::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

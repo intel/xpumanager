@@ -28,6 +28,17 @@
 #include <list>
 #include <driver.h>
 #include <string>
+#include <cstdarg>
+
+enum DAEMONCAP
+{
+	DAEMONLESS,
+	DAEMON,
+	BOTH,
+};
+
+extern DAEMONCAP curDaemonMode;
+extern string progName;
 
 using namespace std;
 
@@ -58,10 +69,13 @@ struct helpCmd
 	}
 
 	// Copy constructor
-	helpCmd(GAP gap, const char *other)
+	helpCmd(GAP gap, const char *fmt, ...)
 	{
 		char_gap = (int)gap;
-		STRNCPY_S(line, other, MAX_PATH);
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(line, MAX_PATH, fmt, args);
+		va_end(args);
 	}
 
 	helpCmd(GAP gap)

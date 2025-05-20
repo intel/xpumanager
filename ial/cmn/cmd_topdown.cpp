@@ -32,11 +32,11 @@ void cmdTopdown::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Show topdown information"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli topdown [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId] -j"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId] -t [tileId]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli topdown -d [deviceId] -t [tileId] -j"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s topdown [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topdown -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topdown -d [deviceId] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topdown -d [deviceId] -t [tileId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s topdown -d [deviceId] -t [tileId] -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "EU in Use:               Contribution to throughput (observed) when EUs are in use with EU threads placed (higher is better)"));
 	helpList.push_back(helpCmd(TITLE, "EU Active:               Contribution to throughput (observed) when EUs are processing instructions from some EU threads (higher is better)"));

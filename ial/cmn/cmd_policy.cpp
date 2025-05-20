@@ -48,19 +48,23 @@ void cmdPolicy::help(HELP helpType)
 	vector<helpCmd> helpList;
 	helpList.push_back(helpCmd(TITLE, "Get and set the GPU policies."));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpumcli policy [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -l"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy --listalltypes"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -d [deviceId] -l"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -d [deviceId] -l -j"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -g [groupId] -l"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -g [groupId] -l -j"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -c -d [deviceId] --type 1 --condition 1"
+	helpList.push_back(helpCmd(TITLE, "Usage: %s policy [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy --listalltypes", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -d [deviceId] -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -d [deviceId] -l -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -g [groupId] -l", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -g [groupId] -l -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -c -d [deviceId] --type 1 --condition 1"
 										" --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue]"
-										" --throttlefrequencymax [frequencyMaxValue]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -c -g [groupId] --type 1 --condition 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -r -d [deviceId] --type [policyTypeValue]"));
-	helpList.push_back(helpCmd(HEADING, "xpumcli policy -r -g [groupId] --type [policyTypeValue]"));
+										" --throttlefrequencymax [frequencyMaxValue]",
+							   progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -c -g [groupId] --type 1 --condition 1 --threshold [threshold]"
+										"  --action 1 --throttlefrequencymin [frequencyMinValue]"
+										" --throttlefrequencymax [frequencyMaxValue]",
+							   progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -r -d [deviceId] --type [policyTypeValue]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s policy -r -g [groupId] --type [policyTypeValue]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -218,6 +222,7 @@ int cmdPolicy::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

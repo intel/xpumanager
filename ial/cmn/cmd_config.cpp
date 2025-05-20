@@ -64,18 +64,18 @@ void cmdConfig::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Get and change the GPU settings"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi config [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --powerlimit [powerValue]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --standby [standbyMode]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --scheduler [schedulerMode]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --reset"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --ppr"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s config [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --powerlimit [powerValue]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --standby [standbyMode]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --scheduler [schedulerMode]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --xelinkport [portId,value]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --reset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --ppr", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -454,6 +454,7 @@ int cmdConfig::run(arg_struct *args)
 		return result;
 	}
 
+	// Iterate through the device list and execute the command
 	for (auto &device : deviceList)
 	{
 		// Call the appropriate command function based on the command type

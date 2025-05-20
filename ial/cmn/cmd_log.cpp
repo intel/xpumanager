@@ -38,8 +38,8 @@ void cmdLogs::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Collect GPU debug logs"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi log [Options]"));
-	helpList.push_back(helpCmd(HEADING, "xpu-smi log -f [tarGzipFileName]"));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s log [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s log -f [tarGzipFileName]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
