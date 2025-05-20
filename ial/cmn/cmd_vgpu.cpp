@@ -52,7 +52,7 @@ void cmdVgpu::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Create and remove virtual GPUs in SRIOV configuration"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi vgpu [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu --precheck"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu --addkernelparam"));
@@ -63,11 +63,11 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -l"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [pciBdfAddress] -l"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi vgpu -d [deviceId] -s"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address"));
 	helpList.push_back(helpCmd(HEADING, "--addkernelparam            Add the kernel command line parameters for the virtual GPUs"));
 	helpList.push_back(helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));

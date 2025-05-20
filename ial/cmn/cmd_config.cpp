@@ -63,7 +63,7 @@ void cmdConfig::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Get and change the GPU settings"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi config [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]"));
@@ -76,11 +76,11 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --reset"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi config -d [deviceId] --ppr"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(HEADING, "--frequencyrange            GPU tile-level core frequency range"));

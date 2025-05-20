@@ -69,7 +69,7 @@ void cmdDiag::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Run some test suites to diagnose GPU"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi diag [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [deviceId] -l [level]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi diag -d [pciBdfAddress] -l [level]"));
@@ -93,11 +93,11 @@ void cmdDiag::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --precheck --gpu --since [startTime] -j"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --stress"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi diag --stress --stresstime [time]"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address"));
 	helpList.push_back(helpCmd(HEADING, "-l,--level                  The diagnostic levels to run. The valid options include"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "1. quick test"));

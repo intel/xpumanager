@@ -54,11 +54,11 @@ void cmdDump::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi dump [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device IDs or PCI BDF addresses to query. The value of \"-1\" means all devices"));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The device tile IDs to query. If the device has only one tile, this parameter should not be specified"));
 	helpList.push_back(helpCmd(HEADING, "-m,--metrics                Metrics type to collect raw data, options. Separated by the comma"));
@@ -100,10 +100,10 @@ void cmdDump::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "34. Copy engine group utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
 	helpList.push_back(helpCmd(SUB_HEADING, "35. Throttle reason, per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "36. Media Engine Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second"));
 	helpList.push_back(helpCmd(HEADING, "-n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--file                      Dump the raw statistics to the file"));
 	helpList.push_back(helpCmd(HEADING, "--ims                       The interval (in milliseconds) to dump the device statistics to file for high-frequency monitoring"));
 	helpList.push_back(helpCmd(SUB_HEADING, "The recommended metrics types for high-frequency sampling: GPU power, GPU frequency, GPU utilization"));

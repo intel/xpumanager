@@ -38,22 +38,22 @@ void cmdPs::help(HELP helpType)
 	vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "List status of processes"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: xpu-smi ps [Options]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi ps"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi ps -d [deviceId]"));
 	helpList.push_back(helpCmd(HEADING, "xpu-smi ps -d [deviceId] -j"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "PID:      Process ID"));
 	helpList.push_back(helpCmd(TITLE, "Command:  Process command name"));
 	helpList.push_back(helpCmd(TITLE, "DeviceID: Device ID"));
 	helpList.push_back(helpCmd(TITLE, "SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)"));
 	helpList.push_back(helpCmd(TITLE, "MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(TITLE, ""));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address"));
 
 	printHelp(helpList, helpType);
