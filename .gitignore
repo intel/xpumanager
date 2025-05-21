@@ -5,5 +5,5 @@
 *.vs
 xpu-smi
 xpumcli
-daemon
+xpumd
 tags

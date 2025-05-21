@@ -1,4 +1,4 @@
-DIRS = cmn cli
+DIRS = cmn cli daemon
 .PHONY: $(DIRS)
 
 MAKE += --no-print-directory
