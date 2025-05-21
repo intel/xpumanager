@@ -52,6 +52,7 @@ enum fwType
 	FAN_TABLE,
 	VR_CONFIG,
 	AMC,
+	MAX_FW_TYPE,
 };
 
 enum fwupdPreference
@@ -209,6 +210,8 @@ struct updateFWCmdStruct
 	updateFW updateFunc;
 	updateFW postUpdateFunc;
 	zes_firmware_handle_t firmwareHandle;
+	char name[ZES_STRING_PROPERTY_SIZE];
+	char version[ZES_STRING_PROPERTY_SIZE];
 };
 
 #endif

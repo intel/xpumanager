@@ -35,13 +35,16 @@ class LIBXPUM_API firmware : public sysman
 private:
 	uint32_t firmwareCount;
 	zes_firmware_handle_t *firmwareList;
+	zes_firmware_properties_t *propertiesList;
+	updateFWCmdStruct *updateFWCmds;
 
 public:
-	firmware() : firmwareCount(0), firmwareList(nullptr) {};
+	firmware();
 	~firmware();
 	ze_result_t getProperties(zes_firmware_handle_t firmwareHandle);
 	ze_result_t enumFirmwares(zes_device_handle_t device);
 	ze_result_t updateFW(firmwareInfo *fwInfo);
+	ze_result_t getFWversion(char *version, uint32_t size);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

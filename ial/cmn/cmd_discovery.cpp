@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <sstream>
 #include <pci.h>
+#include <firmware.h>
 
 discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
@@ -261,7 +262,22 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t devProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &devProp);
+	if(result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j)
+	{
+		DBG("%02X", devProp.uuid.id[j]);
+	}
+	DBG("\n");
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -321,8 +337,12 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
+	char version[MAX_PATH] = {0};
 	UNUSED(discCmds);
-	UNUSED(d);
+	firmware *fw = (firmware *)d->dev->getFirmware();
+
+	fw->getFWversion(version, sizeof(version));
+	DBG("  - GFX Firmware Version: %s\n", version);
 	return ZE_RESULT_SUCCESS;
 }
 
