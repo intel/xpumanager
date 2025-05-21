@@ -27,18 +27,27 @@
 #include <sysmanupd.h>
 #include <amcupd.h>
 
-updateFWCmdStruct updateFWCmds[] = {
-	{GFX, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx},
-	{GFX_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData, &fwupd::postUpdateGfxData},
-	{GFX_CODE_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxCodeData, &fwupd::updateGfxCodeData, &fwupd::postUpdateGfxCodeData},
-	{GFX_PSCBIN, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin, &fwupd::postUpdateGfxPscBin},
-	{FAN_TABLE, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable, &fwupd::postUpdateFanTable},
-	{VR_CONFIG, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig, &fwupd::postUpdateVrConfig},
-	{AMC, FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC},
-};
+firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr)
+{
+	updateFWCmds = new updateFWCmdStruct[MAX_FW_TYPE]{
+		{GFX, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx},
+		{GFX_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData, &fwupd::postUpdateGfxData},
+		{GFX_CODE_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxCodeData, &fwupd::updateGfxCodeData, &fwupd::postUpdateGfxCodeData},
+		{GFX_PSCBIN, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin, &fwupd::postUpdateGfxPscBin},
+		{FAN_TABLE, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable, &fwupd::postUpdateFanTable},
+		{VR_CONFIG, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig, &fwupd::postUpdateVrConfig},
+		{AMC, FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC},
+	};
+}
 
 firmware::~firmware()
 {
+	if (updateFWCmds)
+	{
+		delete[] updateFWCmds;
+		updateFWCmds = nullptr;
+	}
+
 	if (firmwareList)
 	{
 		delete[] firmwareList;
@@ -71,6 +80,8 @@ ze_result_t firmware::enumFirmwares(zes_device_handle_t device)
 
 ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 {
+	TRACING();
+	int index = -1;
 	zes_firmware_properties_t properties;
 	ze_result_t result = zesFirmwareGetProperties(firmwareHandle, &properties);
 	if (result != ZE_RESULT_SUCCESS)
@@ -83,32 +94,49 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	DBG("Can control: %d\n", properties.canControl);
 	if (STRCASECMP(properties.name, "GFX") == 0)
 	{
-		updateFWCmds[GFX].firmwareHandle = firmwareHandle;
+		index = GFX;
 	}
 	else if (STRCASECMP(properties.name, "AMC") == 0)
 	{
-		updateFWCmds[AMC].firmwareHandle = firmwareHandle;
+		index = AMC;
 	}
 	else if (STRCASECMP(properties.name, "GFX_DATA") == 0)
 	{
-		updateFWCmds[GFX_DATA].firmwareHandle = firmwareHandle;
+		index = GFX_DATA;
 	}
 	else if (STRCASECMP(properties.name, "GFX_PSCBIN") == 0)
 	{
-		updateFWCmds[GFX_PSCBIN].firmwareHandle = firmwareHandle;
+		index = GFX_PSCBIN;
 	}
 	else if (STRCASECMP(properties.name, "FANCONTROL") == 0)
 	{
-		updateFWCmds[FAN_TABLE].firmwareHandle = firmwareHandle;
+		index = FAN_TABLE;
 	}
 	else if (STRCASECMP(properties.name, "VRCONFIG") == 0)
 	{
-		updateFWCmds[VR_CONFIG].firmwareHandle = firmwareHandle;
+		index = VR_CONFIG;
 	}
 	else
 	{
 		DBG("Firmware Type: Unknown\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
+
+	// Store the firmware handle and properties
+	updateFWCmds[index].firmwareHandle = firmwareHandle;
+	STRNCPY_S(updateFWCmds[index].name, properties.name, ZES_STRING_PROPERTY_SIZE);
+	STRNCPY_S(updateFWCmds[index].version, properties.version, ZES_STRING_PROPERTY_SIZE);
+
+	return result;
+}
+
+ze_result_t firmware::getFWversion(char *version, uint32_t size)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	STRCPY_S(version, size, updateFWCmds[GFX].version);
+
 	return result;
 }
 
@@ -119,7 +147,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	uint32_t i;
 	fwupd *fw = nullptr;
 
-	for (i = 0; i < ARRAY_SIZE(updateFWCmds); i++)
+	for (i = 0; i < MAX_FW_TYPE; i++)
 	{
 		// Find the matching firmware type
 		if (!STRCASECMP(fwInfo->firmwareType.c_str(), TOSTR(updateFWCmds[i].fw)))
@@ -173,7 +201,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 		}
 	}
 
-	if (i == ARRAY_SIZE(updateFWCmds))
+	if (i == MAX_FW_TYPE)
 	{
 		ERR("Invalid firmware type: %s\n", fwInfo->firmwareType.c_str());
 		result = ZE_RESULT_ERROR_UNKNOWN;
