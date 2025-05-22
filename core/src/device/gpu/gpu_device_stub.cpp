@@ -1137,7 +1137,7 @@ void GPUDeviceStub::addEngineCapabilities(zes_device_handle_t device, const ze_d
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {} {} lacks Compute Engine Group Utilization monitoring capability.", props.name, bdf_address);
-    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE) != engine_caps.end())
+    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_ALL) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {} {} lacks  Media Engine Group Utilization monitoring capability.", props.name, bdf_address);
@@ -2940,10 +2940,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                             }
                             break;
                         case ZES_ENGINE_GROUP_MEDIA_ALL:
-                        case ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE:
-                        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
-                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE ||
-                                props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
+                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL) {
                                 continue;
                             }
                             break;
