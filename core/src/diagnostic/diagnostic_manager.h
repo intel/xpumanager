@@ -117,7 +117,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static void doDiagnosticHardwareSysman(const zes_device_handle_t &zes_device,
                                                  std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
-    static void doDiagnosticMediaCodec(const zes_device_handle_t &zes_device,
+    static void doDiagnosticMediaCodec(const ze_device_handle_t &ze_device,
+                                             const zes_device_handle_t &zes_device,
                                              std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                              std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas,
                                              bool checkOnly);

@@ -62,7 +62,8 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
     int threshold = *static_cast<int*>(value);
     Property prop;
     std::string pciDeviceId;
-    if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
+    auto device = this->p_device_manager->getDevice(std::to_string(deviceId));
+    if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
         pciDeviceId = prop.getValue();
     }
     int limit = -1;
@@ -138,7 +139,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
 
     Property prop;
     std::string pciDeviceId;
-    if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
+    auto device = this->p_device_manager->getDevice(std::to_string(deviceId));
+    if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
         pciDeviceId = prop.getValue();
     }
     if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
@@ -180,8 +182,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
         global_default_limit = false;
     }
 
-    GPUDeviceStub::instance().getHealthStatus(
-        this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceHandle(), type, data, core_thermal_thresold, memory_thermal_thresold, power_threshold, global_default_limit);
+    GPUDeviceStub::instance().getHealthStatus(device->getDeviceZeHandle(),
+        device->getDeviceHandle(), type, data, core_thermal_thresold, memory_thermal_thresold, power_threshold, global_default_limit);
 
     return XPUM_OK;
 }

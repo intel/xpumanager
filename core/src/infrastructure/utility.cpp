@@ -598,7 +598,7 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
 }
 
 //This function won't work when device handle is returned by zesDeviceGet
-bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
+bool Utility::isATSMPlatform(const ze_device_handle_t &device) {
     ze_device_properties_t props = {};
     props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
@@ -611,7 +611,7 @@ bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
 }
 
 //This function won't work when device handle is returned by zesDeviceGet
-bool Utility::isPVCPlatform(const zes_device_handle_t &device) {
+bool Utility::isPVCPlatform(const ze_device_handle_t &device) {
     ze_device_properties_t props = {};
     props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
@@ -621,6 +621,18 @@ bool Utility::isPVCPlatform(const zes_device_handle_t &device) {
         is_pvc = (device_model == XPUM_DEVICE_MODEL_PVC);
     }
     return is_pvc;
+}
+
+bool Utility::isBMGPlatform(const ze_device_handle_t &device) {
+    ze_device_properties_t props = {};
+    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    props.pNext = nullptr;
+    bool is_bmg = false;
+    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
+        is_bmg = (device_model == XPUM_DEVICE_MODEL_BMG);
+    }
+    return is_bmg;
 }
 
 void Utility::parallel_in_batches(unsigned num_elements, unsigned num_threads,
