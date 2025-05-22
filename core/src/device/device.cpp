@@ -146,7 +146,7 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
         case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COMPUTE_SINGLE); };
         case DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
-            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE); };
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_MEDIA_ALL); };
         case DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COPY_SINGLE); };
         case DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
