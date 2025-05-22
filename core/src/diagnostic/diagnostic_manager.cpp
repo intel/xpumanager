@@ -90,10 +90,10 @@ std::string DiagnosticManager::PVC_AMC_MINIMUM_VERSION = "6.7.0.0";
 std::string DiagnosticManager::ATSM150_FW_MINIMUM_VERSION = "DG02_1.3271";
 std::string DiagnosticManager::ATSM75_FW_MINIMUM_VERSION = "DG02_2.2277";
 
-void readTemperatureTask(std::atomic<bool>& subtask_done, uint64_t& max_temperature_value, const zes_device_handle_t& zes_device) {
+void readTemperatureTask(std::atomic<bool>& subtask_done, uint64_t& max_temperature_value, const ze_device_handle_t& ze_device, const zes_device_handle_t& zes_device) {
     while (!subtask_done.load()) {
         try {
-            std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
+            std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(ze_device, zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
             uint64_t current_temperature_value = 0;
             if (temp->hasDataOnDevice()) {
                 current_temperature_value = temp->getCurrent() / Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
@@ -645,7 +645,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_LIGHT_CODEC:
                     XPUM_LOG_INFO("device: {} - start media codec check diagnostic", currentId);
                     try {
-                        doDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas, true);
+                        doDiagnosticMediaCodec(ze_device, zes_device, p_task_info, media_codec_perf_datas, true);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_LIGHT_CODEC, e.what(), p_task_info);
                     }
@@ -669,7 +669,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_MEDIA_CODEC:
                     XPUM_LOG_INFO("device: {} - start mediacodec diagnostic", currentId);
                     try {
-                        doDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas, false);
+                        doDiagnosticMediaCodec(ze_device, zes_device, p_task_info, media_codec_perf_datas, false);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_MEDIA_CODEC, e.what(), p_task_info);
                     }
@@ -1043,7 +1043,7 @@ static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
     return ret;
 }
 
-void DiagnosticManager::doDiagnosticMediaCodec(const zes_device_handle_t &zes_device, std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_device, const zes_device_handle_t &zes_device, std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                                     std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas, bool checkOnly) {
     xpum_diag_component_info_t &component = p_task_info->componentList[
         checkOnly ?
@@ -1110,7 +1110,7 @@ void DiagnosticManager::doDiagnosticMediaCodec(const zes_device_handle_t &zes_de
         
         std::atomic<bool> subtask_done(false);
         uint64_t max_temperature_value = 0;
-        std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+        std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
         XPUM_LOG_INFO("start read temperature thread");
         if (sample_multi_transcode_tool_exist) {
             if (
@@ -1323,7 +1323,7 @@ std::string getOneLineFileContent(std::string file_path, std::string file_name) 
     return line;
 }
 
-std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
+std::string checkDowngradedPCIe(const ze_device_handle_t &ze_device, const zes_device_handle_t &zes_device) {
     std::string ret;
 
     ze_result_t res;
@@ -1407,9 +1407,9 @@ std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
                 // For ATS-M, check downgraded link speed only when current_link_speed < 16.0 GT/s
                 // For PVC, check downgraded link speed only when current_link_speed < 32.0 GT/s
                 if (parsed_speed > 0) {
-                    if (Utility::isATSMPlatform(zes_device) && parsed_speed < 16)
+                    if (Utility::isATSMPlatform(ze_device) && parsed_speed < 16)
                         ret = "Speed on " + current_bridge + " downgraded to " +  current_link_speed + ".";
-                    if (Utility::isPVCPlatform(zes_device) && parsed_speed < 32)
+                    if (Utility::isPVCPlatform(ze_device) && parsed_speed < 32)
                         ret = "Speed on " + current_bridge + " downgraded to " +  current_link_speed + ".";
                 }
             }
@@ -1467,7 +1467,7 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
 
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
     
     std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
@@ -1612,7 +1612,7 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
         desc += " GPU " + std::to_string(p_task_info->deviceId) + " temperature is " + std::to_string(max_temperature_value) + " Celsius degree and the threshold is " + std::to_string(GPU_TEMPERATURE_THRESHOLD) + ".";
         updateMessage(component.message, desc);
     }
-    std::string pcieInfo = checkDowngradedPCIe(zes_device);
+    std::string pcieInfo = checkDowngradedPCIe(ze_device, zes_device);
     if (pcieInfo.size() != 0) {
         std::string desc(component.message);
         desc += " " + pcieInfo;
@@ -2053,7 +2053,7 @@ void DiagnosticManager::doDiagnosticPeformanceComputation(const ze_device_handle
     }
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
     for (std::size_t i = 0; i < device_handles.size(); i++) {
         compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver, checkOnly]() {
@@ -2240,10 +2240,10 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
 
     int max_power_value = 0;
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_power_thread = std::thread([&computation_done, &max_power_value, &max_temperature_value, zes_device]() {
+    std::thread read_temperature_power_thread = std::thread([&computation_done, &max_power_value, &max_temperature_value, ze_device, zes_device]() {
         while (!computation_done.load()) {
             try {
-                std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
+                std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(ze_device, zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
                 uint64_t current_temperature_value = 0;
                 if (temp->hasDataOnDevice()) {
                     current_temperature_value = temp->getCurrent() / Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
@@ -2559,7 +2559,7 @@ void DiagnosticManager::doDiagnosticPeformanceMemoryBandwidth(const ze_device_ha
 
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
     std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
     // show compute engine group perf data if all groups pass 
@@ -3208,7 +3208,7 @@ void DiagnosticManager::doDiagnosticXeLinkThroughput(const ze_device_handle_t &z
     xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
 
     std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
@@ -3625,12 +3625,12 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
     std::atomic<bool> all_to_all_copy_done(false);
     std::vector<uint64_t> temperatures(root_device_count);
     std::vector<double> allToallThroughputs(root_device_count);
-    std::thread read_temperature_and_rwbandwidth_thread = std::thread([&all_to_all_copy_done, &zes_devices, &temperatures, &allToallThroughputs]() {
+    std::thread read_temperature_and_rwbandwidth_thread = std::thread([&all_to_all_copy_done, &ze_devices, &zes_devices, &temperatures, &allToallThroughputs]() {
         std::map<std::string, uint64_t> TxCnts, RxCnts, Timestamps;
         while (!all_to_all_copy_done.load()) {
             for (std::size_t i = 0; i < zes_devices.size(); i++) {
                 try {
-                    std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(zes_devices[i], zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
+                    std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(ze_devices[i], zes_devices[i], zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
                     uint64_t current_temperature_value = 0;
                     if (temp->hasDataOnDevice()) {
                         current_temperature_value = temp->getCurrent() / Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
