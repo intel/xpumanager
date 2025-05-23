@@ -30,13 +30,13 @@
 firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr)
 {
 	updateFWCmds = new updateFWCmdStruct[MAX_FW_TYPE]{
-		{GFX, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx},
-		{GFX_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData, &fwupd::postUpdateGfxData},
-		{GFX_CODE_DATA, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxCodeData, &fwupd::updateGfxCodeData, &fwupd::postUpdateGfxCodeData},
-		{GFX_PSCBIN, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin, &fwupd::postUpdateGfxPscBin},
-		{FAN_TABLE, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable, &fwupd::postUpdateFanTable},
-		{VR_CONFIG, FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig, &fwupd::postUpdateVrConfig},
-		{AMC, FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC},
+		{GFX, TOSTR(GFX), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx},
+		{GFX_DATA, TOSTR(GFX_DATA), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData, &fwupd::postUpdateGfxData},
+		{GFX_CODE_DATA, TOSTR(GFX_CODE_DATA), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxCodeData, &fwupd::updateGfxCodeData, &fwupd::postUpdateGfxCodeData},
+		{GFX_PSCBIN, TOSTR(GFX_PSCBIN), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin, &fwupd::postUpdateGfxPscBin},
+		{FAN_TABLE, TOSTR(FAN_TABLE), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable, &fwupd::postUpdateFanTable},
+		{VR_CONFIG, TOSTR(VR_CONFIG), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig, &fwupd::postUpdateVrConfig},
+		{AMC, TOSTR(AMC), FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC},
 	};
 }
 
@@ -150,7 +150,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	for (i = 0; i < MAX_FW_TYPE; i++)
 	{
 		// Find the matching firmware type
-		if (!STRCASECMP(fwInfo->firmwareType.c_str(), TOSTR(updateFWCmds[i].fw)))
+		if (!STRCASECMP(fwInfo->firmwareType.c_str(), updateFWCmds[i].fwName.c_str()))
 		{
 			// Allocate the appropriate firmware update class based on the update preference
 			switch (updateFWCmds[i].preference)

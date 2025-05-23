@@ -205,6 +205,7 @@ typedef ze_result_t (fwupd::*updateFW)(firmwareInfo *fwInfo);
 struct updateFWCmdStruct
 {
 	int fw;
+	string fwName;
 	fwupdPreference preference;
 	updateFW preUpdateFunc;
 	updateFW updateFunc;
