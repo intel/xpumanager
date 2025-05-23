@@ -54,6 +54,8 @@ using namespace std;
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
 #define PRIVILEGECHECK() privilegeCheck()
 #define GETPROCESSNAME(processId) getProcessName(processId)
+#define OPENI2C openI2C
+#define CLOSEI2C closeI2C
 
 typedef void *(*funcptr)(void *input_params);
 
@@ -72,5 +74,7 @@ thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 bool privilegeCheck();
 string getProcessName(uint32_t processId);
+long long openI2C(const string &deviceName);
+int closeI2C(long long fd);
 
 #endif
