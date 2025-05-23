@@ -65,6 +65,7 @@ struct option
 #define MAX_PATH 256
 #endif
 
+#define AMC_PATH L"\\\\.\\NF_I2C_BUS_00_0x0040"
 #define UNUSED(x) (void)(x)
 #define TWO_MB (2 * 1024 * 1024)
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
@@ -83,6 +84,8 @@ struct option
 #define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
 #define PRIVILEGECHECK() true
 #define GETPROCESSNAME(processId) getProcessName(processId)
+#define OPENI2C openI2C
+#define CLOSEI2C closeI2C
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;
@@ -93,5 +96,7 @@ void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 string getProcessName(uint32_t processId);
+long long openI2C(const string& deviceName);
+int closeI2C(long long fd);
 
 #endif

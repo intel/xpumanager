@@ -212,3 +212,45 @@ string getProcessName(uint32_t processId)
 
 	return processName;
 }
+
+long long openI2C(const string& deviceName)
+{
+	HANDLE amchandle = nullptr;
+	// For now, the device name is not used because we have a hardcoded path
+	UNUSED(deviceName);
+
+	// Open the device handle
+	amchandle = CreateFileW(
+		AMC_PATH,
+		(GENERIC_READ | GENERIC_WRITE),
+		0,
+		nullptr,
+		OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED,
+		nullptr);
+
+	if (amchandle == INVALID_HANDLE_VALUE)
+	{
+		ERR("Couldn't open AMC device handle - %d\n", GetLastError());
+		return -1;
+	}
+
+	DBG("Successfully opened AMC device handle %ls\n", AMC_PATH);
+	return (long long)amchandle;
+}
+
+int closeI2C(long long fd)
+{
+	if (fd == -1)
+	{
+		ERR("Invalid file descriptor\n");
+		return -1;
+	}
+	if (CloseHandle((HANDLE)fd) == 0)
+	{
+		ERR("Failed to close I2C handle - %d\n", GetLastError());
+		return -1;
+	}
+	DBG("Successfully closed I2C handle\n");
+	return 0;
+}

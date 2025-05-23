@@ -29,6 +29,10 @@
 #include <grp.h>
 #include <pwd.h>
 #include <fstream>
+#include <filesystem>
+#include <vector>
+#include <algorithm>
+#include <fcntl.h>
 
 /**
  * @brief Creates a new thread.
@@ -82,7 +86,7 @@ bool privilegeCheck()
 	}
 	gid_t groups[ngroups];
 	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
-	std::string xpum_grp("xpum");
+	string xpum_grp("xpum");
 	bool has_privilege = false;
 	for (int i = 0; i < ngroups; i++)
 	{
@@ -92,7 +96,7 @@ bool privilegeCheck()
 			ERR("getgrgid error\n");
 			return false;
 		}
-		std::string grp_name(gr->gr_name);
+		string grp_name(gr->gr_name);
 		if (grp_name == xpum_grp)
 		{
 			has_privilege = true;
@@ -115,4 +119,66 @@ string getProcessName(uint32_t processId)
 		pinfo.close();
 	}
 	return processName;
+}
+
+vector<string> findI2CDevices()
+{
+	vector<string> devices;
+	string devicesPath = "/sys/bus/i2c/devices";
+
+	// Check if the directory exists
+	if (!filesystem::exists(devicesPath))
+	{
+		ERR("I2C devices directory does not exist: %s\n", devicesPath.c_str());
+		return devices;
+	}
+
+	// Iterate through all entries in the directory
+	for (const auto &entry : filesystem::directory_iterator(devicesPath))
+	{
+		if (entry.is_directory())
+		{
+			string dirname = entry.path().filename().string();
+			devices.push_back(entry.path().string());
+		}
+	}
+
+	return devices;
+}
+
+string getI2CDeviceName(const string &devicePath)
+{
+	string name;
+	ifstream nameFile(devicePath + "/name");
+	if (nameFile.is_open())
+	{
+		getline(nameFile, name);
+		nameFile.close();
+	}
+	return name;
+}
+
+long long openI2C(const string &deviceName)
+{
+	vector<string> devices = findI2CDevices();
+	for (const auto &device : devices)
+	{
+		string name = getI2CDeviceName(device);
+		if (name == deviceName)
+		{
+			// Found the device with the specified name, the first character of the path
+			// Example: "/sys/bus/i2c/devices/7-0040" -> "7"
+			// This needs to be added to i2c- so that we can open the device
+			// Example: "/dev/i2c-7"
+			string i2cDevice = "/dev/i2c-" + device.substr(device.find_last_of('/') + 1, 1);
+			// Open the I2C device
+			return (long long)open(i2cDevice.c_str(), O_RDWR | O_NONBLOCK);
+		}
+	}
+	return -1;
+}
+
+int closeI2C(long long fd)
+{
+	return close((int)fd);
 }
