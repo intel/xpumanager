@@ -29,11 +29,15 @@
 
 class amcupd : public fwupd
 {
+private:
+	long long deviceHandle;
 
 public:
-	amcupd() {}
+	amcupd() : deviceHandle(0) {}
 	~amcupd() {}
+	ze_result_t preUpdateAMC(firmwareInfo *fwInfo) override;
 	ze_result_t updateAMC(firmwareInfo *fwInfo) override;
+	ze_result_t postUpdateAMC(firmwareInfo *fwInfo) override;
 };
 
 #endif

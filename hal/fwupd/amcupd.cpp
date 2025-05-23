@@ -26,10 +26,38 @@
 #include <debug.h>
 #include <os.h>
 
+ze_result_t amcupd::preUpdateAMC(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	string amc = "amc";
+	DBG("Pre-update AMC firmware...\n");
+
+	deviceHandle = OPENI2C(amc);
+	if (deviceHandle < 0)
+	{
+		ERR("Failed to open I2C device for AMC\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Open the I2C device
+	return ZE_RESULT_SUCCESS;
+}
+
 ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 {
 	TRACING();
 	UNUSED(fwInfo);
 	DBG("Updating AMC firmware...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t amcupd::postUpdateAMC(firmwareInfo *fwInfo)
+{
+	TRACING();
+	UNUSED(fwInfo);
+	DBG("Post-update AMC firmware...\n");
+	// Close the I2C device
+	CLOSEI2C(deviceHandle);
 	return ZE_RESULT_SUCCESS;
 }
