@@ -36,10 +36,13 @@ public:
 	enginegroup() : engineGroupCount(0), engineGroups(nullptr) {}
 	~enginegroup();
 	ze_result_t enumGroups(zes_device_handle_t device);
-	ze_result_t getProperties(zes_engine_handle_t engineGroup);
+	ze_result_t getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties);
 	ze_result_t getActivityExt(zes_engine_handle_t engineGroup);
 	ze_result_t getActivity(zes_engine_handle_t engineGroup);
-	ze_result_t zesRun(zes_device_handle_t device);
+	ze_result_t getMediaEngines(uint32_t *mediaEngines, zes_engine_group_t type);
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 
 #endif
