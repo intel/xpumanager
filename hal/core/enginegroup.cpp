@@ -52,19 +52,69 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup)
+ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_engine_properties_t engineProperties = {};
-	result = zesEngineGetProperties(engineGroup, &engineProperties);
+	result = zesEngineGetProperties(engineGroup, engineProperties);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Failed to get engine properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Engine SType: %d\n", engineProperties.stype);
-	DBG("  - Engine Type: %d\n", engineProperties.type);
-	DBG("  - Engine Subdevice ID: %d\n", engineProperties.subdeviceId);
+	DBG("  - Engine SType: %d\n", engineProperties->stype);
+	switch (engineProperties->type)
+	{
+	case ZES_ENGINE_GROUP_ALL:
+		DBG("  - Engine Type: All\n");
+		break;
+	case ZES_ENGINE_GROUP_COMPUTE_ALL:
+		DBG("  - Engine Type: Compute\n");
+		break;
+	case ZES_ENGINE_GROUP_MEDIA_ALL:
+		DBG("  - Engine Type: Media All\n");
+		break;
+	case ZES_ENGINE_GROUP_COPY_ALL:
+		DBG("  - Engine Type: Copy All\n");
+		break;
+	case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+		DBG("  - Engine Type: Compute Single\n");
+		break;
+	case ZES_ENGINE_GROUP_RENDER_SINGLE:
+		DBG("  - Engine Type: Render Single\n");
+		break;
+	case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+		DBG("  - Engine Type: Media Decode Single\n");
+		break;
+	case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+		DBG("  - Engine Type: Media Encode Single\n");
+		break;
+	case ZES_ENGINE_GROUP_COPY_SINGLE:
+		DBG("  - Engine Type: Copy Single\n");
+		break;
+	case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+		DBG("  - Engine Type: Media Enhancement Single\n");
+		break;
+	case ZES_ENGINE_GROUP_3D_SINGLE:
+		DBG("  - Engine Type: 3D Single\n");
+		break;
+	case ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL:
+		DBG("  - Engine Type: 3D Render Compute All\n");
+		break;
+	case ZES_ENGINE_GROUP_RENDER_ALL:
+		DBG("  - Engine Type: Render All\n");
+		break;
+	case ZES_ENGINE_GROUP_3D_ALL:
+		DBG("  - Engine Type: 3D All\n");
+		break;
+	case ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE:
+		DBG("  - Engine Type: Media Codec Single\n");
+		break;
+	default:
+		DBG("  - Engine Type: Unknown (%d)\n", engineProperties->type);
+		break;
+	}
+
+	DBG("  - Engine Subdevice ID: %d\n", engineProperties->subdeviceId);
 	return result;
 }
 
@@ -98,20 +148,53 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 	return result;
 }
 
+ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_group_t type)
+{
+	zes_engine_properties_t engineProperties;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	if (mediaEngines == nullptr)
+	{
+		ERR("Media engines pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	for (uint32_t i = 0; i < engineGroupCount; ++i)
+	{
+		zes_engine_handle_t engineGroup = engineGroups[i];
+		result = getProperties(engineGroup, &engineProperties);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (engineProperties.type == type)
+		{
+			(*mediaEngines)++;
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t enginegroup::init(zes_device_handle_t device)
+{
+	return enumGroups(device);
+}
+
 ze_result_t enginegroup::zesRun(zes_device_handle_t device)
 {
-	ze_result_t result = enumGroups(device);
-	if (result != ZE_RESULT_SUCCESS)
-		return result;
+	UNUSED(device);
+	zes_engine_properties_t engineProperties;
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i)
 	{
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		DBG("  - Engine Group handle: %p\n", engineGroup);
 
-		getProperties(engineGroup);
+		getProperties(engineGroup, &engineProperties);
 		getActivity(engineGroup);
 		getActivityExt(engineGroup);
 	}
-	return result;
+	return ZE_RESULT_SUCCESS;
 }
