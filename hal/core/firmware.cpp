@@ -130,12 +130,17 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	return result;
 }
 
-ze_result_t firmware::getFWversion(char *version, uint32_t size)
+ze_result_t firmware::getFWversion(fwType type, char *version, uint32_t size)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	if (type < GFX || type >= MAX_FW_TYPE)
+	{
+		ERR("Invalid firmware type: %d\n", type);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 
-	STRCPY_S(version, size, updateFWCmds[GFX].version);
+	STRCPY_S(version, size, updateFWCmds[type].version);
 
 	return result;
 }
