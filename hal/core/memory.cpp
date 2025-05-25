@@ -53,10 +53,9 @@ ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t memory::getMemoryProperties(zes_mem_handle_t memhandle)
+ze_result_t memory::getMemoryProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties)
 {
-	zes_mem_properties_t properties;
-	ze_result_t result = zesMemoryGetProperties(memhandle, &properties);
+	ze_result_t result = zesMemoryGetProperties(memhandle, properties);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Failed to get memory properties. 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -66,7 +65,7 @@ ze_result_t memory::getMemoryProperties(zes_mem_handle_t memhandle)
 	DBG("Memory properties retrieved successfully.\n");
 
 	DBG("Memory type: ");
-	switch (properties.type)
+	switch (properties->type)
 	{
 	case ZES_MEM_TYPE_HBM:
 		DBG("HBM\n");
@@ -133,13 +132,30 @@ ze_result_t memory::getMemoryProperties(zes_mem_handle_t memhandle)
 		break;
 	}
 
+	DBG("Subdevice ID: %d\n", properties->subdeviceId);
+	DBG("Location: ");
+	switch (properties->location)
+	{
+	case ZES_MEM_LOC_SYSTEM:
+		DBG("System\n");
+		break;
+	case ZES_MEM_LOC_DEVICE:
+		DBG("Device\n");
+		break;
+	default:
+		DBG("Unknown\n");
+		break;
+	}
+	DBG("Physical size: %" PRIu64 " bytes\n", properties->physicalSize);
+	DBG("Bus width: %d bits\n", properties->busWidth);
+	DBG("Number of channels: %d\n", properties->numChannels);
+
 	return result;
 }
 
-ze_result_t memory::getState(zes_mem_handle_t memhandle)
+ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 {
-	zes_mem_state_t state;
-	ze_result_t result = zesMemoryGetState(memhandle, &state);
+	ze_result_t result = zesMemoryGetState(memhandle, state);
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Failed to get memory state. 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -147,10 +163,10 @@ ze_result_t memory::getState(zes_mem_handle_t memhandle)
 	}
 
 	DBG("Memory state retrieved successfully.\n");
-	DBG("Free memory: %" PRIu64 "bytes\n", state.free);
-	DBG("Size: %" PRIu64 "bytes\n", state.size);
+	DBG("Free memory: %" PRIu64 " bytes\n", state->free);
+	DBG("Size: %" PRIu64 " bytes\n", state->size);
 	DBG("Health: ");
-	switch (state.health)
+	switch (state->health)
 	{
 	case ZES_MEM_HEALTH_OK:
 		DBG("OK\n");
@@ -190,14 +206,99 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle)
 	return result;
 }
 
-ze_result_t memory::zesRun(zes_device_handle_t device)
+ze_result_t memory::getMemorySize(uint64_t *size)
 {
-	enumMemoryModules(device);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_state_t state;
+
+	if (size == nullptr)
+	{
+		ERR("Size pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*size = 0;
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++)
 	{
-		getMemoryProperties(memoryModules[i]);
-		getState(memoryModules[i]);
+		result = getState(memoryModules[i], &state);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+		*size += state.size;
+	}
+	return result;
+}
+
+ze_result_t memory::getMemoryChannels(uint32_t *channels)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_properties_t properties;
+
+	if (channels == nullptr)
+	{
+		ERR("Channels pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*channels = 0;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++)
+	{
+		result = getMemoryProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get memory properties for module %d. 0x%X (%s)\n", i,
+				result, l0_error_to_string(result));
+			return result;
+		}
+		*channels = properties.numChannels;
+	}
+	return result;
+}
+
+ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_properties_t properties;
+
+	if (busWidth == nullptr)
+	{
+		ERR("Bus width pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*busWidth = 0;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++)
+	{
+		result = getMemoryProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS)
+		{
+			ERR("Failed to get memory properties for module %d. 0x%X (%s)\n", i,
+				result, l0_error_to_string(result));
+			return result;
+		}
+		*busWidth = properties.busWidth;
+	}
+	return result;
+}
+
+ze_result_t memory::init(zes_device_handle_t device)
+{
+	return enumMemoryModules(device);
+}
+
+ze_result_t memory::zesRun(zes_device_handle_t device)
+{
+	UNUSED(device);
+
+	zes_mem_state_t state;
+	zes_mem_properties_t properties;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++)
+	{
+		getMemoryProperties(memoryModules[i], &properties);
+		getState(memoryModules[i], &state);
 		getBandwidth(memoryModules[i]);
 	}
 
