@@ -325,10 +325,11 @@ ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
 ze_result_t driver::findDevice(const char *bdf, vector<devInfo> *devList)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t deviceIndex = 0;
 
 	for (uint32_t i = 0; i < driverCount; i++)
 	{
-		result = devs[i].findDevice(bdf, devList);
+		result = devs[i].findDevice(bdf, devList, deviceIndex);
 		if (result != ZE_RESULT_SUCCESS)
 		{
 			ERR("Failed to find device by BDF: %s. Error code: 0x%X (%s) \n", bdf, result, l0_error_to_string(result));
@@ -338,6 +339,7 @@ ze_result_t driver::findDevice(const char *bdf, vector<devInfo> *devList)
 		{
 			DBG("Found device with BDF: %s\n", bdf);
 		}
+		deviceIndex++;
 
 		// If a bdf length was not empty, that means the user provided a bdf, then we should break
 		if (strlen(bdf))

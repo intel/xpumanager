@@ -737,7 +737,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList)
+ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList, uint32_t devIndex)
 {
 	devInfo d;
 	for (uint32_t i = 0; i < deviceCount; ++i)
@@ -746,6 +746,7 @@ ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList)
 		{
 			// If no BDF is provided, add all devices to the list
 			DBG("No BDF provided, adding all devices.\n");
+			d.index = devIndex;
 			d.dev = this;
 			d.deviceHdl = zeDevices[i];
 			d.zesDeviceHdl = zesDevices[i];
