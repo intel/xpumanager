@@ -266,7 +266,7 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &devProp);
-	if(result != ZE_RESULT_SUCCESS)
+	if (result != ZE_RESULT_SUCCESS)
 	{
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -341,7 +341,7 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devIn
 	UNUSED(discCmds);
 	firmware *fw = (firmware *)d->dev->getFirmware();
 
-	fw->getFWversion(version, sizeof(version));
+	fw->getFWversion(fwType::GFX, version, sizeof(version));
 	DBG("  - GFX Firmware Version: %s\n", version);
 	return ZE_RESULT_SUCCESS;
 }
