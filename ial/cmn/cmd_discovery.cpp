@@ -28,6 +28,8 @@
 #include <sstream>
 #include <pci.h>
 #include <firmware.h>
+#include <memory.h>
+#include <enginegroup.h>
 
 discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
@@ -147,7 +149,7 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 
 	// Check if the dump command argument is a number between 1 and TOTAL_DISC_DUMPS
 	int dumpArg = atoi(val.c_str());
-	if (dumpArg < 1 || dumpArg > TOTAL_DISC_DUMPS)
+	if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS)
 	{
 		ERR("Invalid dump command argument. It must be between 1 and %d\n", TOTAL_DISC_DUMPS);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -207,17 +209,7 @@ ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t zeDevProp;
-	ze_result_t result;
-
-	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-	DBG("  - Device ID: 0x%X\n", zeDevProp.deviceId);
-
+	DBG("  - Device ID: %d\n", d->index);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -243,7 +235,7 @@ ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	zes_device_properties_t zesDevProp;
+	zes_device_properties_t zesDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
@@ -285,7 +277,7 @@ ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	zes_device_properties_t zesDevProp;
+	zes_device_properties_t zesDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
@@ -304,7 +296,17 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Core clock rate: %d\n", zeDevProp.coreClockRate);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -320,7 +322,7 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 {
 	TRACING();
 	UNUSED(discCmds);
-	zes_device_properties_t zesDevProp;
+	zes_device_properties_t zesDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
@@ -349,8 +351,12 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devIn
 ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
+	char version[MAX_PATH] = {0};
 	UNUSED(discCmds);
-	UNUSED(d);
+	firmware *fw = (firmware *)d->dev->getFirmware();
+
+	fw->getFWversion(fwType::GFX_DATA, version, sizeof(version));
+	DBG("  - GFX Data Firmware Version: %s\n", version);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -430,7 +436,19 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devIn
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	uint64_t physicalSize = 0;
+	ze_result_t result;
+
+	memory *m = (memory *)d->dev->getMemory();
+
+	result = m->getMemorySize(&physicalSize);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get memory physical size: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Memory Physical Size: %" PRIu64 " MiB\n", physicalSize / 1024 / 1024);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -438,7 +456,19 @@ ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	uint32_t channels = 0;
+	ze_result_t result;
+
+	memory *m = (memory *)d->dev->getMemory();
+
+	result = m->getMemoryChannels(&channels);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get memory channels: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Memory Channels: %d\n", channels);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -446,7 +476,19 @@ ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	uint32_t busWidth = 0;
+	ze_result_t result;
+
+	memory *m = (memory *)d->dev->getMemory();
+
+	result = m->getMemoryBusWidth(&busWidth);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get memory bus width: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Memory Bus Width: %d bits\n", busWidth);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -454,7 +496,16 @@ ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Number of EUs: %d\n", zeDevProp.numEUsPerSubslice * zeDevProp.numSubslicesPerSlice * zeDevProp.numSlices);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -462,7 +513,23 @@ ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+
+	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
+	if (eg == nullptr)
+	{
+		ERR("Failed to get engine group\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	uint32_t mediaEnginesCount = 0;
+	ze_result_t result = eg->getMediaEngines(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_ALL);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Number of Media Engines: %d\n", mediaEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -470,7 +537,22 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, 
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
+	if (eg == nullptr)
+	{
+		ERR("Failed to get engine group\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	uint32_t mediaEnhancementEnginesCount = 0;
+	ze_result_t result = eg->getMediaEngines(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Number of Media Enhancement Engines: %d\n", mediaEnhancementEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -486,7 +568,16 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Vendor ID: 0x%X\n", zeDevProp.vendorId);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -494,7 +585,16 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp;
+	ze_result_t result;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS)
+	{
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	DBG("  - Device ID: 0x%X\n", zeDevProp.deviceId);
 	return ZE_RESULT_SUCCESS;
 }
 
