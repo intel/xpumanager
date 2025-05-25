@@ -92,6 +92,7 @@ class device;
 
 struct devInfo
 {
+	uint32_t index;
 	device *dev;
 	ze_device_handle_t deviceHdl;
 	zes_device_handle_t zesDeviceHdl;
@@ -140,7 +141,7 @@ public:
 	ze_result_t resetDevice(ze_device_handle_t dev);
 
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
-	ze_result_t findDevice(const char *bdf, vector<devInfo> *devList);
+	ze_result_t findDevice(const char *bdf, vector<devInfo> *devList, uint32_t devIndex);
 	ze_device_handle_t findDeviceByIndex(uint32_t index);
 
 	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD);
