@@ -37,7 +37,7 @@ void ComletPs::setupOptions() {
 std::unique_ptr<nlohmann::json> ComletPs::run() {
     std::unique_ptr<nlohmann::json> json;
     if (this->opts->deviceId == "-1") {
-        json = this->coreStub->getAllDeviceUtilizationByProcess(200 * 1000);
+        json = this->coreStub->getAllDeviceUtilizationByProcess();
     } else {
         int targetId = -1;
         if (isNumber(this->opts->deviceId)) {
@@ -48,7 +48,7 @@ std::unique_ptr<nlohmann::json> ComletPs::run() {
                 return convertResult;
             }
         }
-        json = this->coreStub->getDeviceUtilizationByProcess(targetId, 200 * 1000);
+        json = this->coreStub->getDeviceUtilizationByProcess(targetId);
     }
     return json;
 }
@@ -61,10 +61,10 @@ void ComletPs::getTableResult(std::ostream &out) {
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
     *json = *res;
-    std::cout 
-        << std::left << std::setfill(' ') 
-        << std::setw(10) << "PID" 
-        << std::setw(20) << "Command"
+    std::cout
+        << std::left << std::setfill(' ')
+        << std::setw(10) << "PID"
+        << std::setw(30) << "Command"
         << std::setw(15) << "DeviceID"
         << std::setw(15) << "SHR"
         << std::setw(15) << "MEM"
@@ -74,7 +74,7 @@ void ComletPs::getTableResult(std::ostream &out) {
         std::cout 
             << std::left << std::setfill(' ') 
             << std::setw(10) << (*iter)["process_id"].get<uint32_t>()
-            << std::setw(20) << (*iter)["process_name"].get<std::string>()
+            << std::setw(30) << (*iter)["process_name"].get<std::string>()
             << std::setw(15) << (*iter)["device_id"].get<uint32_t>()
             << std::setprecision(4)
             << std::setw(15) << (*iter)["shared_mem_size"].get<uint64_t>() 
