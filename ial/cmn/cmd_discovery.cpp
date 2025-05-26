@@ -25,11 +25,11 @@
 #include "cmd_discovery.h"
 #include "debug.h"
 #include <assert.h>
-#include <sstream>
-#include <pci.h>
+#include <enginegroup.h>
 #include <firmware.h>
 #include <memory.h>
-#include <enginegroup.h>
+#include <pci.h>
+#include <sstream>
 
 discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
@@ -54,7 +54,8 @@ void cmdDiscovery::help(HELP helpType)
 	TRACING();
 	vector<helpCmd> helpList;
 
-	helpList.push_back(helpCmd(TITLE, "Discover the GPU devices installed on this machine and provide the device info"));
+	helpList.push_back(
+		helpCmd(TITLE, "Discover the GPU devices installed on this machine and provide the device info"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s discovery [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s discovery", progName.c_str()));
@@ -67,10 +68,12 @@ void cmdDiscovery::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
+	helpList.push_back(helpCmd(
+		HEADING, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
 	helpList.push_back(helpCmd(HEADING, "--pf,--physicalFunction     Display the physical functions only"));
 	helpList.push_back(helpCmd(HEADING, "--vf,--virtualFunction      Display the virtual functions only"));
-	helpList.push_back(helpCmd(HEADING, "--dump                      Property ID to dump device properties in CSV format. Separated by the comma. \"-1\" means all properties"));
+	helpList.push_back(helpCmd(HEADING, "--dump                      Property ID to dump device properties in CSV "
+										"format. Separated by the comma. \"-1\" means all properties"));
 	helpList.push_back(helpCmd(SUB_HEADING, "1. Device ID"));
 	helpList.push_back(helpCmd(SUB_HEADING, "2. Device Name"));
 	helpList.push_back(helpCmd(SUB_HEADING, "3. Vendor Name"));
@@ -96,9 +99,12 @@ void cmdDiscovery::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "23. PCI Vendor ID"));
 	helpList.push_back(helpCmd(SUB_HEADING, "24. PCI Device ID"));
 	helpList.push_back(helpCmd(HEADING, "--listamcversions           Show all AMC firmware versions"));
-	helpList.push_back(helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
-	helpList.push_back(helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
-	helpList.push_back(helpCmd(HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+	helpList.push_back(
+		helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
+	helpList.push_back(
+		helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
+	helpList.push_back(helpCmd(
+		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -121,36 +127,29 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 	bool found = false;
 
 	// Check if the dump command argument is valid
-	if (val.empty())
-	{
+	if (val.empty()) {
 		ERR("Dump command argument is required\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Dump command argument is a comma-separated list of numbers, with -1 being show all properties
-	if (val == "-1")
-	{
+	if (val == "-1") {
 		// push all dump command types to the vector
-		for (int i = 1; i < TOTAL_DISC_DUMPS; i++)
-		{
+		for (int i = 1; i < TOTAL_DISC_DUMPS; i++) {
 			dumpArgs.push_back(to_string(i));
 		}
-	}
-	else
-	{
+	} else {
 		// Split the dump command argument by commas
 		stringstream ss(val.c_str());
 		string token;
-		while (getline(ss, token, ','))
-		{
+		while (getline(ss, token, ',')) {
 			dumpArgs.push_back(token);
 		}
 	}
 
 	// Check if the dump command argument is a number between 1 and TOTAL_DISC_DUMPS
 	int dumpArg = atoi(val.c_str());
-	if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS)
-	{
+	if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS) {
 		ERR("Invalid dump command argument. It must be between 1 and %d\n", TOTAL_DISC_DUMPS);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -182,12 +181,9 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 		{DUMP_PCIDEVICEID, &cmdDiscovery::pciDeviceID},
 	};
 
-	for (auto &arg : dumpArgs)
-	{
-		for (auto &cmd : dumpCmds)
-		{
-			if (cmd.type == atoi(arg.c_str()))
-			{
+	for (auto &arg : dumpArgs) {
+		for (auto &cmd : dumpCmds) {
+			if (cmd.type == atoi(arg.c_str())) {
 				found = true;
 				DBG("Running command: %d\n", cmd.type);
 				result = (this->*cmd.func)(discCmds, d);
@@ -195,8 +191,7 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 		}
 	}
 
-	if (!found)
-	{
+	if (!found) {
 		ERR("The following argument was not expected: '%s'.\n", val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -221,8 +216,7 @@ ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -239,8 +233,7 @@ ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -258,14 +251,12 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &devProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j)
-	{
+	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j) {
 		DBG("%02X", devProp.uuid.id[j]);
 	}
 	DBG("\n");
@@ -281,8 +272,7 @@ ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -300,8 +290,7 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -326,8 +315,7 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 	ze_result_t result;
 
 	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -369,8 +357,7 @@ ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d
 
 	pci *p = (pci *)d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -396,8 +383,7 @@ ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *
 
 	pci *p = (pci *)d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -414,8 +400,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo
 
 	pci *p = (pci *)d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -442,8 +427,7 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devIn
 	memory *m = (memory *)d->dev->getMemory();
 
 	result = m->getMemorySize(&physicalSize);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory physical size: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -462,8 +446,7 @@ ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *
 	memory *m = (memory *)d->dev->getMemory();
 
 	result = m->getMemoryChannels(&channels);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory channels: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -482,8 +465,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *
 	memory *m = (memory *)d->dev->getMemory();
 
 	result = m->getMemoryBusWidth(&busWidth);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory bus width: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -500,8 +482,7 @@ ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -515,16 +496,14 @@ ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
 	UNUSED(discCmds);
 
 	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
-	if (eg == nullptr)
-	{
+	if (eg == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	uint32_t mediaEnginesCount = 0;
 	ze_result_t result = eg->getMediaEngines(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_ALL);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -538,16 +517,14 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, 
 	TRACING();
 	UNUSED(discCmds);
 	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
-	if (eg == nullptr)
-	{
+	if (eg == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	uint32_t mediaEnhancementEnginesCount = 0;
 	ze_result_t result = eg->getMediaEngines(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -572,8 +549,7 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -589,8 +565,7 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -644,10 +619,8 @@ int cmdDiscovery::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return 0;
@@ -670,13 +643,10 @@ int cmdDiscovery::run(arg_struct *args)
 			discCmds[discCmdType::DISC_ASSUMEYES].enabled = true;
 			break;
 		case 0:
-			for (auto &cmd : discCmds)
-			{
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
-				{
+			for (auto &cmd : discCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
 					discCmds[cmd.type].enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument)
-					{
+					if (longOpts[optionIndex].has_arg == required_argument) {
 						discCmds[cmd.type].val = optarg;
 					}
 					found = true;
@@ -684,8 +654,7 @@ int cmdDiscovery::run(arg_struct *args)
 				}
 			}
 
-			if (!found)
-			{
+			if (!found) {
 				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -702,28 +671,23 @@ int cmdDiscovery::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : discCmds)
-		{
-			if (cmd.enabled && cmd.func != nullptr)
-			{
+		for (auto &cmd : discCmds) {
+			if (cmd.enabled && cmd.func != nullptr) {
 				DBG("Running command: %s\n", cmd.opt.name);
 				(this->*cmd.func)(discCmds, &device);
 			}

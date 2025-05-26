@@ -24,10 +24,10 @@
 #ifndef _SYSMAN_H
 #define _SYSMAN_H
 
-#include <cinttypes>
-#include <zes_api.h>
 #include "debug.h"
+#include <cinttypes>
 #include <os.h>
+#include <zes_api.h>
 
 LIBXPUM_API const char *l0_error_to_string(ze_result_t ret_val);
 

@@ -25,8 +25,7 @@
 
 void ecc::printEccState(const zes_device_ecc_state_t state)
 {
-	switch (state)
-	{
+	switch (state) {
 	case ZES_DEVICE_ECC_STATE_UNAVAILABLE:
 		DBG("Unavailable\n");
 		break;
@@ -44,8 +43,7 @@ void ecc::printEccState(const zes_device_ecc_state_t state)
 
 void ecc::printEccPendingAction(const zes_device_action_t action)
 {
-	switch (action)
-	{
+	switch (action) {
 	case ZES_DEVICE_ACTION_NONE:
 		DBG("None\n");
 		break;
@@ -69,8 +67,7 @@ bool ecc::available(zes_device_handle_t device)
 	ze_result_t result;
 	ze_bool_t eccAvailable;
 	result = zesDeviceEccAvailable(device, &eccAvailable);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to check ECC availability: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return false;
 	}
@@ -82,8 +79,7 @@ bool ecc::configurable(zes_device_handle_t device)
 	ze_result_t result;
 	ze_bool_t eccConfigurable;
 	result = zesDeviceEccConfigurable(device, &eccConfigurable);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to check ECC configurability: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return false;
 	}
@@ -94,13 +90,10 @@ ze_result_t ecc::getState(zes_device_handle_t device)
 {
 	zes_device_ecc_properties_t eccState = {};
 	ze_result_t result = zesDeviceGetEccState(device, &eccState);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
-	}
-	else
-	{
+	} else {
 		DBG("  - ECC State:\n");
 		DBG("    - Current State:\n");
 		printEccState(eccState.currentState);
@@ -119,8 +112,7 @@ ze_result_t ecc::setState(zes_device_handle_t device, bool enable)
 	newState.state = enable ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
 
 	ze_result_t result = zesDeviceSetEccState(device, &newState, &pState);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to set ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -136,12 +128,10 @@ ze_result_t ecc::setState(zes_device_handle_t device, bool enable)
 
 ze_result_t ecc::zesRun(zes_device_handle_t device)
 {
-	if (!available(device))
-	{
+	if (!available(device)) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	if (!configurable(device))
-	{
+	if (!configurable(device)) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 	return getState(device);

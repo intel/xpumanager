@@ -25,13 +25,11 @@
 
 vf::~vf()
 {
-	if (vfActiveHandles)
-	{
+	if (vfActiveHandles) {
 		delete[] vfActiveHandles;
 		vfActiveHandles = nullptr;
 	}
-	if (vfEnabledHandles)
-	{
+	if (vfEnabledHandles) {
 		delete[] vfEnabledHandles;
 		vfEnabledHandles = nullptr;
 	}
@@ -40,22 +38,19 @@ vf::~vf()
 ze_result_t vf::enumActiveVF(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumActiveVFExp(device, &vfActiveCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get active VF vfActiveCount. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (vfActiveCount == 0)
-	{
+	if (vfActiveCount == 0) {
 		DBG("No active VFs found.\n");
 		return ZE_RESULT_SUCCESS;
 	}
 
 	vfActiveHandles = new zes_vf_handle_t[vfActiveCount];
 	result = zesDeviceEnumActiveVFExp(device, &vfActiveCount, vfActiveHandles);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate active VFs. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -66,22 +61,19 @@ ze_result_t vf::enumActiveVF(zes_device_handle_t device)
 ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumEnabledVFExp(device, &vfEnabledCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get enabled VF vfEnabledCount. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (vfEnabledCount == 0)
-	{
+	if (vfEnabledCount == 0) {
 		DBG("No enabled VFs found.\n");
 		return ZE_RESULT_SUCCESS;
 	}
 
 	vfEnabledHandles = new zes_vf_handle_t[vfEnabledCount];
 	result = zesDeviceEnumEnabledVFExp(device, &vfEnabledCount, vfEnabledHandles);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate enabled VFs. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -93,8 +85,7 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle)
 {
 	zes_vf_exp_capabilities_t capabilities = {};
 	ze_result_t result = zesVFManagementGetVFCapabilitiesExp(vfHandle, &capabilities);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get VF capabilities. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -115,16 +106,14 @@ ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle)
 	uint32_t memoryUtilCount = 0;
 	zes_vf_util_mem_exp2_t memoryUtil = {};
 	ze_result_t result = zesVFManagementGetVFMemoryUtilizationExp2(vfHandle, &memoryUtilCount, &memoryUtil);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get VF memory utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Successfully retrieved VF memory utilization.\n");
 
-	switch (memoryUtil.vfMemLocation)
-	{
+	switch (memoryUtil.vfMemLocation) {
 	case ZES_MEM_LOC_SYSTEM:
 		DBG("  - VF Memory Location: System\n");
 		break;
@@ -146,16 +135,14 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 	uint32_t engineUtilCount = 0;
 	zes_vf_util_engine_exp2_t engineUtil = {};
 	ze_result_t result = zesVFManagementGetVFEngineUtilizationExp2(vfHandle, &engineUtilCount, &engineUtil);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get VF engine utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Successfully retrieved VF engine utilization.\n");
 
-	switch (engineUtil.vfEngineType)
-	{
+	switch (engineUtil.vfEngineType) {
 	case ZES_ENGINE_GROUP_ALL:
 		DBG("  - VF Engine Type: All\n");
 		break;
@@ -214,14 +201,12 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 ze_result_t vf::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumActiveVF(device);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
 	result = enumEnabledVF(device);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
@@ -232,8 +217,7 @@ ze_result_t vf::init(zes_device_handle_t device)
 ze_result_t vf::zesRun(zes_device_handle_t device)
 {
 	UNUSED(device);
-	for (uint32_t i = 0; i < vfActiveCount; i++)
-	{
+	for (uint32_t i = 0; i < vfActiveCount; i++) {
 		zes_vf_handle_t vf = vfActiveHandles[i];
 		getVFCapabilities(vf);
 		getVFMemoryUtilization(vf);

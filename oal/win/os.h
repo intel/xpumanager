@@ -27,8 +27,8 @@
 
 #include <cstddef>
 #define NOMINMAX
-#include <windows.h>
 #include <string>
+#include <windows.h>
 
 using namespace std;
 
@@ -91,12 +91,13 @@ typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;
 extern LIBXPUM_API int optind;
 int getopt(int argc, char *argv[], char *optstring);
-LIBXPUM_API int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);
+LIBXPUM_API int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts,
+							int *longindex);
 void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 string getProcessName(uint32_t processId);
-long long openI2C(const string& deviceName);
+long long openI2C(const string &deviceName);
 int closeI2C(long long fd);
 
 #endif

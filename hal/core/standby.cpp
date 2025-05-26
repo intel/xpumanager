@@ -25,8 +25,7 @@
 
 standby::~standby()
 {
-	if (standbyHandles)
-	{
+	if (standbyHandles) {
 		delete[] standbyHandles;
 		standbyHandles = nullptr;
 	}
@@ -35,16 +34,14 @@ standby::~standby()
 ze_result_t standby::enumStandbyDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumStandbyDomains(device, &standbyCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || standbyCount == 0)
-	{
+	if (result != ZE_RESULT_SUCCESS || standbyCount == 0) {
 		ERR("Failed to enumerate standby domains. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	standbyHandles = new zes_standby_handle_t[standbyCount];
 	result = zesDeviceEnumStandbyDomains(device, &standbyCount, standbyHandles);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get standby domains. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -57,8 +54,7 @@ ze_result_t standby::getProperties(zes_standby_handle_t standbyHandle)
 {
 	zes_standby_properties_t properties = {};
 	ze_result_t result = zesStandbyGetProperties(standbyHandle, &properties);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get properties for standby domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -75,15 +71,13 @@ ze_result_t standby::getMode(zes_standby_handle_t standbyHandle)
 {
 	zes_standby_promo_mode_t mode = {};
 	ze_result_t result = zesStandbyGetMode(standbyHandle, &mode);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get state for standby domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Standby Mode:\n");
-	switch (mode)
-	{
+	switch (mode) {
 	case ZES_STANDBY_PROMO_MODE_DEFAULT:
 		DBG("  Default\n");
 		break;
@@ -102,17 +96,14 @@ ze_result_t standby::setMode(zes_standby_promo_mode_t mode)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	if (mode != ZES_STANDBY_PROMO_MODE_DEFAULT && mode != ZES_STANDBY_PROMO_MODE_NEVER)
-	{
+	if (mode != ZES_STANDBY_PROMO_MODE_DEFAULT && mode != ZES_STANDBY_PROMO_MODE_NEVER) {
 		ERR("Invalid standby mode. Valid options are default and never.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	for (uint32_t i = 0; i < standbyCount; ++i)
-	{
+	for (uint32_t i = 0; i < standbyCount; ++i) {
 		result = zesStandbySetMode(standbyHandles[i], mode);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to set standby mode. 0x%X (%s)\n", result, l0_error_to_string(result));
 			return result;
 		}
@@ -120,27 +111,21 @@ ze_result_t standby::setMode(zes_standby_promo_mode_t mode)
 	return result;
 }
 
-ze_result_t standby::init(zes_device_handle_t device)
-{
-	return enumStandbyDomains(device);
-}
+ze_result_t standby::init(zes_device_handle_t device) { return enumStandbyDomains(device); }
 
 ze_result_t standby::zesRun(zes_device_handle_t device)
 {
 	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	for (uint32_t i = 0; i < standbyCount; ++i)
-	{
+	for (uint32_t i = 0; i < standbyCount; ++i) {
 		result = getProperties(standbyHandles[i]);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
 		result = getMode(standbyHandles[i]);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 	}

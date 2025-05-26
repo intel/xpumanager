@@ -22,8 +22,8 @@
  *
  */
 
-#include <vector>
 #include "process.h"
+#include <vector>
 
 using namespace std;
 
@@ -32,23 +32,20 @@ ze_result_t process::getState(zes_device_handle_t device)
 	// Get processes running on the device
 	uint32_t processCount = 0;
 	ze_result_t result = zesDeviceProcessesGetState(device, &processCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get process count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	vector<zes_process_state_t> processes(processCount);
 	result = zesDeviceProcessesGetState(device, &processCount, processes.data());
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get process states: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - Device has %d processes\n", processCount);
-	for (const auto &process : processes)
-	{
+	for (const auto &process : processes) {
 		DBG("    - Process ID: %d\n", process.processId);
 		DBG("    - Name: %s\n", GETPROCESSNAME(process.processId).c_str());
 		DBG("    - Shared Size: %" PRIu64 " KB\n", (process.sharedSize / 1024));
@@ -59,7 +56,4 @@ ze_result_t process::getState(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t process::zesRun(zes_device_handle_t device)
-{
-	return getState(device);
-}
+ze_result_t process::zesRun(zes_device_handle_t device) { return getState(device); }

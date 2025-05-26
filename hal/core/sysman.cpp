@@ -47,11 +47,10 @@ void sysman::printEngines(zes_engine_type_flags_t engines)
  */
 LIBXPUM_API const char *l0_error_to_string(ze_result_t ret_val)
 {
-#define CASE(ret_val) \
-	case ret_val:     \
+#define CASE(ret_val)                                                                                                  \
+	case ret_val:                                                                                                      \
 		return #ret_val;
-	switch (ret_val)
-	{
+	switch (ret_val) {
 		CASE(ZE_RESULT_SUCCESS)
 		CASE(ZE_RESULT_NOT_READY)
 		CASE(ZE_RESULT_ERROR_UNINITIALIZED)

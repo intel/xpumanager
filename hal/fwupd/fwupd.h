@@ -25,10 +25,10 @@
 #ifndef _FWUPD_H_
 #define _FWUPD_H_
 
-#include <zes_api.h>
-#include <string>
-#include <os.h>
 #include <device.h>
+#include <os.h>
+#include <string>
+#include <zes_api.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)

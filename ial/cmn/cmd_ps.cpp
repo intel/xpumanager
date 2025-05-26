@@ -47,8 +47,10 @@ void cmdPs::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "PID:      Process ID"));
 	helpList.push_back(helpCmd(TITLE, "Command:  Process command name"));
 	helpList.push_back(helpCmd(TITLE, "DeviceID: Device ID"));
-	helpList.push_back(helpCmd(TITLE, "SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)"));
-	helpList.push_back(helpCmd(TITLE, "MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)"));
+	helpList.push_back(helpCmd(TITLE, "SHR:      The size of shared device memory mapped into this process (may not "
+									  "necessarily be resident on the device at the time of reading) (kB)"));
+	helpList.push_back(helpCmd(TITLE, "MEM:      Device memory size in bytes allocated by this process (may not "
+									  "necessarily be resident on the device at the time of reading) (kB)"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -76,20 +78,17 @@ int cmdPs::run(arg_struct *args)
 	string deviceId;
 	UNUSED(json);
 
-	static struct option long_options[] = {
-		{"help", no_argument, 0, 'h'},
-		{"json", no_argument, 0, 'j'},
-		{"device", required_argument, 0, 'd'},
-		{0, 0, 0, 0}};
+	static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+										   {"json", no_argument, 0, 'j'},
+										   {"device", required_argument, 0, 'd'},
+										   {0, 0, 0, 0}};
 
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, "hjd:", long_options, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, "hjd:", long_options, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -109,28 +108,23 @@ int cmdPs::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(deviceId.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
-		ERR("Error: Device handle not found for device ID '%s'.\n",
-			deviceId.c_str());
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Error: Device handle not found for device ID '%s'.\n", deviceId.c_str());
 		return result;
 	}
 
 	int i = 0;
-	for (auto &dev : deviceList)
-	{
+	for (auto &dev : deviceList) {
 		DBG("Running ps command on device %d\n", i);
 		process *ps = (process *)dev.dev->getProcess();
-		if (ps == nullptr)
-		{
+		if (ps == nullptr) {
 			ERR("Error: Process pointer not found.\n");
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}

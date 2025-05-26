@@ -23,16 +23,16 @@
  */
 
 #include "os.h"
-#include <sys/mman.h>
-#include <math.h>
-#include <debug.h>
-#include <grp.h>
-#include <pwd.h>
-#include <fstream>
-#include <filesystem>
-#include <vector>
 #include <algorithm>
+#include <debug.h>
 #include <fcntl.h>
+#include <filesystem>
+#include <fstream>
+#include <grp.h>
+#include <math.h>
+#include <pwd.h>
+#include <sys/mman.h>
+#include <vector>
 
 /**
  * @brief Creates a new thread.
@@ -58,8 +58,7 @@ thread_id *create_thread(funcptr thread, void *args)
  */
 void wait_for_thread(thread_id *tid)
 {
-	if (tid->ret_thread_uid())
-	{
+	if (tid->ret_thread_uid()) {
 		DBG("%s: thread handle is %ld\n", __func__, tid->ret_thread_uid());
 		pthread_join(tid->ret_thread_uid(), NULL);
 	}
@@ -68,37 +67,31 @@ void wait_for_thread(thread_id *tid)
 bool privilegeCheck()
 {
 	uid_t uid = getuid();
-	if (uid == 0)
-	{
+	if (uid == 0) {
 		return true;
 	}
 	struct passwd *pw = getpwuid(uid);
-	if (pw == NULL)
-	{
+	if (pw == NULL) {
 		ERR("getpwuid error\n");
 		return false;
 	}
 	int ngroups = 0;
 	getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
-	if (ngroups == 0)
-	{
+	if (ngroups == 0) {
 		return false;
 	}
 	gid_t groups[ngroups];
 	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
 	string xpum_grp("xpum");
 	bool has_privilege = false;
-	for (int i = 0; i < ngroups; i++)
-	{
+	for (int i = 0; i < ngroups; i++) {
 		struct group *gr = getgrgid(groups[i]);
-		if (gr == NULL)
-		{
+		if (gr == NULL) {
 			ERR("getgrgid error\n");
 			return false;
 		}
 		string grp_name(gr->gr_name);
-		if (grp_name == xpum_grp)
-		{
+		if (grp_name == xpum_grp) {
 			has_privilege = true;
 		}
 	}
@@ -113,8 +106,7 @@ string getProcessName(uint32_t processId)
 	char path[255];
 	sprintf(path, "/proc/%d/cmdline", processId);
 	pinfo.open(path);
-	if (pinfo.is_open())
-	{
+	if (pinfo.is_open()) {
 		getline(pinfo, processName);
 		pinfo.close();
 	}
@@ -127,17 +119,14 @@ vector<string> findI2CDevices()
 	string devicesPath = "/sys/bus/i2c/devices";
 
 	// Check if the directory exists
-	if (!filesystem::exists(devicesPath))
-	{
+	if (!filesystem::exists(devicesPath)) {
 		ERR("I2C devices directory does not exist: %s\n", devicesPath.c_str());
 		return devices;
 	}
 
 	// Iterate through all entries in the directory
-	for (const auto &entry : filesystem::directory_iterator(devicesPath))
-	{
-		if (entry.is_directory())
-		{
+	for (const auto &entry : filesystem::directory_iterator(devicesPath)) {
+		if (entry.is_directory()) {
 			string dirname = entry.path().filename().string();
 			devices.push_back(entry.path().string());
 		}
@@ -150,8 +139,7 @@ string getI2CDeviceName(const string &devicePath)
 {
 	string name;
 	ifstream nameFile(devicePath + "/name");
-	if (nameFile.is_open())
-	{
+	if (nameFile.is_open()) {
 		getline(nameFile, name);
 		nameFile.close();
 	}
@@ -161,11 +149,9 @@ string getI2CDeviceName(const string &devicePath)
 long long openI2C(const string &deviceName)
 {
 	vector<string> devices = findI2CDevices();
-	for (const auto &device : devices)
-	{
+	for (const auto &device : devices) {
 		string name = getI2CDeviceName(device);
-		if (name == deviceName)
-		{
+		if (name == deviceName) {
 			// Found the device with the specified name, the first character of the path
 			// Example: "/sys/bus/i2c/devices/7-0040" -> "7"
 			// This needs to be added to i2c- so that we can open the device
@@ -178,7 +164,4 @@ long long openI2C(const string &deviceName)
 	return -1;
 }
 
-int closeI2C(long long fd)
-{
-	return close((int)fd);
-}
+int closeI2C(long long fd) { return close((int)fd); }

@@ -55,13 +55,15 @@ void cmdPolicy::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "%s policy -d [deviceId] -l -j", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s policy -g [groupId] -l", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s policy -g [groupId] -l -j", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s policy -c -d [deviceId] --type 1 --condition 1"
-										" --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue]"
-										" --throttlefrequencymax [frequencyMaxValue]",
+	helpList.push_back(helpCmd(HEADING,
+							   "%s policy -c -d [deviceId] --type 1 --condition 1"
+							   " --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue]"
+							   " --throttlefrequencymax [frequencyMaxValue]",
 							   progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s policy -c -g [groupId] --type 1 --condition 1 --threshold [threshold]"
-										"  --action 1 --throttlefrequencymin [frequencyMinValue]"
-										" --throttlefrequencymax [frequencyMaxValue]",
+	helpList.push_back(helpCmd(HEADING,
+							   "%s policy -c -g [groupId] --type 1 --condition 1 --threshold [threshold]"
+							   "  --action 1 --throttlefrequencymin [frequencyMinValue]"
+							   " --throttlefrequencymax [frequencyMaxValue]",
 							   progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s policy -r -d [deviceId] --type [policyTypeValue]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s policy -r -g [groupId] --type [policyTypeValue]", progName.c_str()));
@@ -74,9 +76,11 @@ void cmdPolicy::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-g,--group                  The group ID."));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-l,--list                   List all policies."));
-	helpList.push_back(helpCmd(HEADING, "--listalltypes              List all policy types, including the supported condition and action."));
+	helpList.push_back(helpCmd(
+		HEADING, "--listalltypes              List all policy types, including the supported condition and action."));
 	helpList.push_back(helpCmd(HEADING, "-c,--create                 Create one policy."));
-	helpList.push_back(helpCmd(HEADING, "-r,--remove                 Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed."));
+	helpList.push_back(helpCmd(HEADING, "-r,--remove                 Remove one policy. Only the policy is removed and "
+										"the changed GPU settings will not be resumed."));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--type                      Policy types."));
 	helpList.push_back(helpCmd(SUB_HEADING2, "1. GPU Core Temperature"));
@@ -149,10 +153,8 @@ int cmdPolicy::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -177,13 +179,10 @@ int cmdPolicy::run(arg_struct *args)
 			policyCmds[POLICY_REMOVE].enabled = true;
 			break;
 		case 0:
-			for (auto &cmd : policyCmds)
-			{
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
-				{
+			for (auto &cmd : policyCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
 					policyCmds[cmd.type].enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument)
-					{
+					if (longOpts[optionIndex].has_arg == required_argument) {
 						policyCmds[cmd.type].val = optarg;
 					}
 					found = true;
@@ -191,8 +190,7 @@ int cmdPolicy::run(arg_struct *args)
 				}
 			}
 
-			if (!found)
-			{
+			if (!found) {
 				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -208,28 +206,23 @@ int cmdPolicy::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(policyCmds[POLICY_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", policyCmds[POLICY_DEVICE].val.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : policyCmds)
-		{
-			if (cmd.enabled && cmd.func != nullptr)
-			{
+		for (auto &cmd : policyCmds) {
+			if (cmd.enabled && cmd.func != nullptr) {
 				DBG("Running command: %s\n", cmd.opt.name);
 				result = (this->*cmd.func)(policyCmds, &device);
 				break;

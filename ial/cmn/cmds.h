@@ -25,10 +25,10 @@
 #ifndef _CMDS_H
 #define _CMDS_H
 
-#include <list>
-#include <driver.h>
-#include <string>
 #include <cstdarg>
+#include <driver.h>
+#include <list>
+#include <string>
 
 enum DAEMONCAP
 {
@@ -63,10 +63,7 @@ struct helpCmd
 	int char_gap;
 
 	// Default constructor
-	helpCmd()
-	{
-		memset(line, 0, MAX_PATH);
-	}
+	helpCmd() { memset(line, 0, MAX_PATH); }
 
 	// Copy constructor
 	helpCmd(GAP gap, const char *fmt, ...)
@@ -115,11 +112,9 @@ struct cmd_struct
 	runFunc rf;
 };
 
-template <typename T>
-void processOptions(T *data, uint32_t size, string &shortOpts, vector<struct option> &longOptsVec)
+template <typename T> void processOptions(T *data, uint32_t size, string &shortOpts, vector<struct option> &longOptsVec)
 {
-	for (uint32_t i = 0; i < size; ++i)
-	{
+	for (uint32_t i = 0; i < size; ++i) {
 		longOptsVec.push_back(data[i].opt);
 
 		char val = data[i].opt.val;

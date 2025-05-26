@@ -70,10 +70,8 @@ int cmdAgentSet::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, "hjlt:", longOptions, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, "hjlt:", longOptions, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -84,8 +82,7 @@ int cmdAgentSet::run(arg_struct *args)
 			showList = true;
 			break;
 		case 't':
-			if (optarg)
-			{
+			if (optarg) {
 				timeInterval = atoi(optarg);
 			}
 			break;
@@ -99,25 +96,19 @@ int cmdAgentSet::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (showJson)
-	{
+	if (showJson) {
 		// handle json output logic
 	}
 
-	if (showList)
-	{
+	if (showList) {
 		// handle list logic
-	}
-	else if (timeInterval != 100 && timeInterval != 200 &&
-			 timeInterval != 500 && timeInterval != 1000)
-	{
+	} else if (timeInterval != 100 && timeInterval != 200 && timeInterval != 500 && timeInterval != 1000) {
 		ERR("Invalid time interval. Valid values include 100, 200, 500, 1000.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}

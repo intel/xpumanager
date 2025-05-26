@@ -52,41 +52,77 @@ void cmdDump::help(HELP helpType)
 
 	helpList.push_back(helpCmd(TITLE, "Dump device statistics data"));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s dump [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
-							   progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
-							   progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
+				progName.c_str()));
+	helpList.push_back(helpCmd(
+		HEADING, "%s dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
+		progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device IDs or PCI BDF addresses to query. The value of \"-1\" means all devices"));
-	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The device tile IDs to query. If the device has only one tile, this parameter should not be specified"));
-	helpList.push_back(helpCmd(HEADING, "-m,--metrics                Metrics type to collect raw data, options. Separated by the comma"));
-	helpList.push_back(helpCmd(SUB_HEADING, "0. GPU Utilization (%), GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device IDs or PCI BDF addresses to query. The "
+										"value of \"-1\" means all devices"));
+	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The device tile IDs to query. If the device has "
+										"only one tile, this parameter should not be specified"));
+	helpList.push_back(helpCmd(
+		HEADING, "-m,--metrics                Metrics type to collect raw data, options. Separated by the comma"));
+	helpList.push_back(helpCmd(SUB_HEADING, "0. GPU Utilization (%), GPU active time of the elapsed time, per tile or "
+											"device. Device-level is the average value of tiles for multi-tiles"));
 	helpList.push_back(helpCmd(SUB_HEADING, "1. GPU Power (W), per tile or device"));
-	helpList.push_back(helpCmd(SUB_HEADING, "2. GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "3. GPU Core Temperature (Celsius Degree), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "4. GPU Memory Temperature (Celsius Degree), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "5. GPU Memory Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "6. GPU Memory Read (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "7. GPU Memory Write (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"2. GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "3. GPU Core Temperature (Celsius Degree), per tile or device. "
+											"Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "4. GPU Memory Temperature (Celsius Degree), per tile or device. "
+											"Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "5. GPU Memory Utilization (%), per tile or device. Device-level is the "
+											"average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"6. GPU Memory Read (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"7. GPU Memory Write (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles"));
 	helpList.push_back(helpCmd(SUB_HEADING, "8. GPU Energy Consumed (J), per tile or device"));
-	helpList.push_back(helpCmd(SUB_HEADING, "9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled"));
-	helpList.push_back(helpCmd(SUB_HEADING, "	At least one thread is loaded, but the EU is stalled. Per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "12. Reset Counter, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "13. Programming Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "14. Driver Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "15. Cache Errors Correctable, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "16. Cache Errors Uncorrectable, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "17. GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "18. GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing "
+		"instructions. Per tile or device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled"));
+	helpList.push_back(helpCmd(SUB_HEADING, "	At least one thread is loaded, but the EU is stalled. Per tile or "
+											"device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING,
+				"11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were "
+				"scheduled on a core. Per tile or device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING, "12. Reset Counter, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING,
+				"13. Programming Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING, "14. Driver Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"15. Cache Errors Correctable, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"16. Cache Errors Uncorrectable, per tile or device. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "17. GPU Memory Bandwidth Utilization (%), per tile or device. "
+											"Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"18. GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles"));
 	helpList.push_back(helpCmd(SUB_HEADING, "19. PCIe Read (kB/s), per device"));
 	helpList.push_back(helpCmd(SUB_HEADING, "20. PCIe Write (kB/s), per device"));
-	helpList.push_back(helpCmd(SUB_HEADING, "21. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "21. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput"));
 	helpList.push_back(helpCmd(SUB_HEADING, "22. Compute engine utilizations (%), per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "23. Render engine utilizations (%), per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "24. Media decoder engine utilizations (%), per tile"));
@@ -94,22 +130,37 @@ void cmdDump::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "26. Copy engine utilizations (%), per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "27. Media enhancement engine utilizations (%), per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "28. 3D engine utilizations (%), per tile"));
-	helpList.push_back(helpCmd(SUB_HEADING, "29. GPU Memory Errors Correctable, per tile or device. Other non-compute correctable errors are also included. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "30. GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable errors are also included. Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "31. Compute engine group utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "32. Render engine group utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "33. Media engine group utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "34. Copy engine group utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "29. GPU Memory Errors Correctable, per tile or device. Other non-compute correctable "
+							 "errors are also included. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "30. GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable "
+							 "errors are also included. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "31. Compute engine group utilization (%), per tile or device. "
+											"Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "32. Render engine group utilization (%), per tile or device. Device-level "
+											"is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "33. Media engine group utilization (%), per tile or device. Device-level "
+											"is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "34. Copy engine group utilization (%), per tile or device. Device-level "
+											"is the average value of tiles for multi-tiles"));
 	helpList.push_back(helpCmd(SUB_HEADING, "35. Throttle reason, per tile"));
-	helpList.push_back(helpCmd(SUB_HEADING, "36. Media Engine Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING, "36. Media Engine Frequency (MHz), per tile or device. Device-level is the "
+											"average value of tiles for multi-tiles"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second"));
-	helpList.push_back(helpCmd(HEADING, "-n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified"));
+	helpList.push_back(helpCmd(HEADING, "-i                          The interval (in seconds) to dump the device "
+										"statistics to screen. Default value: 1 second"));
+	helpList.push_back(helpCmd(HEADING, "-n                          Number of the device statistics dump to screen. "
+										"The dump will never be ended if this parameter is not specified"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--file                      Dump the raw statistics to the file"));
-	helpList.push_back(helpCmd(HEADING, "--ims                       The interval (in milliseconds) to dump the device statistics to file for high-frequency monitoring"));
-	helpList.push_back(helpCmd(SUB_HEADING, "The recommended metrics types for high-frequency sampling: GPU power, GPU frequency, GPU utilization"));
-	helpList.push_back(helpCmd(SUB_HEADING, "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, GPU engine utilizations, Xe Link throughput"));
+	helpList.push_back(helpCmd(HEADING, "--ims                       The interval (in milliseconds) to dump the device "
+										"statistics to file for high-frequency monitoring"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"The recommended metrics types for high-frequency sampling: GPU power, GPU frequency, GPU utilization"));
+	helpList.push_back(helpCmd(SUB_HEADING, "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, "
+											"GPU engine utilizations, Xe Link throughput"));
 	helpList.push_back(helpCmd(HEADING, "--time                      Dump total time in seconds"));
 	helpList.push_back(helpCmd(HEADING, "--date                      Show date in timestamp"));
 
@@ -162,10 +213,8 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 	};
 
 	// Iterate through the dump commands and execute the metrics function for each
-	for (auto &cmd : dumpMetrics)
-	{
-		if (cmd.type == dumpCmdType::DUMP_METRICS && cmd.func != nullptr)
-		{
+	for (auto &cmd : dumpMetrics) {
+		if (cmd.type == dumpCmdType::DUMP_METRICS && cmd.func != nullptr) {
 			result = (this->*cmd.func)(dumpCmds, d);
 			break;
 		}
@@ -485,10 +534,8 @@ int cmdDump::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -516,13 +563,10 @@ int cmdDump::run(arg_struct *args)
 			dumpCmds[dumpCmdType::DUMP_NUMBER].val = optarg;
 			break;
 		case 0:
-			for (auto &cmd : dumpCmds)
-			{
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
-				{
+			for (auto &cmd : dumpCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
 					dumpCmds[cmd.type].enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument)
-					{
+					if (longOpts[optionIndex].has_arg == required_argument) {
 						dumpCmds[cmd.type].val = optarg;
 					}
 					found = true;
@@ -530,8 +574,7 @@ int cmdDump::run(arg_struct *args)
 				}
 			}
 
-			if (!found)
-			{
+			if (!found) {
 				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -548,28 +591,23 @@ int cmdDump::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : dumpCmds)
-		{
-			if (cmd.enabled && cmd.func != nullptr)
-			{
+		for (auto &cmd : dumpCmds) {
+			if (cmd.enabled && cmd.func != nullptr) {
 				DBG("Running command: %s\n", cmd.opt.name);
 				result = (this->*cmd.func)(dumpCmds, &device);
 				break;

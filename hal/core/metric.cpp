@@ -27,8 +27,7 @@
 void metric::printMetricType(zet_metric_type_t metricType)
 {
 	DBG("Metric Type:\n");
-	switch (metricType)
-	{
+	switch (metricType) {
 	case ZET_METRIC_TYPE_DURATION:
 		DBG("  - Duration\n");
 		break;
@@ -80,8 +79,7 @@ void metric::printMetricType(zet_metric_type_t metricType)
 void metric::printResultType(zet_value_type_t resultType)
 {
 	DBG("Result Type:\n");
-	switch (resultType)
-	{
+	switch (resultType) {
 	case ZET_VALUE_TYPE_UINT32:
 		DBG("  - UINT32\n");
 		break;
@@ -112,8 +110,7 @@ void metric::printResultType(zet_value_type_t resultType)
 void metric::printMetricGroupSamplingType(zet_metric_group_sampling_type_flags_t samplingType)
 {
 	DBG("Sampling Type:\n");
-	switch (samplingType)
-	{
+	switch (samplingType) {
 	case ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_EVENT_BASED:
 		DBG("  - Flag Event Based\n");
 		break;
@@ -135,35 +132,30 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 
 	// Get the number of metrics in the metric group
 	result = zetMetricGet(metricGroup, &metricCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || metricCount == 0)
-	{
+	if (result != ZE_RESULT_SUCCESS || metricCount == 0) {
 		ERR("Failed to get metric count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	// Allocate memory for the metrics
 	metrics = new zet_metric_handle_t[metricCount];
-	if (metrics == nullptr)
-	{
+	if (metrics == nullptr) {
 		ERR("Failed to allocate memory for metrics\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
 	// Retrieve the metrics
 	result = zetMetricGet(metricGroup, &metricCount, metrics);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metrics: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	// Print metric information
-	for (uint32_t i = 0; i < metricCount; ++i)
-	{
+	for (uint32_t i = 0; i < metricCount; ++i) {
 		zet_metric_properties_t metricProperties = {};
 		result = zetMetricGetProperties(metrics[i], &metricProperties);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get metric properties for metric %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			continue;
 		}
@@ -187,44 +179,38 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	// Get the number of metric groups
 	uint32_t groupCount = 0;
 	result = zetMetricGroupGet(device, &groupCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || groupCount == 0)
-	{
+	if (result != ZE_RESULT_SUCCESS || groupCount == 0) {
 		ERR("Failed to get metric group count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	// Allocate memory for the metric groups
 	zet_metric_group_handle_t *metricGroups = new zet_metric_group_handle_t[groupCount];
-	if (metricGroups == nullptr)
-	{
+	if (metricGroups == nullptr) {
 		ERR("Failed to allocate memory for metric groups\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
 	// Retrieve the metric groups
 	result = zetMetricGroupGet(device, &groupCount, metricGroups);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] metricGroups;
 		return result;
 	}
 
 	result = zetContextActivateMetricGroups(context, device, groupCount, metricGroups);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] metricGroups;
 		return result;
 	}
 
 	// Print metric group information
-	for (uint32_t i = 0; i < groupCount; ++i)
-	{
+	for (uint32_t i = 0; i < groupCount; ++i) {
 		zet_metric_group_properties_t groupProperties = {};
 		result = zetMetricGroupGetProperties(metricGroups[i], &groupProperties);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get properties for metric group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			continue;
 		}

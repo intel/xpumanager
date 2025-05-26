@@ -113,9 +113,12 @@ private:
 	uint32_t fwupdateProgress;
 
 public:
-	device() : zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr),
-			   zesDevices(nullptr), deviceCount(0), deviceProperties(nullptr),
-			   zes_func_table(nullptr), zet_func_table(nullptr), fwupdateProgress(0) {}
+	device()
+		: zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr), zesDevices(nullptr),
+		  deviceCount(0), deviceProperties(nullptr), zes_func_table(nullptr), zet_func_table(nullptr),
+		  fwupdateProgress(0)
+	{
+	}
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
@@ -126,17 +129,13 @@ public:
 	ze_result_t getModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps);
 	ze_result_t getMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps);
 	ze_result_t getImageProps(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps);
-	ze_result_t getExtMemProps(ze_device_handle_t dev,
-							   ze_device_external_memory_properties_t *zeExternalMemoryProps);
+	ze_result_t getExtMemProps(ze_device_handle_t dev, ze_device_external_memory_properties_t *zeExternalMemoryProps);
 
-	ze_result_t getCmdQueueProps(ze_device_handle_t dev,
-								 ze_command_queue_group_properties_t **zeCmdQueueProps,
+	ze_result_t getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_group_properties_t **zeCmdQueueProps,
 								 uint32_t *cmdQueuePropsCount);
-	ze_result_t getMemProps(ze_device_handle_t dev,
-							ze_device_memory_properties_t **zeMemProps,
+	ze_result_t getMemProps(ze_device_handle_t dev, ze_device_memory_properties_t **zeMemProps,
 							uint32_t *memPropsCount);
-	ze_result_t getCacheProps(ze_device_handle_t dev,
-							  ze_device_cache_properties_t **zeCacheProps,
+	ze_result_t getCacheProps(ze_device_handle_t dev, ze_device_cache_properties_t **zeCacheProps,
 							  uint32_t *cachePropsCount);
 	ze_result_t resetDevice(ze_device_handle_t dev);
 

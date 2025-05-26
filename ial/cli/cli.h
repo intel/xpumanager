@@ -25,6 +25,9 @@
 #ifndef _CLI_H
 #define _CLI_H
 
+#include <cmds.h>
+#include <functional>
+
 using namespace std;
 
 #define STRINGIFY(x) #x

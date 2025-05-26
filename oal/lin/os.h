@@ -26,12 +26,12 @@
 #define _OS_H
 
 #include <cstddef>
-#include <unistd.h>
-#include <cstring>
-#include <pthread.h>
-#include <getopt.h>
-#include <string>
 #include <cstdint>
+#include <cstring>
+#include <getopt.h>
+#include <pthread.h>
+#include <string>
+#include <unistd.h>
 
 using namespace std;
 
@@ -63,11 +63,11 @@ class thread_id
 {
 
 protected:
-    pthread_t thread_hdl;
+	pthread_t thread_hdl;
 
 public:
-    thread_id(pthread_t hdl) { thread_hdl = hdl; }
-    pthread_t ret_thread_uid() { return thread_hdl; }
+	thread_id(pthread_t hdl) { thread_hdl = hdl; }
+	pthread_t ret_thread_uid() { return thread_hdl; }
 };
 
 thread_id *create_thread(funcptr thread, void *args);

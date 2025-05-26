@@ -26,10 +26,10 @@
 #define _GSCUPD_H
 
 #include "fwupd.h"
-#include <zes_api.h>
-#include <vector>
-#include <pci.h>
 #include <device.h>
+#include <pci.h>
+#include <vector>
+#include <zes_api.h>
 
 using namespace std;
 

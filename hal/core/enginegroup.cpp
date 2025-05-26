@@ -25,8 +25,7 @@
 
 enginegroup::~enginegroup()
 {
-	if (engineGroups)
-	{
+	if (engineGroups) {
 		delete[] engineGroups;
 		engineGroups = nullptr;
 	}
@@ -36,8 +35,7 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate engine groups: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -45,8 +43,7 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 
 	engineGroups = new zes_engine_handle_t[engineGroupCount];
 	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, engineGroups);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine group handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 	}
 	return result;
@@ -56,14 +53,12 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	result = zesEngineGetProperties(engineGroup, engineProperties);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 	DBG("  - Engine SType: %d\n", engineProperties->stype);
-	switch (engineProperties->type)
-	{
+	switch (engineProperties->type) {
 	case ZES_ENGINE_GROUP_ALL:
 		DBG("  - Engine Type: All\n");
 		break;
@@ -123,8 +118,7 @@ ze_result_t enginegroup::getActivity(zes_engine_handle_t engineGroup)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_engine_stats_t engineStats = {};
 	result = zesEngineGetActivity(engineGroup, &engineStats);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine activity: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -138,8 +132,7 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_engine_stats_t engineStats = {};
 	result = zesEngineGetActivityExt(engineGroup, 0, &engineStats);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get extended engine activity: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -153,42 +146,34 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 	zes_engine_properties_t engineProperties;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	if (mediaEngines == nullptr)
-	{
+	if (mediaEngines == nullptr) {
 		ERR("Media engines pointer is null.\n");
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i)
-	{
+	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
-		if (engineProperties.type == type)
-		{
+		if (engineProperties.type == type) {
 			(*mediaEngines)++;
 		}
 	}
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t enginegroup::init(zes_device_handle_t device)
-{
-	return enumGroups(device);
-}
+ze_result_t enginegroup::init(zes_device_handle_t device) { return enumGroups(device); }
 
 ze_result_t enginegroup::zesRun(zes_device_handle_t device)
 {
 	UNUSED(device);
 	zes_engine_properties_t engineProperties;
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i)
-	{
+	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		DBG("  - Engine Group handle: %p\n", engineGroup);
 
