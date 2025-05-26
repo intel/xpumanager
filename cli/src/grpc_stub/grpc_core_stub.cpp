@@ -2178,36 +2178,32 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceComponentOccupancyRatio(i
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
-        int deviceId, int utilizationInterval) {
+        int deviceId) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
-    DeviceUtilizationByProcessRequest request;
-    DeviceUtilizationByProcessResponse response;
+    DeviceId request;
+    DeviceProcessStateResponse response;
 
-    request.set_deviceid(deviceId);
-    request.set_utilizationinterval(utilizationInterval);
-    grpc::Status status = stub->getDeviceUtilizationByProcess(&context,
-        request, &response);
+    request.set_id(deviceId);
+    grpc::Status status = stub->getDeviceProcessState(&context, request, &response);
     if (status.ok()) {
-        if (response.errormsg().length() > 0) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> deviceProcessList;
+            for (uint i{0}; i < response.count(); ++i) {
+                auto proc = nlohmann::json();
+                proc["process_id"] = response.processlist(i).processid();
+                proc["mem_size"] = response.processlist(i).memsize();
+                proc["shared_mem_size"] = response.processlist(i).sharedsize();
+                proc["device_id"] = deviceId;
+                proc["process_name"] = response.processlist(i).processname();
+                deviceProcessList.push_back(proc);
+            }
+            (*json)["device_util_by_proc_list"] = deviceProcessList;
+        } else {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
-            return json;
         }
-        std::vector<nlohmann::json> utilByProcessList;
-        for (uint i{0}; i < response.count(); ++i) {
-            auto util = nlohmann::json();
-            util["process_id"] = response.processlist(i).processid();
-            util["process_name"] = response.processlist(i).processname();
-            util["device_id"] = response.processlist(i).deviceid();
-            util["mem_size"] = 
-                response.processlist(i).memsize() / 1000;
-            util["shared_mem_size"] = 
-                response.processlist(i).sharedmemsize() / 1000;
-           utilByProcessList.push_back(util);
-        }
-        (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
         (*json)["error"] = status.error_message();
         (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
@@ -2215,42 +2211,42 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess(
-        int utilizationInterval) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess() {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
-    UtilizationInterval ui;
-    DeviceUtilizationByProcessResponse response;
 
-    ui.set_utilinterval(utilizationInterval);
-    grpc::Status status = stub->getAllDeviceUtilizationByProcess(&context,
-        ui, &response);
+    // Get a list of all devices
+    XpumDeviceBasicInfoArray response;
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    
     if (status.ok()) {
-        if (response.errormsg().length() > 0) {
+        if (response.errormsg().length() == 0) {
+            for (int i = 0; i < response.info_size(); ++i) {
+                auto process_list_json = getDeviceUtilizationByProcess(response.info(i).id().id());
+                if (process_list_json->contains("device_util_by_proc_list")) {
+                    if (!(*json).contains("device_util_by_proc_list")) {
+                        (*json)["device_util_by_proc_list"] = nlohmann::json::array();
+                    }
+                    (*json)["device_util_by_proc_list"].insert(
+                    (*json)["device_util_by_proc_list"].end(),
+                    (*process_list_json)["device_util_by_proc_list"].begin(),
+                    (*process_list_json)["device_util_by_proc_list"].end()
+                    );
+                }
+            }
+        } else {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
-            return json;
         }
-        std::vector<nlohmann::json> utilByProcessList;
-        for (uint i{0}; i < response.count(); ++i) {
-            auto util = nlohmann::json();
-            util["process_id"] = response.processlist(i).processid();
-            util["process_name"] = response.processlist(i).processname();
-            util["device_id"] = response.processlist(i).deviceid();
-            util["mem_size"] = 
-                response.processlist(i).memsize() / 1000;
-            util["shared_mem_size"] = 
-                response.processlist(i).sharedmemsize() / 1000;
-            utilByProcessList.push_back(util);
-        }
-        (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
         (*json)["error"] = status.error_message();
         (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
-    }
+    }    
+
     return json;
 }
+
 std::string GrpcCoreStub::getTopoXMLBuffer() {
     assert(this->stub != nullptr);
     std::string result;

@@ -3339,6 +3339,7 @@ std::string GPUDeviceStub::getProcessName(uint32_t processId) {
     pinfo.open(path);
     if (pinfo.is_open()) {
         std::getline(pinfo, processName);
+        processName = processName.substr(processName.rfind('/') + 1);
         pinfo.close();
     }
     return processName;
