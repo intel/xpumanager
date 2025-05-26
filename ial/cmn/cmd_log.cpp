@@ -45,7 +45,8 @@ void cmdLogs::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-f,--file                   The file (a tar.gz) to archive all the debug logs"));
+	helpList.push_back(
+		helpCmd(HEADING, "-f,--file                   The file (a tar.gz) to archive all the debug logs"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -59,11 +60,10 @@ void cmdLogs::help(HELP helpType)
 int cmdLogs::run(arg_struct *args)
 {
 	TRACING();
-	static struct option longOpts[] = {
-		{"help", no_argument, 0, 'h'},
-		{"json", no_argument, 0, 'j'},
-		{"file", required_argument, 0, 'f'},
-		{0, 0, 0, 0}};
+	static struct option longOpts[] = {{"help", no_argument, 0, 'h'},
+									   {"json", no_argument, 0, 'j'},
+									   {"file", required_argument, 0, 'f'},
+									   {0, 0, 0, 0}};
 
 	int opt;
 	int optionIndex = 0;
@@ -73,10 +73,8 @@ int cmdLogs::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, "hjf:", longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, "hjf:", longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -97,8 +95,7 @@ int cmdLogs::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;

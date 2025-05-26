@@ -25,8 +25,7 @@
 
 performance::~performance()
 {
-	if (perfHandles)
-	{
+	if (perfHandles) {
 		delete[] perfHandles;
 		perfHandles = nullptr;
 	}
@@ -36,9 +35,9 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 {
 	// Get the perfCount of performance factor domains
 	ze_result_t result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || perfCount == 0)
-	{
-		ERR("Failed to get performance factor domains perfCount or no domains available. 0x%X (%s)\n", result, l0_error_to_string(result));
+	if (result != ZE_RESULT_SUCCESS || perfCount == 0) {
+		ERR("Failed to get performance factor domains perfCount or no domains available. 0x%X (%s)\n", result,
+			l0_error_to_string(result));
 		return result;
 	}
 
@@ -46,8 +45,7 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 
 	// Retrieve the performance factor domain handles
 	result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, perfHandles);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate performance factor domains. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -60,8 +58,7 @@ ze_result_t performance::getProperties(zes_perf_handle_t perfHandle)
 {
 	zes_perf_properties_t properties = {};
 	ze_result_t result = zesPerformanceFactorGetProperties(perfHandle, &properties);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get properties for performance factor domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -78,8 +75,7 @@ ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
 {
 	double factor = 0.0;
 	ze_result_t result = zesPerformanceFactorGetConfig(perfHandle, &factor);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get config for performance factor domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -95,17 +91,14 @@ ze_result_t performance::zesRun(zes_device_handle_t device)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	enumPerformanceFactorDomains(device);
 
-	for (uint32_t i = 0; i < perfCount; ++i)
-	{
+	for (uint32_t i = 0; i < perfCount; ++i) {
 		result = getProperties(perfHandles[i]);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
 		result = getConfig(perfHandles[i]);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 	}

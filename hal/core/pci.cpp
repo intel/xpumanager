@@ -21,40 +21,34 @@
  * IN THE SOFTWARE.
  *
  */
-#include <vector>
+#include "pci.h"
 #include <assert.h>
+#include <gscupd.h>
 #include <regex>
 #include <string>
-#include <gscupd.h>
-#include "pci.h"
+#include <vector>
 
 using namespace std;
 
 ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProps)
 {
 	assert(pciProps);
-	if (!pciProps)
-	{
+	if (!pciProps) {
 		ERR("Invalid argument: pciProps is null\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	ze_result_t result = zesDevicePciGetProperties(device, pciProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - PCI Properties:\n");
-	DBG("    - Address: %d:%d:%d.%d\n", pciProps->address.domain,
-		pciProps->address.bus,
-		pciProps->address.device,
+	DBG("    - Address: %d:%d:%d.%d\n", pciProps->address.domain, pciProps->address.bus, pciProps->address.device,
 		pciProps->address.function);
-	DBG("    - Max Speed: %d Gen, %d lanes, Max bandwidth: %" PRIu64 "\n",
-		pciProps->maxSpeed.gen,
-		pciProps->maxSpeed.width,
-		pciProps->maxSpeed.maxBandwidth);
+	DBG("    - Max Speed: %d Gen, %d lanes, Max bandwidth: %" PRIu64 "\n", pciProps->maxSpeed.gen,
+		pciProps->maxSpeed.width, pciProps->maxSpeed.maxBandwidth);
 
 	DBG("    - haveBandwidthCounters: %d\n", pciProps->haveBandwidthCounters);
 	DBG("    - havePacketCounters: %d\n", pciProps->havePacketCounters);
@@ -66,8 +60,7 @@ ze_result_t pci::getState(zes_device_handle_t device)
 {
 	zes_pci_state_t pciState = {};
 	ze_result_t result = zesDevicePciGetState(device, &pciState);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -76,9 +69,7 @@ ze_result_t pci::getState(zes_device_handle_t device)
 	DBG("    - Status: %d\n", pciState.status);
 	DBG("    - Stability Issues: %d\n", pciState.stabilityIssues);
 	DBG("    - Quality Issues: %d\n", pciState.qualityIssues);
-	DBG("    - Current Speed: %d Gen, %d lanes, %" PRIu64 "Max bandwidth\n",
-		pciState.speed.gen,
-		pciState.speed.width,
+	DBG("    - Current Speed: %d Gen, %d lanes, %" PRIu64 "Max bandwidth\n", pciState.speed.gen, pciState.speed.width,
 		pciState.speed.maxBandwidth);
 	return result;
 }
@@ -89,41 +80,31 @@ ze_result_t pci::getBars(zes_device_handle_t device)
 	// Get PCI BARs of each device
 	uint32_t barCount = 0;
 	ze_result_t result = zesDevicePciGetBars(device, &barCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI BAR count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	vector<zes_pci_bar_properties_t> bars(barCount);
 	result = zesDevicePciGetBars(device, &barCount, bars.data());
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI BAR properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - PCI BARs:\n");
-	for (const auto &bar : bars)
-	{
+	for (const auto &bar : bars) {
 		DBG("    - Index: %d\n", bar.index);
 		DBG("    - Base Address: 0x%" PRIx64 "\n", bar.base);
 		DBG("    - Size: 0x%" PRIx64 "bytes\n", bar.size);
 		DBG("    - Type: ");
-		if (bar.type == ZES_PCI_BAR_TYPE_MMIO)
-		{
+		if (bar.type == ZES_PCI_BAR_TYPE_MMIO) {
 			DBG("MMIO");
-		}
-		else if (bar.type == ZES_PCI_BAR_TYPE_ROM)
-		{
+		} else if (bar.type == ZES_PCI_BAR_TYPE_ROM) {
 			DBG("ROM");
-		}
-		else if (bar.type == ZES_PCI_BAR_TYPE_MEM)
-		{
+		} else if (bar.type == ZES_PCI_BAR_TYPE_MEM) {
 			DBG("MEM");
-		}
-		else
-		{
+		} else {
 			DBG("Other");
 		}
 		DBG("\n");
@@ -135,8 +116,7 @@ ze_result_t pci::getStats(zes_device_handle_t device)
 {
 	zes_pci_stats_t pciStats = {};
 	ze_result_t result = zesDevicePciGetStats(device, &pciStats);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI stats: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -158,32 +138,25 @@ bool pci::isBDF(const char *bdf)
 	regex regexPattern(R"((\d+):(\d+):(\d+)\.(\d+))");
 	smatch match;
 
-	if (regex_match(bdfStr, match, regexPattern))
-	{
+	if (regex_match(bdfStr, match, regexPattern)) {
 		string domain = match[1];
 		string bus = match[2];
 		string device = match[3];
 		string function = match[4];
 
-		if (domain.length() > 4 || bus.length() > 2 || device.length() > 2 || function.length() > 1)
-		{
+		if (domain.length() > 4 || bus.length() > 2 || device.length() > 2 || function.length() > 1) {
 			ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
-		}
-		else
-		{
+		} else {
 			DBG("Valid PCI address format: %s\n", bdf);
 			if (deviceProperties.pciProps.address.domain == strtoul(domain.c_str(), nullptr, 16) &&
 				deviceProperties.pciProps.address.bus == strtoul(bus.c_str(), nullptr, 16) &&
 				deviceProperties.pciProps.address.device == strtoul(device.c_str(), nullptr, 16) &&
-				deviceProperties.pciProps.address.function == strtoul(function.c_str(), nullptr, 16))
-			{
+				deviceProperties.pciProps.address.function == strtoul(function.c_str(), nullptr, 16)) {
 				DBG("PCI address matches the device properties.\n");
 				isValid = true;
 			}
 		}
-	}
-	else
-	{
+	} else {
 		ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
 	}
 	return isValid;
@@ -193,8 +166,7 @@ ze_result_t pci::init(ze_device_handle_t device)
 {
 	ze_result_t result;
 	result = getProperties(device, &deviceProperties.pciProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -202,13 +174,11 @@ ze_result_t pci::init(ze_device_handle_t device)
 	gscupd gsc;
 	vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
 
-	for (const auto &dev : devicesVec)
-	{
+	for (const auto &dev : devicesVec) {
 		if (dev.pciProps.address.domain == deviceProperties.pciProps.address.domain &&
 			dev.pciProps.address.bus == deviceProperties.pciProps.address.bus &&
 			dev.pciProps.address.device == deviceProperties.pciProps.address.device &&
-			dev.pciProps.address.function == deviceProperties.pciProps.address.function)
-		{
+			dev.pciProps.address.function == deviceProperties.pciProps.address.function) {
 			DBG("Found matching device: %s\n", dev.meiDevicePath.c_str());
 
 			// Found a matching device so copy the meiDevicePath

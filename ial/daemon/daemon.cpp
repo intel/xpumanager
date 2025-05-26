@@ -22,28 +22,28 @@
  *
  */
 
-#include <cmd_discovery.h>
-#include <cmd_topology.h>
-#include <cmd_diag.h>
-#include <cmd_health.h>
-#include <cmd_updatefw.h>
-#include <cmd_config.h>
-#include <cmd_ps.h>
-#include <cmd_vgpu.h>
-#include <cmd_stats.h>
-#include <cmd_dump.h>
-#include <cmd_log.h>
-#include <cmd_group.h>
-#include <cmd_policy.h>
-#include <cmd_topdown.h>
 #include <cmd_agentset.h>
 #include <cmd_amcsensor.h>
-#include <memory>
-#include <functional>
-#include <list>
+#include <cmd_config.h>
+#include <cmd_diag.h>
+#include <cmd_discovery.h>
+#include <cmd_dump.h>
+#include <cmd_group.h>
+#include <cmd_health.h>
+#include <cmd_log.h>
+#include <cmd_policy.h>
+#include <cmd_ps.h>
+#include <cmd_stats.h>
+#include <cmd_topdown.h>
+#include <cmd_topology.h>
+#include <cmd_updatefw.h>
+#include <cmd_vgpu.h>
 #include <debug.h>
-#include <os.h>
+#include <functional>
 #include <iostream>
+#include <list>
+#include <memory>
+#include <os.h>
 #include <vector>
 
 string progName = "xpumd";
@@ -54,8 +54,7 @@ int main(int argc, char *argv[])
 
 	// Create sysman driver instance
 	ze_result_t result = arg.sm.init();
-	switch (result)
-	{
+	switch (result) {
 	case ZE_RESULT_SUCCESS:
 		PRINT("Sysman driver initialized successfully.\n");
 		break;
@@ -65,8 +64,7 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	if (arg.sm.run() != ZE_RESULT_SUCCESS)
-	{
+	if (arg.sm.run() != ZE_RESULT_SUCCESS) {
 		ERR("Sysman driver run failed.\n");
 		return -1;
 	}

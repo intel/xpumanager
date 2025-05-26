@@ -54,25 +54,24 @@ static int dbg_lvl = DBG;
 static int dbg_lvl = INFO;
 #endif
 
-#define _PRINT(prefix, fmt, ...)    \
-	if (1)                          \
-	{                               \
-		printf("%s", prefix);       \
-		printf(fmt, ##__VA_ARGS__); \
-		fflush(stdout);             \
+#define _PRINT(prefix, fmt, ...)                                                                                       \
+	if (1) {                                                                                                           \
+		printf("%s", prefix);                                                                                          \
+		printf(fmt, ##__VA_ARGS__);                                                                                    \
+		fflush(stdout);                                                                                                \
 	}
 
 #define PRINT(fmt, ...) _PRINT("", fmt, ##__VA_ARGS__)
 #define ERR(fmt, ...) _PRINT("[Error] ", fmt, ##__VA_ARGS__)
 #define WARNING(fmt, ...) _PRINT("[Warning] ", fmt, ##__VA_ARGS__)
-#define DBG(fmt, ...)   \
-	if (dbg_lvl >= DBG) \
+#define DBG(fmt, ...)                                                                                                  \
+	if (dbg_lvl >= DBG)                                                                                                \
 	_PRINT("[DBG] ", fmt, ##__VA_ARGS__)
-#define INFO(fmt, ...)   \
-	if (dbg_lvl >= INFO) \
+#define INFO(fmt, ...)                                                                                                 \
+	if (dbg_lvl >= INFO)                                                                                               \
 	_PRINT("[Info] ", fmt, ##__VA_ARGS__)
-#define TRACE(fmt, ...)   \
-	if (dbg_lvl >= TRACE) \
+#define TRACE(fmt, ...)                                                                                                \
+	if (dbg_lvl >= TRACE)                                                                                              \
 	PRINT(fmt, ##__VA_ARGS__)
 
 #ifdef __cplusplus
@@ -100,8 +99,7 @@ public:
 inline int set_dbg_lvl(int lvl)
 {
 	int ret = 1;
-	if (lvl >= ERR && lvl <= TRACE)
-	{
+	if (lvl >= ERR && lvl <= TRACE) {
 		dbg_lvl = lvl;
 		ret = 0;
 	}

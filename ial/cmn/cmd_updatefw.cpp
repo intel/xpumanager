@@ -47,16 +47,26 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address. If it is not specified, all devices will be updated"));
-	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC."));
-	helpList.push_back(helpCmd(SUB_HEADING, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
-	helpList.push_back(helpCmd(SUB_HEADING, "and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer)"));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address. If it is not "
+										"specified, all devices will be updated"));
+	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, "
+										"GFX_CODE_DATA, GFX_PSCBIN, AMC."));
+	helpList.push_back(helpCmd(
+		SUB_HEADING, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer)"));
 	helpList.push_back(helpCmd(HEADING, "-f,--file                   The firmware image file path on this server"));
-	helpList.push_back(helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
-	helpList.push_back(helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
-	helpList.push_back(helpCmd(HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
-	helpList.push_back(helpCmd(HEADING, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
-	helpList.push_back(helpCmd(HEADING, "--recovery                  Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
+	helpList.push_back(
+		helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
+	helpList.push_back(
+		helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
+	helpList.push_back(helpCmd(
+		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+	helpList.push_back(helpCmd(
+		HEADING, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
+	helpList.push_back(
+		helpCmd(HEADING, "--recovery                  Update firmware under survivability mode. This parameter only "
+						 "works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -77,27 +87,24 @@ int cmdUpdateFW::run(arg_struct *args)
 	int opt;
 	int optionIndex = 0;
 	const char *optString = "hjd:t:f:u:p:y";
-	struct option longOpts[] = {
-		{"help", no_argument, nullptr, 'h'},
-		{"json", no_argument, nullptr, 'j'},
-		{"device", required_argument, nullptr, 'd'},
-		{"type", required_argument, nullptr, 't'},
-		{"file", required_argument, nullptr, 'f'},
-		{"username", required_argument, nullptr, 'u'},
-		{"password", required_argument, nullptr, 'p'},
-		{"assumeyes", no_argument, nullptr, 'y'},
-		{"force", no_argument, nullptr, 0},
-		{"recovery", no_argument, nullptr, 0},
-		{nullptr, 0, nullptr, 0}};
+	struct option longOpts[] = {{"help", no_argument, nullptr, 'h'},
+								{"json", no_argument, nullptr, 'j'},
+								{"device", required_argument, nullptr, 'd'},
+								{"type", required_argument, nullptr, 't'},
+								{"file", required_argument, nullptr, 'f'},
+								{"username", required_argument, nullptr, 'u'},
+								{"password", required_argument, nullptr, 'p'},
+								{"assumeyes", no_argument, nullptr, 'y'},
+								{"force", no_argument, nullptr, 0},
+								{"recovery", no_argument, nullptr, 0},
+								{nullptr, 0, nullptr, 0}};
 
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -123,16 +130,11 @@ int cmdUpdateFW::run(arg_struct *args)
 			fwInfo.assumeYes = true;
 			break;
 		case 0:
-			if (STRCASECMP("force", longOpts[optionIndex].name) == 0)
-			{
+			if (STRCASECMP("force", longOpts[optionIndex].name) == 0) {
 				fwInfo.forceUpdate = true;
-			}
-			else if (STRCASECMP("recovery", longOpts[optionIndex].name) == 0)
-			{
+			} else if (STRCASECMP("recovery", longOpts[optionIndex].name) == 0) {
 				fwInfo.recoveryMode = true;
-			}
-			else
-			{
+			} else {
 				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
@@ -147,62 +149,52 @@ int cmdUpdateFW::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Validate firmware type
-	if (fwInfo.firmwareType.empty())
-	{
+	if (fwInfo.firmwareType.empty()) {
 		ERR("Error: Missing required argument --type.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Validate file path
-	if (fwInfo.filePath.empty())
-	{
+	if (fwInfo.filePath.empty()) {
 		ERR("Error: Missing required argument --file.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(fwInfo.deviceId.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", fwInfo.deviceId.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		fwInfo.dev = device.dev;
 		fwInfo.deviceHdl = device.deviceHdl;
 		firmware *fw = (firmware *)device.dev->getFirmware();
-		if (fw == nullptr)
-		{
+		if (fw == nullptr) {
 			ERR("Error: Firmware pointer not found.\n");
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 
 		// Call the hal to update the firmware
-		if (fw->updateFW(&fwInfo) != ZE_RESULT_SUCCESS)
-		{
+		if (fw->updateFW(&fwInfo) != ZE_RESULT_SUCCESS) {
 			ERR("Error: Failed to update firmware.\n");
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 	}
 
-	if (fwInfo.jsonOutput)
-	{
+	if (fwInfo.jsonOutput) {
 		// Print JSON output
-		INFO("{\"status\": \"success\", \"device\": \"%s\", \"firmware_type\": \"%s\"}\n",
-			 fwInfo.deviceId.c_str(), fwInfo.firmwareType.c_str());
-	}
-	else
-	{
+		INFO("{\"status\": \"success\", \"device\": \"%s\", \"firmware_type\": \"%s\"}\n", fwInfo.deviceId.c_str(),
+			 fwInfo.firmwareType.c_str());
+	} else {
 		// Print human-readable output
 		INFO("Firmware update completed successfully for device '%s'.\n", fwInfo.deviceId.c_str());
 	}

@@ -26,8 +26,8 @@
 #define _CMD_UPDATEFW_H
 
 #include "cmds.h"
-#include <os.h>
 #include <firmware.h>
+#include <os.h>
 
 class cmdUpdateFW : public cmds
 {

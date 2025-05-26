@@ -34,8 +34,7 @@ ze_result_t amcupd::preUpdateAMC(firmwareInfo *fwInfo)
 	DBG("Pre-update AMC firmware...\n");
 
 	deviceHandle = OPENI2C(amc);
-	if (deviceHandle < 0)
-	{
+	if (deviceHandle < 0) {
 		ERR("Failed to open I2C device for AMC\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}

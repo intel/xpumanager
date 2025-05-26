@@ -13,10 +13,7 @@ private:
 public:
 	jsonWrapper() {}
 	~jsonWrapper() {}
-	void addObj(const char *id, const char *val)
-	{
-		newJsonObject[id] = val;
-	}
+	void addObj(const char *id, const char *val) { newJsonObject[id] = val; }
 };
 
 #endif

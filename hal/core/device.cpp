@@ -22,12 +22,7 @@
  *
  */
 
-#include <vector>
-#include <cstring>
-#include <cinttypes>
 #include "device.h"
-#include "pci.h"
-#include "process.h"
 #include "diagnostic.h"
 #include "ecc.h"
 #include "enginegroup.h"
@@ -36,38 +31,37 @@
 #include "firmware.h"
 #include "frequency.h"
 #include "memory.h"
+#include "metric.h"
+#include "pci.h"
 #include "performance.h"
 #include "power.h"
+#include "process.h"
 #include "ras.h"
 #include "scheduler.h"
 #include "standby.h"
 #include "temperature.h"
 #include "vf.h"
-#include "metric.h"
+#include <cinttypes>
+#include <cstring>
+#include <vector>
 
 device::~device()
 {
-	if (context)
-	{
+	if (context) {
 		zeContextDestroy(context);
 		context = nullptr;
 	}
 
 	// Clean up device properties
-	if (deviceProperties)
-	{
-		for (uint32_t i = 0; i < deviceCount; ++i)
-		{
-			if (deviceProperties[i].zeCacheProps)
-			{
+	if (deviceProperties) {
+		for (uint32_t i = 0; i < deviceCount; ++i) {
+			if (deviceProperties[i].zeCacheProps) {
 				delete[] deviceProperties[i].zeCacheProps;
 			}
-			if (deviceProperties[i].zeMemProps)
-			{
+			if (deviceProperties[i].zeMemProps) {
 				delete[] deviceProperties[i].zeMemProps;
 			}
-			if (deviceProperties[i].zeCmdQueueProps)
-			{
+			if (deviceProperties[i].zeCmdQueueProps) {
 				delete[] deviceProperties[i].zeCmdQueueProps;
 			}
 		}
@@ -75,28 +69,24 @@ device::~device()
 		deviceProperties = nullptr;
 	}
 	// Clean up zes_func_table
-	for (uint32_t i = 0; i < TOTAL_ZES; i++)
-	{
+	for (uint32_t i = 0; i < TOTAL_ZES; i++) {
 		delete zes_func_table[i].func;
 	}
 	delete zes_func_table;
 
 	// Clean up zet_func_table
-	for (uint32_t i = 0; i < TOTAL_ZET; i++)
-	{
+	for (uint32_t i = 0; i < TOTAL_ZET; i++) {
 		delete zet_func_table[i].func;
 	}
 	delete zet_func_table;
 
 	// Clean up zeDevices
-	if (zeDevices)
-	{
+	if (zeDevices) {
 		delete[] zeDevices;
 		zeDevices = nullptr;
 	}
 	// Clean up zesDevices
-	if (zesDevices)
-	{
+	if (zesDevices) {
 		delete[] zesDevices;
 		zesDevices = nullptr;
 	}
@@ -105,8 +95,7 @@ device::~device()
 ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp)
 {
 	ze_result_t result = zeDeviceGetProperties(dev, zeDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -114,45 +103,32 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 	DBG("  - Device ID: 0x%X\n", zeDevProp->deviceId);
 	DBG("  - Device Type: %d\n", zeDevProp->type);
 	DBG("  - Device UUID: ");
-	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j)
-	{
+	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j) {
 		DBG("%02X", zeDevProp->uuid.id[j]);
 	}
 	DBG("\n");
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED)
-	{
+	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
 		DBG("  - Integrated Device\n");
-	}
-	else
-	{
+	} else {
 		DBG("  - Discrete Device\n");
 	}
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)
-	{
+	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE) {
 		DBG("  - Subdevice\n");
-	}
-	else
-	{
+	} else {
 		DBG("  - Non-Subdevice\n");
 	}
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_ECC)
-	{
+	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_ECC) {
 		DBG("  - Device supports error correction memory access\n");
-	}
-	else
-	{
+	} else {
 		DBG("  - Device does NOT support error correction memory access\n");
 	}
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING)
-	{
+	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) {
 		DBG("  - Device supports on-demand page-faulting\n");
-	}
-	else
-	{
+	} else {
 		DBG("  - Device does NOT support on-demand page-faulting\n");
 	}
 
@@ -179,8 +155,7 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps)
 {
 	ze_result_t result = zeDeviceGetComputeProperties(dev, zeComputeProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get compute properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -196,8 +171,7 @@ ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_pr
 	DBG("  Max Group Count Z: %u\n", zeComputeProps->maxGroupCountZ);
 	DBG("  Max Shared Local Memory: %u\n", zeComputeProps->maxSharedLocalMemory);
 	DBG("  Number of Sub-Group Sizes: %u\n", zeComputeProps->numSubGroupSizes);
-	for (uint32_t i = 0; i < zeComputeProps->numSubGroupSizes; ++i)
-	{
+	for (uint32_t i = 0; i < zeComputeProps->numSubGroupSizes; ++i) {
 		DBG("  Sub-Group Size %u: %u\n", i, zeComputeProps->subGroupSizes[i]);
 	}
 
@@ -206,107 +180,84 @@ ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_pr
 
 void device::printFlag(const char *flagName, ze_device_fp_flags_t flag)
 {
-	if (flag)
-	{
+	if (flag) {
 		DBG("  %s:\n", flagName);
 	}
 
-	if (flag & ZE_DEVICE_FP_FLAG_DENORM)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_DENORM) {
 		DBG("  - Device supports denorms\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_INF_NAN)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_INF_NAN) {
 		DBG("  - Device supports INF and quiet NaNs\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_ROUND_TO_NEAREST)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_ROUND_TO_NEAREST) {
 		DBG("  - Device supports rounding to nearest even rounding mode\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_ROUND_TO_ZERO)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_ROUND_TO_ZERO) {
 		DBG("  - Device supports rounding to zero\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_ROUND_TO_INF)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_ROUND_TO_INF) {
 		DBG("  - Device supports rounding to both positive and negative INF\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_FMA)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_FMA) {
 		DBG("  - Device supports IEEE754-2008 fused multiply-add\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_ROUNDED_DIVIDE_SQRT)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_ROUNDED_DIVIDE_SQRT) {
 		DBG("  - Device supports rounding as defined by IEEE754 for divide and sqrt operations\n");
 	}
-	if (flag & ZE_DEVICE_FP_FLAG_SOFT_FLOAT)
-	{
+	if (flag & ZE_DEVICE_FP_FLAG_SOFT_FLOAT) {
 		DBG("  - Device uses software implementation for basic floating-point operations\n");
 	}
 }
 
 void device::printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap)
 {
-	if (cap)
-	{
+	if (cap) {
 		DBG("  %s:\n", capName);
 	}
 
-	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_RW)
-	{
+	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_RW) {
 		DBG("  - Device supports load/store access\n");
 	}
-	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_ATOMIC)
-	{
+	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_ATOMIC) {
 		DBG("  - Device supports atomic access\n");
 	}
-	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_CONCURRENT)
-	{
+	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_CONCURRENT) {
 		DBG("  - Device supports concurrent access\n");
 	}
-	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_CONCURRENT_ATOMIC)
-	{
+	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_CONCURRENT_ATOMIC) {
 		DBG("  - Device supports concurrent atomic access\n");
 	}
 }
 
 void device::printExtMemTypeFlags(const char *flagName, ze_external_memory_type_flags_t flag)
 {
-	if (flag)
-	{
+	if (flag) {
 		DBG("  %s:\n", flagName);
 	}
 
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD) {
 		DBG("  - opaque POSIX file descriptor\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_DMA_BUF)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_DMA_BUF) {
 		DBG("  - Linux DMA buffer\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32) {
 		DBG("  - NT handle\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32_KMT)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32_KMT) {
 		DBG("  - Global share (KMT) handle\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D11_TEXTURE)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D11_TEXTURE) {
 		DBG("  - NT handle referring to a Direct3D 10 or 11 texture resource\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D11_TEXTURE_KMT)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D11_TEXTURE_KMT) {
 		DBG("  - Global share (KMT) handle referring to a Direct3D 10 or 11 texture resource\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D12_HEAP)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D12_HEAP) {
 		DBG("  - NT handle referring to a Direct3D 12 heap resource\n");
 	}
-	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D12_RESOURCE)
-	{
+	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D12_RESOURCE) {
 		DBG("  - NT handle referring to a Direct3D 12 committed resource\n");
 	}
 }
@@ -314,28 +265,23 @@ void device::printExtMemTypeFlags(const char *flagName, ze_external_memory_type_
 ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps)
 {
 	ze_result_t result = zeDeviceGetModuleProperties(dev, zeModuleProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get module properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Module Properties:\n");
 	DBG("  SPIRV version supported: %u\n", zeModuleProps->spirvVersionSupported);
-	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_FP16)
-	{
+	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_FP16) {
 		DBG("  Device supports 16-bit floating-point operations\n");
 	}
-	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_FP64)
-	{
+	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_FP64) {
 		DBG("  Device supports 64-bit floating-point operations\n");
 	}
-	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_INT64_ATOMICS)
-	{
+	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_INT64_ATOMICS) {
 		DBG("  Device supports 64-bit atomic operations\n");
 	}
-	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_DP4A)
-	{
+	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_DP4A) {
 		DBG("  Device supports four component dot product and accumulate operations\n");
 	}
 
@@ -352,8 +298,7 @@ ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_prop
 ze_result_t device::getMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps)
 {
 	ze_result_t result = zeDeviceGetMemoryAccessProperties(dev, zeMemAccessProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory access properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -365,16 +310,14 @@ ze_result_t device::getMemAccessProps(ze_device_handle_t dev, ze_device_memory_a
 					   zeMemAccessProps->sharedSingleDeviceAllocCapabilities);
 	printMemAccessCaps("shared, multi-device memory capabilities",
 					   zeMemAccessProps->sharedCrossDeviceAllocCapabilities);
-	printMemAccessCaps("shared, system memory capabilities",
-					   zeMemAccessProps->sharedSystemAllocCapabilities);
+	printMemAccessCaps("shared, system memory capabilities", zeMemAccessProps->sharedSystemAllocCapabilities);
 	return result;
 }
 
 ze_result_t device::getImageProps(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps)
 {
 	ze_result_t result = zeDeviceGetImageProperties(dev, zeImageProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get image properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -398,8 +341,7 @@ ze_result_t device::getExtMemProps(ze_device_handle_t dev,
 								   ze_device_external_memory_properties_t *zeExternalMemoryProps)
 {
 	ze_result_t result = zeDeviceGetExternalMemoryProperties(dev, zeExternalMemoryProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get external memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -413,43 +355,37 @@ ze_result_t device::getExtMemProps(ze_device_handle_t dev,
 	return result;
 }
 
-ze_result_t device::getCmdQueueProps(ze_device_handle_t dev,
-									 ze_command_queue_group_properties_t **zeCmdQueueProps,
+ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_group_properties_t **zeCmdQueueProps,
 									 uint32_t *cmdQueuePropsCount)
 {
 	ze_result_t result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, NULL);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to command queue group count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (*cmdQueuePropsCount == 0)
-	{
+	if (*cmdQueuePropsCount == 0) {
 		DBG("No command queue groups available for this device.\n");
 		return ZE_RESULT_SUCCESS;
 	}
 
 	ze_command_queue_group_properties_t *localCmdQueueProps =
 		new ze_command_queue_group_properties_t[*cmdQueuePropsCount];
-	if (localCmdQueueProps == NULL)
-	{
+	if (localCmdQueueProps == NULL) {
 		ERR("Failed to allocate memory for command queue group properties.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 	memset(localCmdQueueProps, 0, sizeof(ze_command_queue_group_properties_t) * (*cmdQueuePropsCount));
 
 	result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, localCmdQueueProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get command queue group properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] localCmdQueueProps;
 		return result;
 	}
 
 	DBG("Command Queue Group Properties:\n");
-	for (uint32_t i = 0; i < *cmdQueuePropsCount; ++i)
-	{
+	for (uint32_t i = 0; i < *cmdQueuePropsCount; ++i) {
 		DBG("  Group %u:\n", i);
 		DBG("    Flags: %u\n", localCmdQueueProps[i].flags);
 		DBG("    maximum pattern_size supported by command queue group: %" PRIu64 "\n",
@@ -461,92 +397,79 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev,
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::getMemProps(ze_device_handle_t dev,
-								ze_device_memory_properties_t **zeMemProps,
+ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_properties_t **zeMemProps,
 								uint32_t *memPropsCount)
 {
 	ze_result_t result = zeDeviceGetMemoryProperties(dev, memPropsCount, NULL);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (*memPropsCount == 0)
-	{
+	if (*memPropsCount == 0) {
 		DBG("No memory properties available for this device.\n");
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ze_device_memory_properties_t *localMemProps =
-		new ze_device_memory_properties_t[*memPropsCount];
-	if (localMemProps == NULL)
-	{
+	ze_device_memory_properties_t *localMemProps = new ze_device_memory_properties_t[*memPropsCount];
+	if (localMemProps == NULL) {
 		ERR("Failed to allocate memory for memory properties.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 	memset(localMemProps, 0, sizeof(ze_device_memory_properties_t) * (*memPropsCount));
 
 	result = zeDeviceGetMemoryProperties(dev, memPropsCount, localMemProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] localMemProps;
 		return result;
 	}
 
 	DBG("Memory Properties:\n");
-	for (uint32_t i = 0; i < *memPropsCount; ++i)
-	{
+	for (uint32_t i = 0; i < *memPropsCount; ++i) {
 		DBG("  Group %u:\n", i);
 		DBG("    Name: %s\n", localMemProps[i].name);
 		DBG("    Flags: %u\n", localMemProps[i].flags);
 		DBG("    Maximum clock rate for device memory: %u\n", localMemProps[i].maxClockRate);
 		DBG("    Maximum bus width between device and memory: %u\n", localMemProps[i].maxBusWidth);
-		DBG("    Total memory size in bytes that is available to the device: %" PRIu64 "\n", localMemProps[i].totalSize);
+		DBG("    Total memory size in bytes that is available to the device: %" PRIu64 "\n",
+			localMemProps[i].totalSize);
 	}
 	*zeMemProps = localMemProps;
 
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::getCacheProps(ze_device_handle_t dev,
-								  ze_device_cache_properties_t **zeCacheProps,
+ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_properties_t **zeCacheProps,
 								  uint32_t *cachePropsCount)
 {
 	ze_result_t result = zeDeviceGetCacheProperties(dev, cachePropsCount, NULL);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get cache properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (*cachePropsCount == 0)
-	{
+	if (*cachePropsCount == 0) {
 		DBG("No cache properties available for this device.\n");
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ze_device_cache_properties_t *localCacheProps =
-		new ze_device_cache_properties_t[*cachePropsCount];
-	if (localCacheProps == NULL)
-	{
+	ze_device_cache_properties_t *localCacheProps = new ze_device_cache_properties_t[*cachePropsCount];
+	if (localCacheProps == NULL) {
 		ERR("Failed to allocate memory for cache properties.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 	memset(localCacheProps, 0, sizeof(ze_device_cache_properties_t) * (*cachePropsCount));
 
 	result = zeDeviceGetCacheProperties(dev, cachePropsCount, localCacheProps);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get cache properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] localCacheProps;
 		return result;
 	}
 
 	DBG("Cache Properties:\n");
-	for (uint32_t i = 0; i < *cachePropsCount; ++i)
-	{
+	for (uint32_t i = 0; i < *cachePropsCount; ++i) {
 		DBG("    Flags: %u\n", localCacheProps[i].flags);
 		DBG("    Per-cache size, in bytes: %" PRIu64 "\n", localCacheProps[i].cacheSize);
 	}
@@ -558,8 +481,7 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev,
 ze_result_t device::resetDevice(zes_device_handle_t dev)
 {
 	ze_result_t result = zesDeviceReset(dev, true);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -571,8 +493,7 @@ ze_result_t device::resetDevice(zes_device_handle_t dev)
 ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp)
 {
 	ze_result_t result = zesDeviceGetProperties(dev, zesDevProp);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -587,11 +508,7 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 }
 
 /* Function to create an instance of a class */
-template <typename T>
-sysman *createInstance()
-{
-	return new T();
-}
+template <typename T> sysman *createInstance() { return new T(); }
 
 ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 {
@@ -602,31 +519,27 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	ze_context_desc_t context_desc = {};
 	context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
 	ze_result_t result = zeContextCreate(zeDriver, &context_desc, &context);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to create context: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	// Get zesDevices associated with the driver
 	result = zesDeviceGet(zesDriver, &deviceCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || deviceCount == 0)
-	{
+	if (result != ZE_RESULT_SUCCESS || deviceCount == 0) {
 		ERR("Failed to get device count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	zeDevices = new ze_device_handle_t[deviceCount];
-	if (zeDevices == nullptr)
-	{
+	if (zeDevices == nullptr) {
 		ERR("Failed to allocate memory for driver handles.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
 	// Retrieve driver handles
 	result = zeDeviceGet(zeDriver, &deviceCount, zeDevices);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] zeDevices;
 		return result;
@@ -635,8 +548,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	zesDevices = new zes_device_handle_t[deviceCount];
 	result = zesDeviceGet(zesDriver, &deviceCount, zesDevices);
 
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] zesDevices;
 		zesDevices = nullptr;
@@ -647,8 +559,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 
 	// Allocate memory for device properties
 	deviceProperties = new devProps[deviceCount];
-	if (deviceProperties == nullptr)
-	{
+	if (deviceProperties == nullptr) {
 		ERR("Failed to allocate memory for device properties.\n");
 		delete[] zeDevices;
 		delete[] zesDevices;
@@ -659,19 +570,15 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 	memset(deviceProperties, 0, sizeof(devProps) * deviceCount);
 
 	// Get properties of each device
-	for (uint32_t i = 0; i < deviceCount; ++i)
-	{
+	for (uint32_t i = 0; i < deviceCount; ++i) {
 		/* Note that we have to use zeDevices handle for ze functions */
 		getDevProps(zeDevices[i], &deviceProperties[i].zeDeviceProperties);
 		getComputeProps(zeDevices[i], &deviceProperties[i].zeComputeProperties);
 		getModuleProps(zeDevices[i], &deviceProperties[i].zeModuleProperties);
-		getCmdQueueProps(zeDevices[i], &deviceProperties[i].zeCmdQueueProps,
-						 &deviceProperties[i].cmdQueuePropsCount);
-		getMemProps(zeDevices[i], &deviceProperties[i].zeMemProps,
-					&deviceProperties[i].memPropsCount);
+		getCmdQueueProps(zeDevices[i], &deviceProperties[i].zeCmdQueueProps, &deviceProperties[i].cmdQueuePropsCount);
+		getMemProps(zeDevices[i], &deviceProperties[i].zeMemProps, &deviceProperties[i].memPropsCount);
 		getMemAccessProps(zeDevices[i], &deviceProperties[i].zeMemAccessProps);
-		getCacheProps(zeDevices[i], &deviceProperties[i].zeCacheProps,
-					  &deviceProperties[i].cachePropsCount);
+		getCacheProps(zeDevices[i], &deviceProperties[i].zeCacheProps, &deviceProperties[i].cachePropsCount);
 		getImageProps(zeDevices[i], &deviceProperties[i].zeImageProps);
 		getExtMemProps(zeDevices[i], &deviceProperties[i].zeExternalMemoryProps);
 
@@ -681,8 +588,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		// Get state of each device
 		zes_device_state_t deviceState = {};
 		result = zesDeviceGetState(zesDevices[i], &deviceState);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get device state: 0x%X (%s)\n", result, l0_error_to_string(result));
 			delete[] zeDevices;
 			delete[] zesDevices;
@@ -720,8 +626,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		 * For whichever inherited classes of sysman that support the init function,
 		 * call it so that their data can be used later.
 		 */
-		for (uint32_t j = 0; j < TOTAL_ZES; ++j)
-		{
+		for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
 			auto ptr = &zes_func_table[j];
 			// Don't check the return value of init, as they may not all return success
 			// and we don't want to fail the entire initialization process for the rest
@@ -740,10 +645,8 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList, uint32_t devIndex)
 {
 	devInfo d;
-	for (uint32_t i = 0; i < deviceCount; ++i)
-	{
-		if (!bdf || !strlen(bdf))
-		{
+	for (uint32_t i = 0; i < deviceCount; ++i) {
+		if (!bdf || !strlen(bdf)) {
 			// If no BDF is provided, add all devices to the list
 			DBG("No BDF provided, adding all devices.\n");
 			d.index = devIndex;
@@ -751,47 +654,36 @@ ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList, uint32
 			d.deviceHdl = zeDevices[i];
 			d.zesDeviceHdl = zesDevices[i];
 			devList->push_back(d);
-		}
-		else
-		{
+		} else {
 			// BDF is stored in the PCI device properties so get it from there
 			pci *p = (pci *)zes_func_table[PCI].func;
-			if (p->isBDF(bdf))
-			{
+			if (p->isBDF(bdf)) {
 				DBG("Found device with BDF: %s\n", bdf);
 				d.dev = this;
 				d.deviceHdl = zeDevices[i];
 				d.zesDeviceHdl = zesDevices[i];
 				devList->push_back(d);
 				return ZE_RESULT_SUCCESS;
-			}
-			else if (bdf && strlen(bdf) == 1)
-			{
+			} else if (bdf && strlen(bdf) == 1) {
 				// Maybe the user provided a device index instead of BDF
 				// Check if the index is a digit
-				if (!isdigit(bdf[0]))
-				{
+				if (!isdigit(bdf[0])) {
 					ERR("Invalid device index: %s\n", bdf);
 					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 				}
 				uint32_t deviceIndex = bdf[0] - '0';
-				if (deviceIndex < deviceCount)
-				{
+				if (deviceIndex < deviceCount) {
 					DBG("Found device with index: %d\n", deviceIndex);
 					d.dev = this;
 					d.deviceHdl = zeDevices[deviceIndex];
 					d.zesDeviceHdl = zesDevices[deviceIndex];
 					devList->emplace_back(d);
 					return ZE_RESULT_SUCCESS;
-				}
-				else
-				{
+				} else {
 					ERR("Invalid device index: %s\n", bdf);
 					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 				}
-			}
-			else
-			{
+			} else {
 				DBG("Device with BDF %s not found.\n", bdf);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
@@ -802,8 +694,7 @@ ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList, uint32
 
 ze_device_handle_t device::findDeviceByIndex(uint32_t index)
 {
-	if (index < deviceCount)
-	{
+	if (index < deviceCount) {
 		return zeDevices[index];
 	}
 	return nullptr;
@@ -811,16 +702,13 @@ ze_device_handle_t device::findDeviceByIndex(uint32_t index)
 
 ze_result_t device::run()
 {
-	if (zesDevices == nullptr)
-	{
+	if (zesDevices == nullptr) {
 		ERR("No zesDevices initialized.\n");
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	for (uint32_t i = 0; i < deviceCount; ++i)
-	{
-		for (uint32_t j = 0; j < TOTAL_ZES; ++j)
-		{
+	for (uint32_t i = 0; i < deviceCount; ++i) {
+		for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
 			// Run each tool function
 			auto ptr = &zes_func_table[j];
 			ptr->func->zesRun(zesDevices[i]);
@@ -828,11 +716,9 @@ ze_result_t device::run()
 		PRINT("\n==============================================\n");
 	}
 
-	for (uint32_t i = 0; i < deviceCount; ++i)
-	{
+	for (uint32_t i = 0; i < deviceCount; ++i) {
 		// Run each tool function
-		for (uint32_t j = 0; j < TOTAL_ZET; ++j)
-		{
+		for (uint32_t j = 0; j < TOTAL_ZET; ++j) {
 			auto ptr = &zet_func_table[j];
 			ptr->func->zeRun(zeDevices[i], &context);
 		}

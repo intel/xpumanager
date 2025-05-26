@@ -56,8 +56,10 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "Usage: %s vgpu [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s vgpu --precheck", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s vgpu --addkernelparam", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -r", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -r", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -l", progName.c_str()));
@@ -69,14 +71,20 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address"));
-	helpList.push_back(helpCmd(HEADING, "--addkernelparam            Add the kernel command line parameters for the virtual GPUs"));
-	helpList.push_back(helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
+	helpList.push_back(
+		helpCmd(HEADING, "--addkernelparam            Add the kernel command line parameters for the virtual GPUs"));
+	helpList.push_back(
+		helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
 	helpList.push_back(helpCmd(HEADING, "-c,--create                 Create the virtual GPUs"));
 	helpList.push_back(helpCmd(HEADING, "-n                          The number of virtual GPUs to create"));
-	helpList.push_back(helpCmd(HEADING, "--lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500"));
-	helpList.push_back(helpCmd(HEADING, "-r,--remove                 Remove all virtual GPUs on the specified physical GPU"));
-	helpList.push_back(helpCmd(HEADING, "-l,--list                   List all virtual GPUs on the specified phytsical GPU"));
-	helpList.push_back(helpCmd(HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+	helpList.push_back(helpCmd(
+		HEADING, "--lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500"));
+	helpList.push_back(
+		helpCmd(HEADING, "-r,--remove                 Remove all virtual GPUs on the specified physical GPU"));
+	helpList.push_back(
+		helpCmd(HEADING, "-l,--list                   List all virtual GPUs on the specified phytsical GPU"));
+	helpList.push_back(helpCmd(
+		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList.push_back(helpCmd(HEADING, "-s,--stats                  Show statistics data of all virtual GPUs"));
 
 	printHelp(helpList, helpType);
@@ -162,10 +170,8 @@ int cmdVgpu::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -196,13 +202,10 @@ int cmdVgpu::run(arg_struct *args)
 			vgpuCmds[vgpuCmdType::VGPU_STATS].enabled = true;
 			break;
 		case 0:
-			for (auto &cmd : vgpuCmds)
-			{
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
-				{
+			for (auto &cmd : vgpuCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
 					vgpuCmds[cmd.type].enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument)
-					{
+					if (longOpts[optionIndex].has_arg == required_argument) {
 						vgpuCmds[cmd.type].val = optarg;
 					}
 					found = true;
@@ -210,8 +213,7 @@ int cmdVgpu::run(arg_struct *args)
 				}
 			}
 
-			if (!found)
-			{
+			if (!found) {
 				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -228,28 +230,23 @@ int cmdVgpu::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : vgpuCmds)
-		{
-			if (cmd.enabled && cmd.func != nullptr)
-			{
+		for (auto &cmd : vgpuCmds) {
+			if (cmd.enabled && cmd.func != nullptr) {
 				DBG("Running command: %s\n", cmd.opt.name);
 				(this->*cmd.func)(vgpuCmds, &device);
 			}

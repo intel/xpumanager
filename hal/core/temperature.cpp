@@ -25,8 +25,7 @@
 
 temperature::~temperature()
 {
-	if (temperatureHandles)
-	{
+	if (temperatureHandles) {
 		delete[] temperatureHandles;
 		temperatureHandles = nullptr;
 	}
@@ -35,16 +34,14 @@ temperature::~temperature()
 ze_result_t temperature::enumTemperatureDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumTemperatureSensors(device, &temperatureCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || temperatureCount == 0)
-	{
+	if (result != ZE_RESULT_SUCCESS || temperatureCount == 0) {
 		ERR("Failed to enumerate temperature domains. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	temperatureHandles = new zes_temp_handle_t[temperatureCount];
 	result = zesDeviceEnumTemperatureSensors(device, &temperatureCount, temperatureHandles);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get temperature domains. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -57,8 +54,7 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle)
 {
 	zes_temp_properties_t properties = {};
 	ze_result_t result = zesTemperatureGetProperties(temperatureHandle, &properties);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get properties for temperature domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -75,8 +71,7 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle)
 {
 	double state = 0;
 	ze_result_t result = zesTemperatureGetState(temperatureHandle, &state);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get state for temperature domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -90,22 +85,18 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle)
 ze_result_t temperature::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = enumTemperatureDomains(device);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	for (uint32_t i = 0; i < temperatureCount; ++i)
-	{
+	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		result = getProperties(temperatureHandles[i]);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
 		result = getState(temperatureHandles[i]);
-		if (result != ZE_RESULT_SUCCESS)
-		{
+		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 	}

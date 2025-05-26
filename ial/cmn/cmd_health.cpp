@@ -88,10 +88,8 @@ ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 		{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
 	};
 
-	for (auto &test : componentCmds)
-	{
-		if (test.type == healthCmds[healthCmdType::HEALTH_COMPONENT].type)
-		{
+	for (auto &test : componentCmds) {
+		if (test.type == healthCmds[healthCmdType::HEALTH_COMPONENT].type) {
 			DBG("Running test: %d\n", test.type);
 			result = (this->*test.func)(healthCmds, d);
 			break;
@@ -171,10 +169,8 @@ int cmdHealth::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return ZE_RESULT_SUCCESS;
@@ -202,29 +198,24 @@ int cmdHealth::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n",
 			healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : healthCmds)
-		{
-			if (cmd.enabled && cmd.func != nullptr)
-			{
+		for (auto &cmd : healthCmds) {
+			if (cmd.enabled && cmd.func != nullptr) {
 				DBG("Running command: %s\n", cmd.opt.name);
 				result = (this->*cmd.func)(healthCmds, &device);
 				break;

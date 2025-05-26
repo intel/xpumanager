@@ -22,31 +22,31 @@
  *
  */
 
-#include <cmd_discovery.h>
-#include <cmd_topology.h>
-#include <cmd_diag.h>
-#include <cmd_health.h>
-#include <cmd_updatefw.h>
-#include <cmd_config.h>
-#include <cmd_ps.h>
-#include <cmd_vgpu.h>
-#include <cmd_stats.h>
-#include <cmd_dump.h>
-#include <cmd_log.h>
-#include <cmd_group.h>
-#include <cmd_policy.h>
-#include <cmd_topdown.h>
+#include "cli.h"
+#include "version.h"
 #include <cmd_agentset.h>
 #include <cmd_amcsensor.h>
-#include <memory>
-#include <functional>
-#include <list>
+#include <cmd_config.h>
+#include <cmd_diag.h>
+#include <cmd_discovery.h>
+#include <cmd_dump.h>
+#include <cmd_group.h>
+#include <cmd_health.h>
+#include <cmd_log.h>
+#include <cmd_policy.h>
+#include <cmd_ps.h>
+#include <cmd_stats.h>
+#include <cmd_topdown.h>
+#include <cmd_topology.h>
+#include <cmd_updatefw.h>
+#include <cmd_vgpu.h>
 #include <debug.h>
-#include <os.h>
+#include <functional>
 #include <iostream>
+#include <list>
+#include <memory>
+#include <os.h>
 #include <vector>
-#include "version.h"
-#include "cli.h"
 
 #ifdef DAEMONMODE
 DAEMONCAP curDaemonMode = DAEMON;
@@ -57,18 +57,12 @@ string progName = "xpu-smi";
 #endif
 
 /* Function to create an instance of a class */
-template <typename T>
-cmds *createInstance()
-{
-	return new T();
-}
+template <typename T> cmds *createInstance() { return new T(); }
 
 /* Function to delete a list of pointers */
-template <typename T>
-void deleteList(list<T *> *generic_list)
+template <typename T> void deleteList(list<T *> *generic_list)
 {
-	for (auto &it : *generic_list)
-	{
+	for (auto &it : *generic_list) {
 		delete it;
 	}
 	delete generic_list;
@@ -88,8 +82,7 @@ void printVersion()
 
 void printSubCommands(list<cmds *> *cmd_list)
 {
-	for (auto &it : *cmd_list)
-	{
+	for (auto &it : *cmd_list) {
 		it->help(SHORT_HELP);
 	}
 }
@@ -97,8 +90,9 @@ void printSubCommands(list<cmds *> *cmd_list)
 void helpcli()
 {
 	PRINT("Intel XPU Manager Command Line Interface -- %s\n", GET_SHORT_VERSION());
-	PRINT("Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities."
-		  " It can also be used to change the Intel data center GPU settings and update the firmware.\n");
+	PRINT(
+		"Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities."
+		" It can also be used to change the Intel data center GPU settings and update the firmware.\n");
 	PRINT("Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager,"
 		  " the GPU driver and Intel oneAPI Level Zero should be correctly installed.\n\n");
 }
@@ -115,12 +109,9 @@ void helpsmi()
 
 void help(list<cmds *> *cmd_list)
 {
-	if (curDaemonMode == DAEMONCAP::DAEMON)
-	{
+	if (curDaemonMode == DAEMONCAP::DAEMON) {
 		helpcli();
-	}
-	else
-	{
+	} else {
 		helpsmi();
 	}
 
@@ -150,8 +141,7 @@ int main(int argc, char *argv[])
 
 	// Create sysman driver instance
 	ze_result_t result = arg.sm.init();
-	switch (result)
-	{
+	switch (result) {
 	case ZE_RESULT_SUCCESS:
 		PRINT("Sysman driver initialized successfully.\n");
 		break;
@@ -161,8 +151,7 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	if (arg.sm.run() != ZE_RESULT_SUCCESS)
-	{
+	if (arg.sm.run() != ZE_RESULT_SUCCESS) {
 		ERR("Sysman driver run failed.\n");
 		return -1;
 	}
@@ -194,11 +183,9 @@ int main(int argc, char *argv[])
 	arg.argc = argc;
 	arg.argv = argv;
 
-	for (const auto &entry : function_table)
-	{
+	for (const auto &entry : function_table) {
 		if ((entry.os_type == OSTYPE::Both || entry.os_type == current_os) &&
-			(entry.daemon_cap == DAEMONCAP::BOTH || entry.daemon_cap == curDaemonMode))
-		{
+			(entry.daemon_cap == DAEMONCAP::BOTH || entry.daemon_cap == curDaemonMode)) {
 			/* Create an instance of the command and add it to the list */
 			cmds *cmd = entry.create_func();
 			DBG("Adding %s to command list\n", cmd->get_name());
@@ -207,29 +194,24 @@ int main(int argc, char *argv[])
 	}
 
 	/* If no command line args are provided, just print help message and exit */
-	if (argc == 1)
-	{
+	if (argc == 1) {
 		help(cmd_list);
 		deleteList(cmd_list);
 		return 0;
 	}
 
 	/* Print out version info if -v command line arg specified */
-	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version"))
-	{
+	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
 		printVersion();
 		deleteList(cmd_list);
 		return 0;
 	}
 
 	/* Parse command line and run the command that the user wants */
-	for (auto &it : *cmd_list)
-	{
-		if (!STRCASECMP(it->get_name(), argv[1]))
-		{
+	for (auto &it : *cmd_list) {
+		if (!STRCASECMP(it->get_name(), argv[1])) {
 			/* If the second argument is -h or --help, then just print their help */
-			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help")))
-			{
+			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help"))) {
 				it->help(FULL_HELP);
 				deleteList(cmd_list);
 				return 0;
@@ -243,8 +225,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* If we can't parse the user's command line, then print help */
-	if (!found)
-	{
+	if (!found) {
 		help(cmd_list);
 	}
 

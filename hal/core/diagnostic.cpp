@@ -22,15 +22,14 @@
  *
  */
 
-#include <vector>
 #include "diagnostic.h"
+#include <vector>
 
 using namespace std;
 
 diagnostic::~diagnostic()
 {
-	if (testSuites)
-	{
+	if (testSuites) {
 		delete[] testSuites;
 		testSuites = nullptr;
 	}
@@ -40,16 +39,14 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 {
 	// Enumerate diagnostic test suites
 	ze_result_t result = zesDeviceEnumDiagnosticTestSuites(device, &testSuiteCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate diagnostic test suites: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	testSuites = new zes_diag_handle_t[testSuiteCount];
 	result = zesDeviceEnumDiagnosticTestSuites(device, &testSuiteCount, testSuites);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get diagnostic test suite handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -63,8 +60,7 @@ ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_diag_properties_t diagProperties = {};
 	result = zesDiagnosticsGetProperties(testSuite, &diagProperties);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get diagnostic test suite properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -81,24 +77,21 @@ int diagnostic::getTests(zes_diag_handle_t testSuite)
 	uint32_t testCount = 0;
 	// Get tests within the diagnostic test suite
 	ze_result_t result = zesDiagnosticsGetTests(testSuite, &testCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get diagnostic tests count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return 0;
 	}
 
 	vector<zes_diag_test_t> tests(testCount);
 	result = zesDiagnosticsGetTests(testSuite, &testCount, tests.data());
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get diagnostic tests: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return 0;
 	}
 
 	DBG("    - Test Suite has %d tests:\n", testCount);
 
-	for (const auto &test : tests)
-	{
+	for (const auto &test : tests) {
 		DBG("      - Test Index: %d\n", test.index);
 		DBG("      - Test Name: %s\n", test.name);
 	}
@@ -109,12 +102,9 @@ ze_result_t diagnostic::runTests(zes_diag_handle_t testSuite, uint32_t testCount
 {
 	// Run diagnostic tests
 	ze_result_t result = zesDiagnosticsRunTests(testSuite, 0, testCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to run diagnostic tests: 0x%X (%s)\n", result, l0_error_to_string(result));
-	}
-	else
-	{
+	} else {
 		DBG("    - Diagnostic tests run successfully.\n");
 	}
 
@@ -128,8 +118,7 @@ ze_result_t diagnostic::zesRun(zes_device_handle_t device)
 		return result;
 
 	// Run diagnostic tests for each test suite
-	for (uint32_t i = 0; i < testSuiteCount; i++)
-	{
+	for (uint32_t i = 0; i < testSuiteCount; i++) {
 		zes_diag_handle_t testSuite = testSuites[i];
 		getProperties(testSuite);
 		uint32_t testCount = getTests(testSuite);

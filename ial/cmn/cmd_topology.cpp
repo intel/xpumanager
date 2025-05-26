@@ -50,11 +50,14 @@ void cmdTopology::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
-	helpList.push_back(helpCmd(HEADING, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
+	helpList.push_back(
+		helpCmd(HEADING, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
 	helpList.push_back(helpCmd(HEADING, "-m,--matrix                 Print the CPU/GPU topology matrix"));
 	helpList.push_back(helpCmd(SUB_HEADING, "S: Self"));
-	helpList.push_back(helpCmd(SUB_HEADING, "XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link LAN count is also provided"));
-	helpList.push_back(helpCmd(SUB_HEADING, "XL*: Two tiles on the different cards are connected by Xe Link + MDF. They are not directly connected by Xe Link"));
+	helpList.push_back(helpCmd(SUB_HEADING, "XL[laneCount]: Two tiles on the different cards are directly connected by "
+											"Xe Link.  Xe Link LAN count is also provided"));
+	helpList.push_back(helpCmd(SUB_HEADING, "XL*: Two tiles on the different cards are connected by Xe Link + MDF. "
+											"They are not directly connected by Xe Link"));
 	helpList.push_back(helpCmd(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes"));
 	helpList.push_back(helpCmd(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node"));
 	helpList.push_back(helpCmd(SUB_HEADING, "MDF: Connected with Multi-Die Fabric Interface"));

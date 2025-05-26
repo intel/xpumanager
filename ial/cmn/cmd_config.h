@@ -27,8 +27,8 @@
 
 #include "cmds.h"
 #include <os.h>
-#include <zes_api.h>
 #include <string>
+#include <zes_api.h>
 
 enum configCmdType
 {
