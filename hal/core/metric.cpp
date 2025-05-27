@@ -130,19 +130,14 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 {
 	ze_result_t result;
 
-	// Get the number of metrics in the metric group
-	result = zetMetricGet(metricGroup, &metricCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || metricCount == 0) {
-		ERR("Failed to get metric count: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
 	// Allocate memory for the metrics
 	metrics = new zet_metric_handle_t[metricCount];
 	if (metrics == nullptr) {
 		ERR("Failed to allocate memory for metrics\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
+	// Initialize the metrics to zero
+	memset(metrics, 0, sizeof(zet_metric_handle_t) * metricCount);
 
 	// Retrieve the metrics
 	result = zetMetricGet(metricGroup, &metricCount, metrics);
@@ -190,6 +185,8 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 		ERR("Failed to allocate memory for metric groups\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
+	// Initialize the metric groups to zero
+	memset(metricGroups, 0, sizeof(zet_metric_group_handle_t) * groupCount);
 
 	// Retrieve the metric groups
 	result = zetMetricGroupGet(device, &groupCount, metricGroups);
@@ -209,6 +206,7 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	// Print metric group information
 	for (uint32_t i = 0; i < groupCount; ++i) {
 		zet_metric_group_properties_t groupProperties = {};
+		groupProperties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
 		result = zetMetricGroupGetProperties(metricGroups[i], &groupProperties);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get properties for metric group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
@@ -221,6 +219,7 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 		DBG("  - Domain: %d\n", groupProperties.domain);
 		DBG("  - metricCount: %d\n", groupProperties.metricCount);
 		printMetricGroupSamplingType(groupProperties.samplingType);
+		metricCount = groupProperties.metricCount;
 		getMetric(metricGroups[i]);
 	}
 
