@@ -86,6 +86,7 @@ struct option
 #define GETPROCESSNAME(processId) getProcessName(processId)
 #define OPENI2C openI2C
 #define CLOSEI2C closeI2C
+#define SETENV(name, value) _putenv_s(name, value)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;

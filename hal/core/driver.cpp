@@ -29,6 +29,10 @@ using namespace std;
 
 ze_result_t driver::init()
 {
+	TRACING();
+	// Set ZET_ENABLE_METRICS environment variable
+	SETENV("ZET_ENABLE_METRICS", "1");
+
 	// Initialize the Level Zero API
 	ze_result_t result = zeInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS) {

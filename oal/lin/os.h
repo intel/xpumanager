@@ -56,6 +56,8 @@ using namespace std;
 #define GETPROCESSNAME(processId) getProcessName(processId)
 #define OPENI2C openI2C
 #define CLOSEI2C closeI2C
+#define SETENV(name, value) setenv(name, value, 1)
+
 
 typedef void *(*funcptr)(void *input_params);
 
