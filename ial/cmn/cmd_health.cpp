@@ -25,6 +25,7 @@
 #include "cmd_health.h"
 #include "debug.h"
 #include <assert.h>
+#include <temperature.h>
 
 healthCmdStruct healthCmds[] = {
 	{healthCmdType::HEALTH_HELP, {"help", no_argument, 0, 'h'}},
@@ -78,6 +79,7 @@ ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	bool found = false;
 
 	healthSubCmdStruct componentCmds[] = {
 		{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
@@ -89,11 +91,19 @@ ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 	};
 
 	for (auto &test : componentCmds) {
-		if (test.type == healthCmds[healthCmdType::HEALTH_COMPONENT].type) {
+		if (test.type == atoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val.c_str())) {
 			DBG("Running test: %d\n", test.type);
+			found = true;
 			result = (this->*test.func)(healthCmds, d);
 			break;
 		}
+	}
+
+	if (!found) {
+		ERR("The following argument was not expected: '%s'.\n",
+			healthCmds[healthCmdType::HEALTH_COMPONENT].val.c_str());
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	return result;
@@ -103,7 +113,25 @@ ze_result_t cmdHealth::coreTemperature(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(healthCmds);
-	UNUSED(d);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t throttleThreshold = 0;
+	uint32_t shutdownThreshold = 0;
+
+	temperature *t = (temperature *)d->dev->getTemperature();
+	if (t == nullptr) {
+		ERR("Failed to get temperature handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	result = t->getCoreThreshold(d->deviceHdl, &throttleThreshold, &shutdownThreshold);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get core temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	PRINT("Core Temperature Thresholds:\n");
+	PRINT("  Throttle Threshold: %u C\n", throttleThreshold);
+	PRINT("  Shutdown Threshold: %u C\n", shutdownThreshold);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -111,7 +139,24 @@ ze_result_t cmdHealth::memoryTemperature(healthCmdStruct *healthCmds, devInfo *d
 {
 	TRACING();
 	UNUSED(healthCmds);
-	UNUSED(d);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t throttleThreshold = 0;
+	uint32_t shutdownThreshold = 0;
+
+	temperature *t = (temperature *)d->dev->getTemperature();
+	if (t == nullptr) {
+		ERR("Failed to get temperature handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	result = t->getMemoryThreshold(d->deviceHdl, &throttleThreshold, &shutdownThreshold);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get memory temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	PRINT("Memory Temperature Thresholds:\n");
+	PRINT("  Throttle Threshold: %u C\n", throttleThreshold);
+	PRINT("  Shutdown Threshold: %u C\n", shutdownThreshold);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -201,6 +246,12 @@ int cmdHealth::run(arg_struct *args)
 	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// user must specify a device ID or PCI BDF address
+	if (!healthCmds[healthCmdType::HEALTH_LIST].enabled && !healthCmds[healthCmdType::HEALTH_DEVICE].enabled) {
+		ERR("You must specify a device ID or PCI BDF address with the -d option.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
