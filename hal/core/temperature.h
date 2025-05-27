@@ -26,6 +26,11 @@
 
 #include "sysman.h"
 
+#define CORE_THROTTLE_THRESHOLD_DEFAULT 105
+#define CORE_SHUTDOWN_THRESHOLD_DEFAULT 130
+#define MEMORY_THROTTLE_THRESHOLD_DEFAULT 85
+#define MEMORY_SHUTDOWN_THRESHOLD_DEFAULT 100
+
 class LIBXPUM_API temperature : public sysman
 {
 private:
@@ -36,8 +41,16 @@ public:
 	temperature() : temperatureCount(0), temperatureHandles(nullptr) {}
 	~temperature();
 	ze_result_t enumTemperatureDomains(zes_device_handle_t device);
-	ze_result_t getProperties(zes_temp_handle_t temperatureHandle);
-	ze_result_t getState(zes_temp_handle_t temperatureHandle);
-	ze_result_t zesRun(zes_device_handle_t device);
+	ze_result_t getProperties(zes_temp_handle_t temperatureHandle, zes_temp_properties_t *properties);
+	ze_result_t getState(zes_temp_handle_t temperatureHandle, double *temp);
+	ze_result_t getTemp(zes_device_handle_t device, zes_temp_sensors_t type, double *coreTemp);
+	ze_result_t getCoreTemp(zes_device_handle_t device, double *coreTemp);
+	ze_result_t getMemoryTemp(zes_device_handle_t device, double *coreTemp);
+	ze_result_t getCoreThreshold(zes_device_handle_t device, uint32_t *throttleThreshold, uint32_t *shutdownThreshold);
+	ze_result_t getMemoryThreshold(zes_device_handle_t device, uint32_t *throttleThreshold,
+								   uint32_t *shutdownThreshold);
+
+	ze_result_t init(zes_device_handle_t device) override;
+	ze_result_t zesRun(zes_device_handle_t device) override;
 };
 #endif
