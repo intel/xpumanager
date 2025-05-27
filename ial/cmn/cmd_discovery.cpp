@@ -371,6 +371,8 @@ ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d)
 	TRACING();
 	UNUSED(discCmds);
 	UNUSED(d);
+
+	// Not implemented in XPUM for Windows. Linux version only.
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -414,6 +416,9 @@ ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d)
 	TRACING();
 	UNUSED(discCmds);
 	UNUSED(d);
+	// This was only implemented on PVC GPUs so should we simply return NA going forward?
+
+	DBG("  - OAM Socket ID: N/A\n");
 	return ZE_RESULT_SUCCESS;
 }
 

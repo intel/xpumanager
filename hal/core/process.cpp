@@ -56,4 +56,8 @@ ze_result_t process::getState(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t process::zesRun(zes_device_handle_t device) { return getState(device); }
+ze_result_t process::zesRun(zes_device_handle_t device)
+{
+	TRACING();
+	return getState(device);
+}
