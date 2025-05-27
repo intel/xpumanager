@@ -25,6 +25,7 @@
 #include "cmd_dump.h"
 #include "debug.h"
 #include <assert.h>
+#include <temperature.h>
 
 dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
@@ -130,9 +131,9 @@ void cmdDump::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "26. Copy engine utilizations (%), per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "27. Media enhancement engine utilizations (%), per tile"));
 	helpList.push_back(helpCmd(SUB_HEADING, "28. 3D engine utilizations (%), per tile"));
-	helpList.push_back(
-		helpCmd(SUB_HEADING, "29. GPU Memory Errors Correctable, per tile or device. Other non-compute correctable "
-							 "errors are also included. Device-level is the sum value of tiles for multi-tiles"));
+	helpList.push_back(helpCmd(SUB_HEADING,
+							   "29. GPU Memory Errors Correctable, per tile or device. Other non-compute correctable "
+							   "errors are also included. Device-level is the sum value of tiles for multi-tiles"));
 	helpList.push_back(
 		helpCmd(SUB_HEADING, "30. GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable "
 							 "errors are also included. Device-level is the sum value of tiles for multi-tiles"));
@@ -172,6 +173,7 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	bool found = false;
 
 	dumpCmdSubStruct dumpMetrics[] = {
 		{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization},
@@ -214,10 +216,17 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 
 	// Iterate through the dump commands and execute the metrics function for each
 	for (auto &cmd : dumpMetrics) {
-		if (cmd.type == dumpCmdType::DUMP_METRICS && cmd.func != nullptr) {
+		if (cmd.type == atoi(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str()) && cmd.func != nullptr) {
+			found = true;
 			result = (this->*cmd.func)(dumpCmds, d);
 			break;
 		}
+	}
+
+	if (!found) {
+		ERR("The following argument was not expected: '%s'.\n", dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	return result;
@@ -251,7 +260,28 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	double coreTemp = 0.0;
+
+	temperature *t = (temperature *)d->dev->getTemperature();
+	if (t == nullptr) {
+		ERR("Failed to get temperature handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = t->getCoreTemp(d->deviceHdl, &coreTemp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get core temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Core Temperature: %.2f C\n", coreTemp);
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"coreTemperature\": %.2f}\n", coreTemp);
+	} else {
+		PRINT("Core Temperature: %.2f C\n", coreTemp);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -259,7 +289,27 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	double memoryTemp = 0.0;
+
+	temperature *t = (temperature *)d->dev->getTemperature();
+	if (t == nullptr) {
+		ERR("Failed to get temperature handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = t->getMemoryTemp(d->deviceHdl, &memoryTemp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get memory temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Memory Temperature: %.2f C\n", memoryTemp);
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"memoryTemperature\": %.2f}\n", memoryTemp);
+	} else {
+		PRINT("Memory Temperature: %.2f C\n", memoryTemp);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
