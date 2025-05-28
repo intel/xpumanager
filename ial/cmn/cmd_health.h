@@ -42,7 +42,6 @@ enum healthSubCmdType
 {
 	HEALTH_CORETEMPERATURE = 1,
 	HEALTH_MEMORYTEMPERATURE,
-	HEALTH_MEMORYBANDWIDTH,
 	HEALTH_POWER,
 	HEALTH_MEMORY,
 	HEALTH_XELINKPORT,
@@ -62,7 +61,7 @@ public:
 	ze_result_t coreTemperature(healthCmdStruct *healthCmds, devInfo *d);
 	ze_result_t memoryTemperature(healthCmdStruct *healthCmds, devInfo *d);
 	ze_result_t power(healthCmdStruct *healthCmds, devInfo *d);
-	ze_result_t memory(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t healthMemory(healthCmdStruct *healthCmds, devInfo *d);
 	ze_result_t xeLinkPort(healthCmdStruct *healthCmds, devInfo *d);
 	ze_result_t frequency(healthCmdStruct *healthCmds, devInfo *d);
 

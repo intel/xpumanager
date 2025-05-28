@@ -40,6 +40,7 @@ public:
 	ze_result_t getState(zes_mem_handle_t memhandle, zes_mem_state_t *state);
 	ze_result_t getBandwidth(zes_mem_handle_t memhandle);
 	ze_result_t getMemorySize(uint64_t *size);
+	ze_result_t getMemoryHealth(zes_mem_health_t *health);
 	ze_result_t getMemoryChannels(uint32_t *channels);
 	ze_result_t getMemoryBusWidth(uint32_t *busWidth);
 
