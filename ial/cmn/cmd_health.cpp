@@ -26,6 +26,7 @@
 #include "debug.h"
 #include <assert.h>
 #include <temperature.h>
+#include <memory.h>
 
 healthCmdStruct healthCmds[] = {
 	{healthCmdType::HEALTH_HELP, {"help", no_argument, 0, 'h'}},
@@ -85,7 +86,7 @@ ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 		{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
 		{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
 		{healthSubCmdType::HEALTH_POWER, &cmdHealth::power},
-		{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::memory},
+		{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
 		{healthSubCmdType::HEALTH_XELINKPORT, &cmdHealth::xeLinkPort},
 		{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
 	};
@@ -168,11 +169,36 @@ ze_result_t cmdHealth::power(healthCmdStruct *healthCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::memory(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::healthMemory(healthCmdStruct *healthCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(healthCmds);
-	UNUSED(d);
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_health_t health;
+
+	memory *mem = (memory *)d->dev->getMemory();
+	if (mem == nullptr) {
+		ERR("Failed to get memory handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	result = mem->getMemoryHealth(&health);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get memory temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (health == ZES_MEM_HEALTH_OK) {
+		PRINT("Memory Health: OK\n");
+	} else if (health == ZES_MEM_HEALTH_DEGRADED) {
+		PRINT("Memory Health: DEGRADED\n");
+	} else if (health == ZES_MEM_HEALTH_CRITICAL) {
+		PRINT("Memory Health: CRITICAL\n");
+	} else if (health == ZES_MEM_HEALTH_REPLACE) {
+		PRINT("Memory Health: REPLACE\n");
+	} else {
+		PRINT("The memory health cannot be determined.\n");
+	}
 	return ZE_RESULT_SUCCESS;
 }
 

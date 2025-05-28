@@ -219,6 +219,51 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 	return result;
 }
 
+ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_state_t state;
+
+	if (health == nullptr) {
+		ERR("Health pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*health = ZES_MEM_HEALTH_UNKNOWN;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		result = getState(memoryModules[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+		if (state.health == ZES_MEM_HEALTH_CRITICAL || state.health == ZES_MEM_HEALTH_REPLACE) {
+			*health = state.health;
+			DBG("Memory health is critical or replace for module %d.\n", i);
+			return result;
+		} else if (state.health == ZES_MEM_HEALTH_DEGRADED) {
+			*health = ZES_MEM_HEALTH_DEGRADED;
+			DBG("Memory health is degraded for module %d.\n", i);
+			return result;
+		} else if (state.health == ZES_MEM_HEALTH_OK) {
+			// Only in this case we continue the for loop because the health of this module is OK
+			// and we want to check the health of other modules.
+			// If all modules are OK, we will return ZES_MEM_HEALTH_OK at the end.
+			// If any module is degraded, critical, or replace, we will return that health status.
+			// This is to ensure that we do not prematurely return ZES_MEM_HEALTH_OK
+			// if there are other modules that might have a different health status.
+			// This is a design choice to ensure we report the most severe health status
+			// across all memory modules.
+			*health = ZES_MEM_HEALTH_OK;
+			DBG("Memory health is OK for module %d.\n", i);
+		} else {
+			*health = ZES_MEM_HEALTH_UNKNOWN;
+			DBG("Memory health is unknown for module %d.\n", i);
+			return result;
+		}
+	}
+	return result;
+}
+
 ze_result_t memory::getMemoryChannels(uint32_t *channels)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -263,7 +308,11 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 	return result;
 }
 
-ze_result_t memory::init(zes_device_handle_t device) { return enumMemoryModules(device); }
+ze_result_t memory::init(zes_device_handle_t device)
+{
+	TRACING();
+	return enumMemoryModules(device);
+}
 
 ze_result_t memory::zesRun(zes_device_handle_t device)
 {
