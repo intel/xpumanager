@@ -143,6 +143,7 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 	result = zetMetricGet(metricGroup, &metricCount, metrics);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metrics: 0x%X (%s)\n", result, l0_error_to_string(result));
+		delete[] metrics;
 		return result;
 	}
 
@@ -163,6 +164,7 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 		DBG("  - Result Type: %d\n", metricProperties.resultType);
 		printResultType(metricProperties.resultType);
 	}
+	delete[] metrics;
 
 	return ZE_RESULT_SUCCESS;
 }
