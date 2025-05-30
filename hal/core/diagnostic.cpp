@@ -39,8 +39,9 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 {
 	// Enumerate diagnostic test suites
 	ze_result_t result = zesDeviceEnumDiagnosticTestSuites(device, &testSuiteCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate diagnostic test suites: 0x%X (%s)\n", result, l0_error_to_string(result));
+	if (result != ZE_RESULT_SUCCESS || testSuiteCount == 0) {
+		ERR("Failed to enumerate diagnostic test suites or no test suites found: 0x%X (%s)\n", result,
+			l0_error_to_string(result));
 		return result;
 	}
 
