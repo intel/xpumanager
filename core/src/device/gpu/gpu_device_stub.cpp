@@ -1594,7 +1594,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_LOG_TRACE("Get device {} skuType {}", p_device->getId(), value);
             }
         }
-    });
+    }, false);
 
     return p_devices;
 }
