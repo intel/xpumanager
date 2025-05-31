@@ -26,25 +26,38 @@
 
 #include "device.h"
 
+struct devGroup
+{
+	uint32_t totalDevicesCount;
+	device *dev;
+	ze_device_handle_t *zeDevices;
+};
+
 class LIBXPUM_API driver
 {
 private:
 	bool initialized;
 	uint32_t driverCount;
+	uint32_t totalZesDevicesCount;
 	ze_driver_handle_t *zeDrivers;
 	zes_driver_handle_t *zesDrivers;
-	device *devs;
+	zes_device_handle_t *totalZesDevices;
+	devGroup *devs;
 
 public:
-	driver() : initialized(false), driverCount(0), zeDrivers(nullptr), zesDrivers(nullptr), devs(nullptr) {}
+	driver()
+		: initialized(false), driverCount(0), totalZesDevicesCount(0), zeDrivers(nullptr), zesDrivers(nullptr),
+		  totalZesDevices(nullptr), devs(nullptr)
+	{}
 	~driver();
 	ze_result_t init();
+	ze_result_t zeInitialize();
+	ze_result_t zesInitialize();
 	ze_result_t getDriverProperties(ze_driver_handle_t driver);
 	ze_result_t getIpcProperties(ze_driver_handle_t driver);
 	ze_result_t getExtensionProperties(ze_driver_handle_t driver);
 	void printLoaderVersions();
 	ze_result_t findDevice(const char *bdf, vector<devInfo> *dev);
-	ze_device_handle_t findDeviceByIndex(uint32_t index);
 	ze_result_t run();
 };
 

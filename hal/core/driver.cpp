@@ -27,13 +27,9 @@
 
 using namespace std;
 
-ze_result_t driver::init()
+ze_result_t driver::zeInitialize()
 {
 	TRACING();
-	// Set ZET_ENABLE_METRICS environment variable
-	SETENV("ZET_ENABLE_METRICS", "1");
-
-	// Initialize the Level Zero API
 	ze_result_t result = zeInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to initialize Level Zero. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -42,8 +38,39 @@ ze_result_t driver::init()
 
 	DBG("ZE API initialized successfully.\n");
 
-	// Initialize the Level Zero System Management API
-	result = zesInit(ZE_INIT_FLAG_GPU_ONLY);
+	// Discover the number of ze driver instances
+	result = zeDriverGet(&driverCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Allocate space for ze driver handles
+	zeDrivers = new ze_driver_handle_t[driverCount];
+	if (zeDrivers == nullptr) {
+		ERR("Failed to allocate memory for driver handles.\n");
+		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+	}
+	memset(zeDrivers, 0, sizeof(ze_driver_handle_t) * driverCount);
+
+	DBG("Number of zeDrivers: %d\n", driverCount);
+
+	// Retrieve driver handles
+	result = zeDriverGet(&driverCount, zeDrivers);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t driver::zesInitialize()
+{
+	TRACING();
+	uint32_t zesDriverCount = 0;
+
+	ze_result_t result = zesInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to initialize ZES API: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -51,46 +78,74 @@ ze_result_t driver::init()
 
 	DBG("ZES API initialized successfully.\n");
 
-	// Discover the number of driver instances
-	result = zesDriverGet(&driverCount, nullptr);
+	// Discover the number of zes driver instances
+	result = zesDriverGet(&zesDriverCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || driverCount == 0) {
 		ERR("Failed to get driver count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Number of zesDrivers: %d\n", driverCount);
+	DBG("Number of zesDrivers: %d\n", zesDriverCount);
 
-	zeDrivers = new ze_driver_handle_t[driverCount];
-	if (zeDrivers == nullptr) {
-		ERR("Failed to allocate memory for driver handles.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-
-	// Retrieve driver handles
-	result = zeDriverGet(&driverCount, zeDrivers);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] zeDrivers;
-		return result;
-	}
-
-	zesDrivers = new ze_driver_handle_t[driverCount];
+	// Allocate space for zes driver handles
+	zesDrivers = new zes_driver_handle_t[zesDriverCount];
 	if (zesDrivers == nullptr) {
 		ERR("Failed to allocate memory for driver handles.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
+	memset(zesDrivers, 0, sizeof(zes_driver_handle_t) * zesDriverCount);
 
 	// Retrieve driver handles
-	result = zesDriverGet(&driverCount, zesDrivers);
+	result = zesDriverGet(&zesDriverCount, zesDrivers);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] zesDrivers;
 		return result;
 	}
 
-	DBG("Driver handles retrieved successfully.\n");
+	// The way that zes devices work is that they are associated with a single zes driver only.
+	// So we have to enumerate all the zesDevices here, and then pass them to the device class.
+	// There we can associate the zesDevices with the zeDevices.
+	result = zesDeviceGet(zesDrivers[0], &totalZesDevicesCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || totalZesDevicesCount == 0) {
+		ERR("Failed to get device count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
 
-	devs = new device[driverCount];
+	totalZesDevices = new zes_device_handle_t[totalZesDevicesCount];
+	if (totalZesDevices == nullptr) {
+		ERR("Failed to allocate memory for zes device handles.\n");
+		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+	}
+	memset(totalZesDevices, 0, sizeof(zes_device_handle_t) * totalZesDevicesCount);
+
+	result = zesDeviceGet(zesDrivers[0], &totalZesDevicesCount, totalZesDevices);
+
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t driver::init()
+{
+	TRACING();
+
+	// Set ZET_ENABLE_METRICS environment variable
+	SETENV("ZET_ENABLE_METRICS", "1");
+
+	ze_result_t result = zeInitialize();
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	result = zesInitialize();
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	devs = new devGroup[driverCount];
+	memset(devs, 0, sizeof(devGroup) * driverCount);
 
 	for (uint32_t i = 0; i < driverCount; i++) {
 		ze_api_version_t apiVersion = {};
@@ -121,21 +176,48 @@ ze_result_t driver::init()
 			}
 		} else {
 			ERR("Failed to get API version for driver %u. Error code: %d\n", i, result);
-			delete[] zeDrivers;
-			delete[] zesDrivers;
 			delete[] devs;
 			return result;
 		}
 
 		PRINT("\n==============================================\n");
 
-		result = devs[i].init(zeDrivers[i], zesDrivers[i]);
+		// Get zeDevices associated with the driver
+		result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, nullptr);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
-			delete[] zeDrivers;
-			delete[] zesDrivers;
-			delete[] devs;
+			ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 			return result;
+		}
+
+		// Allocate memory for zeDevices
+		devs[i].zeDevices = new ze_device_handle_t[devs[i].totalDevicesCount];
+		if (devs[i].zeDevices == nullptr) {
+			ERR("Failed to allocate memory for ze device handles.\n");
+			return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+		}
+
+		// Allocate memory for each dev within the group
+		devs[i].dev = new device[devs[i].totalDevicesCount];
+		if (devs[i].dev == nullptr) {
+			ERR("Failed to allocate memory for device.\n");
+			return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+		}
+
+		// Retrieve zeDevices for the driver
+		result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, devs[i].zeDevices);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
+			DBG("Driver %u Device %u: %p\n", i, j, devs[i].zeDevices[j]);
+
+			result = devs[i].dev[j].init(zeDrivers[i], devs[i].zeDevices[j], totalZesDevices, totalZesDevicesCount);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
+				return result;
+			}
 		}
 	}
 	initialized = true;
@@ -145,6 +227,10 @@ ze_result_t driver::init()
 driver::~driver()
 {
 	if (devs != nullptr) {
+		for (uint32_t i = 0; i < driverCount; i++) {
+			delete[] devs[i].zeDevices;
+			delete[] devs[i].dev;
+		}
 		delete[] devs;
 		devs = nullptr;
 	}
@@ -157,6 +243,12 @@ driver::~driver()
 	if (zesDrivers != nullptr) {
 		delete[] zesDrivers;
 		zesDrivers = nullptr;
+	}
+
+	// Clean up the ZES device handles
+	if (totalZesDevices != nullptr) {
+		delete[] totalZesDevices;
+		totalZesDevices = nullptr;
 	}
 }
 
@@ -250,9 +342,11 @@ ze_result_t driver::run()
 		getExtensionProperties(zeDrivers[i]);
 
 		// Run device operations
-		result = devs[i].run();
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to run device operations: 0x%X (%s)\n", result, l0_error_to_string(result));
+		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
+			result = devs[i].dev[j].run();
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to run device operations: 0x%X (%s)\n", result, l0_error_to_string(result));
+			}
 		}
 	}
 	return result;
@@ -275,44 +369,37 @@ void driver::printLoaderVersions()
 	delete[] versions;
 }
 
-ze_device_handle_t driver::findDeviceByIndex(uint32_t index)
-{
-	ze_device_handle_t foundDevice = nullptr;
-
-	for (uint32_t i = 0; i < driverCount; i++) {
-		foundDevice = devs[i].findDeviceByIndex(index);
-		if (foundDevice != nullptr) {
-			DBG("Found device with index: %u\n", index);
-			break;
-		}
-	}
-
-	if (foundDevice == nullptr) {
-		DBG("No device found with index: %u\n", index);
-	}
-	return foundDevice;
-}
-
 ze_result_t driver::findDevice(const char *bdf, vector<devInfo> *devList)
 {
-	ze_result_t result = ZE_RESULT_SUCCESS;
 	uint32_t deviceIndex = 0;
 
 	for (uint32_t i = 0; i < driverCount; i++) {
-		result = devs[i].findDevice(bdf, devList, deviceIndex);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to find device by BDF: %s. Error code: 0x%X (%s) \n", bdf, result, l0_error_to_string(result));
-			return result;
-		} else {
-			DBG("Found device with BDF: %s\n", bdf);
-		}
-		deviceIndex++;
-
-		// If a bdf length was not empty, that means the user provided a bdf, then we should break
-		if (strlen(bdf)) {
-			break;
+		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
+			if (!bdf || !strlen(bdf)) {
+				// If no BDF is provided, add all devices to the list
+				DBG("No BDF provided, adding all devices.\n");
+				devs[i].dev[j].addInfo(devList, deviceIndex);
+			} else {
+				if (devs[i].dev[j].isBDF(bdf)) {
+					devs[i].dev[j].addInfo(devList, deviceIndex);
+					return ZE_RESULT_SUCCESS;
+				} else if (bdf && strlen(bdf) == 1) {
+					// Maybe the user provided a device index instead of BDF
+					// Check if the index is a digit
+					if (!isdigit(bdf[0])) {
+						ERR("Invalid device index: %s\n", bdf);
+						return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+					}
+					uint32_t userIndex = bdf[0] - '0';
+					if (userIndex == deviceIndex) {
+						DBG("Found device with index: %d\n", userIndex);
+						devs[i].dev[j].addInfo(devList, deviceIndex);
+						return ZE_RESULT_SUCCESS;
+					}
+				}
+			}
+			deviceIndex++;
 		}
 	}
-
 	return ZE_RESULT_SUCCESS;
 }
