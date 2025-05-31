@@ -53,42 +53,30 @@ device::~device()
 	}
 
 	// Clean up device properties
-	if (deviceProperties) {
-		for (uint32_t i = 0; i < deviceCount; ++i) {
-			if (deviceProperties[i].zeCacheProps) {
-				delete[] deviceProperties[i].zeCacheProps;
-			}
-			if (deviceProperties[i].zeMemProps) {
-				delete[] deviceProperties[i].zeMemProps;
-			}
-			if (deviceProperties[i].zeCmdQueueProps) {
-				delete[] deviceProperties[i].zeCmdQueueProps;
-			}
-		}
-		delete[] deviceProperties;
-		deviceProperties = nullptr;
+	if (deviceProperties.zeCacheProps) {
+		delete[] deviceProperties.zeCacheProps;
 	}
+	if (deviceProperties.zeMemProps) {
+		delete[] deviceProperties.zeMemProps;
+	}
+	if (deviceProperties.zeCmdQueueProps) {
+		delete[] deviceProperties.zeCmdQueueProps;
+	}
+
 	// Clean up zes_func_table
 	for (uint32_t i = 0; i < TOTAL_ZES; i++) {
 		delete zes_func_table[i].func;
 	}
-	delete zes_func_table;
+	if (zes_func_table) {
+		delete[] zes_func_table;
+	}
 
 	// Clean up zet_func_table
 	for (uint32_t i = 0; i < TOTAL_ZET; i++) {
 		delete zet_func_table[i].func;
 	}
-	delete zet_func_table;
-
-	// Clean up zeDevices
-	if (zeDevices) {
-		delete[] zeDevices;
-		zeDevices = nullptr;
-	}
-	// Clean up zesDevices
-	if (zesDevices) {
-		delete[] zesDevices;
-		zesDevices = nullptr;
+	if (zet_func_table) {
+		delete zet_func_table;
 	}
 }
 
@@ -510,10 +498,13 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 /* Function to create an instance of a class */
 template <typename T> sysman *createInstance() { return new T(); }
 
-ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
+ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
+						 uint32_t totalZesDeviceCount)
 {
+	TRACING();
+	bool found;
 	zeDriver = zeD;
-	zesDriver = zesD;
+	zeDevice = zeHdl;
 
 	// Create the context
 	ze_context_desc_t context_desc = {};
@@ -524,204 +515,131 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD)
 		return result;
 	}
 
-	// Get zesDevices associated with the driver
-	result = zesDeviceGet(zesDriver, &deviceCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || deviceCount == 0) {
-		ERR("Failed to get device count: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	zeDevices = new ze_device_handle_t[deviceCount];
-	if (zeDevices == nullptr) {
-		ERR("Failed to allocate memory for driver handles.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-
-	// Retrieve driver handles
-	result = zeDeviceGet(zeDriver, &deviceCount, zeDevices);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] zeDevices;
-		return result;
-	}
-
-	zesDevices = new zes_device_handle_t[deviceCount];
-	result = zesDeviceGet(zesDriver, &deviceCount, zesDevices);
-
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] zesDevices;
-		zesDevices = nullptr;
-		return result;
-	}
-
-	DBG("Driver has %d zesDevices:\n", deviceCount);
-
-	// Allocate memory for device properties
-	deviceProperties = new devProps[deviceCount];
-	if (deviceProperties == nullptr) {
-		ERR("Failed to allocate memory for device properties.\n");
-		delete[] zeDevices;
-		delete[] zesDevices;
-		zeDevices = nullptr;
-		zesDevices = nullptr;
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-	memset(deviceProperties, 0, sizeof(devProps) * deviceCount);
+	memset(&deviceProperties, 0, sizeof(devProps));
 
 	// Get properties of each device
-	for (uint32_t i = 0; i < deviceCount; ++i) {
-		/* Note that we have to use zeDevices handle for ze functions */
-		getDevProps(zeDevices[i], &deviceProperties[i].zeDeviceProperties);
-		getComputeProps(zeDevices[i], &deviceProperties[i].zeComputeProperties);
-		getModuleProps(zeDevices[i], &deviceProperties[i].zeModuleProperties);
-		getCmdQueueProps(zeDevices[i], &deviceProperties[i].zeCmdQueueProps, &deviceProperties[i].cmdQueuePropsCount);
-		getMemProps(zeDevices[i], &deviceProperties[i].zeMemProps, &deviceProperties[i].memPropsCount);
-		getMemAccessProps(zeDevices[i], &deviceProperties[i].zeMemAccessProps);
-		getCacheProps(zeDevices[i], &deviceProperties[i].zeCacheProps, &deviceProperties[i].cachePropsCount);
-		getImageProps(zeDevices[i], &deviceProperties[i].zeImageProps);
-		getExtMemProps(zeDevices[i], &deviceProperties[i].zeExternalMemoryProps);
+	/* Note that we have to use zeDevices handle for ze functions */
+	getDevProps(zeDevice, &deviceProperties.zeDeviceProperties);
+	getComputeProps(zeDevice, &deviceProperties.zeComputeProperties);
+	getModuleProps(zeDevice, &deviceProperties.zeModuleProperties);
+	getCmdQueueProps(zeDevice, &deviceProperties.zeCmdQueueProps, &deviceProperties.cmdQueuePropsCount);
+	getMemProps(zeDevice, &deviceProperties.zeMemProps, &deviceProperties.memPropsCount);
+	getMemAccessProps(zeDevice, &deviceProperties.zeMemAccessProps);
+	getCacheProps(zeDevice, &deviceProperties.zeCacheProps, &deviceProperties.cachePropsCount);
+	getImageProps(zeDevice, &deviceProperties.zeImageProps);
+	getExtMemProps(zeDevice, &deviceProperties.zeExternalMemoryProps);
 
-		/* Note that we have to use zesDevices handle for zes functions */
-		zesGetDevProps(zesDevices[i], &deviceProperties[i].zesDeviceProperties);
+	found = false;
+	// Now we have to match zesDevice with zeDevices
+	for (uint32_t j = 0; j < totalZesDeviceCount; ++j) {
+		zes_device_properties_t tempProperties = {};
 
-		// Get state of each device
-		zes_device_state_t deviceState = {};
-		result = zesDeviceGetState(zesDevices[i], &deviceState);
+		result = zesGetDevProps(totalZesDevices[j], &tempProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get device state: 0x%X (%s)\n", result, l0_error_to_string(result));
-			delete[] zeDevices;
-			delete[] zesDevices;
-			zeDevices = nullptr;
-			zesDevices = nullptr;
 			return result;
 		}
 
-		DBG("  - Device State:\n");
-		DBG("    - Type: %d\n", deviceState.stype);
-		DBG("    - Reset State: %d\n", deviceState.reset);
-		DBG("    - Repair State: %d\n", deviceState.repaired);
-
-		zes_func_table = new zesInfo[TOTAL_ZES]{
-			{PCI, createInstance<pci>()},
-			{PROCESS, createInstance<process>()},
-			{DIAGNOSTIC, createInstance<diagnostic>()},
-			{ECC, createInstance<ecc>()},
-			{ENGINEGROUP, createInstance<enginegroup>()},
-			{FABRIC, createInstance<fabric>()},
-			{FAN, createInstance<fan>()},
-			{FIRMWARE, createInstance<firmware>()},
-			{FREQUENCY, createInstance<frequency>()},
-			{MEMORY, createInstance<memory>()},
-			{PERFORMANCE, createInstance<performance>()},
-			{POWER, createInstance<power>()},
-			{RAS, createInstance<ras>()},
-			{SCHEDULER, createInstance<scheduler>()},
-			{STANDBY, createInstance<standby>()},
-			{TEMPERATURE, createInstance<temperature>()},
-			{VF, createInstance<vf>()},
-		};
-
-		/*
-		 * For whichever inherited classes of sysman that support the init function,
-		 * call it so that their data can be used later.
-		 */
-		for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
-			auto ptr = &zes_func_table[j];
-			// Don't check the return value of init, as they may not all return success
-			// and we don't want to fail the entire initialization process for the rest
-			// of the classes
-			ptr->func->init(zesDevices[i]);
+		// Compare the UUIDs of the devices
+		if (memcmp(tempProperties.core.uuid.id, deviceProperties.zeDeviceProperties.uuid.id, ZE_MAX_DEVICE_UUID_SIZE) ==
+			0) {
+			zesDevice = totalZesDevices[j];
+			found = true;
+			break;
 		}
-
-		zet_func_table = new zetInfo[TOTAL_ZET]{
-			{METRIC, createInstance<metric>()},
-		};
-		PRINT("\n==============================================\n");
 	}
+
+	if (!found) {
+		ERR("Failed to match zesDevice with zeDevice\n");
+		return ZE_RESULT_ERROR_INVALID_ENUMERATION;
+	}
+
+	// Get state of each device
+	zes_device_state_t deviceState = {};
+	result = zesDeviceGetState(zesDevice, &deviceState);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("  - Device State:\n");
+	DBG("    - Type: %d\n", deviceState.stype);
+	DBG("    - Reset State: %d\n", deviceState.reset);
+	DBG("    - Repair State: %d\n", deviceState.repaired);
+
+	zes_func_table = new zesInfo[TOTAL_ZES]{
+		{PCI, createInstance<pci>()},
+		{PROCESS, createInstance<process>()},
+		{DIAGNOSTIC, createInstance<diagnostic>()},
+		{ECC, createInstance<ecc>()},
+		{ENGINEGROUP, createInstance<enginegroup>()},
+		{FABRIC, createInstance<fabric>()},
+		{FAN, createInstance<fan>()},
+		{FIRMWARE, createInstance<firmware>()},
+		{FREQUENCY, createInstance<frequency>()},
+		{MEMORY, createInstance<memory>()},
+		{PERFORMANCE, createInstance<performance>()},
+		{POWER, createInstance<power>()},
+		{RAS, createInstance<ras>()},
+		{SCHEDULER, createInstance<scheduler>()},
+		{STANDBY, createInstance<standby>()},
+		{TEMPERATURE, createInstance<temperature>()},
+		{VF, createInstance<vf>()},
+	};
+
+	/*
+	 * For whichever inherited classes of sysman that support the init function,
+	 * call it so that their data can be used later.
+	 */
+	for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
+		auto ptr = &zes_func_table[j];
+		// Don't check the return value of init, as they may not all return success
+		// and we don't want to fail the entire initialization process for the rest
+		// of the classes
+		ptr->func->init(zesDevice);
+	}
+
+	zet_func_table = new zetInfo[TOTAL_ZET]{
+		{METRIC, createInstance<metric>()},
+	};
+	PRINT("\n==============================================\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t device::findDevice(const char *bdf, vector<devInfo> *devList, uint32_t devIndex)
+bool device::isBDF(const char *bdf)
+{
+	// BDF is stored in the PCI device properties so get it from there
+	pci *p = (pci *)zes_func_table[PCI].func;
+	return p->isBDF(bdf);
+}
+
+void device::addInfo(vector<devInfo> *devList, uint32_t devIndex)
 {
 	devInfo d;
-	for (uint32_t i = 0; i < deviceCount; ++i) {
-		if (!bdf || !strlen(bdf)) {
-			// If no BDF is provided, add all devices to the list
-			DBG("No BDF provided, adding all devices.\n");
-			d.index = devIndex;
-			d.dev = this;
-			d.deviceHdl = zeDevices[i];
-			d.zesDeviceHdl = zesDevices[i];
-			devList->push_back(d);
-		} else {
-			// BDF is stored in the PCI device properties so get it from there
-			pci *p = (pci *)zes_func_table[PCI].func;
-			if (p->isBDF(bdf)) {
-				DBG("Found device with BDF: %s\n", bdf);
-				d.dev = this;
-				d.deviceHdl = zeDevices[i];
-				d.zesDeviceHdl = zesDevices[i];
-				devList->push_back(d);
-				return ZE_RESULT_SUCCESS;
-			} else if (bdf && strlen(bdf) == 1) {
-				// Maybe the user provided a device index instead of BDF
-				// Check if the index is a digit
-				if (!isdigit(bdf[0])) {
-					ERR("Invalid device index: %s\n", bdf);
-					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-				}
-				uint32_t deviceIndex = bdf[0] - '0';
-				if (deviceIndex < deviceCount) {
-					DBG("Found device with index: %d\n", deviceIndex);
-					d.dev = this;
-					d.deviceHdl = zeDevices[deviceIndex];
-					d.zesDeviceHdl = zesDevices[deviceIndex];
-					devList->emplace_back(d);
-					return ZE_RESULT_SUCCESS;
-				} else {
-					ERR("Invalid device index: %s\n", bdf);
-					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-				}
-			} else {
-				DBG("Device with BDF %s not found.\n", bdf);
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-		}
-	}
-	return ZE_RESULT_SUCCESS;
-}
-
-ze_device_handle_t device::findDeviceByIndex(uint32_t index)
-{
-	if (index < deviceCount) {
-		return zeDevices[index];
-	}
-	return nullptr;
+	d.index = devIndex;
+	d.dev = this;
+	d.deviceHdl = zeDevice;
+	d.zesDeviceHdl = zesDevice;
+	devList->push_back(d);
 }
 
 ze_result_t device::run()
 {
-	if (zesDevices == nullptr) {
-		ERR("No zesDevices initialized.\n");
+	if (zesDevice == 0) {
+		ERR("No zesDevice initialized.\n");
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	for (uint32_t i = 0; i < deviceCount; ++i) {
-		for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
-			// Run each tool function
-			auto ptr = &zes_func_table[j];
-			ptr->func->zesRun(zesDevices[i]);
-		}
-		PRINT("\n==============================================\n");
-	}
-
-	for (uint32_t i = 0; i < deviceCount; ++i) {
+	for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
 		// Run each tool function
-		for (uint32_t j = 0; j < TOTAL_ZET; ++j) {
-			auto ptr = &zet_func_table[j];
-			ptr->func->zeRun(zeDevices[i], &context);
-		}
+		auto ptr = &zes_func_table[j];
+		ptr->func->zesRun(zesDevice);
+	}
+	PRINT("\n==============================================\n");
+
+	// Run each tool function
+	for (uint32_t j = 0; j < TOTAL_ZET; ++j) {
+		auto ptr = &zet_func_table[j];
+		ptr->func->zeRun(zeDevice, &context);
 	}
 	return ZE_RESULT_SUCCESS;
 }

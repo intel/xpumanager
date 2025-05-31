@@ -102,23 +102,20 @@ class LIBXPUM_API device
 {
 private:
 	ze_driver_handle_t zeDriver;
-	zes_driver_handle_t zesDriver;
 	ze_context_handle_t context;
-	ze_device_handle_t *zeDevices;
-	zes_device_handle_t *zesDevices;
+	ze_device_handle_t zeDevice;
+	zes_device_handle_t zesDevice;
 	uint32_t deviceCount;
-	devProps *deviceProperties;
+	devProps deviceProperties;
 	zesInfo *zes_func_table;
 	zetInfo *zet_func_table;
 	uint32_t fwupdateProgress;
 
 public:
 	device()
-		: zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevices(nullptr), zesDevices(nullptr),
-		  deviceCount(0), deviceProperties(nullptr), zes_func_table(nullptr), zet_func_table(nullptr),
-		  fwupdateProgress(0)
-	{
-	}
+		: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), zes_func_table(nullptr),
+		  zet_func_table(nullptr), fwupdateProgress(0)
+	{}
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
@@ -140,10 +137,11 @@ public:
 	ze_result_t resetDevice(ze_device_handle_t dev);
 
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
-	ze_result_t findDevice(const char *bdf, vector<devInfo> *devList, uint32_t devIndex);
-	ze_device_handle_t findDeviceByIndex(uint32_t index);
+	bool isBDF(const char *bdf);
+	void addInfo(vector<devInfo> *devList, uint32_t devIndex);
 
-	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD);
+	ze_result_t init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
+					 uint32_t totalZesDeviceCount);
 	ze_result_t run();
 
 	sysman *getPCI() { return zes_func_table[PCI].func; }
