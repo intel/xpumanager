@@ -34,14 +34,13 @@ frequency::~frequency()
 ze_result_t frequency::enumFrequencies(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFrequencyDomains(device, &frequencyCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate frequency domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+	if (result != ZE_RESULT_SUCCESS || frequencyCount == 0) {
+		ERR("Failed to enumerate frequency domains or no frequency domains found. 0x%X (%s)\n", result,
+			l0_error_to_string(result));
 		return result;
 	}
 
-	if (frequencyCount == 0) {
-		return ZE_RESULT_SUCCESS;
-	}
+	DBG("Found %d frequency domains.\n", frequencyCount);
 
 	frequencyHandles = new zes_freq_handle_t[frequencyCount];
 	result = zesDeviceEnumFrequencyDomains(device, &frequencyCount, frequencyHandles);
@@ -117,6 +116,25 @@ ze_result_t frequency::getRange(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+ze_result_t frequency::getCurFreq(double *currentFreq)
+{
+	TRACING();
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		zes_freq_state_t state = {};
+		ze_result_t result = zesFrequencyGetState(frequencyHandles[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get frequency state. 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (currentFreq) {
+			*currentFreq = state.actual;
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
 ze_result_t frequency::setRange(double minFreq, double maxFreq)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -139,22 +157,21 @@ ze_result_t frequency::setRange(double minFreq, double maxFreq)
 	return result;
 }
 
-ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle)
+ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle, zes_freq_state_t *state)
 {
-	zes_freq_state_t state;
-	ze_result_t result = zesFrequencyGetState(frequencyHandle, &state);
+	ze_result_t result = zesFrequencyGetState(frequencyHandle, state);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get frequency state. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Frequency State:\n");
-	DBG("  Current voltage: %f MHz\n", state.currentVoltage);
-	DBG("  Requested Frequency: %f MHz\n", state.request);
-	DBG("  TDP Frequency: %f MHz\n", state.tdp);
-	DBG("  Efficient Frequency: %f MHz\n", state.efficient);
-	DBG("  Current Frequency: %f MHz\n", state.actual);
-	DBG("  Throttle Reasons: %u\n", state.throttleReasons);
+	DBG("  Current voltage: %f MHz\n", state->currentVoltage);
+	DBG("  Requested Frequency: %f MHz\n", state->request);
+	DBG("  TDP Frequency: %f MHz\n", state->tdp);
+	DBG("  Efficient Frequency: %f MHz\n", state->efficient);
+	DBG("  Current Frequency: %f MHz\n", state->actual);
+	DBG("  Throttle Reasons: %u\n", state->throttleReasons);
 
 	return result;
 }
@@ -181,6 +198,7 @@ ze_result_t frequency::zesRun(zes_device_handle_t device)
 {
 	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_freq_state_t state = {};
 
 	for (uint32_t i = 0; i < frequencyCount; ++i) {
 		result = getProperties(frequencyHandles[i]);
@@ -195,7 +213,7 @@ ze_result_t frequency::zesRun(zes_device_handle_t device)
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
-		result = getState(frequencyHandles[i]);
+		result = getState(frequencyHandles[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
