@@ -26,6 +26,7 @@
 #include "debug.h"
 #include <assert.h>
 #include <temperature.h>
+#include <frequency.h>
 
 dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
@@ -252,7 +253,22 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	double curFreq = 0.0;
+
+	frequency *fq = (frequency *)d->dev->getFrequency();
+	if (fq == nullptr) {
+		ERR("Failed to get frequency handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = fq->getCurFreq(&curFreq);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("GPU Frequency: %.2f MHz\n", curFreq);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -268,7 +284,7 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = t->getCoreTemp(d->deviceHdl, &coreTemp);
+	ze_result_t result = t->getCoreTemp(d->zesDeviceHdl, &coreTemp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get core temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
