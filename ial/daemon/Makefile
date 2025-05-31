@@ -24,6 +24,13 @@ OBJECTS_DAEMON := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.dmn.o)
 OTHER_OBJECTS = $(wildcard $(CMNDIR)/$(OBJDIR)/*.o)
 OAL_OBJECTS = $(wildcard $(OALDIR)/$(OBJDIR)/*.o)
 
+# Check if VERBOSE is set to 1, if not, silence the commands
+ifeq ($(VERBOSE),1)
+CMD_PREFIX=
+else
+CMD_PREFIX=@
+endif
+
 all::
 	@echo "Compiling..."
 
@@ -32,17 +39,17 @@ all::$(OAL_OBJECTS) $(SOURCES) $(DAEMONNAME) $(OTHER_OBJECTS)
 all::
 	@echo "Done"
 
-$(DAEMONNAME):  $(OAL_OBJECTS) $(OBJECTS_DAEMON) $(OTHER_OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_DAEMON) $(OTHER_OBJECTS) $(LIBS)
+$(DAEMONNAME): $(OAL_OBJECTS) $(OBJECTS_DAEMON) $(OTHER_OBJECTS)
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_DAEMON) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
 $(OBJDIR)/%.dmn.o: %.cpp $(HEADERS)
-	@echo $<
-	@mkdir -p $(OBJDIR)
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CMD_PREFIX)echo $<
+	$(CMD_PREFIX)mkdir -p $(OBJDIR)
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 debug:
 	@export DBG_FLAGS='-g -D DEBUGON'; \
@@ -50,6 +57,6 @@ debug:
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(DAEMONNAME) $(OBJDIR)/*.o
-	@rm -rf $(OBJDIR)
+	$(CMD_PREFIX)rm -f $(DAEMONNAME) $(OBJDIR)/*.o
+	$(CMD_PREFIX)rm -rf $(OBJDIR)
 
