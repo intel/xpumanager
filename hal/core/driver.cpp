@@ -290,7 +290,7 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 
 ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
 {
-	ze_driver_properties_t driverProperties;
+	ze_driver_properties_t driverProperties = {};
 	ze_result_t result = zeDriverGetProperties(driver, &driverProperties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get driver properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));

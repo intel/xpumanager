@@ -76,7 +76,7 @@ device::~device()
 		delete zet_func_table[i].func;
 	}
 	if (zet_func_table) {
-		delete zet_func_table;
+		delete[] zet_func_table;
 	}
 }
 
