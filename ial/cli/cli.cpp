@@ -56,10 +56,18 @@ DAEMONCAP curDaemonMode = DAEMONLESS;
 string progName = "xpu-smi";
 #endif
 
-/* Function to create an instance of a class */
+/**
+ * @brief Creates an instance of a command class
+ * @tparam T The command class type to instantiate
+ * @return A pointer to the newly created command instance
+ */
 template <typename T> cmds *createInstance() { return new T(); }
 
-/* Function to delete a list of pointers */
+/**
+ * @brief Deletes all elements in a list of pointers and the list itself
+ * @tparam T The type of objects in the list
+ * @param generic_list The list of pointers to delete
+ */
 template <typename T> void deleteList(list<T *> *generic_list)
 {
 	for (auto &it : *generic_list) {
@@ -68,6 +76,9 @@ template <typename T> void deleteList(list<T *> *generic_list)
 	delete generic_list;
 }
 
+/**
+ * @brief Prints the version information for both CLI and service components
+ */
 void printVersion()
 {
 	PRINT("%-*sCLI:\n", TITLE, "");
@@ -80,6 +91,10 @@ void printVersion()
 	// sys->print_lz_version();
 }
 
+/**
+ * @brief Prints all available subcommands with short help text
+ * @param cmd_list List of command objects to display
+ */
 void printSubCommands(list<cmds *> *cmd_list)
 {
 	for (auto &it : *cmd_list) {
@@ -87,6 +102,9 @@ void printSubCommands(list<cmds *> *cmd_list)
 	}
 }
 
+/**
+ * @brief Displays help information for daemon mode (xpumcli)
+ */
 void helpcli()
 {
 	PRINT("Intel XPU Manager Command Line Interface -- %s\n", GET_SHORT_VERSION());
@@ -97,6 +115,9 @@ void helpcli()
 		  " the GPU driver and Intel oneAPI Level Zero should be correctly installed.\n\n");
 }
 
+/**
+ * @brief Displays help information for daemonless mode (xpu-smi)
+ */
 void helpsmi()
 {
 	PRINT("Intel XPU System Management Interface -- %s\n", GET_SHORT_VERSION());
@@ -107,6 +128,10 @@ void helpsmi()
 		  "oneAPI Level Zero should be installed rightly.\n\n");
 }
 
+/**
+ * @brief Displays comprehensive help information including usage, options, and subcommands
+ * @param cmd_list List of command objects to include in help output
+ */
 void help(list<cmds *> *cmd_list)
 {
 	if (curDaemonMode == DAEMONCAP::DAEMON) {
@@ -131,6 +156,12 @@ void help(list<cmds *> *cmd_list)
 	printSubCommands(cmd_list);
 }
 
+/**
+ * @brief Main entry point for the application
+ * @param argc Number of command-line arguments
+ * @param argv Array of command-line argument strings
+ * @return Exit code (0 for success, non-zero for errors)
+ */
 int main(int argc, char *argv[])
 {
 	TRACING();
