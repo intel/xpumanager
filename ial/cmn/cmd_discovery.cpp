@@ -566,7 +566,7 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t zeDevProp;
+	ze_device_properties_t zeDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);

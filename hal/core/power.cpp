@@ -106,7 +106,7 @@ ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle)
 
 ze_result_t power::getPowerLimits(zes_pwr_handle_t powerHandle)
 {
-	uint32_t powerLimitsCount;
+	uint32_t powerLimitsCount = 0;
 	ze_result_t result = zesPowerGetLimitsExt(powerHandle, &powerLimitsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get extended power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
