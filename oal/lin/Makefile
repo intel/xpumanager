@@ -18,6 +18,13 @@ export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 export HEADERS := $(wildcard $(SRCDIR)/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
+# Check if VERBOSE is set to 1, if not, silence the commands
+ifeq ($(VERBOSE),1)
+CMD_PREFIX=
+else
+CMD_PREFIX=@
+endif
+
 all::
 	@echo "Compiling..."
 
@@ -35,7 +42,7 @@ $(BINNAME): $(OBJECTS)
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS)
 	@echo $<
 	@mkdir -p $(OBJDIR)
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 debug:
 	@export DBG_FLAGS='-g -D DEBUGON'; \
@@ -43,6 +50,6 @@ debug:
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(BINNAME) $(OBJECTS)
-	@rm -rf $(OBJDIR)
+	$(CMD_PREFIX)rm -f $(BINNAME) $(OBJECTS)
+	$(CMD_PREFIX)rm -rf $(OBJDIR)
 

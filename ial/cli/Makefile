@@ -26,6 +26,13 @@ OBJECTS_CLI := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.cli.o)
 OTHER_OBJECTS = $(wildcard $(CMNDIR)/$(OBJDIR)/*.o)
 OAL_OBJECTS = $(wildcard $(OALDIR)/$(OBJDIR)/*.o)
 
+# Check if VERBOSE is set to 1, if not, silence the commands
+ifeq ($(VERBOSE),1)
+CMD_PREFIX=
+else
+CMD_PREFIX=@
+endif
+
 all::
 	@echo "Compiling..."
 
@@ -35,14 +42,14 @@ all::
 	@echo "Done"
 
 $(SMINAME):  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS) $(LIBS)
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
 $(CLINAME):  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS)
-	@$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS) $(LIBS)
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
@@ -51,12 +58,12 @@ $(CLINAME):  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS)
 $(OBJDIR)/%.smi.o: %.cpp $(HEADERS)
 	@echo $<
 	@mkdir -p $(OBJDIR)
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 $(OBJDIR)/%.cli.o: %.cpp $(HEADERS)
 	@echo $<
 	@mkdir -p $(OBJDIR)
-	@$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $(DEFINES_DMN) -c $< -o $@
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) $(DEFINES_DMN) -c $< -o $@
 
 debug:
 	@export DBG_FLAGS='-g -D DEBUGON'; \
@@ -64,6 +71,6 @@ debug:
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(SMINAME) $(CLINAME) $(OBJDIR)/*.o
-	@rm -rf $(OBJDIR)
+	$(CMD_PREFIX)rm -f $(SMINAME) $(CLINAME) $(OBJDIR)/*.o
+	$(CMD_PREFIX)rm -rf $(OBJDIR)
 
