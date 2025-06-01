@@ -162,7 +162,7 @@ bool pci::isBDF(const char *bdf)
 	return isValid;
 }
 
-ze_result_t pci::init(ze_device_handle_t device)
+ze_result_t pci::init(zes_device_handle_t device)
 {
 	ze_result_t result;
 	result = getProperties(device, &deviceProperties.pciProps);
