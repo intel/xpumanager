@@ -42,7 +42,7 @@ ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 	memoryModules = new zes_mem_handle_t[memoryModulesCount];
 	result = zesDeviceEnumMemoryModules(device, &memoryModulesCount, memoryModules);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get  Memory modules. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory modules. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -54,7 +54,7 @@ ze_result_t memory::getMemoryProperties(zes_mem_handle_t memhandle, zes_mem_prop
 {
 	ze_result_t result = zesMemoryGetProperties(memhandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory properties. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory properties. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -151,7 +151,7 @@ ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 {
 	ze_result_t result = zesMemoryGetState(memhandle, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory state. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory state. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -180,19 +180,18 @@ ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 	return result;
 }
 
-ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle)
+ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t *bandwidth)
 {
-	zes_mem_bandwidth_t bandwidth;
-	ze_result_t result = zesMemoryGetBandwidth(memhandle, &bandwidth);
+	ze_result_t result = zesMemoryGetBandwidth(memhandle, bandwidth);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory bandwidth. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory bandwidth. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Memory bandwidth retrieved successfully.\n");
-	DBG("Read counter: %" PRIu64 "bytes\n", bandwidth.readCounter);
-	DBG("Write counter: %" PRIu64 "bytes\n", bandwidth.writeCounter);
-	DBG("Max bandwidth: %" PRIu64 "bytes/sec\n", bandwidth.maxBandwidth);
+	DBG("Read counter: %" PRIu64 "bytes\n", bandwidth->readCounter);
+	DBG("Write counter: %" PRIu64 "bytes\n", bandwidth->writeCounter);
+	DBG("Max bandwidth: %" PRIu64 "bytes/sec\n", bandwidth->maxBandwidth);
 
 	return result;
 }
@@ -211,7 +210,7 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		*size += state.size;
@@ -233,7 +232,7 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		if (state.health == ZES_MEM_HEALTH_CRITICAL || state.health == ZES_MEM_HEALTH_REPLACE) {
@@ -278,7 +277,7 @@ ze_result_t memory::getMemoryChannels(uint32_t *channels)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getMemoryProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		*channels = properties.numChannels;
@@ -300,10 +299,64 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getMemoryProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		*busWidth = properties.busWidth;
+	}
+	return result;
+}
+
+ze_result_t memory::getMemoryUsed(uint64_t *used)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_state_t state;
+
+	if (used == nullptr) {
+		ERR("Used pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*used = 0;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		result = getState(memoryModules[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+		*used += (state.size - state.free);
+	}
+	return result;
+}
+
+ze_result_t memory::getMemoryRW(zes_device_handle_t device, uint64_t *read, uint64_t *write)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_bandwidth_t bandwidth;
+
+	if (read) {
+		*read = 0;
+	}
+
+	if (write) {
+		*write = 0;
+	}
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+
+		result = getBandwidth(memoryModules[i], &bandwidth);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory bandwidth for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (read) {
+			*read += bandwidth.readCounter;
+		}
+
+		if (write) {
+			*write += bandwidth.writeCounter;
+		}
 	}
 	return result;
 }
@@ -318,13 +371,14 @@ ze_result_t memory::zesRun(zes_device_handle_t device)
 {
 	UNUSED(device);
 
-	zes_mem_state_t state;
-	zes_mem_properties_t properties;
+	zes_mem_state_t state = {};
+	zes_mem_properties_t properties = {};
+	zes_mem_bandwidth_t bandwidth = {};
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		getMemoryProperties(memoryModules[i], &properties);
 		getState(memoryModules[i], &state);
-		getBandwidth(memoryModules[i]);
+		getBandwidth(memoryModules[i], &bandwidth);
 	}
 
 	return ZE_RESULT_SUCCESS;
