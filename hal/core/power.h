@@ -37,7 +37,7 @@ public:
 	~power();
 	ze_result_t enumPowerDomains(zes_device_handle_t device);
 	ze_result_t getProperties(zes_pwr_handle_t powerHandle);
-	ze_result_t getEnergyCounter(zes_pwr_handle_t powerHandle);
+	ze_result_t getEnergyCounter(zes_pwr_handle_t powerHandle, zes_power_energy_counter_t *energyCounter);
 	ze_result_t getEnergyThreshold(zes_pwr_handle_t powerHandle);
 	ze_result_t getPowerLimits(zes_pwr_handle_t powerHandle);
 
