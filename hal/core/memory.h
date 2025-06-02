@@ -38,11 +38,13 @@ public:
 	ze_result_t enumMemoryModules(zes_device_handle_t device);
 	ze_result_t getMemoryProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties);
 	ze_result_t getState(zes_mem_handle_t memhandle, zes_mem_state_t *state);
-	ze_result_t getBandwidth(zes_mem_handle_t memhandle);
+	ze_result_t getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t *bandwidth);
 	ze_result_t getMemorySize(uint64_t *size);
 	ze_result_t getMemoryHealth(zes_mem_health_t *health);
 	ze_result_t getMemoryChannels(uint32_t *channels);
 	ze_result_t getMemoryBusWidth(uint32_t *busWidth);
+	ze_result_t getMemoryUsed(uint64_t *used);
+	ze_result_t getMemoryRW(zes_device_handle_t device, uint64_t *read, uint64_t *write);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device);
