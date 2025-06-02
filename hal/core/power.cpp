@@ -88,18 +88,18 @@ ze_result_t power::getEnergyThreshold(zes_pwr_handle_t powerHandle)
 	return result;
 }
 
-ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle)
+ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle, zes_power_energy_counter_t *energyCounter)
 {
-	zes_power_energy_counter_t energyCounter;
-	ze_result_t result = zesPowerGetEnergyCounter(powerHandle, &energyCounter);
+	memset(energyCounter, 0, sizeof(zes_power_energy_counter_t));
+	ze_result_t result = zesPowerGetEnergyCounter(powerHandle, energyCounter);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get energy counter. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Energy Counter:\n");
-	DBG("  Energy: %" PRIu64 "J\n", energyCounter.energy);
-	DBG("  Timestamp: %" PRIu64 "us\n", energyCounter.timestamp);
+	DBG("  Energy: %" PRIu64 " J\n", energyCounter->energy);
+	DBG("  Timestamp: %" PRIu64 " us\n", energyCounter->timestamp);
 
 	return result;
 }
@@ -190,6 +190,7 @@ ze_result_t power::init(zes_device_handle_t device)
 ze_result_t power::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_power_energy_counter_t energyCounter;
 	UNUSED(device);
 
 	for (uint32_t i = 0; i < powerCount; ++i) {
@@ -197,14 +198,13 @@ ze_result_t power::zesRun(zes_device_handle_t device)
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
-		result = getEnergyCounter(powerHandles[i]);
+		result = getEnergyCounter(powerHandles[i], &energyCounter);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
-		result = getEnergyThreshold(powerHandles[i]);
-		if (result != ZE_RESULT_SUCCESS) {
-			return result;
-		}
+
+		getEnergyThreshold(powerHandles[i]);
+
 		result = getPowerLimits(powerHandles[i]);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
