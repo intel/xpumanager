@@ -225,6 +225,14 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 		getMetric(metricGroups[i]);
 	}
 
+	// Deconfigure HW
+	result = zetContextActivateMetricGroups(context, device, 0, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		delete[] metricGroups;
+		return result;
+	}
+
 	// Clean up
 	delete[] metricGroups;
 
