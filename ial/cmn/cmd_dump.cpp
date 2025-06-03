@@ -28,6 +28,7 @@
 #include <temperature.h>
 #include <frequency.h>
 #include <memory.h>
+#include <power.h>
 
 dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
@@ -282,12 +283,54 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp)
+{
+	TRACING();
+	UNUSED(dumpCmds);
+	power *p = (power *)d->dev->getPower();
+	if (p == nullptr) {
+		ERR("Failed to get power handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = p->getPower(gpuPower, timeStamp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU power: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
 ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
-	return ZE_RESULT_SUCCESS;
+	uint64_t gpuPower1 = 0, gpuPower2 = 0;
+	uint64_t timeStamp1 = 0, timeStamp2 = 0;
+
+	ze_result_t result = gpuPowerIter(d, &gpuPower1, &timeStamp1);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	// Sleep for 500 milliseconds to allow the next power reading to be accurate
+	MSLEEP(500);
+
+	// Call gpuPowerIter again to get the next power reading
+	result = gpuPowerIter(d, &gpuPower2, &timeStamp2);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	double gpuPowerDiff =
+		(timeStamp2 - timeStamp1) == 0 ? 0 : (double)(gpuPower2 - gpuPower1) / (timeStamp2 - timeStamp1);
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuPower\": %.2f W}\n", gpuPowerDiff);
+	} else {
+		PRINT("GPU Power: %.2f W\n", gpuPowerDiff);
+	}
+	return result;
 }
 
 ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
