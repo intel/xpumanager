@@ -87,6 +87,7 @@ struct option
 #define OPENI2C openI2C
 #define CLOSEI2C closeI2C
 #define SETENV(name, value) _putenv_s(name, value)
+#define MSLEEP(ms) Sleep(ms)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;

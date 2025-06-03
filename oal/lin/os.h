@@ -57,7 +57,7 @@ using namespace std;
 #define OPENI2C openI2C
 #define CLOSEI2C closeI2C
 #define SETENV(name, value) setenv(name, value, 1)
-
+#define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
 
 typedef void *(*funcptr)(void *input_params);
 

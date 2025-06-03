@@ -132,6 +132,8 @@ public:
 	ze_result_t copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d);
 	ze_result_t throttleReason(dumpCmdStruct *dumpCmds, devInfo *d);
 
+	ze_result_t gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp);
+
 	ze_result_t metrics(dumpCmdStruct *dumpCmds, devInfo *d);
 	int run(arg_struct *args);
 };

@@ -171,6 +171,33 @@ ze_result_t power::setPowerLimit(double powerLimit)
 	return result;
 }
 
+ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_power_energy_counter_t energyCounter = {};
+
+	if (power == nullptr || timeStamp == nullptr) {
+		ERR("Power or timestamp pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		result = getEnergyCounter(powerHandles[i], &energyCounter);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get energy counter for power domain %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (energyCounter.energy != 0) {
+			*power = energyCounter.energy;
+			*timeStamp = energyCounter.timestamp;
+			return result;
+		}
+	}
+
+	return result;
+}
+
 ze_result_t power::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumPowerDomains(device);
