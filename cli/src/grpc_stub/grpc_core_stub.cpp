@@ -2384,6 +2384,8 @@ std::string errorTypeToStr(PrecheckErrorType type) {
         case MEMORY_ERROR: ret = "Memory Error"; break;
         case GPU_INITIALIZATION_FAILED: ret = "GPU Initialization Failed"; break;
         case MEI_ERROR: ret = "MEI Error"; break;
+        case XE_ERROR: ret = "XE Error"; break;
+        case XE_NOT_LOADED: ret = "XE Not Loaded"; break;
         default: break;
     }
     return ret;
