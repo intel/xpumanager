@@ -2015,8 +2015,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const ze_device
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     if (type == ZES_TEMP_SENSORS_GPU) {
         uint64_t offset = 0;
-        if (Utility::isATSMPlatform(device)) {
+        if (Utility::isATSMPlatform(zes_device)) {
             offset = 0x145978;
+        }
+        if (Utility::isBMGPlatform(zes_device)) {
+            offset = 0x138434;
         }
         if (offset != 0) {
             int val = (int)getRegisterValueFromSys(zes_device, offset);
@@ -4051,7 +4054,7 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                 }
             }
         }
-        if (Utility::isATSMPlatform(device) && (status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK || status == xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN)) {
+        if (Utility::isATSMPlatform(zes_device) && (status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK || status == xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN)) {
             auto memoryFailedMRCInfo = parseMemoryFailedMRCInfo(getRegisterValueFromSys(zes_device, 0x4F104));
             if (memoryFailedMRCInfo.size() > 0)  {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
@@ -4126,10 +4129,10 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumTemperatureSensors(zes_device, &temp_sensor_count, nullptr));
         if (temp_sensor_count == 0 && type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
             uint64_t offset = 0;
-            if (Utility::isATSMPlatform(device)) {
+            if (Utility::isATSMPlatform(zes_device)) {
                 offset = 0x145978;
             }
-            if (Utility::isBMGPlatform(device)) {
+            if (Utility::isBMGPlatform(zes_device)) {
                 offset = 0x138434;
             }
             if (offset != 0) {

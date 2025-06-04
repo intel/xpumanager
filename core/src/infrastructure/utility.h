@@ -57,13 +57,13 @@ class Utility {
 
     static xpum_fabric_throughput_type_t toXPUMFabricThroughputType(FabricThroughputType type);
 
-    static int getPlatform(const ze_device_handle_t &device);
+    static int getPlatform(const zes_device_handle_t &device);
 
-    static bool isATSMPlatform(const ze_device_handle_t &device);
+    static bool isATSMPlatform(const zes_device_handle_t &device);
 
-    static bool isPVCPlatform(const ze_device_handle_t &device);
+    static bool isPVCPlatform(const zes_device_handle_t &device);
 
-    static bool isBMGPlatform(const ze_device_handle_t &device);
+    static bool isBMGPlatform(const zes_device_handle_t &device);
 
     static void parallel_in_batches(unsigned num_elements, unsigned num_threads,
                   std::function<void (int start, int end)> functor,
