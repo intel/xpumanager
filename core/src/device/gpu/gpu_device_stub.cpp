@@ -1738,17 +1738,26 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_properties_t props = {};
+            zes_power_ext_properties_t ext_props = {};
+            props.pNext = &ext_props;
+            props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+            ext_props.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_power_energy_counter_t snap = {};
-                XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp) : ret->setRawTimestamp(snap.timestamp);
-                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                    data_acquired = true;
-                } else {
-                    exception_msgs["zesPowerGetEnergyCounter"] = res;
+                // For BMG (and future) it is preferred to use the card power value
+                // For legacy platforms, we leave the code unchanged
+                if ((Utility::isATSMPlatform(device) || Utility::isPVCPlatform(device)) || ext_props.domain == ZES_POWER_DOMAIN_CARD) {
+                    zes_power_energy_counter_t snap = {};
+                    XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy);
+                        props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp) : ret->setRawTimestamp(snap.timestamp);
+                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesPowerGetEnergyCounter"] = res;
+                    }
                 }
             } else {
                 exception_msgs["zesPowerGetProperties"] = res;
