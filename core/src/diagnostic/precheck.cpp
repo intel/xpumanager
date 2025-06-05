@@ -356,7 +356,7 @@ namespace xpum {
                     dependency_issue = true;
             }
         }
-        // GPU i915 driver
+        // GPU Xe driver
         bool is_xe_loaded = false;
         FILE* f = popen("cat /proc/modules | grep \"^xe \" 2>/dev/null", "r");
         char c_line[1024];
@@ -367,21 +367,21 @@ namespace xpum {
             }
         }
         pclose(f);
-	bool is_i915_loaded = false;
-	if (!is_xe_loaded){
-	    f = popen("cat /proc/modules | grep \"^i915 \" 2>/dev/null", "r");
-	    while (fgets(c_line, 1024, f) != NULL) {
-		std::string line(c_line);
-		if (line.find("i915") != std::string::npos) {
-		    is_i915_loaded = true;
-		}
-	    }
-	    pclose(f);
-	}
-
-        if (!(is_i915_loaded | is_xe_loaded)) {
+        // GPU i915 driver
+        bool is_i915_loaded = false;
+        if (!is_xe_loaded){
+            f = popen("cat /proc/modules | grep \"^i915 \" 2>/dev/null", "r");
+            while (fgets(c_line, 1024, f) != NULL) {
+                std::string line(c_line);
+                if (line.find("i915") != std::string::npos) {
+                    is_i915_loaded = true;
+                }
+            }
+            pclose(f);
+        }
+        if (!(is_i915_loaded || is_xe_loaded)) {
             updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "Failed to find i915 in /proc/modules.", XPUM_I915_NOT_LOADED);
-	    updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "Failed to find xe in /proc/modules.", XPUM_XE_NOT_LOADED);
+            updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "Failed to find xe in /proc/modules.", XPUM_XE_NOT_LOADED);
         } else if (!level0_driver_error_info.empty()) {
             updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, level0_driver_error_info, dependency_issue? XPUM_LEVEL_ZERO_METRICS_INIT_ERROR : XPUM_LEVEL_ZERO_INIT_ERROR);
         }
