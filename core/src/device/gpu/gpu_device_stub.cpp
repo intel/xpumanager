@@ -226,7 +226,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
                         pvc_idle_powers[gpu_bdf] = std::make_shared<MeasurementData>();
 
                     pvc_idle_powers[gpu_bdf]->setTimestamp(timestamp);
-                    if (name == "i915") {
+                    if ((name == "i915") || (name == "xe")) {
                         pvc_idle_powers[gpu_bdf]->setCurrent(value);
                         gpu_bdf_to_power_paths[gpu_bdf][UINT32_MAX] = energy_path;
                     } else if (name.find("gt0") != std::string::npos) {
@@ -831,7 +831,7 @@ static std::string getI915Version() {
     std::string ret = "";
     char buf[BUF_SIZE];
 
-    if (readStrSysFsFile(buf, "/sys/module/i915/version") != true) {
+    if (readStrSysFsFile(buf, "/sys/module/i915/srcversion") != true) {
         return ret;
     }
     std::string str(buf);
@@ -843,6 +843,21 @@ static std::string getI915Version() {
         return ret;
     }
     ret = str.substr(pos + 1);
+    return ret;
+}
+
+static std::string getXeVersion() {
+    std::string ret = "";
+    char buf[BUF_SIZE];
+
+    if (readStrSysFsFile(buf, "/sys/module/xe/srcversion") != true) {
+        return ret;
+    }
+    size_t bufLen = strlen(buf);
+    if (buf[bufLen - 1] == '\n') {
+        buf[bufLen - 1] = '\0';
+    }
+    ret.assign(buf);
     return ret;
 }
 
@@ -886,12 +901,22 @@ static std::string getDriverPackVersion() {
 
 static std::string getDriverVersion() {
     std::string version;
-    // Try to get i915 backported version from sysfs first
-    version = getI915Version();
-    if (version.length() > 0) {
-        return version;
+    std::ifstream xe_version_file("/sys/module/xe/srcversion");
+    if(xe_version_file.is_open()){
+        version = getXeVersion();
+        xe_version_file.close();
+    }else {
+        // Try to get i915 backported version from sysfs first
+        std::ifstream i915_version_file("/sys/module/i915/srcversion");
+        if (i915_version_file.is_open()){
+            version = getI915Version();
+            if (version.length() <= 0) {
+                return getDriverPackVersion();
+            }
+            i915_version_file.close();
+        }
     }
-    return getDriverPackVersion();
+    return version;
 }
 
 static std::string getKernelVersion() {

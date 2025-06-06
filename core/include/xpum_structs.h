@@ -1212,7 +1212,9 @@ typedef enum xpum_precheck_error_type_t {
     XPUM_LEVEL_ZERO_METRICS_INIT_ERROR = 14,
     XPUM_MEMORY_ERROR = 15,
     XPUM_GPU_INITIALIZATION_FAILED = 16,
-    XPUM_MEI_ERROR = 17
+    XPUM_MEI_ERROR = 17,
+    XPUM_XE_ERROR = 18,
+    XPUM_XE_NOT_LOADED = 19,
 } xpum_precheck_error_type_t;
 
 typedef struct xpum_precheck_error_t {
