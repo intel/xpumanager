@@ -201,8 +201,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
             if (strncmp(pdirent->d_name, "hwmon", 5) != 0) {
                 continue;
             }
- 
-            snprintf(path, PATH_MAX, "/sys/class/hwmon/%s", pdirent->d_name);
+            int len = snprintf(path, PATH_MAX, "/sys/class/hwmon/%s", pdirent->d_name);
+            if (len <= 0 || len >= PATH_MAX) {
+                XPUM_LOG_DEBUG("snprintf returned length {}, which is out of bounds.", len);
+                continue;
+            }
             char full_path[PATH_MAX];
             ssize_t full_len = ::readlink(path, full_path, sizeof(full_path));
             if (full_len < 0) {
