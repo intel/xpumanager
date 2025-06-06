@@ -1132,29 +1132,25 @@ void GPUDeviceStub::addEngineCapabilities(zes_device_handle_t device, const ze_d
     } else {
         XPUM_LOG_WARN("Failed to get to enum engine groups properties, zesDeviceEnumEngineGroups returned: {}", res);
     }
-    if (engine_caps.find(ZES_ENGINE_GROUP_COMPUTE_ALL) != engine_caps.end())
+    if (engine_caps.find(ZES_ENGINE_GROUP_COMPUTE_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {}{} has no Compute Engine Group Utilization monitoring capability.", props.name, bdf_address);
-    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_ALL) != engine_caps.end())
+    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {}{} has no Media Engine Group Utilization monitoring capability.", props.name, bdf_address);
-    if (engine_caps.find(ZES_ENGINE_GROUP_COPY_ALL) != engine_caps.end())
+    if (engine_caps.find(ZES_ENGINE_GROUP_COPY_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {}{} has no Copy Engine Group Utilization monitoring capability.", props.name, bdf_address);
-    if (engine_caps.find(ZES_ENGINE_GROUP_RENDER_ALL) != engine_caps.end())
+    if (engine_caps.find(ZES_ENGINE_GROUP_RENDER_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {}{} has no Render Engine Group Utilization monitoring capability.", props.name, bdf_address);
-    if (engine_caps.find(ZES_ENGINE_GROUP_3D_ALL) != engine_caps.end())
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
-    else
-        XPUM_LOG_WARN("Device {}{} has no 3D Engine Group Utilization monitoring capability.", props.name, bdf_address);
 }
 
-void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_gpu) {
+void addPCIeProperties(zes_device_handle_t& device, std::shared_ptr<GPUDevice> p_gpu) {
     using namespace std;
     zes_pci_properties_t data = {};
     ze_result_t res;
@@ -1499,7 +1495,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                 uint32_t engine_grp_count = 0;
                 uint32_t media_engine_count = 0;
-                uint32_t meida_enhancement_engine_count = 0;
+                uint32_t media_enhancement_engine_count = 0;
                 XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumEngineGroups(zes_device, &engine_grp_count, nullptr));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::vector<zes_engine_handle_t> engines(engine_grp_count);
@@ -1511,21 +1507,23 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             props.pNext = nullptr;
                             XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                             if (res == ZE_RESULT_SUCCESS) {
-                                if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
+                                if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || 
+                                    props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || 
+                                    props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
                                 }
                                 if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
                                     media_engine_count += 1;
                                 }
                                 if (props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
-                                    meida_enhancement_engine_count += 1;
+                                    media_enhancement_engine_count += 1;
                                 }
                             }
                         }
                     }
                 }
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(media_enhancement_engine_count)));
                 addPCIeProperties(zes_device, p_gpu);
                 
                 if (func_type == DEVICE_FUNCTION_TYPE_PHYSICAL) {
@@ -2713,7 +2711,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_de
                 props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    if (props.type == ZES_ENGINE_GROUP_ALL) {
+                    if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE ||
+                        props.type == ZES_ENGINE_GROUP_COPY_SINGLE) {
                         zes_engine_stats_t snap = {};
                         XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap));
                         if (res == ZE_RESULT_SUCCESS) {
@@ -2849,27 +2848,27 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (engine_group_type) {
                         case ZES_ENGINE_GROUP_COMPUTE_ALL:
+                        case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
                             if (props.type != ZES_ENGINE_GROUP_COMPUTE_SINGLE && props.type != ZES_ENGINE_GROUP_COMPUTE_ALL) {
                                 continue;
                             }
                             break;
-                        case ZES_ENGINE_GROUP_RENDER_ALL:
+                        case ZES_ENGINE_GROUP_RENDER_SINGLE:
                             if (props.type != ZES_ENGINE_GROUP_RENDER_SINGLE && props.type != ZES_ENGINE_GROUP_RENDER_ALL) {
                                 continue;
                             }
                             break;
                         case ZES_ENGINE_GROUP_MEDIA_ALL:
-                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
+                        case ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE:
+                        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE ||
+                                props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
                                 continue;
                             }
                             break;
                         case ZES_ENGINE_GROUP_COPY_ALL:
+                        case ZES_ENGINE_GROUP_COPY_SINGLE:
                             if (props.type != ZES_ENGINE_GROUP_COPY_SINGLE && props.type != ZES_ENGINE_GROUP_COPY_ALL) {
-                                continue;
-                            }
-                            break;
-                        case ZES_ENGINE_GROUP_3D_ALL:
-                            if (props.type != ZES_ENGINE_GROUP_3D_SINGLE && props.type != ZES_ENGINE_GROUP_3D_ALL) {
                                 continue;
                             }
                             break;

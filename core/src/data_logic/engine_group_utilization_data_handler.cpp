@@ -54,8 +54,8 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
                 auto pre_extended = pre_data_iter->second->getExtendedDatas()->find(engineHandle);
                 if (pre_extended != pre_data_iter->second->getExtendedDatas()->end()) {
                     auto &preExMeasurementData = pre_extended->second;
-                    if (exMeasurementData.type == ZES_ENGINE_GROUP_COMPUTE_ALL || exMeasurementData.type == ZES_ENGINE_GROUP_RENDER_ALL || 
-                        exMeasurementData.type == ZES_ENGINE_GROUP_MEDIA_ALL || exMeasurementData.type == ZES_ENGINE_GROUP_COPY_ALL || 
+                    if (exMeasurementData.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || exMeasurementData.type == ZES_ENGINE_GROUP_RENDER_SINGLE ||
+                        exMeasurementData.type == ZES_ENGINE_GROUP_MEDIA_ALL || exMeasurementData.type == ZES_ENGINE_GROUP_COPY_SINGLE ||
                         exMeasurementData.type == ZES_ENGINE_GROUP_3D_ALL) {
                         if (exMeasurementData.timestamp == 
                                 preExMeasurementData.timestamp) {
