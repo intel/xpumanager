@@ -2054,6 +2054,8 @@ std::string errorTypeToStr(xpum_precheck_error_type_t error_type) {
         case XPUM_MEMORY_ERROR: ret = "Memory Error"; break;
         case XPUM_GPU_INITIALIZATION_FAILED: ret = "GPU Initialization Failed"; break;
         case XPUM_MEI_ERROR: ret = "MEI Error"; break;
+        case XPUM_XE_ERROR: ret = "xe Error"; break;
+        case XPUM_XE_NOT_LOADED: ret = "xe Not Loaded"; break;
         default: break;
     }
     return ret;

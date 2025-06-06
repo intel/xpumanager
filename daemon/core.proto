@@ -263,6 +263,8 @@ enum PrecheckErrorType {
     MEMORY_ERROR = 14;
     GPU_INITIALIZATION_FAILED = 15;
     MEI_ERROR = 16;
+    XE_ERROR = 17;
+    XE_NOT_LOADED = 18;
 }
 
 enum PrecheckErrorCategory {

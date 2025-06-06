@@ -2272,7 +2272,7 @@ int32_t getMaxPowerFromSysfs(std::string id, Power power){
                     deviceDir = tempDir;
                     break;
                 }
-            } else if (name == "i915") {
+            } else if ((name == "i915") || (name == "xe")) {
                 deviceDir = tempDir;
                 break;
             }
