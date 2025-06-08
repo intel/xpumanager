@@ -220,7 +220,7 @@ ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Device Name: %s\n", zeDevProp.name);
+	PRINT("  - Device Name: %s\n", zeDevProp.name);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -238,7 +238,7 @@ ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	DBG("  - Vendor Name: %s\n", zesDevProp.vendorName);
+	PRINT("  - Vendor Name: %s\n", zesDevProp.vendorName);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -256,10 +256,11 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
+	PRINT("  - SOC UUID: ");
 	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j) {
-		DBG("%02X", devProp.uuid.id[j]);
+		PRINT("%02X", devProp.uuid.id[j]);
 	}
-	DBG("\n");
+	PRINT("\n");
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -277,7 +278,7 @@ ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	DBG("  - Serial Number: %s\n", zesDevProp.serialNumber);
+	PRINT("  - Serial Number: %s\n", zesDevProp.serialNumber);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -294,7 +295,7 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Core clock rate: %d\n", zeDevProp.coreClockRate);
+	PRINT("  - Core clock rate: %d\n", zeDevProp.coreClockRate);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -320,7 +321,7 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 		return result;
 	}
 
-	DBG("  - Driver Version: %s\n", zesDevProp.driverVersion);
+	PRINT("  - Driver Version: %s\n", zesDevProp.driverVersion);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -344,7 +345,7 @@ ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, d
 	firmware *fw = (firmware *)d->dev->getFirmware();
 
 	fw->getFWversion(fwType::GFX_DATA, version, sizeof(version));
-	DBG("  - GFX Data Firmware Version: %s\n", version);
+	PRINT("  - GFX Data Firmware Version: %s\n", version);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -361,8 +362,8 @@ ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - PCI BDF Address: %04x:%02x:%02x.%01x\n", pciProps.address.domain, pciProps.address.bus,
-		pciProps.address.device, pciProps.address.function);
+	PRINT("  - PCI BDF Address: %04x:%02x:%02x.%01x\n", pciProps.address.domain, pciProps.address.bus,
+		  pciProps.address.device, pciProps.address.function);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -389,7 +390,7 @@ ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - PCIe Generation: %d\n", pciProps.maxSpeed.gen);
+	PRINT("  - PCIe Generation: %d\n", pciProps.maxSpeed.gen);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -406,7 +407,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Max link width: %d\n", pciProps.maxSpeed.width);
+	PRINT("  - Max link width: %d\n", pciProps.maxSpeed.width);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -418,7 +419,7 @@ ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d)
 	UNUSED(d);
 	// This was only implemented on PVC GPUs so should we simply return NA going forward?
 
-	DBG("  - OAM Socket ID: N/A\n");
+	PRINT("  - OAM Socket ID: N/A\n");
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -437,7 +438,7 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devIn
 		return result;
 	}
 
-	DBG("  - Memory Physical Size: %" PRIu64 " MiB\n", physicalSize / 1024 / 1024);
+	PRINT("  - Memory Physical Size: %" PRIu64 " MiB\n", physicalSize / 1024 / 1024);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -456,7 +457,7 @@ ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *
 		return result;
 	}
 
-	DBG("  - Memory Channels: %d\n", channels);
+	PRINT("  - Memory Channels: %d\n", channels);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -475,7 +476,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *
 		return result;
 	}
 
-	DBG("  - Memory Bus Width: %d bits\n", busWidth);
+	PRINT("  - Memory Bus Width: %d bits\n", busWidth);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -491,7 +492,8 @@ ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Number of EUs: %d\n", zeDevProp.numEUsPerSubslice * zeDevProp.numSubslicesPerSlice * zeDevProp.numSlices);
+	PRINT("  - Number of EUs: %d\n",
+		  zeDevProp.numEUsPerSubslice * zeDevProp.numSubslicesPerSlice * zeDevProp.numSlices);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -513,7 +515,7 @@ ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	DBG("  - Number of Media Engines: %d\n", mediaEnginesCount);
+	PRINT("  - Number of Media Engines: %d\n", mediaEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -534,7 +536,7 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, 
 		return result;
 	}
 
-	DBG("  - Number of Media Enhancement Engines: %d\n", mediaEnhancementEnginesCount);
+	PRINT("  - Number of Media Enhancement Engines: %d\n", mediaEnhancementEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -558,7 +560,7 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Vendor ID: 0x%X\n", zeDevProp.vendorId);
+	PRINT("  - Vendor ID: 0x%X\n", zeDevProp.vendorId);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -574,7 +576,7 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Device ID: 0x%X\n", zeDevProp.deviceId);
+	PRINT("  - Device ID: 0x%X\n", zeDevProp.deviceId);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -688,13 +690,31 @@ int cmdDiscovery::run(arg_struct *args)
 		return result;
 	}
 
-	// Iterate through the device list and execute the command
-	for (auto &device : deviceList) {
-		// Call the appropriate command function based on the command type
-		for (auto &cmd : discCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.func)(discCmds, &device);
+	// If no args were provided, then we need to print out this info:
+	//| 0   | Device Name: Intel(R) Graphics [0xe216]                                              |
+	//      | Vendor Name: Intel(R) Corporation                                                    |
+	//      | SOC UUID: 00000000-0000-0003-0000-0000e2168086                                       |
+	//      | PCI BDF Address: 0000:03:00.0                                                        |
+	//      | DRM Device: /dev/dri/card1                                                           |
+	//      | Function Type: physical                                                              |
+	if (args->argc == 2) {
+		// Print out the device information
+		for (auto &device : deviceList) {
+			deviceName(discCmds, &device);
+			vendorName(discCmds, &device);
+			socUuid(discCmds, &device);
+			pciBDFAddress(discCmds, &device);
+			PRINT("==============================================\n");
+		}
+	} else {
+		// Iterate through the device list and execute the command
+		for (auto &device : deviceList) {
+			// Call the appropriate command function based on the command type
+			for (auto &cmd : discCmds) {
+				if (cmd.enabled && cmd.func != nullptr) {
+					DBG("Running command: %s\n", cmd.opt.name);
+					(this->*cmd.func)(discCmds, &device);
+				}
 			}
 		}
 	}
