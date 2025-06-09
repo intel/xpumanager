@@ -35,6 +35,7 @@ static int is_windows __attribute__((unused)) = 0;
 
 enum
 {
+	NO_PRINT = -1,
 	ERR,
 	INFO,
 	DBG,
@@ -48,11 +49,7 @@ enum
  * 2 = Errors + Info messages + Debug messages
  * 3 = Errors + Info messages + Debug messages + Trace calls
  */
-#ifdef DEBUGON
-static int dbg_lvl = DBG;
-#else
-static int dbg_lvl = INFO;
-#endif
+extern int dbg_lvl;
 
 #define _PRINT(prefix, fmt, ...)                                                                                       \
 	if (1) {                                                                                                           \
@@ -62,14 +59,15 @@ static int dbg_lvl = INFO;
 	}
 
 #define PRINT(fmt, ...) _PRINT("", fmt, ##__VA_ARGS__)
-#define ERR(fmt, ...) _PRINT("[Error] ", fmt, ##__VA_ARGS__)
-#define WARNING(fmt, ...) _PRINT("[Warning] ", fmt, ##__VA_ARGS__)
-#define DBG(fmt, ...)                                                                                                  \
-	if (dbg_lvl >= DBG)                                                                                                \
-	_PRINT("[DBG] ", fmt, ##__VA_ARGS__)
+#define ERR(fmt, ...)                                                                                                  \
+	if (dbg_lvl >= ERR)                                                                                                \
+	_PRINT("[Error] ", fmt, ##__VA_ARGS__)
 #define INFO(fmt, ...)                                                                                                 \
 	if (dbg_lvl >= INFO)                                                                                               \
 	_PRINT("[Info] ", fmt, ##__VA_ARGS__)
+#define DBG(fmt, ...)                                                                                                  \
+	if (dbg_lvl >= DBG)                                                                                                \
+	_PRINT("[DBG] ", fmt, ##__VA_ARGS__)
 #define TRACE(fmt, ...)                                                                                                \
 	if (dbg_lvl >= TRACE)                                                                                              \
 	PRINT(fmt, ##__VA_ARGS__)
@@ -96,14 +94,16 @@ public:
 };
 #endif
 
-inline int set_dbg_lvl(int lvl)
+inline int setDbgLvl(int lvl)
 {
 	int ret = 1;
-	if (lvl >= ERR && lvl <= TRACE) {
+	if (lvl >= NO_PRINT && lvl <= TRACE) {
 		dbg_lvl = lvl;
 		ret = 0;
 	}
 	return ret;
 }
+
+inline int getDbgLvl() { return dbg_lvl; }
 
 #endif
