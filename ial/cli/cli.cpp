@@ -56,6 +56,12 @@ DAEMONCAP curDaemonMode = DAEMONLESS;
 string progName = "xpu-smi";
 #endif
 
+#ifdef DEBUGON
+int dbg_lvl = DBG;
+#else
+int dbg_lvl = INFO;
+#endif
+
 /**
  * @brief Creates an instance of a command class
  * @tparam T The command class type to instantiate
@@ -156,6 +162,12 @@ void help(list<cmds *> *cmd_list)
 	printSubCommands(cmd_list);
 }
 
+void setPrintLvl(arg_struct *arg, int lvl)
+{
+	setDbgLvl(lvl);
+	arg->sm.setPrintLvl(lvl);
+}
+
 /**
  * @brief Main entry point for the application
  * @param argc Number of command-line arguments
@@ -167,25 +179,37 @@ int main(int argc, char *argv[])
 	TRACING();
 	bool found = false;
 	arg_struct arg;
+	int dbgLvl;
 	bool priv = PRIVILEGECHECK();
 	UNUSED(priv);
 
+	// Get current debug level
+	dbgLvl = getDbgLvl();
+
+	// If we are not in debug mode, set the debug level to NO_PRINT.
+	// That's because we don't want to see all the sysman initialization messages in release mode
+	if (dbgLvl != DBG) {
+		setPrintLvl(&arg, NO_PRINT);
+	}
 	// Create sysman driver instance
 	ze_result_t result = arg.sm.init();
 	switch (result) {
 	case ZE_RESULT_SUCCESS:
-		PRINT("Sysman driver initialized successfully.\n");
+		DBG("Sysman driver initialized successfully.\n");
 		break;
 	default:
-		ERR("Sysman driver initialization failed.\n");
+		PRINT("Sysman driver initialization failed.\n");
 		return -1;
 		break;
 	}
 
 	if (arg.sm.run() != ZE_RESULT_SUCCESS) {
-		ERR("Sysman driver run failed.\n");
+		PRINT("Sysman driver run failed.\n");
 		return -1;
 	}
+
+	// Set the debug level back to the original value
+	setPrintLvl(&arg, dbgLvl);
 
 	/* Create a list of commands */
 	list<cmds *> *cmd_list = new list<cmds *>;

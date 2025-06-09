@@ -50,6 +50,7 @@ public:
 		  totalZesDevices(nullptr), devs(nullptr)
 	{}
 	~driver();
+	void setPrintLvl(int lvl) { setDbgLvl(lvl); }
 	ze_result_t init();
 	ze_result_t zeInitialize();
 	ze_result_t zesInitialize();

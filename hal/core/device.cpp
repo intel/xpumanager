@@ -601,7 +601,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	zet_func_table = new zetInfo[TOTAL_ZET]{
 		{METRIC, createInstance<metric>()},
 	};
-	PRINT("\n==============================================\n");
+	DBG("\n==============================================\n");
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -634,7 +634,7 @@ ze_result_t device::run()
 		auto ptr = &zes_func_table[j];
 		ptr->func->zesRun(zesDevice);
 	}
-	PRINT("\n==============================================\n");
+	DBG("\n==============================================\n");
 
 	// Run each tool function
 	for (uint32_t j = 0; j < TOTAL_ZET; ++j) {

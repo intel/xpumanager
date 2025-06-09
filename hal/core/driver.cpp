@@ -27,6 +27,12 @@
 
 using namespace std;
 
+#ifdef DEBUGON
+int dbg_lvl = DBG;
+#else
+int dbg_lvl = INFO;
+#endif
+
 ze_result_t driver::zeInitialize()
 {
 	TRACING();
@@ -180,7 +186,7 @@ ze_result_t driver::init()
 			return result;
 		}
 
-		PRINT("\n==============================================\n");
+		DBG("\n==============================================\n");
 
 		// Get zeDevices associated with the driver
 		result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, nullptr);
