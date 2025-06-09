@@ -42,26 +42,27 @@ void PCIeManager::init() {
             while (!interrupted.load() && !datas.empty()) {
                 for (auto data : datas) {
                     std::stringstream sstream(data);
-                    std::vector<std::string> line;
                     std::string item;
+                    std::map<std::string, std::string> line;
                     while (getline(sstream, item, ',')) {
                         auto pos = item.find('=');
-                        line.push_back(item.substr(pos + 1));
+                        line[item.substr(0, pos)] = item.substr(pos + 1);
                     }
                     // Note : sample interval is 100ms and unit is B/s
-                    auto read_value = std::stoull(line[2].c_str());
-                    pcie_read_throughputs[line[1]] = read_value / 1000;
-                    if (pcie_reads.find(line[1]) == pcie_reads.end()) {
-                        pcie_reads[line[1]] = 0;
+                    std::string bdf = line["bdf"];
+                    auto read_value = std::stoull(line["IB read"].c_str());
+                    pcie_read_throughputs[bdf] = read_value / 1000;
+                    if (pcie_reads.find(bdf) == pcie_reads.end()) {
+                        pcie_reads[bdf] = 0;
                     }
-                    pcie_reads[line[1]] += read_value * 0.1;
+                    pcie_reads[bdf] += read_value * 0.1;
 
-                    auto write_value = std::stoull(line[3].c_str());
-                    pcie_write_throughputs[line[1]] = write_value / 1000;
-                    if (pcie_writes.find(line[1]) == pcie_writes.end()) {
-                        pcie_writes[line[1]] = 0;
+                    auto write_value = std::stoull(line["IB write"].c_str());
+                    pcie_write_throughputs[bdf] = write_value / 1000;
+                    if (pcie_writes.find(bdf) == pcie_writes.end()) {
+                        pcie_writes[bdf] = 0;
                     }
-                    pcie_writes[line[1]] += write_value * 0.1;
+                    pcie_writes[bdf] += write_value * 0.1;
                 }
                 if (!initialized.load())
                     initialized.store(true);

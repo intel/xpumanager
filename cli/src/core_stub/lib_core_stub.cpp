@@ -1830,18 +1830,17 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
         int deviceId, int utilizationInterval) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     uint32_t count = 1024;
-    xpum_device_util_by_process_t dataArray[count];
-    xpum_result_t res = xpumGetDeviceUtilizationByProcess(
-            deviceId, utilizationInterval, dataArray, &count);
+    xpum_device_process_t dataArray[count];
+    xpum_result_t res = xpumGetDeviceProcessState(deviceId, dataArray, &count);
     if (res == XPUM_OK) {
         std::vector<nlohmann::json> utils;
         for (uint32_t i = 0; i < count; i++) {
             auto util = nlohmann::json();
             util["process_id"] = dataArray[i].processId;
             util["process_name"] = dataArray[i].processName;
-            util["device_id"] = dataArray[i].deviceId;
-            util["mem_size"] = dataArray[i].memSize / 1000;
-            util["shared_mem_size"] = dataArray[i].sharedMemSize / 1000;
+            util["device_id"] = deviceId;
+            util["mem_size"] = dataArray[i].memSize / 1024;
+            util["shared_mem_size"] = dataArray[i].sharedSize / 1024;
             utils.push_back(util);
         }
         (*json)["device_util_by_proc_list"] = utils;
@@ -1864,38 +1863,32 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess(
-        int utilizationInterval) {
+std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess(int utilizationInterval) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    uint32_t count = 1024 * 4;
-    xpum_device_util_by_process_t dataArray[count];
-    xpum_result_t res = xpumGetAllDeviceUtilizationByProcess(
-            utilizationInterval, dataArray, &count);
-    if (res == XPUM_OK) {
-        std::vector<nlohmann::json> utils;
-        for (uint32_t i = 0; i < count; i++) {
-            auto util = nlohmann::json();
-            util["process_id"] = dataArray[i].processId;
-            util["process_name"] = dataArray[i].processName;
-            util["device_id"] = dataArray[i].deviceId;
-            util["mem_size"] = dataArray[i].memSize / 1000;
-            util["shared_mem_size"] = dataArray[i].sharedMemSize / 1000;
-            utils.push_back(util);
+
+    int driver_count = 0;
+    xpum::xpum_result_t res = XPUM_OK;
+    xpumGetDeviceList(nullptr, &driver_count);
+
+    if (XPUM_OK == res) {
+        for (int i = 0; i < driver_count; i++) {
+            auto deviceUtilJson = getDeviceUtilizationByProcess(i, 200 * 1000);
+            if (deviceUtilJson->contains("device_util_by_proc_list")) {
+                if (!(*json).contains("device_util_by_proc_list")) {
+                    (*json)["device_util_by_proc_list"] = nlohmann::json::array();
+                }
+                (*json)["device_util_by_proc_list"].insert(
+                (*json)["device_util_by_proc_list"].end(),
+                (*deviceUtilJson)["device_util_by_proc_list"].begin(),
+                (*deviceUtilJson)["device_util_by_proc_list"].end()
+                );
+            }
         }
-        (*json)["device_util_by_proc_list"] = utils;
     } else {
-        switch (res) {
-            case XPUM_BUFFER_TOO_SMALL:
-                (*json)["error"] = "Buffer is too small";
-                break;
-            case XPUM_INTERVAL_INVALID:
-                (*json)["error"] = "Interval must be (0, 1000*1000]";
-                break;
-            default:
-                (*json)["error"] = "Error";
-        }
+        (*json)["error"] = "No devices found";
         (*json)["errno"] = errorNumTranslate(res);
     }
+
     return json;
 }
 

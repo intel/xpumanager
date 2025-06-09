@@ -1837,16 +1837,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(con
                     if (freq_state.request >= 0) {
                         ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_REQUEST_FREQUENCY, freq_state.request);
                     }
-                    if (Utility::isATSMPlatform(device) == true) {
-                        std::vector<PerformanceFactor> pfs;
-                        getPerformanceFactor(zes_device, pfs);
-                        for (auto &pf : pfs) {
-                            if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
-                                ret->setSubdeviceAdditionalData(subdeviceId, 
-                                    MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY, 
-                                    freq_state.actual * pf.getFactor() / 100);
-                                break;
-                            }
+                    std::vector<PerformanceFactor> pfs;
+                    getPerformanceFactor(zes_device, pfs);
+                    for (auto &pf : pfs) {
+                        if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
+                            ret->setSubdeviceAdditionalData(subdeviceId, 
+                            MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY, 
+                            freq_state.actual * pf.getFactor() / 100);
+                            break;
                         }
                     }
                     data_acquired = true;
