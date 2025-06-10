@@ -42,8 +42,8 @@ void cmdAgentSet::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-l, --list                  Display all agent settings"));
 	helpList.push_back(helpCmd(HEADING, "-t, --time                  Set the time interval(in milliseconds) by which"
-										" XPU Manager daemon retrieve raw gpu statistics."
-										" Valid values include 100, 200, 500, 1000."));
+										" XPU Manager daemon should retrieve raw gpu statistics."
+										" Valid values are 100, 200, 500, 1000."));
 
 	printHelp(helpList, helpType);
 	helpList.clear();

@@ -204,7 +204,7 @@ ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(discCmds);
-	DBG("  - Device ID: %d\n", d->index);
+	PRINT("  - Device ID: %d\n", d->index);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -333,7 +333,7 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devIn
 	firmware *fw = (firmware *)d->dev->getFirmware();
 
 	fw->getFWversion(fwType::GFX, version, sizeof(version));
-	DBG("  - GFX Firmware Version: %s\n", version);
+	PRINT("  - GFX Firmware Version: %s\n", version);
 	return ZE_RESULT_SUCCESS;
 }
 
