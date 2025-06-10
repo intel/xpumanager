@@ -114,11 +114,11 @@ void printSubCommands(list<cmds *> *cmd_list)
 void helpcli()
 {
 	PRINT("Intel XPU Manager Command Line Interface -- %s\n", GET_SHORT_VERSION());
-	PRINT(
-		"Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities."
-		" It can also be used to change the Intel data center GPU settings and update the firmware.\n");
-	PRINT("Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager,"
-		  " the GPU driver and Intel oneAPI Level Zero should be correctly installed.\n\n");
+	PRINT("Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring "
+		  "capabilities.\n");
+	PRINT("It can also be used to change the Intel data center GPU settings and update the firmware.\n");
+	PRINT("Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager,\n");
+	PRINT("the GPU driver and Intel oneAPI Level Zero should be correctly installed.\n\n");
 }
 
 /**
@@ -127,11 +127,11 @@ void helpcli()
 void helpsmi()
 {
 	PRINT("Intel XPU System Management Interface -- %s\n", GET_SHORT_VERSION());
-	PRINT("Intel XPU System Management Interface provides the Intel datacenter GPU model. "
-		  "It can also be used to update the firmware.\n");
-	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero. "
-		  "Before using Intel XPU System Management Interface, the GPU driver and Intel "
-		  "oneAPI Level Zero should be installed rightly.\n\n");
+	PRINT("Intel XPU System Management Interface provides the Intel data center GPU model."
+		  " It can also be used to update the firmware.\n");
+	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero.\n");
+	PRINT("Before using Intel XPU System Management Interface, the GPU driver and Intel "
+		  "oneAPI Level Zero should be correctly installed.\n\n");
 }
 
 /**

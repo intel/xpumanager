@@ -351,7 +351,7 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	DBG("GPU Frequency: %.2f MHz\n", curFreq);
+	PRINT("GPU Frequency: %.2f MHz\n", curFreq);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -373,8 +373,6 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 		ERR("Failed to get core temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-
-	DBG("Core Temperature: %.2f C\n", coreTemp);
 
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"coreTemperature\": %.2f}\n", coreTemp);
@@ -402,8 +400,6 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 		ERR("Failed to get memory temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-
-	DBG("Memory Temperature: %.2f C\n", memoryTemp);
 
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"memoryTemperature\": %.2f}\n", memoryTemp);

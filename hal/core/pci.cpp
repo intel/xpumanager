@@ -156,8 +156,6 @@ bool pci::isBDF(const char *bdf)
 				isValid = true;
 			}
 		}
-	} else {
-		ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
 	}
 	return isValid;
 }
