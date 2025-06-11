@@ -421,7 +421,40 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t memoryRead1 = 0, memoryRead2 = 0;
+	uint64_t timeStamp1 = 0, timeStamp2 = 0;
+
+	memory *mem = (memory *)d->dev->getMemory();
+	if (mem == nullptr) {
+		ERR("Failed to get memory handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = mem->getMemoryRW(&memoryRead1, nullptr, &timeStamp1);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Sleep for 500 milliseconds to allow the next power reading to be accurate
+	MSLEEP(500);
+
+	// Call getMemoryRW again to get the next memory read value
+	result = mem->getMemoryRW(&memoryRead2, nullptr, &timeStamp2);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	double memoryReadDiff = (timeStamp2 - timeStamp1) == 0
+								? 0
+								: (double)(memoryRead2 - memoryRead1) / (timeStamp2 - timeStamp1) / 1024 * 1000000;
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuMemoryRead\": %lu kB/s}\n", (unsigned long)memoryReadDiff);
+	} else {
+		PRINT("GPU Memory Read: %lu kB/s\n", (unsigned long)memoryReadDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -429,7 +462,40 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t memoryWrite1 = 0, memoryWrite2 = 0;
+	uint64_t timeStamp1 = 0, timeStamp2 = 0;
+
+	memory *mem = (memory *)d->dev->getMemory();
+	if (mem == nullptr) {
+		ERR("Failed to get memory handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = mem->getMemoryRW(nullptr, &memoryWrite1, &timeStamp1);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory write: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Sleep for 500 milliseconds to allow the next power reading to be accurate
+	MSLEEP(500);
+
+	// Call getMemoryRW again to get the next memory write value
+	result = mem->getMemoryRW(nullptr, &memoryWrite2, &timeStamp2);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory write: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	double memoryWriteDiff = (timeStamp2 - timeStamp1) == 0
+								 ? 0
+								 : (double)(memoryWrite2 - memoryWrite1) / (timeStamp2 - timeStamp1) / 1024 * 1000000;
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuMemoryWrite\": %lu kB/s}\n", (unsigned long)memoryWriteDiff);
+	} else {
+		PRINT("GPU Memory Write: %lu kB/s\n", (unsigned long)memoryWriteDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
