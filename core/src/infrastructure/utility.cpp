@@ -598,40 +598,35 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
 }
 
 //This function won't work when device handle is returned by zesDeviceGet
-bool Utility::isATSMPlatform(const ze_device_handle_t &device) {
+int Utility::getPlatform(const ze_device_handle_t &device) {
     ze_device_properties_t props = {};
     props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
-    bool is_atsm = false;
+    int device_model = 0;
     if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
-        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1G);
+        device_model = getDeviceModelByPciDeviceId(props.deviceId);
     }
+    return device_model;
+}
+
+bool Utility::isATSMPlatform(const ze_device_handle_t &device) {
+    bool is_atsm = false;
+    int device_model = getPlatform(device);
+    is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1G);
+
     return is_atsm;
 }
 
-//This function won't work when device handle is returned by zesDeviceGet
 bool Utility::isPVCPlatform(const ze_device_handle_t &device) {
-    ze_device_properties_t props = {};
-    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-    props.pNext = nullptr;
     bool is_pvc = false;
-    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
-        is_pvc = (device_model == XPUM_DEVICE_MODEL_PVC);
-    }
+    is_pvc = (getPlatform(device) == XPUM_DEVICE_MODEL_PVC);
+
     return is_pvc;
 }
 
 bool Utility::isBMGPlatform(const ze_device_handle_t &device) {
-    ze_device_properties_t props = {};
-    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-    props.pNext = nullptr;
     bool is_bmg = false;
-    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
-        is_bmg = (device_model == XPUM_DEVICE_MODEL_BMG);
-    }
+    is_bmg = (getPlatform(device) == XPUM_DEVICE_MODEL_BMG);
     return is_bmg;
 }
 
