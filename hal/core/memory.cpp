@@ -189,9 +189,10 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t
 	}
 
 	DBG("Memory bandwidth retrieved successfully.\n");
-	DBG("Read counter: %" PRIu64 "bytes\n", bandwidth->readCounter);
-	DBG("Write counter: %" PRIu64 "bytes\n", bandwidth->writeCounter);
-	DBG("Max bandwidth: %" PRIu64 "bytes/sec\n", bandwidth->maxBandwidth);
+	DBG("Read counter: %" PRIu64 " bytes\n", bandwidth->readCounter);
+	DBG("Write counter: %" PRIu64 " bytes\n", bandwidth->writeCounter);
+	DBG("Max bandwidth: %" PRIu64 " bytes/sec\n", bandwidth->maxBandwidth);
+	DBG("Timestamp: %" PRIu64 " ns\n", bandwidth->timestamp);
 
 	return result;
 }
@@ -329,7 +330,7 @@ ze_result_t memory::getMemoryUsed(uint64_t *used)
 	return result;
 }
 
-ze_result_t memory::getMemoryRW(zes_device_handle_t device, uint64_t *read, uint64_t *write)
+ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *timeStamp)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_mem_bandwidth_t bandwidth;
@@ -340,6 +341,10 @@ ze_result_t memory::getMemoryRW(zes_device_handle_t device, uint64_t *read, uint
 
 	if (write) {
 		*write = 0;
+	}
+
+	if (timeStamp) {
+		*timeStamp = 0;
 	}
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
@@ -356,6 +361,10 @@ ze_result_t memory::getMemoryRW(zes_device_handle_t device, uint64_t *read, uint
 
 		if (write) {
 			*write += bandwidth.writeCounter;
+		}
+
+		if (timeStamp) {
+			*timeStamp = bandwidth.timestamp;
 		}
 	}
 	return result;
