@@ -753,7 +753,6 @@ void DiagnosticManager::doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_di
     p_task_info->count += 1;
     updateMessage(component1.message, std::string("Running"));
     std::vector<std::string> check_env_varibles;
-    check_env_varibles.push_back(std::string("ZES_ENABLE_SYSMAN"));
     if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
                     [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
         check_env_varibles.push_back(std::string("ZET_ENABLE_METRICS"));
@@ -762,7 +761,7 @@ void DiagnosticManager::doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_di
     bool find_env_varibles = true;
     for (auto it = check_env_varibles.begin(); it != check_env_varibles.end(); it++) {
         std::string check_env_var = *it;
-        if (std::getenv(check_env_var.c_str()) == nullptr) {
+        if (check_env_var.size() > 0 && std::getenv(check_env_var.c_str()) == nullptr) {
             find_env_varibles = false;
             details = check_env_var;
             break;
@@ -1051,7 +1050,7 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
         xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC
     ];
     p_task_info->count += 1;
-    if (Utility::isPVCPlatform(zes_device)) {
+    if (Utility::isPVCPlatform(ze_device)) {
         component.result = XPUM_DIAG_RESULT_FAIL;
         component.finished = true;
         updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED);
@@ -1572,9 +1571,9 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
         std::string bandwidth_detail = " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
         auto bandwidth_threshold = 0;
         auto ref_bandwidth = 0;
-        if (device_names.find(ze_device) != device_names.end()) {
-            bandwidth_threshold = thresholds[device_names[ze_device]]["PCIE_BANDWIDTH_MIN_GBPS"];
-            ref_bandwidth = thresholds[device_names[ze_device]]["REF_PCIE_BANDWIDTH_GBPS"];
+        if (device_names.find(zes_device) != device_names.end()) {
+            bandwidth_threshold = thresholds[device_names[zes_device]]["PCIE_BANDWIDTH_MIN_GBPS"];
+            ref_bandwidth = thresholds[device_names[zes_device]]["REF_PCIE_BANDWIDTH_GBPS"];
         }
         diagnostic_perf_datas[p_task_info->deviceId].pcie_bandwidth = total_bandwidth;
         diagnostic_perf_datas[p_task_info->deviceId].reference_pcie_bandwidth = ref_bandwidth;
@@ -1818,9 +1817,9 @@ void DiagnosticManager::doDiagnosticMemoryError(const ze_device_handle_t &ze_dev
 
     uint64_t physical_size = 0;
     uint32_t mem_module_count = 0;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zesDeviceEnumMemoryModules(ze_device, &mem_module_count, nullptr));
+    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, nullptr));
     std::vector<zes_mem_handle_t> mems(mem_module_count);
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zesDeviceEnumMemoryModules(ze_device, &mem_module_count, mems.data()));
+    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, mems.data()));
     if (ret == ZE_RESULT_SUCCESS) {
         for (auto& mem : mems) {
             uint64_t mem_module_physical_size = 0;
@@ -2158,9 +2157,9 @@ void DiagnosticManager::doDiagnosticPeformanceComputation(const ze_device_handle
     std::string compute_detail = "Its single-precision GFLOPS is " + roundDouble(all_gflops_value, 3) + ".";
     auto gflops_threshold = 0;
     auto ref_gflops = 0;
-    if (device_names.find(ze_device) != device_names.end()) {
-        gflops_threshold = thresholds[device_names[ze_device]]["SINGLE_PRECISION_MIN_GFLOPS"];
-        ref_gflops = thresholds[device_names[ze_device]]["REF_SINGLE_PRECISION_GFLOPS"];
+    if (device_names.find(zes_device) != device_names.end()) {
+        gflops_threshold = thresholds[device_names[zes_device]]["SINGLE_PRECISION_MIN_GFLOPS"];
+        ref_gflops = thresholds[device_names[zes_device]]["REF_SINGLE_PRECISION_GFLOPS"];
     }
     diagnostic_perf_datas[p_task_info->deviceId].gflops = all_gflops_value;
     diagnostic_perf_datas[p_task_info->deviceId].reference_gflops = ref_gflops;
@@ -2401,9 +2400,9 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
     std::string power_detail = "Its stress power is " + std::to_string(max_power_value) + " W.";
     auto power_threshold = 0;
     auto ref_power = 0;
-    if (device_names.find(ze_device) != device_names.end()) {
-        power_threshold = thresholds[device_names[ze_device]]["POWER_MIN_STRESS_WATT"];
-        ref_power = thresholds[device_names[ze_device]]["REF_POWER_STRESS_WATT"];
+    if (device_names.find(zes_device) != device_names.end()) {
+        power_threshold = thresholds[device_names[zes_device]]["POWER_MIN_STRESS_WATT"];
+        ref_power = thresholds[device_names[zes_device]]["REF_POWER_STRESS_WATT"];
     }
     diagnostic_perf_datas[p_task_info->deviceId].peak_power = max_power_value;
     diagnostic_perf_datas[p_task_info->deviceId].reference_peak_power = ref_power;
@@ -2772,9 +2771,9 @@ void DiagnosticManager::doDiagnosticPeformanceMemoryBandwidth(const ze_device_ha
         std::string memorybandwidth_detail = "Its memory bandwidth is " + roundDouble(all_gbps_value, 3) + " GBPS.";
         auto memorybandwidth_threshold = 0;
         auto ref_memorybandwidth = 0;
-        if (device_names.find(ze_device) != device_names.end()) {
-            memorybandwidth_threshold = thresholds[device_names[ze_device]]["MEMORY_BANDWIDTH_MIN_GBPS"];
-            ref_memorybandwidth = thresholds[device_names[ze_device]]["REF_MEMORY_BANDWIDTH_GBPS"];
+        if (device_names.find(zes_device) != device_names.end()) {
+            memorybandwidth_threshold = thresholds[device_names[zes_device]]["MEMORY_BANDWIDTH_MIN_GBPS"];
+            ref_memorybandwidth = thresholds[device_names[zes_device]]["REF_MEMORY_BANDWIDTH_GBPS"];
         }
         diagnostic_perf_datas[p_task_info->deviceId].memory_bandwidth = all_gbps_value;
         diagnostic_perf_datas[p_task_info->deviceId].reference_memory_bandwidth = ref_memorybandwidth;

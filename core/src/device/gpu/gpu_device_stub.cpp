@@ -1355,10 +1355,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             }
             ze_device_properties_t props = {};
             props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            auto extendedProperties = std::make_unique<ze_base_properties_t>();
-            if (extendedProperties) {
-                props.pNext = extendedProperties.get();
-                extendedProperties->stype = ZE_STRUCTURE_TYPE_EU_COUNT_EXT;
+            ze_eu_count_ext_t * extendedPropertiesPtr = new ze_eu_count_ext_t();
+            if (extendedPropertiesPtr) {
+                memset(extendedPropertiesPtr, 0, sizeof(ze_eu_count_ext_t));
+                extendedPropertiesPtr->stype = ZE_STRUCTURE_TYPE_EU_COUNT_EXT;
+                props.pNext = extendedPropertiesPtr;
             }
             XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetProperties(device,
                         &props));
@@ -1411,6 +1412,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 if (props.pNext != nullptr) {
                     ze_eu_count_ext_t* eu_count_ext = (ze_eu_count_ext_t*)(props.pNext);
                     euCount = eu_count_ext->numTotalEUs;
+                    delete static_cast<ze_eu_count_ext_t*>(props.pNext);
                 }
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
                 zes_pci_properties_t pci_props = {};

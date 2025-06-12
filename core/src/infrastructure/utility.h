@@ -57,6 +57,8 @@ class Utility {
 
     static xpum_fabric_throughput_type_t toXPUMFabricThroughputType(FabricThroughputType type);
 
+    static int getPlatform(const ze_device_handle_t &device);
+
     static bool isATSMPlatform(const ze_device_handle_t &device);
 
     static bool isPVCPlatform(const ze_device_handle_t &device);

@@ -71,7 +71,7 @@ class FirmwareManager {
 
     std::string amcFwErrMsg;
     std::string flashFwErrMsg;
-
+    bool isModelSupported(int model) const;
 
    public:
     void init();

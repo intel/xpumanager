@@ -315,7 +315,6 @@ namespace xpum {
         if (Configuration::XPUM_MODE == "xpu-smi") {
             pid_t pid = fork();
             if (pid == 0) {
-                putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
                 putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
                 int init_status = zeInit(0);
                 if (init_status == 0 || init_status == 1)
