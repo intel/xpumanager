@@ -430,12 +430,16 @@ bool GPUDeviceStub::isBmgOrNewer() {
         }
         for (const auto& device : devices) {
             ze_device_properties_t properties = {};
-	    properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-	     ret = zeDeviceGetProperties(device, &properties);
+            properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+            ret = zeDeviceGetProperties(device, &properties);
+            if (ret != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_DEBUG("isBmgOrNewer: zeDeviceGetProperties returns: {}", ret);
+                continue;
+            }
             if (properties.type == ZE_DEVICE_TYPE_GPU && properties.vendorId == INTEL_VENDOR_ID) {
-		if(!isLegacyPlatform(properties.deviceId)){
-			return true;
-		}	
+                if(!isLegacyPlatform(properties.deviceId)){
+                    return true;
+                }
             }
         }
     }
