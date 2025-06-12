@@ -283,7 +283,7 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp)
+ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -293,7 +293,7 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = p->getPower(gpuPower, timeStamp);
+	ze_result_t result = p->getPower(gpuPower, timeStamp, forGPU);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU power: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -309,7 +309,9 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 	uint64_t gpuPower1 = 0, gpuPower2 = 0;
 	uint64_t timeStamp1 = 0, timeStamp2 = 0;
 
-	ze_result_t result = gpuPowerIter(d, &gpuPower1, &timeStamp1);
+	// Call gpuPowerIter to get the first power reading. The last parameter is false to indicate it's not for GPU,
+	// instead it is for the entire card
+	ze_result_t result = gpuPowerIter(d, &gpuPower1, &timeStamp1, false);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
@@ -317,7 +319,7 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 	MSLEEP(500);
 
 	// Call gpuPowerIter again to get the next power reading
-	result = gpuPowerIter(d, &gpuPower2, &timeStamp2);
+	result = gpuPowerIter(d, &gpuPower2, &timeStamp2, false);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
@@ -503,7 +505,22 @@ ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t gpuPower1 = 0;
+	uint64_t timeStamp1 = 0;
+
+	// Call gpuPowerIter to get the energy consumed by the GPU. The last parameter is true to indicate it's for GPU
+	ze_result_t result = gpuPowerIter(d, &gpuPower1, &timeStamp1, true);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	double energyConsumed = (double)(gpuPower1) / 1000000;
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"energyConsumed\": %.2f J}\n", energyConsumed);
+	} else {
+		PRINT("GPU Energy Consumed: %.2f J\n", energyConsumed);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
