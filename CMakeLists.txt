@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2021-2025 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file CMakeLists.txt
+#
 cmake_minimum_required(VERSION 3.18.0)
 
 if(NOT DEFINED WORK_PATH)

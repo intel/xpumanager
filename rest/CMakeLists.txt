@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2021-2023 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file CMakeLists.txt
+#
 cmake_minimum_required(VERSION 3.14.0)
 
 configure_file("${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service.template.in"

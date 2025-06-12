@@ -1,3 +1,8 @@
+/*
+ *  Copyright (C) 2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file config.h.in
+ */
 #pragma once
 
 #define AMCMCLI_VERSION "@AMCMCLI_VERSION_STRING@.@BUILD_DATE@"

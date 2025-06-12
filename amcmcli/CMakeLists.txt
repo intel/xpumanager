@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2022-2023 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file CMakeLists.txt
+#
 cmake_minimum_required(VERSION 3.14.0)
 
 project(AMCMCLI)
