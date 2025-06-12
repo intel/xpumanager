@@ -50,23 +50,54 @@ ze_result_t power::enumPowerDomains(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t power::getProperties(zes_pwr_handle_t powerHandle)
+ze_result_t power::getProperties(zes_pwr_handle_t powerHandle, zes_power_properties_t *properties,
+								 zes_power_ext_properties_t *extProps)
 {
-	zes_power_properties_t properties = {};
-	ze_result_t result = zesPowerGetProperties(powerHandle, &properties);
+	memset(properties, 0, sizeof(zes_power_properties_t));
+	memset(extProps, 0, sizeof(zes_power_ext_properties_t));
+	properties->pNext = extProps;
+	properties->stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+	extProps->stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+
+	ze_result_t result = zesPowerGetProperties(powerHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get properties for power domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Power Properties:\n");
-	DBG("  Default Limit: %d W\n", properties.defaultLimit);
-	DBG("  Max Limit: %d W\n", properties.maxLimit);
-	DBG("  Min Limit: %d W\n", properties.minLimit);
-	DBG("  Is Energy threshold supported: %d\n", properties.isEnergyThresholdSupported);
-	DBG("  Can control: %d\n", properties.canControl);
-	DBG("  onSubdevice: %d\n", properties.onSubdevice);
-	DBG("  subdeviceId: %d\n", properties.subdeviceId);
+	DBG("  Default Limit: %d W\n", properties->defaultLimit);
+	DBG("  Max Limit: %d W\n", properties->maxLimit);
+	DBG("  Min Limit: %d W\n", properties->minLimit);
+	DBG("  Is Energy threshold supported: %d\n", properties->isEnergyThresholdSupported);
+	DBG("  Can control: %d\n", properties->canControl);
+	DBG("  onSubdevice: %d\n", properties->onSubdevice);
+	DBG("  subdeviceId: %d\n", properties->subdeviceId);
+	DBG("  extProperties:\n");
+	DBG("    Domain: %d\n", extProps->domain);
+	switch (extProps->domain) {
+	case ZES_POWER_DOMAIN_UNKNOWN:
+		DBG("    Domain Type: Unknown\n");
+		break;
+	case ZES_POWER_DOMAIN_CARD:
+		DBG("    Domain Type: Card\n");
+		break;
+	case ZES_POWER_DOMAIN_PACKAGE:
+		DBG("    Domain Type: Package\n");
+		break;
+	case ZES_POWER_DOMAIN_STACK:
+		DBG("    Domain Type: Stack\n");
+		break;
+	case ZES_POWER_DOMAIN_MEMORY:
+		DBG("    Domain Type: Memory\n");
+		break;
+	case ZES_POWER_DOMAIN_GPU:
+		DBG("    Domain Type: GPU\n");
+		break;
+	default:
+		DBG("    Domain Type: Unknown\n");
+		break;
+	}
 
 	return result;
 }
@@ -171,10 +202,13 @@ ze_result_t power::setPowerLimit(double powerLimit)
 	return result;
 }
 
-ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp)
+ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp, bool forGPU)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_power_energy_counter_t energyCounter = {};
+	zes_power_properties_t properties;
+	zes_power_ext_properties_t extProps;
+	zes_power_domain_t domain = forGPU ? ZES_POWER_DOMAIN_GPU : ZES_POWER_DOMAIN_CARD;
 
 	if (power == nullptr || timeStamp == nullptr) {
 		ERR("Power or timestamp pointer is null.\n");
@@ -182,17 +216,29 @@ ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp)
 	}
 
 	for (uint32_t i = 0; i < powerCount; ++i) {
+		// First we are supposed to get the properties of the power domain. This is so that we can check if the domain
+		// matches the one we are looking for (GPU or CARD).
+		result = getProperties(powerHandles[i], &properties, &extProps);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		// Skip if not the desired domain or if powerCount is only 1 (as is the case in some GPUs), then look for
+		// package domain
+		if (extProps.domain != domain && (powerCount != 1 || extProps.domain != ZES_POWER_DOMAIN_PACKAGE)) {
+			continue;
+		}
+
+		// Once we found the right domain, we can get the energy counter
 		result = getEnergyCounter(powerHandles[i], &energyCounter);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get energy counter for power domain %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
-		if (energyCounter.energy != 0) {
-			*power = energyCounter.energy;
-			*timeStamp = energyCounter.timestamp;
-			return result;
-		}
+		*power = energyCounter.energy;
+		*timeStamp = energyCounter.timestamp;
+		break;
 	}
 
 	return result;
@@ -218,10 +264,12 @@ ze_result_t power::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_power_energy_counter_t energyCounter;
+	zes_power_properties_t properties;
+	zes_power_ext_properties_t extProps;
 	UNUSED(device);
 
 	for (uint32_t i = 0; i < powerCount; ++i) {
-		result = getProperties(powerHandles[i]);
+		result = getProperties(powerHandles[i], &properties, &extProps);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}

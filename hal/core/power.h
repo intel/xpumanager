@@ -36,11 +36,12 @@ public:
 	power() : powerCount(0), powerHandles(nullptr) {}
 	~power();
 	ze_result_t enumPowerDomains(zes_device_handle_t device);
-	ze_result_t getProperties(zes_pwr_handle_t powerHandle);
+	ze_result_t getProperties(zes_pwr_handle_t powerHandle, zes_power_properties_t *properties,
+							  zes_power_ext_properties_t *extProps);
 	ze_result_t getEnergyCounter(zes_pwr_handle_t powerHandle, zes_power_energy_counter_t *energyCounter);
 	ze_result_t getEnergyThreshold(zes_pwr_handle_t powerHandle);
 	ze_result_t getPowerLimits(zes_pwr_handle_t powerHandle);
-	ze_result_t getPower(uint64_t *power, uint64_t *timeStamp);
+	ze_result_t getPower(uint64_t *power, uint64_t *timeStamp, bool forGPU);
 
 	ze_result_t setPowerLimit(double powerLimit);
 	ze_result_t init(zes_device_handle_t device) override;
