@@ -1262,6 +1262,7 @@ void static addMemUtilizationCapAndMemProperty(zes_device_handle_t& device, std:
 }
 
 std::map<ze_device_handle_t, zes_device_handle_t> constructZeHandleMaptoZesHandle(std::vector<ze_device_handle_t> ze_devices) {
+    ze_result_t res;
     std::map<ze_device_handle_t, zes_device_handle_t> zeHandleTozesHandle;
     if (ze_devices.empty())
         return zeHandleTozesHandle;
@@ -1281,13 +1282,28 @@ std::map<ze_device_handle_t, zes_device_handle_t> constructZeHandleMaptoZesHandl
     zesDriverGet(&driver_count, drivers.data());
     for (auto& p_driver : drivers) {
         uint32_t device_count = 0;
-        XPUM_ZE_HANDLE_LOCK(p_driver, zesDeviceGet(p_driver, &device_count, nullptr));
+        XPUM_ZE_HANDLE_LOCK(p_driver, res = zesDeviceGet(p_driver, &device_count, nullptr));
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_DEBUG("constructZeHandleMaptoZesHandle: zesDeviceGet returns {}", res);
+            continue;
+        }
+        if (device_count == 0) {
+            XPUM_LOG_DEBUG("constructZeHandleMaptoZesHandle: zesDeviceGet returns 0 device count");
+            continue;
+        }
         std::vector<ze_device_handle_t> zes_devices(device_count);
-        XPUM_ZE_HANDLE_LOCK(p_driver, zesDeviceGet(p_driver, &device_count, zes_devices.data()));
-
+        XPUM_ZE_HANDLE_LOCK(p_driver, res = zesDeviceGet(p_driver, &device_count, zes_devices.data()));
+        if (res != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_DEBUG("constructZeHandleMaptoZesHandle: zesDeviceGet returns {}", res);
+            continue;
+        }
         for (auto zes_device : zes_devices) {
             zes_pci_properties_t pPciProperties = {};
-            XPUM_ZE_HANDLE_LOCK(zes_device, zesDevicePciGetProperties(zes_device, &pPciProperties));
+            XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDevicePciGetProperties(zes_device, &pPciProperties));
+            if (res != ZE_RESULT_SUCCESS) {
+                XPUM_LOG_DEBUG("constructZeHandleMaptoZesHandle: zesDevicePciGetProperties returns {}", res);
+                continue;
+            }
             for (size_t i = 0; i < pci_addresses.size(); i++) {
                 if (pci_addresses[i].domain == pPciProperties.address.domain
                         && pci_addresses[i].bus == pPciProperties.address.bus
