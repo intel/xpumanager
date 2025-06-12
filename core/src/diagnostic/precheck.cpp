@@ -345,7 +345,6 @@ namespace xpum {
             if (GPUDeviceStub::zeInitReturnCode != -1) {
                 init_status = GPUDeviceStub::zeInitReturnCode;
             } else {
-                putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
                 putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
                 init_status = zeInit(0);
             }
