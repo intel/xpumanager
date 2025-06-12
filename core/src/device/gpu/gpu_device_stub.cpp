@@ -89,7 +89,7 @@ bool checkCapability(const char* device_name, const std::string& bdf_address, co
         detect_func();
         return true;
     } catch (BaseException& e) {
-        XPUM_LOG_WARN("Device {}{} has no {} capability.", device_name, bdf_address, capability_name);
+        XPUM_LOG_WARN("Device {} {} lacks {} capability.", device_name, bdf_address, capability_name);
         XPUM_LOG_WARN("Capability {} detection returned: {}", capability_name, e.what());
     }
     return false;
@@ -342,9 +342,6 @@ void GPUDeviceStub::init() {
         XPUM_LOG_ERROR("GPUDeviceStub::init zesInit error: {0:x}", ret);
         checkInitDependency();
         throw LevelZeroInitializationException("zesInit error");
-    }
-    if (Configuration::INITIALIZE_PCIE_MANAGER) {
-        pcie_manager.init();
     }
 }
 
@@ -1089,11 +1086,11 @@ void GPUDeviceStub::addEuActiveStallIdleCapabilities(ze_device_handle_t device, 
         capabilities.push_back(DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE);
     } catch (BaseException& e) {
         if (strcmp(e.what(), "toGetEuActiveStallIdleCore - zetMetricStreamerOpen") == 0) {
-            XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability. Or because there are other applications on the current machine that are monitoring related data, XPUM cannot monitor these data at the same time.", props.name, bdf_address);
+            XPUM_LOG_WARN("Device {} {} lacks Active/Stall/Idle monitoring capability. Or because there are other applications on the current machine that are monitoring related data, XPUM cannot monitor these data at the same time.", props.name, bdf_address);
         } else if (strcmp(e.what(), "toGetEuActiveStallIdleCore - abnormal EU data") == 0) {
-            XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability due to abnormal EU data.", props.name, bdf_address);
+            XPUM_LOG_WARN("Device {} {} lacks Active/Stall/Idle monitoring capability due to abnormal EU data.", props.name, bdf_address);
         } else {
-            XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability.", props.name, bdf_address);
+            XPUM_LOG_WARN("Device {} {} lacks Active/Stall/Idle monitoring capability.", props.name, bdf_address);
         }
         XPUM_LOG_DEBUG("Capability EU Active/Stall/Idle detection returned: {}", e.what());
     }
@@ -1135,19 +1132,19 @@ void GPUDeviceStub::addEngineCapabilities(zes_device_handle_t device, const ze_d
     if (engine_caps.find(ZES_ENGINE_GROUP_COMPUTE_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
     else
-        XPUM_LOG_WARN("Device {}{} has no Compute Engine Group Utilization monitoring capability.", props.name, bdf_address);
+        XPUM_LOG_WARN("Device {} {} lacks Compute Engine Group Utilization monitoring capability.", props.name, bdf_address);
     if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
     else
-        XPUM_LOG_WARN("Device {}{} has no Media Engine Group Utilization monitoring capability.", props.name, bdf_address);
+        XPUM_LOG_WARN("Device {} {} lacks  Media Engine Group Utilization monitoring capability.", props.name, bdf_address);
     if (engine_caps.find(ZES_ENGINE_GROUP_COPY_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
     else
-        XPUM_LOG_WARN("Device {}{} has no Copy Engine Group Utilization monitoring capability.", props.name, bdf_address);
+        XPUM_LOG_WARN("Device {} {} lacks  Copy Engine Group Utilization monitoring capability.", props.name, bdf_address);
     if (engine_caps.find(ZES_ENGINE_GROUP_RENDER_SINGLE) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
     else
-        XPUM_LOG_WARN("Device {}{} has no Render Engine Group Utilization monitoring capability.", props.name, bdf_address);
+        XPUM_LOG_WARN("Device {} {} lacks  Render Engine Group Utilization monitoring capability.", props.name, bdf_address);
 }
 
 void addPCIeProperties(zes_device_handle_t& device, std::shared_ptr<GPUDevice> p_gpu) {
@@ -1188,7 +1185,7 @@ void GPUDeviceStub::logSupportedMetrics(zes_device_handle_t device, const ze_dev
             log_content += (Utility::getXpumStatsTypeString(*iter) + std::string("."));
         }
     }
-    XPUM_LOG_INFO("Device {}{} has the following monitoring metric types: {}", props.name, bdf_address, log_content);
+    XPUM_LOG_INFO("Device {} {} has the following monitoring metric types: {}", props.name, bdf_address, log_content);
 }
 
 void static addMemUtilizationCapAndMemProperty(zes_device_handle_t& device, std::shared_ptr<Device> gpu){
@@ -4160,7 +4157,7 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                 }
             }
         } else {
-            description = "The device has no Xe Link capability.";
+            description = "The device lacks Xe Link capability.";
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_FREQUENCY) {
         description = "The device frequency state cannot be determined.";
@@ -4456,16 +4453,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeReadThroughput(const ze
         throw BaseException("toGetPCIeReadThroughput error");
     }
 
-    ze_result_t res;
-    zes_pci_properties_t pci_props = {};
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
-    std::string bdf_address;
-    if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetPCIeReadThroughput error");
-    }
-    bdf_address = to_string(pci_props.address);
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    auto value = pcie_manager.getLatestPCIeReadThroughput(bdf_address.substr(5));
+    auto value = pcie_manager.getLatestPCIeReadThroughput(device);
     ret->setCurrent(value);
     return ret;
 }
@@ -4482,16 +4471,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWriteThroughput(const z
         throw BaseException("toGetPCIeWriteThroughput error");
     }
 
-    ze_result_t res;
-    zes_pci_properties_t pci_props = {};
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
-    std::string bdf_address;
-    if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetPCIeWriteThroughput error");
-    }
-    bdf_address = to_string(pci_props.address);
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    auto value = pcie_manager.getLatestPCIeWriteThroughput(bdf_address.substr(5));
+    auto value = pcie_manager.getLatestPCIeWriteThroughput(device);
     ret->setCurrent(value);
     return ret;
 }
@@ -4508,16 +4489,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeRead(const zes_device_h
         throw BaseException("toGetPCIeRead error");
     }
 
-    ze_result_t res;
-    zes_pci_properties_t pci_props = {};
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
-    std::string bdf_address;
-    if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetPCIeRead error");
-    }
-    bdf_address = to_string(pci_props.address);
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    auto value = pcie_manager.getLatestPCIeRead(bdf_address.substr(5));
+    auto value = pcie_manager.getLatestPCIeRead(device);
     ret->setCurrent(value);
     return ret;
 }
@@ -4531,19 +4504,11 @@ void GPUDeviceStub::getPCIeWrite(const zes_device_handle_t& device, Callback_t c
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWrite(const zes_device_handle_t& device) {
     if (device == nullptr) {
-        throw BaseException("toGetPCIeWrite error");
+        throw BaseException("toGetPCIeRead error");
     }
 
-    ze_result_t res;
-    zes_pci_properties_t pci_props = {};
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
-    std::string bdf_address;
-    if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetPCIeWrite error");
-    }
-    bdf_address = to_string(pci_props.address);
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    auto value = pcie_manager.getLatestPCIeWrite(bdf_address.substr(5));
+    auto value = pcie_manager.getLatestPCIeWrite(device);
     ret->setCurrent(value);
     return ret;
 }
