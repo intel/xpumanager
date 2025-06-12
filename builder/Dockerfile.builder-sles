@@ -1,3 +1,5 @@
+# Copyright (C) 2022-2025 Intel Corporation.
+# SPDX-License-Identifier: MIT
 FROM registry.suse.com/suse/sle15:15.4.27.8.1@sha256:996ee2bc5ae2301191053e33424806b2a37af8b51aadf2b76f061f90df0a2fbe
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz

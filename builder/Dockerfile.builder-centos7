@@ -1,3 +1,5 @@
+# Copyright (C) 2022-2025 Intel Corporation.
+# SPDX-License-Identifier: MIT
 FROM centos:7.6.1810@sha256:62d9e1c2daa91166139b51577fe4f4f6b4cc41a3a2c7fc36bd895e2a17a3e4e6
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz

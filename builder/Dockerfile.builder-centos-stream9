@@ -1,3 +1,5 @@
+# Copyright (C) 2021-2025 Intel Corporation.
+# SPDX-License-Identifier: MIT
 FROM quay.io/centos/centos:stream9
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz

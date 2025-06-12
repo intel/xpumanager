@@ -1,3 +1,8 @@
+/*
+ *  Copyright (C) 2023 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file internal_api.h
+ */
 #pragma once
 
 #include "xpum_structs.h"
