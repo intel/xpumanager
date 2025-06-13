@@ -145,7 +145,10 @@ int genCmdOut(const string &uuid) {
 
     string fileName = "/var/tmp/xpum-" + uuid + "/driver-info";
     ofstream os(fileName);
-    string cmd = "modinfo -n i915";
+    std::ifstream ifs("/sys/module/xe/srcversion");
+    std::string devType = ifs.good()?"xe":"i915";
+    ifs.close();
+    string cmd = "modinfo -n " + devType;
     SystemCommandResult scr = execCommand(cmd.c_str()) ;
     os << cmd + "\n" + scr.output();
     cmd = "uname -r";
