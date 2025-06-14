@@ -126,6 +126,14 @@ void cmdConfig::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Sets the frequency range for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setFrequencyRange(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -163,6 +171,14 @@ ze_result_t cmdConfig::setFrequencyRange(configCmdStruct *configCmds, devInfo *d
 	return result;
 }
 
+/**
+ * @brief Sets the power limit for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setPowerLimit(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -186,6 +202,14 @@ ze_result_t cmdConfig::setPowerLimit(configCmdStruct *configCmds, devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Sets the standby mode for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setStandby(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -209,6 +233,14 @@ ze_result_t cmdConfig::setStandby(configCmdStruct *configCmds, devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Sets the scheduler mode for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setScheduler(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -260,12 +292,28 @@ ze_result_t cmdConfig::setScheduler(configCmdStruct *configCmds, devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Sets the performance factor for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setPerformanceFactor(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Sets the Xe Link port configuration for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setXeLinkPort(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -287,6 +335,14 @@ ze_result_t cmdConfig::setXeLinkPort(configCmdStruct *configCmds, devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Sets the Xe Link port beaconing configuration for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setXeLinkPortBeaconing(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -308,6 +364,14 @@ ze_result_t cmdConfig::setXeLinkPortBeaconing(configCmdStruct *configCmds, devIn
 	return result;
 }
 
+/**
+ * @brief Sets the memory ECC configuration for the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -332,6 +396,14 @@ ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Resets the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -343,12 +415,28 @@ ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Applies PPR to the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Forces PPR to run on the device.
+ *
+ * @param configCmds Array of configuration command structures.
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
 ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
@@ -356,7 +444,7 @@ ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
 }
 
 /**
- * @brief Executes the discovery run.
+ * @brief Executes the config run.
  *
  * @return int Returns 0 on success.
  */
