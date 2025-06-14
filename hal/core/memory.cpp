@@ -50,7 +50,7 @@ ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t memory::getMemoryProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties)
+ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties)
 {
 	ze_result_t result = zesMemoryGetProperties(memhandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -276,7 +276,7 @@ ze_result_t memory::getMemoryChannels(uint32_t *channels)
 	*channels = 0;
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
-		result = getMemoryProperties(memoryModules[i], &properties);
+		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
@@ -298,7 +298,7 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 	*busWidth = 0;
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
-		result = getMemoryProperties(memoryModules[i], &properties);
+		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
@@ -308,24 +308,42 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 	return result;
 }
 
-ze_result_t memory::getMemoryUsed(uint64_t *used)
+ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_properties_t properties = {};
 	zes_mem_state_t state;
+	uint64_t tempUsed = 0;
 
-	if (used == nullptr) {
-		ERR("Used pointer is null.\n");
-		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	if (used != nullptr) {
+		*used = 0;
 	}
-	*used = 0;
+
+	if (utilization != nullptr) {
+		*utilization = 0;
+	}
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		result = getProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
-		*used += (state.size - state.free);
+		tempUsed = properties.physicalSize == 0 ? state.size - state.free : properties.physicalSize - state.free;
+		if (used != nullptr) {
+			*used = tempUsed;
+		}
+
+		if (utilization != nullptr) {
+			// Calculate utilization as a percentage of the total size
+			*utilization =
+				(double)tempUsed * 100 / (properties.physicalSize == 0 ? state.size : properties.physicalSize);
+		}
 	}
 	return result;
 }
@@ -385,7 +403,7 @@ ze_result_t memory::zesRun(zes_device_handle_t device)
 	zes_mem_bandwidth_t bandwidth = {};
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
-		getMemoryProperties(memoryModules[i], &properties);
+		getProperties(memoryModules[i], &properties);
 		getState(memoryModules[i], &state);
 		getBandwidth(memoryModules[i], &bandwidth);
 	}

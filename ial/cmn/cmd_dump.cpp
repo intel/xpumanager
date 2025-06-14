@@ -495,7 +495,21 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	double memoryUtilization = 0;
+
+	memory *mem = (memory *)d->dev->getMemory();
+	if (mem == nullptr) {
+		ERR("Failed to get memory handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = mem->getMemoryUsed(nullptr, &memoryUtilization);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory used: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	PRINT("GPU Memory Utilization: %.2f%%\n", memoryUtilization);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -816,13 +830,14 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
 	TRACING();
 	UNUSED(dumpCmds);
 	uint64_t memoryUsed = 0;
+
 	memory *mem = (memory *)d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = mem->getMemoryUsed(&memoryUsed);
+	ze_result_t result = mem->getMemoryUsed(&memoryUsed, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU memory used: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
