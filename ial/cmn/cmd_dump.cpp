@@ -56,6 +56,7 @@ void cmdDump::help(HELP helpType)
 	int32_t i = 0;
 
 	helpList.push_back(helpCmd(TITLE, "Dump device statistics data"));
+	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s dump [Options]", progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
@@ -207,6 +208,7 @@ void cmdDump::help(HELP helpType)
 											"GPU engine utilizations, Xe Link throughput"));
 	helpList.push_back(helpCmd(HEADING, "--time                      Dump total time in seconds"));
 	helpList.push_back(helpCmd(HEADING, "--date                      Show date in timestamp"));
+	helpList.push_back(helpCmd(BLANK));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -1195,6 +1197,12 @@ int cmdDump::run(arg_struct *args)
 	int optionIndex = 0;
 	string shortOpts;
 	vector<struct option> longOptsVec;
+
+	// If the user didn't provide any arguments, show help
+	if (args->argc == 2) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	}
 
 	processOptions(dumpCmds, ARRAY_SIZE(dumpCmds), shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
