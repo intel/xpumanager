@@ -29,6 +29,7 @@
 #include <frequency.h>
 #include <memory.h>
 #include <power.h>
+#include <enginegroup.h>
 
 dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
@@ -316,6 +317,50 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
 }
 
 /**
+ * @brief Helper function to get utilization on an engine type
+ *
+ * @param d A pointer to the device information structure.
+ * @param type The engine group type for which to get the utilization.
+ * @param utilizationDiff A pointer to store the calculated utilization difference.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ */
+ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t type, double *utilizationDiff)
+{
+	TRACING();
+	uint64_t utilization1 = 0, utilization2 = 0;
+	uint64_t timeStamp1 = 0, timeStamp2 = 0;
+	ze_result_t result;
+
+	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
+	if (eg == nullptr) {
+		ERR("Failed to get engine group\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	result = eg->getUtilization(type, &utilization1, &timeStamp1);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Sleep for 500 milliseconds to allow the next power reading to be accurate
+	MSLEEP(500);
+
+	result = eg->getUtilization(type, &utilization2, &timeStamp2);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	*utilizationDiff = (timeStamp2 - timeStamp1) == 0
+						   ? 0
+						   : (double)((double)utilization2 - (double)utilization1) * 100 / (timeStamp2 - timeStamp1);
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Executes the GPU utilization command when user requests dump -m 0
  *
  * GPU Utilization (%), GPU active time of the elapsed time, per tile or device. Device-level is the average value of
@@ -330,7 +375,21 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+
+	result = utilization(d, ZES_ENGINE_GROUP_ALL, &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("GPU Utilization: %.2f %%\n", utilizationDiff);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 

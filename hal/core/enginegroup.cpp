@@ -34,6 +34,8 @@ enginegroup::~enginegroup()
 ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	TRACING();
+
 	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate engine groups: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -52,6 +54,8 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	TRACING();
+
 	result = zesEngineGetProperties(engineGroup, engineProperties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine properties: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -113,17 +117,19 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 	return result;
 }
 
-ze_result_t enginegroup::getActivity(zes_engine_handle_t engineGroup)
+ze_result_t enginegroup::getActivity(zes_engine_handle_t engineGroup, zes_engine_stats_t *engineStats)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_engine_stats_t engineStats = {};
-	result = zesEngineGetActivity(engineGroup, &engineStats);
+	TRACING();
+
+	memset(engineStats, 0, sizeof(zes_engine_stats_t));
+	result = zesEngineGetActivity(engineGroup, engineStats);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine activity: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Timestamp: %" PRIu64 "\n", engineStats.timestamp);
-	DBG("  - Active Time: %" PRIu64 "ns\n", engineStats.activeTime);
+	DBG("  - Timestamp: %" PRIu64 "\n", engineStats->timestamp);
+	DBG("  - Active Time: %" PRIu64 "ns\n", engineStats->activeTime);
 	return result;
 }
 
@@ -131,6 +137,8 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_engine_stats_t engineStats = {};
+	TRACING();
+
 	result = zesEngineGetActivityExt(engineGroup, 0, &engineStats);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get extended engine activity: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -145,6 +153,7 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 {
 	zes_engine_properties_t engineProperties;
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	TRACING();
 
 	if (mediaEngines == nullptr) {
 		ERR("Media engines pointer is null.\n");
@@ -166,19 +175,66 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t enginegroup::init(zes_device_handle_t device) { return enumGroups(device); }
+ze_result_t enginegroup::getUtilization(zes_engine_group_t type, uint64_t *utilization, uint64_t *timestamp)
+{
+	zes_engine_properties_t engineProperties;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_engine_stats_t engineStats;
+	TRACING();
+
+	if (utilization == nullptr) {
+		ERR("Utilization pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	if (timestamp == nullptr) {
+		ERR("Timestamp pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+		zes_engine_handle_t engineGroup = engineGroups[i];
+		result = getProperties(engineGroup, &engineProperties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (engineProperties.type == type) {
+			result = getActivity(engineGroup, &engineStats);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+				return result;
+			}
+			*utilization = engineStats.activeTime;
+			*timestamp = engineStats.timestamp;
+			DBG("  - Engine Group %d Utilization: %" PRIu64 "%%, Timestamp: %" PRIu64 "\n", i, *utilization,
+				*timestamp);
+			break;
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t enginegroup::init(zes_device_handle_t device)
+{
+	TRACING();
+	return enumGroups(device);
+}
 
 ze_result_t enginegroup::zesRun(zes_device_handle_t device)
 {
-	UNUSED(device);
 	zes_engine_properties_t engineProperties;
+	zes_engine_stats_t engineStats;
+	UNUSED(device);
+	TRACING();
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		DBG("  - Engine Group handle: %p\n", engineGroup);
 
 		getProperties(engineGroup, &engineProperties);
-		getActivity(engineGroup);
+		getActivity(engineGroup, &engineStats);
 		getActivityExt(engineGroup);
 	}
 	return ZE_RESULT_SUCCESS;
