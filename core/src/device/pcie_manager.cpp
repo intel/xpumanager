@@ -33,7 +33,31 @@ uint64_t PCIeManager::getLatestPCIeReadThroughput(const zes_device_handle_t& dev
         prevCounter = prevReadCounter[device].rxCounter;
         prevTime = prevReadCounter[device].timestamp;
     } else {
-        XPUM_LOG_ERROR("{} Failed to get PCIe stats", __FUNCTION__);
+        zes_device_ext_properties_t extProps = {};
+        extProps.stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES;
+        extProps.pNext = nullptr;
+        zes_device_properties_t props = {};
+        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        props.pNext = &extProps;
+        res = zesDeviceGetProperties(device, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+            char uuidStr[37] = {};
+            auto& uuidBuf = extProps.uuid.id;
+            int ret = sprintf(uuidStr,
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                    uuidBuf[15], uuidBuf[14], uuidBuf[13], uuidBuf[12], uuidBuf[11], uuidBuf[10], uuidBuf[9], uuidBuf[8],
+                    uuidBuf[7], uuidBuf[6], uuidBuf[5], uuidBuf[4], uuidBuf[3], uuidBuf[2], uuidBuf[1], uuidBuf[0]);
+            if (ret < 0) {
+                uuidStr[0] = '\0';
+            }
+            if (props.core.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
+                XPUM_LOG_DEBUG("{} Failed to get PCIe stats for integrated device {}", __FUNCTION__, uuidStr);
+            } else {
+                XPUM_LOG_ERROR("{} Failed to get PCIe stats for discrete device {}", __FUNCTION__, uuidStr);
+            }
+        } else {
+            XPUM_LOG_ERROR("{} Failed to get PCIe stats", __FUNCTION__);
+        }
         return 0;
     }
 
@@ -80,7 +104,31 @@ uint64_t PCIeManager::getLatestPCIeWriteThroughput(const zes_device_handle_t& de
         prevCounter = prevWriteCounter[device].txCounter;
         prevTime = prevWriteCounter[device].timestamp;
     } else {
-        XPUM_LOG_ERROR("{} Failed to get PCIe stats", __FUNCTION__);
+        zes_device_ext_properties_t extProps = {};
+        extProps.stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES;
+        extProps.pNext = nullptr;
+        zes_device_properties_t props = {};
+        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        props.pNext = &extProps;
+        res = zesDeviceGetProperties(device, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+            char uuidStr[37] = {};
+            auto& uuidBuf = extProps.uuid.id;
+            int ret = sprintf(uuidStr,
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                    uuidBuf[15], uuidBuf[14], uuidBuf[13], uuidBuf[12], uuidBuf[11], uuidBuf[10], uuidBuf[9], uuidBuf[8],
+                    uuidBuf[7], uuidBuf[6], uuidBuf[5], uuidBuf[4], uuidBuf[3], uuidBuf[2], uuidBuf[1], uuidBuf[0]);
+            if (ret < 0) {
+                uuidStr[0] = '\0';
+            }
+            if (props.core.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
+                XPUM_LOG_DEBUG("{} Failed to get PCIe stats for integrated device {}", __FUNCTION__, uuidStr);
+            } else {
+                XPUM_LOG_ERROR("{} Failed to get PCIe stats for discrete device {}", __FUNCTION__, uuidStr);
+            }
+        } else {
+            XPUM_LOG_ERROR("{} Failed to get PCIe stats", __FUNCTION__);
+        }
         return 0;
     }
 
