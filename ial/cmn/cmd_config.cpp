@@ -426,6 +426,11 @@ ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
+
+	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
+
+	PRINT("  PPR: N/A\n");
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -440,6 +445,11 @@ ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
+
+	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
+
+	PRINT("  PPR: N/A\n");
+
 	return ZE_RESULT_SUCCESS;
 }
 
