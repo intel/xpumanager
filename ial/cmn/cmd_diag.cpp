@@ -99,21 +99,31 @@ void cmdDiag::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address"));
-	helpList.push_back(helpCmd(HEADING, "-l,--level                  The diagnostic levels to run. The valid options include"));
+	helpList.push_back(
+		helpCmd(HEADING, "-l,--level                  The diagnostic levels to run. The valid options include"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "1. quick test"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "3. long test - this diagnostic level will have the significant performance impact on the specified GPUs"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING2,
+		"2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING2,
+		"3. long test - this diagnostic level will have the significant performance impact on the specified GPUs"));
 	helpList.push_back(helpCmd(HEADING, "-s,--stress                 Stress the GPU(s) for the specified time"));
 	helpList.push_back(helpCmd(HEADING, "--stresstime                Stress time (in minutes)"));
-	helpList.push_back(helpCmd(HEADING, "--precheck                  Do the precheck on the GPU and GPU driver. By default, precheck scans kernel messages by journalctl"));
+	helpList.push_back(helpCmd(HEADING, "--precheck                  Do the precheck on the GPU and GPU driver. By "
+										"default, precheck scans kernel messages by journalctl"));
 	helpList.push_back(helpCmd(SUB_HEADING, "It could be configured to scan dmesg or log file through xpum.conf"));
 	helpList.push_back(helpCmd(HEADING, "--listtypes                 List all supported GPU error types"));
 	helpList.push_back(helpCmd(HEADING, "--gpu                       Show the GPU status only"));
-	helpList.push_back(helpCmd(HEADING, "--since                     Start time for log scanning. It only works with the journalctl option. The generic format is \"YYYY-MM-DD HH:MM:SS\""));
+	helpList.push_back(helpCmd(HEADING, "--since                     Start time for log scanning. It only works with "
+										"the journalctl option. The generic format is \"YYYY-MM-DD HH:MM:SS\""));
 	helpList.push_back(helpCmd(SUB_HEADING, "Alternatively the strings \"yesterday\", \"today\" are also understood"));
-	helpList.push_back(helpCmd(SUB_HEADING, "Relative times also may be specified, prefixed with \"-\" referring to times before the current time"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"Relative times also may be specified, prefixed with \"-\" referring to times before the current time"));
 	helpList.push_back(helpCmd(SUB_HEADING, "Scanning would start from the latest boot if it is not specified"));
-	helpList.push_back(helpCmd(HEADING, "--singletest                Selectively run some particular tests. Separated by the comma"));
+	helpList.push_back(
+		helpCmd(HEADING, "--singletest                Selectively run some particular tests. Separated by the comma"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "1. Computation"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "2. Memory Error"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "3. Memory Bandwidth"));
@@ -123,9 +133,13 @@ void cmdDiag::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING2, "7. Computation functional test"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "8. Media Codec functional test"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "9. Xe Link Throughput"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "10. Xe Link all-to-all Throughput. It only works for all GPUs (\"-d -1\")"));
-	helpList.push_back(helpCmd(SUB_HEADING, "Note that in a multi NUMA node server, it may need to use numactl to specify which node the PCIe bandwidth test runs on"));
-	helpList.push_back(helpCmd(SUB_HEADING, "Usage: numactl [ --membind nodes ] [ --cpunodebind nodes ] xpu-smi diag -d [deviceId] --singletest 5"));
+	helpList.push_back(
+		helpCmd(SUB_HEADING2, "10. Xe Link all-to-all Throughput. It only works for all GPUs (\"-d -1\")"));
+	helpList.push_back(helpCmd(SUB_HEADING, "Note that in a multi NUMA node server, it may need to use numactl to "
+											"specify which node the PCIe bandwidth test runs on"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"Usage: numactl [ --membind nodes ] [ --cpunodebind nodes ] xpu-smi diag -d [deviceId] --singletest 5"));
 	helpList.push_back(helpCmd(SUB_HEADING, "It also applies to diag level tests"));
 
 	printHelp(helpList, helpType);
@@ -155,16 +169,14 @@ ze_result_t cmdDiag::level(diagCmdStruct *diagCmds, devInfo *d)
 	UNUSED(d);
 
 	// Check if the level is valid
-	if (diagCmds[diagCmdType::LEVEL].val.empty())
-	{
+	if (diagCmds[diagCmdType::LEVEL].val.empty()) {
 		ERR("Level is required.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Convert the level string to an integer
 	int level = stoi(diagCmds[diagCmdType::LEVEL].val);
-	if (level < 1 || level > 3)
-	{
+	if (level < 1 || level > 3) {
 		ERR("Invalid level. Valid options are 1, 2, or 3.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -190,10 +202,8 @@ ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 		{DIAG_XELINKALLTOALLTHROUGHPUT, &cmdDiag::xeLinkAllToAllThroughput},
 	};
 
-	for (auto &test : diagSingleTests)
-	{
-		if (test.type == diagCmds[diagCmdType::SINGLETEST].type)
-		{
+	for (auto &test : diagSingleTests) {
+		if (test.type == diagCmds[diagCmdType::SINGLETEST].type) {
 			DBG("Running test: %d\n", test.type);
 			result = (this->*test.func)(diagCmds, d);
 			break;
@@ -283,11 +293,59 @@ ze_result_t cmdDiag::xeLinkAllToAllThroughput(diagCmdStruct *diagCmds, devInfo *
 	return ZE_RESULT_SUCCESS;
 }
 
+static void printPretty()
+{
+	PRINT("+------------+-----------------------------------+----------------------+----------------+\n");
+}
+
 ze_result_t cmdDiag::listTypes(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
+
+	if (!diagCmds[diagCmdType::PRECHECK].enabled) {
+		ERR("--listtypes requires --precheck.\n");
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	printPretty();
+	PRINT("| Error ID   | Error Type                        | Error Category       | Error Severity |\n");
+	printPretty();
+	PRINT("| 1          | GuC Not Running                   | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 2          | GuC Error                         | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 3          | GuC Initialization Failed         | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 4          | IOMMU Catastrophic Error          | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 5          | LMEM Not Initialized By Firmware  | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 6          | PCIe Error                        | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 7          | DRM Error                         | Kernel Mode Driver   | Critical       |\n");
+	printPretty();
+	PRINT("| 8          | GPU Hang                          | Kernel Mode Driver   | Critical       |\n");
+	printPretty();
+	PRINT("| 9          | Xe Error                          | Kernel Mode Driver   | Critical       |\n");
+	printPretty();
+	PRINT("| 10         | Xe Not Loaded                     | Kernel Mode Driver   | Critical       |\n");
+	printPretty();
+	PRINT("| 11         | Level Zero Init Error             | Kernel Mode Driver   | Critical       |\n");
+	printPretty();
+	PRINT("| 12         | HuC Disabled                      | Hardware             | High           |\n");
+	printPretty();
+	PRINT("| 13         | HuC Not Running                   | Hardware             | High           |\n");
+	printPretty();
+	PRINT("| 14         | Level Zero Metrics Init Error     | User Mode Driver     | High           |\n");
+	printPretty();
+	PRINT("| 15         | Memory Error                      | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 16         | GPU Initialization Failed         | Hardware             | Critical       |\n");
+	printPretty();
+	PRINT("| 17         | MEI Error                         | Kernel Mode Driver   | High           |\n");
+	printPretty();
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -329,10 +387,8 @@ int cmdDiag::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1)
-	{
-		switch (opt)
-		{
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
 		case 'h':
 			help();
 			return 0;
@@ -351,13 +407,10 @@ int cmdDiag::run(arg_struct *args)
 			diagCmds[diagCmdType::STRESS].enabled = true;
 			break;
 		case 0:
-			for (auto &cmd : diagCmds)
-			{
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0)
-				{
+			for (auto &cmd : diagCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
 					diagCmds[cmd.type].enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument)
-					{
+					if (longOpts[optionIndex].has_arg == required_argument) {
 						diagCmds[cmd.type].val = optarg;
 					}
 					found = true;
@@ -365,8 +418,7 @@ int cmdDiag::run(arg_struct *args)
 				}
 			}
 
-			if (!found)
-			{
+			if (!found) {
 				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -383,28 +435,23 @@ int cmdDiag::run(arg_struct *args)
 
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
-	if (optind != args->argc)
-	{
+	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(diagCmds[diagCmdType::DIAGDEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS)
-	{
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", diagCmds[diagCmdType::DIAGDEVICE].val.c_str());
 		return result;
 	}
 
 	// Iterate through the device list and execute the command
-	for (auto &device : deviceList)
-	{
+	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : diagCmds)
-		{
-			if (cmd.enabled && cmd.func != nullptr)
-			{
+		for (auto &cmd : diagCmds) {
+			if (cmd.enabled && cmd.func != nullptr) {
 				DBG("Running command: %s\n", cmd.opt.name);
 				result = (this->*cmd.func)(diagCmds, &device);
 				break;
