@@ -29,6 +29,7 @@
     <ClCompile Include="..\cmn\cmd_group.cpp" />
     <ClCompile Include="..\cmn\cmd_health.cpp" />
     <ClCompile Include="..\cmn\cmd_log.cpp" />
+    <ClCompile Include="..\cmn\cmd_oob.cpp" />
     <ClCompile Include="..\cmn\cmd_policy.cpp" />
     <ClCompile Include="..\cmn\cmd_ps.cpp" />
     <ClCompile Include="..\cmn\cmd_stats.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="..\cmn\cmd_group.h" />
     <ClInclude Include="..\cmn\cmd_health.h" />
     <ClInclude Include="..\cmn\cmd_log.h" />
+    <ClInclude Include="..\cmn\cmd_oob.h" />
     <ClInclude Include="..\cmn\cmd_policy.h" />
     <ClInclude Include="..\cmn\cmd_ps.h" />
     <ClInclude Include="..\cmn\cmd_stats.h" />
