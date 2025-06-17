@@ -8,6 +8,10 @@
 
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
+
+#include <sstream>
+#include <string>
+#include <thread>
 #include <map>
 
 namespace xpum {
