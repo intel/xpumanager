@@ -63,6 +63,9 @@
     <ClCompile Include="..\cmn\cmd_amcsensor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\cmn\cmd_oob.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="version.h">
@@ -120,6 +123,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\cmn\cmd_amcsensor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cmn\cmd_oob.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

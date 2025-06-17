@@ -33,6 +33,7 @@
 #include <cmd_group.h>
 #include <cmd_health.h>
 #include <cmd_log.h>
+#include <cmd_oob.h>
 #include <cmd_policy.h>
 #include <cmd_ps.h>
 #include <cmd_stats.h>
@@ -191,6 +192,7 @@ int main(int argc, char *argv[])
 	if (dbgLvl != DBG) {
 		setPrintLvl(&arg, NO_PRINT);
 	}
+
 	// Create sysman driver instance
 	ze_result_t result = arg.sm.init();
 	switch (result) {
@@ -226,6 +228,7 @@ int main(int argc, char *argv[])
 		{createInstance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::Both},
 		{createInstance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::Both},
 		{createInstance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::Linux},
+		{createInstance<cmdOOB>, DAEMONCAP::BOTH, OSTYPE::Linux},
 		{createInstance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
 		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
