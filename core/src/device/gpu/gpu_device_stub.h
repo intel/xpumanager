@@ -290,7 +290,9 @@ private:
     
     static void openDevicePerfMetricStream(ze_device_handle_t& device, ze_driver_handle_t& driver, 
                                            std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
-                                           std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts); 
+                                           std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts,
+                                           std::map<ze_device_handle_t, ze_event_pool_handle_t>& device_event_pools,
+                                           std::map<ze_device_handle_t, ze_event_handle_t>& device_events);
 
     static std::string getPciSlot(zes_pci_address_t address);
     static std::string getOAMSocketId(zes_pci_address_t address);

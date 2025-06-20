@@ -155,6 +155,10 @@ bool isFileExists(const char* path) {
     return ifs.good();
 }
 
+bool isXeDevice() {
+    return isFileExists("/sys/module/xe/srcversion");
+}
+
 std::string roundDouble(double r, int precision) {
     std::stringstream buffer;
     buffer << std::fixed << std::setprecision(precision) << r;

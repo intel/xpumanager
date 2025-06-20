@@ -2805,6 +2805,10 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         return XPUM_METRIC_NOT_SUPPORTED;
     }
 
+    auto isXeDevice = [](){
+        std::ifstream ifs("/sys/module/xe/srcversion");
+        return ifs.good();
+    };
     /*  calculate the component occupancy ratio of each tile in current device */
     for (size_t i = 0; i < p_perf_datas->size(); i++) {
         std::float_t active = 0;
@@ -2820,6 +2824,16 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         std::float_t stallOther = 0;
         std::float_t stallBarrier = 0;
         std::float_t stallInstFetch = 0;
+        std::float_t alu0Active = 0;
+        std::float_t alu1Active = 0;
+        std::float_t alu2Active = 0;
+        std::float_t alu2Only = 0;
+        std::float_t alu0Withoutalu2 = 0;
+        std::float_t alu0Only = 0;
+        std::float_t alu1IntOnly = 0;
+        std::float_t alu1alu0Active = 0;
+        std::float_t alu2alu0Active = 0;
+        std::float_t aluActive = 0;
         std::float_t fpuActive = 0;
         std::float_t emActive = 0;
         std::float_t xmxActive = 0;
@@ -2829,7 +2843,6 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         std::float_t emIntOnly = 0;
         std::float_t emFpuActive = 0;
         std::float_t xmxFpuActive = 0;
-        std::float_t aluActive = 0;
         std::float_t other = 0;
         std::float_t stallTotal = 0;
         std::float_t notInUse = 0;
@@ -2842,29 +2855,56 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
 
         for (auto group_data : (*p_perf_datas)[i]->data) {
             for (auto metric_data : group_data.data) {
-                if (std::strcmp(metric_data.name.c_str(), "XveActive") == 0) {
-                    active = metric_data.average;
-                } 
-                if (std::strcmp(metric_data.name.c_str(), "XveStall") == 0) {
-                    stall = metric_data.average;
-                }
-                if (std::strcmp(metric_data.name.c_str(), "EmActive") == 0) {
-                    emActive = metric_data.average;
-                }
-                if (std::strcmp(metric_data.name.c_str(), "XmxActive") == 0) {
-                    xmxActive = metric_data.average;
-                }
-                if (std::strcmp(metric_data.name.c_str(), "FpuActive") == 0) {
-                    fpuActive = metric_data.average;
-                }
-                if (std::strcmp(metric_data.name.c_str(), "XveFpuEmActive") == 0) {
-                    emFpuActive = metric_data.average;
-                }
-                if (std::strcmp(metric_data.name.c_str(), "XveFpuXmxActive") == 0) {
-                    xmxFpuActive = metric_data.average;
-                }
-                if (std::strcmp(metric_data.name.c_str(), "XveThreadOccupancy") == 0) {
-                    occupancy = metric_data.average;
+                if (isXeDevice()) {
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_ACTIVE") == 0) {
+                        active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_STALL") == 0) {
+                        stall = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_INST_EXECUTED_ALU1_ALL_UTILIZATION") == 0) {
+                        alu1Active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_INST_EXECUTED_ALU2_ALL_UTILIZATION") == 0) {
+                        alu2Active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_INST_EXECUTED_ALU0_ALL_UTILIZATION") == 0) {
+                        alu0Active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_PIPE_ALU0_AND_ALU1_ACTIVE") == 0) {
+                        alu1alu0Active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_PIPE_ALU0_AND_ALU2_ACTIVE") == 0) {
+                        alu2alu0Active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XVE_THREADS_OCCUPANCY_ALL") == 0) {
+                        occupancy = metric_data.average;
+                    }
+                } else {
+                    if (std::strcmp(metric_data.name.c_str(), "XveActive") == 0) {
+                        active = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XveStall") == 0) {
+                        stall = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "EmActive") == 0) {
+                        emActive = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XmxActive") == 0) {
+                        xmxActive = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "FpuActive") == 0) {
+                        fpuActive = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XveFpuEmActive") == 0) {
+                        emFpuActive = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XveFpuXmxActive") == 0) {
+                        xmxFpuActive = metric_data.average;
+                    }
+                    if (std::strcmp(metric_data.name.c_str(), "XveThreadOccupancy") == 0) {
+                        occupancy = metric_data.average;
+                    }
                 }
                 if (metric_data.name.find("ALUWR") != std::string::npos) {
                     stallALU += metric_data.average;
@@ -2939,12 +2979,19 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
             stallDep *= remaining;
             stallOther *= remaining;
             stallInstFetch *= remaining;
-                
-            aluActive = emActive + fpuActive - emFpuActive + xmxActive - xmxFpuActive;
-            xmxOnly = xmxActive - xmxFpuActive;
-            fpuWithoutXMX = fpuActive - xmxFpuActive;
-            fpuOnly = fpuActive - xmxFpuActive - emFpuActive;
-            emIntOnly = emActive - emFpuActive;
+            if (isXeDevice()) {
+                aluActive = alu1Active + alu0Active - alu1alu0Active + alu2Active - alu2alu0Active;
+                alu2Only = alu2Active - alu2alu0Active;
+                alu0Withoutalu2 = alu0Active - alu2alu0Active;
+                alu0Only = alu0Active - alu2alu0Active - alu1alu0Active;
+                alu1IntOnly = alu1Active - alu1alu0Active;
+            } else {
+                aluActive = emActive + fpuActive - emFpuActive + xmxActive - xmxFpuActive;
+                xmxOnly = xmxActive - xmxFpuActive;
+                fpuWithoutXMX = fpuActive - xmxFpuActive;
+                fpuOnly = fpuActive - xmxFpuActive - emFpuActive;
+                emIntOnly = emActive - emFpuActive;
+            }
             other = active - aluActive;
         }
 
@@ -2955,13 +3002,23 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         components_ratios.push_back(std::pair<std::string, std::double_t>("inUse", inUse));
         components_ratios.push_back(std::pair<std::string, std::double_t>("active", active));
         components_ratios.push_back(std::pair<std::string, std::double_t>("aluActive", aluActive));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxActive", xmxActive));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxOnly", xmxOnly));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxFpuActive", xmxFpuActive));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("fpuWithoutXMX", fpuWithoutXMX));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("fpuOnly", fpuOnly));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("emFpuActive", emFpuActive));
-        components_ratios.push_back(std::pair<std::string, std::double_t>("emIntOnly", emIntOnly));
+        if(isXeDevice()) {
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu2Active", alu2Active));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu2Only", alu2Only));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu2alu0Active", alu2alu0Active));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu0Withoutalu2", alu0Withoutalu2));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu0Only", alu0Only));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu1alu0Active", alu1alu0Active));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("alu1IntOnly", alu1IntOnly));
+        } else {
+            components_ratios.push_back(std::pair<std::string, std::double_t>("xmxActive", xmxActive));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("xmxOnly", xmxOnly));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("xmxFpuActive", xmxFpuActive));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("fpuWithoutXMX", fpuWithoutXMX));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("fpuOnly", fpuOnly));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("emFpuActive", emFpuActive));
+            components_ratios.push_back(std::pair<std::string, std::double_t>("emIntOnly", emIntOnly));
+        }
         components_ratios.push_back(std::pair<std::string, std::double_t>("other", other));
         components_ratios.push_back(std::pair<std::string, std::double_t>("stall", stall));
         components_ratios.push_back(std::pair<std::string, std::double_t>("nonOccupancy", nonOccupancy));
