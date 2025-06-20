@@ -4624,7 +4624,8 @@ std::shared_ptr<PerfMeasurementData> GPUDeviceStub::toGetPerfMetrics(ze_device_h
     std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> remaining_groups;
     std::map<ze_device_handle_t, std::shared_ptr<PerfMetricDeviceData_t>> device_datas;
     std::map<ze_device_handle_t, ze_context_handle_t> device_contexts;
-    
+    std::map<ze_device_handle_t, ze_event_pool_handle_t> device_event_pools;
+    std::map<ze_device_handle_t, ze_event_handle_t> device_events;
     for (auto device : target_devices) {
         auto p_groups = getDevicePerfMetricGroups(device, driver);
         if (p_groups->size() > 0) {
@@ -4667,7 +4668,7 @@ std::shared_ptr<PerfMeasurementData> GPUDeviceStub::toGetPerfMetrics(ze_device_h
         }
 
         for (auto it = to_active_groups.begin(); it != to_active_groups.end(); it++) {
-            openDevicePerfMetricStream(device, driver, it->second, device_contexts);
+            openDevicePerfMetricStream(device, driver, it->second, device_contexts, device_event_pools, device_events);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(
@@ -4688,7 +4689,21 @@ std::shared_ptr<PerfMeasurementData> GPUDeviceStub::toGetPerfMetrics(ze_device_h
                 zetMetricStreamerClose(it_group->second->streamer);
             }
 
+            if (device_events.find(it->first) != device_events.end()) {
+                zeEventDestroy(device_events.at(it->first));
+                device_events.erase(it->first);
+            }
+            if (device_event_pools.find(it->first) != device_event_pools.end()) {
+                zeEventPoolDestroy(device_event_pools.at(it->first));
+                device_event_pools.erase(it->first);
+            }
+
             zetContextActivateMetricGroups(device_contexts[it->first], it->first, 0, nullptr);
+
+            if (device_contexts.find(it->first) != device_contexts.end()) {
+                zeContextDestroy(device_contexts.at(it->first));
+                device_contexts.erase(it->first);
+            }
         }
 
         to_active_groups.clear();
@@ -4801,8 +4816,10 @@ std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>> GPUDeviceStu
 void GPUDeviceStub::openDevicePerfMetricStream(ze_device_handle_t& device,
                                               ze_driver_handle_t& driver, 
                                               std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
-                                              std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts) {
-    
+                                              std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts,
+                                              std::map<ze_device_handle_t, ze_event_pool_handle_t>& device_event_pools,
+                                              std::map<ze_device_handle_t, ze_event_handle_t>& device_events
+                                            ) {
     ze_context_handle_t ze_context;
     if (device_contexts.find(device) != device_contexts.end()) {
         ze_context = device_contexts.at(device);
@@ -4833,11 +4850,43 @@ void GPUDeviceStub::openDevicePerfMetricStream(ze_device_handle_t& device,
         throw BaseException("openDevicePerfMetricStream");
     }
 
+    ze_event_pool_handle_t hEventPool = nullptr;
+    if (device_event_pools.find(device) != device_event_pools.end()) {
+        hEventPool = device_event_pools.at(device);
+    } else {
+        ze_event_pool_desc_t eventPoolDesc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, 0, 1};
+
+        // Create notification event
+        auto res = zeEventPoolCreate( ze_context, &eventPoolDesc, 1, &device, &hEventPool );
+        if (res != ZE_RESULT_SUCCESS)  {
+            XPUM_LOG_WARN("Failed to create event pool: {}", res);
+            throw BaseException("openDevicePerfMetricStream");
+        }
+        device_event_pools[device] = hEventPool;
+    }
+
+    ze_event_handle_t hNotificationEvent = nullptr;
+    if (device_events.find(device) != device_events.end()) {
+        hNotificationEvent = device_events.at(device);
+    } else {
+        ze_event_desc_t eventDesc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
+        eventDesc.index  = 0;
+        eventDesc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
+        eventDesc.wait   = ZE_EVENT_SCOPE_FLAG_HOST;
+        auto res = zeEventCreate( hEventPool, &eventDesc, &hNotificationEvent );
+        if (res != ZE_RESULT_SUCCESS)  {
+            XPUM_LOG_WARN("Failed to create event: {}", res);
+            throw BaseException("openDevicePerfMetricStream");
+        }
+        device_events[device] = hNotificationEvent;
+    }
+
     zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
     streamer_desc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
+    streamer_desc.notifyEveryNReports  = Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX;
     for (auto it = p_target_groups->begin(); it != p_target_groups->end(); it++) {
-        res = zetMetricStreamerOpen(ze_context, device, it->second->metric_group, &streamer_desc, 
-                                    nullptr, &it->second->streamer);
+        res = zetMetricStreamerOpen(ze_context, device, it->second->metric_group, &streamer_desc,
+            hNotificationEvent, &it->second->streamer);
         if (res != ZE_RESULT_SUCCESS)  {
             XPUM_LOG_WARN("Failed to zetMetricStreamerOpen {} with {}", 
                           to_active_groups.size(), res);            

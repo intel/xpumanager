@@ -1856,6 +1856,13 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 componentsOccupancy->set_fpuonly(doubleToFormatStr(dataArray[i].ratios[10].value));
                 componentsOccupancy->set_emfpuactive(doubleToFormatStr(dataArray[i].ratios[11].value));
                 componentsOccupancy->set_emintonly(doubleToFormatStr(dataArray[i].ratios[12].value));
+                componentsOccupancy->set_alu2active(doubleToFormatStr(dataArray[i].ratios[6].value));
+                componentsOccupancy->set_alu2only(doubleToFormatStr(dataArray[i].ratios[7].value));
+                componentsOccupancy->set_alu2alu0active(doubleToFormatStr(dataArray[i].ratios[8].value));
+                componentsOccupancy->set_alu0withoutalu2(doubleToFormatStr(dataArray[i].ratios[9].value));
+                componentsOccupancy->set_alu0only(doubleToFormatStr(dataArray[i].ratios[10].value));
+                componentsOccupancy->set_alu1alu0active(doubleToFormatStr(dataArray[i].ratios[11].value));
+                componentsOccupancy->set_alu1intonly(doubleToFormatStr(dataArray[i].ratios[12].value));
                 componentsOccupancy->set_other(doubleToFormatStr(dataArray[i].ratios[13].value));
                 componentsOccupancy->set_stall(doubleToFormatStr(dataArray[i].ratios[14].value));
                 componentsOccupancy->set_nonoccupancy(doubleToFormatStr(dataArray[i].ratios[15].value));
