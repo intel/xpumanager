@@ -10,7 +10,7 @@ FWDIR  := ../fwupd
 # Compiler and Flags
 CXX := g++
 export DBG_FLAGS?=-Ofast
-CXXFLAGS := -Wall -fPIC -I. -I$(OALDIR) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
+CXXFLAGS := -Wall -fPIC -std=c++20 -I. -I$(OALDIR) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
 LIBS :=-L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc
 INCLUDEDIR := include
 
