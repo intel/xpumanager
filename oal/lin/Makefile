@@ -13,7 +13,7 @@ export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=
 export INCLUDES=-I$(LEVELZERO)/include -I. -I$(HALCORE)
-export CFLAGS=-c -Wall -fPIC
+export CFLAGS=-c -Wall -fPIC -std=c++20
 export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 export HEADERS := $(wildcard $(SRCDIR)/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
