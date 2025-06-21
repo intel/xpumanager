@@ -47,7 +47,7 @@ public:
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);
 	ze_result_t getBars(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device);
-	ze_result_t getStats(zes_device_handle_t device);
+	ze_result_t getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats);
 	ze_result_t zesRun(zes_device_handle_t device);
 	bool isBDF(const char *bdf);
 	string getMeiDevicePath() { return deviceProperties.meiDevicePath; }

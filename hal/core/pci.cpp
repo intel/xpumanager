@@ -112,21 +112,28 @@ ze_result_t pci::getBars(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t pci::getStats(zes_device_handle_t device)
+ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 {
-	zes_pci_stats_t pciStats = {};
-	ze_result_t result = zesDevicePciGetStats(device, &pciStats);
+	TRACING();
+
+	if (!pciStats) {
+		ERR("Invalid argument: pciStats is null\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	memset(pciStats, 0, sizeof(zes_pci_stats_t));
+
+	ze_result_t result = zesDevicePciGetStats(device, pciStats);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI stats: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - PCI Stats:");
-	DBG("    - Timestamp: %" PRIu64 "\n", pciStats.timestamp);
-	DBG("    - Replay counter: %" PRIu64 "\n", pciStats.replayCounter);
-	DBG("    - Packet counter: %" PRIu64 "\n", pciStats.packetCounter);
-	DBG("    - Received Bytes: %" PRIu64 "\n", pciStats.rxCounter);
-	DBG("    - Transmitted Bytes: %" PRIu64 "\n", pciStats.txCounter);
+	DBG("    - Timestamp: %" PRIu64 "\n", pciStats->timestamp);
+	DBG("    - Replay counter: %" PRIu64 "\n", pciStats->replayCounter);
+	DBG("    - Packet counter: %" PRIu64 "\n", pciStats->packetCounter);
+	DBG("    - Received Bytes: %" PRIu64 "\n", pciStats->rxCounter);
+	DBG("    - Transmitted Bytes: %" PRIu64 "\n", pciStats->txCounter);
 
 	return result;
 }
@@ -190,9 +197,11 @@ ze_result_t pci::init(zes_device_handle_t device)
 
 ze_result_t pci::zesRun(zes_device_handle_t device)
 {
+	zes_pci_stats_t pciStats = {};
+
 	getState(device);
 	getBars(device);
-	getStats(device);
+	getStats(device, &pciStats);
 
 	return ZE_RESULT_SUCCESS;
 }
