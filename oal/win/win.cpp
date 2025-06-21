@@ -145,7 +145,11 @@ thread_id *create_thread(funcptr thread, void *args)
 	return new_thread_id;
 }
 
-void wait_for_thread(thread_id *tid) { WaitForSingleObject(tid->ret_thread_uid(), INFINITE); }
+void wait_for_thread(thread_id *tid)
+{
+	WaitForSingleObject(tid->ret_thread_uid(), INFINITE);
+	delete tid; // Clean up the thread_id object after waiting
+}
 
 string getProcessName(uint32_t processId)
 {
