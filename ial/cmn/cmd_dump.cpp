@@ -30,6 +30,8 @@
 #include <memory.h>
 #include <power.h>
 #include <enginegroup.h>
+#include <ras.h>
+#include <pci.h>
 
 dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
@@ -287,6 +289,26 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 	return result;
 }
 
+string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flags)
+{
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP)
+		return string("frequency throttled due to average power excursion.");
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP)
+		return string("frequency throttled due to burst power excursion.");
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) == ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT)
+		return string("frequency throttled due to current excursion.");
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) == ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT)
+		return string("frequency throttled due to thermal excursion.");
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) == ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT)
+		return string("frequency throttled due to power supply assertion.");
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE)
+		return string("frequency throttled due to software supplied frequency range.");
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE)
+		return string("frequency throttled due to a sub block that has a lower frequency.");
+
+	return string("Not Throttled");
+}
+
 /**
  * @brief Helper function to get the GPU power.
  *
@@ -374,7 +396,6 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	ze_result_t result;
 	double utilizationDiff = 0.0;
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_ALL};
@@ -406,7 +427,6 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	uint64_t gpuPower1 = 0, gpuPower2 = 0;
 	uint64_t timeStamp1 = 0, timeStamp2 = 0;
 
@@ -449,7 +469,6 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	double curFreq = 0.0;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -485,7 +504,6 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	double coreTemp = 0.0;
 
 	temperature *t = (temperature *)d->dev->getTemperature();
@@ -522,7 +540,6 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	double memoryTemp = 0.0;
 
 	temperature *t = (temperature *)d->dev->getTemperature();
@@ -558,7 +575,6 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	double memoryUtilization = 0;
 
 	memory *mem = (memory *)d->dev->getMemory();
@@ -573,7 +589,11 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("GPU Memory Utilization: %.2f%%\n", memoryUtilization);
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuMemoryUtilization\": %.2f%%}\n", memoryUtilization);
+	} else {
+		PRINT("GPU Memory Utilization: %.2f%%\n", memoryUtilization);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -590,7 +610,6 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	uint64_t memoryRead1 = 0, memoryRead2 = 0;
 	uint64_t timeStamp1 = 0, timeStamp2 = 0;
 
@@ -641,7 +660,6 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	uint64_t memoryWrite1 = 0, memoryWrite2 = 0;
 	uint64_t timeStamp1 = 0, timeStamp2 = 0;
 
@@ -692,7 +710,6 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	uint64_t gpuPower1 = 0;
 	uint64_t timeStamp1 = 0;
 
@@ -783,8 +800,25 @@ ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d)
 ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS reset counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuEuArrayResetCounter\": %" PRIu64 " }\n", rasCounter);
+	} else {
+		PRINT("GPU EU Array Reset Counter: %" PRIu64 "\n", rasCounter);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -796,13 +830,31 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result =
+		r->getErrors(ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS programming counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuEuArrayProgrammingErrors\": %" PRIu64 " }\n", rasCounter);
+	} else {
+		PRINT("GPU EU Array Programming Errors: %" PRIu64 "\n", rasCounter);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -814,49 +866,104 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInf
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS driver counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuEuArrayDriverErrors\": %" PRIu64 " }\n", rasCounter);
+	} else {
+		PRINT("GPU EU Array Driver Errors: %" PRIu64 "\n", rasCounter);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
  * @brief Executes the GPU EU array cache errors correctable command when user requests dump -m 15.
  *
- * GPU EU Array Cache Errors Correctable, per tile or device. Device-level is the sum value of tiles for multi-tiles.
+ * GPU EU Array Cache Errors Correctable, per tile or device. Device-level is the sum value of tiles for
+ * multi-tiles.
  *
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS cache correctable counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuEuArrayCacheErrorsCorrectable\": %" PRIu64 " }\n", rasCounter);
+	} else {
+		PRINT("GPU EU Array Cache Errors Correctable: %" PRIu64 "\n", rasCounter);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
  * @brief Executes the GPU EU array cache errors uncorrectable command when user requests dump -m 16.
  *
- * GPU EU Array Cache Errors Uncorrectable, per tile or device. Device-level is the sum value of tiles for multi-tiles.
+ * GPU EU Array Cache Errors Uncorrectable, per tile or device. Device-level is the sum value of tiles for
+ * multi-tiles.
  *
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS cache uncorrectable counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuEuArrayCacheErrorsUncorrectable\": %" PRIu64 " }\n", rasCounter);
+	} else {
+		PRINT("GPU EU Array Cache Errors Uncorrectable: %" PRIu64 "\n", rasCounter);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -869,13 +976,49 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds,
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	uint64_t memoryRead1 = 0, memoryRead2 = 0, memoryWrite1 = 0, memoryWrite2 = 0, maxBandwidth = 0;
+	double memoryBW1 = 0, memoryBW2 = 0, memoryBWDiff = 0;
+	uint64_t timeStamp1 = 0, timeStamp2 = 0;
+
+	memory *mem = (memory *)d->dev->getMemory();
+	if (mem == nullptr) {
+		ERR("Failed to get memory handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = mem->getMemoryRW(&memoryRead1, &memoryWrite1, &maxBandwidth, &timeStamp1);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Sleep for 500 milliseconds to allow the next power reading to be accurate
+	MSLEEP(500);
+
+	result = mem->getMemoryRW(&memoryRead2, &memoryWrite2, &maxBandwidth, &timeStamp2);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Calculate bandwidth utilization as a percentage of the maximum bandwidth
+	memoryBW1 = (double)(100 * (memoryRead1 / 1000 + memoryWrite1 / 1000) / (maxBandwidth / 1000) * 1000);
+	memoryBW2 = (double)(100 * (memoryRead2 / 1000 + memoryWrite2 / 1000) / (maxBandwidth / 1000) * 1000);
+
+	// Calculate the memory bandwidth difference
+	memoryBWDiff = (timeStamp2 - timeStamp1) == 0 ? 0 : (memoryBW2 - memoryBW1) / ((timeStamp2 - timeStamp1) / 1000.0);
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"memoryBandwidth\": %d %%}\n", (uint32_t)memoryBWDiff);
+	} else {
+		PRINT("Memory Bandwidth: %d %%\n", (uint32_t)memoryBWDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -887,12 +1030,12 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	uint64_t memoryUsed = 0;
 
 	memory *mem = (memory *)d->dev->getMemory();
@@ -907,7 +1050,11 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("GPU Memory Used: %.2f MiB\n", (double)memoryUsed / (1024 * 1024));
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuMemoryUsed\": %.2f MiB}\n", (double)memoryUsed / (1024 * 1024));
+	} else {
+		PRINT("GPU Memory Used: %.2f MiB\n", (double)memoryUsed / (1024 * 1024));
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -919,13 +1066,43 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	zes_pci_stats_t pciStats1 = {}, pciStats2 = {};
+	uint64_t pciDiff = 0;
+
+	pci *p = (pci *)d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = p->getStats(d->zesDeviceHdl, &pciStats1);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	// Sleep for 500 milliseconds to allow the next PCIe read value to be accurate
+	MSLEEP(500);
+
+	result = p->getStats(d->zesDeviceHdl, &pciStats2);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	pciDiff = (pciStats2.timestamp - pciStats1.timestamp == 0) ? 0
+															   : 1000000 * (pciStats2.rxCounter - pciStats1.rxCounter) /
+																	 (pciStats2.timestamp - pciStats1.timestamp) / 1024;
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"pciRead\": %" PRIu64 " kB/s}\n", pciDiff);
+	} else {
+		PRINT("PCIe Read: %" PRIu64 " kB/s\n", pciDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -937,13 +1114,44 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	zes_pci_stats_t pciStats1 = {}, pciStats2 = {};
+	uint64_t pciDiff = 0;
+
+	pci *p = (pci *)d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = p->getStats(d->zesDeviceHdl, &pciStats1);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI stats: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Sleep for 500 milliseconds to allow the next PCIe read value to be accurate
+	MSLEEP(500);
+
+	result = p->getStats(d->zesDeviceHdl, &pciStats2);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	pciDiff = (pciStats2.timestamp - pciStats1.timestamp == 0) ? 0
+															   : 1000000 * (pciStats2.txCounter - pciStats1.txCounter) /
+																	 (pciStats2.timestamp - pciStats1.timestamp) / 1024;
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"pciWrite\": %" PRIu64 " kB/s}\n", pciDiff);
+	} else {
+		PRINT("PCIe Write: %" PRIu64 " kB/s\n", pciDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -955,7 +1163,8 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d)
 {
@@ -973,13 +1182,28 @@ ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"computeUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Compute Utilization: %.2f %%\n", utilizationDiff);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -991,13 +1215,27 @@ ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"renderUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Render Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1009,13 +1247,27 @@ ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"mediaDecodeUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Media Decode Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1027,13 +1279,27 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"mediaEncodeUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Media Encode Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1045,13 +1311,27 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"copyUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Copy Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1063,13 +1343,27 @@ ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"mediaEnhancementUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Media Enhancement Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1081,7 +1375,8 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, 
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
@@ -1100,7 +1395,8 @@ ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
@@ -1119,7 +1415,8 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
 {
@@ -1138,13 +1435,27 @@ ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devIn
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE, ZES_ENGINE_GROUP_COMPUTE_ALL};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"computeGroupUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Compute Engine Group Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1157,13 +1468,27 @@ ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devI
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE, ZES_ENGINE_GROUP_RENDER_ALL};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"renderGroupUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Render Engine Group Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1176,13 +1501,28 @@ ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devIn
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE,
+										ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, ZES_ENGINE_GROUP_MEDIA_ALL};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"mediaGroupUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Media Engine Group Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1195,13 +1535,27 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInf
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	ze_result_t result;
+	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE, ZES_ENGINE_GROUP_COPY_ALL};
+
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"copyGroupUtilization\": %.2f %%}\n", utilizationDiff);
+	} else {
+		PRINT("Copy Engine Group Utilization: %.2f %%\n", utilizationDiff);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1213,13 +1567,32 @@ ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	zes_freq_throttle_reason_flags_t throttleReasons;
+
+	frequency *fq = (frequency *)d->dev->getFrequency();
+	if (fq == nullptr) {
+		ERR("Failed to get frequency handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = fq->getThrottleReason(&throttleReasons);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GPU frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"throttleReason\": \"%s\"}\n", getFreqThrottleString(throttleReasons).c_str());
+	} else {
+		PRINT("Throttle Reason: %s\n", getFreqThrottleString(throttleReasons).c_str());
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1231,13 +1604,31 @@ ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
  * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
  */
 ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 {
 	TRACING();
-	UNUSED(dumpCmds);
-	UNUSED(d);
+	double curFreq = 0.0;
+
+	frequency *fq = (frequency *)d->dev->getFrequency();
+	if (fq == nullptr) {
+		ERR("Failed to get frequency handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = fq->getCurFreq(&curFreq, ZES_FREQ_DOMAIN_MEDIA);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get Media frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"mediaFrequency\": %.2f MHz}\n", curFreq);
+	} else {
+		PRINT("Media Frequency: %.2f MHz\n", curFreq);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
