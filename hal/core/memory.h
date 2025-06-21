@@ -44,7 +44,7 @@ public:
 	ze_result_t getMemoryChannels(uint32_t *channels);
 	ze_result_t getMemoryBusWidth(uint32_t *busWidth);
 	ze_result_t getMemoryUsed(uint64_t *used, double *utilization);
-	ze_result_t getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *timeStamp);
+	ze_result_t getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBandwidth, uint64_t *timeStamp);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device);
