@@ -61,6 +61,7 @@ void wait_for_thread(thread_id *tid)
 	if (tid->ret_thread_uid()) {
 		DBG("%s: thread handle is %ld\n", __func__, tid->ret_thread_uid());
 		pthread_join(tid->ret_thread_uid(), NULL);
+		delete tid; // Clean up the thread_id object after waiting
 	}
 }
 
