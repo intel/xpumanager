@@ -157,6 +157,7 @@ struct dumpCmdSubStruct
 {
 	int type;
 	dumpSubCmdFunc func;
+	bool availableForIGPU;
 };
 
 #endif

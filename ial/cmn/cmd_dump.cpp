@@ -232,9 +232,9 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 	bool found = false;
 
 	dumpCmdSubStruct dumpMetrics[] = {
-		{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization},
+		{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, true},
 		{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower},
-		{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency},
+		{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency, true},
 		{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature},
 		{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature},
 		{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization},
@@ -275,7 +275,10 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 	for (auto &cmd : dumpMetrics) {
 		if (cmd.type == atoi(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str()) && cmd.func != nullptr) {
 			found = true;
-			result = (this->*cmd.func)(dumpCmds, d);
+			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
+			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
+				result = (this->*cmd.func)(dumpCmds, d);
+			}
 			break;
 		}
 	}
