@@ -73,9 +73,6 @@ struct option
 #define STRTOK_S(str, delimiters, context) strtok_s(str, delimiters, context)
 #define STRCASECMP _stricmp
 #define THREAD_RET DWORD WINAPI
-#define GET_PCI_DEV(devs) (1)
-#define PCI_CLEANUP(devs, found_dev)
-#define GET_DEV_ID(dev) (0)
 #define GETOPT getopt
 #define GETOPT_LONG getopt_long
 #define no_argument 0
