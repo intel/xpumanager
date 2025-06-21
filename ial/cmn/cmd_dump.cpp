@@ -48,43 +48,58 @@ dumpCmdStruct dumpCmds[] = {
 };
 
 dumpCmdSubStruct dumpMetrics[] = {
-	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, true},
-	{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower},
-	{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency, true},
-	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite},
-	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, &cmdDump::gpuEuArrayIdle},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER, &cmdDump::gpuEuArrayResetCounter},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS, &cmdDump::gpuEuArrayProgrammingErrors},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS, &cmdDump::gpuEuArrayDriverErrors},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsCorrectable},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsUncorrectable},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION, &cmdDump::gpuMemoryBandwidthUtilization},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, &cmdDump::gpuMemoryUsed},
-	{dumpCmdSubType::DUMP_PCIE_READ, &cmdDump::pcieRead},
-	{dumpCmdSubType::DUMP_PCIE_WRITE, &cmdDump::pcieWrite},
-	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, &cmdDump::xeLinkThroughput},
-	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION, &cmdDump::computeEngineUtilization},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION, &cmdDump::renderEngineUtilization},
-	{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION, &cmdDump::mediaDecoderEngineUtilization},
-	{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION, &cmdDump::mediaEncoderEngineUtilization},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION, &cmdDump::copyEngineUtilization},
-	{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, &cmdDump::mediaEnhancementEngineUtilization},
-	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, &cmdDump::engineUtilization},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE, &cmdDump::gpuMemoryErrorsCorrectable},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE, &cmdDump::gpuMemoryErrorsUncorrectable},
-	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION, &cmdDump::computeEngineGroupUtilization},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION, &cmdDump::renderEngineGroupUtilization},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION, &cmdDump::mediaEngineGroupUtilization},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION, &cmdDump::copyEngineGroupUtilization},
-	{dumpCmdSubType::DUMP_THROTTLE_REASON, &cmdDump::throttleReason},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY, &cmdDump::mediaEngineFrequency},
+	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, "GPU Utilization (%)", true},
+	{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower, "GPU Power (W)"},
+	{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency, "GPU Frequency (MHz)", true},
+	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead, "GPU Memory Read (GB/s)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite, "GPU Memory Write (GB/s)"},
+	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, &cmdDump::gpuEuArrayIdle, "GPU EU Array Idle (%)"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER, &cmdDump::gpuEuArrayResetCounter, "GPU EU Array Reset Counter"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS, &cmdDump::gpuEuArrayProgrammingErrors,
+	 "GPU EU Array Programming Errors"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS, &cmdDump::gpuEuArrayDriverErrors, "GPU EU Array Driver Errors"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsCorrectable,
+	 "GPU EU Array Cache Errors Correctable"},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsUncorrectable,
+	 "GPU EU Array Cache Errors Uncorrectable"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION, &cmdDump::gpuMemoryBandwidthUtilization,
+	 "GPU Memory Bandwidth Utilization (%)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, &cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)"},
+	{dumpCmdSubType::DUMP_PCIE_READ, &cmdDump::pcieRead, "PCIe Read (kB/s)"},
+	{dumpCmdSubType::DUMP_PCIE_WRITE, &cmdDump::pcieWrite, "PCIe Write (kB/s)"},
+	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, &cmdDump::xeLinkThroughput, "XE Link Throughput (kB/s)"},
+	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION, &cmdDump::computeEngineUtilization,
+	 "Compute Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION, &cmdDump::renderEngineUtilization,
+	 "Render Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION, &cmdDump::mediaDecoderEngineUtilization,
+	 "Media Decoder Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION, &cmdDump::mediaEncoderEngineUtilization,
+	 "Media Encoder Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION, &cmdDump::copyEngineUtilization, "Copy Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, &cmdDump::mediaEnhancementEngineUtilization,
+	 "Media Enhancement Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, &cmdDump::engineUtilization, "3D Engine Utilization (%)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE, &cmdDump::gpuMemoryErrorsCorrectable,
+	 "GPU Memory Errors Correctable"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE, &cmdDump::gpuMemoryErrorsUncorrectable,
+	 "GPU Memory Errors Uncorrectable"},
+	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION, &cmdDump::computeEngineGroupUtilization,
+	 "Compute Engine Group Utilization (%)"},
+	{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION, &cmdDump::renderEngineGroupUtilization,
+	 "Render Engine Group Utilization (%)"},
+	{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION, &cmdDump::mediaEngineGroupUtilization,
+	 "Media Engine Group Utilization (%)"},
+	{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION, &cmdDump::copyEngineGroupUtilization,
+	 "Copy Engine Group Utilization (%)"},
+	{dumpCmdSubType::DUMP_THROTTLE_REASON, &cmdDump::throttleReason, "Throttle Reason"},
+	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY, &cmdDump::mediaEngineFrequency, "Media Engine Frequency (MHz)"},
 };
 
 /**
@@ -411,7 +426,7 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("GPU Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -454,7 +469,7 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuPower\": %.2f W}\n", gpuPowerDiff);
 	} else {
-		PRINT("GPU Power: %.2f W\n", gpuPowerDiff);
+		PRINT("%.2f\n", gpuPowerDiff);
 	}
 	return result;
 }
@@ -489,7 +504,7 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuFrequency\": %.2f MHz}\n", curFreq);
 	} else {
-		PRINT("GPU Frequency: %.2f MHz\n", curFreq);
+		PRINT("%.2f\n", curFreq);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -524,7 +539,7 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"coreTemperature\": %.2f}\n", coreTemp);
 	} else {
-		PRINT("Core Temperature: %.2f C\n", coreTemp);
+		PRINT("%.2f\n", coreTemp);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -560,7 +575,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"memoryTemperature\": %.2f}\n", memoryTemp);
 	} else {
-		PRINT("Memory Temperature: %.2f C\n", memoryTemp);
+		PRINT("%.2f\n", memoryTemp);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -595,7 +610,7 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuMemoryUtilization\": %.2f%%}\n", memoryUtilization);
 	} else {
-		PRINT("GPU Memory Utilization: %.2f%%\n", memoryUtilization);
+		PRINT("%.2f\n", memoryUtilization);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -645,7 +660,7 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuMemoryRead\": %lu kB/s}\n", (unsigned long)memoryReadDiff);
 	} else {
-		PRINT("GPU Memory Read: %lu kB/s\n", (unsigned long)memoryReadDiff);
+		PRINT("%.2f\n", memoryReadDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -695,7 +710,7 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuMemoryWrite\": %lu kB/s}\n", (unsigned long)memoryWriteDiff);
 	} else {
-		PRINT("GPU Memory Write: %lu kB/s\n", (unsigned long)memoryWriteDiff);
+		PRINT("%lu\n", (unsigned long)memoryWriteDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -727,7 +742,7 @@ ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"energyConsumed\": %.2f J}\n", energyConsumed);
 	} else {
-		PRINT("GPU Energy Consumed: %.2f J\n", energyConsumed);
+		PRINT("%.2f\n", energyConsumed);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -819,7 +834,7 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuEuArrayResetCounter\": %" PRIu64 " }\n", rasCounter);
 	} else {
-		PRINT("GPU EU Array Reset Counter: %" PRIu64 "\n", rasCounter);
+		PRINT("%" PRIu64 "\n", rasCounter);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -856,7 +871,7 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInf
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuEuArrayProgrammingErrors\": %" PRIu64 " }\n", rasCounter);
 	} else {
-		PRINT("GPU EU Array Programming Errors: %" PRIu64 "\n", rasCounter);
+		PRINT("%" PRIu64 "\n", rasCounter);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -891,7 +906,7 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuEuArrayDriverErrors\": %" PRIu64 " }\n", rasCounter);
 	} else {
-		PRINT("GPU EU Array Driver Errors: %" PRIu64 "\n", rasCounter);
+		PRINT("%" PRIu64 "\n", rasCounter);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -927,7 +942,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, d
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuEuArrayCacheErrorsCorrectable\": %" PRIu64 " }\n", rasCounter);
 	} else {
-		PRINT("GPU EU Array Cache Errors Correctable: %" PRIu64 "\n", rasCounter);
+		PRINT("%" PRIu64 "\n", rasCounter);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -964,7 +979,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds,
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuEuArrayCacheErrorsUncorrectable\": %" PRIu64 " }\n", rasCounter);
 	} else {
-		PRINT("GPU EU Array Cache Errors Uncorrectable: %" PRIu64 "\n", rasCounter);
+		PRINT("%" PRIu64 "\n", rasCounter);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -1020,7 +1035,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"memoryBandwidth\": %d %%}\n", (uint32_t)memoryBWDiff);
 	} else {
-		PRINT("Memory Bandwidth: %d %%\n", (uint32_t)memoryBWDiff);
+		PRINT("%d\n", (uint32_t)memoryBWDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1056,7 +1071,7 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"gpuMemoryUsed\": %.2f MiB}\n", (double)memoryUsed / (1024 * 1024));
 	} else {
-		PRINT("GPU Memory Used: %.2f MiB\n", (double)memoryUsed / (1024 * 1024));
+		PRINT("%.2f\n", (double)memoryUsed / (1024 * 1024));
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1104,7 +1119,7 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"pciRead\": %" PRIu64 " kB/s}\n", pciDiff);
 	} else {
-		PRINT("PCIe Read: %" PRIu64 " kB/s\n", pciDiff);
+		PRINT("%" PRIu64 "\n", pciDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1134,7 +1149,6 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 
 	ze_result_t result = p->getStats(d->zesDeviceHdl, &pciStats1);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI stats: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1153,7 +1167,7 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"pciWrite\": %" PRIu64 " kB/s}\n", pciDiff);
 	} else {
-		PRINT("PCIe Write: %" PRIu64 " kB/s\n", pciDiff);
+		PRINT("%" PRIu64 "\n", pciDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1204,7 +1218,7 @@ ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"computeUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Compute Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -1237,7 +1251,7 @@ ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"renderUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Render Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1269,7 +1283,7 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"mediaDecodeUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Media Decode Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1301,7 +1315,7 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"mediaEncodeUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Media Encode Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1333,7 +1347,7 @@ ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"copyUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Copy Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1365,7 +1379,7 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, 
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"mediaEnhancementUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Media Enhancement Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1457,7 +1471,7 @@ ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devI
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"computeGroupUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Compute Engine Group Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1490,7 +1504,7 @@ ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devIn
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"renderGroupUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Render Engine Group Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1524,7 +1538,7 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInf
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"mediaGroupUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Media Engine Group Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1557,7 +1571,7 @@ ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"copyGroupUtilization\": %.2f %%}\n", utilizationDiff);
 	} else {
-		PRINT("Copy Engine Group Utilization: %.2f %%\n", utilizationDiff);
+		PRINT("%.2f\n", utilizationDiff);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1593,7 +1607,7 @@ ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"throttleReason\": \"%s\"}\n", getFreqThrottleString(throttleReasons).c_str());
 	} else {
-		PRINT("Throttle Reason: %s\n", getFreqThrottleString(throttleReasons).c_str());
+		PRINT("%s\n", getFreqThrottleString(throttleReasons).c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -1630,7 +1644,7 @@ ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
 		PRINT("{\"mediaFrequency\": %.2f MHz}\n", curFreq);
 	} else {
-		PRINT("Media Frequency: %.2f MHz\n", curFreq);
+		PRINT("%.2f\n", curFreq);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1653,6 +1667,8 @@ int cmdDump::run(arg_struct *args)
 	int optionIndex = 0;
 	string shortOpts;
 	vector<struct option> longOptsVec;
+	string header;
+	bool first = false;
 
 	// If the user didn't provide any arguments, show help
 	if (args->argc == 2) {
@@ -1734,6 +1750,19 @@ int cmdDump::run(arg_struct *args)
 		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
 		return result;
 	}
+
+	header = "Timestamp, DeviceId, ";
+	// First print the header which looks like this Timestamp, DeviceId, <heading>
+	for (auto &cmd : dumpMetrics) {
+		if (cmd.type == atoi(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str()) && cmd.func != nullptr) {
+			if (first) {
+				header += ", ";
+			}
+			header += cmd.heading;
+			first = true;
+		}
+	}
+	PRINT("%s\n", header.c_str());
 
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
