@@ -110,11 +110,12 @@ private:
 	zesInfo *zes_func_table;
 	zetInfo *zet_func_table;
 	uint32_t fwupdateProgress;
+	bool igpu;
 
 public:
 	device()
 		: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), zes_func_table(nullptr),
-		  zet_func_table(nullptr), fwupdateProgress(0)
+		  zet_func_table(nullptr), fwupdateProgress(0), igpu(false)
 	{}
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
@@ -137,6 +138,7 @@ public:
 	ze_result_t resetDevice(ze_device_handle_t dev);
 
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
+	bool isIGPU() const { return igpu; }
 	bool isBDF(const char *bdf);
 	void addInfo(vector<devInfo> *devList, uint32_t devIndex);
 

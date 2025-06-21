@@ -96,25 +96,25 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 	}
 	DBG("\n");
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
+	if (zeDevProp->flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
 		DBG("  - Integrated Device\n");
 	} else {
 		DBG("  - Discrete Device\n");
 	}
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE) {
+	if (zeDevProp->flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE) {
 		DBG("  - Subdevice\n");
 	} else {
 		DBG("  - Non-Subdevice\n");
 	}
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_ECC) {
+	if (zeDevProp->flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
 		DBG("  - Device supports error correction memory access\n");
 	} else {
 		DBG("  - Device does NOT support error correction memory access\n");
 	}
 
-	if (zeDevProp->type & ZE_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) {
+	if (zeDevProp->flags & ZE_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) {
 		DBG("  - Device supports on-demand page-faulting\n");
 	} else {
 		DBG("  - Device does NOT support on-demand page-faulting\n");
@@ -529,6 +529,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	getImageProps(zeDevice, &deviceProperties.zeImageProps);
 	getExtMemProps(zeDevice, &deviceProperties.zeExternalMemoryProps);
 
+	igpu = (deviceProperties.zeDeviceProperties.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED);
 	found = false;
 	// Now we have to match zesDevice with zeDevices
 	for (uint32_t j = 0; j < totalZesDeviceCount; ++j) {
