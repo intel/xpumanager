@@ -41,6 +41,7 @@ public:
 	ze_result_t getRange(zes_freq_handle_t frequencyHandle);
 	ze_result_t getState(zes_freq_handle_t frequencyHandle, zes_freq_state_t *state);
 	ze_result_t getThrottleTime(zes_freq_handle_t frequencyHandle);
+	ze_result_t getThrottleReason(zes_freq_throttle_reason_flags_t *throttleReasons);
 
 	ze_result_t getCurFreq(double *currentFreq, zes_freq_domain_t domain);
 	ze_result_t setRange(double minFreq, double maxFreq);

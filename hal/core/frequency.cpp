@@ -216,6 +216,35 @@ ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+ze_result_t frequency::getThrottleReason(zes_freq_throttle_reason_flags_t *throttleReasons)
+{
+	TRACING();
+	zes_freq_properties_t properties = {};
+	zes_freq_state_t state = {};
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		result = getProperties(frequencyHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		if (properties.type == ZES_FREQ_DOMAIN_GPU) {
+
+			result = getState(frequencyHandles[i], &state);
+			if (result != ZE_RESULT_SUCCESS) {
+				return result;
+			}
+
+			if (throttleReasons) {
+				*throttleReasons = state.throttleReasons;
+				break;
+			}
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
 ze_result_t frequency::init(zes_device_handle_t device) { return enumFrequencies(device); }
 
 ze_result_t frequency::zesRun(zes_device_handle_t device)
