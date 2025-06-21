@@ -280,10 +280,15 @@ void cmdDump::help(HELP helpType)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
+THREAD_RET cmdDump::metrics(void *args)
 {
 	TRACING();
+	threadArgs *metricArgs = (threadArgs *)args;
+	cmdDump *cmdDumpInstance = metricArgs->cmdDumpInstance;
+	dumpCmdStruct *dumpCmds = metricArgs->dumpCmds;
+	devInfo *d = metricArgs->d;
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	UNUSED(result);
 	bool found = false;
 
 	// Iterate through the dump commands and execute the metrics function for each
@@ -292,7 +297,7 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 			found = true;
 			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
 			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
-				result = (this->*cmd.func)(dumpCmds, d);
+				result = (cmdDumpInstance->*cmd.func)(dumpCmds, d);
 			}
 			break;
 		}
@@ -301,10 +306,10 @@ ze_result_t cmdDump::metrics(dumpCmdStruct *dumpCmds, devInfo *d)
 	if (!found) {
 		ERR("The following argument was not expected: '%s'.\n", dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
 		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	return result;
+	delete metricArgs;
+	return 0;
 }
 
 string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flags)
@@ -1764,17 +1769,32 @@ int cmdDump::run(arg_struct *args)
 	}
 	PRINT("%s\n", header.c_str());
 
+	thread_id **tidList = new thread_id *[deviceList.size()];
+	if (tidList == nullptr) {
+		ERR("Failed to allocate memory for thread ID list.\n");
+		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+	}
+	int index = 0;
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : dumpCmds) {
 			if (cmd.enabled && cmd.func != nullptr) {
+				threadArgs *args = new threadArgs{this, dumpCmds, &device};
 				DBG("Running command: %s\n", cmd.opt.name);
-				result = (this->*cmd.func)(dumpCmds, &device);
+				// cmd.func(args);
+				tidList[index++] = create_thread(cmd.func, args);
 				break;
 			}
 		}
 	}
+
+	for (int i = 0; i < index; i++) {
+		if (tidList[i] != nullptr) {
+			wait_for_thread(tidList[i]);
+		}
+	}
+	delete[] tidList;
 
 	return result;
 }

@@ -134,23 +134,6 @@ int getopt_long(int argc, char *const argv[], const char *optstring, const struc
 
 void *align_alloc(size_t size) { return malloc(size); }
 
-thread_id *create_thread(funcptr thread, void *args)
-{
-	HANDLE thread_hdl;
-
-	thread_hdl = CreateThread(NULL, NULL, *thread, args, NULL, NULL);
-
-	thread_id *new_thread_id = new thread_id(thread_hdl);
-
-	return new_thread_id;
-}
-
-void wait_for_thread(thread_id *tid)
-{
-	WaitForSingleObject(tid->ret_thread_uid(), INFINITE);
-	delete tid; // Clean up the thread_id object after waiting
-}
-
 string getProcessName(uint32_t processId)
 {
 	string processName = "<unknown>";

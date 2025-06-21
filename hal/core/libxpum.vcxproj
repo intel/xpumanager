@@ -186,6 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\oal\win\dllmain.cpp" />
+    <ClCompile Include="..\..\oal\win\thread.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\fwupd\amcupd.cpp" />
     <ClCompile Include="..\fwupd\fwupd.cpp" />
