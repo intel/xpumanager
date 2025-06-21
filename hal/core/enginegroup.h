@@ -41,7 +41,8 @@ public:
 	ze_result_t getActivityExt(zes_engine_handle_t engineGroup);
 	ze_result_t getUtilization(zes_engine_group_t type, uint64_t *utilization, uint64_t *timestamp);
 	ze_result_t getMediaEngines(uint32_t *mediaEngines, zes_engine_group_t type);
-	ze_result_t getUtilization(uint32_t *utilization, zes_engine_group_t type);
+	ze_result_t getUtilization(zes_engine_group_t *typeTable, uint32_t tableSize, uint64_t *utilization,
+							   uint64_t *timestamp);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;
