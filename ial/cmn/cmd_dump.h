@@ -134,7 +134,7 @@ public:
 	ze_result_t throttleReason(dumpCmdStruct *dumpCmds, devInfo *d);
 	ze_result_t mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d);
 
-	ze_result_t utilization(devInfo *d, zes_engine_group_t type, double *utilizationDiff);
+	ze_result_t utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, double *utilizationDiff);
 	ze_result_t gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU);
 
 	ze_result_t metrics(dumpCmdStruct *dumpCmds, devInfo *d);

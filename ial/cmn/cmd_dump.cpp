@@ -325,7 +325,7 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t type, double *utilizationDiff)
+ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, double *utilizationDiff)
 {
 	TRACING();
 	uint64_t utilization1 = 0, utilization2 = 0;
@@ -338,7 +338,7 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t type, double *ut
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	result = eg->getUtilization(type, &utilization1, &timeStamp1);
+	result = eg->getUtilization(typeTable, tableSize, &utilization1, &timeStamp1);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -347,7 +347,7 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t type, double *ut
 	// Sleep for 500 milliseconds to allow the next power reading to be accurate
 	MSLEEP(500);
 
-	result = eg->getUtilization(type, &utilization2, &timeStamp2);
+	result = eg->getUtilization(typeTable, tableSize, &utilization2, &timeStamp2);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -377,10 +377,10 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 	UNUSED(dumpCmds);
 	ze_result_t result;
 	double utilizationDiff = 0.0;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_ALL};
 
-	result = utilization(d, ZES_ENGINE_GROUP_ALL, &utilizationDiff);
+	result = utilization(d, engineTable, ARRAY_SIZE(engineTable), &utilizationDiff);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU utilization: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -464,8 +464,11 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("GPU Frequency: %.2f MHz\n", curFreq);
-
+	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
+		PRINT("{\"gpuFrequency\": %.2f MHz}\n", curFreq);
+	} else {
+		PRINT("GPU Frequency: %.2f MHz\n", curFreq);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 

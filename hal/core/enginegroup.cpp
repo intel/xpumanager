@@ -175,11 +175,13 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t enginegroup::getUtilization(zes_engine_group_t type, uint64_t *utilization, uint64_t *timestamp)
+ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t tableSize, uint64_t *utilization,
+										uint64_t *timestamp)
 {
 	zes_engine_properties_t engineProperties;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_engine_stats_t engineStats;
+	bool found;
 	TRACING();
 
 	if (utilization == nullptr) {
@@ -200,7 +202,15 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t type, uint64_t *utili
 			return result;
 		}
 
-		if (engineProperties.type == type) {
+		found = false;
+		for (uint32_t j = 0; j < tableSize; j++) {
+			if (engineProperties.type == typeTable[j]) {
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
 			result = getActivity(engineGroup, &engineStats);
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
