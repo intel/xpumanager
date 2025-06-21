@@ -36,9 +36,12 @@ public:
 	ras() : rasCount(0), rasHandles(nullptr) {}
 	~ras();
 	ze_result_t enumRasErrorSets(zes_device_handle_t device);
-	ze_result_t getProperties(zes_ras_handle_t rasHandle);
-	ze_result_t getConfig(zes_ras_handle_t rasHandle);
-	ze_result_t getState(zes_ras_handle_t rasHandle);
+	ze_result_t getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t *properties);
+	ze_result_t getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config);
+	ze_result_t getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state);
+	ze_result_t getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorType, uint64_t *rasCounter);
+
+	ze_result_t init(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);
 };
 

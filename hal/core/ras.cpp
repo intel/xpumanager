@@ -50,20 +50,19 @@ ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t ras::getProperties(zes_ras_handle_t rasHandle)
+ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t *properties)
 {
-	zes_ras_properties_t properties;
-	ze_result_t result = zesRasGetProperties(rasHandle, &properties);
+	ze_result_t result = zesRasGetProperties(rasHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get RAS properties. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("RAS properties retrieved successfully.\n");
-	DBG("  onSubdevice: %d\n", properties.onSubdevice);
-	DBG("  subdeviceId: %d\n", properties.subdeviceId);
+	DBG("  onSubdevice: %d\n", properties->onSubdevice);
+	DBG("  subdeviceId: %d\n", properties->subdeviceId);
 
-	switch (properties.type) {
+	switch (properties->type) {
 	case ZES_RAS_ERROR_TYPE_CORRECTABLE:
 		DBG("  Type: Correctable\n");
 		break;
@@ -77,28 +76,26 @@ ze_result_t ras::getProperties(zes_ras_handle_t rasHandle)
 	return result;
 }
 
-ze_result_t ras::getConfig(zes_ras_handle_t rasHandle)
+ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
 {
-	zes_ras_config_t config;
-	ze_result_t result = zesRasGetConfig(rasHandle, &config);
+	ze_result_t result = zesRasGetConfig(rasHandle, config);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get RAS config. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("RAS config retrieved successfully.\n");
-	DBG("  Total Threshold: %" PRIu64 "\n", config.totalThreshold);
+	DBG("  Total Threshold: %" PRIu64 "\n", config->totalThreshold);
 	DBG("  Detailed Thresholds:\n");
 	for (uint32_t i = 0; i < ZES_MAX_RAS_ERROR_CATEGORY_COUNT; ++i) {
-		DBG("    Category %u: %" PRIu64 "\n", i, config.detailedThresholds.category[i]);
+		DBG("    Category %u: %" PRIu64 "\n", i, config->detailedThresholds.category[i]);
 	}
 	return result;
 }
 
-ze_result_t ras::getState(zes_ras_handle_t rasHandle)
+ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 {
-	zes_ras_state_t state = {};
-	ze_result_t result = zesRasGetState(rasHandle, 0, &state);
+	ze_result_t result = zesRasGetState(rasHandle, 0, state);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get RAS state. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -106,31 +103,76 @@ ze_result_t ras::getState(zes_ras_handle_t rasHandle)
 
 	DBG("RAS state retrieved successfully.\n");
 	for (uint32_t i = 0; i < ZES_MAX_RAS_ERROR_CATEGORY_COUNT; ++i) {
-		DBG("    Category %u: %" PRIu64 "\n", i, state.category[i]);
+		DBG("    Category %u: %" PRIu64 "\n", i, state->category[i]);
 	}
 
 	return result;
 }
 
-ze_result_t ras::zesRun(zes_device_handle_t device)
+ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorType, uint64_t *rasCounter)
 {
-	ze_result_t result = enumRasErrorSets(device);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_ras_properties_t properties = {};
+	zes_ras_state_t states = {};
+
+	if (type < ZES_RAS_ERROR_CAT_RESET || type > ZES_RAS_ERROR_CAT_DISPLAY_ERRORS) {
+		ERR("Invalid RAS error category type: %d\n", type);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (rasCounter == nullptr) {
+		ERR("Invalid argument: rasCounter is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*rasCounter = 0;
+
 	for (uint32_t i = 0; i < rasCount; ++i) {
-		result = getProperties(rasHandles[i]);
+		result = getProperties(rasHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = getConfig(rasHandles[i]);
+		result = getState(rasHandles[i], &states);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = getState(rasHandles[i]);
+		if (type != ZES_RAS_ERROR_CAT_CACHE_ERRORS || errorType == properties.type ||
+			errorType == ZES_RAS_ERROR_TYPE_FORCE_UINT32) {
+			*rasCounter = states.category[type];
+			DBG("RAS error count for category %d: %" PRIu64 "\n", type, *rasCounter);
+		}
+	}
+	return result;
+}
+
+ze_result_t ras::init(zes_device_handle_t device)
+{
+	TRACING();
+	return enumRasErrorSets(device);
+}
+
+ze_result_t ras::zesRun(zes_device_handle_t device)
+{
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_ras_properties_t properties = {};
+	zes_ras_config_t config = {};
+	zes_ras_state_t state = {};
+	UNUSED(device);
+
+	for (uint32_t i = 0; i < rasCount; ++i) {
+		result = getProperties(rasHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		result = getConfig(rasHandles[i], &config);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		result = getState(rasHandles[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
