@@ -36,13 +36,13 @@ public:
 	frequency() : frequencyCount(0), frequencyHandles(nullptr) {}
 	~frequency();
 	ze_result_t enumFrequencies(zes_device_handle_t device);
-	ze_result_t getProperties(zes_freq_handle_t frequencyHandle);
+	ze_result_t getProperties(zes_freq_handle_t frequencyHandle, zes_freq_properties_t *properties);
 	ze_result_t getAvailableClocks(zes_freq_handle_t frequencyHandle);
 	ze_result_t getRange(zes_freq_handle_t frequencyHandle);
 	ze_result_t getState(zes_freq_handle_t frequencyHandle, zes_freq_state_t *state);
 	ze_result_t getThrottleTime(zes_freq_handle_t frequencyHandle);
 
-	ze_result_t getCurFreq(double *currentFreq);
+	ze_result_t getCurFreq(double *currentFreq, zes_freq_domain_t domain);
 	ze_result_t setRange(double minFreq, double maxFreq);
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

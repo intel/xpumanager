@@ -52,19 +52,34 @@ ze_result_t frequency::enumFrequencies(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle)
+ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq_properties_t *properties)
 {
-	zes_freq_properties_t properties;
-	ze_result_t result = zesFrequencyGetProperties(frequencyHandle, &properties);
+	TRACING();
+	ze_result_t result = zesFrequencyGetProperties(frequencyHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
 	DBG("Frequency Properties:\n");
-	DBG("  Max Frequency: %f MHz\n", properties.max);
-	DBG("  Min Frequency: %f MHz\n", properties.min);
-	DBG("  Is throttle supported: %d\n", properties.isThrottleEventSupported);
-	DBG("  Can control: %d\n", properties.canControl);
+	DBG("  Type: ");
+	switch (properties->type) {
+	case ZES_FREQ_DOMAIN_GPU:
+		DBG("GPU\n");
+		break;
+	case ZES_FREQ_DOMAIN_MEMORY:
+		DBG("Memory\n");
+		break;
+	case ZES_FREQ_DOMAIN_MEDIA:
+		DBG("Media\n");
+		break;
+	default:
+		DBG("Other\n");
+		break;
+	}
+	DBG("  Max Frequency: %f MHz\n", properties->max);
+	DBG("  Min Frequency: %f MHz\n", properties->min);
+	DBG("  Is throttle supported: %d\n", properties->isThrottleEventSupported);
+	DBG("  Can control: %d\n", properties->canControl);
 
 	return result;
 }
@@ -116,23 +131,32 @@ ze_result_t frequency::getRange(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
-ze_result_t frequency::getCurFreq(double *currentFreq)
+ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 {
 	TRACING();
+	zes_freq_properties_t properties = {};
+	zes_freq_state_t state = {};
+	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < frequencyCount; ++i) {
-		zes_freq_state_t state = {};
-		ze_result_t result = zesFrequencyGetState(frequencyHandles[i], &state);
+		result = getProperties(frequencyHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get frequency state. 0x%X (%s)\n", result, l0_error_to_string(result));
 			return result;
 		}
 
-		if (currentFreq) {
-			*currentFreq = state.actual;
+		result = getState(frequencyHandles[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		if (properties.type == domain) {
+			if (currentFreq) {
+				*currentFreq = state.actual;
+				break;
+			}
 		}
 	}
-	return ZE_RESULT_SUCCESS;
+	return result;
 }
 
 ze_result_t frequency::setRange(double minFreq, double maxFreq)
@@ -198,10 +222,11 @@ ze_result_t frequency::zesRun(zes_device_handle_t device)
 {
 	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_freq_properties_t properties = {};
 	zes_freq_state_t state = {};
 
 	for (uint32_t i = 0; i < frequencyCount; ++i) {
-		result = getProperties(frequencyHandles[i]);
+		result = getProperties(frequencyHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}

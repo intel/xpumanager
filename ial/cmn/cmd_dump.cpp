@@ -458,7 +458,7 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = fq->getCurFreq(&curFreq);
+	ze_result_t result = fq->getCurFreq(&curFreq, ZES_FREQ_DOMAIN_GPU);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
