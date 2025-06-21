@@ -79,6 +79,9 @@
     <ClCompile Include="..\fwupd\fwupd.cpp">
       <Filter>fwupd</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\oal\win\thread.cpp">
+      <Filter>oal</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h">

@@ -138,7 +138,7 @@ public:
 	ze_result_t gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU);
 	string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 
-	ze_result_t metrics(dumpCmdStruct *dumpCmds, devInfo *d);
+	static THREAD_RET metrics(void *args);
 	int run(arg_struct *args);
 };
 
@@ -148,7 +148,7 @@ struct dumpCmdStruct
 {
 	dumpCmdType type;
 	option opt;
-	dumpSubCmdFunc func;
+	funcptr func;
 	bool enabled;
 	string val;
 };
@@ -159,6 +159,13 @@ struct dumpCmdSubStruct
 	dumpSubCmdFunc func;
 	string heading;
 	bool availableForIGPU;
+};
+
+struct threadArgs
+{
+	cmdDump *cmdDumpInstance;
+	dumpCmdStruct *dumpCmds;
+	devInfo *d;
 };
 
 #endif
