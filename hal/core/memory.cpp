@@ -348,7 +348,7 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 	return result;
 }
 
-ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *timeStamp)
+ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBandwidth, uint64_t *timeStamp)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_mem_bandwidth_t bandwidth;
@@ -359,6 +359,10 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *timeS
 
 	if (write) {
 		*write = 0;
+	}
+
+	if (maxBandwidth) {
+		*maxBandwidth = 0;
 	}
 
 	if (timeStamp) {
@@ -383,6 +387,10 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *timeS
 
 		if (timeStamp) {
 			*timeStamp = bandwidth.timestamp;
+		}
+
+		if (maxBandwidth) {
+			*maxBandwidth = bandwidth.maxBandwidth;
 		}
 	}
 	return result;
