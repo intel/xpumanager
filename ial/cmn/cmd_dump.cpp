@@ -38,7 +38,7 @@ dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_JSON, {"json", no_argument, 0, 'j'}},
 	{dumpCmdType::DUMP_DEVICE, {"device", required_argument, 0, 'd'}},
 	{dumpCmdType::DUMP_TILE, {"tile", required_argument, 0, 't'}},
-	{dumpCmdType::DUMP_METRICS, {"metrics", required_argument, 0, 'm'}, &cmdDump::metrics},
+	{dumpCmdType::DUMP_METRICS, {"metrics", required_argument, 0, 'm'}},
 	{dumpCmdType::DUMP_FILE, {"file", required_argument, 0, 'f'}},
 	{dumpCmdType::DUMP_IMS, {"ims", no_argument, 0, 'i'}},
 	{dumpCmdType::DUMP_TIME, {"time", no_argument, 0, 'T'}},
@@ -1774,22 +1774,15 @@ int cmdDump::run(arg_struct *args)
 		ERR("Failed to allocate memory for thread ID list.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
-	int index = 0;
-	// Iterate through the device list and execute the command
+	int total = 0;
+
+	// Iterate through the device list and execute the metrics command for each device
 	for (auto &device : deviceList) {
-		// Call the appropriate command function based on the command type
-		for (auto &cmd : dumpCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				threadArgs *args = new threadArgs{this, dumpCmds, &device};
-				DBG("Running command: %s\n", cmd.opt.name);
-				// cmd.func(args);
-				tidList[index++] = create_thread(cmd.func, args);
-				break;
-			}
-		}
+		threadArgs *args = new threadArgs{this, dumpCmds, &device};
+		tidList[total++] = create_thread(metrics, args);
 	}
 
-	for (int i = 0; i < index; i++) {
+	for (int i = 0; i < total; i++) {
 		if (tidList[i] != nullptr) {
 			wait_for_thread(tidList[i]);
 		}
