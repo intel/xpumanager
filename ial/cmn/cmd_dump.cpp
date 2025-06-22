@@ -32,6 +32,7 @@
 #include <enginegroup.h>
 #include <ras.h>
 #include <pci.h>
+#include <format>
 
 dumpCmdStruct dumpCmds[] = {
 	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
@@ -297,7 +298,10 @@ THREAD_RET cmdDump::metrics(void *args)
 			found = true;
 			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
 			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
-				result = (cmdDumpInstance->*cmd.func)(dumpCmds, d);
+				result = (cmdDumpInstance->*cmd.func)(dumpCmds, d, &metricArgs->outputLine);
+			} else {
+				// If the command is not available for iGPUs, set outputLine to N/A
+				metricArgs->outputLine = "N/A";
 			}
 			break;
 		}
@@ -308,7 +312,6 @@ THREAD_RET cmdDump::metrics(void *args)
 		ERR("Run with --help for more information.\n");
 	}
 
-	delete metricArgs;
 	return 0;
 }
 
@@ -416,7 +419,7 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -428,11 +431,7 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -447,7 +446,7 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t gpuPower1 = 0, gpuPower2 = 0;
@@ -471,11 +470,8 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
 	double gpuPowerDiff =
 		(timeStamp2 - timeStamp1) == 0 ? 0 : (double)(gpuPower2 - gpuPower1) / (timeStamp2 - timeStamp1);
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuPower\": %.2f W}\n", gpuPowerDiff);
-	} else {
-		PRINT("%.2f\n", gpuPowerDiff);
-	}
+	*outputLine = format("{:.2f}", gpuPowerDiff);
+
 	return result;
 }
 
@@ -489,7 +485,7 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	double curFreq = 0.0;
@@ -506,11 +502,8 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuFrequency\": %.2f MHz}\n", curFreq);
-	} else {
-		PRINT("%.2f\n", curFreq);
-	}
+	*outputLine = format("{:.2f}", curFreq);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -524,7 +517,7 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	double coreTemp = 0.0;
@@ -541,11 +534,7 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"coreTemperature\": %.2f}\n", coreTemp);
-	} else {
-		PRINT("%.2f\n", coreTemp);
-	}
+	*outputLine = format("{:.2f}", coreTemp);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -560,7 +549,7 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	double memoryTemp = 0.0;
@@ -577,11 +566,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"memoryTemperature\": %.2f}\n", memoryTemp);
-	} else {
-		PRINT("%.2f\n", memoryTemp);
-	}
+	*outputLine = format("{:.2f}", memoryTemp);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -595,7 +580,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	double memoryUtilization = 0;
@@ -612,11 +597,7 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuMemoryUtilization\": %.2f%%}\n", memoryUtilization);
-	} else {
-		PRINT("%.2f\n", memoryUtilization);
-	}
+	*outputLine = format("{:.2f}", memoryUtilization);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -630,7 +611,7 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t memoryRead1 = 0, memoryRead2 = 0;
@@ -662,11 +643,8 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
 								? 0
 								: (double)(1000000 * (memoryRead2 - memoryRead1)) / (timeStamp2 - timeStamp1) / 1024;
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuMemoryRead\": %lu kB/s}\n", (unsigned long)memoryReadDiff);
-	} else {
-		PRINT("%.2f\n", memoryReadDiff);
-	}
+	*outputLine = format("{:.2f}", memoryReadDiff);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -680,7 +658,7 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t memoryWrite1 = 0, memoryWrite2 = 0;
@@ -712,11 +690,8 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 								 ? 0
 								 : (double)(1000000 * (memoryWrite2 - memoryWrite1) / (timeStamp2 - timeStamp1) / 1024);
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuMemoryWrite\": %lu kB/s}\n", (unsigned long)memoryWriteDiff);
-	} else {
-		PRINT("%lu\n", (unsigned long)memoryWriteDiff);
-	}
+	*outputLine = format("{:.2f}", memoryWriteDiff);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -730,7 +705,7 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t gpuPower1 = 0;
@@ -744,11 +719,7 @@ ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
 
 	double energyConsumed = (double)(gpuPower1) / 1000000;
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"energyConsumed\": %.2f J}\n", energyConsumed);
-	} else {
-		PRINT("%.2f\n", energyConsumed);
-	}
+	*outputLine = format("{:.2f}", energyConsumed);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -763,7 +734,7 @@ ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -783,7 +754,7 @@ ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -802,7 +773,7 @@ ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -820,7 +791,7 @@ ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -836,12 +807,7 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuEuArrayResetCounter\": %" PRIu64 " }\n", rasCounter);
-	} else {
-		PRINT("%" PRIu64 "\n", rasCounter);
-	}
-
+	*outputLine = to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -856,7 +822,7 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -873,11 +839,7 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInf
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuEuArrayProgrammingErrors\": %" PRIu64 " }\n", rasCounter);
-	} else {
-		PRINT("%" PRIu64 "\n", rasCounter);
-	}
+	*outputLine = to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -892,7 +854,7 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInf
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -908,11 +870,7 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuEuArrayDriverErrors\": %" PRIu64 " }\n", rasCounter);
-	} else {
-		PRINT("%" PRIu64 "\n", rasCounter);
-	}
+	*outputLine = to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -928,7 +886,7 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -944,12 +902,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, d
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuEuArrayCacheErrorsCorrectable\": %" PRIu64 " }\n", rasCounter);
-	} else {
-		PRINT("%" PRIu64 "\n", rasCounter);
-	}
-
+	*outputLine = to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -965,7 +918,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, d
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -981,12 +934,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds,
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuEuArrayCacheErrorsUncorrectable\": %" PRIu64 " }\n", rasCounter);
-	} else {
-		PRINT("%" PRIu64 "\n", rasCounter);
-	}
-
+	*outputLine = to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1002,7 +950,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds,
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t memoryRead1 = 0, memoryRead2 = 0, memoryWrite1 = 0, memoryWrite2 = 0, maxBandwidth = 0;
@@ -1037,11 +985,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
 	// Calculate the memory bandwidth difference
 	memoryBWDiff = (timeStamp2 - timeStamp1) == 0 ? 0 : (memoryBW2 - memoryBW1) / ((timeStamp2 - timeStamp1) / 1000.0);
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"memoryBandwidth\": %d %%}\n", (uint32_t)memoryBWDiff);
-	} else {
-		PRINT("%d\n", (uint32_t)memoryBWDiff);
-	}
+	*outputLine = format("{:d}", (uint32_t)memoryBWDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1056,7 +1000,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	uint64_t memoryUsed = 0;
@@ -1073,11 +1017,7 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"gpuMemoryUsed\": %.2f MiB}\n", (double)memoryUsed / (1024 * 1024));
-	} else {
-		PRINT("%.2f\n", (double)memoryUsed / (1024 * 1024));
-	}
+	*outputLine = format("{:.2f}", (double)memoryUsed / (1024 * 1024));
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1092,7 +1032,7 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	zes_pci_stats_t pciStats1 = {}, pciStats2 = {};
@@ -1121,11 +1061,7 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
 															   : 1000000 * (pciStats2.rxCounter - pciStats1.rxCounter) /
 																	 (pciStats2.timestamp - pciStats1.timestamp) / 1024;
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"pciRead\": %" PRIu64 " kB/s}\n", pciDiff);
-	} else {
-		PRINT("%" PRIu64 "\n", pciDiff);
-	}
+	*outputLine = to_string(pciDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1140,7 +1076,7 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	zes_pci_stats_t pciStats1 = {}, pciStats2 = {};
@@ -1169,11 +1105,7 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
 															   : 1000000 * (pciStats2.txCounter - pciStats1.txCounter) /
 																	 (pciStats2.timestamp - pciStats1.timestamp) / 1024;
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"pciWrite\": %" PRIu64 " kB/s}\n", pciDiff);
-	} else {
-		PRINT("%" PRIu64 "\n", pciDiff);
-	}
+	*outputLine = to_string(pciDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1188,7 +1120,7 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1207,7 +1139,7 @@ ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1220,12 +1152,7 @@ ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"computeUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
-
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1240,7 +1167,7 @@ ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1253,11 +1180,7 @@ ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"renderUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1272,7 +1195,7 @@ ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1285,11 +1208,7 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"mediaDecodeUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1304,7 +1223,7 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1317,11 +1236,7 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"mediaEncodeUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1336,7 +1251,7 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1349,11 +1264,7 @@ ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"copyUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1368,7 +1279,7 @@ ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1381,11 +1292,7 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, 
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"mediaEnhancementUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1400,7 +1307,7 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, 
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1420,7 +1327,7 @@ ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1440,7 +1347,7 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1460,7 +1367,7 @@ ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devIn
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1473,11 +1380,7 @@ ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devI
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"computeGroupUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1493,7 +1396,7 @@ ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1506,11 +1409,7 @@ ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devIn
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"renderGroupUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1526,7 +1425,7 @@ ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devIn
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1540,11 +1439,7 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInf
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"mediaGroupUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1560,7 +1455,7 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInf
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	ze_result_t result;
@@ -1573,11 +1468,7 @@ ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"copyGroupUtilization\": %.2f %%}\n", utilizationDiff);
-	} else {
-		PRINT("%.2f\n", utilizationDiff);
-	}
+	*outputLine = format("{:.2f}", utilizationDiff);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1592,7 +1483,7 @@ ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	zes_freq_throttle_reason_flags_t throttleReasons;
@@ -1609,11 +1500,7 @@ ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"throttleReason\": \"%s\"}\n", getFreqThrottleString(throttleReasons).c_str());
-	} else {
-		PRINT("%s\n", getFreqThrottleString(throttleReasons).c_str());
-	}
+	*outputLine = getFreqThrottleString(throttleReasons);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1629,7 +1516,7 @@ ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d)
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
+ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	double curFreq = 0.0;
@@ -1646,11 +1533,7 @@ ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d)
 		return result;
 	}
 
-	if (dumpCmds[dumpCmdType::DUMP_JSON].enabled) {
-		PRINT("{\"mediaFrequency\": %.2f MHz}\n", curFreq);
-	} else {
-		PRINT("%.2f\n", curFreq);
-	}
+	*outputLine = format("{:.2f}", curFreq);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1769,6 +1652,7 @@ int cmdDump::run(arg_struct *args)
 	}
 	PRINT("%s\n", header.c_str());
 
+	threadArgs **argsList = new threadArgs *[deviceList.size()];
 	thread_id **tidList = new thread_id *[deviceList.size()];
 	if (tidList == nullptr) {
 		ERR("Failed to allocate memory for thread ID list.\n");
@@ -1776,18 +1660,28 @@ int cmdDump::run(arg_struct *args)
 	}
 	int total = 0;
 
-	// Iterate through the device list and execute the metrics command for each device
+	// Iterate through the device list and create a thread called metrics for each device
 	for (auto &device : deviceList) {
-		threadArgs *args = new threadArgs{this, dumpCmds, &device};
-		tidList[total++] = create_thread(metrics, args);
+		argsList[total] = new threadArgs{this, dumpCmds, &device};
+		tidList[total] = create_thread(metrics, argsList[total]);
+		total++;
 	}
 
+	// Wait for all threads to complete
 	for (int i = 0; i < total; i++) {
 		if (tidList[i] != nullptr) {
 			wait_for_thread(tidList[i]);
 		}
 	}
+
+	// Print the output and delete the thread arguments
+	for (int i = 0; i < total; i++) {
+		PRINT("%s\n", argsList[i]->outputLine.c_str());
+		delete argsList[i];
+	}
+
 	delete[] tidList;
+	delete[] argsList;
 
 	return result;
 }
