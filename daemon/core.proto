@@ -605,6 +605,13 @@ message DeviceComponentOccupancyRatio {
     string stallOther = 20;
     string stallInstFetch = 21;
     string tileId = 22;
+    string alu2Active = 23;
+    string alu2Only = 24;
+    string alu2alu0Active = 25;
+    string alu0Withoutalu2 = 26;
+    string alu0Only = 27;
+    string alu1alu0Active = 28;
+    string alu1IntOnly = 29;
 }
 
 message DeviceComponentOccupancyRatioResponse {
