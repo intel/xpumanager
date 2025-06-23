@@ -2134,13 +2134,23 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceComponentOccupancyRatio(i
                 tileJson["in_use"] = response.componentoccupancylist(i).inuse();
                 tileJson["active"] = response.componentoccupancylist(i).active();
                 tileJson["alu_active"] = response.componentoccupancylist(i).aluactive();
-                tileJson["xmx_active"] = response.componentoccupancylist(i).xmxactive();
-                tileJson["xmx_only"] = response.componentoccupancylist(i).xmxonly();
-                tileJson["xmx_fpu_active"] = response.componentoccupancylist(i).xmxfpuactive();
-                tileJson["fpu_without_xmx"] = response.componentoccupancylist(i).fpuwithoutxmx();
-                tileJson["fpu_only"] = response.componentoccupancylist(i).fpuonly();
-                tileJson["em_fpu_active"] = response.componentoccupancylist(i).emfpuactive();
-                tileJson["em_int_only"] = response.componentoccupancylist(i).emintonly();
+                if (isXeDevice()) {
+                    tileJson["alu2_active"] = response.componentoccupancylist(i).alu2active();
+                    tileJson["alu2_only"] = response.componentoccupancylist(i).alu2only();
+                    tileJson["alu2_alu0_active"] = response.componentoccupancylist(i).alu2alu0active();
+                    tileJson["alu0_without_alu2"] = response.componentoccupancylist(i).alu0withoutalu2();
+                    tileJson["alu0_only"] = response.componentoccupancylist(i).alu0only();
+                    tileJson["alu1_alu0_active"] = response.componentoccupancylist(i).alu1alu0active();
+                    tileJson["alu1_int_only"] = response.componentoccupancylist(i).alu1intonly();
+                }else {
+                    tileJson["xmx_active"] = response.componentoccupancylist(i).xmxactive();
+                    tileJson["xmx_only"] = response.componentoccupancylist(i).xmxonly();
+                    tileJson["xmx_fpu_active"] = response.componentoccupancylist(i).xmxfpuactive();
+                    tileJson["fpu_without_xmx"] = response.componentoccupancylist(i).fpuwithoutxmx();
+                    tileJson["fpu_only"] = response.componentoccupancylist(i).fpuonly();
+                    tileJson["em_fpu_active"] = response.componentoccupancylist(i).emfpuactive();
+                    tileJson["em_int_only"] = response.componentoccupancylist(i).emintonly();
+                }
                 tileJson["other"] = response.componentoccupancylist(i).other();
                 tileJson["stall"] = response.componentoccupancylist(i).stall();
                 tileJson["non_occupancy"] = response.componentoccupancylist(i).nonoccupancy();
