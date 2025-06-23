@@ -132,9 +132,6 @@
     <ClInclude Include="power.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="process.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ras.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -167,6 +164,9 @@
     </ClInclude>
     <ClInclude Include="..\fwupd\sysmanupd.h">
       <Filter>fwupd</Filter>
+    </ClInclude>
+    <ClInclude Include="sysprocess.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

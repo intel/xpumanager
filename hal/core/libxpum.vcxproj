@@ -178,11 +178,11 @@
     <ClInclude Include="pci.h" />
     <ClInclude Include="performance.h" />
     <ClInclude Include="power.h" />
-    <ClInclude Include="process.h" />
     <ClInclude Include="ras.h" />
     <ClInclude Include="scheduler.h" />
     <ClInclude Include="standby.h" />
     <ClInclude Include="sysman.h" />
+    <ClInclude Include="sysprocess.h" />
     <ClInclude Include="temperature.h" />
     <ClInclude Include="vf.h" />
   </ItemGroup>

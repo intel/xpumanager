@@ -29,6 +29,8 @@
 #define NOMINMAX
 #include <string>
 #include <windows.h>
+#include <process.h>
+#include <conio.h>
 
 using namespace std;
 
@@ -85,6 +87,7 @@ struct option
 #define CLOSEI2C closeI2C
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
+#define GETCH _getch
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;

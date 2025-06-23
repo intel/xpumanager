@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  *
  */
-#ifndef _PROCESS_H
-#define _PROCESS_H
+#ifndef _SYSPROCESS_H
+#define _SYSPROCESS_H
 
 #include "sysman.h"
 
