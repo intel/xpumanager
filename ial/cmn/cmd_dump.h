@@ -134,7 +134,7 @@ public:
 	ze_result_t throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine);
 	ze_result_t mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine);
 
-	ze_result_t utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, double *utilizationDiff);
+	ze_result_t utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, string *outputLine);
 	ze_result_t gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU);
 	string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 

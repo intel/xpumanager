@@ -22,7 +22,7 @@
  *
  */
 
-#include "process.h"
+#include "sysprocess.h"
 #include <vector>
 
 using namespace std;

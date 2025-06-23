@@ -35,7 +35,7 @@
 #include "pci.h"
 #include "performance.h"
 #include "power.h"
-#include "process.h"
+#include "sysprocess.h"
 #include "ras.h"
 #include "scheduler.h"
 #include "standby.h"

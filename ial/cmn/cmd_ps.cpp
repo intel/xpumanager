@@ -25,7 +25,7 @@
 #include "cmd_ps.h"
 #include "debug.h"
 #include <assert.h>
-#include <process.h>
+#include <sysprocess.h>
 
 /**
  * @brief Adds help commands to the provided help list.

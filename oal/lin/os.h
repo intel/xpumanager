@@ -58,6 +58,7 @@ using namespace std;
 #define CLOSEI2C closeI2C
 #define SETENV(name, value) setenv(name, value, 1)
 #define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
+#define GETCH getch
 
 typedef void *(*funcptr)(void *input_params);
 
@@ -78,5 +79,6 @@ bool privilegeCheck();
 string getProcessName(uint32_t processId);
 long long openI2C(const string &deviceName);
 int closeI2C(long long fd);
+char getch();
 
 #endif
