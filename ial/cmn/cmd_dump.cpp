@@ -53,14 +53,14 @@ dumpCmdStruct dumpCmds[] = {
 };
 
 dumpCmdSubStruct dumpMetrics[] = {
-	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, "GPU Utilization (%)", true},
+	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, "GPU Utilization (%)"},
 	{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower, "GPU Power (W)"},
 	{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency, "GPU Frequency (MHz)", true},
 	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)"},
 	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)"},
 	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead, "GPU Memory Read (GB/s)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite, "GPU Memory Write (GB/s)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead, "GPU Memory Read (kB/s)"},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite, "GPU Memory Write (kB/s)"},
 	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)"},
 	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)"},
 	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)"},
@@ -302,7 +302,7 @@ THREAD_RET cmdDump::metrics(void *args)
 			found = true;
 			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
 			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
-				result = (cmdDumpInstance->*cmd.func)(dumpCmds, d, &metricArgs->outputLine);
+				result = (cmdDumpInstance->*cmd.func)(dumpCmds, d, &metricArgs->outputLine, &metricArgs->td);
 			} else {
 				// If the command is not available for iGPUs, set outputLine to N/A
 				metricArgs->outputLine = "N/A";
@@ -377,15 +377,12 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, string *outputLine)
+ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, string *outputLine,
+								 threadData *td)
 {
 	TRACING();
 	double utilizationDiff = 0.0;
 	ze_result_t result;
-	// Static variables to store the last utilization and timestamp values
-	static uint64_t utilization[2] = {0};
-	static uint64_t timeStamp[2] = {0};
-	static bool first = true;
 
 	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
 	if (eg == nullptr) {
@@ -393,28 +390,28 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	result = eg->getUtilization(typeTable, tableSize, &utilization[0], &timeStamp[0]);
+	result = eg->getUtilization(typeTable, tableSize, &td->u[0].utilization, &td->u[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	if (!first) {
+	// If this is the first time we are getting the utilization, we cannot calculate the difference. We would know
+	// this by checking if the timeStamp[1] is zero, which means we have not yet stored the last utilization
+	if (td->u[1].timeStamp) {
 		// Calculate the utilization difference. First check if the time difference is zero to avoid division by zero
 		// Next, calculate the utilization difference by checking the current utilization (in utilization[0]) against
 		// the last utilization (in utilization[1]) and the time difference (in timeStamp[0] - timeStamp[1]). Since we
 		// are calculating a percentage, therefore multiply the numerator by 100 before dividing the timestamp to get
 		// an accurate percentage value.
-		utilizationDiff =
-			((timeStamp[0] - timeStamp[1]) == 0)
-				? 0
-				: (double)((double)utilization[0] - (double)utilization[1]) * 100 / (timeStamp[0] - timeStamp[1]);
+		utilizationDiff = ((td->u[0].timeStamp - td->u[1].timeStamp) == 0)
+							  ? 0
+							  : (double)((double)td->u[0].utilization - (double)td->u[1].utilization) * 100 /
+									(td->u[0].timeStamp - td->u[1].timeStamp);
 		*outputLine = format("{:.2f}", utilizationDiff);
 	}
 
 	// Update the last utilization and timestamp values for the next iteration
-	utilization[1] = utilization[0];
-	timeStamp[1] = timeStamp[0];
-	first = false;
+	memcpy(&td->u[1], &td->u[0], sizeof(utilData));
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -430,11 +427,11 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -447,36 +444,31 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	// Static variables to store the last utilization and timestamp values
-	static uint64_t gpuPower[2] = {0};
-	static uint64_t timeStamp[2] = {0};
-	static bool first = true;
 
 	// Call gpuPowerIter to get the first power reading. The last parameter is false to indicate it's not for GPU,
 	// instead it is for the entire card
-	ze_result_t result = gpuPowerIter(d, &gpuPower[0], &timeStamp[0], false);
+	ze_result_t result = gpuPowerIter(d, &td->p[0].power, &td->p[0].timeStamp, false);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	if (!first) {
+	if (td->p[1].timeStamp) {
 		// Calculate the power difference. First check if the time difference is zero to avoid division by zero
 		// Next, calculate the power difference by checking the current power (in gpuPower[0]) against
 		// the last power (in gpuPower[1]) and the time difference (in timeStamp[0] - timeStamp[1])
-		double gpuPowerDiff = (timeStamp[0] - timeStamp[1]) == 0
-								  ? 0
-								  : (double)(gpuPower[0] - gpuPower[1]) / (timeStamp[0] - timeStamp[1]);
+		double gpuPowerDiff =
+			(td->p[0].timeStamp - td->p[1].timeStamp) == 0
+				? 0
+				: (double)(td->p[0].power - td->p[1].power) / (td->p[0].timeStamp - td->p[1].timeStamp);
 
 		*outputLine = format("{:.2f}", gpuPowerDiff);
 	}
 
 	// Update the last power and timestamp values for the next iteration
-	gpuPower[1] = gpuPower[0];
-	timeStamp[1] = timeStamp[0];
-	first = false;
+	memcpy(&td->p[1], &td->p[0], sizeof(powerData));
 
 	return result;
 }
@@ -491,7 +483,7 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d, string *outpu
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	double curFreq = 0.0;
@@ -523,7 +515,7 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *o
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	double coreTemp = 0.0;
@@ -555,7 +547,7 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d, str
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	double memoryTemp = 0.0;
@@ -586,7 +578,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d, s
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	double memoryUtilization = 0;
@@ -617,13 +609,9 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d, s
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	// Static variables to store the last memory read and timestamp values
-	static uint64_t memoryRead[2] = {0};
-	static uint64_t timeStamp[2] = {0};
-	static bool first = true;
 
 	memory *mem = (memory *)d->dev->getMemory();
 	if (mem == nullptr) {
@@ -631,25 +619,23 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = mem->getMemoryRW(&memoryRead[0], nullptr, nullptr, &timeStamp[0]);
+	ze_result_t result = mem->getMemoryRW(&td->m[0].read, nullptr, nullptr, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (!first) {
-		double memoryReadDiff =
-			(timeStamp[0] - timeStamp[1]) == 0
-				? 0
-				: (double)(1000000 * (memoryRead[0] - memoryRead[1])) / (timeStamp[0] - timeStamp[1]) / 1024;
+	if (td->m[1].timeStamp) {
+		double memoryReadDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
+									? 0
+									: (double)(1000000 * (td->m[0].read - td->m[1].read)) /
+										  (td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
 
-		*outputLine = format("{:.2f}", memoryReadDiff);
+		*outputLine = format("{:d}", (int)memoryReadDiff);
 	}
 
 	// Update the last memory read and timestamp values for the next iteration
-	memoryRead[1] = memoryRead[0];
-	timeStamp[1] = timeStamp[0];
-	first = false;
+	td->m[1] = td->m[0];
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -664,13 +650,9 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	// Static variables to store the last memory write and timestamp values
-	static uint64_t memoryWrite[2] = {0};
-	static uint64_t timeStamp[2] = {0};
-	static bool first = true;
 
 	memory *mem = (memory *)d->dev->getMemory();
 	if (mem == nullptr) {
@@ -678,25 +660,23 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string 
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = mem->getMemoryRW(nullptr, &memoryWrite[0], nullptr, &timeStamp[0]);
+	ze_result_t result = mem->getMemoryRW(nullptr, &td->m[0].write, nullptr, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU memory write: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (!first) {
-		double memoryWriteDiff =
-			(timeStamp[0] - timeStamp[1]) == 0
-				? 0
-				: (double)(1000000 * (memoryWrite[0] - memoryWrite[1])) / (timeStamp[0] - timeStamp[1]) / 1024;
+	if (td->m[1].timeStamp) {
+		double memoryWriteDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
+									 ? 0
+									 : (double)(1000000 * (td->m[0].write - td->m[1].write)) /
+										   (td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
 
-		*outputLine = format("{:.2f}", memoryWriteDiff);
+		*outputLine = format("{:d}", (int)memoryWriteDiff);
 	}
 
 	// Update the last memory write and timestamp values for the next iteration
-	memoryWrite[1] = memoryWrite[0];
-	timeStamp[1] = timeStamp[0];
-	first = false;
+	td->m[1] = td->m[0];
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -711,7 +691,7 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t gpuPower1 = 0;
@@ -740,7 +720,7 @@ ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d, stri
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -760,7 +740,7 @@ ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d, strin
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -779,7 +759,7 @@ ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d, string
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -797,7 +777,7 @@ ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -828,7 +808,8 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d,
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												 threadData *td)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -860,7 +841,7 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInf
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -892,7 +873,8 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d,
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+													  threadData *td)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -924,7 +906,8 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, d
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+														threadData *td)
 {
 	TRACING();
 	uint64_t rasCounter;
@@ -956,13 +939,10 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds,
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												   threadData *td)
 {
 	TRACING();
-	static uint64_t memoryRead[2] = {0};
-	static uint64_t memoryWrite[2] = {0};
-	static uint64_t timeStamp[2] = {0};
-	static bool first = true;
 	uint64_t maxBandwidth = 0;
 	double memoryBW[2] = {0}, memoryBWDiff = 0;
 
@@ -972,30 +952,27 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = mem->getMemoryRW(&memoryRead[0], &memoryWrite[0], &maxBandwidth, &timeStamp[0]);
+	ze_result_t result = mem->getMemoryRW(&td->m[0].read, &td->m[0].write, &maxBandwidth, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	if (!first) {
+	if (td->m[1].timeStamp) {
 		// Calculate bandwidth utilization as a percentage of the maximum bandwidth
-		memoryBW[0] = (double)(100 * (memoryRead[0] / 1000 + memoryWrite[0] / 1000) / (maxBandwidth / 1000) * 1000);
-		memoryBW[1] = (double)(100 * (memoryRead[1] / 1000 + memoryWrite[1] / 1000) / (maxBandwidth / 1000) * 1000);
+		memoryBW[0] = (double)(100 * (td->m[0].read / 1000 + td->m[0].write / 1000) / (maxBandwidth / 1000) * 1000);
+		memoryBW[1] = (double)(100 * (td->m[1].read / 1000 + td->m[1].write / 1000) / (maxBandwidth / 1000) * 1000);
 
 		// Calculate the memory bandwidth difference
-		memoryBWDiff = (timeStamp[0] - timeStamp[1]) == 0
+		memoryBWDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
 						   ? 0
-						   : (memoryBW[0] - memoryBW[1]) / ((timeStamp[0] - timeStamp[1]) / 1000.0);
+						   : (memoryBW[0] - memoryBW[1]) / ((td->m[0].timeStamp - td->m[1].timeStamp) / 1000.0);
 
 		*outputLine = format("{:d}", (uint32_t)memoryBWDiff);
 	}
 
 	// Update the last memory read, write, and timestamp values for the next iteration
-	memoryRead[1] = memoryRead[0];
-	memoryWrite[1] = memoryWrite[0];
-	timeStamp[1] = timeStamp[0];
-	first = false;
+	memcpy(&td->m[1], &td->m[0], sizeof(memData));
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1011,7 +988,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t memoryUsed = 0;
@@ -1043,11 +1020,9 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d, string *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	static zes_pci_stats_t pciStats[2] = {};
-	static bool first = true;
 	uint64_t pciDiff = 0;
 
 	pci *p = (pci *)d->dev->getPCI();
@@ -1056,24 +1031,23 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outpu
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = p->getStats(d->zesDeviceHdl, &pciStats[0]);
+	ze_result_t result = p->getStats(d->zesDeviceHdl, &td->pci[0].pciStats);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	if (!first) {
+	if (td->pci[1].pciStats.timestamp) {
 
-		pciDiff = (pciStats[0].timestamp - pciStats[1].timestamp == 0)
+		pciDiff = (td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp == 0)
 					  ? 0
-					  : 1000000 * (pciStats[0].rxCounter - pciStats[1].rxCounter) /
-							(pciStats[0].timestamp - pciStats[1].timestamp) / 1024;
+					  : 1000000 * (td->pci[0].pciStats.rxCounter - td->pci[1].pciStats.rxCounter) /
+							(td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp) / 1024;
 
 		*outputLine = to_string(pciDiff);
 	}
 
 	// Update the last pciStats for the next iteration
-	pciStats[1] = pciStats[0];
-	first = false;
+	memcpy(&td->pci[1], &td->pci[0], sizeof(pciData));
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1089,11 +1063,9 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outpu
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	static zes_pci_stats_t pciStats[2] = {};
-	static bool first = true;
 	uint64_t pciDiff = 0;
 
 	pci *p = (pci *)d->dev->getPCI();
@@ -1102,24 +1074,23 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outp
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = p->getStats(d->zesDeviceHdl, &pciStats[0]);
+	ze_result_t result = p->getStats(d->zesDeviceHdl, &td->pci[0].pciStats);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	if (!first) {
+	if (td->pci[1].pciStats.timestamp) {
 
-		pciDiff = (pciStats[0].timestamp - pciStats[1].timestamp == 0)
+		pciDiff = (td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp == 0)
 					  ? 0
-					  : 1000000 * (pciStats[0].txCounter - pciStats[1].txCounter) /
-							(pciStats[0].timestamp - pciStats[1].timestamp) / 1024;
+					  : 1000000 * (td->pci[0].pciStats.txCounter - td->pci[1].pciStats.txCounter) /
+							(td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp) / 1024;
 
 		*outputLine = to_string(pciDiff);
 	}
 
 	// Update the last pciStats for the next iteration
-	pciStats[1] = pciStats[0];
-	first = false;
+	memcpy(&td->pci[1], &td->pci[0], sizeof(pciData));
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1135,7 +1106,7 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outp
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1154,11 +1125,11 @@ ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d, strin
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1172,11 +1143,11 @@ ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1190,11 +1161,12 @@ ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												   threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1208,11 +1180,12 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												   threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1226,11 +1199,11 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1244,11 +1217,12 @@ ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, 
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+													   threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1262,7 +1236,7 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, 
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1282,7 +1256,7 @@ ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, stri
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1302,7 +1276,8 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												  threadData *td)
 {
 	TRACING();
 	UNUSED(dumpCmds);
@@ -1322,11 +1297,12 @@ ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devIn
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												   threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE, ZES_ENGINE_GROUP_COMPUTE_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1341,11 +1317,12 @@ ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devI
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												  threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE, ZES_ENGINE_GROUP_RENDER_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1360,12 +1337,13 @@ ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devIn
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
+												 threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE,
 										ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, ZES_ENGINE_GROUP_MEDIA_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1380,11 +1358,11 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInf
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE, ZES_ENGINE_GROUP_COPY_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine);
+	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
 }
 
 /**
@@ -1398,7 +1376,7 @@ ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_freq_throttle_reason_flags_t throttleReasons;
@@ -1431,7 +1409,7 @@ ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string 
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine)
+ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	double curFreq = 0.0;
@@ -1471,7 +1449,8 @@ int cmdDump::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 	string header;
-	bool first = false;
+	bool first = false, running = true;
+	int total = 0;
 
 	// If the user didn't provide any arguments, show help
 	if (args->argc == 2) {
@@ -1554,7 +1533,7 @@ int cmdDump::run(arg_struct *args)
 		return result;
 	}
 
-	header = "Timestamp, DeviceId, ";
+	header = "Timestamp,    DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
 	for (auto &cmd : dumpMetrics) {
 		if (cmd.type == atoi(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str()) && cmd.func != nullptr) {
@@ -1567,14 +1546,12 @@ int cmdDump::run(arg_struct *args)
 	}
 	PRINT("%s\n", header.c_str());
 
-	threadArgs **argsList = new threadArgs *[deviceList.size()];
-	thread_id **tidList = new thread_id *[deviceList.size()];
+	threadArgs **argsList = new threadArgs *[deviceList.size()] {};
+	thread_id **tidList = new thread_id *[deviceList.size()] {};
 	if (tidList == nullptr) {
 		ERR("Failed to allocate memory for thread ID list.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
-
-	bool running = true;
 
 	// Start a thread to check for key presses
 	std::thread inputThread([&running]() {
@@ -1588,13 +1565,23 @@ int cmdDump::run(arg_struct *args)
 		}
 	});
 
+	first = true;
 	while (running) {
 
-		int total = 0;
+		total = 0;
 
 		// Iterate through the device list and create a thread called metrics for each device
 		for (auto &device : deviceList) {
+			threadData prevThreadData = {};
+			if (argsList[total] != nullptr) {
+				// Copy any previous thread data before we delete the old argsList entry
+				memcpy(&prevThreadData, &argsList[total]->td, sizeof(threadData));
+				delete argsList[total]; // Clean up any previously allocated memory
+			}
 			argsList[total] = new threadArgs{this, dumpCmds, &device, ""};
+			// Copy any previous thread data into the new argsList entry just in case the underlying functions
+			// need to access it to do comparision between old and new values
+			memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));
 			tidList[total] = create_thread(metrics, argsList[total]);
 			total++;
 		}
@@ -1606,18 +1593,25 @@ int cmdDump::run(arg_struct *args)
 			}
 		}
 
-		// Print the output and delete the thread arguments
+		// Print the output
 		for (int i = 0; i < total; i++) {
-			PRINT("%s\n", argsList[i]->outputLine.c_str());
-			delete argsList[i];
+			if (!first) {
+				PRINT("%s, %8d, %s\n", TIMESTAMP().c_str(), argsList[i]->d->index, argsList[i]->outputLine.c_str());
+			}
 		}
-
-		MSLEEP(500);
+		first = false;
+		MSLEEP(1000);
 	}
 
 	// Clean up
 	if (inputThread.joinable()) {
 		inputThread.join();
+	}
+
+	for (int i = 0; i < total; i++) {
+		if (argsList[i]) {
+			delete argsList[i]; // Clean up any previously allocated memory
+		}
 	}
 
 	// Clean up allocated memory
