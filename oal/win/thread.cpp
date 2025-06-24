@@ -43,3 +43,14 @@ void wait_for_thread(thread_id *tid)
 	WaitForSingleObject(tid->ret_thread_uid(), INFINITE);
 	delete tid; // Clean up the thread_id object after waiting
 }
+
+string timestamp()
+{
+	string timestamp_str = "";
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	char buffer[64];
+	sprintf_s(buffer, sizeof(buffer), "%02d:%02d:%02d.%03d", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+	timestamp_str = buffer;
+	return timestamp_str;
+}

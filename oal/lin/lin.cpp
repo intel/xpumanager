@@ -35,6 +35,7 @@
 #include <vector>
 #include <termios.h>
 #include <unistd.h>
+#include <format>
 
 char getch()
 {
@@ -189,3 +190,28 @@ long long openI2C(const string &deviceName)
 }
 
 int closeI2C(long long fd) { return close((int)fd); }
+
+string timestamp()
+{
+	string timestamp_str = "";
+	time_t now;
+	struct tm *time_info;
+
+	// Get current time in seconds since the epoch
+	now = time(NULL);
+
+	time_info = localtime(&now);
+	if (time_info == NULL) {
+		ERR("localtime failed\n");
+		return timestamp_str;
+	}
+
+	struct timeval tv;
+	if (gettimeofday(&tv, NULL) == -1) {
+		ERR("gettimeofday failed\n");
+		return timestamp_str;
+	}
+	timestamp_str = format("{:02d}:{:02d}:{:02d}.{:03d}", time_info->tm_hour, time_info->tm_min, time_info->tm_sec,
+						   (int)tv.tv_usec / 1000);
+	return timestamp_str;
+}
