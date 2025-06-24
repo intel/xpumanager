@@ -88,6 +88,7 @@ struct option
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH _getch
+#define TIMESTAMP timestamp
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;
@@ -101,5 +102,6 @@ void wait_for_thread(thread_id *tid);
 string getProcessName(uint32_t processId);
 long long openI2C(const string &deviceName);
 int closeI2C(long long fd);
+string timestamp();
 
 #endif
