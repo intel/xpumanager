@@ -478,12 +478,6 @@ namespace xpum {
                 updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "i915 wedged", XPUM_I915_ERROR);
                 i915_wedged_file.close();
             }
-            snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/wedged_mode", gpu_id.c_str());
-            std::ifstream xe_wedged_file(path);
-            if (xe_wedged_file.good() && isDeviceWedged(xe_wedged_file, path)) {
-                updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "xe wedged", XPUM_XE_ERROR);
-                xe_wedged_file.close();
-            }
             gpu_id_index += 1;
         }
 
