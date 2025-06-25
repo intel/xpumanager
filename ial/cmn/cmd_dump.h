@@ -202,6 +202,7 @@ struct threadArgs
 	cmdDump *cmdDumpInstance;
 	dumpCmdStruct *dumpCmds;
 	devInfo *d;
+	string cmdName;
 	string outputLine;
 	threadData td;
 };
