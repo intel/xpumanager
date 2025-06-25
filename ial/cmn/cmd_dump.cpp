@@ -137,7 +137,7 @@ void cmdDump::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The device tile IDs to query. If the device has "
 										"only one tile, this parameter should not be specified"));
 	helpList.push_back(helpCmd(
-		HEADING, "-m,--metrics                Metrics type to collect raw data, options. Separated by the comma"));
+		HEADING, "-m,--metrics                Metrics type to collect raw data, options. Separated by a comma"));
 	helpList.push_back(helpCmd(SUB_HEADING,
 							   "%d. GPU Utilization (%), GPU active time of the elapsed time, per tile or "
 							   "device.",
@@ -298,7 +298,7 @@ THREAD_RET cmdDump::metrics(void *args)
 
 	// Iterate through the dump commands and execute the metrics function for each
 	for (auto &cmd : dumpMetrics) {
-		if (cmd.type == atoi(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str()) && cmd.func != nullptr) {
+		if (cmd.type == atoi(metricArgs->cmdName.c_str()) && cmd.func != nullptr) {
 			found = true;
 			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
 			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
@@ -1431,7 +1431,8 @@ ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d, s
 }
 
 /**
- * @brief Executes the dump run.
+ * @brief Executes the dump run. It processes command-line arguments, finds devices, and runs the specified dump
+ * commands.
  *
  * @param args A pointer to the argument structure.
  *
@@ -1449,7 +1450,7 @@ int cmdDump::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 	string header;
-	bool first = false;
+	bool first = true;
 	atomic<bool> running{true};
 	int total = 0, iter = -1;
 	std::thread inputThread;
@@ -1477,6 +1478,9 @@ int cmdDump::run(arg_struct *args)
 		case 'd':
 			dumpCmds[dumpCmdType::DUMP_DEVICE].enabled = true;
 			dumpCmds[dumpCmdType::DUMP_DEVICE].val = optarg;
+			if (atoi(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str()) == -1) {
+				dumpCmds[dumpCmdType::DUMP_DEVICE].val = "";
+			}
 			break;
 		case 't':
 			dumpCmds[dumpCmdType::DUMP_TILE].enabled = true;
@@ -1529,6 +1533,7 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// If the user specified the -n /--number option, we need to check if it is a valid positive integer.
 	if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
 		iter = atoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
 		if (iter <= 0) {
@@ -1548,21 +1553,31 @@ int cmdDump::run(arg_struct *args)
 		return result;
 	}
 
+	// Split the dump command argument by commas
+	stringstream ss(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
+	string token;
+	vector<string> dumpArgs;
+	while (getline(ss, token, ',')) {
+		dumpArgs.push_back(token);
+	}
+
 	header = "Timestamp,    DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
 	for (auto &cmd : dumpMetrics) {
-		if (cmd.type == atoi(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str()) && cmd.func != nullptr) {
-			if (first) {
-				header += ", ";
+		for (auto &arg : dumpArgs) {
+			if (cmd.type == atoi(arg.c_str()) && cmd.func != nullptr) {
+				if (!first) {
+					header += ", ";
+				}
+				header += cmd.heading;
+				first = false;
 			}
-			header += cmd.heading;
-			first = true;
 		}
 	}
 	PRINT("%s\n", header.c_str());
 
-	threadArgs **argsList = new threadArgs *[deviceList.size()] {};
-	thread_id **tidList = new thread_id *[deviceList.size()] {};
+	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()] {};
+	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()] {};
 	if (tidList == nullptr) {
 		ERR("Failed to allocate memory for thread ID list.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -1589,18 +1604,20 @@ int cmdDump::run(arg_struct *args)
 
 		// Iterate through the device list and create a thread called metrics for each device
 		for (auto &device : deviceList) {
-			threadData prevThreadData = {};
-			if (argsList[total] != nullptr) {
-				// Copy any previous thread data before we delete the old argsList entry
-				memcpy(&prevThreadData, &argsList[total]->td, sizeof(threadData));
-				delete argsList[total]; // Clean up any previously allocated memory
+			for (auto &arg : dumpArgs) {
+				threadData prevThreadData = {};
+				if (argsList[total] != nullptr) {
+					// Copy any previous thread data before we delete the old argsList entry
+					memcpy(&prevThreadData, &argsList[total]->td, sizeof(threadData));
+					delete argsList[total]; // Clean up any previously allocated memory
+				}
+				argsList[total] = new threadArgs{this, dumpCmds, &device, arg, ""};
+				// Copy any previous thread data into the new argsList entry just in case the underlying functions
+				// need to access it to do comparision between old and new values
+				memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));
+				tidList[total] = create_thread(metrics, argsList[total]);
+				total++;
 			}
-			argsList[total] = new threadArgs{this, dumpCmds, &device, ""};
-			// Copy any previous thread data into the new argsList entry just in case the underlying functions
-			// need to access it to do comparision between old and new values
-			memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));
-			tidList[total] = create_thread(metrics, argsList[total]);
-			total++;
 		}
 
 		// Wait for all threads to complete
@@ -1611,9 +1628,18 @@ int cmdDump::run(arg_struct *args)
 		}
 
 		// Print the output
-		for (int i = 0; i < total; i++) {
-			if (!first) {
-				PRINT("%s, %8d, %s\n", TIMESTAMP().c_str(), argsList[i]->d->index, argsList[i]->outputLine.c_str());
+		if (!first) {
+			for (uint32_t i = 0; i < deviceList.size(); i++) {
+				string outputLine = "";
+				for (uint32_t j = 0; j < dumpArgs.size(); j++) {
+					// Construct a string which has comma separated values of all the output lines
+					outputLine += argsList[i * dumpArgs.size() + j]->outputLine;
+					if (j < dumpArgs.size() - 1) {
+						outputLine += ", ";
+					}
+				}
+				PRINT("%s, %8d, %s\n", TIMESTAMP().c_str(), argsList[i * dumpArgs.size()]->d->index,
+					  outputLine.c_str());
 			}
 		}
 		first = false;
