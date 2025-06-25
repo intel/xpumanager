@@ -1449,8 +1449,10 @@ int cmdDump::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 	string header;
-	bool first = false, running = true;
-	int total = 0;
+	bool first = false;
+	atomic<bool> running{true};
+	int total = 0, iter = -1;
+	std::thread inputThread;
 
 	// If the user didn't provide any arguments, show help
 	if (args->argc == 2) {
@@ -1527,6 +1529,19 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
+		iter = atoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
+		if (iter <= 0) {
+			ERR("Invalid value for -n/--number: '%s'. Must be a positive integer.\n",
+				dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		// We need to add 1 to iter to account for the first iteration where we are getting the initial values
+		// and may not be ready to print the output yet.
+		iter++;
+	}
+
 	result = args->sm.findDevice(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
@@ -1553,17 +1568,19 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
-	// Start a thread to check for key presses
-	std::thread inputThread([&running]() {
-		char ch;
-		while (true) {
-			ch = GETCH(); // Get the character without waiting for Enter
-			if (ch == 'q' || ch == 'Q') {
-				running = false;
-				break; // Exit the loop
+	// Start a thread to check for key presses only if iter was not provided
+	if (iter < 0) {
+		inputThread = std::thread([&running]() {
+			char ch;
+			while (running) {
+				ch = GETCH(); // Get the character without waiting for Enter
+				if (ch == 'q' || ch == 'Q') {
+					running = false;
+					break; // Exit the loop
+				}
 			}
-		}
-	});
+		});
+	}
 
 	first = true;
 	while (running) {
@@ -1601,10 +1618,18 @@ int cmdDump::run(arg_struct *args)
 		}
 		first = false;
 		MSLEEP(1000);
+
+		// If the user specified an iteration count, decrement it
+		if (iter > 0) {
+			iter--;
+			if (iter == 0) {
+				running = false; // Stop the loop after the specified number of iterations
+			}
+		}
 	}
 
 	// Clean up
-	if (inputThread.joinable()) {
+	if (iter < 0 && inputThread.joinable()) {
 		inputThread.join();
 	}
 
