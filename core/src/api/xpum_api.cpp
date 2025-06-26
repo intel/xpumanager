@@ -74,6 +74,8 @@ const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
             return "PCIE_GENERATION";
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return "PCIE_MAX_LINK_WIDTH";
+        case XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH:
+            return "PCIE_MAX_BANDWIDTH";
         case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
             return "DEVICE_STEPPING";
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
@@ -843,6 +845,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION;
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH;
+        case XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_BANDWIDTH;
         case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
             return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING;
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:

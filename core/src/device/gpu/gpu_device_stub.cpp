@@ -1155,10 +1155,16 @@ void addPCIeProperties(zes_device_handle_t& device, std::shared_ptr<GPUDevice> p
     using namespace std;
     zes_pci_properties_t data = {};
     ze_result_t res;
+    double max_bw;
+    std::ostringstream max_bw_stream;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &data));
     if (res == ZE_RESULT_SUCCESS) {
         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION, std::to_string(data.maxSpeed.gen)));
         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH, std::to_string(data.maxSpeed.width)));
+
+        max_bw = (double)data.maxSpeed.maxBandwidth / (1000 * 1000 * 1000); // Convert to GB/s
+        max_bw_stream << std::fixed << std::setprecision(2) << max_bw;
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_BANDWIDTH, max_bw_stream.str() + " GB/s"));
     }
 }
 
