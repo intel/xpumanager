@@ -31,10 +31,17 @@
 #include <pci.h>
 #include <sstream>
 
+/*
+ * @brief This structure serves two purposes:
+ * 1. It defines the command parsing for discovery commands.
+ * 2. It allows for easy addition of new commands by simply adding a new entry to the array.
+ * For example: The dump command requires a function of its own, so it is defined in the
+ * discoveryCmdStruct with a pointer to the function that will be called when the command is executed
+ */
 discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
 	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}},
-	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dev},
+	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}},
 	{discCmdType::DISC_PHYSICALFUNCTION, {"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
 	{discCmdType::DISC_VIRTUALFUNCTION, {"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
 	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump},
@@ -110,14 +117,14 @@ void cmdDiscovery::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdDiscovery::dev(discoveryCmdStruct *discCmds, devInfo *d)
-{
-	TRACING();
-	UNUSED(discCmds);
-	UNUSED(d);
-	return ZE_RESULT_SUCCESS;
-}
-
+/**
+ * @brief Executes the dump command. This command dumps the device properties
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -200,6 +207,14 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Prints out the device ID of the device.
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -208,6 +223,14 @@ ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Print out the device name for a device.
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -225,6 +248,14 @@ ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints out the vendor name of a device.
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -243,6 +274,14 @@ ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Print the SOC UUID command for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -265,6 +304,14 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the serial number for a device.
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -283,6 +330,14 @@ ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the core clock rate for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -300,6 +355,14 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the stepping for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::stepping(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -308,6 +371,14 @@ ze_result_t cmdDiscovery::stepping(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the driver version for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -325,6 +396,14 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the GFX firmware version for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -337,6 +416,14 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devIn
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the GFX data firmware version for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -349,6 +436,14 @@ ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, d
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the PCI BDF address for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -367,6 +462,14 @@ ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the PCI slot for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -377,6 +480,14 @@ ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the PCIe generation for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -394,6 +505,14 @@ ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the PCIe max link width for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -412,6 +531,14 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the OAM socket ID for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -423,6 +550,14 @@ ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the memory physical size for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -442,6 +577,14 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devIn
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the memory channels for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -461,6 +604,14 @@ ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the memory bus width for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -480,6 +631,14 @@ ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the EUs for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -497,6 +656,14 @@ ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the media engines for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -519,6 +686,14 @@ ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the media enhancement engines for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -540,6 +715,14 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, 
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the GFX firmware status for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -548,6 +731,14 @@ ze_result_t cmdDiscovery::gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInf
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the PCI vendor ID for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -564,6 +755,14 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the PCI device ID for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -580,6 +779,14 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the physical function for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::physicalFunction(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -588,6 +795,14 @@ ze_result_t cmdDiscovery::physicalFunction(discoveryCmdStruct *discCmds, devInfo
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Prints the virtual function for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::virtualFunction(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();
@@ -596,6 +811,14 @@ ze_result_t cmdDiscovery::virtualFunction(discoveryCmdStruct *discCmds, devInfo 
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief  Lists the AMC versions for a device
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
 ze_result_t cmdDiscovery::listamcversions(discoveryCmdStruct *discCmds, devInfo *d)
 {
 	TRACING();

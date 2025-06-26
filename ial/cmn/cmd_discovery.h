@@ -81,7 +81,6 @@ public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 	~cmdDiscovery() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t dev(discoveryCmdStruct *discCmds, devInfo *d);
 	ze_result_t dump(discoveryCmdStruct *discCmds, devInfo *d);
 	ze_result_t physicalFunction(discoveryCmdStruct *discCmds, devInfo *d);
 	ze_result_t virtualFunction(discoveryCmdStruct *discCmds, devInfo *d);
