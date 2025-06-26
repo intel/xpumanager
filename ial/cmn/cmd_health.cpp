@@ -275,6 +275,12 @@ int cmdHealth::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// If no options were specified, print help
+	if (args->argc == 2) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	}
+
 	// user must specify a device ID or PCI BDF address
 	if (!healthCmds[healthCmdType::HEALTH_LIST].enabled && !healthCmds[healthCmdType::HEALTH_DEVICE].enabled) {
 		ERR("You must specify a device ID or PCI BDF address with the -d option.\n");
