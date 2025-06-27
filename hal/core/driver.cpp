@@ -33,6 +33,14 @@ int dbg_lvl = DBG;
 int dbg_lvl = INFO;
 #endif
 
+/**
+ * @brief Initializes the Level Zero API.
+ *
+ * This function initializes the Level Zero API with the ZE_INIT_FLAG_GPU_ONLY flag.
+ * It retrieves the number of available drivers and their handles.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::zeInitialize()
 {
 	TRACING();
@@ -71,6 +79,14 @@ ze_result_t driver::zeInitialize()
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Initializes the ZES (Ze Management Services) API.
+ *
+ * This function initializes the ZES API with the ZE_INIT_FLAG_GPU_ONLY flag.
+ * It retrieves the number of available ZES drivers and their handles, as well as all ZES devices.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::zesInitialize()
 {
 	TRACING();
@@ -133,6 +149,15 @@ ze_result_t driver::zesInitialize()
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Initializes the driver and its associated devices.
+ *
+ * This function initializes the Level Zero and ZES APIs, retrieves driver handles,
+ * and initializes each device associated with the drivers. It also sets the ZET_ENABLE_METRICS
+ * environment variable.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::init()
 {
 	TRACING();
@@ -219,6 +244,7 @@ ze_result_t driver::init()
 		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
 			DBG("Driver %u Device %u: %p\n", i, j, devs[i].zeDevices[j]);
 
+			// Initialize each device in the group
 			result = devs[i].dev[j].init(zeDrivers[i], devs[i].zeDevices[j], totalZesDevices, totalZesDevicesCount);
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
@@ -230,6 +256,11 @@ ze_result_t driver::init()
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Destructor for the driver class.
+ *
+ * This destructor releases the memory allocated for driver and device handles.
+ */
 driver::~driver()
 {
 	if (devs != nullptr) {
@@ -258,6 +289,14 @@ driver::~driver()
 	}
 }
 
+/**
+ * @brief Retrieves and prints the extension properties for a given Level Zero driver.
+ *
+ * This function retrieves and prints the extension properties supported by the specified Level Zero driver.
+ *
+ * @param driver The handle to the Level Zero driver.
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 {
 	uint32_t extensionCount = 0;
@@ -294,6 +333,15 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and prints the properties of a given Level Zero driver.
+ *
+ * This function retrieves and prints the properties of the specified Level Zero driver,
+ * including its UUID and driver version.
+ *
+ * @param driver The handle to the Level Zero driver.
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
 {
 	ze_driver_properties_t driverProperties = {};
@@ -313,6 +361,15 @@ ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints the IPC (Inter-Process Communication) properties of a Level Zero driver.
+ *
+ * This function retrieves and prints the IPC properties of the specified Level Zero driver,
+ * indicating whether it supports passing memory allocations and event pools between processes.
+ *
+ * @param driver The handle to the Level Zero driver.
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::getIpcProperties(ze_driver_handle_t driver)
 {
 	ze_driver_ipc_properties_t ipcProperties;
@@ -332,6 +389,14 @@ ze_result_t driver::getIpcProperties(ze_driver_handle_t driver)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Runs the functions related to the driver class and its associated devices.
+ *
+ * This function iterates over each driver and its associated devices, retrieving driver properties,
+ * IPC properties, and extension properties. It then runs the device operations for each device.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::run()
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -358,6 +423,11 @@ ze_result_t driver::run()
 	return result;
 }
 
+/**
+ * @brief Prints the versions of the Level Zero loader components.
+ *
+ * This function retrieves and prints the versions of the Level Zero loader components.
+ */
 void driver::printLoaderVersions()
 {
 	zel_component_version_t *versions;
@@ -375,6 +445,16 @@ void driver::printLoaderVersions()
 	delete[] versions;
 }
 
+/**
+ * @brief Finds a device based on its BDF (Bus-Device-Function) address or index.
+ *
+ * This function searches for a device based on its BDF address. If no BDF is provided,
+ * it adds all devices to the list.
+ *
+ * @param bdf The BDF address of the device to find. If nullptr or empty, all devices are added.
+ * @param devList A pointer to a vector to store the device information.
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t driver::findDevice(const char *bdf, vector<devInfo> *devList)
 {
 	uint32_t deviceIndex = 0;
