@@ -1827,7 +1827,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceComponentOccupancyRatio(in
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
-        int deviceId, int utilizationInterval) {
+        int deviceId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     uint32_t count = 1024;
     xpum_device_process_t dataArray[count];
@@ -1863,16 +1863,17 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess(int utilizationInterval) {
+std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    int driver_count = 0;
+    int dev_count{XPUM_MAX_NUM_DEVICES};
     xpum::xpum_result_t res = XPUM_OK;
-    xpumGetDeviceList(nullptr, &driver_count);
+    xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
+    res = xpumGetDeviceList(devices, &dev_count);
 
     if (XPUM_OK == res) {
-        for (int i = 0; i < driver_count; i++) {
-            auto deviceUtilJson = getDeviceUtilizationByProcess(i, 200 * 1000);
+        for (int i = 0; i < dev_count; i++) {
+            auto deviceUtilJson = getDeviceUtilizationByProcess(devices[i].deviceId);
             if (deviceUtilJson->contains("device_util_by_proc_list")) {
                 if (!(*json).contains("device_util_by_proc_list")) {
                     (*json)["device_util_by_proc_list"] = nlohmann::json::array();
