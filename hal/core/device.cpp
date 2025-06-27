@@ -45,6 +45,13 @@
 #include <cstring>
 #include <vector>
 
+/**
+ * @brief Destructor for the device class.
+ *
+ * This destructor releases resources allocated by the device object,
+ * including the Level Zero context, device properties, and function tables
+ * for both ZES (Ze System Management) and ZET (Ze Tracing) APIs.
+ */
 device::~device()
 {
 	if (context) {
@@ -80,8 +87,25 @@ device::~device()
 	}
 }
 
+/**
+ * @brief Retrieves and prints Level Zero device properties.
+ *
+ * This function retrieves the properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeDevProp A pointer to a structure to store the device properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp)
 {
+	TRACING();
+	if (zeDevProp == nullptr) {
+		ERR("Invalid device properties pointer\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	memset(zeDevProp, 0, sizeof(ze_device_properties_t));
+
 	ze_result_t result = zeDeviceGetProperties(dev, zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -140,6 +164,16 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero compute properties of a device.
+ *
+ * This function retrieves the compute properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeComputeProps A pointer to a structure to store the compute properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_properties_t *zeComputeProps)
 {
 	ze_result_t result = zeDeviceGetComputeProperties(dev, zeComputeProps);
@@ -166,6 +200,14 @@ ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_pr
 	return result;
 }
 
+/**
+ * @brief Prints the floating-point flags of a device.
+ *
+ * This function prints the supported floating-point flags of a device to the debug output.
+ *
+ * @param flagName A string describing the floating-point flag.
+ * @param flag The floating-point flag to print.
+ */
 void device::printFlag(const char *flagName, ze_device_fp_flags_t flag)
 {
 	if (flag) {
@@ -198,6 +240,14 @@ void device::printFlag(const char *flagName, ze_device_fp_flags_t flag)
 	}
 }
 
+/**
+ * @brief Prints the memory access capabilities of a device.
+ *
+ * This function prints the memory access capabilities of a device to the debug output.
+ *
+ * @param capName A string describing the memory access capability.
+ * @param cap The memory access capability to print.
+ */
 void device::printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap)
 {
 	if (cap) {
@@ -218,6 +268,14 @@ void device::printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_
 	}
 }
 
+/**
+ * @brief Prints the external memory type flags of a device.
+ *
+ * This function prints the supported external memory type flags of a device to the debug output.
+ *
+ * @param flagName A string describing the external memory type flag.
+ * @param flag The external memory type flag to print.
+ */
 void device::printExtMemTypeFlags(const char *flagName, ze_external_memory_type_flags_t flag)
 {
 	if (flag) {
@@ -250,6 +308,16 @@ void device::printExtMemTypeFlags(const char *flagName, ze_external_memory_type_
 	}
 }
 
+/**
+ * @brief Retrieves and prints Level Zero module properties of a device.
+ *
+ * This function retrieves the module properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeModuleProps A pointer to a structure to store the module properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_properties_t *zeModuleProps)
 {
 	ze_result_t result = zeDeviceGetModuleProperties(dev, zeModuleProps);
@@ -283,6 +351,16 @@ ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_prop
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero memory access properties of a device.
+ *
+ * This function retrieves the memory access properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeMemAccessProps A pointer to a structure to store the memory access properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getMemAccessProps(ze_device_handle_t dev, ze_device_memory_access_properties_t *zeMemAccessProps)
 {
 	ze_result_t result = zeDeviceGetMemoryAccessProperties(dev, zeMemAccessProps);
@@ -302,6 +380,16 @@ ze_result_t device::getMemAccessProps(ze_device_handle_t dev, ze_device_memory_a
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero image properties of a device.
+ *
+ * This function retrieves the image properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeImageProps A pointer to a structure to store the image properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getImageProps(ze_device_handle_t dev, ze_device_image_properties_t *zeImageProps)
 {
 	ze_result_t result = zeDeviceGetImageProperties(dev, zeImageProps);
@@ -325,6 +413,16 @@ ze_result_t device::getImageProps(ze_device_handle_t dev, ze_device_image_proper
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero external memory properties of a device.
+ *
+ * This function retrieves the external memory properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeExternalMemoryProps A pointer to a structure to store the external memory properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getExtMemProps(ze_device_handle_t dev,
 								   ze_device_external_memory_properties_t *zeExternalMemoryProps)
 {
@@ -343,6 +441,18 @@ ze_result_t device::getExtMemProps(ze_device_handle_t dev,
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero command queue group properties of a device.
+ *
+ * This function retrieves the command queue group properties of a Level Zero device and prints them to the debug
+ * output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeCmdQueueProps A pointer to a pointer to a structure to store the command queue group properties.
+ * @param cmdQueuePropsCount A pointer to a variable to store the number of command queue group properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_group_properties_t **zeCmdQueueProps,
 									 uint32_t *cmdQueuePropsCount)
 {
@@ -385,6 +495,17 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero memory properties of a device.
+ *
+ * This function retrieves the memory properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeMemProps A pointer to a pointer to a structure to store the memory properties.
+ * @param memPropsCount A pointer to a variable to store the number of memory properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_properties_t **zeMemProps,
 								uint32_t *memPropsCount)
 {
@@ -428,6 +549,17 @@ ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_propert
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and prints Level Zero cache properties of a device.
+ *
+ * This function retrieves the cache properties of a Level Zero device and prints them to the debug output.
+ *
+ * @param dev A handle to the Level Zero device.
+ * @param zeCacheProps A pointer to a pointer to a structure to store the cache properties.
+ * @param cachePropsCount A pointer to a variable to store the number of cache properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_properties_t **zeCacheProps,
 								  uint32_t *cachePropsCount)
 {
@@ -466,6 +598,15 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Resets a Level Zero device.
+ *
+ * This function resets a Level Zero device.
+ *
+ * @param dev A handle to the Level Zero device.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::resetDevice(zes_device_handle_t dev)
 {
 	ze_result_t result = zesDeviceReset(dev, true);
@@ -478,6 +619,16 @@ ze_result_t device::resetDevice(zes_device_handle_t dev)
 	return result;
 }
 
+/**
+ * @brief Retrieves and prints ZES (Ze System Management) device properties.
+ *
+ * This function retrieves the properties of a ZES device and prints them to the debug output.
+ *
+ * @param dev A handle to the ZES device.
+ * @param zesDevProp A pointer to a structure to store the device properties.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp)
 {
 	ze_result_t result = zesDeviceGetProperties(dev, zesDevProp);
@@ -498,6 +649,20 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 /* Function to create an instance of a class */
 template <typename T> sysman *createInstance() { return new T(); }
 
+/**
+ * @brief Initializes the device object.
+ *
+ * This function initializes the device object, including creating a Level Zero context,
+ * retrieving device properties, matching the ZES device with the Level Zero device,
+ * getting the device state, and initializing the function tables for ZES and ZET APIs.
+ *
+ * @param zeD A handle to the Level Zero driver.
+ * @param zeHdl A handle to the Level Zero device.
+ * @param totalZesDevices An array of handles to all ZES devices.
+ * @param totalZesDeviceCount The number of ZES devices in the array.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
 						 uint32_t totalZesDeviceCount)
 {
@@ -506,7 +671,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	zeDriver = zeD;
 	zeDevice = zeHdl;
 
-	// Create the context
+	// Create a context
 	ze_context_desc_t context_desc = {};
 	context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
 	ze_result_t result = zeContextCreate(zeDriver, &context_desc, &context);
@@ -531,7 +696,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 
 	igpu = (deviceProperties.zeDeviceProperties.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED);
 	found = false;
-	// Now we have to match zesDevice with zeDevices
+	// Now we have to match zesDevice with zeDevices. The way to do this is to match UUIDs of Ze and Zes devices.
 	for (uint32_t j = 0; j < totalZesDeviceCount; ++j) {
 		zes_device_properties_t tempProperties = {};
 
@@ -606,6 +771,12 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Checks if the device's BDF (Bus-Device-Function) matches the given BDF string.
+ *
+ * @param bdf The BDF string to compare with the device's BDF.
+ * @return True if the BDFs match, false otherwise.
+ */
 bool device::isBDF(const char *bdf)
 {
 	// BDF is stored in the PCI device properties so get it from there
@@ -613,6 +784,14 @@ bool device::isBDF(const char *bdf)
 	return p->isBDF(bdf);
 }
 
+/**
+ * @brief Adds device information to the device list.
+ *
+ * This function adds the device's information to the provided device list.
+ *
+ * @param devList A pointer to the vector of device information.
+ * @param devIndex The index of the device.
+ */
 void device::addInfo(vector<devInfo> *devList, uint32_t devIndex)
 {
 	devInfo d;
@@ -623,6 +802,14 @@ void device::addInfo(vector<devInfo> *devList, uint32_t devIndex)
 	devList->push_back(d);
 }
 
+/**
+ * @brief Runs the device's monitoring and tracing functions.
+ *
+ * This function iterates through the ZES and ZET function tables and executes
+ * the run functions for each tool.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
 ze_result_t device::run()
 {
 	if (zesDevice == 0) {
