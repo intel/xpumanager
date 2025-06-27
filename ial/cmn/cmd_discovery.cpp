@@ -44,11 +44,38 @@ discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}},
 	{discCmdType::DISC_PHYSICALFUNCTION, {"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
 	{discCmdType::DISC_VIRTUALFUNCTION, {"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
-	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump},
+	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading},
 	{discCmdType::DISC_LISTAMCVERSIONS, {"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions},
 	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}},
 	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}},
 	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}},
+};
+
+discoveryDumpStruct discDumpCmds[] = {
+	{DUMP_DEVICEID, &cmdDiscovery::deviceID, "Device ID"},
+	{DUMP_DEVICENAME, &cmdDiscovery::deviceName, "Device Name"},
+	{DUMP_VENDORNAME, &cmdDiscovery::vendorName, "Vendor Name"},
+	{DUMP_SOCUUID, &cmdDiscovery::socUuid, "SOC UUID"},
+	{DUMP_SERIALNUMBER, &cmdDiscovery::serialNumber, "Serial Number"},
+	{DUMP_CORECLOCKRATE, &cmdDiscovery::coreClockRate, "Core Clock Rate"},
+	{DUMP_STEPPING, &cmdDiscovery::stepping, "Stepping"},
+	{DUMP_DRIVERVERSION, &cmdDiscovery::driverVersion, "Driver Version"},
+	{DUMP_GFXFIRMWAREVERSION, &cmdDiscovery::gfxFirmwareVersion, "GFX Firmware Version"},
+	{DUMP_GFXDATAFIRMWAREVERSION, &cmdDiscovery::gfxDataFirmwareVersion, "GFX Data Firmware Version"},
+	{DUMP_PCIBDFADDRESS, &cmdDiscovery::pciBDFAddress, "PCI BDF Address"},
+	{DUMP_PCISLOT, &cmdDiscovery::pciSlot, "PCI Slot"},
+	{DUMP_PCIEGENERATION, &cmdDiscovery::pcieGeneration, "PCIe Generation"},
+	{DUMP_PCIEMAXLINKWIDTH, &cmdDiscovery::pcieMaxLinkWidth, "PCIe Max Link Width"},
+	{DUMP_OAMSOCID, &cmdDiscovery::oamSocketID, "OAM Socket ID"},
+	{DUMP_MEMORYPHYSICALSIZE, &cmdDiscovery::memoryPhysicalSize, "Memory Physical Size"},
+	{DUMP_MEMORYCHANNELS, &cmdDiscovery::memoryChannels, "Number of Memory Channels"},
+	{DUMP_MEMORYBUSWIDTH, &cmdDiscovery::memoryBusWidth, "Memory Bus Width"},
+	{DUMP_EUS, &cmdDiscovery::eus, "Number of EUs"},
+	{DUMP_MEDIAENGINES, &cmdDiscovery::mediaEngines, "Number of Media Engines"},
+	{DUMP_MEDIAENHANCEMENTENGINES, &cmdDiscovery::mediaEnhancementEngines, "Number of Media Enhancement Engines"},
+	{DUMP_GFXFIRMWARESTATUS, &cmdDiscovery::gfxFirmwareStatus, "GFX Firmware Status"},
+	{DUMP_PCIVENDORID, &cmdDiscovery::pciVendorID, "PCI Vendor ID"},
+	{DUMP_PCIDEVICEID, &cmdDiscovery::pciDeviceID, "PCI Device ID"},
 };
 
 /**
@@ -118,20 +145,16 @@ void cmdDiscovery::help(HELP helpType)
 }
 
 /**
- * @brief Executes the dump command. This command dumps the device properties
+ * @brief This function does the common pre-checks for the discovery commands.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::preCheck(discoveryCmdStruct *discCmds, vector<string> *dumpArgs)
 {
-	TRACING();
-	ze_result_t result = ZE_RESULT_SUCCESS;
-	vector<string> dumpArgs;
 	string val = discCmds[discCmdType::DISC_DUMP].val;
-	bool found = false;
 
 	// Check if the dump command argument is valid
 	if (val.empty()) {
@@ -143,14 +166,14 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 	if (val == "-1") {
 		// push all dump command types to the vector
 		for (int i = 1; i < TOTAL_DISC_DUMPS; i++) {
-			dumpArgs.push_back(to_string(i));
+			dumpArgs->push_back(to_string(i));
 		}
 	} else {
 		// Split the dump command argument by commas
 		stringstream ss(val.c_str());
 		string token;
 		while (getline(ss, token, ',')) {
-			dumpArgs.push_back(token);
+			dumpArgs->push_back(token);
 		}
 	}
 
@@ -161,39 +184,40 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	discoveryDumpStruct dumpCmds[] = {
-		{DUMP_DEVICEID, &cmdDiscovery::deviceID},
-		{DUMP_DEVICENAME, &cmdDiscovery::deviceName},
-		{DUMP_VENDORNAME, &cmdDiscovery::vendorName},
-		{DUMP_SOCUUID, &cmdDiscovery::socUuid},
-		{DUMP_SERIALNUMBER, &cmdDiscovery::serialNumber},
-		{DUMP_CORECLOCKRATE, &cmdDiscovery::coreClockRate},
-		{DUMP_STEPPING, &cmdDiscovery::stepping},
-		{DUMP_DRIVERVERSION, &cmdDiscovery::driverVersion},
-		{DUMP_GFXFIRMWAREVERSION, &cmdDiscovery::gfxFirmwareVersion},
-		{DUMP_GFXDATAFIRMWAREVERSION, &cmdDiscovery::gfxDataFirmwareVersion},
-		{DUMP_PCIBDFADDRESS, &cmdDiscovery::pciBDFAddress},
-		{DUMP_PCISLOT, &cmdDiscovery::pciSlot},
-		{DUMP_PCIEGENERATION, &cmdDiscovery::pcieGeneration},
-		{DUMP_PCIEMAXLINKWIDTH, &cmdDiscovery::pcieMaxLinkWidth},
-		{DUMP_OAMSOCID, &cmdDiscovery::oamSocketID},
-		{DUMP_MEMORYPHYSICALSIZE, &cmdDiscovery::memoryPhysicalSize},
-		{DUMP_MEMORYCHANNELS, &cmdDiscovery::memoryChannels},
-		{DUMP_MEMORYBUSWIDTH, &cmdDiscovery::memoryBusWidth},
-		{DUMP_EUS, &cmdDiscovery::eus},
-		{DUMP_MEDIAENGINES, &cmdDiscovery::mediaEngines},
-		{DUMP_MEDIAENHANCEMENTENGINES, &cmdDiscovery::mediaEnhancementEngines},
-		{DUMP_GFXFIRMWARESTATUS, &cmdDiscovery::gfxFirmwareStatus},
-		{DUMP_PCIVENDORID, &cmdDiscovery::pciVendorID},
-		{DUMP_PCIDEVICEID, &cmdDiscovery::pciDeviceID},
-	};
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Executes the dump heading command. This command print the heading
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
+ze_result_t cmdDiscovery::dumpHeading(discoveryCmdStruct *discCmds)
+{
+	TRACING();
+	vector<string> dumpArgs;
+	ze_result_t result;
+	bool found = false;
+	string val = discCmds[discCmdType::DISC_DUMP].val;
+
+	result = preCheck(discCmds, &dumpArgs);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
 
 	for (auto &arg : dumpArgs) {
-		for (auto &cmd : dumpCmds) {
+		for (auto &cmd : discDumpCmds) {
 			if (cmd.type == atoi(arg.c_str())) {
+				// found will only be true if we have printed at least one heading, so add a comma before the next
+				// heading
+				if (found) {
+					PRINT(", ");
+				}
+				PRINT("%s", cmd.heading.c_str());
 				found = true;
-				DBG("Running command: %d\n", cmd.type);
-				result = (this->*cmd.func)(discCmds, d);
 			}
 		}
 	}
@@ -202,36 +226,98 @@ ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("The following argument was not expected: '%s'.\n", val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	} else {
+		// Print a new line after the heading
+		PRINT("\n");
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Executes the dump command. This command dumps the device properties
+ *
+ * @param discCmds A pointer to the discovery command structure.
+ * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
+ze_result_t cmdDiscovery::dump(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	vector<string> dumpArgs;
+	string val = discCmds[discCmdType::DISC_DUMP].val;
+	bool found = false;
+
+	result = preCheck(discCmds, &dumpArgs);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	for (auto &arg : dumpArgs) {
+		for (auto &cmd : discDumpCmds) {
+			if (cmd.type == atoi(arg.c_str())) {
+				DBG("Running command: %d\n", cmd.type);
+				result = (this->*cmd.func)(discCmds, d, outputLine);
+				if (result != ZE_RESULT_SUCCESS) {
+					return result;
+				}
+				// found will only be true if we have printed at least one heading, so add a comma before the next
+				// heading
+				if (found) {
+					PRINT(", ");
+				}
+				PRINT("%s", outputLine->c_str());
+				// Clear the output line for the next command
+				outputLine->clear();
+				// Set found to true to indicate that we have printed at least one command
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found) {
+		ERR("The following argument was not expected: '%s'.\n", val.c_str());
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	} else {
+		// Print a new line after the output
+		PRINT("\n");
 	}
 
 	return result;
 }
 
 /**
- * @brief Prints out the device ID of the device.
+ * @brief Prints out the device ID of the device when user runs discovery --dump 1
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::deviceID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
-	PRINT("  - Device ID: %d\n", d->index);
+	*outputLine = to_string(d->index);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Print out the device name for a device.
+ * @brief Print out the device name for a device when user runs discovery --dump 2.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -243,20 +329,21 @@ ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - Device Name: %s\n", zeDevProp.name);
+	*outputLine = zeDevProp.name;
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints out the vendor name of a device.
+ * @brief Prints out the vendor name of a device when user runs discovery --dump 3.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -269,20 +356,21 @@ ze_result_t cmdDiscovery::vendorName(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("  - Vendor Name: %s\n", zesDevProp.vendorName);
+	*outputLine = zesDevProp.vendorName;
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Print the SOC UUID command for a device
+ * @brief Print the SOC UUID command for a device when user runs discovery --dump 4.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -295,24 +383,23 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("  - SOC UUID: ");
 	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j) {
-		PRINT("%02X", devProp.uuid.id[j]);
+		*outputLine += to_string(devProp.uuid.id[j]);
 	}
-	PRINT("\n");
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the serial number for a device.
+ * @brief Prints the serial number for a device when user runs discovery --dump 5
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -325,20 +412,21 @@ ze_result_t cmdDiscovery::serialNumber(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("  - Serial Number: %s\n", zesDevProp.serialNumber);
+	*outputLine = zesDevProp.serialNumber;
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the core clock rate for a device
+ * @brief Prints the core clock rate for a device when user runs discovery --dump 6
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -350,36 +438,40 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - Core clock rate: %d\n", zeDevProp.coreClockRate);
+
+	*outputLine = to_string(zeDevProp.coreClockRate);
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the stepping for a device
+ * @brief Prints the stepping for a device when user runs discovery --dump 7.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::stepping(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::stepping(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the driver version for a device
+ * @brief Prints the driver version for a device when user runs discovery --dump 8.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -392,19 +484,20 @@ ze_result_t cmdDiscovery::driverVersion(discoveryCmdStruct *discCmds, devInfo *d
 		return result;
 	}
 
-	PRINT("  - Driver Version: %s\n", zesDevProp.driverVersion);
+	*outputLine = zesDevProp.driverVersion;
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the GFX firmware version for a device
+ * @brief Prints the GFX firmware version for a device when user runs discovery --dump 9.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	char version[MAX_PATH] = {0};
@@ -412,19 +505,20 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(discoveryCmdStruct *discCmds, devIn
 	firmware *fw = (firmware *)d->dev->getFirmware();
 
 	fw->getFWversion(fwType::GFX, version, sizeof(version));
-	PRINT("  - GFX Firmware Version: %s\n", version);
+	*outputLine = version;
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the GFX data firmware version for a device
+ * @brief Prints the GFX data firmware version for a device when user runs discovery --dump 10.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	char version[MAX_PATH] = {0};
@@ -432,24 +526,26 @@ ze_result_t cmdDiscovery::gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, d
 	firmware *fw = (firmware *)d->dev->getFirmware();
 
 	fw->getFWversion(fwType::GFX_DATA, version, sizeof(version));
-	PRINT("  - GFX Data Firmware Version: %s\n", version);
+	*outputLine = version;
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the PCI BDF address for a device
+ * @brief Prints the PCI BDF address for a device when user runs discovery --dump 11.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
 	zes_pci_properties_t pciProps;
 	ze_result_t result;
+	char output[256] = {0};
 
 	pci *p = (pci *)d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
@@ -457,20 +553,26 @@ ze_result_t cmdDiscovery::pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - PCI BDF Address: %04x:%02x:%02x.%01x\n", pciProps.address.domain, pciProps.address.bus,
-		  pciProps.address.device, pciProps.address.function);
+
+	// Format the PCI BDF address as "domain:bus:device.function"
+	// Example: "0000:00:02.0"
+	// where domain is 4 digits, bus is 2 digits in hex, device is 2 digits, and function is 1 digit.
+	snprintf(output, 255, "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus, pciProps.address.device,
+			 pciProps.address.function);
+	*outputLine = output;
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the PCI slot for a device
+ * @brief Prints the PCI slot for a device when user runs discovery --dump 12.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -481,14 +583,15 @@ ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d)
 }
 
 /**
- * @brief Prints the PCIe generation for a device
+ * @brief Prints the PCIe generation for a device when user runs discovery --dump 13.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -501,19 +604,21 @@ ze_result_t cmdDiscovery::pcieGeneration(discoveryCmdStruct *discCmds, devInfo *
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - PCIe Generation: %d\n", pciProps.maxSpeed.gen);
+
+	*outputLine = to_string(pciProps.maxSpeed.gen);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the PCIe max link width for a device
+ * @brief Prints the PCIe max link width for a device when user runs discovery --dump 14.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -526,39 +631,41 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - Max link width: %d\n", pciProps.maxSpeed.width);
+	*outputLine = to_string(pciProps.maxSpeed.width);
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the OAM socket ID for a device
+ * @brief Prints the OAM socket ID for a device when user runs discovery --dump 15.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::oamSocketID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
 	UNUSED(d);
 	// This was only implemented on PVC GPUs so should we simply return NA going forward?
 
-	PRINT("  - OAM Socket ID: N/A\n");
+	*outputLine = "N/A";
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the memory physical size for a device
+ * @brief Prints the memory physical size for a device when user runs discovery --dump 16.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -573,19 +680,20 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devIn
 		return result;
 	}
 
-	PRINT("  - Memory Physical Size: %" PRIu64 " MiB\n", physicalSize / 1024 / 1024);
+	*outputLine = to_string(physicalSize / 1024 / 1024) + " MiB";
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the memory channels for a device
+ * @brief Prints the memory channels for a device when user runs discovery --dump 17.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -600,19 +708,20 @@ ze_result_t cmdDiscovery::memoryChannels(discoveryCmdStruct *discCmds, devInfo *
 		return result;
 	}
 
-	PRINT("  - Memory Channels: %d\n", channels);
+	*outputLine = to_string(channels);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the memory bus width for a device
+ * @brief Prints the memory bus width for a device when user runs discovery --dump 18.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -627,19 +736,20 @@ ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *
 		return result;
 	}
 
-	PRINT("  - Memory Bus Width: %d bits\n", busWidth);
+	*outputLine = to_string(busWidth) + " bits";
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the EUs for a device
+ * @brief Prints the EUs for a device when user runs discovery --dump 19.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -651,20 +761,20 @@ ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - Number of EUs: %d\n",
-		  zeDevProp.numEUsPerSubslice * zeDevProp.numSubslicesPerSlice * zeDevProp.numSlices);
+	*outputLine = to_string(zeDevProp.numEUsPerSubslice * zeDevProp.numSubslicesPerSlice * zeDevProp.numSlices);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the media engines for a device
+ * @brief Prints the media engines for a device when user runs discovery --dump 20.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -682,19 +792,20 @@ ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d)
 		return result;
 	}
 
-	PRINT("  - Number of Media Engines: %d\n", mediaEnginesCount);
+	*outputLine = to_string(mediaEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the media enhancement engines for a device
+ * @brief Prints the media enhancement engines for a device when user runs discovery --dump 21.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -711,19 +822,20 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(discoveryCmdStruct *discCmds, 
 		return result;
 	}
 
-	PRINT("  - Number of Media Enhancement Engines: %d\n", mediaEnhancementEnginesCount);
+	*outputLine = to_string(mediaEnhancementEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the GFX firmware status for a device
+ * @brief Prints the GFX firmware status for a device when user runs discovery --dump 22.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -732,14 +844,15 @@ ze_result_t cmdDiscovery::gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInf
 }
 
 /**
- * @brief Prints the PCI vendor ID for a device
+ * @brief Prints the PCI vendor ID for a device when user runs discovery --dump 23.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -751,19 +864,24 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - Vendor ID: 0x%X\n", zeDevProp.vendorId);
+
+	std::stringstream stream;
+	stream << std::hex << zeDevProp.vendorId;
+	std::string hexString = stream.str();
+	*outputLine = "0x" + hexString;
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Prints the PCI device ID for a device
+ * @brief Prints the PCI device ID for a device when user runs discovery --dump 24.
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -775,7 +893,11 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("  - Device ID: 0x%X\n", zeDevProp.deviceId);
+
+	std::stringstream stream;
+	stream << std::hex << zeDevProp.deviceId;
+	std::string hexString = stream.str();
+	*outputLine = "0x" + hexString;
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -784,10 +906,11 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d)
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::physicalFunction(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::physicalFunction(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -800,10 +923,11 @@ ze_result_t cmdDiscovery::physicalFunction(discoveryCmdStruct *discCmds, devInfo
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::virtualFunction(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::virtualFunction(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
@@ -816,14 +940,16 @@ ze_result_t cmdDiscovery::virtualFunction(discoveryCmdStruct *discCmds, devInfo 
  *
  * @param discCmds A pointer to the discovery command structure.
  * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::listamcversions(discoveryCmdStruct *discCmds, devInfo *d)
+ze_result_t cmdDiscovery::listamcversions(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine)
 {
 	TRACING();
 	UNUSED(discCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -837,11 +963,12 @@ int cmdDiscovery::run(arg_struct *args)
 	TRACING();
 	vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
+	bool found = false, headingFirst = true;
 	int opt;
 	int optionIndex = 0;
 	string shortOpts;
 	vector<struct option> longOptsVec;
+	string outputLine = "";
 
 	processOptions(discCmds, ARRAY_SIZE(discCmds), shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
@@ -923,20 +1050,41 @@ int cmdDiscovery::run(arg_struct *args)
 	if (args->argc == 2) {
 		// Print out the device information
 		for (auto &device : deviceList) {
-			deviceName(discCmds, &device);
-			vendorName(discCmds, &device);
-			socUuid(discCmds, &device);
-			pciBDFAddress(discCmds, &device);
+			deviceName(discCmds, &device, &outputLine);
+			PRINT("deviceID: %s\n", outputLine.c_str());
+			outputLine.clear();
+			vendorName(discCmds, &device, &outputLine);
+			PRINT("vendorName: %s\n", outputLine.c_str());
+			outputLine.clear();
+			socUuid(discCmds, &device, &outputLine);
+			PRINT("socUuid: %s\n", outputLine.c_str());
+			outputLine.clear();
+			pciBDFAddress(discCmds, &device, &outputLine);
+			PRINT("pciBDFAddress: %s\n", outputLine.c_str());
 			PRINT("==============================================\n");
 		}
 	} else {
 		// Iterate through the device list and execute the command
 		for (auto &device : deviceList) {
+			outputLine.clear();
+
 			// Call the appropriate command function based on the command type
 			for (auto &cmd : discCmds) {
 				if (cmd.enabled && cmd.func != nullptr) {
+					// If there is a heading function, call it first
+					if (cmd.headingFunc != nullptr && headingFirst) {
+						headingFirst = false;
+						result = (this->*cmd.headingFunc)(discCmds);
+						if (result != ZE_RESULT_SUCCESS) {
+							return result;
+						}
+					}
+
 					DBG("Running command: %s\n", cmd.opt.name);
-					(this->*cmd.func)(discCmds, &device);
+					result = (this->*cmd.func)(discCmds, &device, &outputLine);
+					if (result != ZE_RESULT_SUCCESS) {
+						return result;
+					}
 				}
 			}
 		}
