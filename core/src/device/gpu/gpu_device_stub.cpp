@@ -1348,7 +1348,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
             auto enabled_GPU_ids = Configuration::getEnabledGPUIds();
             if(enabled_GPU_ids != nullptr){
-                if(enabled_GPU_ids->find(unique_device_id) == enabled_GPU_ids->end()){
+                if(enabled_GPU_ids->find(i + unique_device_id) == enabled_GPU_ids->end()){
                     continue;
                 }
             }
@@ -1391,7 +1391,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 addEngineCapabilities(zes_device, props, capabilities);
                 addEuActiveStallIdleCapabilities(device, zes_device, props, p_driver, capabilities);
                 logSupportedMetrics(zes_device, props, capabilities);
-                auto p_gpu = std::make_shared<GPUDevice>(std::to_string(unique_device_id), zes_device, device, p_driver, capabilities);
+                if (i + unique_device_id >= XPUM_MAX_NUM_DEVICES) {
+                    XPUM_LOG_ERROR("The number of GPU devices exceeds the maximum limit of {}, only the first {} devices will be discovered.", XPUM_MAX_NUM_DEVICES, XPUM_MAX_NUM_DEVICES);
+                    continue;
+                }
+                auto p_gpu = std::make_shared<GPUDevice>(std::to_string(i + unique_device_id), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.deviceId)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.name)));
@@ -1561,10 +1565,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                 std::lock_guard<std::mutex> lock(devices_mtx);
                 p_devices->push_back(p_gpu);
-                unique_device_id++;
             }
         }
         });
+        unique_device_id += devices.size();
     }
 
     sort(p_devices->begin(), p_devices->end(),
@@ -3339,6 +3343,7 @@ std::string GPUDeviceStub::getProcessName(uint32_t processId) {
     pinfo.open(path);
     if (pinfo.is_open()) {
         std::getline(pinfo, processName);
+        processName = processName.substr(processName.rfind('/') + 1);
         pinfo.close();
     }
     return processName;
