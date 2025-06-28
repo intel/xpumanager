@@ -30,6 +30,8 @@
 #include <memory.h>
 #include <pci.h>
 #include <sstream>
+#include <iomanip>
+#include <format>
 
 /*
  * @brief This structure serves two purposes:
@@ -321,7 +323,7 @@ ze_result_t cmdDiscovery::deviceName(discoveryCmdStruct *discCmds, devInfo *d, s
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t zeDevProp;
+	ze_device_properties_t zeDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
@@ -374,8 +376,9 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d, stri
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t devProp;
+	ze_device_properties_t devProp = {};
 	ze_result_t result;
+	char output[256] = {0};
 
 	result = d->dev->getDevProps(d->deviceHdl, &devProp);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -383,9 +386,13 @@ ze_result_t cmdDiscovery::socUuid(discoveryCmdStruct *discCmds, devInfo *d, stri
 		return result;
 	}
 
-	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j) {
-		*outputLine += to_string(devProp.uuid.id[j]);
-	}
+	snprintf(output, sizeof(output), "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+			 devProp.uuid.id[15], devProp.uuid.id[14], devProp.uuid.id[13], devProp.uuid.id[12], devProp.uuid.id[11],
+			 devProp.uuid.id[10], devProp.uuid.id[9], devProp.uuid.id[8], devProp.uuid.id[7], devProp.uuid.id[6],
+			 devProp.uuid.id[5], devProp.uuid.id[4], devProp.uuid.id[3], devProp.uuid.id[2], devProp.uuid.id[1],
+			 devProp.uuid.id[0]);
+
+	*outputLine = output;
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -430,7 +437,7 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t zeDevProp;
+	ze_device_properties_t zeDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
@@ -439,7 +446,7 @@ ze_result_t cmdDiscovery::coreClockRate(discoveryCmdStruct *discCmds, devInfo *d
 		return result;
 	}
 
-	*outputLine = to_string(zeDevProp.coreClockRate);
+	*outputLine = to_string(zeDevProp.coreClockRate) + " MHz";
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -579,6 +586,7 @@ ze_result_t cmdDiscovery::pciSlot(discoveryCmdStruct *discCmds, devInfo *d, stri
 	UNUSED(d);
 
 	// Not implemented in XPUM for Windows. Linux version only.
+	*outputLine = "";
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -680,7 +688,9 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(discoveryCmdStruct *discCmds, devIn
 		return result;
 	}
 
-	*outputLine = to_string(physicalSize / 1024 / 1024) + " MiB";
+	stringstream stream;
+	stream << fixed << setprecision(2) << (double)physicalSize / 1024 / 1024;
+	*outputLine = stream.str() + " MiB";
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -736,7 +746,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *
 		return result;
 	}
 
-	*outputLine = to_string(busWidth) + " bits";
+	*outputLine = to_string(busWidth);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -753,15 +763,28 @@ ze_result_t cmdDiscovery::eus(discoveryCmdStruct *discCmds, devInfo *d, string *
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t zeDevProp;
+	ze_device_properties_t zeDevProp = {};
 	ze_result_t result;
+
+	zeDevProp.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	ze_eu_count_ext_t *extendedPropertiesPtr = new ze_eu_count_ext_t();
+	memset(extendedPropertiesPtr, 0, sizeof(ze_eu_count_ext_t));
+	extendedPropertiesPtr->stype = ZE_STRUCTURE_TYPE_EU_COUNT_EXT;
+	zeDevProp.pNext = extendedPropertiesPtr;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		delete extendedPropertiesPtr;
 		return result;
 	}
-	*outputLine = to_string(zeDevProp.numEUsPerSubslice * zeDevProp.numSubslicesPerSlice * zeDevProp.numSlices);
+
+	if (zeDevProp.pNext != nullptr) {
+		ze_eu_count_ext_t *eu_count_ext = (ze_eu_count_ext_t *)(zeDevProp.pNext);
+		*outputLine = to_string(eu_count_ext->numTotalEUs);
+	}
+
+	delete extendedPropertiesPtr;
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -786,7 +809,7 @@ ze_result_t cmdDiscovery::mediaEngines(discoveryCmdStruct *discCmds, devInfo *d,
 	}
 
 	uint32_t mediaEnginesCount = 0;
-	ze_result_t result = eg->getMediaEngines(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_ALL);
+	ze_result_t result = eg->getMediaEngines(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -856,7 +879,7 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d, 
 {
 	TRACING();
 	UNUSED(discCmds);
-	ze_device_properties_t zeDevProp;
+	ze_device_properties_t zeDevProp = {};
 	ze_result_t result;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
@@ -865,9 +888,9 @@ ze_result_t cmdDiscovery::pciVendorID(discoveryCmdStruct *discCmds, devInfo *d, 
 		return result;
 	}
 
-	std::stringstream stream;
-	stream << std::hex << zeDevProp.vendorId;
-	std::string hexString = stream.str();
+	stringstream stream;
+	stream << hex << zeDevProp.vendorId;
+	string hexString = stream.str();
 	*outputLine = "0x" + hexString;
 	return ZE_RESULT_SUCCESS;
 }
@@ -894,9 +917,9 @@ ze_result_t cmdDiscovery::pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d, 
 		return result;
 	}
 
-	std::stringstream stream;
-	stream << std::hex << zeDevProp.deviceId;
-	std::string hexString = stream.str();
+	stringstream stream;
+	stream << hex << zeDevProp.deviceId;
+	string hexString = stream.str();
 	*outputLine = "0x" + hexString;
 	return ZE_RESULT_SUCCESS;
 }

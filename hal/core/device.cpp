@@ -104,7 +104,6 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 		ERR("Invalid device properties pointer\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
-	memset(zeDevProp, 0, sizeof(ze_device_properties_t));
 
 	ze_result_t result = zeDeviceGetProperties(dev, zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
