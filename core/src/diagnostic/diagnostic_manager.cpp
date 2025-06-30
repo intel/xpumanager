@@ -1051,7 +1051,7 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
         xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC
     ];
     p_task_info->count += 1;
-    if (Utility::isPVCPlatform(ze_device)) {
+    if (Utility::isPVCPlatform(zes_device)) {
         component.result = XPUM_DIAG_RESULT_FAIL;
         component.finished = true;
         updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED);
@@ -1407,9 +1407,9 @@ std::string checkDowngradedPCIe(const ze_device_handle_t &ze_device, const zes_d
                 // For ATS-M, check downgraded link speed only when current_link_speed < 16.0 GT/s
                 // For PVC, check downgraded link speed only when current_link_speed < 32.0 GT/s
                 if (parsed_speed > 0) {
-                    if (Utility::isATSMPlatform(ze_device) && parsed_speed < 16)
+                    if (Utility::isATSMPlatform(zes_device) && parsed_speed < 16)
                         ret = "Speed on " + current_bridge + " downgraded to " +  current_link_speed + ".";
-                    if (Utility::isPVCPlatform(ze_device) && parsed_speed < 32)
+                    if (Utility::isPVCPlatform(zes_device) && parsed_speed < 32)
                         ret = "Speed on " + current_bridge + " downgraded to " +  current_link_speed + ".";
                 }
             }
@@ -3091,7 +3091,7 @@ void DiagnosticManager::doDiagnosticXeLinkThroughput(const ze_device_handle_t &z
     if (fabric_port_count == 0) {
         XPUM_LOG_DEBUG("Target device GPU {} xe link port not found", device_id);
     }
-    if (!Utility::isPVCPlatform(ze_device) || devices.size() < 2 || fabric_port_count == 0) {
+    if (!Utility::isPVCPlatform(zes_device) || devices.size() < 2 || fabric_port_count == 0) {
         xe_link_throughput_component.result = XPUM_DIAG_RESULT_FAIL;
         xe_link_throughput_component.finished = true;
         updateMessage(xe_link_throughput_component.message, COMPONENT_TYPE_NOT_SUPPORTED);

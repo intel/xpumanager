@@ -2193,8 +2193,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
             for (uint i{0}; i < response.count(); ++i) {
                 auto proc = nlohmann::json();
                 proc["process_id"] = response.processlist(i).processid();
-                proc["mem_size"] = response.processlist(i).memsize();
-                proc["shared_mem_size"] = response.processlist(i).sharedsize();
+                proc["mem_size"] = response.processlist(i).memsize() / 1024;
+                proc["shared_mem_size"] = response.processlist(i).sharedsize() / 1024;
                 proc["device_id"] = deviceId;
                 proc["process_name"] = response.processlist(i).processname();
                 deviceProcessList.push_back(proc);
