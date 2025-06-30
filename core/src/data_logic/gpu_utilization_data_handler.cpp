@@ -50,10 +50,7 @@ void GPUUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_dat
             if (pre_data != p_preData->getData().end()) {
                 auto pre_extended = pre_data->second->getExtendedDatas()->find(engineHandle);
                 if (pre_extended != pre_data->second->getExtendedDatas()->end()) {
-                    if (exMeasurementData.type == ZES_ENGINE_GROUP_RENDER_SINGLE ||
-                        exMeasurementData.type == ZES_ENGINE_GROUP_RENDER_SINGLE ||
-                        exMeasurementData.type == ZES_ENGINE_GROUP_COPY_SINGLE
-                     ) {
+                    if (exMeasurementData.type == ZES_ENGINE_GROUP_ALL) {
                         if (exMeasurementData.timestamp ==
                                 pre_extended->second.timestamp) {
                             ++extended_data;

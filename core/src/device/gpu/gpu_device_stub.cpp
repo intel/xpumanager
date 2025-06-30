@@ -1137,7 +1137,7 @@ void GPUDeviceStub::addEngineCapabilities(zes_device_handle_t device, const ze_d
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {} {} lacks Compute Engine Group Utilization monitoring capability.", props.name, bdf_address);
-    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE) != engine_caps.end())
+    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_ALL) != engine_caps.end())
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
     else
         XPUM_LOG_WARN("Device {} {} lacks  Media Engine Group Utilization monitoring capability.", props.name, bdf_address);
@@ -1594,7 +1594,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_LOG_TRACE("Get device {} skuType {}", p_device->getId(), value);
             }
         }
-    });
+    }, false);
 
     return p_devices;
 }
@@ -1738,17 +1738,26 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_properties_t props = {};
+            zes_power_ext_properties_t ext_props = {};
+            props.pNext = &ext_props;
+            props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+            ext_props.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_power_energy_counter_t snap = {};
-                XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp) : ret->setRawTimestamp(snap.timestamp);
-                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                    data_acquired = true;
-                } else {
-                    exception_msgs["zesPowerGetEnergyCounter"] = res;
+                // For BMG (and future) it is preferred to use the card power value
+                // For legacy platforms, we leave the code unchanged
+                if ((Utility::isATSMPlatform(device) || Utility::isPVCPlatform(device)) || ext_props.domain == ZES_POWER_DOMAIN_CARD) {
+                    zes_power_energy_counter_t snap = {};
+                    XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * snap.energy);
+                        props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp) : ret->setRawTimestamp(snap.timestamp);
+                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesPowerGetEnergyCounter"] = res;
+                    }
                 }
             } else {
                 exception_msgs["zesPowerGetProperties"] = res;
@@ -2015,8 +2024,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const ze_device
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     if (type == ZES_TEMP_SENSORS_GPU) {
         uint64_t offset = 0;
-        if (Utility::isATSMPlatform(device)) {
+        if (Utility::isATSMPlatform(zes_device)) {
             offset = 0x145978;
+        }
+        if (Utility::isBMGPlatform(zes_device)) {
+            offset = 0x138434;
         }
         if (offset != 0) {
             int val = (int)getRegisterValueFromSys(zes_device, offset);
@@ -2792,8 +2804,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_de
                 props.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE ||
-                        props.type == ZES_ENGINE_GROUP_COPY_SINGLE) {
+                    if (props.type == ZES_ENGINE_GROUP_ALL) {
                         zes_engine_stats_t snap = {};
                         XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap));
                         if (res == ZE_RESULT_SUCCESS) {
@@ -2940,10 +2951,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                             }
                             break;
                         case ZES_ENGINE_GROUP_MEDIA_ALL:
-                        case ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE:
-                        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
-                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE ||
-                                props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
+                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL) {
                                 continue;
                             }
                             break;
@@ -4055,7 +4063,7 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                 }
             }
         }
-        if (Utility::isATSMPlatform(device) && (status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK || status == xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN)) {
+        if (Utility::isATSMPlatform(zes_device) && (status == xpum_health_status_t::XPUM_HEALTH_STATUS_OK || status == xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN)) {
             auto memoryFailedMRCInfo = parseMemoryFailedMRCInfo(getRegisterValueFromSys(zes_device, 0x4F104));
             if (memoryFailedMRCInfo.size() > 0)  {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
@@ -4130,10 +4138,10 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumTemperatureSensors(zes_device, &temp_sensor_count, nullptr));
         if (temp_sensor_count == 0 && type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
             uint64_t offset = 0;
-            if (Utility::isATSMPlatform(device)) {
+            if (Utility::isATSMPlatform(zes_device)) {
                 offset = 0x145978;
             }
-            if (Utility::isBMGPlatform(device)) {
+            if (Utility::isBMGPlatform(zes_device)) {
                 offset = 0x138434;
             }
             if (offset != 0) {

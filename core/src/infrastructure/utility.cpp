@@ -597,19 +597,18 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
     }
 }
 
-//This function won't work when device handle is returned by zesDeviceGet
-int Utility::getPlatform(const ze_device_handle_t &device) {
-    ze_device_properties_t props = {};
-    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+int Utility::getPlatform(const zes_device_handle_t &device) {
+    zes_device_properties_t props = {};
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
     int device_model = 0;
-    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        device_model = getDeviceModelByPciDeviceId(props.deviceId);
+    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
     }
     return device_model;
 }
 
-bool Utility::isATSMPlatform(const ze_device_handle_t &device) {
+bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
     bool is_atsm = false;
     int device_model = getPlatform(device);
     is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1G);
@@ -617,14 +616,14 @@ bool Utility::isATSMPlatform(const ze_device_handle_t &device) {
     return is_atsm;
 }
 
-bool Utility::isPVCPlatform(const ze_device_handle_t &device) {
+bool Utility::isPVCPlatform(const zes_device_handle_t &device) {
     bool is_pvc = false;
     is_pvc = (getPlatform(device) == XPUM_DEVICE_MODEL_PVC);
 
     return is_pvc;
 }
 
-bool Utility::isBMGPlatform(const ze_device_handle_t &device) {
+bool Utility::isBMGPlatform(const zes_device_handle_t &device) {
     bool is_bmg = false;
     is_bmg = (getPlatform(device) == XPUM_DEVICE_MODEL_BMG);
     return is_bmg;
