@@ -1538,8 +1538,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             props.pNext = nullptr;
                             XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                             if (res == ZE_RESULT_SUCCESS) {
-                                if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || 
-                                    props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || 
+                                if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE ||
+                                    props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE ||
                                     props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
                                 }
@@ -2322,7 +2322,24 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         zetContextActivateMetricGroups(hContext, device, 0, nullptr);
         zeContextDestroy(hContext);
         GPUDeviceStub::target_metric_contexts.erase(device);
-        XPUM_LOG_ERROR("Failed to open metric streamer: {0:x}", res);
+
+        ze_device_properties_t props = {};
+        ze_result_t res2 = zeDeviceGetProperties(device, &props);
+        if (res2 == ZE_RESULT_SUCCESS) {
+            char uuidStr[37] = {};
+            auto& uuidBuf = props.uuid.id;
+            int ret = sprintf(uuidStr,
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                    uuidBuf[15], uuidBuf[14], uuidBuf[13], uuidBuf[12], uuidBuf[11], uuidBuf[10], uuidBuf[9], uuidBuf[8],
+                    uuidBuf[7], uuidBuf[6], uuidBuf[5], uuidBuf[4], uuidBuf[3], uuidBuf[2], uuidBuf[1], uuidBuf[0]);
+            if (ret < 0) {
+                XPUM_LOG_ERROR("Failed to open metric streamer: {0:x} for device [0x{1:x}]", res, props.deviceId);
+            } else {
+                XPUM_LOG_ERROR("Failed to open metric streamer: {0:x} for device {1}", res, uuidStr);
+            }
+        } else {
+            XPUM_LOG_ERROR("Failed to open metric streamer: {0:x}", res);
+        }
         throw BaseException("toGetEuActiveStallIdleCore - zetMetricStreamerOpen");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD));
