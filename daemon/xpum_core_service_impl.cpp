@@ -1735,8 +1735,8 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             for (uint32_t i = 0; i < count; i++) {
                 DeviceProcessState* proc = response->add_processlist();
                 proc->set_processid(dataArray[i].processId);
-                proc->set_memsize(dataArray[i].memSize);
-                proc->set_sharedsize(dataArray[i].sharedSize);
+                proc->set_memsize(dataArray[i].memSize / 1024);
+                proc->set_sharedsize(dataArray[i].sharedSize / 1024);
                 proc->set_engine(convertEngineId2Num(dataArray[i].engine));
                 proc->set_processname(dataArray[i].processName);
             }
@@ -1929,42 +1929,57 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::getAllDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::UtilizationInterval* request, ::DeviceUtilizationByProcessResponse* response) {
-    xpum_result_t res;
-    uint32_t count = 1024 * 4;
-    xpum_device_util_by_process_t dataArray[count];
+    int dev_count{XPUM_MAX_NUM_DEVICES};
+    xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
+    xpum_result_t res = xpumGetDeviceList(devices, &dev_count);
+    uint32_t total_count = dev_count;
+    if (res == XPUM_OK) {
+        if (dev_count > 0) {
+            for (int i{0}; i < dev_count; ++i) {
+                uint32_t process_count = 0;
+                res = xpumGetDeviceProcessState(devices[i].deviceId, nullptr, &process_count);
+                if (res != XPUM_OK) {
+                    switch (res) {
+                        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                            response->set_errormsg("Level Zero Initialization Error");
+                            break;
+                        default:
+                            response->set_errormsg("Error");
+                            break;
+                    }
+                    response->set_errorno(res);
+                    return grpc::Status::OK;
+                }
+                if (process_count > 0) {
+                    total_count += process_count;
+                    xpum_device_process_t dataArray[process_count];
+                    res = xpumGetDeviceProcessState(devices[i].deviceId, dataArray, &process_count);
+                    for (uint32_t i = 0; i < process_count; i++) {
+                        DeviceUtilizationByProcess* proc = response->add_processlist();
+                        proc->set_processid(dataArray[i].processId);
+                        proc->set_memsize(dataArray[i].memSize / 1024);
+                        proc->set_sharedmemsize(dataArray[i].sharedSize / 1024);
+                        proc->set_deviceid(devices[i].deviceId);
+                        proc->set_processname(dataArray[i].processName);
+                    }
+                }
+            }
+        }
 
-    res = xpumGetAllDeviceUtilizationByProcess(request->utilinterval(), 
-        dataArray, &count);
-    if (res != XPUM_OK) {
+    } else {
         switch (res) {
-            case XPUM_BUFFER_TOO_SMALL:
-                response->set_errormsg("Buffer is too small");
-                break;
-            case XPUM_INTERVAL_INVALID:
-                response->set_errormsg("Interval must be (0, 1000*1000]");
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
                 break;
             default:
                 response->set_errormsg("Error");
-        }
-    } else {
-        for (uint32_t i = 0; i < count; i++) {
-            DeviceUtilizationByProcess *proc = response->add_processlist();
-            proc->set_processid(dataArray[i].processId);
-            proc->set_processname(dataArray[i].processName);
-            proc->set_deviceid(dataArray[i].deviceId);
-            proc->set_memsize(dataArray[i].memSize);
-            proc->set_sharedmemsize(dataArray[i].sharedMemSize);
-            proc->set_renderingengineutil(dataArray[i].renderingEngineUtil);
-            proc->set_computeengineutil(dataArray[i].computeEngineUtil);
-            proc->set_copyengineutil(dataArray[i].copyEngineUtil);
-            proc->set_mediaengineutil(dataArray[i].mediaEngineUtil);
-            proc->set_mediaenhancementutil(
-                    dataArray[i].mediaEnhancementUtil);
+                break;
         }
     }
-    response->set_count(count);
+
+    response->set_count(total_count);
     response->set_errorno(res);
-    return grpc::Status::OK; 
+    return grpc::Status::OK;
 }
 
 std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {

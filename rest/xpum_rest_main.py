@@ -278,4 +278,4 @@ if __name__ == '__main__':
     else:
         app = main()
     app.debug = True
-    app.run(host='0.0.0.0', port=30000, use_reloader=False)
+    app.run(host='0.0.0.0', port=30000, ssl_context=('conf/cert.pem', 'conf/key.pem'), use_reloader=False)
