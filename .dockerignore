@@ -1,7 +1,0 @@
-.ci
-.git
-.vscode
-**/build
-validation
-deployment
-**/*.log
