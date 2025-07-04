@@ -45,7 +45,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS)
 	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 debug:
-	@export DBG_FLAGS='-g -D DEBUGON'; \
+	@export DBG_FLAGS='-g -D _DEBUG'; \
 	$(MAKE)
 
 clean:
