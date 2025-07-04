@@ -718,19 +718,6 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 		return ZE_RESULT_ERROR_INVALID_ENUMERATION;
 	}
 
-	// Get state of each device
-	zes_device_state_t deviceState = {};
-	result = zesDeviceGetState(zesDevice, &deviceState);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device state: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	DBG("  - Device State:\n");
-	DBG("    - Type: %d\n", deviceState.stype);
-	DBG("    - Reset State: %d\n", deviceState.reset);
-	DBG("    - Repair State: %d\n", deviceState.repaired);
-
 	zes_func_table = new zesInfo[TOTAL_ZES]{
 		{PCI, createInstance<pci>()},
 		{PROCESS, createInstance<process>()},
