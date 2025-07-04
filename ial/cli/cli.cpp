@@ -57,7 +57,7 @@ DAEMONCAP curDaemonMode = DAEMONLESS;
 string progName = "xpu-smi";
 #endif
 
-#ifdef DEBUGON
+#ifdef _DEBUG
 int dbg_lvl = DBG;
 #else
 int dbg_lvl = INFO;

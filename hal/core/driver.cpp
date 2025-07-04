@@ -27,7 +27,7 @@
 
 using namespace std;
 
-#ifdef DEBUGON
+#ifdef _DEBUG
 int dbg_lvl = DBG;
 #else
 int dbg_lvl = INFO;

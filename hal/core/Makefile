@@ -64,7 +64,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS)
 -include $(DEPS)
 
 debug:
-	@export DBG_FLAGS='-g -D DEBUGON'; \
+	@export DBG_FLAGS='-g -D _DEBUG'; \
 	$(MAKE)
 
 # Clean up build artifacts
