@@ -81,43 +81,43 @@ public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 	~cmdDiscovery() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t preCheck(discoveryCmdStruct *discCmds, vector<string> *dumpArgs);
-	ze_result_t dumpHeading(discoveryCmdStruct *discCmds);
-	ze_result_t dump(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t physicalFunction(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t virtualFunction(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t listamcversions(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
+	ze_result_t preCheck(vector<string> *dumpArgs);
+	ze_result_t dumpHeading();
+	ze_result_t dump(devInfo *d, string *outputLine);
+	ze_result_t physicalFunction(devInfo *d, string *outputLine);
+	ze_result_t virtualFunction(devInfo *d, string *outputLine);
+	ze_result_t listamcversions(devInfo *d, string *outputLine);
 
-	ze_result_t deviceID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t deviceName(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t vendorName(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t socUuid(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t serialNumber(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t coreClockRate(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t stepping(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t driverVersion(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t gfxFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t gfxDataFirmwareVersion(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t pciBDFAddress(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t pciSlot(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t pcieGeneration(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t pcieMaxLinkWidth(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t oamSocketID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t memoryPhysicalSize(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t memoryChannels(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t memoryBusWidth(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t eus(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t mediaEngines(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t mediaEnhancementEngines(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t gfxFirmwareStatus(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t pciVendorID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
-	ze_result_t pciDeviceID(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
+	ze_result_t deviceID(devInfo *d, string *outputLine);
+	ze_result_t deviceName(devInfo *d, string *outputLine);
+	ze_result_t vendorName(devInfo *d, string *outputLine);
+	ze_result_t socUuid(devInfo *d, string *outputLine);
+	ze_result_t serialNumber(devInfo *d, string *outputLine);
+	ze_result_t coreClockRate(devInfo *d, string *outputLine);
+	ze_result_t stepping(devInfo *d, string *outputLine);
+	ze_result_t driverVersion(devInfo *d, string *outputLine);
+	ze_result_t gfxFirmwareVersion(devInfo *d, string *outputLine);
+	ze_result_t gfxDataFirmwareVersion(devInfo *d, string *outputLine);
+	ze_result_t pciBDFAddress(devInfo *d, string *outputLine);
+	ze_result_t pciSlot(devInfo *d, string *outputLine);
+	ze_result_t pcieGeneration(devInfo *d, string *outputLine);
+	ze_result_t pcieMaxLinkWidth(devInfo *d, string *outputLine);
+	ze_result_t oamSocketID(devInfo *d, string *outputLine);
+	ze_result_t memoryPhysicalSize(devInfo *d, string *outputLine);
+	ze_result_t memoryChannels(devInfo *d, string *outputLine);
+	ze_result_t memoryBusWidth(devInfo *d, string *outputLine);
+	ze_result_t eus(devInfo *d, string *outputLine);
+	ze_result_t mediaEngines(devInfo *d, string *outputLine);
+	ze_result_t mediaEnhancementEngines(devInfo *d, string *outputLine);
+	ze_result_t gfxFirmwareStatus(devInfo *d, string *outputLine);
+	ze_result_t pciVendorID(devInfo *d, string *outputLine);
+	ze_result_t pciDeviceID(devInfo *d, string *outputLine);
 
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdDiscovery::*discoveryHeadingFunc)(discoveryCmdStruct *discCmds);
-typedef ze_result_t (cmdDiscovery::*discoverySubCmdFunc)(discoveryCmdStruct *discCmds, devInfo *d, string *outputLine);
+typedef ze_result_t (cmdDiscovery::*discoveryHeadingFunc)();
+typedef ze_result_t (cmdDiscovery::*discoverySubCmdFunc)(devInfo *d, string *outputLine);
 
 struct discoveryCmdStruct
 {
