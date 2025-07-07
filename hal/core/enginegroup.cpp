@@ -168,6 +168,7 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 			return result;
 		}
 
+		DBG("  - Engine Group %d Type: %d\n", i, engineProperties.type);
 		if (engineProperties.type == type) {
 			(*mediaEngines)++;
 		}

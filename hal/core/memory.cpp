@@ -281,6 +281,7 @@ ze_result_t memory::getMemoryChannels(uint32_t *channels)
 			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
+		DBG("Memory properties for module %d: numChannels=%d\n", i, properties.numChannels);
 		*channels = properties.numChannels;
 	}
 	return result;
@@ -303,6 +304,7 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
+		DBG("Memory properties for module %d: busWidth=%d\n", i, properties.busWidth);
 		*busWidth = properties.busWidth;
 	}
 	return result;
