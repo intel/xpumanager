@@ -145,6 +145,7 @@ public:
 	ze_result_t init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
 					 uint32_t totalZesDeviceCount);
 	ze_result_t run();
+	ze_context_handle_t getContext() const { return context; }
 
 	sysman *getPCI() { return zes_func_table[PCI].func; }
 	sysman *getProcess() { return zes_func_table[PROCESS].func; }
