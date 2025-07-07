@@ -83,6 +83,7 @@ public:
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t preCheck(vector<string> *dumpArgs);
 	ze_result_t dumpHeading();
+	ze_result_t dumpAll(devInfo *d, string *outputLine);
 	ze_result_t dump(devInfo *d, string *outputLine);
 	ze_result_t physicalFunction(devInfo *d, string *outputLine);
 	ze_result_t virtualFunction(devInfo *d, string *outputLine);

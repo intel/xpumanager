@@ -43,7 +43,7 @@
 discoveryCmdStruct discCmds[] = {
 	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
 	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}},
-	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}},
+	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll},
 	{discCmdType::DISC_PHYSICALFUNCTION, {"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
 	{discCmdType::DISC_VIRTUALFUNCTION, {"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
 	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading},
@@ -285,6 +285,40 @@ ze_result_t cmdDiscovery::dump(devInfo *d, string *outputLine)
 	} else {
 		// Print a new line after the output
 		PRINT("\n");
+	}
+
+	return result;
+}
+
+/**
+ * @brief Executes the dumpAll command. This command dumps all the device properties
+ *
+ * @param d A pointer to the device info structure.
+ * @param outputLine A pointer to the output line string.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
+ze_result_t cmdDiscovery::dumpAll(devInfo *d, string *outputLine)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	// We should dump all properties for a device only when no other command line options are specified.
+	for (auto &cmd : discCmds) {
+		if (cmd.enabled && cmd.type != discCmdType::DISC_DEVICE) {
+			// Silently return if any other command line options are specified
+			return result;
+		}
+	}
+
+	// Iterate over all dump commands and execute them
+	for (auto &cmd : discDumpCmds) {
+		result = (this->*cmd.func)(d, outputLine);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		PRINT("%s: %s\n", cmd.heading.c_str(), outputLine->c_str());
+		outputLine->clear();
 	}
 
 	return result;
