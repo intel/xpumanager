@@ -7,7 +7,7 @@ grpcio==1.59.5
 marshmallow==3.14.1
 myst-parser==2.0.0
 prometheus-client==0.14.1
-protobuf==4.21.10
+protobuf==4.25.8
 sphinx-rtd-theme==2.0.0
 Sphinx==7.1.2
 sphinxcontrib-openapi==0.8.3
