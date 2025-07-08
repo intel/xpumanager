@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_structs.h
  */
@@ -262,6 +262,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_SKU_TYPE = 46,                       ///< The type of SKU
     XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE = 47,        ///< Xe Link Calibration Date
     XPUM_DEVICE_PROPERTY_DRIVER_PACK_VERSION = 48,            ///< The driver package version
+    XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH = 49,             ///< PCIe max link speed
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -387,6 +388,8 @@ typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GFX_DATA = 2,      ///< GFX_DATA firmware
     XPUM_DEVICE_FIRMWARE_GFX_PSCBIN = 3,    ///< GFX_PSCBIN firmware
     XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA = 4, ///< GFX_CODE_DATA firmware
+    XPUM_DEVICE_FIRMWARE_FAN_TABLE = 5,     ///< FAN_TABLE firmware
+    XPUM_DEVICE_FIRMWARE_VR_CONFIG = 6,     ///< VR_CONFIG firmware
 } xpum_firmware_type_t;
 
 /**
@@ -1212,7 +1215,9 @@ typedef enum xpum_precheck_error_type_t {
     XPUM_LEVEL_ZERO_METRICS_INIT_ERROR = 14,
     XPUM_MEMORY_ERROR = 15,
     XPUM_GPU_INITIALIZATION_FAILED = 16,
-    XPUM_MEI_ERROR = 17
+    XPUM_MEI_ERROR = 17,
+    XPUM_XE_ERROR = 18,
+    XPUM_XE_NOT_LOADED = 19,
 } xpum_precheck_error_type_t;
 
 typedef struct xpum_precheck_error_t {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file dump_manager.h
  */
@@ -9,6 +9,7 @@
 #include "fwdata_mgmt.h"
 #include "fwcodedata_mgmt.h"
 #include "psc_mgmt.h"
+#include "latebinding_mgmt.h"
 #include "group/group_manager.h"
 #include "api/device_model.h"
 #include "amc/ipmi_amc_manager.h"
@@ -89,6 +90,19 @@ static std::string getGfxVersionByMeiDevice(std::string meiDevicePath) {
     return res;
 }
 
+bool FirmwareManager::isModelSupported(int model) const {
+    switch (model) {
+        case XPUM_DEVICE_MODEL_PVC:
+        case XPUM_DEVICE_MODEL_ATS_M_1:
+        case XPUM_DEVICE_MODEL_ATS_M_3:
+        case XPUM_DEVICE_MODEL_ATS_M_1G:
+        case XPUM_DEVICE_MODEL_BMG:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void FirmwareManager::init() {
     char* env = std::getenv("_XPUM_INIT_SKIP");
     std::string xpum_init_skip_module_list{env != NULL ? env : ""};
@@ -105,7 +119,7 @@ void FirmwareManager::init() {
             auto gfxFwVersion = getGfxVersionByMeiDevice(pDevice->getMeiDevicePath());
             pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, gfxFwVersion));
             XPUM_LOG_DEBUG("Device {} get GFX fw version: {}", i, gfxFwVersion);
-            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1G) {
+            if (true == isModelSupported(pDevice->getDeviceModel()))  {
                 // fwDataMgmt
                 pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
                 pDevice->getFwDataMgmt()->getFwDataVersion();
@@ -118,6 +132,11 @@ void FirmwareManager::init() {
                 pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
                 pDevice->getPscMgmt()->getPscFwVersion();
                 XPUM_LOG_DEBUG("Device {} get PSC fw version", i);
+            }
+            // LateBinding
+            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_BMG) {
+                pDevice->setLateBindingMgmt(std::make_shared<LateBindingMgmt>(pDevice->getMeiDevicePath(), pDevice));
+                XPUM_LOG_DEBUG("Device {} set LateBinding", i);
             }
         }
     });
@@ -362,7 +381,7 @@ xpum_result_t FirmwareManager::runGscOnlyFwFlash(const char* filePath, bool forc
     }
 
     std::lock_guard<std::mutex> lck(mtx);
-    if (taskGSC.valid() || taskGSCData.valid()) {
+    if (taskGSC.valid() || taskGSCData.valid() || taskLateBinding.valid()) {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
     flashFwErrMsg.clear();
@@ -658,7 +677,7 @@ xpum_result_t FirmwareManager::runGscOnlyFwDataFlash(const char* filePath) {
     }
 
     std::lock_guard<std::mutex> lck(mtx);
-    if (taskGSCData.valid() || taskGSC.valid()) {
+    if (taskGSCData.valid() || taskGSC.valid() || taskLateBinding.valid()) {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
     flashFwErrMsg.clear();
@@ -766,7 +785,7 @@ xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const c
 
     for (auto device : deviceList) {
         auto deviceModel = device->getDeviceModel();
-        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1G)) {
+        if (false == isModelSupported(deviceModel)) {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA;
         }
     }
@@ -840,7 +859,7 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
 
     for (auto device : deviceList) {
         auto deviceModel = device->getDeviceModel();
-        if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_1G)) {
+        if (false == isModelSupported(deviceModel)) {    
             result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
             return;
         }
@@ -1134,6 +1153,220 @@ void FirmwareManager::getFwCodeDataFlashResult(xpum_device_id_t deviceId, xpum_f
         flashFwErrMsg = param.errMsg;
         result->result = res;
     }
+}
+
+xpum_result_t FirmwareManager::runGSCLateBindingFlash(xpum_device_id_t deviceId, const char* filePath, xpum_firmware_type_t type, bool igscOnly) {
+    if (igscOnly == true) {
+        return runGscOnlyLateBindingFlash(filePath, type);
+    }
+
+    // read image file
+    auto buffer = readImageContent(filePath);
+
+    // check device exists
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            return XPUM_GENERIC_ERROR;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        // check for ats-m3
+        deviceList = getSiblingDevices(pDevice);
+    }
+
+    xpum_result_t res = XPUM_GENERIC_ERROR;
+
+    bool locked = Core::instance().getDeviceManager()->tryLockDevices(deviceList);
+    if (!locked)
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    // check is updating fw
+    for (auto pd : deviceList) {
+        if (pd->isUpgradingFw()) {
+            Core::instance().getDeviceManager()->unlockDevices(deviceList);
+            return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        }
+    }
+    // try to update
+    bool stop = false;
+    std::vector<std::shared_ptr<Device>> toUnlock;
+    for (auto pd : deviceList) {
+        if (!stop) {
+            flashFwErrMsg.clear();
+            FlashLateBindingFwParam param;
+            param.filePath = filePath;
+            param.type = type;
+            auto pLateBindingMgmt = pd->getLateBindingMgmt();
+            if (!pLateBindingMgmt) {
+                return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC;
+            }
+            res = pLateBindingMgmt->flashLateBindingFw(param);
+            flashFwErrMsg = param.errMsg;
+            if (res != XPUM_OK) {
+                if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                    flashFwErrMsg += " Device ID: " + pd->getId();
+                }
+                stop = true;
+                toUnlock.push_back(pd);
+            }
+        } else {
+            toUnlock.push_back(pd);
+        }
+    }
+    if (toUnlock.size() > 0) {
+        // some device fail to start, remember to unlock
+        Core::instance().getDeviceManager()->unlockDevices(toUnlock);
+    }
+    return res;
+}
+
+void FirmwareManager::getGSCLateBindingFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t *result, xpum_firmware_type_t type, bool igscOnly) {
+    if (igscOnly == true) {
+        getGscOnlyLateBindingFlashResult(result, type);
+        return;
+    }
+
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+        deviceList = getSiblingDevices(pDevice);
+    }
+
+    result->deviceId = deviceId;
+    result->type = type;
+
+    int totalPercent = 0;
+    for (auto pd : deviceList) {
+        auto pLateBindingMgmt = pd->getLateBindingMgmt();
+        if (pLateBindingMgmt == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+            return;
+        }
+        totalPercent += pLateBindingMgmt->percent.load();
+        GetFlashLateBindingFwResultParam param;
+        auto res = pLateBindingMgmt->getFlashLateBindingFwResult(param);
+        flashFwErrMsg = param.errMsg;
+        result->result = res;
+        if (res != XPUM_DEVICE_FIRMWARE_FLASH_OK &&
+            res != XPUM_DEVICE_FIRMWARE_FLASH_ONGOING) {
+            if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                flashFwErrMsg += " Device ID: " + pd->getId();
+            }
+            break;
+        }
+    }
+    result->percentage = totalPercent / deviceList.size();
+    return;
+}
+
+void FirmwareManager::getGscOnlyLateBindingFlashResult(xpum_firmware_flash_task_result_t* result, xpum_firmware_type_t type) {
+    result->percentage = 0;
+    result->type = type;
+    auto devices = getPCIAddrAndMeiDevices();
+    std::size_t deviceNum = devices.size();
+    if (deviceNum == 0) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(mtxPct);
+        result->percentage = (gscLateBindingFlashTotalPercent.load() +
+            gscLateBindingFlashPercent.load()) / deviceNum;
+    }
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskLateBinding.valid() && taskLateBinding.wait_for(0ms) != std::future_status::ready) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+    } else {
+        result->result = taskLateBinding.get();
+    }
+}
+
+xpum_result_t FirmwareManager::runGscOnlyLateBindingFlash(const char* filePath, xpum_firmware_type_t type) {
+    auto devices = getPCIAddrAndMeiDevices();
+    if (devices.size() == 0) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    // read image file
+    auto buffer = readImageContent(filePath);
+
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskGSCData.valid() || taskGSC.valid() || taskLateBinding.valid()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+    flashFwErrMsg.clear();
+    gscLateBindingFlashPercent.store(0);
+    gscLateBindingFlashTotalPercent.store(0);
+    taskLateBinding = std::async(std::launch::async,
+        [this, buffer, filePath, devices, type] {
+        for (auto &device : devices) {
+             XPUM_LOG_INFO("Start update GSC FW-DATA on device {}",
+                device.meiDevicePath);
+
+            struct igsc_device_handle handle {};
+            int ret;
+
+            ret = igsc_device_init_by_device(&handle, device.meiDevicePath.c_str());
+            if (ret != IGSC_SUCCESS) {
+                flashFwErrMsg = "Cannot initialize device: " + device.meiDevicePath;
+                XPUM_LOG_ERROR("Cannot initialize device: {}", device.meiDevicePath);
+                igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            csc_late_binding_type late_binding_type;
+            switch (type) {
+                case XPUM_DEVICE_FIRMWARE_FAN_TABLE:
+                    late_binding_type = CSC_LATE_BINDING_TYPE_FAN_TABLE;
+                    break;
+                case XPUM_DEVICE_FIRMWARE_VR_CONFIG:
+                    late_binding_type = CSC_LATE_BINDING_TYPE_VR_CONFIG;
+                    break;
+                default:
+                   late_binding_type = CSC_LATE_BINDING_TYPE_INVALID;
+            }
+
+            csc_late_binding_flags late_binding_flags = {};
+
+            uint32_t late_binding_status = {};
+            ret = igsc_device_update_late_binding_config(&handle,
+               late_binding_type, late_binding_flags,
+               (uint8_t*)buffer.data(), buffer.size(), &late_binding_status);
+
+            if (ret) {
+                flashFwErrMsg = "GSC late binding update failed. " + print_device_fw_status(&handle);
+                XPUM_LOG_ERROR("GSC late binding update failed on device {}. {}", device.meiDevicePath, print_device_fw_status(&handle));
+                igsc_device_close(&handle);
+                return XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            igsc_device_close(&handle);
+            uint32_t totalPercent = this->gscLateBindingFlashPercent.load() +
+                                    this->gscLateBindingFlashTotalPercent.load();
+            {
+                std::lock_guard<std::mutex> lock(this->mtxPct);
+                this->gscLateBindingFlashPercent.store(0);
+                this->gscLateBindingFlashTotalPercent.store(totalPercent);
+            }
+        }
+        return XPUM_DEVICE_FIRMWARE_FLASH_OK;
+    });
+    return XPUM_OK;
 }
 
 void FirmwareManager::credentialCheckIfFail(AmcCredential credential, std::string& errMsg) {

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_discovery.cpp
  */
@@ -90,6 +90,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
                 { "label": "PCIe Generation", "value": "pcie_generation", "dumpId": 13 },
                 { "label": "PCIe Max Link Width", "value": "pcie_max_link_width", "dumpId": 14 },
+                { "label": "PCIe Max Bandwidth", "value": "pcie_max_bandwidth", "dumpId": 25 },
                 { "label": "OAM Socket ID", "value": "oam_socket_id", "dumpId": 15 },
                 { "rowTitle": " " },
                 { "label": "Memory Physical Size", "value": "memory_physical_size_byte", "suffix": " MiB", "scale": 1048576, "dumpId": 16 },

@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2021-2024 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file CMakeLists.txt
+#
 cmake_minimum_required(VERSION 3.14.0)
 
 project(xpum)
@@ -90,6 +95,7 @@ target_include_directories(
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/
           /usr/include/level_zero/
+          ${CMAKE_INSTALL_PREFIX}/include
           ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
@@ -102,6 +108,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
     PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
     PRIVATE /usr/local/include/level_zero/
             /usr/include/level_zero/
+            ${CMAKE_INSTALL_PREFIX}/include
             ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
@@ -201,6 +208,12 @@ else()
     target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc
                                                 pcm-iio-gpu stdc++fs metee igsc)
   endif()
+endif()
+
+target_link_directories(xpum PRIVATE ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
+
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  target_link_directories(test_xpum_api PRIVATE ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
 unset(BUILD_TEST CACHE)

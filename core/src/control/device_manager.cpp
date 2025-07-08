@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 #include <regex>
+#include <thread>
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"

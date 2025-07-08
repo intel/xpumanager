@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file grpc_core_stub.cpp
  */
@@ -2134,13 +2134,23 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceComponentOccupancyRatio(i
                 tileJson["in_use"] = response.componentoccupancylist(i).inuse();
                 tileJson["active"] = response.componentoccupancylist(i).active();
                 tileJson["alu_active"] = response.componentoccupancylist(i).aluactive();
-                tileJson["xmx_active"] = response.componentoccupancylist(i).xmxactive();
-                tileJson["xmx_only"] = response.componentoccupancylist(i).xmxonly();
-                tileJson["xmx_fpu_active"] = response.componentoccupancylist(i).xmxfpuactive();
-                tileJson["fpu_without_xmx"] = response.componentoccupancylist(i).fpuwithoutxmx();
-                tileJson["fpu_only"] = response.componentoccupancylist(i).fpuonly();
-                tileJson["em_fpu_active"] = response.componentoccupancylist(i).emfpuactive();
-                tileJson["em_int_only"] = response.componentoccupancylist(i).emintonly();
+                if (isXeDevice()) {
+                    tileJson["alu2_active"] = response.componentoccupancylist(i).alu2active();
+                    tileJson["alu2_only"] = response.componentoccupancylist(i).alu2only();
+                    tileJson["alu2_alu0_active"] = response.componentoccupancylist(i).alu2alu0active();
+                    tileJson["alu0_without_alu2"] = response.componentoccupancylist(i).alu0withoutalu2();
+                    tileJson["alu0_only"] = response.componentoccupancylist(i).alu0only();
+                    tileJson["alu1_alu0_active"] = response.componentoccupancylist(i).alu1alu0active();
+                    tileJson["alu1_int_only"] = response.componentoccupancylist(i).alu1intonly();
+                }else {
+                    tileJson["xmx_active"] = response.componentoccupancylist(i).xmxactive();
+                    tileJson["xmx_only"] = response.componentoccupancylist(i).xmxonly();
+                    tileJson["xmx_fpu_active"] = response.componentoccupancylist(i).xmxfpuactive();
+                    tileJson["fpu_without_xmx"] = response.componentoccupancylist(i).fpuwithoutxmx();
+                    tileJson["fpu_only"] = response.componentoccupancylist(i).fpuonly();
+                    tileJson["em_fpu_active"] = response.componentoccupancylist(i).emfpuactive();
+                    tileJson["em_int_only"] = response.componentoccupancylist(i).emintonly();
+                }
                 tileJson["other"] = response.componentoccupancylist(i).other();
                 tileJson["stall"] = response.componentoccupancylist(i).stall();
                 tileJson["non_occupancy"] = response.componentoccupancylist(i).nonoccupancy();
@@ -2168,36 +2178,32 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceComponentOccupancyRatio(i
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
-        int deviceId, int utilizationInterval) {
+        int deviceId) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
-    DeviceUtilizationByProcessRequest request;
-    DeviceUtilizationByProcessResponse response;
+    DeviceId request;
+    DeviceProcessStateResponse response;
 
-    request.set_deviceid(deviceId);
-    request.set_utilizationinterval(utilizationInterval);
-    grpc::Status status = stub->getDeviceUtilizationByProcess(&context,
-        request, &response);
+    request.set_id(deviceId);
+    grpc::Status status = stub->getDeviceProcessState(&context, request, &response);
     if (status.ok()) {
-        if (response.errormsg().length() > 0) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> deviceProcessList;
+            for (uint i{0}; i < response.count(); ++i) {
+                auto proc = nlohmann::json();
+                proc["process_id"] = response.processlist(i).processid();
+                proc["mem_size"] = response.processlist(i).memsize() / 1024;
+                proc["shared_mem_size"] = response.processlist(i).sharedsize() / 1024;
+                proc["device_id"] = deviceId;
+                proc["process_name"] = response.processlist(i).processname();
+                deviceProcessList.push_back(proc);
+            }
+            (*json)["device_util_by_proc_list"] = deviceProcessList;
+        } else {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
-            return json;
         }
-        std::vector<nlohmann::json> utilByProcessList;
-        for (uint i{0}; i < response.count(); ++i) {
-            auto util = nlohmann::json();
-            util["process_id"] = response.processlist(i).processid();
-            util["process_name"] = response.processlist(i).processname();
-            util["device_id"] = response.processlist(i).deviceid();
-            util["mem_size"] = 
-                response.processlist(i).memsize() / 1000;
-            util["shared_mem_size"] = 
-                response.processlist(i).sharedmemsize() / 1000;
-           utilByProcessList.push_back(util);
-        }
-        (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
         (*json)["error"] = status.error_message();
         (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
@@ -2205,42 +2211,42 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess(
-        int utilizationInterval) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess() {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
-    UtilizationInterval ui;
-    DeviceUtilizationByProcessResponse response;
 
-    ui.set_utilinterval(utilizationInterval);
-    grpc::Status status = stub->getAllDeviceUtilizationByProcess(&context,
-        ui, &response);
+    // Get a list of all devices
+    XpumDeviceBasicInfoArray response;
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    
     if (status.ok()) {
-        if (response.errormsg().length() > 0) {
+        if (response.errormsg().length() == 0) {
+            for (int i = 0; i < response.info_size(); ++i) {
+                auto process_list_json = getDeviceUtilizationByProcess(response.info(i).id().id());
+                if (process_list_json->contains("device_util_by_proc_list")) {
+                    if (!(*json).contains("device_util_by_proc_list")) {
+                        (*json)["device_util_by_proc_list"] = nlohmann::json::array();
+                    }
+                    (*json)["device_util_by_proc_list"].insert(
+                    (*json)["device_util_by_proc_list"].end(),
+                    (*process_list_json)["device_util_by_proc_list"].begin(),
+                    (*process_list_json)["device_util_by_proc_list"].end()
+                    );
+                }
+            }
+        } else {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
-            return json;
         }
-        std::vector<nlohmann::json> utilByProcessList;
-        for (uint i{0}; i < response.count(); ++i) {
-            auto util = nlohmann::json();
-            util["process_id"] = response.processlist(i).processid();
-            util["process_name"] = response.processlist(i).processname();
-            util["device_id"] = response.processlist(i).deviceid();
-            util["mem_size"] = 
-                response.processlist(i).memsize() / 1000;
-            util["shared_mem_size"] = 
-                response.processlist(i).sharedmemsize() / 1000;
-            utilByProcessList.push_back(util);
-        }
-        (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
         (*json)["error"] = status.error_message();
         (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
-    }
+    }    
+
     return json;
 }
+
 std::string GrpcCoreStub::getTopoXMLBuffer() {
     assert(this->stub != nullptr);
     std::string result;
@@ -2384,6 +2390,8 @@ std::string errorTypeToStr(PrecheckErrorType type) {
         case MEMORY_ERROR: ret = "Memory Error"; break;
         case GPU_INITIALIZATION_FAILED: ret = "GPU Initialization Failed"; break;
         case MEI_ERROR: ret = "MEI Error"; break;
+        case XE_ERROR: ret = "XE Error"; break;
+        case XE_NOT_LOADED: ret = "XE Not Loaded"; break;
         default: break;
     }
     return ret;

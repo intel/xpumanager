@@ -1,5 +1,9 @@
 #!/bin/bash
-
+#
+# Copyright (C) 2021-2023 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file posttrans.in
+#
 LOG_FILE="/dev/null"
 
 function CreateUser()

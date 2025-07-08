@@ -1,130 +1,180 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file pcie_manager.cpp
  */
 
 #include "pcie_manager.h"
 
-#include "infrastructure/configuration.h"
 #include "infrastructure/exception/base_exception.h"
+#include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
-#include "pcm-iio-gpu.h"
 
 namespace xpum {
 
-PCIeManager::PCIeManager() {
-    this->initialized.store(false);
-    this->interrupted.store(false);
-    this->stopped.store(false);
-    XPUM_LOG_DEBUG("PCIeManager()");
-}
+uint64_t PCIeManager::getLatestPCIeReadThroughput(const zes_device_handle_t& device) {
+    double prevCounter = 0.0;
+    double curCounter = 0.0;
+    double curTime = 0.0;
+    double prevTime = 0.0;
+    double throughput = 0.0;
+    zes_pci_stats_t stats = {};
+    ze_result_t res = ZE_RESULT_SUCCESS;
 
-PCIeManager::~PCIeManager() {
-    // XPUM_LOG_DEBUG("~PCIeManager()");
-}
-
-void PCIeManager::init() {
-    XPUM_LOG_DEBUG("start PCIeManager init");
-    if (std::system("modprobe msr") != 0) {
-        XPUM_LOG_ERROR("Failed to load msr kernel module");
-    }
-    auto pcie_thread = std::thread([this]() {
-        try {
-            int res = pcm_iio_gpu_init();
-            if (res != 0) {
-                interrupted.store(true);
-                stopped.store(true);
-                XPUM_LOG_ERROR("Failed to init pcm-iio-gpu");
-                return;
-            }
-            std::vector<std::string> datas = pcm_iio_gpu_query();
-            while (!interrupted.load() && !datas.empty()) {
-                for (auto data : datas) {
-                    std::stringstream sstream(data);
-                    std::vector<std::string> line;
-                    std::string item;
-                    while (getline(sstream, item, ',')) {
-                        auto pos = item.find('=');
-                        line.push_back(item.substr(pos + 1));
-                    }
-                    // Note : sample interval is 100ms and unit is B/s
-                    auto read_value = std::stoull(line[2].c_str());
-                    pcie_read_throughputs[line[1]] = read_value / 1000;
-                    if (pcie_reads.find(line[1]) == pcie_reads.end()) {
-                        pcie_reads[line[1]] = 0;
-                    }
-                    pcie_reads[line[1]] += read_value * 0.1;
-
-                    auto write_value = std::stoull(line[3].c_str());
-                    pcie_write_throughputs[line[1]] = write_value / 1000;
-                    if (pcie_writes.find(line[1]) == pcie_writes.end()) {
-                        pcie_writes[line[1]] = 0;
-                    }
-                    pcie_writes[line[1]] += write_value * 0.1;
-                }
-                if (!initialized.load())
-                    initialized.store(true);
-                datas = pcm_iio_gpu_query();
-            }
-        } catch (std::exception& e) {
-            interrupted.store(true);
-            XPUM_LOG_ERROR("error occurred in pcm-iio-gpu : {}", e.what());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetStats(device, &stats));
+    if (res == ZE_RESULT_SUCCESS) {
+        // Initialize prevReadCounter if not already initialized
+        if (prevReadCounter.find(device) == prevReadCounter.end()) {
+            prevReadCounter[device] = {0, 0};
         }
-        stopped.store(true);
-    });
-    pcie_thread.detach();
-    while (!stopped.load() && !interrupted.load() && !initialized.load()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        curCounter = (double)stats.rxCounter;
+        curTime = (double)stats.timestamp;
+        prevCounter = prevReadCounter[device].rxCounter;
+        prevTime = prevReadCounter[device].timestamp;
+    } else {
+        zes_device_ext_properties_t extProps = {};
+        extProps.stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES;
+        extProps.pNext = nullptr;
+        zes_device_properties_t props = {};
+        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        props.pNext = &extProps;
+        res = zesDeviceGetProperties(device, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+            char uuidStr[37] = {};
+            auto& uuidBuf = extProps.uuid.id;
+            int ret = sprintf(uuidStr,
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                    uuidBuf[15], uuidBuf[14], uuidBuf[13], uuidBuf[12], uuidBuf[11], uuidBuf[10], uuidBuf[9], uuidBuf[8],
+                    uuidBuf[7], uuidBuf[6], uuidBuf[5], uuidBuf[4], uuidBuf[3], uuidBuf[2], uuidBuf[1], uuidBuf[0]);
+            if (ret < 0) {
+                uuidStr[0] = '\0';
+            }
+            if (props.core.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
+                XPUM_LOG_DEBUG("{} Failed to get PCIe stats for integrated device {}", __FUNCTION__, uuidStr);
+            } else {
+                XPUM_LOG_ERROR("{} Failed to get PCIe stats for discrete device {}", __FUNCTION__, uuidStr);
+            }
+        } else {
+            XPUM_LOG_ERROR("{} Failed to get PCIe stats", __FUNCTION__);
+        }
+        return 0;
     }
-    XPUM_LOG_DEBUG("PCIeManager init done");
+
+    if (curTime > prevTime) {
+        // The timestamp is in microseconds
+        double deltaTimeInMs = (curTime - prevTime) / MICROSECONDS_TO_SECONDS;
+        // The counters are in bytes
+        double deltaCounterInKB = 0.0;
+        if (curCounter >= prevCounter) {
+            deltaCounterInKB = (curCounter - prevCounter) / BYTES_TO_KILOBYTES;
+        } else { // Handle counter wraparound
+            deltaCounterInKB = ((UINT64_MAX - prevCounter + curCounter + 1) / BYTES_TO_KILOBYTES);
+        }
+        // throughput is kB/s
+        throughput = deltaCounterInKB / deltaTimeInMs;
+
+        // divide by 2 to get the throughput for each direction
+        throughput /= 2;
+        prevReadCounter[device].rxCounter = stats.rxCounter;
+        prevReadCounter[device].timestamp = stats.timestamp;
+    }
+
+    return (uint64_t)throughput;
 }
 
-void PCIeManager::close() {
-    if (!initialized.load()) {
-        return;
+uint64_t PCIeManager::getLatestPCIeWriteThroughput(const zes_device_handle_t& device) {
+    double prevCounter = 0.0;
+    double curCounter = 0.0;
+    double curTime = 0.0;
+    double prevTime = 0.0;
+    double throughput = 0.0;
+    zes_pci_stats_t stats = {};
+    ze_result_t res = ZE_RESULT_SUCCESS;
+
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetStats(device, &stats));
+    if (res == ZE_RESULT_SUCCESS) {
+        // Initialize prevWriteCounter if not already initialized
+        if (prevWriteCounter.find(device) == prevWriteCounter.end()) {
+            prevWriteCounter[device] = {0, 0};
+        }
+
+        curCounter = (double)stats.txCounter;
+        curTime = (double)stats.timestamp;
+        prevCounter = prevWriteCounter[device].txCounter;
+        prevTime = prevWriteCounter[device].timestamp;
+    } else {
+        zes_device_ext_properties_t extProps = {};
+        extProps.stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES;
+        extProps.pNext = nullptr;
+        zes_device_properties_t props = {};
+        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        props.pNext = &extProps;
+        res = zesDeviceGetProperties(device, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+            char uuidStr[37] = {};
+            auto& uuidBuf = extProps.uuid.id;
+            int ret = sprintf(uuidStr,
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                    uuidBuf[15], uuidBuf[14], uuidBuf[13], uuidBuf[12], uuidBuf[11], uuidBuf[10], uuidBuf[9], uuidBuf[8],
+                    uuidBuf[7], uuidBuf[6], uuidBuf[5], uuidBuf[4], uuidBuf[3], uuidBuf[2], uuidBuf[1], uuidBuf[0]);
+            if (ret < 0) {
+                uuidStr[0] = '\0';
+            }
+            if (props.core.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) {
+                XPUM_LOG_DEBUG("{} Failed to get PCIe stats for integrated device {}", __FUNCTION__, uuidStr);
+            } else {
+                XPUM_LOG_ERROR("{} Failed to get PCIe stats for discrete device {}", __FUNCTION__, uuidStr);
+            }
+        } else {
+            XPUM_LOG_ERROR("{} Failed to get PCIe stats", __FUNCTION__);
+        }
+        return 0;
     }
-    interrupted.store(true);
-    while (!stopped.load()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    if (curTime > prevTime) {
+        // The timestamp is in microseconds
+        double deltaTimeInMs = (curTime - prevTime) / MICROSECONDS_TO_SECONDS;
+        // The counters are in bytes
+        double deltaCounterInKB = 0.0;
+        if (curCounter >= prevCounter) {
+            deltaCounterInKB = (curCounter - prevCounter) / BYTES_TO_KILOBYTES;
+        } else { // Handle counter wraparound
+            deltaCounterInKB = ((UINT64_MAX - prevCounter + curCounter + 1) / BYTES_TO_KILOBYTES);
+        }
+        // throughput is kB/s
+        throughput = deltaCounterInKB / deltaTimeInMs;
+        // divide by 2 to get the throughput for each direction
+        throughput /= 2;
+        prevWriteCounter[device].txCounter = curCounter;
+        prevWriteCounter[device].timestamp = curTime;
     }
-    pcie_read_throughputs.clear();
-    pcie_write_throughputs.clear();
+
+    return (uint64_t)throughput;
 }
 
-uint64_t PCIeManager::getLatestPCIeReadThroughput(std::string bdf) {
-    if (this->interrupted == true ||
-        pcie_read_throughputs.find(bdf) == pcie_read_throughputs.end()) {
-        throw BaseException("get PCIe read throughput error");
-    }
+uint64_t PCIeManager::getLatestPCIeRead(const zes_device_handle_t& device) {
+    uint64_t curCounter = 0;
+    zes_pci_stats_t stats = {};
+    ze_result_t res = ZE_RESULT_SUCCESS;
 
-    return pcie_read_throughputs[bdf];
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetStats(device, &stats));
+    if (res == ZE_RESULT_SUCCESS) {
+        curCounter = stats.rxCounter;
+    }
+    return curCounter;
 }
 
-uint64_t PCIeManager::getLatestPCIeWriteThroughput(std::string bdf) {
-    if (this->interrupted == true ||
-        pcie_write_throughputs.find(bdf) == pcie_write_throughputs.end()) {
-        throw BaseException("get PCIe write throughput error");
-    }
+uint64_t PCIeManager::getLatestPCIeWrite(const zes_device_handle_t& device) {
+    uint64_t curCounter = 0;
+    zes_pci_stats_t stats = {};
+    ze_result_t res = ZE_RESULT_SUCCESS;
 
-    return pcie_write_throughputs[bdf];
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetStats(device, &stats));
+    if (res == ZE_RESULT_SUCCESS) {
+        curCounter = stats.txCounter;
+    }
+    return curCounter;
 }
 
-uint64_t PCIeManager::getLatestPCIeRead(std::string bdf) {
-    if (this->interrupted == true ||
-        pcie_reads.find(bdf) == pcie_reads.end()) {
-        throw BaseException("get PCIe read error");
-    }
-
-    return pcie_reads[bdf];
-}
-
-uint64_t PCIeManager::getLatestPCIeWrite(std::string bdf) {
-    if (this->interrupted == true ||
-        pcie_writes.find(bdf) == pcie_writes.end()) {
-        throw BaseException("get PCIe write error");
-    }
-
-    return pcie_writes[bdf];
-}
 } // namespace xpum

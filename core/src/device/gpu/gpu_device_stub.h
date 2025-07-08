@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file gpu_device_stub.h
  */
@@ -61,9 +61,9 @@ class GPUDeviceStub {
 
     void getPower(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-    void getActuralRequestFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept;
+    void getActuralRequestFrequency(const ze_device_handle_t& device, const zes_device_handle_t& zes_device, Callback_t callback) noexcept;
 
-    void getTemperature(const zes_device_handle_t& device, Callback_t callback, zes_temp_sensors_t type) noexcept;
+    void getTemperature(const ze_device_handle_t& device, const zes_device_handle_t& zes_device, Callback_t callback, zes_temp_sensors_t type) noexcept;
 
     void getMemoryUsedUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
@@ -157,7 +157,7 @@ class GPUDeviceStub {
                                           const SchedulerDebugMode& mode);
     static bool getFrequencyState(const zes_device_handle_t& device, std::string& freq_throttle_message);
 
-    static void getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t* data,
+    static void getHealthStatus(const ze_device_handle_t& device, const zes_device_handle_t& zes_device, xpum_health_type_t type, xpum_health_data_t* data,
                                 int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit);
 
     static bool resetDevice(const zes_device_handle_t& device, ze_bool_t force);
@@ -195,7 +195,7 @@ class GPUDeviceStub {
 
     static std::string parseMemoryFailedMRCInfo(uint32_t registerValue);
 
-    static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type);
+    static std::shared_ptr<MeasurementData> toGetTemperature(const ze_device_handle_t& device, const zes_device_handle_t& zes_device, zes_temp_sensors_t type);
 
     static bool isPhysicalFunctionDevice(std::string pci_addr);
 
@@ -210,9 +210,13 @@ private:
 
     void init();
 
+    bool initSysmanWithZesInit();
+    bool isBmgOrNewer();
+    bool isLegacyPlatform(int deviceId);
+
     static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
 
-    static std::shared_ptr<MeasurementData> toGetActuralRequestFrequency(const zes_device_handle_t& device);
+    static std::shared_ptr<MeasurementData> toGetActuralRequestFrequency(const ze_device_handle_t& device, const zes_device_handle_t& zes_device);
 
     static std::shared_ptr<MeasurementData> toGetMemoryUsedUtilization(const zes_device_handle_t& device);
 
@@ -261,9 +265,9 @@ private:
 
     static std::string to_regex_string(zes_pci_address_t address);
 
-    static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
+    static void addEuActiveStallIdleCapabilities(ze_device_handle_t device, zes_device_handle_t zes_device, const ze_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
 
-    static void addCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
+    static void addCapabilities(ze_device_handle_t device, zes_device_handle_t zes_device, const ze_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
     static void addEngineCapabilities(zes_device_handle_t device, const ze_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
@@ -286,7 +290,9 @@ private:
     
     static void openDevicePerfMetricStream(ze_device_handle_t& device, ze_driver_handle_t& driver, 
                                            std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
-                                           std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts); 
+                                           std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts,
+                                           std::map<ze_device_handle_t, ze_event_pool_handle_t>& device_event_pools,
+                                           std::map<ze_device_handle_t, ze_event_handle_t>& device_events);
 
     static std::string getPciSlot(zes_pci_address_t address);
     static std::string getOAMSocketId(zes_pci_address_t address);

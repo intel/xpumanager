@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_property.cpp
  */
@@ -45,6 +45,7 @@ const std::string DeviceProperty::PCI_SLOT = "PCI SLOT";
 const std::string DeviceProperty::SOCKET_ID = "SOCKET ID";
 const std::string DeviceProperty::PCIE_GEN = "PCIE_GEN";
 const std::string DeviceProperty::PCIE_MAX_LINK_WIDTH = "PCIE_MAX_LINK_WIDTH";
+const std::string DeviceProperty::PCIE_MAX_BANDWIDTH = "PCIE_MAX_BANDWIDTH";
 const std::string DeviceProperty::MEM_BUS_WIDTH = "MEM_BUS_WIDTH";
 const std::string DeviceProperty::MEM_CHANNEL_NUM = "MEM_CHANNEL_NUM";
 

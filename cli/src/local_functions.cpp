@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file local_functions.cpp
  */
@@ -471,6 +471,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     bool hasTargetParam = false;
     std::string line;
     std::vector<std::string> buffer;
+    std::string devType = isFileExists("/sys/module/xe/srcversion")?"xe":"i915";
     while (std::getline(ifs, line)) {
         buffer.push_back(line);
         line = trim(line, " \t");
@@ -481,7 +482,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
         std::string key, value;
         if (std::getline(lineStream, key, '=') && std::getline(lineStream, value)) {
             if (key.compare("GRUB_CMDLINE_LINUX_DEFAULT") == 0 || key.compare("GRUB_CMDLINE_LINUX") == 0) {
-                if (value.find("intel_iommu=") != std::string::npos || value.find("i915.max_vfs=") != std::string::npos) {
+                if (value.find("intel_iommu=") != std::string::npos || value.find(devType + ".max_vfs=") != std::string::npos) {
                     hasTargetParam = true;
                 }
             }
@@ -489,7 +490,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     }
     ifs.close();
     if (hasTargetParam) {
-        (*json)["error"] = "intel_iommu or i915.max_vfs is already exists in GRUB command line in /etc/default/grub, please make sure the parameters are correct and take effect manually";
+        (*json)["error"] = "intel_iommu or " + devType + ".max_vfs is already exists in GRUB command line in /etc/default/grub, please make sure the parameters are correct and take effect manually";
         (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
@@ -509,9 +510,9 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
         return json;
     }
     if (isATSMPlatformFromSysFile())
-        targetLine->insert(pos, " intel_iommu=on i915.max_vfs=31");
+        targetLine->insert(pos, " intel_iommu=on "+devType+".max_vfs=31");
     else
-        targetLine->insert(pos, " intel_iommu=on iommu=pt i915.force_probe=* i915.max_vfs=63 i915.enable_iaf=0");
+        targetLine->insert(pos, " intel_iommu=on iommu=pt " + devType + ".force_probe=* " + devType + ".max_vfs=63 " + devType + ".enable_iaf=0");
     std::ofstream ofs("/etc/default/grub", std::ios::out | std::ios::trunc);
     if (!ofs.is_open()) {
         (*json)["error"] = "Fail to open grub file.";

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file time_weighted_average_data_handler.h
  */

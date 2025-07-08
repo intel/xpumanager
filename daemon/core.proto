@@ -1,3 +1,8 @@
+/* 
+ *  Copyright (C) 2021-2025 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file core.proto
+ */
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
@@ -263,6 +268,8 @@ enum PrecheckErrorType {
     MEMORY_ERROR = 14;
     GPU_INITIALIZATION_FAILED = 15;
     MEI_ERROR = 16;
+    XE_ERROR = 17;
+    XE_NOT_LOADED = 18;
 }
 
 enum PrecheckErrorCategory {
@@ -598,6 +605,13 @@ message DeviceComponentOccupancyRatio {
     string stallOther = 20;
     string stallInstFetch = 21;
     string tileId = 22;
+    string alu2Active = 23;
+    string alu2Only = 24;
+    string alu2alu0Active = 25;
+    string alu0Withoutalu2 = 26;
+    string alu0Only = 27;
+    string alu1alu0Active = 28;
+    string alu1IntOnly = 29;
 }
 
 message DeviceComponentOccupancyRatioResponse {

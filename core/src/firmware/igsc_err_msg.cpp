@@ -1,4 +1,8 @@
-
+/*
+ *  Copyright (C) 2022-2023 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file igsc_err_msg.cpp
+ */
 #include "igsc_err_msg.h"
 #include "igsc_lib.h"
 

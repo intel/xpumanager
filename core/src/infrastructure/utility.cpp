@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.cpp
  */
@@ -597,30 +597,36 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
     }
 }
 
-//This function won't work when device handle is returned by zesDeviceGet
-bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
-    ze_device_properties_t props = {};
-    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+int Utility::getPlatform(const zes_device_handle_t &device) {
+    zes_device_properties_t props = {};
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     props.pNext = nullptr;
-    bool is_atsm = false;
-    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
-        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1G);
+    int device_model = 0;
+    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
     }
+    return device_model;
+}
+
+bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
+    bool is_atsm = false;
+    int device_model = getPlatform(device);
+    is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3) || (device_model == XPUM_DEVICE_MODEL_ATS_M_1G);
+
     return is_atsm;
 }
 
-//This function won't work when device handle is returned by zesDeviceGet
 bool Utility::isPVCPlatform(const zes_device_handle_t &device) {
-    ze_device_properties_t props = {};
-    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-    props.pNext = nullptr;
     bool is_pvc = false;
-    if (zeDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
-        int device_model = getDeviceModelByPciDeviceId(props.deviceId);
-        is_pvc = (device_model == XPUM_DEVICE_MODEL_PVC);
-    }
+    is_pvc = (getPlatform(device) == XPUM_DEVICE_MODEL_PVC);
+
     return is_pvc;
+}
+
+bool Utility::isBMGPlatform(const zes_device_handle_t &device) {
+    bool is_bmg = false;
+    is_bmg = (getPlatform(device) == XPUM_DEVICE_MODEL_BMG);
+    return is_bmg;
 }
 
 void Utility::parallel_in_batches(unsigned num_elements, unsigned num_threads,

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file grpc_core_stub.h
  */
@@ -85,8 +85,8 @@ class GrpcCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq);
     std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
     std::unique_ptr<nlohmann::json> getDeviceComponentOccupancyRatio(int deviceId, int tileId, int samplingInterval);
-    std::unique_ptr<nlohmann::json> getDeviceUtilizationByProcess(int deviceId, int utilizationInterval);
-    std::unique_ptr<nlohmann::json> getAllDeviceUtilizationByProcess(int utilizationInterval);
+    std::unique_ptr<nlohmann::json> getDeviceUtilizationByProcess(int deviceId);
+    std::unique_ptr<nlohmann::json> getAllDeviceUtilizationByProcess();
     std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor);
     std::unique_ptr<nlohmann::json> setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled);

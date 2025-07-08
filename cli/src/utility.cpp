@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.cpp
  */
@@ -153,6 +153,10 @@ linux_os_release_t getOsRelease() {
 bool isFileExists(const char* path) {
     std::ifstream ifs(path);
     return ifs.good();
+}
+
+bool isXeDevice() {
+    return isFileExists("/sys/module/xe/srcversion");
 }
 
 std::string roundDouble(double r, int precision) {

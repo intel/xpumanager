@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2021-2023 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file CMakeLists.txt
+#
 cmake_minimum_required(VERSION 3.14.0)
 cmake_policy(SET CMP0077 OLD)
 
@@ -96,10 +101,11 @@ if(NOT DAEMONLESS) # Build xpumcli
     ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
   
   target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} igsc ${CMAKE_DL_LIBS})
+  target_link_directories(xpumcli PRIVATE ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
   
 else() # Build xpu-smi
 
-  include_directories(${CMAKE_CURRENT_LIST_DIR}/src/core_stub)
+  include_directories(${CMAKE_CURRENT_LIST_DIR}/src/core_stub ${CMAKE_INSTALL_PREFIX}/include)
   aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/core_stub XPUM_CLI_CORE_STUB_SRC)
 
   add_executable(xpumanager ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
@@ -111,6 +117,7 @@ else() # Build xpu-smi
     PRIVATE ${XPUM_CLI_SRC} ${XPUM_CLI_CORE_STUB_SRC})
 
   target_link_libraries(xpumanager PRIVATE igsc ${CMAKE_DL_LIBS})
+  target_link_directories(xpumanager PRIVATE ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
 
   add_custom_command(
     TARGET xpumanager

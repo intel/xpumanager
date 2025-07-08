@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.h
  */
@@ -57,14 +57,18 @@ class Utility {
 
     static xpum_fabric_throughput_type_t toXPUMFabricThroughputType(FabricThroughputType type);
 
+    static int getPlatform(const zes_device_handle_t &device);
+
     static bool isATSMPlatform(const zes_device_handle_t &device);
-    
+
     static bool isPVCPlatform(const zes_device_handle_t &device);
+
+    static bool isBMGPlatform(const zes_device_handle_t &device);
 
     static void parallel_in_batches(unsigned num_elements, unsigned num_threads,
                   std::function<void (int start, int end)> functor,
                   bool use_multithreading = true);
-   
+
    static std::vector<std::string> split(const std::string &s, char delim);
    static bool getUEvent(UEvent &uevent, const char *d_name);
 };

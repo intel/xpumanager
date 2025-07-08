@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device.cpp
  */
@@ -144,13 +144,13 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
         case DeviceCapability::METRIC_ENGINE_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineUtilization(callback); };
         case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
-            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COMPUTE_ALL); };
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COMPUTE_SINGLE); };
         case DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_MEDIA_ALL); };
         case DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
-            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COPY_ALL); };
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COPY_SINGLE); };
         case DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
-            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_RENDER_ALL); };
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_RENDER_SINGLE); };
         case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_3D_ALL); };
         case DeviceCapability::METRIC_ENERGY:

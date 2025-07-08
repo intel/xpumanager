@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2022-2023 Intel Corporation
+ *  Copyright (C) 2022-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file precheck.cpp
  */
@@ -315,7 +315,6 @@ namespace xpum {
         if (Configuration::XPUM_MODE == "xpu-smi") {
             pid_t pid = fork();
             if (pid == 0) {
-                putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
                 putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
                 int init_status = zeInit(0);
                 if (init_status == 0 || init_status == 1)
@@ -346,7 +345,6 @@ namespace xpum {
             if (GPUDeviceStub::zeInitReturnCode != -1) {
                 init_status = GPUDeviceStub::zeInitReturnCode;
             } else {
-                putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
                 putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
                 init_status = zeInit(0);
             }
@@ -356,23 +354,49 @@ namespace xpum {
                     dependency_issue = true;
             }
         }
-        // GPU i915 driver
-        bool is_i915_loaded = false;
-        FILE* f = popen("cat /proc/modules | grep \"^i915 \" 2>/dev/null", "r");
+        // GPU Xe driver
+        bool is_xe_loaded = false;
+        FILE* f = popen("cat /proc/modules | grep \"^xe \" 2>/dev/null", "r");
         char c_line[1024];
         while (fgets(c_line, 1024, f) != NULL) {
             std::string line(c_line);
-            if (line.find("i915") != std::string::npos) {
-                is_i915_loaded = true;
+            if (line.find("xe") != std::string::npos) {
+                is_xe_loaded = true;
             }
         }
         pclose(f);
-
-        if (!is_i915_loaded) {
+        // GPU i915 driver
+        bool is_i915_loaded = false;
+        if (!is_xe_loaded){
+            f = popen("cat /proc/modules | grep \"^i915 \" 2>/dev/null", "r");
+            while (fgets(c_line, 1024, f) != NULL) {
+                std::string line(c_line);
+                if (line.find("i915") != std::string::npos) {
+                    is_i915_loaded = true;
+                }
+            }
+            pclose(f);
+        }
+        if (!(is_i915_loaded || is_xe_loaded)) {
             updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "Failed to find i915 in /proc/modules.", XPUM_I915_NOT_LOADED);
+            updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "Failed to find xe in /proc/modules.", XPUM_XE_NOT_LOADED);
         } else if (!level0_driver_error_info.empty()) {
             updateErrorComponentInfo(PrecheckManager::component_driver, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, level0_driver_error_info, dependency_issue? XPUM_LEVEL_ZERO_METRICS_INIT_ERROR : XPUM_LEVEL_ZERO_INIT_ERROR);
         }
+    }
+
+    bool isDeviceWedged(std::ifstream& file, char* path) {
+        std::string line;
+        while(std::getline(file, line)) {
+            try {
+                if (!line.empty() && std::stoi(line) != 0) {
+                    return true;
+                }
+            } catch (...) {
+                XPUM_LOG_ERROR("Failed to get device wedged status: {}", path);
+            }
+        }
+        return false;
     }
 
     static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::vector<std::string> gpu_bdfs, bool is_atsm_platform) {
@@ -449,25 +473,11 @@ namespace xpum {
             }
 
             snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/i915_wedged", gpu_id.c_str());
-            bool is_i915_wedged = false;
             std::ifstream i915_wedged_file(path);
-            if (i915_wedged_file.good()) {
-                while(std::getline(i915_wedged_file, line)) {
-                    try {
-                        if (!line.empty() && std::stoi(line) != 0) {
-                            is_i915_wedged = true;
-                            break;
-                        }
-                    } catch (...) {
-                        XPUM_LOG_ERROR("Failed to get i915 wedged status: {}", path);
-                    }
-                }
-                if (is_i915_wedged) {
-                    updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "i915 wedged", XPUM_I915_ERROR);
-                }
+            if (i915_wedged_file.good() && isDeviceWedged(i915_wedged_file, path)) {
+                updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, XPUM_PRECHECK_COMPONENT_STATUS_FAIL, "i915 wedged", XPUM_I915_ERROR);
+                i915_wedged_file.close();
             }
-            i915_wedged_file.close();
-
             gpu_id_index += 1;
         }
 

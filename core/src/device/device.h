@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device.h
  */
@@ -29,6 +29,7 @@ namespace xpum {
 class FwDataMgmt;
 class PscMgmt;
 class FwCodeDataMgmt;
+class LateBindingMgmt;
 
 struct RunGSCFirmwareFlashParam;
 struct GetGSCFirmwareFlashResultParam;
@@ -207,6 +208,14 @@ class Device {
         return pPscMgmt;
     }
 
+    void setLateBindingMgmt(std::shared_ptr<LateBindingMgmt> pLateBindingMgmt) {
+        this->pLateBindingMgmt = pLateBindingMgmt;
+    }
+
+    std::shared_ptr<LateBindingMgmt> getLateBindingMgmt() {
+        return pLateBindingMgmt;
+    }
+
     bool try_lock() {
         if (_operation_lock.test_and_set()) {
             return false;
@@ -259,6 +268,8 @@ class Device {
     std::shared_ptr<PscMgmt> pPscMgmt;
 
     std::shared_ptr<FwCodeDataMgmt> pFwCodeDataMgmt;
+
+    std::shared_ptr<LateBindingMgmt> pLateBindingMgmt;
 
    private:
     std::atomic_flag _operation_lock = ATOMIC_FLAG_INIT;

@@ -1,3 +1,8 @@
+/*
+ *  Copyright (C) 2023 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file dllmain.cpp
+ */
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 

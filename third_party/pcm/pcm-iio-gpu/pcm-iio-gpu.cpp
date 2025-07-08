@@ -358,7 +358,8 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
             // This function returns no data if multiple GPUs (except one ATS-M3[2 GPUs]) are under same iio stack
             std::set<uint16_t> intel_gpu_device_ids = {0x020A, 0x0205, 0x56C0, 0x56C1, 0x56C2,
                                                 0x0bd0, 0x0bd4, 0x0bd5, 0x0bd6, 0x0bd7, 0x0bd8, 
-                                                0x0bd9, 0x0bda, 0x0bdb, 0x0b69, 0x0be5, 0x0b6e};
+                                                0x0bd9, 0x0bda, 0x0bdb, 0x0b69, 0x0be5, 0x0b6e,
+                                                0xE202, 0xE20B, 0xE20C, 0xE20D, 0xE210, 0xE212, 0xE216};
             for (const auto& part : stack->parts) {
                 for (const auto& pci_device : part.child_pci_devs) {
                     if (pci_device.vendor_id == 0x8086) {

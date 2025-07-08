@@ -6,46 +6,35 @@
 
 #pragma once
 
-#include <array>
-#include <atomic>
-#include <cstdlib>
-#include <exception>
-#include <fstream>
-#include <iostream>
-#include <map>
+#include "level_zero/ze_api.h"
+#include "level_zero/zes_api.h"
+
 #include <sstream>
 #include <string>
 #include <thread>
-
-#include "infrastructure/init_close_interface.h"
+#include <map>
 
 namespace xpum {
 
-class PCIeManager : InitCloseInterface {
-   public:
-    PCIeManager();
+class PCIeManager {
+    public:
 
-    virtual ~PCIeManager();
+    uint64_t getLatestPCIeReadThroughput(const zes_device_handle_t& device);
 
-    void init() override;
+    uint64_t getLatestPCIeWriteThroughput(const zes_device_handle_t& device);
 
-    void close() override;
+    uint64_t getLatestPCIeRead(const zes_device_handle_t& device);
 
-    uint64_t getLatestPCIeReadThroughput(std::string bdf);
+    uint64_t getLatestPCIeWrite(const zes_device_handle_t& device);
 
-    uint64_t getLatestPCIeWriteThroughput(std::string bdf);
+    private:
 
-    uint64_t getLatestPCIeRead(std::string bdf);
+    std::map<zes_device_handle_t, zes_pci_stats_t> prevReadCounter;
 
-    uint64_t getLatestPCIeWrite(std::string bdf);
+    std::map<zes_device_handle_t, zes_pci_stats_t> prevWriteCounter;
 
-   private:
-    std::map<std::string, uint64_t> pcie_read_throughputs;
-    std::map<std::string, uint64_t> pcie_write_throughputs;
-    std::map<std::string, uint64_t> pcie_reads;
-    std::map<std::string, uint64_t> pcie_writes;
-    std::atomic<bool> interrupted;
-    std::atomic<bool> initialized;
-    std::atomic<bool> stopped;
+    static const uint64_t BYTES_TO_KILOBYTES = 1024;
+
+    static const uint64_t MICROSECONDS_TO_SECONDS = 1000000;
 };
 } // namespace xpum

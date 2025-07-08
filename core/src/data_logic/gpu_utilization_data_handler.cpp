@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file gpu_utilization_data_handler.cpp
  */
@@ -51,7 +51,7 @@ void GPUUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_dat
                 auto pre_extended = pre_data->second->getExtendedDatas()->find(engineHandle);
                 if (pre_extended != pre_data->second->getExtendedDatas()->end()) {
                     if (exMeasurementData.type == ZES_ENGINE_GROUP_ALL) {
-                        if (exMeasurementData.timestamp == 
+                        if (exMeasurementData.timestamp ==
                                 pre_extended->second.timestamp) {
                             ++extended_data;
                             continue;

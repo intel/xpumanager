@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_property.h
  */
@@ -85,6 +85,8 @@ class DeviceProperty {
     static const std::string PCIE_GEN;
 
     static const std::string PCIE_MAX_LINK_WIDTH;
+
+    static const std::string PCIE_MAX_BANDWIDTH;
 
     static const std::string MEM_BUS_WIDTH;
 

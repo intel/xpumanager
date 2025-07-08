@@ -1,3 +1,6 @@
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+#
 file(READ "${CMAKE_CURRENT_LIST_DIR}/../VERSION" VER_STR)
 string(STRIP "${VER_STR}" VER_STR)
 string(REPLACE "." ";" VER_LIST ${VER_STR})

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_firmware.cpp
  */
@@ -77,11 +77,17 @@ void ComletFirmware::setupOptions() {
         return errStr;
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC, FAN_TABLE, VR_CONFIG. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
 
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0 || str.compare("GFX_CODE_DATA") == 0 || str.compare("GFX_PSCBIN") == 0) {
+        if (str.compare("GFX") == 0 ||
+            str.compare("AMC") == 0 ||
+            str.compare("GFX_DATA") == 0 ||
+            str.compare("GFX_CODE_DATA") == 0 ||
+            str.compare("GFX_PSCBIN") == 0 ||
+            str.compare("FAN_TABLE") == 0 ||
+            str.compare("VR_CONFIG") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -200,6 +206,10 @@ static int getIntFirmwareType(std::string firmwareType) {
         return XPUM_DEVICE_FIRMWARE_GFX_PSCBIN;
     if (firmwareType.compare("GFX_CODE_DATA") == 0)
         return XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA;
+    if (firmwareType.compare("FAN_TABLE") == 0)
+        return XPUM_DEVICE_FIRMWARE_FAN_TABLE;
+    if (firmwareType.compare("VR_CONFIG") == 0)
+        return XPUM_DEVICE_FIRMWARE_VR_CONFIG;
     return -1;
 }
 
@@ -757,7 +767,9 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 auto errNo = (*deviceListJson)["errno"];
                 if (errNo == XPUM_CLI_ERROR_LEVEL_ZERO_INITIALIZATION_ERROR) {
                     if (type == XPUM_DEVICE_FIRMWARE_GFX ||
-                        type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
+                        type == XPUM_DEVICE_FIRMWARE_GFX_DATA ||
+                        type == XPUM_DEVICE_FIRMWARE_FAN_TABLE ||
+                        type == XPUM_DEVICE_FIRMWARE_VR_CONFIG)
                         igscOnly = true;
                 }
             }
@@ -797,36 +809,41 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 deviceIdsToFlashFirmware.push_back(deviceId);
             }
         }
-        // version confirmation
-        for (int deviceId : deviceIdsToFlashFirmware) {
-            auto json = getDeviceProperties(deviceId);
-            if (json.contains("error")) {
-                out << "Error: " << json["error"].get<std::string>() << std::endl;
-                setExitCodeByJson(json);
-                return;
+        // We don't have version info for fan table and vr config
+        // so we don't need to check the version
+        if (type != XPUM_DEVICE_FIRMWARE_FAN_TABLE &&
+            type != XPUM_DEVICE_FIRMWARE_VR_CONFIG) {
+            // version confirmation
+            for (int deviceId : deviceIdsToFlashFirmware) {
+                auto json = getDeviceProperties(deviceId);
+                if (json.contains("error")) {
+                    out << "Error: " << json["error"].get<std::string>() << std::endl;
+                    setExitCodeByJson(json);
+                    return;
+                }
+                out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
             }
-            out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
-        }
-        if (igscOnly == true) {
-            out << print_devices_fw_versions(type);
-        }
-        if (type == XPUM_DEVICE_FIRMWARE_GFX) {
-            out << "Image FW version: " << getImageFwVersion() << std::endl;
-        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
-            out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
-        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
-            out << "Image FW version: " << getPSCImageFwVersion() << std::endl;
-        }
-        out << "Do you want to continue? (y/n) ";
-        if (!opts->assumeyes) {
-            std::string confirm;
-            std::cin >> confirm;
-            if (confirm != "Y" && confirm != "y") {
-                out << "update aborted" << std::endl;
-                return;
+            if (igscOnly == true) {
+                out << print_devices_fw_versions(type);
             }
-        } else {
-            out << std::endl;
+            if (type == XPUM_DEVICE_FIRMWARE_GFX) {
+                out << "Image FW version: " << getImageFwVersion() << std::endl;
+            } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
+                out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
+            } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
+                out << "Image FW version: " << getPSCImageFwVersion() << std::endl;
+            }
+            out << "Do you want to continue? (y/n) ";
+            if (!opts->assumeyes) {
+                std::string confirm;
+                std::cin >> confirm;
+                if (confirm != "Y" && confirm != "y") {
+                    out << "update aborted" << std::endl;
+                    return;
+                }
+            } else {
+                out << std::endl;
+            }
         }
     }
 

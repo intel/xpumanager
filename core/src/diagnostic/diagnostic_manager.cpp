@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file diagnostic_manager.cpp
  */
@@ -11,6 +11,7 @@
 #include <tuple>
 #include <numeric>
 #include <limits>
+#include <array>
 
 #include "firmware/firmware_manager.h"
 #include "device/gpu/gpu_device_stub.h"
@@ -90,10 +91,10 @@ std::string DiagnosticManager::PVC_AMC_MINIMUM_VERSION = "6.7.0.0";
 std::string DiagnosticManager::ATSM150_FW_MINIMUM_VERSION = "DG02_1.3271";
 std::string DiagnosticManager::ATSM75_FW_MINIMUM_VERSION = "DG02_2.2277";
 
-void readTemperatureTask(std::atomic<bool>& subtask_done, uint64_t& max_temperature_value, const zes_device_handle_t& zes_device) {
+void readTemperatureTask(std::atomic<bool>& subtask_done, uint64_t& max_temperature_value, const ze_device_handle_t& ze_device, const zes_device_handle_t& zes_device) {
     while (!subtask_done.load()) {
         try {
-            std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
+            std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(ze_device, zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
             uint64_t current_temperature_value = 0;
             if (temp->hasDataOnDevice()) {
                 current_temperature_value = temp->getCurrent() / Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
@@ -645,7 +646,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_LIGHT_CODEC:
                     XPUM_LOG_INFO("device: {} - start media codec check diagnostic", currentId);
                     try {
-                        doDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas, true);
+                        doDiagnosticMediaCodec(ze_device, zes_device, p_task_info, media_codec_perf_datas, true);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_LIGHT_CODEC, e.what(), p_task_info);
                     }
@@ -669,7 +670,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_MEDIA_CODEC:
                     XPUM_LOG_INFO("device: {} - start mediacodec diagnostic", currentId);
                     try {
-                        doDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas, false);
+                        doDiagnosticMediaCodec(ze_device, zes_device, p_task_info, media_codec_perf_datas, false);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_MEDIA_CODEC, e.what(), p_task_info);
                     }
@@ -753,7 +754,6 @@ void DiagnosticManager::doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_di
     p_task_info->count += 1;
     updateMessage(component1.message, std::string("Running"));
     std::vector<std::string> check_env_varibles;
-    check_env_varibles.push_back(std::string("ZES_ENABLE_SYSMAN"));
     if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
                     [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
         check_env_varibles.push_back(std::string("ZET_ENABLE_METRICS"));
@@ -762,7 +762,7 @@ void DiagnosticManager::doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_di
     bool find_env_varibles = true;
     for (auto it = check_env_varibles.begin(); it != check_env_varibles.end(); it++) {
         std::string check_env_var = *it;
-        if (std::getenv(check_env_var.c_str()) == nullptr) {
+        if (check_env_var.size() > 0 && std::getenv(check_env_var.c_str()) == nullptr) {
             find_env_varibles = false;
             details = check_env_var;
             break;
@@ -1043,7 +1043,7 @@ static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
     return ret;
 }
 
-void DiagnosticManager::doDiagnosticMediaCodec(const zes_device_handle_t &zes_device, std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_device, const zes_device_handle_t &zes_device, std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                                     std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas, bool checkOnly) {
     xpum_diag_component_info_t &component = p_task_info->componentList[
         checkOnly ?
@@ -1110,7 +1110,7 @@ void DiagnosticManager::doDiagnosticMediaCodec(const zes_device_handle_t &zes_de
         
         std::atomic<bool> subtask_done(false);
         uint64_t max_temperature_value = 0;
-        std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+        std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
         XPUM_LOG_INFO("start read temperature thread");
         if (sample_multi_transcode_tool_exist) {
             if (
@@ -1323,7 +1323,7 @@ std::string getOneLineFileContent(std::string file_path, std::string file_name) 
     return line;
 }
 
-std::string checkDowngradedPCIe(const zes_device_handle_t &zes_device) {
+std::string checkDowngradedPCIe(const ze_device_handle_t &ze_device, const zes_device_handle_t &zes_device) {
     std::string ret;
 
     ze_result_t res;
@@ -1467,7 +1467,7 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
 
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
     
     std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
@@ -1572,9 +1572,9 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
         std::string bandwidth_detail = " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
         auto bandwidth_threshold = 0;
         auto ref_bandwidth = 0;
-        if (device_names.find(ze_device) != device_names.end()) {
-            bandwidth_threshold = thresholds[device_names[ze_device]]["PCIE_BANDWIDTH_MIN_GBPS"];
-            ref_bandwidth = thresholds[device_names[ze_device]]["REF_PCIE_BANDWIDTH_GBPS"];
+        if (device_names.find(zes_device) != device_names.end()) {
+            bandwidth_threshold = thresholds[device_names[zes_device]]["PCIE_BANDWIDTH_MIN_GBPS"];
+            ref_bandwidth = thresholds[device_names[zes_device]]["REF_PCIE_BANDWIDTH_GBPS"];
         }
         diagnostic_perf_datas[p_task_info->deviceId].pcie_bandwidth = total_bandwidth;
         diagnostic_perf_datas[p_task_info->deviceId].reference_pcie_bandwidth = ref_bandwidth;
@@ -1612,7 +1612,7 @@ void DiagnosticManager::doDiagnosticIntegration(const ze_device_handle_t &ze_dev
         desc += " GPU " + std::to_string(p_task_info->deviceId) + " temperature is " + std::to_string(max_temperature_value) + " Celsius degree and the threshold is " + std::to_string(GPU_TEMPERATURE_THRESHOLD) + ".";
         updateMessage(component.message, desc);
     }
-    std::string pcieInfo = checkDowngradedPCIe(zes_device);
+    std::string pcieInfo = checkDowngradedPCIe(ze_device, zes_device);
     if (pcieInfo.size() != 0) {
         std::string desc(component.message);
         desc += " " + pcieInfo;
@@ -1818,9 +1818,9 @@ void DiagnosticManager::doDiagnosticMemoryError(const ze_device_handle_t &ze_dev
 
     uint64_t physical_size = 0;
     uint32_t mem_module_count = 0;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zesDeviceEnumMemoryModules(ze_device, &mem_module_count, nullptr));
+    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, nullptr));
     std::vector<zes_mem_handle_t> mems(mem_module_count);
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zesDeviceEnumMemoryModules(ze_device, &mem_module_count, mems.data()));
+    XPUM_ZE_HANDLE_LOCK(zes_device, ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, mems.data()));
     if (ret == ZE_RESULT_SUCCESS) {
         for (auto& mem : mems) {
             uint64_t mem_module_physical_size = 0;
@@ -2053,7 +2053,7 @@ void DiagnosticManager::doDiagnosticPeformanceComputation(const ze_device_handle
     }
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
     for (std::size_t i = 0; i < device_handles.size(); i++) {
         compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver, checkOnly]() {
@@ -2158,9 +2158,9 @@ void DiagnosticManager::doDiagnosticPeformanceComputation(const ze_device_handle
     std::string compute_detail = "Its single-precision GFLOPS is " + roundDouble(all_gflops_value, 3) + ".";
     auto gflops_threshold = 0;
     auto ref_gflops = 0;
-    if (device_names.find(ze_device) != device_names.end()) {
-        gflops_threshold = thresholds[device_names[ze_device]]["SINGLE_PRECISION_MIN_GFLOPS"];
-        ref_gflops = thresholds[device_names[ze_device]]["REF_SINGLE_PRECISION_GFLOPS"];
+    if (device_names.find(zes_device) != device_names.end()) {
+        gflops_threshold = thresholds[device_names[zes_device]]["SINGLE_PRECISION_MIN_GFLOPS"];
+        ref_gflops = thresholds[device_names[zes_device]]["REF_SINGLE_PRECISION_GFLOPS"];
     }
     diagnostic_perf_datas[p_task_info->deviceId].gflops = all_gflops_value;
     diagnostic_perf_datas[p_task_info->deviceId].reference_gflops = ref_gflops;
@@ -2240,10 +2240,10 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
 
     int max_power_value = 0;
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_power_thread = std::thread([&computation_done, &max_power_value, &max_temperature_value, zes_device]() {
+    std::thread read_temperature_power_thread = std::thread([&computation_done, &max_power_value, &max_temperature_value, ze_device, zes_device]() {
         while (!computation_done.load()) {
             try {
-                std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
+                std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(ze_device, zes_device, zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
                 uint64_t current_temperature_value = 0;
                 if (temp->hasDataOnDevice()) {
                     current_temperature_value = temp->getCurrent() / Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
@@ -2401,9 +2401,9 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
     std::string power_detail = "Its stress power is " + std::to_string(max_power_value) + " W.";
     auto power_threshold = 0;
     auto ref_power = 0;
-    if (device_names.find(ze_device) != device_names.end()) {
-        power_threshold = thresholds[device_names[ze_device]]["POWER_MIN_STRESS_WATT"];
-        ref_power = thresholds[device_names[ze_device]]["REF_POWER_STRESS_WATT"];
+    if (device_names.find(zes_device) != device_names.end()) {
+        power_threshold = thresholds[device_names[zes_device]]["POWER_MIN_STRESS_WATT"];
+        ref_power = thresholds[device_names[zes_device]]["REF_POWER_STRESS_WATT"];
     }
     diagnostic_perf_datas[p_task_info->deviceId].peak_power = max_power_value;
     diagnostic_perf_datas[p_task_info->deviceId].reference_peak_power = ref_power;
@@ -2559,7 +2559,7 @@ void DiagnosticManager::doDiagnosticPeformanceMemoryBandwidth(const ze_device_ha
 
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
     std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
     // show compute engine group perf data if all groups pass 
@@ -2772,9 +2772,9 @@ void DiagnosticManager::doDiagnosticPeformanceMemoryBandwidth(const ze_device_ha
         std::string memorybandwidth_detail = "Its memory bandwidth is " + roundDouble(all_gbps_value, 3) + " GBPS.";
         auto memorybandwidth_threshold = 0;
         auto ref_memorybandwidth = 0;
-        if (device_names.find(ze_device) != device_names.end()) {
-            memorybandwidth_threshold = thresholds[device_names[ze_device]]["MEMORY_BANDWIDTH_MIN_GBPS"];
-            ref_memorybandwidth = thresholds[device_names[ze_device]]["REF_MEMORY_BANDWIDTH_GBPS"];
+        if (device_names.find(zes_device) != device_names.end()) {
+            memorybandwidth_threshold = thresholds[device_names[zes_device]]["MEMORY_BANDWIDTH_MIN_GBPS"];
+            ref_memorybandwidth = thresholds[device_names[zes_device]]["REF_MEMORY_BANDWIDTH_GBPS"];
         }
         diagnostic_perf_datas[p_task_info->deviceId].memory_bandwidth = all_gbps_value;
         diagnostic_perf_datas[p_task_info->deviceId].reference_memory_bandwidth = ref_memorybandwidth;
@@ -3091,7 +3091,7 @@ void DiagnosticManager::doDiagnosticXeLinkThroughput(const ze_device_handle_t &z
     if (fabric_port_count == 0) {
         XPUM_LOG_DEBUG("Target device GPU {} xe link port not found", device_id);
     }
-    if (!Utility::isPVCPlatform(ze_device) || devices.size() < 2 || fabric_port_count == 0) {
+    if (!Utility::isPVCPlatform(zes_device) || devices.size() < 2 || fabric_port_count == 0) {
         xe_link_throughput_component.result = XPUM_DIAG_RESULT_FAIL;
         xe_link_throughput_component.finished = true;
         updateMessage(xe_link_throughput_component.message, COMPONENT_TYPE_NOT_SUPPORTED);
@@ -3208,7 +3208,7 @@ void DiagnosticManager::doDiagnosticXeLinkThroughput(const ze_device_handle_t &z
     xe_link_throughput_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     std::atomic<bool> subtask_done(false);
     uint64_t max_temperature_value = 0;
-    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(zes_device));
+    std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
     XPUM_LOG_INFO("start read temperature thread");
 
     std::vector<int> copyEngineGroupIds = getDeviceAvailableCopyEngingGroups(ze_device, true);
@@ -3625,12 +3625,12 @@ void DiagnosticManager::doDiagnosticXeLinkAllToAllThroughput(const ze_driver_han
     std::atomic<bool> all_to_all_copy_done(false);
     std::vector<uint64_t> temperatures(root_device_count);
     std::vector<double> allToallThroughputs(root_device_count);
-    std::thread read_temperature_and_rwbandwidth_thread = std::thread([&all_to_all_copy_done, &zes_devices, &temperatures, &allToallThroughputs]() {
+    std::thread read_temperature_and_rwbandwidth_thread = std::thread([&all_to_all_copy_done, &ze_devices, &zes_devices, &temperatures, &allToallThroughputs]() {
         std::map<std::string, uint64_t> TxCnts, RxCnts, Timestamps;
         while (!all_to_all_copy_done.load()) {
             for (std::size_t i = 0; i < zes_devices.size(); i++) {
                 try {
-                    std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(zes_devices[i], zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
+                    std::shared_ptr<MeasurementData> temp = GPUDeviceStub::toGetTemperature(ze_devices[i], zes_devices[i], zes_temp_sensors_t::ZES_TEMP_SENSORS_GPU);
                     uint64_t current_temperature_value = 0;
                     if (temp->hasDataOnDevice()) {
                         current_temperature_value = temp->getCurrent() / Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
@@ -3991,7 +3991,7 @@ xpum_result_t DiagnosticManager::checkStress(xpum_device_id_t deviceId, xpum_dia
         device != nullptr) {
         double mean = calculateMean(allScores);
         double variance = calcaulateVariance(allScores);
-        int ref = thresholds[device_names[device->getDeviceZeHandle()]]["REF_INT_GFLOPS"];
+        int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_INT_GFLOPS"];
         std::string msg = "Integer compute: Mean: " + roundDouble(mean, 3) + " GIOPS. Var: ";
         msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GIOPS.";
         updateMessage(resultList[0].message, msg);

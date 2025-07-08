@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file core.cpp
  */
@@ -164,7 +164,6 @@ void Core::close() {
           "Failed to close device manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_data_logic),
           "Failed to close data logic");
-    GPUDeviceStub::pcie_manager.close();
 }
 
 void Core::close(const std::shared_ptr<InitCloseInterface>& p_init_close_interface,

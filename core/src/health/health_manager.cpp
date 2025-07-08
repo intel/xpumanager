@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file health_manager.cpp
  */
@@ -20,7 +20,8 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
     XPUM_LOG_TRACE("HealthManager()");
     p_health_device_to_tdps = {{0x0205, 150}, {0x0203, 150}, {0x020A, 300}, {0x56C0, 150}, {0x56C1, 37.5}, {0x56C2, 150}, 
                                {0x0BD0, 600}, {0x0BD4, 600}, {0x0BD5, 600}, {0x0BD6, 600}, {0x0BD7, 450}, {0x0BD8, 450},
-                               {0x0BD9, 300}, {0x0BDA, 300}, {0x0BDB, 300}, {0x0B6E, 300}, {0x0BE5, 600}, {0x4907, 25}};
+                               {0x0BD9, 300}, {0x0BDA, 300}, {0x0BDB, 300}, {0x0B6E, 300}, {0x0BE5, 600}, {0x4907, 25},
+                               {0xE20B, 190}, {0xE20C, 150}, {0xE210, 190}, {0xE216, 75}};
     p_health_device_to_throttle_core_temperatures = {{0x56C0, 100}, {0x56C1, 95}, {0x56C2, 100}};
     p_health_device_to_shutdown_core_temperatures = {{0x56C0, 125}, {0x56C1, 125}, {0x56C2, 125}};
     p_health_device_to_shutdown_memory_temperatures = {{0x56C0, 105}, {0x56C1, 105}, {0x56C2, 105}};
@@ -62,7 +63,8 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
     int threshold = *static_cast<int*>(value);
     Property prop;
     std::string pciDeviceId;
-    if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
+    auto device = this->p_device_manager->getDevice(std::to_string(deviceId));
+    if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
         pciDeviceId = prop.getValue();
     }
     int limit = -1;
@@ -138,7 +140,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
 
     Property prop;
     std::string pciDeviceId;
-    if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
+    auto device = this->p_device_manager->getDevice(std::to_string(deviceId));
+    if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
         pciDeviceId = prop.getValue();
     }
     if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
@@ -180,8 +183,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
         global_default_limit = false;
     }
 
-    GPUDeviceStub::instance().getHealthStatus(
-        this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceHandle(), type, data, core_thermal_thresold, memory_thermal_thresold, power_threshold, global_default_limit);
+    GPUDeviceStub::instance().getHealthStatus(device->getDeviceZeHandle(),
+        device->getDeviceHandle(), type, data, core_thermal_thresold, memory_thermal_thresold, power_threshold, global_default_limit);
 
     return XPUM_OK;
 }

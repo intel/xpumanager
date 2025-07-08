@@ -5,6 +5,7 @@
 #
 
 from stub import devices
+from flask import Response
 import stub
 
 import sys
@@ -19,9 +20,17 @@ from prometheus_exporter import get_metrics # this import must follow sys.path.i
 def export_metrics():
     if os.environ.get("XPUM_EXPORTER_POD") == '1':
         from kube_pod_resource import get_pod_resources
-        return get_metrics(stub, get_pod_resources())
+        result = get_metrics(stub, get_pod_resources())
     else:
-        return get_metrics(stub, {})
+        result = get_metrics(stub, {})
+
+    # Handle (body, status) or just body
+    if isinstance(result, tuple):
+        body, status = result
+    else:
+        body, status = result, 200
+
+    return Response(body, status=status, content_type='text/plain')
 
 
 def check_health():

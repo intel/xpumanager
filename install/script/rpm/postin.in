@@ -1,5 +1,9 @@
 #!/bin/bash
-
+#
+# Copyright (C) 2021-2023 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file postin.in
+#
 if [ -n "${RPM_INSTALL_PREFIX}" ]; then
     cp -f ${RPM_INSTALL_PREFIX}/bin/xpumcli ${RPM_INSTALL_PREFIX}/lib/xpum/xpumcli
 else

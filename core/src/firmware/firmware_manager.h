@@ -53,6 +53,7 @@ class FirmwareManager {
     std::future<xpum_firmware_flash_result_t> taskAMC;
     std::future<xpum_firmware_flash_result_t> taskGSC;
     std::future<xpum_firmware_flash_result_t> taskGSCData;
+    std::future<xpum_firmware_flash_result_t> taskLateBinding;
 
     std::shared_ptr<AmcManager> p_amc_manager;
 
@@ -68,10 +69,12 @@ class FirmwareManager {
     void getGscOnlyFwFlashResult(xpum_firmware_flash_task_result_t* result);
     xpum_result_t runGscOnlyFwDataFlash(const char* filePath);
     void getGscOnlyFwDataFlashResult(xpum_firmware_flash_task_result_t* result);
+    xpum_result_t runGscOnlyLateBindingFlash(const char* filePath, xpum_firmware_type_t type);
+    void getGscOnlyLateBindingFlashResult(xpum_firmware_flash_task_result_t* result, xpum_firmware_type_t type);
 
     std::string amcFwErrMsg;
     std::string flashFwErrMsg;
-
+    bool isModelSupported(int model) const;
 
    public:
     void init();
@@ -96,6 +99,9 @@ class FirmwareManager {
     xpum_result_t runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState);
     void getFwCodeDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 
+    xpum_result_t runGSCLateBindingFlash(xpum_device_id_t deviceId, const char* filePath, xpum_firmware_type_t type, bool igscOnly = false);
+    void getGSCLateBindingFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result, xpum_firmware_type_t type, bool igscOnly = false);
+
     std::string getAmcFwErrMsg() {
         return amcFwErrMsg;
     }
@@ -119,6 +125,8 @@ class FirmwareManager {
     std::atomic<int> gscFwFlashTotalPercent;
     std::atomic<int> gscFwDataFlashPercent;
     std::atomic<int> gscFwDataFlashTotalPercent;
+    std::atomic<int> gscLateBindingFlashPercent;
+    std::atomic<int> gscLateBindingFlashTotalPercent;
 };
 
 std::vector<char> readImageContent(const char* filePath);

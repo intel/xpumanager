@@ -1,3 +1,8 @@
+/*
+ *  Copyright (C) 2021-2023 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file xpum_config.h.in
+ */
 #pragma once
 
 #define XPUM_VERSION "@XPUM_VERSION_STRING@"

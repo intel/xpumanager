@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2021-2023 Intel Corporation
+# Copyright (C) 2021-2024 Intel Corporation
 # SPDX-License-Identifier: MIT
 # @file xpum_rest_main.py
 #
@@ -278,4 +278,4 @@ if __name__ == '__main__':
     else:
         app = main()
     app.debug = True
-    app.run(host='0.0.0.0', port=30000, use_reloader=False)
+    app.run(host='0.0.0.0', port=30000, ssl_context=('conf/cert.pem', 'conf/key.pem'), use_reloader=False)

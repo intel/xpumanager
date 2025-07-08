@@ -10,21 +10,19 @@ from google.protobuf import empty_pb2
 
 
 def getDeviceUtilByProc(deviceId):
-    resp = stub.getDeviceUtilizationByProcess(
-            core_pb2.DeviceUtilizationByProcessRequest(
-                deviceId = deviceId, 
-                utilizationInterval = 200 * 1000))
+    resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=deviceId))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     data = []
-    for d in resp.processList:
+    for d in resp.processlist:
         util = dict()
         util['process_id'] = d.processId
         util['process_name'] = d.processName
-        util['device_id'] = d.deviceId
+        util['device_id'] = deviceId
         util['mem_size'] = d.memSize
-        util['shared_mem_size'] = d.sharedMemSize
+        util['shared_mem_size'] = d.sharedSize
         data.append(util)
+        print(d)
     return 0, "OK", data 
 
 def getAllDeviceUtilByProc():

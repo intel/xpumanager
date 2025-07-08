@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.h
  */
@@ -44,6 +44,8 @@ std::string trim(const std::string& str, const std::string& toRemove);
 linux_os_release_t getOsRelease();
 
 bool isFileExists(const char* path);
+
+bool isXeDevice();
 
 std::string roundDouble(double r, int precision);
 

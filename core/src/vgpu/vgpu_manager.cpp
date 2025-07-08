@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2023 Intel Corporation
+ *  Copyright (C) 2023-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file vgpu_manager.cpp
  */
@@ -358,28 +358,34 @@ static xpum_realtime_metric_type_t engineToMetricType(zes_engine_group_t engine)
 }
 
 bool static findVfMgmtApi(VfMgmtApi_t &vfMgmtApi, void *dlHandle) {
-    vfMgmtApi.pfnZesDeviceEnumEnabledVfExp = 
-        reinterpret_cast<pfnZesDeviceEnumEnabledVfExp_t>(dlsym(dlHandle, 
+    char* error;
+
+    vfMgmtApi.pfnZesDeviceEnumEnabledVfExp =
+        reinterpret_cast<pfnZesDeviceEnumEnabledVfExp_t>(dlsym(dlHandle,
         "zesDeviceEnumEnabledVFExp"));
-    if (vfMgmtApi.pfnZesDeviceEnumEnabledVfExp == nullptr) {
+    if ((error = dlerror()) != NULL) {
+        XPUM_LOG_ERROR("dlsym error: {}", error);
         return false;
     }
-    vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2 = 
+    vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2 =
         reinterpret_cast<pfnZesVFManagementGetVFCapabilitiesExp2_t>(dlsym(
             dlHandle, "zesVFManagementGetVFCapabilitiesExp2"));
-    if (vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2 == nullptr) {
+    if ((error = dlerror()) != NULL) {
+        XPUM_LOG_ERROR("dlsym error: {}", error);
         return false;
     }
-    vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2 = 
+    vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2 =
         reinterpret_cast<pfnZesVFManagementGetVFMemoryUtilizationExp2_t>(dlsym(
             dlHandle, "zesVFManagementGetVFMemoryUtilizationExp2"));
-    if (vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2 == nullptr) {
+    if ((error = dlerror()) != NULL) {
+        XPUM_LOG_ERROR("dlsym error: {}", error);
         return false;
     }
     vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2 =
         reinterpret_cast<pfnZesVFManagementGetVFEngineUtilizationExp2_t>(dlsym(
             dlHandle, "zesVFManagementGetVFEngineUtilizationExp2"));
-    if (vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2 == nullptr) {
+    if ((error = dlerror()) != NULL) {
+        XPUM_LOG_ERROR("dlsym error: {}", error);
         return false;
     }
     return true;

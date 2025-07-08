@@ -1,3 +1,8 @@
+/*
+ *  Copyright (C) 2022-2025 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file resource.h
+ */
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by Resource.rc
@@ -14,8 +19,8 @@
 #endif
 
 #define VER_VERSION_MAJOR 1
-#define VER_VERSION_MINOR 2
-#define VER_VERSION_PATCH 41
+#define VER_VERSION_MINOR 3
+#define VER_VERSION_PATCH 0
 #define VER_VERSION_BUILD 0
 
 #ifndef VER_FILEVERSION

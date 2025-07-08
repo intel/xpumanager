@@ -421,6 +421,8 @@
 </li>
         <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-2">XPUM_DEVICE_FIRMWARE_AMC</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-2">[1]</a>
 </li>
+        <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-6">XPUM_DEVICE_FIRMWARE_FAN_TABLE</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-6">[1]</a>
+</li>
         <li><a href="smidoc/rst/enum_xpum_firmware_flash_result_enum.html#index-2">XPUM_DEVICE_FIRMWARE_FLASH_ERROR</a>, <a href="xpumdoc/rst/enum_xpum_firmware_flash_result_enum.html#index-2">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_firmware_flash_result_enum.html#index-1">XPUM_DEVICE_FIRMWARE_FLASH_OK</a>, <a href="xpumdoc/rst/enum_xpum_firmware_flash_result_enum.html#index-1">[1]</a>
@@ -436,6 +438,8 @@
         <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-3">XPUM_DEVICE_FIRMWARE_GFX_DATA</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-3">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-4">XPUM_DEVICE_FIRMWARE_GFX_PSCBIN</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-4">[1]</a>
+</li>
+        <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-7">XPUM_DEVICE_FIRMWARE_VR_CONFIG</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-7">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-19">XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-19">[1]</a>
 </li>
@@ -520,6 +524,8 @@
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-6">XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-6">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-10">XPUM_DEVICE_PROPERTY_PCIE_GENERATION</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-10">[1]</a>
+</li>
+        <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-50">XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-50">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-11">XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-11">[1]</a>
 </li>
@@ -1917,6 +1923,13 @@
 </li>
       </ul></li>
       <li>
+    XPUM_DEVICE_FIRMWARE_FAN_TABLE
+
+      <ul>
+        <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-6">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-6">[1]</a>
+</li>
+      </ul></li>
+      <li>
     XPUM_DEVICE_FIRMWARE_FLASH_ERROR
 
       <ul>
@@ -1970,6 +1983,13 @@
 
       <ul>
         <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-4">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-4">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    XPUM_DEVICE_FIRMWARE_VR_CONFIG
+
+      <ul>
+        <li><a href="smidoc/rst/enum_xpum_firmware_type_enum.html#index-7">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_firmware_type_enum.html#index-7">[1]</a>
 </li>
       </ul></li>
       <li>
@@ -2354,6 +2374,13 @@
 
       <ul>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-10">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-10">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH
+
+      <ul>
+        <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-50">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-50">[1]</a>
 </li>
       </ul></li>
       <li>
@@ -3055,6 +3082,8 @@
         <li><a href="smidoc/rst/struct_xpum_power_prop_data_t.html#index-0">struct</a>, <a href="xpumdoc/rst/struct_xpum_power_prop_data_t.html#index-0">[1]</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     xpum_power_sustained_limit_t
 
@@ -3069,8 +3098,6 @@
         <li><a href="smidoc/rst/struct_xpum_precheck_component_info_t.html#index-0">struct</a>, <a href="xpumdoc/rst/struct_xpum_precheck_component_info_t.html#index-0">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     xpum_precheck_component_status_t
 

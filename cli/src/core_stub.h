@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2024 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file core_stub.h
  */
@@ -86,8 +86,8 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq)=0;
     virtual std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId)=0;
     virtual std::unique_ptr<nlohmann::json> getDeviceComponentOccupancyRatio(int deviceId, int tileId, int samplingInterval)=0;
-    virtual std::unique_ptr<nlohmann::json> getDeviceUtilizationByProcess(int deviceId, int utilizationInterval)=0;
-    virtual std::unique_ptr<nlohmann::json> getAllDeviceUtilizationByProcess(int utilizationInterval)=0;
+    virtual std::unique_ptr<nlohmann::json> getDeviceUtilizationByProcess(int deviceId)=0;
+    virtual std::unique_ptr<nlohmann::json> getAllDeviceUtilizationByProcess()=0;
     virtual std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId)=0;
     virtual std::unique_ptr<nlohmann::json> setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor)=0;
     virtual std::unique_ptr<nlohmann::json> setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled)=0;

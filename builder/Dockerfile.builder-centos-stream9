@@ -1,8 +1,10 @@
+# Copyright (C) 2021-2025 Intel Corporation.
+# SPDX-License-Identifier: MIT
 FROM quay.io/centos/centos:stream9
 
-ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.8.5.tar.gz
-ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz
-ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz
+ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz
+ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/4.0.0.tar.gz
+ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.9.5.tar.gz
 ARG ZLIB_VERSION=v1.3
 ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_29_0

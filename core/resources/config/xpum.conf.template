@@ -1,3 +1,6 @@
+# Copyright (C) 2023-2024 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 #-------------------------------------------------------
 # Request timeout for Redfish Host Interface 
 #-------------------------------------------------------

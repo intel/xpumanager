@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file gpu_device.cpp
  */
@@ -61,7 +61,7 @@ void GPUDevice::getPower(Callback_t callback) noexcept {
 }
 
 void GPUDevice::getActuralRequestFrequency(Callback_t callback) noexcept {
-    GPUDeviceStub::instance().getActuralRequestFrequency(zes_device_handle,
+    GPUDeviceStub::instance().getActuralRequestFrequency(ze_device_handle, zes_device_handle,
                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                       callback(ret, e);
                                                   });
@@ -69,6 +69,7 @@ void GPUDevice::getActuralRequestFrequency(Callback_t callback) noexcept {
 
 void GPUDevice::getTemperature(Callback_t callback, zes_temp_sensors_t type) noexcept {
     GPUDeviceStub::instance().getTemperature(
+        ze_device_handle,
         zes_device_handle,
         [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
             callback(ret, e);
@@ -443,7 +444,7 @@ void GPUDevice::getFabricThroughput(Callback_t callback) noexcept {
 }
 
 void GPUDevice::getPerfMetrics(Callback_t callback) noexcept {
-    GPUDeviceStub::instance().getPerfMetrics(zes_device_handle, ze_driver_handle,
+    GPUDeviceStub::instance().getPerfMetrics(ze_device_handle, ze_driver_handle,
                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                       callback(ret, e);
                                                   });
