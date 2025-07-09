@@ -86,8 +86,9 @@ template <typename T> void deleteList(list<T *> *generic_list)
 /**
  * @brief Prints the version information for both CLI and service components
  */
-void printVersion()
+void printVersion(arg_struct *arg)
 {
+	string lzVersion;
 	PRINT("%-*sCLI:\n", TITLE, "");
 	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
 	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
@@ -95,7 +96,8 @@ void printVersion()
 	PRINT("%-*sService:\n", TITLE, "");
 	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
 	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
-	// sys->print_lz_version();
+	arg->sm.getLoaderVersion(&lzVersion);
+	PRINT("%-*sLevel Zero Version: %s\n", HEADING, "", lzVersion.c_str());
 }
 
 /**
@@ -260,7 +262,7 @@ int main(int argc, char *argv[])
 
 	/* Print out version info if -v command line arg specified */
 	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
-		printVersion();
+		printVersion(&arg);
 		deleteList(cmd_list);
 		return 0;
 	}
