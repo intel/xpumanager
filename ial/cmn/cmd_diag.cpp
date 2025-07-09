@@ -25,6 +25,9 @@
 #include "cmd_diag.h"
 #include "debug.h"
 #include <assert.h>
+#include <chrono>
+#include <fstream>
+#include <sys/stat.h>
 
 /*
  * @brief Command structure for diagnostic commands.
@@ -203,7 +206,7 @@ ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 	};
 
 	for (auto &test : diagSingleTests) {
-		if (test.type == diagCmds[diagCmdType::SINGLETEST].type) {
+		if (test.type == atoi(diagCmds[diagCmdType::SINGLETEST].val.c_str())) {
 			DBG("Running test: %d\n", test.type);
 			result = (this->*test.func)(diagCmds, d);
 			break;
@@ -213,11 +216,439 @@ ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
 	return result;
 }
 
+bool cmdDiag::isPathExist(const std::string &s)
+{
+	struct stat buffer;
+	return (stat(s.c_str(), &buffer) == 0);
+}
+
+ze_result_t cmdDiag::moduleCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device,
+								  std::vector<uint8_t> binary_file, ze_module_handle_t *module_handle)
+{
+	ze_module_desc_t module_description = {};
+	module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+	module_description.pNext = nullptr;
+	module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
+	module_description.inputSize = static_cast<uint32_t>(binary_file.size());
+	module_description.pInputModule = binary_file.data();
+	module_description.pBuildFlags = nullptr;
+	ze_result_t ret;
+
+	ret = zeModuleCreate(context, ze_device, &module_description, module_handle, nullptr);
+
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't create module: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+void cmdDiag::moduleDestroy(ze_module_handle_t hModule)
+{
+	ze_result_t ret = zeModuleDestroy(hModule);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't destroy module: %s\n", l0_error_to_string(ret));
+	}
+}
+
+ze_result_t cmdDiag::memoryAlloc(const ze_context_handle_t context, ze_device_handle_t ze_device, size_t size,
+								 size_t alignment, void **ptr)
+{
+	ze_device_mem_alloc_desc_t device_desc = {};
+	device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+	device_desc.pNext = nullptr;
+	device_desc.ordinal = 0;
+	device_desc.flags = 0;
+	ze_result_t ret;
+	ret = zeMemAllocDevice(context, &device_desc, size, alignment, ze_device, ptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+ze_result_t cmdDiag::commandListCreate(const ze_context_handle_t context, ze_device_handle_t ze_device,
+									   uint32_t command_queue_group_ordinal, ze_command_list_handle_t *phCommandList,
+									   uint32_t flags)
+{
+	ze_command_list_desc_t command_list_description{};
+	command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+	command_list_description.commandQueueGroupOrdinal = command_queue_group_ordinal;
+	command_list_description.pNext = nullptr;
+	command_list_description.flags = flags;
+	ze_result_t ret;
+	ret = zeCommandListCreate(context, ze_device, &command_list_description, phCommandList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't create command list: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+ze_result_t cmdDiag::commandQueueCreate(const ze_context_handle_t context, ze_device_handle_t ze_device,
+										const uint32_t command_queue_group_ordinal, const uint32_t command_queue_index,
+										ze_command_queue_handle_t *phCommandQueue, uint32_t flags)
+{
+	ze_command_queue_desc_t command_queue_description{};
+	command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+	command_queue_description.pNext = nullptr;
+	command_queue_description.ordinal = command_queue_group_ordinal;
+	command_queue_description.index = command_queue_index;
+	command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+	command_queue_description.flags = flags;
+
+	ze_result_t ret;
+	ret = zeCommandQueueCreate(context, ze_device, &command_queue_description, phCommandQueue);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't create command queue: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+void commandQueueExecuteCommandLists(ze_command_queue_handle_t hCommandQueue, ze_command_list_handle_t hCommandList)
+{
+	ze_result_t ret = zeCommandQueueExecuteCommandLists(hCommandQueue, 1, &hCommandList, nullptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't execute command lists: %s\n", l0_error_to_string(ret));
+	}
+}
+
+void commandQueueSynchronize(ze_command_queue_handle_t hCommandQueue)
+{
+	ze_result_t ret = zeCommandQueueSynchronize(hCommandQueue, UINT64_MAX);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't synchronize command queue: %s\n", l0_error_to_string(ret));
+	}
+}
+
+void commandListReset(ze_command_list_handle_t hCommandList)
+{
+	ze_result_t ret = zeCommandListReset(hCommandList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't reset command list: %s\n", l0_error_to_string(ret));
+	}
+}
+
+ze_result_t kernelCreate(ze_module_handle_t hModule, std::string name, ze_kernel_handle_t *hKernel)
+{
+	ze_kernel_desc_t test_function_description = {};
+	test_function_description.stype = ZE_STRUCTURE_TYPE_KERNEL_DESC;
+	test_function_description.pNext = nullptr;
+	test_function_description.flags = 0;
+	test_function_description.pKernelName = name.c_str();
+
+	ze_result_t ret = zeKernelCreate(hModule, &test_function_description, hKernel);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error creating kernel: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+void memoryFree(const ze_context_handle_t &context, const void *ptr)
+{
+	ze_result_t ret = zeMemFree(context, const_cast<void *>(ptr));
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error freeing memory: %s\n", l0_error_to_string(ret));
+	}
+}
+
+void setupFunction(ze_module_handle_t module_handle, ze_kernel_handle_t &function, const char *name, void *input,
+				   void *output)
+{
+	ze_result_t ret = kernelCreate(module_handle, name, &function);
+	if (ret != ZE_RESULT_SUCCESS) {
+		return;
+	}
+
+	ret = zeKernelSetArgumentValue(function, 0, sizeof(input), &input);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error setting kernel argument value: %s\n", l0_error_to_string(ret));
+	}
+	ret = zeKernelSetArgumentValue(function, 1, sizeof(output), &output);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error setting kernel argument value: %s\n", l0_error_to_string(ret));
+	}
+}
+
+void commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_kernel_handle_t hKernel,
+								   const ze_group_count_t *pLaunchFuncArgs)
+{
+	ze_result_t ret = zeCommandListAppendLaunchKernel(hCommandList, hKernel, pLaunchFuncArgs, nullptr, 0, nullptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error appending launch kernel: %s\n", l0_error_to_string(ret));
+	}
+}
+
+long double calculateGbps(long double period, long double total_gbps)
+{
+	if (period != 0.0L)
+		return total_gbps / period;
+	else {
+		return std::numeric_limits<double>::max();
+	}
+}
+
+long double runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
+					  ze_kernel_handle_t &function, struct ZeWorkGroups &workgroup_info, bool checkOnly)
+{
+	long double timed = 0;
+
+	ze_result_t ret = zeKernelSetGroupSize(function, workgroup_info.group_size_x, workgroup_info.group_size_y,
+										   workgroup_info.group_size_z);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error setting kernel group size: %s\n", l0_error_to_string(ret));
+		return -1;
+	}
+
+	ze_group_count_t thread_group_dimensions;
+	thread_group_dimensions.groupCountX = workgroup_info.group_count_x;
+	thread_group_dimensions.groupCountY = workgroup_info.group_count_y;
+	thread_group_dimensions.groupCountZ = workgroup_info.group_count_z;
+	commandListAppendLaunchKernel(command_list, function, &thread_group_dimensions);
+
+	ret = zeCommandListClose(command_list);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+		return -1;
+	}
+
+	// 1 round is good enough if it is not perf diag
+	if (checkOnly == true) {
+		commandQueueExecuteCommandLists(command_queue, command_list);
+		commandQueueSynchronize(command_queue);
+		return 0;
+	}
+	// Consistent with ze_peak
+	uint32_t warmup_iterations = 5;
+	uint32_t iters = 20;
+	for (uint32_t i = 0; i < warmup_iterations; i++) {
+		commandQueueExecuteCommandLists(command_queue, command_list);
+		commandQueueSynchronize(command_queue);
+	}
+
+	std::chrono::high_resolution_clock::time_point time_start, time_end;
+	time_start = std::chrono::high_resolution_clock::now();
+	for (uint32_t i = 0; i < iters; i++) {
+		commandQueueExecuteCommandLists(command_queue, command_list);
+		commandQueueSynchronize(command_queue);
+	}
+
+	time_end = std::chrono::high_resolution_clock::now();
+	timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
+	commandListReset(command_list);
+	return (timed / static_cast<long double>(iters));
+}
+
+uint64_t cmdDiag::setWorkgroups(ze_device_compute_properties_t *device_compute_properties,
+								const uint64_t total_work_items_requested, struct ZeWorkGroups *workgroup_info)
+{
+	auto group_size_x = std::min(total_work_items_requested, uint64_t(device_compute_properties->maxGroupSizeX));
+	auto group_size_y = 1;
+	auto group_size_z = 1;
+	auto group_size = group_size_x * group_size_y * group_size_z;
+
+	auto group_count_x = total_work_items_requested / group_size;
+	group_count_x = std::min(group_count_x, uint64_t(device_compute_properties->maxGroupCountX));
+	auto remaining_items = total_work_items_requested - group_count_x * group_size;
+
+	uint64_t group_count_y = remaining_items / (group_count_x * group_size);
+	group_count_y = std::min(group_count_y, uint64_t(device_compute_properties->maxGroupCountY));
+	group_count_y = std::max(group_count_y, uint64_t(1));
+	remaining_items = total_work_items_requested - group_count_x * group_count_y * group_size;
+
+	uint64_t group_count_z = remaining_items / (group_count_x * group_count_y * group_size);
+	group_count_z = std::min(group_count_z, uint64_t(device_compute_properties->maxGroupCountZ));
+	group_count_z = std::max(group_count_z, uint64_t(1));
+
+	auto final_work_items = group_count_x * group_count_y * group_count_z * group_size;
+	remaining_items = total_work_items_requested - final_work_items;
+
+	workgroup_info->group_size_x = static_cast<uint32_t>(group_size_x);
+	workgroup_info->group_size_y = static_cast<uint32_t>(group_size_y);
+	workgroup_info->group_size_z = static_cast<uint32_t>(group_size_z);
+	workgroup_info->group_count_x = static_cast<uint32_t>(group_count_x);
+	workgroup_info->group_count_y = static_cast<uint32_t>(group_count_y);
+	workgroup_info->group_count_z = static_cast<uint32_t>(group_count_z);
+
+	return final_work_items;
+}
+
+ze_result_t cmdDiag::loadBinaryFile(const string &file_path, vector<uint8_t> *binary_file)
+{
+	string folder = string(XPUM_RESOURCES_DIR) + string("kernels/");
+	if (!isPathExist(folder)) {
+		ERR("Kernel folder does not exist: %s\n", folder.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	string absolute_file_path = folder + file_path;
+	ifstream stream(absolute_file_path, ios::in | ios::binary);
+	;
+
+	if (!stream.good()) {
+		ERR("Failed to open kernel file: %s\n", absolute_file_path.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	size_t length = 0;
+	stream.seekg(0, stream.end);
+	length = static_cast<size_t>(stream.tellg());
+	stream.seekg(0, stream.beg);
+	binary_file->resize(length);
+	stream.read(reinterpret_cast<char *>(binary_file->data()), length);
+	stream.close();
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Runs the computation diagnostic test on the specified device when user runs diag --singletest 1
+ *
+ * This function performs a floating-point computation test on the GPU device to measure its performance
+ * in terms of GFLOPS. It loads a SPIR-V kernel, allocates necessary device memory, sets up and launches
+ * the kernel, and reports the measured performance.
+ *
+ * @param diagCmds Pointer to the array of diagnostic command structures.
+ * @param d Pointer to the device information structure.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success, or an appropriate error code on failure.
+ */
 ze_result_t cmdDiag::computation(diagCmdStruct *diagCmds, devInfo *d)
 {
 	TRACING();
 	UNUSED(diagCmds);
-	UNUSED(d);
+	ze_device_properties_t zeDevProp = {};
+	ze_device_compute_properties_t zeComputeProp = {};
+	ze_result_t result;
+	ze_context_handle_t context = d->dev->getContext();
+	float input_value = 1.3f;
+	bool checkOnly = false;
+	std::vector<long double> all_gflops;
+	// int i = 0;
+
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	result = d->dev->getComputeProps(d->deviceHdl, &zeComputeProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	long double timed;
+	std::size_t flops_per_work_item = 4096;
+	vector<uint8_t> binary_file;
+	ze_result_t ret = loadBinaryFile("ze_sp_compute.spv", &binary_file);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+	ze_module_handle_t module_handle;
+	ret = moduleCreate(context, d->deviceHdl, binary_file, &module_handle);
+	if (ret != ZE_RESULT_SUCCESS) {
+		return ret;
+	}
+
+	uint64_t max_work_items = (uint64_t)zeDevProp.numSlices * zeDevProp.numSubslicesPerSlice *
+							  zeDevProp.numEUsPerSubslice * zeComputeProp.maxGroupCountX * 2048;
+	uint64_t max_number_of_allocated_items = zeDevProp.maxMemAllocSize / sizeof(float);
+	uint64_t number_of_work_items = min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
+	ZeWorkGroups workgroup_info;
+	number_of_work_items = setWorkgroups(&zeComputeProp, number_of_work_items, &workgroup_info);
+
+	void *device_input_value;
+	ret = memoryAlloc(context, d->deviceHdl, sizeof(float), 1, &device_input_value);
+	if (ret != ZE_RESULT_SUCCESS) {
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	void *device_output_buffer;
+	ret = memoryAlloc(context, d->deviceHdl, static_cast<std::size_t>((number_of_work_items * sizeof(float))), 1,
+					  &device_output_buffer);
+	if (ret != ZE_RESULT_SUCCESS) {
+		memoryFree(context, device_input_value);
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	ze_command_list_handle_t command_list;
+	ret = commandListCreate(context, d->deviceHdl, 0, &command_list, ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY);
+	if (ret != ZE_RESULT_SUCCESS) {
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	ze_command_queue_handle_t command_queue;
+	ret = commandQueueCreate(context, d->deviceHdl, 0, 0, &command_queue, ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
+	if (ret != ZE_RESULT_SUCCESS) {
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	ret = zeCommandListAppendMemoryCopy(command_list, device_output_buffer, &input_value, sizeof(float), nullptr, 0,
+										nullptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't append barrier: %s\n", l0_error_to_string(ret));
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	ret = zeCommandListClose(command_list);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
+		return ret;
+	}
+
+	commandQueueExecuteCommandLists(command_queue, command_list);
+	commandQueueSynchronize(command_queue);
+	commandListReset(command_list);
+	ze_kernel_handle_t compute_sp_v1;
+	setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
+
+	timed = 0;
+	long double current;
+	// Vector width 1
+	timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, checkOnly);
+	current = calculateGbps(timed, (long double) number_of_work_items * flops_per_work_item);
+	//	all_gflops[i] = std::max(all_gflops[i], current);
+	ret = zeKernelDestroy(compute_sp_v1);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+	}
+
+	ret = zeCommandListDestroy(command_list);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error destroying command list: %s\n", l0_error_to_string(ret));
+	}
+
+	ret = zeCommandQueueDestroy(command_queue);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error destroying command queue: %s\n", l0_error_to_string(ret));
+	}
+
+	memoryFree(context, device_input_value);
+	memoryFree(context, device_output_buffer);
+	moduleDestroy(module_handle);
+	PRINT("Computation test completed with %Lf GFLOPS.\n", current);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -447,8 +878,14 @@ int cmdDiag::run(arg_struct *args)
 		return result;
 	}
 
+	INFO("Running diagnostics can take several minutes to complete.\n");
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
+		if (device.dev->isIGPU()) {
+			DBG("Diagnostics are only supported on discrete GPUs so skipping device %d.\n", device.index);
+			continue;
+		}
+
 		// Call the appropriate command function based on the command type
 		for (auto &cmd : diagCmds) {
 			if (cmd.enabled && cmd.func != nullptr) {

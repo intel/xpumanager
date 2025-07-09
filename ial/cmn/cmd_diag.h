@@ -29,6 +29,8 @@
 #include <os.h>
 #include <string>
 
+#define XPUM_RESOURCES_DIR "resources/"
+
 enum diagCmdType
 {
 	DIAGHELP,
@@ -60,10 +62,36 @@ enum diagSubCmdType
 	TOTAL_DIAG_SUBCMD
 };
 
+struct ZeWorkGroups
+{
+	uint32_t group_count_x; // number of thread groups in X dimension
+	uint32_t group_count_y; // number of thread groups in Y dimension
+	uint32_t group_count_z; // number of thread groups in Z dimension
+	uint32_t group_size_x;
+	uint32_t group_size_y;
+	uint32_t group_size_z;
+};
+
 struct diagCmdStruct;
 
 class cmdDiag : public cmds
 {
+private:
+	bool isPathExist(const std::string &s);
+	ze_result_t loadBinaryFile(const string &file_path, vector<uint8_t> *binary_file);
+	ze_result_t moduleCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device,
+							 std::vector<uint8_t> binary_file, ze_module_handle_t *module_handle);
+	void moduleDestroy(ze_module_handle_t hModule);
+	uint64_t setWorkgroups(ze_device_compute_properties_t *device_compute_properties,
+						   const uint64_t total_work_items_requested, struct ZeWorkGroups *workgroup_info);
+	ze_result_t memoryAlloc(const ze_context_handle_t context, ze_device_handle_t ze_device, size_t size,
+							size_t alignment, void **ptr);
+	ze_result_t commandListCreate(const ze_context_handle_t context, ze_device_handle_t ze_device,
+								  uint32_t command_queue_group_ordinal, ze_command_list_handle_t *phCommandList,
+								  uint32_t flags);
+	ze_result_t commandQueueCreate(const ze_context_handle_t context, ze_device_handle_t ze_device,
+								   const uint32_t command_queue_group_ordinal, const uint32_t command_queue_index,
+								   ze_command_queue_handle_t *phCommandQueue, uint32_t flags);
 
 public:
 	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
