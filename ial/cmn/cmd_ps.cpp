@@ -76,7 +76,7 @@ int cmdPs::run(arg_struct *args)
 	int optionIndex = 0;
 	bool json = false;
 	string deviceId;
-	UNUSED(json);
+	vector<zes_process_state_t> processList;
 
 	static struct option long_options[] = {{"help", no_argument, 0, 'h'},
 										   {"json", no_argument, 0, 'j'},
@@ -120,18 +120,27 @@ int cmdPs::run(arg_struct *args)
 		return result;
 	}
 
-	int i = 0;
+	if (!json) {
+		PRINT("PID       Command             DeviceID       SHR            MEM\n");
+	}
+
 	for (auto &dev : deviceList) {
-		DBG("Running ps command on device %d\n", i);
+		DBG("Running ps command on device %d\n", dev.index);
 		process *ps = (process *)dev.dev->getProcess();
 		if (ps == nullptr) {
 			ERR("Error: Process pointer not found.\n");
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 
-		ps->getState(dev.deviceHdl);
+		ps->getState(dev.deviceHdl, &processList);
 
-		i++;
+		if (!json) {
+			for (const auto &proc : processList) {
+				PRINT("%-9d %-19s %-14d %-14" PRIu64 " %-14" PRIu64 "\n", proc.processId,
+					  GETPROCESSNAME(proc.processId).c_str(), dev.index, (proc.sharedSize / 1024),
+					  (proc.memSize / 1024));
+			}
+		}
 	}
 
 	return ZE_RESULT_SUCCESS;

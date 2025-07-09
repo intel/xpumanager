@@ -27,7 +27,7 @@
 
 using namespace std;
 
-ze_result_t process::getState(zes_device_handle_t device)
+ze_result_t process::getState(zes_device_handle_t device, vector<zes_process_state_t> *processList)
 {
 	// Get processes running on the device
 	uint32_t processCount = 0;
@@ -37,21 +37,20 @@ ze_result_t process::getState(zes_device_handle_t device)
 		return result;
 	}
 
-	vector<zes_process_state_t> processes(processCount);
-	result = zesDeviceProcessesGetState(device, &processCount, processes.data());
+	processList->clear();
+	processList->resize(processCount);
+	result = zesDeviceProcessesGetState(device, &processCount, processList->data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get process states: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - Device has %d processes\n", processCount);
-	for (const auto &process : processes) {
+	for (const auto &process : *processList) {
 		DBG("    - Process ID: %d\n", process.processId);
 		DBG("    - Name: %s\n", GETPROCESSNAME(process.processId).c_str());
 		DBG("    - Shared Size: %" PRIu64 " KB\n", (process.sharedSize / 1024));
 		DBG("    - Memory Size: %" PRIu64 " KB\n", (process.memSize / 1024));
-		DBG("    - Engines: %d\n", process.engines);
-		printEngines(process.engines);
 	}
 	return result;
 }
@@ -59,5 +58,7 @@ ze_result_t process::getState(zes_device_handle_t device)
 ze_result_t process::zesRun(zes_device_handle_t device)
 {
 	TRACING();
-	return getState(device);
+
+	vector<zes_process_state_t> processList;
+	return getState(device, &processList);
 }
