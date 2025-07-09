@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\oal\win;..\..\hal\fwupd;..\..\hal\core;$(IGSC)\include;$(LEVELZERO)\include</IncludePath>
-    <LibraryPath>$(LEVELZERO)\build\lib\Release\;$(IGSC)\build\lib\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(IGSC)\build\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>..\..\hal\core;..\..\hal\fwupd;..\..\oal\win;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
