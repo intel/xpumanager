@@ -25,6 +25,7 @@
 #include "os.h"
 #include <debug.h>
 #include <malloc.h>
+#include <psapi.h>
 #include <stdlib.h>
 
 thread_id *create_thread(funcptr thread, void *args)
@@ -53,4 +54,31 @@ string timestamp()
 	sprintf_s(buffer, sizeof(buffer), "%02d:%02d:%02d.%03d", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 	timestamp_str = buffer;
 	return timestamp_str;
+}
+
+string getProcessName(uint32_t processId)
+{
+	string processName = "<unknown>";
+
+	// Open the process with the necessary access rights
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (hProcess) {
+		HMODULE hMod;
+		DWORD cbNeeded;
+
+		// Get the first module in the process, which is typically the executable
+		if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
+			char szProcessName[MAX_PATH];
+			// Get the process name
+			if (GetModuleBaseNameA(hProcess, hMod, szProcessName, sizeof(szProcessName) / sizeof(char))) {
+				processName = szProcessName;
+			}
+		}
+		// Close the process handle
+		CloseHandle(hProcess);
+	} else {
+		ERR("Unable to open process with ID: %d\n", processId);
+	}
+
+	return processName;
 }
