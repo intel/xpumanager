@@ -424,11 +424,11 @@ ze_result_t driver::run()
 }
 
 /**
- * @brief Prints the versions of the Level Zero loader components.
+ * @brief Gets the versions of the Level Zero loader components.
  *
  * This function retrieves and prints the versions of the Level Zero loader components.
  */
-void driver::printLoaderVersions()
+void driver::getLoaderVersion(string *lzVersion)
 {
 	zel_component_version_t *versions;
 	size_t size = 0;
@@ -437,9 +437,10 @@ void driver::printLoaderVersions()
 	versions = new zel_component_version_t[size];
 	zelLoaderGetVersions(&size, versions);
 
-	for (size_t i = 0; i < size; i++) {
-		PRINT("Level Zero Version: %d.%d.%d\n", versions[i].component_lib_version.major,
-			  versions[i].component_lib_version.minor, versions[i].component_lib_version.patch);
+	if (size > 0) {
+		*lzVersion = to_string(versions[0].component_lib_version.major) + ".";
+		*lzVersion += to_string(versions[0].component_lib_version.minor) + ".";
+		*lzVersion += to_string(versions[0].component_lib_version.patch);
 	}
 
 	delete[] versions;
