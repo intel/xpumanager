@@ -27,18 +27,18 @@
 #include <assert.h>
 
 vgpuCmdStruct vgpuCmds[] = {
-	{VGPU_HELP, {"help", no_argument, 0, 'h'}},
-	{VGPU_JSON, {"json", no_argument, 0, 'j'}},
-	{VGPU_DEVICE, {"device", required_argument, 0, 'd'}},
-	{VGPU_ADDKERNELPARAM, {"addkernelparam", no_argument, 0, 0}, &cmdVgpu::addKernelParam},
-	{VGPU_PRECHECK, {"precheck", no_argument, 0, 0}, &cmdVgpu::precheck},
-	{VGPU_NUMBER, {"number", required_argument, 0, 'n'}},
-	{VGPU_CREATE, {"create", no_argument, 0, 'c'}, &cmdVgpu::create},
-	{VGPU_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdVgpu::remove},
-	{VGPU_LIST, {"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus},
-	{VGPU_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}},
-	{VGPU_STATS, {"stats", no_argument, 0, 's'}, &cmdVgpu::stats},
-	{VGPU_LMEM, {"lmem", required_argument, 0, 0}, &cmdVgpu::lmem},
+	{VGPU_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{VGPU_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{VGPU_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{VGPU_ADDKERNELPARAM, {"addkernelparam", no_argument, 0, 0}, &cmdVgpu::addKernelParam, false, ""},
+	{VGPU_PRECHECK, {"precheck", no_argument, 0, 0}, &cmdVgpu::precheck, false, ""},
+	{VGPU_NUMBER, {"number", required_argument, 0, 'n'}, nullptr, false, ""},
+	{VGPU_CREATE, {"create", no_argument, 0, 'c'}, &cmdVgpu::create, false, ""},
+	{VGPU_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdVgpu::remove, false, ""},
+	{VGPU_LIST, {"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus, false, ""},
+	{VGPU_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}, nullptr, false, ""},
+	{VGPU_STATS, {"stats", no_argument, 0, 's'}, &cmdVgpu::stats, false, ""},
+	{VGPU_LMEM, {"lmem", required_argument, 0, 0}, &cmdVgpu::lmem, false, ""},
 };
 
 /**

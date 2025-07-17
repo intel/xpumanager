@@ -35,7 +35,16 @@
 #pragma warning(disable : 4200)
 #endif
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
 #include <igsc_lib.h>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -211,8 +220,8 @@ struct updateFWCmdStruct
 	updateFW updateFunc;
 	updateFW postUpdateFunc;
 	zes_firmware_handle_t firmwareHandle;
-	char name[ZES_STRING_PROPERTY_SIZE];
-	char version[ZES_STRING_PROPERTY_SIZE];
+	string name;
+	string version;
 };
 
 #endif

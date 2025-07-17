@@ -30,18 +30,18 @@
 firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr)
 {
 	updateFWCmds = new updateFWCmdStruct[MAX_FW_TYPE]{
-		{GFX, TOSTR(GFX), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx},
+		{GFX, TOSTR(GFX), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx, nullptr,
+		 "", ""},
 		{GFX_DATA, TOSTR(GFX_DATA), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData,
-		 &fwupd::postUpdateGfxData},
-		{GFX_CODE_DATA, TOSTR(GFX_CODE_DATA), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxCodeData,
-		 &fwupd::updateGfxCodeData, &fwupd::postUpdateGfxCodeData},
+		 &fwupd::postUpdateGfxData, nullptr, "", ""},
 		{GFX_PSCBIN, TOSTR(GFX_PSCBIN), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin,
-		 &fwupd::postUpdateGfxPscBin},
+		 &fwupd::postUpdateGfxPscBin, nullptr, "", ""},
 		{FAN_TABLE, TOSTR(FAN_TABLE), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable,
-		 &fwupd::postUpdateFanTable},
+		 &fwupd::postUpdateFanTable, nullptr, "", ""},
 		{VR_CONFIG, TOSTR(VR_CONFIG), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig,
-		 &fwupd::postUpdateVrConfig},
-		{AMC, TOSTR(AMC), FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC},
+		 &fwupd::postUpdateVrConfig, nullptr, "", ""},
+		{AMC, TOSTR(AMC), FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC, nullptr,
+		 "", ""},
 	};
 }
 
@@ -110,8 +110,8 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 
 	// Store the firmware handle and properties
 	updateFWCmds[index].firmwareHandle = firmwareHandle;
-	STRNCPY_S(updateFWCmds[index].name, properties.name, ZES_STRING_PROPERTY_SIZE);
-	STRNCPY_S(updateFWCmds[index].version, properties.version, ZES_STRING_PROPERTY_SIZE);
+	updateFWCmds[index].name = properties.name;
+	updateFWCmds[index].version = properties.version;
 
 	return result;
 }
@@ -119,13 +119,15 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 ze_result_t firmware::getFWversion(fwType type, char *version, uint32_t size)
 {
 	TRACING();
+	UNUSED(size);
+
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	if (type < GFX || type >= MAX_FW_TYPE) {
 		ERR("Invalid firmware type: %d\n", type);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	STRCPY_S(version, size, updateFWCmds[type].version);
+	STRCPY_S(version, size, updateFWCmds[type].version.c_str());
 
 	return result;
 }

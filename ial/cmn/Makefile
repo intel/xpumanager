@@ -14,7 +14,7 @@ export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=-L$(HALCORE) -lxpum -lpciaccess
 export INCLUDES=-I. -I$(OALDIR) -I$(HALCORE) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
-export CFLAGS=-c -Wall -std=c++20
+export CFLAGS=-c -Wall -Wextra -Werror -pedantic -std=c++20
 export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 export HEADERS := $(wildcard $(SRCDIR)/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)

@@ -242,7 +242,7 @@ ze_result_t driver::init()
 		}
 
 		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
-			DBG("Driver %u Device %u: %p\n", i, j, devs[i].zeDevices[j]);
+			DBG("Driver %u Device %u: %p\n", i, j, (void *)devs[i].zeDevices[j]);
 
 			// Initialize each device in the group
 			result = devs[i].dev[j].init(zeDrivers[i], devs[i].zeDevices[j], totalZesDevices, totalZesDevicesCount);

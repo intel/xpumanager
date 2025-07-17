@@ -40,7 +40,7 @@
 char getch()
 {
 	char buf = 0;
-	struct termios old = {0};
+	struct termios old = {};
 	if (tcgetattr(STDIN_FILENO, &old) < 0)
 		perror("tcsetattr()");
 	old.c_lflag &= ~ICANON;
@@ -105,8 +105,8 @@ bool privilegeCheck()
 	if (ngroups == 0) {
 		return false;
 	}
-	gid_t groups[ngroups];
-	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
+	vector<gid_t> groups(ngroups);
+	getgrouplist(pw->pw_name, pw->pw_gid, groups.data(), &ngroups);
 	string xpum_grp("xpum");
 	bool has_privilege = false;
 	for (int i = 0; i < ngroups; i++) {

@@ -26,16 +26,16 @@
 #include "debug.h"
 
 groupCmdStruct groupCmds[] = {
-	{groupCmdType::GROUP_HELP, {"help", no_argument, 0, 'h'}},
-	{groupCmdType::GROUP_JSON, {"json", no_argument, 0, 'j'}},
-	{groupCmdType::GROUP_CREATE, {"create", no_argument, 0, 'c'}, &cmdGroup::create},
-	{groupCmdType::GROUP_DELETE, {"delete", no_argument, 0, 'D'}, &cmdGroup::deleteGroup},
-	{groupCmdType::GROUP_LIST, {"list", no_argument, 0, 'l'}, &cmdGroup::listGroup},
-	{groupCmdType::GROUP_ADD, {"add", no_argument, 0, 'a'}, &cmdGroup::add},
-	{groupCmdType::GROUP_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdGroup::remove},
-	{groupCmdType::GROUP_GROUP, {"group", required_argument, 0, 'g'}},
-	{groupCmdType::GROUP_NAME1, {"name", required_argument, 0, 'n'}},
-	{groupCmdType::GROUP_DEVICE, {"device", required_argument, 0, 'd'}},
+	{groupCmdType::GROUP_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{groupCmdType::GROUP_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{groupCmdType::GROUP_CREATE, {"create", no_argument, 0, 'c'}, &cmdGroup::create, false, ""},
+	{groupCmdType::GROUP_DELETE, {"delete", no_argument, 0, 'D'}, &cmdGroup::deleteGroup, false, ""},
+	{groupCmdType::GROUP_LIST, {"list", no_argument, 0, 'l'}, &cmdGroup::listGroup, false, ""},
+	{groupCmdType::GROUP_ADD, {"add", no_argument, 0, 'a'}, &cmdGroup::add, false, ""},
+	{groupCmdType::GROUP_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdGroup::remove, false, ""},
+	{groupCmdType::GROUP_GROUP, {"group", required_argument, 0, 'g'}, nullptr, false, ""},
+	{groupCmdType::GROUP_NAME1, {"name", required_argument, 0, 'n'}, nullptr, false, ""},
+	{groupCmdType::GROUP_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
 };
 
 void cmdGroup::help(HELP helpType)

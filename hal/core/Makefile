@@ -10,7 +10,7 @@ FWDIR  := ../fwupd
 # Compiler and Flags
 CXX := g++
 export DBG_FLAGS?=-Ofast
-CXXFLAGS := -Wall -fPIC -std=c++20 -I. -I$(OALDIR) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
+CXXFLAGS := -Wall -Wextra -Werror -pedantic -fPIC -std=c++20 -I. -I$(OALDIR) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
 LIBS :=-L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc
 INCLUDEDIR := include
 
@@ -39,7 +39,7 @@ all: $(TARGET_SHARED) $(TARGET_STATIC)
 # Shared library
 $(TARGET_SHARED): $(OBJECTS) $(OAL_OBJECTS) $(FWUPD_OBJECTS)
 	$(CMD_PREFIX)echo "Creating shared library..."
-	$(CMD_PREFIX)$(CXX) -Wall -shared $(DBG_FLAGS) -o $@ $^ $(LIBS)
+	$(CMD_PREFIX)$(CXX) -Wall -Wextra -Werror -pedantic -shared $(DBG_FLAGS) -o $@ $^ $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
