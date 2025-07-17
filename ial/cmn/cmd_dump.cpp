@@ -39,72 +39,76 @@
 #include <chrono>
 
 dumpCmdStruct dumpCmds[] = {
-	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}},
-	{dumpCmdType::DUMP_JSON, {"json", no_argument, 0, 'j'}},
-	{dumpCmdType::DUMP_DEVICE, {"device", required_argument, 0, 'd'}},
-	{dumpCmdType::DUMP_TILE, {"tile", required_argument, 0, 't'}},
-	{dumpCmdType::DUMP_METRICS, {"metrics", required_argument, 0, 'm'}},
-	{dumpCmdType::DUMP_FILE, {"file", required_argument, 0, 'f'}},
-	{dumpCmdType::DUMP_IMS, {"ims", no_argument, 0, 'i'}},
-	{dumpCmdType::DUMP_TIME, {"time", no_argument, 0, 'T'}},
-	{dumpCmdType::DUMP_DATE, {"date", no_argument, 0, 'D'}},
-	{dumpCmdType::DUMP_INTERVAL, {"interval", required_argument, 0, 'i'}},
-	{dumpCmdType::DUMP_NUMBER, {"number", required_argument, 0, 'n'}},
+	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_TILE, {"tile", required_argument, 0, 't'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_METRICS, {"metrics", required_argument, 0, 'm'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_FILE, {"file", required_argument, 0, 'f'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_IMS, {"ims", no_argument, 0, 'i'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_TIME, {"time", no_argument, 0, 'T'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_DATE, {"date", no_argument, 0, 'D'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_INTERVAL, {"interval", required_argument, 0, 'i'}, nullptr, false, ""},
+	{dumpCmdType::DUMP_NUMBER, {"number", required_argument, 0, 'n'}, nullptr, false, ""},
 };
 
 dumpCmdSubStruct dumpMetrics[] = {
-	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, "GPU Utilization (%)"},
-	{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower, "GPU Power (W)"},
+	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, "GPU Utilization (%)", false},
+	{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower, "GPU Power (W)", false},
 	{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency, "GPU Frequency (MHz)", true},
-	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead, "GPU Memory Read (kB/s)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite, "GPU Memory Write (kB/s)"},
-	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)"},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)"},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)"},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, &cmdDump::gpuEuArrayIdle, "GPU EU Array Idle (%)"},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER, &cmdDump::gpuEuArrayResetCounter, "GPU EU Array Reset Counter"},
+	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)", false},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)", false},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)", false},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead, "GPU Memory Read (kB/s)", false},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite, "GPU Memory Write (kB/s)", false},
+	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)", false},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)", false},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)", false},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, &cmdDump::gpuEuArrayIdle, "GPU EU Array Idle (%)", false},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER, &cmdDump::gpuEuArrayResetCounter, "GPU EU Array Reset Counter",
+	 false},
 	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS, &cmdDump::gpuEuArrayProgrammingErrors,
-	 "GPU EU Array Programming Errors"},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS, &cmdDump::gpuEuArrayDriverErrors, "GPU EU Array Driver Errors"},
+	 "GPU EU Array Programming Errors", false},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS, &cmdDump::gpuEuArrayDriverErrors, "GPU EU Array Driver Errors",
+	 false},
 	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsCorrectable,
-	 "GPU EU Array Cache Errors Correctable"},
+	 "GPU EU Array Cache Errors Correctable", false},
 	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsUncorrectable,
-	 "GPU EU Array Cache Errors Uncorrectable"},
+	 "GPU EU Array Cache Errors Uncorrectable", false},
 	{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION, &cmdDump::gpuMemoryBandwidthUtilization,
-	 "GPU Memory Bandwidth Utilization (%)"},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, &cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)"},
-	{dumpCmdSubType::DUMP_PCIE_READ, &cmdDump::pcieRead, "PCIe Read (kB/s)"},
-	{dumpCmdSubType::DUMP_PCIE_WRITE, &cmdDump::pcieWrite, "PCIe Write (kB/s)"},
-	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, &cmdDump::xeLinkThroughput, "XE Link Throughput (kB/s)"},
+	 "GPU Memory Bandwidth Utilization (%)", false},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, &cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)", false},
+	{dumpCmdSubType::DUMP_PCIE_READ, &cmdDump::pcieRead, "PCIe Read (kB/s)", false},
+	{dumpCmdSubType::DUMP_PCIE_WRITE, &cmdDump::pcieWrite, "PCIe Write (kB/s)", false},
+	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, &cmdDump::xeLinkThroughput, "XE Link Throughput (kB/s)", false},
 	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION, &cmdDump::computeEngineUtilization,
-	 "Compute Engine Utilization (%)"},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION, &cmdDump::renderEngineUtilization,
-	 "Render Engine Utilization (%)"},
+	 "Compute Engine Utilization (%)", false},
+	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION, &cmdDump::renderEngineUtilization, "Render Engine Utilization (%)",
+	 false},
 	{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION, &cmdDump::mediaDecoderEngineUtilization,
-	 "Media Decoder Engine Utilization (%)"},
+	 "Media Decoder Engine Utilization (%)", false},
 	{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION, &cmdDump::mediaEncoderEngineUtilization,
-	 "Media Encoder Engine Utilization (%)"},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION, &cmdDump::copyEngineUtilization, "Copy Engine Utilization (%)"},
+	 "Media Encoder Engine Utilization (%)", false},
+	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION, &cmdDump::copyEngineUtilization, "Copy Engine Utilization (%)",
+	 false},
 	{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, &cmdDump::mediaEnhancementEngineUtilization,
-	 "Media Enhancement Engine Utilization (%)"},
-	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, &cmdDump::engineUtilization, "3D Engine Utilization (%)"},
+	 "Media Enhancement Engine Utilization (%)", false},
+	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, &cmdDump::engineUtilization, "3D Engine Utilization (%)", false},
 	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE, &cmdDump::gpuMemoryErrorsCorrectable,
-	 "GPU Memory Errors Correctable"},
+	 "GPU Memory Errors Correctable", false},
 	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE, &cmdDump::gpuMemoryErrorsUncorrectable,
-	 "GPU Memory Errors Uncorrectable"},
+	 "GPU Memory Errors Uncorrectable", false},
 	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION, &cmdDump::computeEngineGroupUtilization,
-	 "Compute Engine Group Utilization (%)"},
+	 "Compute Engine Group Utilization (%)", false},
 	{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION, &cmdDump::renderEngineGroupUtilization,
-	 "Render Engine Group Utilization (%)"},
+	 "Render Engine Group Utilization (%)", false},
 	{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION, &cmdDump::mediaEngineGroupUtilization,
-	 "Media Engine Group Utilization (%)"},
+	 "Media Engine Group Utilization (%)", false},
 	{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION, &cmdDump::copyEngineGroupUtilization,
-	 "Copy Engine Group Utilization (%)"},
-	{dumpCmdSubType::DUMP_THROTTLE_REASON, &cmdDump::throttleReason, "Throttle Reason"},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY, &cmdDump::mediaEngineFrequency, "Media Engine Frequency (MHz)"},
+	 "Copy Engine Group Utilization (%)", false},
+	{dumpCmdSubType::DUMP_THROTTLE_REASON, &cmdDump::throttleReason, "Throttle Reason", false},
+	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY, &cmdDump::mediaEngineFrequency, "Media Engine Frequency (MHz)",
+	 false},
 };
 
 /**
@@ -280,7 +284,7 @@ void cmdDump::help(HELP helpType)
 /**
  * @brief Executes the metrics command based on the provided arguments.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
+
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
@@ -302,7 +306,7 @@ THREAD_RET cmdDump::metrics(void *args)
 			found = true;
 			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
 			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
-				result = (cmdDumpInstance->*cmd.func)(dumpCmds, d, &metricArgs->outputLine, &metricArgs->td);
+				result = (cmdDumpInstance->*cmd.func)(d, &metricArgs->outputLine, &metricArgs->td);
 			} else {
 				// If the command is not available for iGPUs, set outputLine to N/A
 				metricArgs->outputLine = "N/A";
@@ -352,7 +356,6 @@ string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flags)
 ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	power *p = (power *)d->dev->getPower();
 	if (p == nullptr) {
 		ERR("Failed to get power handle\n");
@@ -422,12 +425,11 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
  * GPU Utilization (%), GPU active time of the elapsed time, per tile or device. Device-level is the average value of
  * tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_ALL};
@@ -439,12 +441,11 @@ ze_result_t cmdDump::gpuUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * GPU Power (W), per tile or device.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuPower(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 
@@ -478,14 +479,14 @@ ze_result_t cmdDump::gpuPower(dumpCmdStruct *dumpCmds, devInfo *d, string *outpu
  *
  * GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuFrequency(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	double curFreq = 0.0;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -510,14 +511,14 @@ ze_result_t cmdDump::gpuFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *o
  *
  * GPU Core Temperature (C), per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	double coreTemp = 0.0;
 
 	temperature *t = (temperature *)d->dev->getTemperature();
@@ -542,14 +543,14 @@ ze_result_t cmdDump::gpuCoreTemperature(dumpCmdStruct *dumpCmds, devInfo *d, str
  *
  * GPU Memory Temperature (C), per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	double memoryTemp = 0.0;
 
 	temperature *t = (temperature *)d->dev->getTemperature();
@@ -573,14 +574,14 @@ ze_result_t cmdDump::gpuMemoryTemperature(dumpCmdStruct *dumpCmds, devInfo *d, s
  *
  * GPU Memory Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	double memoryUtilization = 0;
 
 	memory *mem = (memory *)d->dev->getMemory();
@@ -604,12 +605,11 @@ ze_result_t cmdDump::gpuMemoryUtilization(dumpCmdStruct *dumpCmds, devInfo *d, s
  *
  * GPU Memory Read (kB/s), per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryRead(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 
@@ -645,12 +645,11 @@ ze_result_t cmdDump::gpuMemoryRead(dumpCmdStruct *dumpCmds, devInfo *d, string *
  *
  * GPU Memory Write (kB/s), per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 
@@ -686,14 +685,14 @@ ze_result_t cmdDump::gpuMemoryWrite(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * GPU Energy Consumed (J), per tile or device.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEnergyConsumed(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t gpuPower1 = 0;
 	uint64_t timeStamp1 = 0;
 
@@ -715,16 +714,16 @@ ze_result_t cmdDump::gpuEnergyConsumed(dumpCmdStruct *dumpCmds, devInfo *d, stri
  * GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
  * Per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -735,16 +734,16 @@ ze_result_t cmdDump::gpuEuArrayActive(dumpCmdStruct *dumpCmds, devInfo *d, strin
  * thread is loaded, but the EU is stalled. Per tile or device. Device-level is the average value of tiles for
  * multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayStall(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -754,16 +753,16 @@ ze_result_t cmdDump::gpuEuArrayStall(dumpCmdStruct *dumpCmds, devInfo *d, string
  * GPU EU Array Idle (%), the normalized sum of all cycles on all EUs during which the EUs were idle. Per tile or
  * device.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayIdle(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -772,14 +771,14 @@ ze_result_t cmdDump::gpuEuArrayIdle(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * GPU EU Array Reset Counter, resets the EU array counters.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayResetCounter(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -802,16 +801,15 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(dumpCmdStruct *dumpCmds, devInfo *d,
  *
  * GPU EU Array Programming Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												 threadData *td)
+ze_result_t cmdDump::gpuEuArrayProgrammingErrors(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -835,15 +833,15 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(dumpCmdStruct *dumpCmds, devInf
  *
  * GPU EU Array Driver Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayDriverErrors(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -867,16 +865,15 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(dumpCmdStruct *dumpCmds, devInfo *d,
  * GPU EU Array Cache Errors Correctable, per tile or device. Device-level is the sum value of tiles for
  * multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-													  threadData *td)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -900,16 +897,15 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(dumpCmdStruct *dumpCmds, d
  * GPU EU Array Cache Errors Uncorrectable, per tile or device. Device-level is the sum value of tiles for
  * multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-														threadData *td)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -933,14 +929,12 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(dumpCmdStruct *dumpCmds,
  * GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for
  * multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												   threadData *td)
+ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t maxBandwidth = 0;
@@ -982,15 +976,15 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(dumpCmdStruct *dumpCmds, devI
  *
  * GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	uint64_t memoryUsed = 0;
 
 	memory *mem = (memory *)d->dev->getMemory();
@@ -1014,13 +1008,12 @@ ze_result_t cmdDump::gpuMemoryUsed(dumpCmdStruct *dumpCmds, devInfo *d, string *
  *
  * PCIe Read (kB/s), per device.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::pcieRead(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t pciDiff = 0;
@@ -1057,13 +1050,12 @@ ze_result_t cmdDump::pcieRead(dumpCmdStruct *dumpCmds, devInfo *d, string *outpu
  *
  * PCIe Write (kB/s), per device.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::pcieWrite(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	uint64_t pciDiff = 0;
@@ -1100,17 +1092,17 @@ ze_result_t cmdDump::pcieWrite(dumpCmdStruct *dumpCmds, devInfo *d, string *outp
  *
  * Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::xeLinkThroughput(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1119,13 +1111,12 @@ ze_result_t cmdDump::xeLinkThroughput(dumpCmdStruct *dumpCmds, devInfo *d, strin
  *
  * Compute engine utilization (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::computeEngineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE};
@@ -1137,13 +1128,12 @@ ze_result_t cmdDump::computeEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *
  *
  * Render engine utilization (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::renderEngineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE};
@@ -1155,14 +1145,12 @@ ze_result_t cmdDump::renderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d
  *
  * Media decoder engine utilizations (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												   threadData *td)
+ze_result_t cmdDump::mediaDecoderEngineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE};
@@ -1174,14 +1162,12 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  *
  * Media encoder engine utilizations (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												   threadData *td)
+ze_result_t cmdDump::mediaEncoderEngineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE};
@@ -1193,13 +1179,12 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(dumpCmdStruct *dumpCmds, devI
  *
  * Copy engine utilization (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::copyEngineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE};
@@ -1211,14 +1196,12 @@ ze_result_t cmdDump::copyEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, 
  *
  * Media enhancement engine utilization (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-													   threadData *td)
+ze_result_t cmdDump::mediaEnhancementEngineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE};
@@ -1230,17 +1213,17 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(dumpCmdStruct *dumpCmds, 
  *
  * 3D engine utilization (%), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::engineUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1250,17 +1233,17 @@ ze_result_t cmdDump::engineUtilization(dumpCmdStruct *dumpCmds, devInfo *d, stri
  * GPU Memory Errors Correctable, per tile or device. Other non-compute correctable errors are also included.
  * Device-level is the sum value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryErrorsCorrectable(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1270,18 +1253,17 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(dumpCmdStruct *dumpCmds, devInfo
  * GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable errors are also included.
  * Device-level is the sum value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												  threadData *td)
+ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
-	UNUSED(dumpCmds);
 	UNUSED(d);
+	UNUSED(outputLine);
+	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1291,14 +1273,12 @@ ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(dumpCmdStruct *dumpCmds, devIn
  * Compute engine group utilization (%), per tile.
  * Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												   threadData *td)
+ze_result_t cmdDump::computeEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE, ZES_ENGINE_GROUP_COMPUTE_ALL};
@@ -1311,14 +1291,12 @@ ze_result_t cmdDump::computeEngineGroupUtilization(dumpCmdStruct *dumpCmds, devI
  * Render engine group utilization (%), per tile.
  * Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												  threadData *td)
+ze_result_t cmdDump::renderEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE, ZES_ENGINE_GROUP_RENDER_ALL};
@@ -1331,14 +1309,13 @@ ze_result_t cmdDump::renderEngineGroupUtilization(dumpCmdStruct *dumpCmds, devIn
  * Media engine group utilization (%), per tile.
  * Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
+
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine,
-												 threadData *td)
+ze_result_t cmdDump::mediaEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE,
@@ -1352,13 +1329,13 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInf
  * Copy engine group utilization (%), per tile.
  * Device-level is the average value of tiles for multi-tiles.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
+
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::copyEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
 	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE, ZES_ENGINE_GROUP_COPY_ALL};
@@ -1370,15 +1347,15 @@ ze_result_t cmdDump::copyEngineGroupUtilization(dumpCmdStruct *dumpCmds, devInfo
  *
  * Throttle reason, per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::throttleReason(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	zes_freq_throttle_reason_flags_t throttleReasons;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -1403,15 +1380,15 @@ ze_result_t cmdDump::throttleReason(dumpCmdStruct *dumpCmds, devInfo *d, string 
  *
  * Media engine frequency (MHz), per tile.
  *
- * @param dumpCmds An array of dump command structures containing command-line arguments and flags.
  * @param d A pointer to the device information structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineFrequency(dumpCmdStruct *dumpCmds, devInfo *d, string *outputLine, threadData *td)
+ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED(td);
 	double curFreq = 0.0;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -1611,7 +1588,7 @@ int cmdDump::run(arg_struct *args)
 					memcpy(&prevThreadData, &argsList[total]->td, sizeof(threadData));
 					delete argsList[total]; // Clean up any previously allocated memory
 				}
-				argsList[total] = new threadArgs{this, dumpCmds, &device, arg, ""};
+				argsList[total] = new threadArgs{this, dumpCmds, &device, arg, "", {}};
 				// Copy any previous thread data into the new argsList entry just in case the underlying functions
 				// need to access it to do comparision between old and new values
 				memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));

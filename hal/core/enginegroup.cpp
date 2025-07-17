@@ -242,7 +242,7 @@ ze_result_t enginegroup::zesRun(zes_device_handle_t device)
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
-		DBG("  - Engine Group handle: %p\n", engineGroup);
+		DBG("  - Engine Group handle: %p\n", (void *)engineGroup);
 
 		getProperties(engineGroup, &engineProperties);
 		getActivity(engineGroup, &engineStats);

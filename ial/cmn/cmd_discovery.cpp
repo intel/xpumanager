@@ -41,18 +41,38 @@
  * discoveryCmdStruct with a pointer to the function that will be called when the command is executed
  */
 discoveryCmdStruct discCmds[] = {
-	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}},
-	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}},
-	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll},
-	{discCmdType::DISC_PF, {"pf", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
-	{discCmdType::DISC_PHYSICALFUNCTION, {"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction},
-	{discCmdType::DISC_VF, {"vf", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
-	{discCmdType::DISC_VIRTUALFUNCTION, {"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction},
-	{discCmdType::DISC_DUMP, {"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading},
-	{discCmdType::DISC_LISTAMCVERSIONS, {"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions},
-	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}},
-	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}},
-	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}},
+	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}, nullptr, nullptr, false, ""},
+	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}, nullptr, nullptr, false, ""},
+	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll, nullptr, false, ""},
+	{discCmdType::DISC_PF, {"pf", no_argument, 0, 0}, &cmdDiscovery::physicalFunction, nullptr, false, ""},
+	{discCmdType::DISC_PHYSICALFUNCTION,
+	 {"physicalFunction", no_argument, 0, 0},
+	 &cmdDiscovery::physicalFunction,
+	 nullptr,
+	 false,
+	 ""},
+	{discCmdType::DISC_VF, {"vf", no_argument, 0, 0}, &cmdDiscovery::virtualFunction, nullptr, false, ""},
+	{discCmdType::DISC_VIRTUALFUNCTION,
+	 {"virtualFunction", no_argument, 0, 0},
+	 &cmdDiscovery::virtualFunction,
+	 nullptr,
+	 false,
+	 ""},
+	{discCmdType::DISC_DUMP,
+	 {"dump", required_argument, 0, 0},
+	 &cmdDiscovery::dump,
+	 &cmdDiscovery::dumpHeading,
+	 false,
+	 ""},
+	{discCmdType::DISC_LISTAMCVERSIONS,
+	 {"listamcversions", no_argument, 0, 0},
+	 &cmdDiscovery::listamcversions,
+	 nullptr,
+	 false,
+	 ""},
+	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}, nullptr, nullptr, false, ""},
+	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}, nullptr, nullptr, false, ""},
+	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}, nullptr, nullptr, false, ""},
 };
 
 discoveryDumpStruct discDumpCmds[] = {
@@ -873,6 +893,7 @@ ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, string *outputLine)
 	TRACING();
 
 	UNUSED(d);
+	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -945,6 +966,7 @@ ze_result_t cmdDiscovery::physicalFunction(devInfo *d, string *outputLine)
 	TRACING();
 
 	UNUSED(d);
+	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -961,6 +983,7 @@ ze_result_t cmdDiscovery::virtualFunction(devInfo *d, string *outputLine)
 	TRACING();
 
 	UNUSED(d);
+	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 

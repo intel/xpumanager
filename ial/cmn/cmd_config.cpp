@@ -33,25 +33,33 @@
 #include <standby.h>
 
 configCmdStruct configCmds[] = {
-	{configCmdType::CONFIGHELP, {"help", no_argument, 0, 'h'}},
-	{configCmdType::CONFIGJSON, {"json", no_argument, 0, 'j'}},
-	{configCmdType::CONFIGDEVICE, {"device", required_argument, 0, 'd'}},
-	{configCmdType::TILE, {"tile", required_argument, 0, 't'}},
-	{configCmdType::FREQUENCYRANGE, {"frequencyrange", required_argument, 0, 0}, &cmdConfig::setFrequencyRange},
-	{configCmdType::POWERLIMIT, {"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit},
-	{configCmdType::STANDBYMODE, {"standby", required_argument, 0, 0}, &cmdConfig::setStandby},
-	{configCmdType::SCHEDULERMODE, {"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler},
+	{configCmdType::CONFIGHELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{configCmdType::CONFIGJSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{configCmdType::CONFIGDEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{configCmdType::TILE, {"tile", required_argument, 0, 't'}, nullptr, false, ""},
+	{configCmdType::FREQUENCYRANGE,
+	 {"frequencyrange", required_argument, 0, 0},
+	 &cmdConfig::setFrequencyRange,
+	 false,
+	 ""},
+	{configCmdType::POWERLIMIT, {"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit, false, ""},
+	{configCmdType::STANDBYMODE, {"standby", required_argument, 0, 0}, &cmdConfig::setStandby, false, ""},
+	{configCmdType::SCHEDULERMODE, {"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler, false, ""},
 	{configCmdType::PERFORMANCEFACTOR,
 	 {"performancefactor", required_argument, 0, 0},
-	 &cmdConfig::setPerformanceFactor},
-	{configCmdType::XELINKPORT, {"xelinkport", required_argument, 0, 0}, &cmdConfig::setXeLinkPort},
+	 &cmdConfig::setPerformanceFactor,
+	 false,
+	 ""},
+	{configCmdType::XELINKPORT, {"xelinkport", required_argument, 0, 0}, &cmdConfig::setXeLinkPort, false, ""},
 	{configCmdType::XELINKPORTBEACONING,
 	 {"xelinkportbeaconing", required_argument, 0, 0},
-	 &cmdConfig::setXeLinkPortBeaconing},
-	{configCmdType::MEMORYECC, {"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc},
-	{configCmdType::RESET, {"reset", no_argument, 0, 0}, &cmdConfig::resetDevice},
-	{configCmdType::PPR, {"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr},
-	{configCmdType::FORCE, {"force", no_argument, 0, 0}, &cmdConfig::forcePpr},
+	 &cmdConfig::setXeLinkPortBeaconing,
+	 false,
+	 ""},
+	{configCmdType::MEMORYECC, {"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc, false, ""},
+	{configCmdType::RESET, {"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""},
+	{configCmdType::PPR, {"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr, false, ""},
+	{configCmdType::FORCE, {"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""},
 };
 
 /**
@@ -303,6 +311,8 @@ ze_result_t cmdConfig::setScheduler(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::setPerformanceFactor(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
+	UNUSED(configCmds);
+	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -407,6 +417,7 @@ ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
+	UNUSED(configCmds);
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -426,7 +437,8 @@ ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
-
+	UNUSED(configCmds);
+	UNUSED(d);
 	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
 	PRINT("  PPR: N/A\n");
@@ -445,7 +457,8 @@ ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
 {
 	TRACING();
-
+	UNUSED(configCmds);
+	UNUSED(d);
 	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
 	PRINT("  PPR: N/A\n");

@@ -187,6 +187,7 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 		break;
 	case ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE:
 		DBG("  - VF Engine Type: Media Codec\n");
+		break;
 	default:
 		DBG("  - VF Engine Type: Unknown\n");
 		break;

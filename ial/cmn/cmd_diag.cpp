@@ -48,17 +48,17 @@
  */
 
 diagCmdStruct diagCmds[] = {
-	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}},
-	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}},
-	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}},
-	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, &cmdDiag::level},
-	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::precheck},
-	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::stress},
-	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest},
-	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::listTypes},
-	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::gpu},
-	{diagCmdType::SINCE, {"since", required_argument, 0, 0}, &cmdDiag::runSince},
-	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}},
+	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, &cmdDiag::level, false, ""},
+	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::precheck, false, ""},
+	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::stress, false, ""},
+	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest, false, ""},
+	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::listTypes, false, ""},
+	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::gpu, false, ""},
+	{diagCmdType::SINCE, {"since", required_argument, 0, 0}, &cmdDiag::runSince, false, ""},
+	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}, nullptr, false, ""},
 };
 
 /**
@@ -628,7 +628,7 @@ ze_result_t cmdDiag::computation(diagCmdStruct *diagCmds, devInfo *d)
 	long double current;
 	// Vector width 1
 	timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, checkOnly);
-	current = calculateGbps(timed, (long double) number_of_work_items * flops_per_work_item);
+	current = calculateGbps(timed, (long double)number_of_work_items * flops_per_work_item);
 	//	all_gflops[i] = std::max(all_gflops[i], current);
 	ret = zeKernelDestroy(compute_sp_v1);
 	if (ret != ZE_RESULT_SUCCESS) {

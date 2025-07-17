@@ -178,7 +178,7 @@ ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 {
 	TRACING();
 	int ret;
-	struct igsc_fw_update_flags flags = {0};
+	struct igsc_fw_update_flags flags = {};
 
 	if (!fwInfo->forceUpdate) {
 		ret = firmware_check_hw_config(&fwInfo->handle, fwInfo->buffer);

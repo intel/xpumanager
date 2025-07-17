@@ -29,11 +29,11 @@
 #include <memory.h>
 
 healthCmdStruct healthCmds[] = {
-	{healthCmdType::HEALTH_HELP, {"help", no_argument, 0, 'h'}},
-	{healthCmdType::HEALTH_JSON, {"json", no_argument, 0, 'j'}},
-	{healthCmdType::HEALTH_LIST, {"list", no_argument, 0, 'l'}},
-	{healthCmdType::HEALTH_DEVICE, {"device", required_argument, 0, 'd'}},
-	{healthCmdType::HEALTH_COMPONENT, {"component", required_argument, 0, 'c'}, &cmdHealth::component},
+	{healthCmdType::HEALTH_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{healthCmdType::HEALTH_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{healthCmdType::HEALTH_LIST, {"list", no_argument, 0, 'l'}, nullptr, false, ""},
+	{healthCmdType::HEALTH_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{healthCmdType::HEALTH_COMPONENT, {"component", required_argument, 0, 'c'}, &cmdHealth::component, false, ""},
 };
 
 /**

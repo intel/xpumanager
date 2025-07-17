@@ -33,6 +33,7 @@ void cmdOOB::help(HELP helpType)
 int cmdOOB::run(arg_struct *args)
 {
 	TRACING();
+	UNUSED(args);
 	// Implement the command logic here
 	return 0;
 }

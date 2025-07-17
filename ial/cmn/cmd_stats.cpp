@@ -27,14 +27,14 @@
 #include <assert.h>
 
 statsCmdStruct statsCmds[] = {
-	{STATS_HELP, {"help", no_argument, 0, 'h'}},
-	{STATS_JSON, {"json", no_argument, 0, 'j'}},
-	{STATS_DEVICE, {"device", required_argument, 0, 'd'}},
-	{STATS_EU, {"eu", no_argument, 0, 'e'}, &cmdStats::eu},
-	{STATS_RAS, {"ras", no_argument, 0, 'r'}, &cmdStats::ras},
-	{STATS_X, {"x", no_argument, 0, 'x'}, &cmdStats::x},
-	{STATS_XELINK, {"xelink", no_argument, 0, 0}, &cmdStats::xelink},
-	{STATS_UTILS, {"utils", no_argument, 0, 0}, &cmdStats::utils},
+	{STATS_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{STATS_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{STATS_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{STATS_EU, {"eu", no_argument, 0, 'e'}, &cmdStats::eu, false, ""},
+	{STATS_RAS, {"ras", no_argument, 0, 'r'}, &cmdStats::ras, false, ""},
+	{STATS_X, {"x", no_argument, 0, 'x'}, &cmdStats::x, false, ""},
+	{STATS_XELINK, {"xelink", no_argument, 0, 0}, &cmdStats::xelink, false, ""},
+	{STATS_UTILS, {"utils", no_argument, 0, 0}, &cmdStats::utils, false, ""},
 };
 
 /**

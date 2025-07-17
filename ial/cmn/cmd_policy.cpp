@@ -26,20 +26,20 @@
 #include "debug.h"
 
 policyCmdStruct policyCmds[] = {
-	{POLICY_HELP, {"help", no_argument, 0, 'h'}},
-	{POLICY_JSON, {"json", no_argument, 0, 'j'}},
-	{POLICY_DEVICE, {"device", required_argument, 0, 'd'}},
-	{POLICY_GROUP, {"group", required_argument, 0, 'g'}},
-	{POLICY_LIST, {"list", no_argument, 0, 'l'}, &cmdPolicy::listPolicies},
-	{POLICY_LISTALLTYPES, {"listalltypes", no_argument, 0, 0}, &cmdPolicy::listTypes},
-	{POLICY_CREATE, {"create", no_argument, 0, 'c'}, &cmdPolicy::create},
-	{POLICY_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdPolicy::remove},
-	{POLICY_TYPE, {"type", required_argument, 0, 0}},
-	{POLICY_CONDITION, {"condition", required_argument, 0, 0}},
-	{POLICY_THRESHOLD, {"threshold", required_argument, 0, 0}},
-	{POLICY_ACTION, {"action", required_argument, 0, 0}},
-	{POLICY_THROTTLEFREQUENCYMIN, {"throttlefrequencymin", required_argument, 0, 0}},
-	{POLICY_THROTTLEFREQUENCYMAX, {"throttlefrequencymax", required_argument, 0, 0}},
+	{POLICY_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
+	{POLICY_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
+	{POLICY_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
+	{POLICY_GROUP, {"group", required_argument, 0, 'g'}, nullptr, false, ""},
+	{POLICY_LIST, {"list", no_argument, 0, 'l'}, &cmdPolicy::listPolicies, false, ""},
+	{POLICY_LISTALLTYPES, {"listalltypes", no_argument, 0, 0}, &cmdPolicy::listTypes, false, ""},
+	{POLICY_CREATE, {"create", no_argument, 0, 'c'}, &cmdPolicy::create, false, ""},
+	{POLICY_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdPolicy::remove, false, ""},
+	{POLICY_TYPE, {"type", required_argument, 0, 0}, nullptr, false, ""},
+	{POLICY_CONDITION, {"condition", required_argument, 0, 0}, nullptr, false, ""},
+	{POLICY_THRESHOLD, {"threshold", required_argument, 0, 0}, nullptr, false, ""},
+	{POLICY_ACTION, {"action", required_argument, 0, 0}, nullptr, false, ""},
+	{POLICY_THROTTLEFREQUENCYMIN, {"throttlefrequencymin", required_argument, 0, 0}, nullptr, false, ""},
+	{POLICY_THROTTLEFREQUENCYMAX, {"throttlefrequencymax", required_argument, 0, 0}, nullptr, false, ""},
 };
 
 void cmdPolicy::help(HELP helpType)

@@ -50,6 +50,8 @@ string progName = "xpumd";
 
 int main(int argc, char *argv[])
 {
+	UNUSED(argc);
+	UNUSED(argv);
 	arg_struct arg;
 
 	// Create sysman driver instance
