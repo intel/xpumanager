@@ -58,22 +58,21 @@ public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t coreTemperature(healthCmdStruct *healthCmds, devInfo *d);
-	ze_result_t memoryTemperature(healthCmdStruct *healthCmds, devInfo *d);
-	ze_result_t power(healthCmdStruct *healthCmds, devInfo *d);
-	ze_result_t healthMemory(healthCmdStruct *healthCmds, devInfo *d);
-	ze_result_t xeLinkPort(healthCmdStruct *healthCmds, devInfo *d);
-	ze_result_t frequency(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t coreTemperature(devInfo *d);
+	ze_result_t memoryTemperature(devInfo *d);
+	ze_result_t power(devInfo *d);
+	ze_result_t healthMemory(devInfo *d);
+	ze_result_t xeLinkPort(devInfo *d);
+	ze_result_t frequency(devInfo *d);
 
-	ze_result_t component(healthCmdStruct *healthCmds, devInfo *d);
+	ze_result_t component(devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdHealth::*healthSubCmdFunc)(healthCmdStruct *healthCmds, devInfo *d);
+using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d);
 
 struct healthCmdStruct
 {
-	healthCmdType type;
 	option opt;
 	healthSubCmdFunc func;
 	bool enabled;

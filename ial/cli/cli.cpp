@@ -106,7 +106,7 @@ void printVersion(arg_struct *arg)
  */
 void printSubCommands(list<cmds *> *cmd_list)
 {
-	for (auto &it : *cmd_list) {
+	for (const auto &it : *cmd_list) {
 		it->help(SHORT_HELP);
 	}
 }
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Parse command line and run the command that the user wants */
-	for (auto &it : *cmd_list) {
+	for (const auto &it : *cmd_list) {
 		if (!STRCASECMP(it->get_name(), argv[1])) {
 			/* If the second argument is -h or --help, then just print their help */
 			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help"))) {

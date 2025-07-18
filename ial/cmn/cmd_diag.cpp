@@ -32,7 +32,7 @@
 /*
  * @brief Command structure for diagnostic commands.
  * The way that this structure is defined allows for easy addition of new commands
- * by simply adding a new entry to the diagCmds array.
+ * by simply adding a new entry to the diagCmds map.
  * The command type is defined in the diagCmdType enum. It allows for easy
  * identification of the command type when requiring a specific command.
  * Next comes the option structure, which defines the command line options for the command.
@@ -47,18 +47,18 @@
  * string. It is required to convert it to the appropriate type when the command is executed.
  */
 
-diagCmdStruct diagCmds[] = {
-	{diagCmdType::DIAGHELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{diagCmdType::DIAGJSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{diagCmdType::DIAGDEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{diagCmdType::LEVEL, {"level", required_argument, 0, 'l'}, &cmdDiag::level, false, ""},
-	{diagCmdType::PRECHECK, {"precheck", no_argument, 0, 0}, &cmdDiag::precheck, false, ""},
-	{diagCmdType::STRESS, {"stress", no_argument, 0, 's'}, &cmdDiag::stress, false, ""},
-	{diagCmdType::SINGLETEST, {"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest, false, ""},
-	{diagCmdType::LISTTYPES, {"listtypes", no_argument, 0, 0}, &cmdDiag::listTypes, false, ""},
-	{diagCmdType::GPU, {"gpu", no_argument, 0, 0}, &cmdDiag::gpu, false, ""},
-	{diagCmdType::SINCE, {"since", required_argument, 0, 0}, &cmdDiag::runSince, false, ""},
-	{diagCmdType::STRESSTIME, {"stresstime", required_argument, 0, 0}, nullptr, false, ""},
+static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
+	{diagCmdType::DIAGHELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{diagCmdType::DIAGJSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{diagCmdType::DIAGDEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{diagCmdType::LEVEL, {{"level", required_argument, 0, 'l'}, &cmdDiag::level, false, ""}},
+	{diagCmdType::PRECHECK, {{"precheck", no_argument, 0, 0}, &cmdDiag::precheck, false, ""}},
+	{diagCmdType::STRESS, {{"stress", no_argument, 0, 's'}, &cmdDiag::stress, false, ""}},
+	{diagCmdType::SINGLETEST, {{"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest, false, ""}},
+	{diagCmdType::LISTTYPES, {{"listtypes", no_argument, 0, 0}, &cmdDiag::listTypes, false, ""}},
+	{diagCmdType::GPU, {{"gpu", no_argument, 0, 0}, &cmdDiag::gpu, false, ""}},
+	{diagCmdType::SINCE, {{"since", required_argument, 0, 0}, &cmdDiag::runSince, false, ""}},
+	{diagCmdType::STRESSTIME, {{"stresstime", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
 /**
@@ -149,26 +149,23 @@ void cmdDiag::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdDiag::precheck(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::precheck(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::stress(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::stress(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::level(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::level(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 
 	// Check if the level is valid
@@ -187,28 +184,28 @@ ze_result_t cmdDiag::level(diagCmdStruct *diagCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runSingleTest(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::runSingleTest(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	diagSubCmdStruct diagSingleTests[] = {
-		{DIAG_COMPUTATION, &cmdDiag::computation},
-		{DIAG_MEMORYERROR, &cmdDiag::memoryError},
-		{DIAG_MEMORYBANDWIDTH, &cmdDiag::memoryBandwidth},
-		{DIAG_MEDIA, &cmdDiag::mediaCodec},
-		{DIAG_PCIEBANDWIDTH, &cmdDiag::pcieBandwidth},
-		{DIAG_POWER, &cmdDiag::power},
-		{DIAG_COMPUTATIONFUNCTEST, &cmdDiag::computationFuncTest},
-		{DIAG_MEDIAFUNCTEST, &cmdDiag::mediaFuncTest},
-		{DIAG_XELINKTHROUGHPUT, &cmdDiag::xeLinkThroughput},
-		{DIAG_XELINKALLTOALLTHROUGHPUT, &cmdDiag::xeLinkAllToAllThroughput},
+	static std::unordered_map<diagSubCmdType, diagSubCmdStruct> diagSingleTests = {
+		{DIAG_COMPUTATION, {&cmdDiag::computation}},
+		{DIAG_MEMORYERROR, {&cmdDiag::memoryError}},
+		{DIAG_MEMORYBANDWIDTH, {&cmdDiag::memoryBandwidth}},
+		{DIAG_MEDIA, {&cmdDiag::mediaCodec}},
+		{DIAG_PCIEBANDWIDTH, {&cmdDiag::pcieBandwidth}},
+		{DIAG_POWER, {&cmdDiag::power}},
+		{DIAG_COMPUTATIONFUNCTEST, {&cmdDiag::computationFuncTest}},
+		{DIAG_MEDIAFUNCTEST, {&cmdDiag::mediaFuncTest}},
+		{DIAG_XELINKTHROUGHPUT, {&cmdDiag::xeLinkThroughput}},
+		{DIAG_XELINKALLTOALLTHROUGHPUT, {&cmdDiag::xeLinkAllToAllThroughput}},
 	};
 
-	for (auto &test : diagSingleTests) {
-		if (test.type == atoi(diagCmds[diagCmdType::SINGLETEST].val.c_str())) {
-			DBG("Running test: %d\n", test.type);
-			result = (this->*test.func)(diagCmds, d);
+	for (const auto &test : diagSingleTests) {
+		if (test.first == stoi(diagCmds[diagCmdType::SINGLETEST].val)) {
+			DBG("Running test: %d\n", test.first);
+			result = (this->*test.second.func)(d);
 			break;
 		}
 	}
@@ -506,14 +503,12 @@ ze_result_t cmdDiag::loadBinaryFile(const string &file_path, vector<uint8_t> *bi
  * in terms of GFLOPS. It loads a SPIR-V kernel, allocates necessary device memory, sets up and launches
  * the kernel, and reports the measured performance.
  *
- * @param diagCmds Pointer to the array of diagnostic command structures.
  * @param d Pointer to the device information structure.
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success, or an appropriate error code on failure.
  */
-ze_result_t cmdDiag::computation(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::computation(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	ze_device_properties_t zeDevProp = {};
 	ze_device_compute_properties_t zeComputeProp = {};
 	ze_result_t result;
@@ -652,74 +647,65 @@ ze_result_t cmdDiag::computation(diagCmdStruct *diagCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::memoryError(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::memoryError(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::memoryBandwidth(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::memoryBandwidth(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::mediaCodec(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::mediaCodec(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::pcieBandwidth(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::power(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::power(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::computationFuncTest(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::computationFuncTest(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::mediaFuncTest(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::mediaFuncTest(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::xeLinkThroughput(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::xeLinkThroughput(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::xeLinkAllToAllThroughput(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::xeLinkAllToAllThroughput(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
@@ -729,7 +715,7 @@ static void printPretty()
 	PRINT("+------------+-----------------------------------+----------------------+----------------+\n");
 }
 
-ze_result_t cmdDiag::listTypes(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::listTypes(devInfo *d)
 {
 	TRACING();
 	UNUSED(d);
@@ -780,18 +766,16 @@ ze_result_t cmdDiag::listTypes(diagCmdStruct *diagCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::gpu(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::gpu(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runSince(diagCmdStruct *diagCmds, devInfo *d)
+ze_result_t cmdDiag::runSince(devInfo *d)
 {
 	TRACING();
-	UNUSED(diagCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
@@ -812,7 +796,7 @@ int cmdDiag::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
-	processOptions(diagCmds, ARRAY_SIZE(diagCmds), shortOpts, longOptsVec);
+	processOptions(diagCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -839,10 +823,10 @@ int cmdDiag::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : diagCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					diagCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						diagCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -887,10 +871,10 @@ int cmdDiag::run(arg_struct *args)
 		}
 
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : diagCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				DBG("Running command: %s\n", cmd.opt.name);
-				result = (this->*cmd.func)(diagCmds, &device);
+		for (const auto &cmd : diagCmds) {
+			if (cmd.second.enabled && cmd.second.func != nullptr) {
+				DBG("Running command: %s\n", cmd.second.opt.name);
+				result = (this->*cmd.second.func)(&device);
 				break;
 			}
 		}

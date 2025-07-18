@@ -38,77 +38,79 @@
 #include <atomic>
 #include <chrono>
 
-dumpCmdStruct dumpCmds[] = {
-	{dumpCmdType::DUMP_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_TILE, {"tile", required_argument, 0, 't'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_METRICS, {"metrics", required_argument, 0, 'm'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_FILE, {"file", required_argument, 0, 'f'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_IMS, {"ims", no_argument, 0, 'i'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_TIME, {"time", no_argument, 0, 'T'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_DATE, {"date", no_argument, 0, 'D'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_INTERVAL, {"interval", required_argument, 0, 'i'}, nullptr, false, ""},
-	{dumpCmdType::DUMP_NUMBER, {"number", required_argument, 0, 'n'}, nullptr, false, ""},
+static std::unordered_map<dumpCmdType, dumpCmdStruct> dumpCmds = {
+	{dumpCmdType::DUMP_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_TILE, {{"tile", required_argument, 0, 't'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_METRICS, {{"metrics", required_argument, 0, 'm'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_FILE, {{"file", required_argument, 0, 'f'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_IMS, {{"ims", no_argument, 0, 'i'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_TIME, {{"time", no_argument, 0, 'T'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_DATE, {{"date", no_argument, 0, 'D'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_INTERVAL, {{"interval", required_argument, 0, 'i'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_NUMBER, {{"number", required_argument, 0, 'n'}, nullptr, false, ""}},
 };
 
-dumpCmdSubStruct dumpMetrics[] = {
-	{dumpCmdSubType::DUMP_GPU_UTILIZATION, &cmdDump::gpuUtilization, "GPU Utilization (%)", false},
-	{dumpCmdSubType::DUMP_GPU_POWER, &cmdDump::gpuPower, "GPU Power (W)", false},
-	{dumpCmdSubType::DUMP_GPU_FREQUENCY, &cmdDump::gpuFrequency, "GPU Frequency (MHz)", true},
-	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, &cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE, &cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION, &cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, &cmdDump::gpuMemoryRead, "GPU Memory Read (kB/s)", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, &cmdDump::gpuMemoryWrite, "GPU Memory Write (kB/s)", false},
-	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, &cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)", false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, &cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)", false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, &cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)", false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, &cmdDump::gpuEuArrayIdle, "GPU EU Array Idle (%)", false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER, &cmdDump::gpuEuArrayResetCounter, "GPU EU Array Reset Counter",
-	 false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS, &cmdDump::gpuEuArrayProgrammingErrors,
-	 "GPU EU Array Programming Errors", false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS, &cmdDump::gpuEuArrayDriverErrors, "GPU EU Array Driver Errors",
-	 false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsCorrectable,
-	 "GPU EU Array Cache Errors Correctable", false},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE, &cmdDump::gpuEuArrayCacheErrorsUncorrectable,
-	 "GPU EU Array Cache Errors Uncorrectable", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION, &cmdDump::gpuMemoryBandwidthUtilization,
-	 "GPU Memory Bandwidth Utilization (%)", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, &cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)", false},
-	{dumpCmdSubType::DUMP_PCIE_READ, &cmdDump::pcieRead, "PCIe Read (kB/s)", false},
-	{dumpCmdSubType::DUMP_PCIE_WRITE, &cmdDump::pcieWrite, "PCIe Write (kB/s)", false},
-	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, &cmdDump::xeLinkThroughput, "XE Link Throughput (kB/s)", false},
-	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION, &cmdDump::computeEngineUtilization,
-	 "Compute Engine Utilization (%)", false},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION, &cmdDump::renderEngineUtilization, "Render Engine Utilization (%)",
-	 false},
-	{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION, &cmdDump::mediaDecoderEngineUtilization,
-	 "Media Decoder Engine Utilization (%)", false},
-	{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION, &cmdDump::mediaEncoderEngineUtilization,
-	 "Media Encoder Engine Utilization (%)", false},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION, &cmdDump::copyEngineUtilization, "Copy Engine Utilization (%)",
-	 false},
-	{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, &cmdDump::mediaEnhancementEngineUtilization,
-	 "Media Enhancement Engine Utilization (%)", false},
-	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, &cmdDump::engineUtilization, "3D Engine Utilization (%)", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE, &cmdDump::gpuMemoryErrorsCorrectable,
-	 "GPU Memory Errors Correctable", false},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE, &cmdDump::gpuMemoryErrorsUncorrectable,
-	 "GPU Memory Errors Uncorrectable", false},
-	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION, &cmdDump::computeEngineGroupUtilization,
-	 "Compute Engine Group Utilization (%)", false},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION, &cmdDump::renderEngineGroupUtilization,
-	 "Render Engine Group Utilization (%)", false},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION, &cmdDump::mediaEngineGroupUtilization,
-	 "Media Engine Group Utilization (%)", false},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION, &cmdDump::copyEngineGroupUtilization,
-	 "Copy Engine Group Utilization (%)", false},
-	{dumpCmdSubType::DUMP_THROTTLE_REASON, &cmdDump::throttleReason, "Throttle Reason", false},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY, &cmdDump::mediaEngineFrequency, "Media Engine Frequency (MHz)",
-	 false},
+static std::unordered_map<int, dumpCmdSubStruct> dumpMetrics = {
+	{dumpCmdSubType::DUMP_GPU_UTILIZATION, {&cmdDump::gpuUtilization, "GPU Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_POWER, {&cmdDump::gpuPower, "GPU Power (W)", false}},
+	{dumpCmdSubType::DUMP_GPU_FREQUENCY, {&cmdDump::gpuFrequency, "GPU Frequency (MHz)", true}},
+	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, {&cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE,
+	 {&cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION,
+	 {&cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, {&cmdDump::gpuMemoryRead, "GPU Memory Read (kB/s)", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, {&cmdDump::gpuMemoryWrite, "GPU Memory Write (kB/s)", false}},
+	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, {&cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, {&cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, {&cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, {&cmdDump::gpuEuArrayIdle, "GPU EU Array Idle (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER,
+	 {&cmdDump::gpuEuArrayResetCounter, "GPU EU Array Reset Counter", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS,
+	 {&cmdDump::gpuEuArrayProgrammingErrors, "GPU EU Array Programming Errors", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS,
+	 {&cmdDump::gpuEuArrayDriverErrors, "GPU EU Array Driver Errors", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE,
+	 {&cmdDump::gpuEuArrayCacheErrorsCorrectable, "GPU EU Array Cache Errors Correctable", false}},
+	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE,
+	 {&cmdDump::gpuEuArrayCacheErrorsUncorrectable, "GPU EU Array Cache Errors Uncorrectable", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION,
+	 {&cmdDump::gpuMemoryBandwidthUtilization, "GPU Memory Bandwidth Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, {&cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)", false}},
+	{dumpCmdSubType::DUMP_PCIE_READ, {&cmdDump::pcieRead, "PCIe Read (kB/s)", false}},
+	{dumpCmdSubType::DUMP_PCIE_WRITE, {&cmdDump::pcieWrite, "PCIe Write (kB/s)", false}},
+	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, {&cmdDump::xeLinkThroughput, "XE Link Throughput (kB/s)", false}},
+	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION,
+	 {&cmdDump::computeEngineUtilization, "Compute Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION,
+	 {&cmdDump::renderEngineUtilization, "Render Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION,
+	 {&cmdDump::mediaDecoderEngineUtilization, "Media Decoder Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION,
+	 {&cmdDump::mediaEncoderEngineUtilization, "Media Encoder Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION,
+	 {&cmdDump::copyEngineUtilization, "Copy Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION,
+	 {&cmdDump::mediaEnhancementEngineUtilization, "Media Enhancement Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, {&cmdDump::engineUtilization, "3D Engine Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE,
+	 {&cmdDump::gpuMemoryErrorsCorrectable, "GPU Memory Errors Correctable", false}},
+	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE,
+	 {&cmdDump::gpuMemoryErrorsUncorrectable, "GPU Memory Errors Uncorrectable", false}},
+	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION,
+	 {&cmdDump::computeEngineGroupUtilization, "Compute Engine Group Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION,
+	 {&cmdDump::renderEngineGroupUtilization, "Render Engine Group Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION,
+	 {&cmdDump::mediaEngineGroupUtilization, "Media Engine Group Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION,
+	 {&cmdDump::copyEngineGroupUtilization, "Copy Engine Group Utilization (%)", false}},
+	{dumpCmdSubType::DUMP_THROTTLE_REASON, {&cmdDump::throttleReason, "Throttle Reason", false}},
+	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY,
+	 {&cmdDump::mediaEngineFrequency, "Media Engine Frequency (MHz)", false}},
 };
 
 /**
@@ -294,19 +296,18 @@ THREAD_RET cmdDump::metrics(void *args)
 	TRACING();
 	threadArgs *metricArgs = (threadArgs *)args;
 	cmdDump *cmdDumpInstance = metricArgs->cmdDumpInstance;
-	dumpCmdStruct *dumpCmds = metricArgs->dumpCmds;
 	devInfo *d = metricArgs->d;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	UNUSED(result);
 	bool found = false;
 
 	// Iterate through the dump commands and execute the metrics function for each
-	for (auto &cmd : dumpMetrics) {
-		if (cmd.type == atoi(metricArgs->cmdName.c_str()) && cmd.func != nullptr) {
+	for (const auto &cmd : dumpMetrics) {
+		if (cmd.first == stoi(metricArgs->cmdName) && cmd.second.func != nullptr) {
 			found = true;
 			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
-			if (!d->dev->isIGPU() || cmd.availableForIGPU) {
-				result = (cmdDumpInstance->*cmd.func)(d, &metricArgs->outputLine, &metricArgs->td);
+			if (!d->dev->isIGPU() || cmd.second.availableForIGPU) {
+				result = (cmdDumpInstance->*cmd.second.func)(d, &metricArgs->outputLine, &metricArgs->td);
 			} else {
 				// If the command is not available for iGPUs, set outputLine to N/A
 				metricArgs->outputLine = "N/A";
@@ -1438,7 +1439,7 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_SUCCESS;
 	}
 
-	processOptions(dumpCmds, ARRAY_SIZE(dumpCmds), shortOpts, longOptsVec);
+	processOptions(dumpCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -1455,7 +1456,7 @@ int cmdDump::run(arg_struct *args)
 		case 'd':
 			dumpCmds[dumpCmdType::DUMP_DEVICE].enabled = true;
 			dumpCmds[dumpCmdType::DUMP_DEVICE].val = optarg;
-			if (atoi(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str()) == -1) {
+			if (stoi(dumpCmds[dumpCmdType::DUMP_DEVICE].val) == -1) {
 				dumpCmds[dumpCmdType::DUMP_DEVICE].val = "";
 			}
 			break;
@@ -1477,10 +1478,10 @@ int cmdDump::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : dumpCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					dumpCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						dumpCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -1512,7 +1513,7 @@ int cmdDump::run(arg_struct *args)
 
 	// If the user specified the -n /--number option, we need to check if it is a valid positive integer.
 	if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
-		iter = atoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
+		iter = stoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val);
 		if (iter <= 0) {
 			ERR("Invalid value for -n/--number: '%s'. Must be a positive integer.\n",
 				dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
@@ -1540,13 +1541,13 @@ int cmdDump::run(arg_struct *args)
 
 	header = "Timestamp,    DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
-	for (auto &cmd : dumpMetrics) {
-		for (auto &arg : dumpArgs) {
-			if (cmd.type == atoi(arg.c_str()) && cmd.func != nullptr) {
+	for (const auto &cmd : dumpMetrics) {
+		for (const auto &arg : dumpArgs) {
+			if (cmd.first == stoi(arg) && cmd.second.func != nullptr) {
 				if (!first) {
 					header += ", ";
 				}
-				header += cmd.heading;
+				header += cmd.second.heading;
 				first = false;
 			}
 		}
@@ -1581,14 +1582,14 @@ int cmdDump::run(arg_struct *args)
 
 		// Iterate through the device list and create a thread called metrics for each device
 		for (auto &device : deviceList) {
-			for (auto &arg : dumpArgs) {
+			for (const auto &arg : dumpArgs) {
 				threadData prevThreadData = {};
 				if (argsList[total] != nullptr) {
 					// Copy any previous thread data before we delete the old argsList entry
 					memcpy(&prevThreadData, &argsList[total]->td, sizeof(threadData));
 					delete argsList[total]; // Clean up any previously allocated memory
 				}
-				argsList[total] = new threadArgs{this, dumpCmds, &device, arg, "", {}};
+				argsList[total] = new threadArgs{this, &device, arg, "", {}};
 				// Copy any previous thread data into the new argsList entry just in case the underlying functions
 				// need to access it to do comparision between old and new values
 				memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));

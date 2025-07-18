@@ -26,19 +26,19 @@
 #include "debug.h"
 #include <assert.h>
 
-vgpuCmdStruct vgpuCmds[] = {
-	{VGPU_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{VGPU_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{VGPU_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{VGPU_ADDKERNELPARAM, {"addkernelparam", no_argument, 0, 0}, &cmdVgpu::addKernelParam, false, ""},
-	{VGPU_PRECHECK, {"precheck", no_argument, 0, 0}, &cmdVgpu::precheck, false, ""},
-	{VGPU_NUMBER, {"number", required_argument, 0, 'n'}, nullptr, false, ""},
-	{VGPU_CREATE, {"create", no_argument, 0, 'c'}, &cmdVgpu::create, false, ""},
-	{VGPU_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdVgpu::remove, false, ""},
-	{VGPU_LIST, {"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus, false, ""},
-	{VGPU_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}, nullptr, false, ""},
-	{VGPU_STATS, {"stats", no_argument, 0, 's'}, &cmdVgpu::stats, false, ""},
-	{VGPU_LMEM, {"lmem", required_argument, 0, 0}, &cmdVgpu::lmem, false, ""},
+static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
+	{VGPU_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{VGPU_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{VGPU_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{VGPU_ADDKERNELPARAM, {{"addkernelparam", no_argument, 0, 0}, &cmdVgpu::addKernelParam, false, ""}},
+	{VGPU_PRECHECK, {{"precheck", no_argument, 0, 0}, &cmdVgpu::precheck, false, ""}},
+	{VGPU_NUMBER, {{"number", required_argument, 0, 'n'}, nullptr, false, ""}},
+	{VGPU_CREATE, {{"create", no_argument, 0, 'c'}, &cmdVgpu::create, false, ""}},
+	{VGPU_REMOVE, {{"remove", no_argument, 0, 'r'}, &cmdVgpu::remove, false, ""}},
+	{VGPU_LIST, {{"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus, false, ""}},
+	{VGPU_ASSUMEYES, {{"assumeyes", no_argument, 0, 'y'}, nullptr, false, ""}},
+	{VGPU_STATS, {{"stats", no_argument, 0, 's'}, &cmdVgpu::stats, false, ""}},
+	{VGPU_LMEM, {{"lmem", required_argument, 0, 0}, &cmdVgpu::lmem, false, ""}},
 };
 
 /**
@@ -91,59 +91,52 @@ void cmdVgpu::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdVgpu::precheck(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::precheck(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	DBG("Precheck vGPU...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::addKernelParam(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::addKernelParam(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::create(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::create(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::remove(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::remove(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::listGpus(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::listGpus(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::stats(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::stats(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::lmem(vgpuCmdStruct *vgpuCmds, devInfo *d)
+ze_result_t cmdVgpu::lmem(devInfo *d)
 {
 	TRACING();
-	UNUSED(vgpuCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
@@ -164,7 +157,7 @@ int cmdVgpu::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
-	processOptions(vgpuCmds, ARRAY_SIZE(vgpuCmds), shortOpts, longOptsVec);
+	processOptions(vgpuCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -203,10 +196,10 @@ int cmdVgpu::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : vgpuCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					vgpuCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						vgpuCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -245,10 +238,10 @@ int cmdVgpu::run(arg_struct *args)
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : vgpuCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				DBG("Running command: %s\n", cmd.opt.name);
-				(this->*cmd.func)(vgpuCmds, &device);
+		for (const auto &cmd : vgpuCmds) {
+			if (cmd.second.enabled && cmd.second.func != nullptr) {
+				DBG("Running command: %s\n", cmd.second.opt.name);
+				(this->*cmd.second.func)(&device);
 			}
 		}
 	}

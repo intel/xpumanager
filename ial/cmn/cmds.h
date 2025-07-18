@@ -29,6 +29,8 @@
 #include <driver.h>
 #include <list>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 enum DAEMONCAP
 {
@@ -112,18 +114,37 @@ struct cmd_struct
 	runFunc rf;
 };
 
-template <typename T> void processOptions(T *data, uint32_t size, string &shortOpts, vector<struct option> &longOptsVec)
-{
-	for (uint32_t i = 0; i < size; ++i) {
-		longOptsVec.push_back(data[i].opt);
+template <typename T>
+concept HasOpt = requires(T t) {
+	t.opt;
+	t.opt.val;
+	t.opt.has_arg;
+	requires std::is_same_v<decltype(t.opt.val), int>;
+	requires std::is_convertible_v<decltype(t.opt.has_arg), int>;
+};
 
-		char val = data[i].opt.val;
+template <typename Container>
+concept IsUnorderedMap = requires(Container c) {
+	typename Container::key_type;
+	typename Container::mapped_type;
+	c.begin();
+	c.end();
+	requires HasOpt<typename Container::mapped_type>;
+};
+
+template <IsUnorderedMap MapType>
+void processOptions(const MapType &mapData, string &shortOpts, vector<struct option> &longOptsVec)
+{
+	for (const auto &pair : mapData) {
+		longOptsVec.push_back(pair.second.opt);
+
+		char val = pair.second.opt.val;
 		if (val == 0)
 			continue; // skip if no short option
 		shortOpts += val;
-		if (data[i].opt.has_arg == required_argument)
+		if (pair.second.opt.has_arg == required_argument)
 			shortOpts += ":";
-		else if (data[i].opt.has_arg == optional_argument)
+		else if (pair.second.opt.has_arg == optional_argument)
 			shortOpts += "::";
 	}
 	longOptsVec.push_back({0, 0, 0, 0}); // Null-terminate the array

@@ -52,19 +52,18 @@ public:
 	~cmdGroup() {};
 	void help(HELP helpType = FULL_HELP);
 
-	ze_result_t create(groupCmdStruct *groupCmds, devInfo *d);
-	ze_result_t deleteGroup(groupCmdStruct *groupCmds, devInfo *d);
-	ze_result_t listGroup(groupCmdStruct *groupCmds, devInfo *d);
-	ze_result_t add(groupCmdStruct *groupCmds, devInfo *d);
-	ze_result_t remove(groupCmdStruct *groupCmds, devInfo *d);
+	ze_result_t create(devInfo *d);
+	ze_result_t deleteGroup(devInfo *d);
+	ze_result_t listGroup(devInfo *d);
+	ze_result_t add(devInfo *d);
+	ze_result_t remove(devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdGroup::*groupSubCmdFunc)(groupCmdStruct *groupCmds, devInfo *d);
+using groupSubCmdFunc = ze_result_t (cmdGroup::*)(devInfo *d);
 
 struct groupCmdStruct
 {
-	groupCmdType type;
 	option opt;
 	groupSubCmdFunc func;
 	bool enabled;
