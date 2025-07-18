@@ -97,33 +97,32 @@ public:
 	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
 	~cmdDiag() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t precheck(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t stress(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t level(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t runSingleTest(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t listTypes(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t gpu(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t runSince(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t precheck(devInfo *d);
+	ze_result_t stress(devInfo *d);
+	ze_result_t level(devInfo *d);
+	ze_result_t runSingleTest(devInfo *d);
+	ze_result_t listTypes(devInfo *d);
+	ze_result_t gpu(devInfo *d);
+	ze_result_t runSince(devInfo *d);
 
-	ze_result_t computation(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t memoryError(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t memoryBandwidth(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t mediaCodec(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t pcieBandwidth(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t power(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t computationFuncTest(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t mediaFuncTest(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t xeLinkThroughput(diagCmdStruct *diagCmds, devInfo *d);
-	ze_result_t xeLinkAllToAllThroughput(diagCmdStruct *diagCmds, devInfo *d);
+	ze_result_t computation(devInfo *d);
+	ze_result_t memoryError(devInfo *d);
+	ze_result_t memoryBandwidth(devInfo *d);
+	ze_result_t mediaCodec(devInfo *d);
+	ze_result_t pcieBandwidth(devInfo *d);
+	ze_result_t power(devInfo *d);
+	ze_result_t computationFuncTest(devInfo *d);
+	ze_result_t mediaFuncTest(devInfo *d);
+	ze_result_t xeLinkThroughput(devInfo *d);
+	ze_result_t xeLinkAllToAllThroughput(devInfo *d);
 
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdDiag::*diagSubCmdFunc)(diagCmdStruct *diagCmds, devInfo *d);
+using diagSubCmdFunc = ze_result_t (cmdDiag::*)(devInfo *d);
 
 struct diagCmdStruct
 {
-	diagCmdType type;
 	option opt;
 	diagSubCmdFunc func;
 	bool enabled;
@@ -132,7 +131,6 @@ struct diagCmdStruct
 
 struct diagSubCmdStruct
 {
-	int type;
 	diagSubCmdFunc func;
 };
 

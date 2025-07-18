@@ -25,21 +25,21 @@
 #include "cmd_policy.h"
 #include "debug.h"
 
-policyCmdStruct policyCmds[] = {
-	{POLICY_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{POLICY_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{POLICY_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{POLICY_GROUP, {"group", required_argument, 0, 'g'}, nullptr, false, ""},
-	{POLICY_LIST, {"list", no_argument, 0, 'l'}, &cmdPolicy::listPolicies, false, ""},
-	{POLICY_LISTALLTYPES, {"listalltypes", no_argument, 0, 0}, &cmdPolicy::listTypes, false, ""},
-	{POLICY_CREATE, {"create", no_argument, 0, 'c'}, &cmdPolicy::create, false, ""},
-	{POLICY_REMOVE, {"remove", no_argument, 0, 'r'}, &cmdPolicy::remove, false, ""},
-	{POLICY_TYPE, {"type", required_argument, 0, 0}, nullptr, false, ""},
-	{POLICY_CONDITION, {"condition", required_argument, 0, 0}, nullptr, false, ""},
-	{POLICY_THRESHOLD, {"threshold", required_argument, 0, 0}, nullptr, false, ""},
-	{POLICY_ACTION, {"action", required_argument, 0, 0}, nullptr, false, ""},
-	{POLICY_THROTTLEFREQUENCYMIN, {"throttlefrequencymin", required_argument, 0, 0}, nullptr, false, ""},
-	{POLICY_THROTTLEFREQUENCYMAX, {"throttlefrequencymax", required_argument, 0, 0}, nullptr, false, ""},
+static std::unordered_map<policyCmdType, policyCmdStruct> policyCmds = {
+	{POLICY_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{POLICY_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{POLICY_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{POLICY_GROUP, {{"group", required_argument, 0, 'g'}, nullptr, false, ""}},
+	{POLICY_LIST, {{"list", no_argument, 0, 'l'}, &cmdPolicy::listPolicies, false, ""}},
+	{POLICY_LISTALLTYPES, {{"listalltypes", no_argument, 0, 0}, &cmdPolicy::listTypes, false, ""}},
+	{POLICY_CREATE, {{"create", no_argument, 0, 'c'}, &cmdPolicy::create, false, ""}},
+	{POLICY_REMOVE, {{"remove", no_argument, 0, 'r'}, &cmdPolicy::remove, false, ""}},
+	{POLICY_TYPE, {{"type", required_argument, 0, 0}, nullptr, false, ""}},
+	{POLICY_CONDITION, {{"condition", required_argument, 0, 0}, nullptr, false, ""}},
+	{POLICY_THRESHOLD, {{"threshold", required_argument, 0, 0}, nullptr, false, ""}},
+	{POLICY_ACTION, {{"action", required_argument, 0, 0}, nullptr, false, ""}},
+	{POLICY_THROTTLEFREQUENCYMIN, {{"throttlefrequencymin", required_argument, 0, 0}, nullptr, false, ""}},
+	{POLICY_THROTTLEFREQUENCYMAX, {{"throttlefrequencymax", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
 void cmdPolicy::help(HELP helpType)
@@ -96,41 +96,37 @@ void cmdPolicy::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdPolicy::create(policyCmdStruct *policyCmds, devInfo *d)
+ze_result_t cmdPolicy::create(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(policyCmds);
 	UNUSED(d);
 
 	return result;
 }
 
-ze_result_t cmdPolicy::listPolicies(policyCmdStruct *policyCmds, devInfo *d)
+ze_result_t cmdPolicy::listPolicies(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(policyCmds);
 	UNUSED(d);
 
 	return result;
 }
 
-ze_result_t cmdPolicy::listTypes(policyCmdStruct *policyCmds, devInfo *d)
+ze_result_t cmdPolicy::listTypes(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(policyCmds);
 	UNUSED(d);
 
 	return result;
 }
 
-ze_result_t cmdPolicy::remove(policyCmdStruct *policyCmds, devInfo *d)
+ze_result_t cmdPolicy::remove(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(policyCmds);
 	UNUSED(d);
 
 	return result;
@@ -147,7 +143,7 @@ int cmdPolicy::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
-	processOptions(policyCmds, ARRAY_SIZE(policyCmds), shortOpts, longOptsVec);
+	processOptions(policyCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -180,10 +176,10 @@ int cmdPolicy::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : policyCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					policyCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						policyCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -221,10 +217,10 @@ int cmdPolicy::run(arg_struct *args)
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : policyCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				DBG("Running command: %s\n", cmd.opt.name);
-				result = (this->*cmd.func)(policyCmds, &device);
+		for (const auto &cmd : policyCmds) {
+			if (cmd.second.enabled && cmd.second.func != nullptr) {
+				DBG("Running command: %s\n", cmd.second.opt.name);
+				result = (this->*cmd.second.func)(&device);
 				break;
 			}
 		}

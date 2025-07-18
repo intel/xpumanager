@@ -36,70 +36,54 @@
 /*
  * @brief This structure serves two purposes:
  * 1. It defines the command parsing for discovery commands.
- * 2. It allows for easy addition of new commands by simply adding a new entry to the array.
+ * 2. It allows for easy addition of new commands by simply adding a new entry to the map.
  * For example: The dump command requires a function of its own, so it is defined in the
  * discoveryCmdStruct with a pointer to the function that will be called when the command is executed
  */
-discoveryCmdStruct discCmds[] = {
-	{discCmdType::DISC_HELP, {"help", no_argument, 0, 'h'}, nullptr, nullptr, false, ""},
-	{discCmdType::DISC_JSON, {"json", no_argument, 0, 'j'}, nullptr, nullptr, false, ""},
-	{discCmdType::DISC_DEVICE, {"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll, nullptr, false, ""},
-	{discCmdType::DISC_PF, {"pf", no_argument, 0, 0}, &cmdDiscovery::physicalFunction, nullptr, false, ""},
+static std::unordered_map<discCmdType, discoveryCmdStruct> discCmds = {
+	{discCmdType::DISC_HELP, {{"help", no_argument, 0, 'h'}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_JSON, {{"json", no_argument, 0, 'j'}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll, nullptr, false, ""}},
+	{discCmdType::DISC_PF, {{"pf", no_argument, 0, 0}, &cmdDiscovery::physicalFunction, nullptr, false, ""}},
 	{discCmdType::DISC_PHYSICALFUNCTION,
-	 {"physicalFunction", no_argument, 0, 0},
-	 &cmdDiscovery::physicalFunction,
-	 nullptr,
-	 false,
-	 ""},
-	{discCmdType::DISC_VF, {"vf", no_argument, 0, 0}, &cmdDiscovery::virtualFunction, nullptr, false, ""},
+	 {{"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction, nullptr, false, ""}},
+	{discCmdType::DISC_VF, {{"vf", no_argument, 0, 0}, &cmdDiscovery::virtualFunction, nullptr, false, ""}},
 	{discCmdType::DISC_VIRTUALFUNCTION,
-	 {"virtualFunction", no_argument, 0, 0},
-	 &cmdDiscovery::virtualFunction,
-	 nullptr,
-	 false,
-	 ""},
+	 {{"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction, nullptr, false, ""}},
 	{discCmdType::DISC_DUMP,
-	 {"dump", required_argument, 0, 0},
-	 &cmdDiscovery::dump,
-	 &cmdDiscovery::dumpHeading,
-	 false,
-	 ""},
+	 {{"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading, false, ""}},
 	{discCmdType::DISC_LISTAMCVERSIONS,
-	 {"listamcversions", no_argument, 0, 0},
-	 &cmdDiscovery::listamcversions,
-	 nullptr,
-	 false,
-	 ""},
-	{discCmdType::DISC_USERNAME, {"username", required_argument, 0, 'u'}, nullptr, nullptr, false, ""},
-	{discCmdType::DISC_PASSWORD, {"password", required_argument, 0, 'p'}, nullptr, nullptr, false, ""},
-	{discCmdType::DISC_ASSUMEYES, {"assumeyes", no_argument, 0, 'y'}, nullptr, nullptr, false, ""},
+	 {{"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions, nullptr, false, ""}},
+	{discCmdType::DISC_USERNAME, {{"username", required_argument, 0, 'u'}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_PASSWORD, {{"password", required_argument, 0, 'p'}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_ASSUMEYES, {{"assumeyes", no_argument, 0, 'y'}, nullptr, nullptr, false, ""}},
 };
 
-discoveryDumpStruct discDumpCmds[] = {
-	{DUMP_DEVICEID, &cmdDiscovery::deviceID, "Device ID"},
-	{DUMP_DEVICENAME, &cmdDiscovery::deviceName, "Device Name"},
-	{DUMP_VENDORNAME, &cmdDiscovery::vendorName, "Vendor Name"},
-	{DUMP_SOCUUID, &cmdDiscovery::socUuid, "SOC UUID"},
-	{DUMP_SERIALNUMBER, &cmdDiscovery::serialNumber, "Serial Number"},
-	{DUMP_CORECLOCKRATE, &cmdDiscovery::coreClockRate, "Core Clock Rate"},
-	{DUMP_STEPPING, &cmdDiscovery::stepping, "Stepping"},
-	{DUMP_DRIVERVERSION, &cmdDiscovery::driverVersion, "Driver Version"},
-	{DUMP_GFXFIRMWAREVERSION, &cmdDiscovery::gfxFirmwareVersion, "GFX Firmware Version"},
-	{DUMP_GFXDATAFIRMWAREVERSION, &cmdDiscovery::gfxDataFirmwareVersion, "GFX Data Firmware Version"},
-	{DUMP_PCIBDFADDRESS, &cmdDiscovery::pciBDFAddress, "PCI BDF Address"},
-	{DUMP_PCISLOT, &cmdDiscovery::pciSlot, "PCI Slot"},
-	{DUMP_PCIEGENERATION, &cmdDiscovery::pcieGeneration, "PCIe Generation"},
-	{DUMP_PCIEMAXLINKWIDTH, &cmdDiscovery::pcieMaxLinkWidth, "PCIe Max Link Width"},
-	{DUMP_OAMSOCID, &cmdDiscovery::oamSocketID, "OAM Socket ID"},
-	{DUMP_MEMORYPHYSICALSIZE, &cmdDiscovery::memoryPhysicalSize, "Memory Physical Size"},
-	{DUMP_MEMORYCHANNELS, &cmdDiscovery::memoryChannels, "Number of Memory Channels"},
-	{DUMP_MEMORYBUSWIDTH, &cmdDiscovery::memoryBusWidth, "Memory Bus Width"},
-	{DUMP_EUS, &cmdDiscovery::eus, "Number of EUs"},
-	{DUMP_MEDIAENGINES, &cmdDiscovery::mediaEngines, "Number of Media Engines"},
-	{DUMP_MEDIAENHANCEMENTENGINES, &cmdDiscovery::mediaEnhancementEngines, "Number of Media Enhancement Engines"},
-	{DUMP_GFXFIRMWARESTATUS, &cmdDiscovery::gfxFirmwareStatus, "GFX Firmware Status"},
-	{DUMP_PCIVENDORID, &cmdDiscovery::pciVendorID, "PCI Vendor ID"},
-	{DUMP_PCIDEVICEID, &cmdDiscovery::pciDeviceID, "PCI Device ID"},
+static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
+	{DUMP_DEVICEID, {&cmdDiscovery::deviceID, "Device ID"}},
+	{DUMP_DEVICENAME, {&cmdDiscovery::deviceName, "Device Name"}},
+	{DUMP_VENDORNAME, {&cmdDiscovery::vendorName, "Vendor Name"}},
+	{DUMP_SOCUUID, {&cmdDiscovery::socUuid, "SOC UUID"}},
+	{DUMP_SERIALNUMBER, {&cmdDiscovery::serialNumber, "Serial Number"}},
+	{DUMP_CORECLOCKRATE, {&cmdDiscovery::coreClockRate, "Core Clock Rate"}},
+	{DUMP_STEPPING, {&cmdDiscovery::stepping, "Stepping"}},
+	{DUMP_DRIVERVERSION, {&cmdDiscovery::driverVersion, "Driver Version"}},
+	{DUMP_GFXFIRMWAREVERSION, {&cmdDiscovery::gfxFirmwareVersion, "GFX Firmware Version"}},
+	{DUMP_GFXDATAFIRMWAREVERSION, {&cmdDiscovery::gfxDataFirmwareVersion, "GFX Data Firmware Version"}},
+	{DUMP_PCIBDFADDRESS, {&cmdDiscovery::pciBDFAddress, "PCI BDF Address"}},
+	{DUMP_PCISLOT, {&cmdDiscovery::pciSlot, "PCI Slot"}},
+	{DUMP_PCIEGENERATION, {&cmdDiscovery::pcieGeneration, "PCIe Generation"}},
+	{DUMP_PCIEMAXLINKWIDTH, {&cmdDiscovery::pcieMaxLinkWidth, "PCIe Max Link Width"}},
+	{DUMP_OAMSOCID, {&cmdDiscovery::oamSocketID, "OAM Socket ID"}},
+	{DUMP_MEMORYPHYSICALSIZE, {&cmdDiscovery::memoryPhysicalSize, "Memory Physical Size"}},
+	{DUMP_MEMORYCHANNELS, {&cmdDiscovery::memoryChannels, "Number of Memory Channels"}},
+	{DUMP_MEMORYBUSWIDTH, {&cmdDiscovery::memoryBusWidth, "Memory Bus Width"}},
+	{DUMP_EUS, {&cmdDiscovery::eus, "Number of EUs"}},
+	{DUMP_MEDIAENGINES, {&cmdDiscovery::mediaEngines, "Number of Media Engines"}},
+	{DUMP_MEDIAENHANCEMENTENGINES, {&cmdDiscovery::mediaEnhancementEngines, "Number of Media Enhancement Engines"}},
+	{DUMP_GFXFIRMWARESTATUS, {&cmdDiscovery::gfxFirmwareStatus, "GFX Firmware Status"}},
+	{DUMP_PCIVENDORID, {&cmdDiscovery::pciVendorID, "PCI Vendor ID"}},
+	{DUMP_PCIDEVICEID, {&cmdDiscovery::pciDeviceID, "PCI Device ID"}},
 };
 
 /**
@@ -230,15 +214,15 @@ ze_result_t cmdDiscovery::dumpHeading()
 		return result;
 	}
 
-	for (auto &arg : dumpArgs) {
-		for (auto &cmd : discDumpCmds) {
-			if (cmd.type == atoi(arg.c_str())) {
+	for (const auto &arg : dumpArgs) {
+		for (const auto &cmd : discDumpCmds) {
+			if (cmd.first == stoi(arg)) {
 				// found will only be true if we have printed at least one heading, so add a comma before the next
 				// heading
 				if (found) {
 					PRINT(", ");
 				}
-				PRINT("%s", cmd.heading.c_str());
+				PRINT("%s", cmd.second.heading.c_str());
 				found = true;
 			}
 		}
@@ -277,11 +261,11 @@ ze_result_t cmdDiscovery::dump(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	for (auto &arg : dumpArgs) {
-		for (auto &cmd : discDumpCmds) {
-			if (cmd.type == atoi(arg.c_str())) {
-				DBG("Running command: %d\n", cmd.type);
-				result = (this->*cmd.func)(d, outputLine);
+	for (const auto &arg : dumpArgs) {
+		for (const auto &cmd : discDumpCmds) {
+			if (cmd.first == stoi(arg)) {
+				DBG("Running command: %d\n", cmd.first);
+				result = (this->*cmd.second.func)(d, outputLine);
 				if (result != ZE_RESULT_SUCCESS) {
 					return result;
 				}
@@ -326,20 +310,20 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, string *outputLine)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	// We should dump all properties for a device only when no other command line options are specified.
-	for (auto &cmd : discCmds) {
-		if (cmd.enabled && cmd.type != discCmdType::DISC_DEVICE) {
+	for (const auto &cmd : discCmds) {
+		if (cmd.second.enabled && cmd.first != discCmdType::DISC_DEVICE) {
 			// Silently return if any other command line options are specified
 			return result;
 		}
 	}
 
 	// Iterate over all dump commands and execute them
-	for (auto &cmd : discDumpCmds) {
-		result = (this->*cmd.func)(d, outputLine);
+	for (const auto &cmd : discDumpCmds) {
+		result = (this->*cmd.second.func)(d, outputLine);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
-		PRINT("%s: %s\n", cmd.heading.c_str(), outputLine->c_str());
+		PRINT("%s: %s\n", cmd.second.heading.c_str(), outputLine->c_str());
 		outputLine->clear();
 	}
 
@@ -1021,7 +1005,7 @@ int cmdDiscovery::run(arg_struct *args)
 	vector<struct option> longOptsVec;
 	string outputLine = "";
 
-	processOptions(discCmds, ARRAY_SIZE(discCmds), shortOpts, longOptsVec);
+	processOptions(discCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -1052,10 +1036,10 @@ int cmdDiscovery::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : discCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					discCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						discCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -1120,19 +1104,19 @@ int cmdDiscovery::run(arg_struct *args)
 			outputLine.clear();
 
 			// Call the appropriate command function based on the command type
-			for (auto &cmd : discCmds) {
-				if (cmd.enabled && cmd.func != nullptr) {
+			for (const auto &cmd : discCmds) {
+				if (cmd.second.enabled && cmd.second.func != nullptr) {
 					// If there is a heading function, call it first
-					if (cmd.headingFunc != nullptr && headingFirst) {
+					if (cmd.second.headingFunc != nullptr && headingFirst) {
 						headingFirst = false;
-						result = (this->*cmd.headingFunc)();
+						result = (this->*cmd.second.headingFunc)();
 						if (result != ZE_RESULT_SUCCESS) {
 							return result;
 						}
 					}
 
-					DBG("Running command: %s\n", cmd.opt.name);
-					result = (this->*cmd.func)(&device, &outputLine);
+					DBG("Running command: %s\n", cmd.second.opt.name);
+					result = (this->*cmd.second.func)(&device, &outputLine);
 					if (result != ZE_RESULT_SUCCESS) {
 						return result;
 					}

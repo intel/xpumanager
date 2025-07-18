@@ -26,15 +26,15 @@
 #include "debug.h"
 #include <assert.h>
 
-statsCmdStruct statsCmds[] = {
-	{STATS_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{STATS_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{STATS_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{STATS_EU, {"eu", no_argument, 0, 'e'}, &cmdStats::eu, false, ""},
-	{STATS_RAS, {"ras", no_argument, 0, 'r'}, &cmdStats::ras, false, ""},
-	{STATS_X, {"x", no_argument, 0, 'x'}, &cmdStats::x, false, ""},
-	{STATS_XELINK, {"xelink", no_argument, 0, 0}, &cmdStats::xelink, false, ""},
-	{STATS_UTILS, {"utils", no_argument, 0, 0}, &cmdStats::utils, false, ""},
+static std::unordered_map<statsCmdType, statsCmdStruct> statsCmds = {
+	{statsCmdType::STATS_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{statsCmdType::STATS_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{statsCmdType::STATS_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{statsCmdType::STATS_EU, {{"eu", no_argument, 0, 'e'}, &cmdStats::eu, false, ""}},
+	{statsCmdType::STATS_RAS, {{"ras", no_argument, 0, 'r'}, &cmdStats::ras, false, ""}},
+	{statsCmdType::STATS_X, {{"x", no_argument, 0, 'x'}, &cmdStats::x, false, ""}},
+	{statsCmdType::STATS_XELINK, {{"xelink", no_argument, 0, 0}, &cmdStats::xelink, false, ""}},
+	{statsCmdType::STATS_UTILS, {{"utils", no_argument, 0, 0}, &cmdStats::utils, false, ""}},
 };
 
 /**
@@ -80,42 +80,37 @@ void cmdStats::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdStats::eu(statsCmdStruct *statsCmds, devInfo *d)
+ze_result_t cmdStats::eu(devInfo *d)
 {
 	TRACING();
-	UNUSED(statsCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::ras(statsCmdStruct *statsCmds, devInfo *d)
+ze_result_t cmdStats::ras(devInfo *d)
 {
 	TRACING();
-	UNUSED(statsCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::x(statsCmdStruct *statsCmds, devInfo *d)
+ze_result_t cmdStats::x(devInfo *d)
 {
 	TRACING();
-	UNUSED(statsCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::xelink(statsCmdStruct *statsCmds, devInfo *d)
+ze_result_t cmdStats::xelink(devInfo *d)
 {
 	TRACING();
-	UNUSED(statsCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::utils(statsCmdStruct *statsCmds, devInfo *d)
+ze_result_t cmdStats::utils(devInfo *d)
 {
 	TRACING();
-	UNUSED(statsCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
@@ -136,7 +131,7 @@ int cmdStats::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
-	processOptions(statsCmds, ARRAY_SIZE(statsCmds), shortOpts, longOptsVec);
+	processOptions(statsCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -165,10 +160,10 @@ int cmdStats::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : statsCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					statsCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						statsCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -206,10 +201,10 @@ int cmdStats::run(arg_struct *args)
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : statsCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				DBG("Running command: %s\n", cmd.opt.name);
-				result = (this->*cmd.func)(statsCmds, &device);
+		for (const auto &cmd : statsCmds) {
+			if (cmd.second.enabled && cmd.second.func != nullptr) {
+				DBG("Running command: %s\n", cmd.second.opt.name);
+				result = (this->*cmd.second.func)(&device);
 				break;
 			}
 		}

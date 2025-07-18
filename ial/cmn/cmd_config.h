@@ -59,25 +59,24 @@ public:
 	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
 	~cmdConfig() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t setFrequencyRange(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setPowerLimit(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setStandby(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setScheduler(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setPerformanceFactor(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setXeLinkPort(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setXeLinkPortBeaconing(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t setMemoryEcc(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t resetDevice(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t applyPpr(configCmdStruct *configCmds, devInfo *d);
-	ze_result_t forcePpr(configCmdStruct *configCmds, devInfo *d);
+	ze_result_t setFrequencyRange(devInfo *d);
+	ze_result_t setPowerLimit(devInfo *d);
+	ze_result_t setStandby(devInfo *d);
+	ze_result_t setScheduler(devInfo *d);
+	ze_result_t setPerformanceFactor(devInfo *d);
+	ze_result_t setXeLinkPort(devInfo *d);
+	ze_result_t setXeLinkPortBeaconing(devInfo *d);
+	ze_result_t setMemoryEcc(devInfo *d);
+	ze_result_t resetDevice(devInfo *d);
+	ze_result_t applyPpr(devInfo *d);
+	ze_result_t forcePpr(devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdConfig::*configSubCmdFunc)(configCmdStruct *configCmds, devInfo *d);
+using configSubCmdFunc = ze_result_t (cmdConfig::*)(devInfo *d);
 
 struct configCmdStruct
 {
-	configCmdType type;
 	option opt;
 	configSubCmdFunc func;
 	bool enabled;

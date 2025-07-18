@@ -209,7 +209,7 @@ public:
 	};
 };
 
-typedef ze_result_t (fwupd::*updateFW)(firmwareInfo *fwInfo);
+using updateFW = ze_result_t (fwupd::*)(firmwareInfo *fwInfo);
 
 struct updateFWCmdStruct
 {

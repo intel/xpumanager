@@ -175,11 +175,11 @@ public:
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdDump::*dumpSubCmdFunc)(devInfo *d, string *outputLine, threadData *td);
+using dumpSubCmdFunc = ze_result_t (cmdDump::*)(devInfo *d, string *outputLine, threadData *td);
+using dumpHeadingFunc = ze_result_t (cmdDump::*)();
 
 struct dumpCmdStruct
 {
-	dumpCmdType type;
 	option opt;
 	funcptr func;
 	bool enabled;
@@ -188,7 +188,6 @@ struct dumpCmdStruct
 
 struct dumpCmdSubStruct
 {
-	int type;
 	dumpSubCmdFunc func;
 	string heading;
 	bool availableForIGPU;
@@ -197,7 +196,6 @@ struct dumpCmdSubStruct
 struct threadArgs
 {
 	cmdDump *cmdDumpInstance;
-	dumpCmdStruct *dumpCmds;
 	devInfo *d;
 	string cmdName;
 	string outputLine;

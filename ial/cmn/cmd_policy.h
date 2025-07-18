@@ -55,18 +55,17 @@ public:
 	cmdPolicy() { STRCPY_S(name, MAX_PATH, "policy"); };
 	~cmdPolicy() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t create(policyCmdStruct *policyCmds, devInfo *d);
-	ze_result_t listPolicies(policyCmdStruct *policyCmds, devInfo *d);
-	ze_result_t listTypes(policyCmdStruct *policyCmds, devInfo *d);
-	ze_result_t remove(policyCmdStruct *policyCmds, devInfo *d);
+	ze_result_t create(devInfo *d);
+	ze_result_t listPolicies(devInfo *d);
+	ze_result_t listTypes(devInfo *d);
+	ze_result_t remove(devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdPolicy::*policySubCmdFunc)(policyCmdStruct *policyCmds, devInfo *d);
+using policySubCmdFunc = ze_result_t (cmdPolicy::*)(devInfo *d);
 
 struct policyCmdStruct
 {
-	policyCmdType type;
 	option opt;
 	policySubCmdFunc func;
 	bool enabled;

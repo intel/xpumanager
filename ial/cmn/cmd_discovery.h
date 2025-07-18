@@ -119,12 +119,11 @@ public:
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdDiscovery::*discoveryHeadingFunc)();
-typedef ze_result_t (cmdDiscovery::*discoverySubCmdFunc)(devInfo *d, string *outputLine);
+using discoveryHeadingFunc = ze_result_t (cmdDiscovery::*)();
+using discoverySubCmdFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, string *outputLine);
 
 struct discoveryCmdStruct
 {
-	discCmdType type;
 	option opt;
 	discoverySubCmdFunc func;
 	discoveryHeadingFunc headingFunc;
@@ -134,7 +133,6 @@ struct discoveryCmdStruct
 
 struct discoveryDumpStruct
 {
-	int type;
 	discoverySubCmdFunc func;
 	string heading;
 };

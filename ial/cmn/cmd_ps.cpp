@@ -124,7 +124,7 @@ int cmdPs::run(arg_struct *args)
 		PRINT("PID       Command             DeviceID       SHR            MEM\n");
 	}
 
-	for (auto &dev : deviceList) {
+	for (const auto &dev : deviceList) {
 		DBG("Running ps command on device %d\n", dev.index);
 		process *ps = (process *)dev.dev->getProcess();
 		if (ps == nullptr) {

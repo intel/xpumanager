@@ -28,12 +28,12 @@
 #include <temperature.h>
 #include <memory.h>
 
-healthCmdStruct healthCmds[] = {
-	{healthCmdType::HEALTH_HELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{healthCmdType::HEALTH_JSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{healthCmdType::HEALTH_LIST, {"list", no_argument, 0, 'l'}, nullptr, false, ""},
-	{healthCmdType::HEALTH_DEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{healthCmdType::HEALTH_COMPONENT, {"component", required_argument, 0, 'c'}, &cmdHealth::component, false, ""},
+static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
+	{healthCmdType::HEALTH_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{healthCmdType::HEALTH_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{healthCmdType::HEALTH_LIST, {{"list", no_argument, 0, 'l'}, nullptr, false, ""}},
+	{healthCmdType::HEALTH_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{healthCmdType::HEALTH_COMPONENT, {{"component", required_argument, 0, 'c'}, &cmdHealth::component, false, ""}},
 };
 
 /**
@@ -76,7 +76,7 @@ void cmdHealth::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::component(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -91,11 +91,11 @@ ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 		{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
 	};
 
-	for (auto &test : componentCmds) {
-		if (test.type == atoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val.c_str())) {
+	for (const auto &test : componentCmds) {
+		if (test.type == stoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val)) {
 			DBG("Running test: %d\n", test.type);
 			found = true;
-			result = (this->*test.func)(healthCmds, d);
+			result = (this->*test.func)(d);
 			break;
 		}
 	}
@@ -110,10 +110,9 @@ ze_result_t cmdHealth::component(healthCmdStruct *healthCmds, devInfo *d)
 	return result;
 }
 
-ze_result_t cmdHealth::coreTemperature(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::coreTemperature(devInfo *d)
 {
 	TRACING();
-	UNUSED(healthCmds);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	uint32_t throttleThreshold = 0;
 	uint32_t shutdownThreshold = 0;
@@ -136,10 +135,9 @@ ze_result_t cmdHealth::coreTemperature(healthCmdStruct *healthCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::memoryTemperature(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::memoryTemperature(devInfo *d)
 {
 	TRACING();
-	UNUSED(healthCmds);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	uint32_t throttleThreshold = 0;
 	uint32_t shutdownThreshold = 0;
@@ -161,18 +159,16 @@ ze_result_t cmdHealth::memoryTemperature(healthCmdStruct *healthCmds, devInfo *d
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::power(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::power(devInfo *d)
 {
 	TRACING();
-	UNUSED(healthCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::healthMemory(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::healthMemory(devInfo *d)
 {
 	TRACING();
-	UNUSED(healthCmds);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_mem_health_t health;
 
@@ -202,18 +198,16 @@ ze_result_t cmdHealth::healthMemory(healthCmdStruct *healthCmds, devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::xeLinkPort(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::xeLinkPort(devInfo *d)
 {
 	TRACING();
-	UNUSED(healthCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::frequency(healthCmdStruct *healthCmds, devInfo *d)
+ze_result_t cmdHealth::frequency(devInfo *d)
 {
 	TRACING();
-	UNUSED(healthCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
@@ -234,7 +228,7 @@ int cmdHealth::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
-	processOptions(healthCmds, ARRAY_SIZE(healthCmds), shortOpts, longOptsVec);
+	processOptions(healthCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -298,10 +292,10 @@ int cmdHealth::run(arg_struct *args)
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : healthCmds) {
-			if (cmd.enabled && cmd.func != nullptr) {
-				DBG("Running command: %s\n", cmd.opt.name);
-				result = (this->*cmd.func)(healthCmds, &device);
+		for (const auto &cmd : healthCmds) {
+			if (cmd.second.enabled && cmd.second.func != nullptr) {
+				DBG("Running command: %s\n", cmd.second.opt.name);
+				result = (this->*cmd.second.func)(&device);
 				break;
 			}
 		}

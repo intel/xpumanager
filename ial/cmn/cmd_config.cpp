@@ -32,34 +32,25 @@
 #include <scheduler.h>
 #include <standby.h>
 
-configCmdStruct configCmds[] = {
-	{configCmdType::CONFIGHELP, {"help", no_argument, 0, 'h'}, nullptr, false, ""},
-	{configCmdType::CONFIGJSON, {"json", no_argument, 0, 'j'}, nullptr, false, ""},
-	{configCmdType::CONFIGDEVICE, {"device", required_argument, 0, 'd'}, nullptr, false, ""},
-	{configCmdType::TILE, {"tile", required_argument, 0, 't'}, nullptr, false, ""},
+static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
+	{configCmdType::CONFIGHELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{configCmdType::CONFIGJSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{configCmdType::CONFIGDEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{configCmdType::TILE, {{"tile", required_argument, 0, 't'}, nullptr, false, ""}},
 	{configCmdType::FREQUENCYRANGE,
-	 {"frequencyrange", required_argument, 0, 0},
-	 &cmdConfig::setFrequencyRange,
-	 false,
-	 ""},
-	{configCmdType::POWERLIMIT, {"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit, false, ""},
-	{configCmdType::STANDBYMODE, {"standby", required_argument, 0, 0}, &cmdConfig::setStandby, false, ""},
-	{configCmdType::SCHEDULERMODE, {"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler, false, ""},
+	 {{"frequencyrange", required_argument, 0, 0}, &cmdConfig::setFrequencyRange, false, ""}},
+	{configCmdType::POWERLIMIT, {{"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit, false, ""}},
+	{configCmdType::STANDBYMODE, {{"standby", required_argument, 0, 0}, &cmdConfig::setStandby, false, ""}},
+	{configCmdType::SCHEDULERMODE, {{"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler, false, ""}},
 	{configCmdType::PERFORMANCEFACTOR,
-	 {"performancefactor", required_argument, 0, 0},
-	 &cmdConfig::setPerformanceFactor,
-	 false,
-	 ""},
-	{configCmdType::XELINKPORT, {"xelinkport", required_argument, 0, 0}, &cmdConfig::setXeLinkPort, false, ""},
+	 {{"performancefactor", required_argument, 0, 0}, &cmdConfig::setPerformanceFactor, false, ""}},
+	{configCmdType::XELINKPORT, {{"xelinkport", required_argument, 0, 0}, &cmdConfig::setXeLinkPort, false, ""}},
 	{configCmdType::XELINKPORTBEACONING,
-	 {"xelinkportbeaconing", required_argument, 0, 0},
-	 &cmdConfig::setXeLinkPortBeaconing,
-	 false,
-	 ""},
-	{configCmdType::MEMORYECC, {"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc, false, ""},
-	{configCmdType::RESET, {"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""},
-	{configCmdType::PPR, {"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr, false, ""},
-	{configCmdType::FORCE, {"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""},
+	 {{"xelinkportbeaconing", required_argument, 0, 0}, &cmdConfig::setXeLinkPortBeaconing, false, ""}},
+	{configCmdType::MEMORYECC, {{"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc, false, ""}},
+	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
+	{configCmdType::PPR, {{"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr, false, ""}},
+	{configCmdType::FORCE, {{"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""}},
 };
 
 /**
@@ -137,12 +128,11 @@ void cmdConfig::help(HELP helpType)
 /**
  * @brief Sets the frequency range for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setFrequencyRange(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 {
 	TRACING();
 
@@ -182,12 +172,11 @@ ze_result_t cmdConfig::setFrequencyRange(configCmdStruct *configCmds, devInfo *d
 /**
  * @brief Sets the power limit for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setPowerLimit(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 {
 	TRACING();
 	ze_result_t result;
@@ -213,12 +202,11 @@ ze_result_t cmdConfig::setPowerLimit(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Sets the standby mode for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setStandby(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setStandby(devInfo *d)
 {
 	TRACING();
 
@@ -244,12 +232,11 @@ ze_result_t cmdConfig::setStandby(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Sets the scheduler mode for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setScheduler(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setScheduler(devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -303,15 +290,13 @@ ze_result_t cmdConfig::setScheduler(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Sets the performance factor for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setPerformanceFactor(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 {
 	TRACING();
-	UNUSED(configCmds);
 	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
@@ -319,12 +304,11 @@ ze_result_t cmdConfig::setPerformanceFactor(configCmdStruct *configCmds, devInfo
 /**
  * @brief Sets the Xe Link port configuration for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setXeLinkPort(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setXeLinkPort(devInfo *d)
 {
 	TRACING();
 	// Set Xe Link port. Valid options are 0:disable; 1:enable
@@ -348,12 +332,11 @@ ze_result_t cmdConfig::setXeLinkPort(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Sets the Xe Link port beaconing configuration for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setXeLinkPortBeaconing(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setXeLinkPortBeaconing(devInfo *d)
 {
 	TRACING();
 	// Set Xe Link port beaconing. Valid options are 0:disable; 1:enable
@@ -377,12 +360,11 @@ ze_result_t cmdConfig::setXeLinkPortBeaconing(configCmdStruct *configCmds, devIn
 /**
  * @brief Sets the memory ECC configuration for the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 {
 	TRACING();
 	// Set memory ECC. Valid options are 0:disable; 1:enable
@@ -409,15 +391,13 @@ ze_result_t cmdConfig::setMemoryEcc(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Resets the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::resetDevice(devInfo *d)
 {
 	TRACING();
-	UNUSED(configCmds);
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -429,15 +409,13 @@ ze_result_t cmdConfig::resetDevice(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Applies PPR to the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::applyPpr(devInfo *d)
 {
 	TRACING();
-	UNUSED(configCmds);
 	UNUSED(d);
 	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
@@ -449,15 +427,13 @@ ze_result_t cmdConfig::applyPpr(configCmdStruct *configCmds, devInfo *d)
 /**
  * @brief Forces PPR to run on the device.
  *
- * @param configCmds Array of configuration command structures.
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::forcePpr(configCmdStruct *configCmds, devInfo *d)
+ze_result_t cmdConfig::forcePpr(devInfo *d)
 {
 	TRACING();
-	UNUSED(configCmds);
 	UNUSED(d);
 	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
@@ -483,7 +459,7 @@ int cmdConfig::run(arg_struct *args)
 	string shortOpts;
 	vector<struct option> longOptsVec;
 
-	processOptions(configCmds, ARRAY_SIZE(configCmds), shortOpts, longOptsVec);
+	processOptions(configCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -508,10 +484,10 @@ int cmdConfig::run(arg_struct *args)
 			break;
 		case 0:
 			for (auto &cmd : configCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.opt.name) == 0) {
-					configCmds[cmd.type].enabled = true;
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						configCmds[cmd.type].val = optarg;
+						cmd.second.val = optarg;
 					}
 					found = true;
 					break;
@@ -557,9 +533,9 @@ int cmdConfig::run(arg_struct *args)
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
-		for (auto &cmd : configCmds) {
-			if (cmd.type == cmdType && cmd.func != nullptr) {
-				result = (this->*cmd.func)(configCmds, &device);
+		for (const auto &cmd : configCmds) {
+			if (cmd.first == cmdType && cmd.second.func != nullptr) {
+				result = (this->*cmd.second.func)(&device);
 				break;
 			}
 		}

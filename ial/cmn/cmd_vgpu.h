@@ -54,21 +54,20 @@ public:
 	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
 	~cmdVgpu() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t precheck(vgpuCmdStruct *vgpuCmds, devInfo *d);
-	ze_result_t addKernelParam(vgpuCmdStruct *vgpuCmds, devInfo *d);
-	ze_result_t create(vgpuCmdStruct *vgpuCmds, devInfo *d);
-	ze_result_t remove(vgpuCmdStruct *vgpuCmds, devInfo *d);
-	ze_result_t listGpus(vgpuCmdStruct *vgpuCmds, devInfo *d);
-	ze_result_t stats(vgpuCmdStruct *vgpuCmds, devInfo *d);
-	ze_result_t lmem(vgpuCmdStruct *vgpuCmds, devInfo *d);
+	ze_result_t precheck(devInfo *d);
+	ze_result_t addKernelParam(devInfo *d);
+	ze_result_t create(devInfo *d);
+	ze_result_t remove(devInfo *d);
+	ze_result_t listGpus(devInfo *d);
+	ze_result_t stats(devInfo *d);
+	ze_result_t lmem(devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdVgpu::*vgpuSubCmdFunc)(vgpuCmdStruct *vgpuCmds, devInfo *d);
+using vgpuSubCmdFunc = ze_result_t (cmdVgpu::*)(devInfo *d);
 
 struct vgpuCmdStruct
 {
-	vgpuCmdType type;
 	option opt;
 	vgpuSubCmdFunc func;
 	bool enabled;

@@ -50,19 +50,18 @@ public:
 	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); };
 	~cmdStats() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t eu(statsCmdStruct *statsCmds, devInfo *d);
-	ze_result_t ras(statsCmdStruct *statsCmds, devInfo *d);
-	ze_result_t x(statsCmdStruct *statsCmds, devInfo *d);
-	ze_result_t xelink(statsCmdStruct *statsCmds, devInfo *d);
-	ze_result_t utils(statsCmdStruct *statsCmds, devInfo *d);
+	ze_result_t eu(devInfo *d);
+	ze_result_t ras(devInfo *d);
+	ze_result_t x(devInfo *d);
+	ze_result_t xelink(devInfo *d);
+	ze_result_t utils(devInfo *d);
 	int run(arg_struct *args);
 };
 
-typedef ze_result_t (cmdStats::*statsSubCmdFunc)(statsCmdStruct *statsCmds, devInfo *d);
+using statsSubCmdFunc = ze_result_t (cmdStats::*)(devInfo *d);
 
 struct statsCmdStruct
 {
-	statsCmdType type;
 	option opt;
 	statsSubCmdFunc func;
 	bool enabled;
