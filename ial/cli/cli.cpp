@@ -182,16 +182,16 @@ int main(int argc, char *argv[])
 	TRACING();
 	bool found = false;
 	arg_struct arg;
-	int dbgLvl;
+	int dbglvl;
 	bool priv = PRIVILEGECHECK();
 	UNUSED_VAR(priv);
 
 	// Get current debug level
-	dbgLvl = getDbgLvl();
+	dbglvl = getDbgLvl();
 
-	// If we are not in debug mode, set the debug level to NO_PRINT.
+	// If we are in < debug mode, set the debug level to NO_PRINT.
 	// That's because we don't want to see all the sysman initialization messages in release mode
-	if (dbgLvl != DBG) {
+	if (dbglvl < DBG) {
 		setPrintLvl(&arg, NO_PRINT);
 	}
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Set the debug level back to the original value
-	setPrintLvl(&arg, dbgLvl);
+	setPrintLvl(&arg, dbglvl);
 
 	/* Create a list of commands */
 	std::list<cmds *> *cmdList = new std::list<cmds *>;

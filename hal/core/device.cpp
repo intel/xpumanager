@@ -485,7 +485,7 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 	for (uint32_t i = 0; i < *cmdQueuePropsCount; ++i) {
 		DBG("  Group %u:\n", i);
 		DBG("    Flags: %u\n", localCmdQueueProps[i].flags);
-		DBG("    maximum pattern_size supported by command queue group: %" PRIu64 "\n",
+		DBG("    maximum pattern_size supported by command queue group: %zu\n",
 			localCmdQueueProps[i].maxMemoryFillPatternSize);
 		DBG("    The number of physical engines within the group: %u\n", localCmdQueueProps[i].numQueues);
 	}
@@ -590,7 +590,7 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 	DBG("Cache Properties:\n");
 	for (uint32_t i = 0; i < *cachePropsCount; ++i) {
 		DBG("    Flags: %u\n", localCacheProps[i].flags);
-		DBG("    Per-cache size, in bytes: %" PRIu64 "\n", localCacheProps[i].cacheSize);
+		DBG("    Per-cache size, in bytes: %zu\n", localCacheProps[i].cacheSize);
 	}
 	*zeCacheProps = localCacheProps;
 

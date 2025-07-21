@@ -202,7 +202,7 @@ ze_result_t power::setPowerLimit(double powerLimit)
 	return result;
 }
 
-ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp, bool forGPU)
+ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_power_energy_counter_t energyCounter = {};
@@ -210,7 +210,7 @@ ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp, bool forGPU)
 	zes_power_ext_properties_t extProps;
 	zes_power_domain_t domain = forGPU ? ZES_POWER_DOMAIN_GPU : ZES_POWER_DOMAIN_CARD;
 
-	if (power == nullptr || timeStamp == nullptr) {
+	if (pwr == nullptr || timeStamp == nullptr) {
 		ERR("Power or timestamp pointer is null.\n");
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
@@ -236,7 +236,7 @@ ze_result_t power::getPower(uint64_t *power, uint64_t *timeStamp, bool forGPU)
 			return result;
 		}
 
-		*power = energyCounter.energy;
+		*pwr = energyCounter.energy;
 		*timeStamp = energyCounter.timestamp;
 		break;
 	}

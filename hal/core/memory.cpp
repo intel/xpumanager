@@ -343,8 +343,8 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 
 		if (utilization != nullptr) {
 			// Calculate utilization as a percentage of the total size
-			*utilization =
-				(double)tempUsed * 100 / (properties.physicalSize == 0 ? state.size : properties.physicalSize);
+			uint64_t totalSize = properties.physicalSize == 0 ? state.size : properties.physicalSize;
+			*utilization = (double)(totalSize == 0 ? 0 : tempUsed) * 100.0 / (double)totalSize;
 		}
 	}
 	return result;

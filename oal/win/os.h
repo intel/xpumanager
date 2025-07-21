@@ -87,7 +87,7 @@ struct option
 #define CLOSEI2C closeI2C
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
-#define GETCH _getch
+#define GETCH (char) _getch
 #define TIMESTAMP timestamp
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);

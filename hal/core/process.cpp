@@ -44,11 +44,11 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 	}
 
 	DBG("  - Device has %d processes\n", processCount);
-	for (const auto &process : *processList) {
-		DBG("    - Process ID: %d\n", process.processId);
-		DBG("    - Name: %s\n", GETPROCESSNAME(process.processId).c_str());
-		DBG("    - Shared Size: %" PRIu64 " KB\n", (process.sharedSize / 1024));
-		DBG("    - Memory Size: %" PRIu64 " KB\n", (process.memSize / 1024));
+	for (const auto &ps : *processList) {
+		DBG("    - Process ID: %d\n", ps.processId);
+		DBG("    - Name: %s\n", GETPROCESSNAME(ps.processId).c_str());
+		DBG("    - Shared Size: %" PRIu64 " KB\n", (ps.sharedSize / 1024));
+		DBG("    - Memory Size: %" PRIu64 " KB\n", (ps.memSize / 1024));
 	}
 	return result;
 }

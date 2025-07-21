@@ -362,7 +362,7 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = p->getPower(gpuPower, timeStamp, forGPU);
+	ze_result_t result = p->getEnergy(gpuPower, timeStamp, forGPU);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get GPU power: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -409,7 +409,7 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 		utilizationDiff = ((td->u[0].timeStamp - td->u[1].timeStamp) == 0)
 							  ? 0
 							  : (double)((double)td->u[0].utilization - (double)td->u[1].utilization) * 100 /
-									(td->u[0].timeStamp - td->u[1].timeStamp);
+									(double)(td->u[0].timeStamp - td->u[1].timeStamp);
 		*outputLine = std::format("{:.2f}", utilizationDiff);
 	}
 
@@ -463,7 +463,7 @@ ze_result_t cmdDump::gpuPower(devInfo *d, std::string *outputLine, threadData *t
 		double gpuPowerDiff =
 			(td->p[0].timeStamp - td->p[1].timeStamp) == 0
 				? 0
-				: (double)(td->p[0].power - td->p[1].power) / (td->p[0].timeStamp - td->p[1].timeStamp);
+				: (double)(td->p[0].power - td->p[1].power) / (double)(td->p[0].timeStamp - td->p[1].timeStamp);
 
 		*outputLine = std::format("{:.2f}", gpuPowerDiff);
 	}
@@ -625,7 +625,7 @@ ze_result_t cmdDump::gpuMemoryRead(devInfo *d, std::string *outputLine, threadDa
 		double memoryReadDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
 									? 0
 									: (double)(1000000 * (td->m[0].read - td->m[1].read)) /
-										  (td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
+										  (double)(td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
 
 		*outputLine = std::format("{:d}", (int)memoryReadDiff);
 	}
@@ -665,7 +665,7 @@ ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, std::string *outputLine, threadD
 		double memoryWriteDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
 									 ? 0
 									 : (double)(1000000 * (td->m[0].write - td->m[1].write)) /
-										   (td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
+										   (double)(td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
 
 		*outputLine = std::format("{:d}", (int)memoryWriteDiff);
 	}
@@ -941,7 +941,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, std::string *outp
 		// Calculate the memory bandwidth difference
 		memoryBWDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
 						   ? 0
-						   : (memoryBW[0] - memoryBW[1]) / ((td->m[0].timeStamp - td->m[1].timeStamp) / 1000.0);
+						   : (memoryBW[0] - memoryBW[1]) / ((double)(td->m[0].timeStamp - td->m[1].timeStamp) / 1000.0);
 
 		*outputLine = std::format("{:d}", (uint32_t)memoryBWDiff);
 	}

@@ -27,6 +27,14 @@
 
 #include <stdio.h>
 
+// Check for C++20 source_location support
+#if __cplusplus >= 202002L && __has_include(<source_location>)
+#include <source_location>
+#define HAS_SOURCE_LOCATION 1
+#else
+#define HAS_SOURCE_LOCATION 0
+#endif
+
 #ifdef _WIN32
 static int is_windows = 1;
 #else
@@ -73,7 +81,11 @@ extern int dbgLvl;
 	PRINT(fmt, ##__VA_ARGS__)
 
 #ifdef __cplusplus
+#if HAS_SOURCE_LOCATION
+#define TRACING() tracer trace{};
+#else
 #define TRACING() tracer trace(__FUNCTION__);
+#endif
 #else
 #define TRACING()
 #endif
@@ -82,15 +94,28 @@ extern int dbgLvl;
 class tracer
 {
 private:
-	char *m_func_name;
+	const char *m_func_name;
 
 public:
-	tracer(const char *func_name)
+#if HAS_SOURCE_LOCATION
+	// C++20 source_location constructor
+	explicit tracer(const std::source_location &loc = std::source_location::current())
+		: m_func_name(loc.function_name())
 	{
-		TRACE(">>> %s\n", func_name);
-		m_func_name = (char *)func_name;
+		TRACE(">>> %s\n", m_func_name);
 	}
+#endif
+
+	// Fallback constructor for older C++ standards
+	explicit tracer(const char *func_name) : m_func_name(func_name) { TRACE(">>> %s\n", m_func_name); }
+
 	~tracer() { TRACE("<<< %s\n", m_func_name); }
+
+	// Prevents additional room for dangling references
+	tracer(const tracer &) = delete;
+	tracer &operator=(const tracer &) = delete;
+	tracer(tracer &&) = delete;
+	tracer &operator=(tracer &&) = delete;
 };
 #endif
 
