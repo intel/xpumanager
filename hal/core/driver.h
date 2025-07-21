@@ -54,9 +54,9 @@ public:
 	ze_result_t init();
 	ze_result_t zeInitialize();
 	ze_result_t zesInitialize();
-	ze_result_t getDriverProperties(ze_driver_handle_t driver);
-	ze_result_t getIpcProperties(ze_driver_handle_t driver);
-	ze_result_t getExtensionProperties(ze_driver_handle_t driver);
+	ze_result_t getDriverProperties(ze_driver_handle_t drvr);
+	ze_result_t getIpcProperties(ze_driver_handle_t drvr);
+	ze_result_t getExtensionProperties(ze_driver_handle_t drvr);
 	void getLoaderVersion(std::string *lzVersion);
 	ze_result_t findDevice(const char *bdf, std::vector<devInfo> *dev);
 	ze_result_t run();

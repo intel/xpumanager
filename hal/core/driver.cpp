@@ -295,10 +295,10 @@ driver::~driver()
  * @param driver The handle to the Level Zero driver.
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
+ze_result_t driver::getExtensionProperties(ze_driver_handle_t drvr)
 {
 	uint32_t extensionCount = 0;
-	ze_result_t result = zeDriverGetExtensionProperties(driver, &extensionCount, NULL);
+	ze_result_t result = zeDriverGetExtensionProperties(drvr, &extensionCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get extension count. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -315,7 +315,7 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
-	result = zeDriverGetExtensionProperties(driver, &extensionCount, extensions);
+	result = zeDriverGetExtensionProperties(drvr, &extensionCount, extensions);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get extension properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete[] extensions;
@@ -340,10 +340,10 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t driver)
  * @param driver The handle to the Level Zero driver.
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
+ze_result_t driver::getDriverProperties(ze_driver_handle_t drvr)
 {
 	ze_driver_properties_t driverProperties = {};
-	ze_result_t result = zeDriverGetProperties(driver, &driverProperties);
+	ze_result_t result = zeDriverGetProperties(drvr, &driverProperties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get driver properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -368,10 +368,10 @@ ze_result_t driver::getDriverProperties(ze_driver_handle_t driver)
  * @param driver The handle to the Level Zero driver.
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::getIpcProperties(ze_driver_handle_t driver)
+ze_result_t driver::getIpcProperties(ze_driver_handle_t drvr)
 {
 	ze_driver_ipc_properties_t ipcProperties;
-	ze_result_t result = zeDriverGetIpcProperties(driver, &ipcProperties);
+	ze_result_t result = zeDriverGetIpcProperties(drvr, &ipcProperties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get IPC properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

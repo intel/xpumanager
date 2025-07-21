@@ -218,10 +218,10 @@ ze_result_t vf::init(zes_device_handle_t device)
 ze_result_t vf::zesRun(UNUSED zes_device_handle_t device)
 {
 	for (uint32_t i = 0; i < vfActiveCount; i++) {
-		zes_vf_handle_t vf = vfActiveHandles[i];
-		getVFCapabilities(vf);
-		getVFMemoryUtilization(vf);
-		getVFEngineUtilization(vf);
+		zes_vf_handle_t v = vfActiveHandles[i];
+		getVFCapabilities(v);
+		getVFMemoryUtilization(v);
+		getVFEngineUtilization(v);
 	}
 	return ZE_RESULT_SUCCESS;
 }

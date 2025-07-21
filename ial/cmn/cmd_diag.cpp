@@ -373,7 +373,8 @@ void commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_ker
 
 long double calculateGbps(long double period, long double total_gbps)
 {
-	if (period != 0.0L)
+	auto ep = std::numeric_limits<double>::epsilon();
+	if (period > ep)
 		return total_gbps / period;
 	else {
 		return std::numeric_limits<double>::max();
