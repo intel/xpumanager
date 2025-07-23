@@ -614,7 +614,7 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, std::string *outputLine
 	TRACING();
 	char version[MAX_PATH] = {0};
 
-	firmware *fw = (firmware *)d->dev->getFirmware();
+	firmware *fw = d->dev->getFirmware();
 
 	fw->getFWversion(fwType::GFX, version, sizeof(version));
 	*outputLine = version;
@@ -634,7 +634,7 @@ ze_result_t cmdDiscovery::gfxDataFirmwareVersion(devInfo *d, std::string *output
 	TRACING();
 	char version[MAX_PATH] = {0};
 
-	firmware *fw = (firmware *)d->dev->getFirmware();
+	firmware *fw = d->dev->getFirmware();
 
 	fw->getFWversion(fwType::GFX_DATA, version, sizeof(version));
 	*outputLine = version;
@@ -653,7 +653,7 @@ ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI device properties.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -695,7 +695,7 @@ ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, std::string *outputLine)
 	zes_pci_properties_t pciProps;
 	ze_result_t result;
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -721,7 +721,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
 	zes_pci_properties_t pciProps;
 	ze_result_t result;
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -765,7 +765,7 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, std::string *outputLine
 	uint64_t physicalSize = 0;
 	ze_result_t result;
 
-	memory *m = (memory *)d->dev->getMemory();
+	memory *m = d->dev->getMemory();
 
 	result = m->getMemorySize(&physicalSize);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -794,7 +794,7 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 	uint32_t channels = 0;
 	ze_result_t result;
 
-	memory *m = (memory *)d->dev->getMemory();
+	memory *m = d->dev->getMemory();
 
 	result = m->getMemoryChannels(&channels);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -821,7 +821,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 	uint32_t busWidth = 0;
 	ze_result_t result;
 
-	memory *m = (memory *)d->dev->getMemory();
+	memory *m = d->dev->getMemory();
 
 	result = m->getMemoryBusWidth(&busWidth);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -882,7 +882,7 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
+	enginegroup *eg = d->dev->getEngineGroup();
 	if (eg == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -911,7 +911,7 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
 {
 	TRACING();
 
-	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
+	enginegroup *eg = d->dev->getEngineGroup();
 	if (eg == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -940,7 +940,7 @@ ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI device properties.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -1040,7 +1040,7 @@ devFuncType cmdDiscovery::getFuncType(devInfo *d)
 		return DEVICE_FUNCTION_TYPE_UNKNOWN;
 	}
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
