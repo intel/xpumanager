@@ -46,7 +46,7 @@
 #include <os.h>
 #include <vector>
 
-string progName = "xpumd";
+std::string progName = "xpumd";
 
 int main(int argc, char *argv[])
 {

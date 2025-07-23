@@ -76,7 +76,7 @@ struct healthCmdStruct
 	option opt;
 	healthSubCmdFunc func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 struct healthSubCmdStruct

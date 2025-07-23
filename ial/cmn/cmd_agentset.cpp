@@ -28,7 +28,7 @@
 void cmdAgentSet::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 	helpList.push_back(helpCmd(TITLE, "Get or change some XPU Manager settings."));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s agentset [Options]", progName.c_str()));

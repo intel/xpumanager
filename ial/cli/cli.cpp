@@ -51,10 +51,10 @@
 
 #ifdef DAEMONMODE
 DAEMONCAP curDaemonMode = DAEMON;
-string progName = "xpumcli";
+std::string progName = "xpumcli";
 #else
 DAEMONCAP curDaemonMode = DAEMONLESS;
-string progName = "xpu-smi";
+std::string progName = "xpu-smi";
 #endif
 
 #ifdef _DEBUG
@@ -75,7 +75,7 @@ template <typename T> cmds *createInstance() { return new T(); }
  * @tparam T The type of objects in the list
  * @param generic_list The list of pointers to delete
  */
-template <typename T> void deleteList(list<T *> *generic_list)
+template <typename T> void deleteList(std::list<T *> *generic_list)
 {
 	for (auto &it : *generic_list) {
 		delete it;
@@ -88,7 +88,7 @@ template <typename T> void deleteList(list<T *> *generic_list)
  */
 void printVersion(arg_struct *arg)
 {
-	string lzVersion;
+	std::string lzVersion;
 	PRINT("%-*sCLI:\n", TITLE, "");
 	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
 	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
@@ -104,7 +104,7 @@ void printVersion(arg_struct *arg)
  * @brief Prints all available subcommands with short help text
  * @param cmd_list List of command objects to display
  */
-void printSubCommands(list<cmds *> *cmd_list)
+void printSubCommands(std::list<cmds *> *cmd_list)
 {
 	for (const auto &it : *cmd_list) {
 		it->help(SHORT_HELP);
@@ -141,7 +141,7 @@ void helpsmi()
  * @brief Displays comprehensive help information including usage, options, and subcommands
  * @param cmd_list List of command objects to include in help output
  */
-void help(list<cmds *> *cmd_list)
+void help(std::list<cmds *> *cmd_list)
 {
 	if (curDaemonMode == DAEMONCAP::DAEMON) {
 		helpcli();
@@ -216,9 +216,9 @@ int main(int argc, char *argv[])
 	setPrintLvl(&arg, dbgLvl);
 
 	/* Create a list of commands */
-	list<cmds *> *cmd_list = new list<cmds *>;
+	std::list<cmds *> *cmd_list = new std::list<cmds *>;
 
-	vector<function_entry> function_table = {
+	std::vector<function_entry> function_table = {
 		{createInstance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::Both},
 		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::Linux},
 		{createInstance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::Linux},

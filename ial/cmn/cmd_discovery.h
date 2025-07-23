@@ -83,44 +83,44 @@ public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 	~cmdDiscovery() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t preCheck(vector<string> *dumpArgs);
+	ze_result_t preCheck(std::vector<std::string> *dumpArgs);
 	ze_result_t dumpHeading();
-	ze_result_t dumpAll(devInfo *d, string *outputLine);
-	ze_result_t dump(devInfo *d, string *outputLine);
-	ze_result_t physicalFunction(devInfo *d, string *outputLine);
-	ze_result_t virtualFunction(devInfo *d, string *outputLine);
-	ze_result_t listamcversions(devInfo *d, string *outputLine);
+	ze_result_t dumpAll(devInfo *d, std::string *outputLine);
+	ze_result_t dump(devInfo *d, std::string *outputLine);
+	ze_result_t physicalFunction(devInfo *d, std::string *outputLine);
+	ze_result_t virtualFunction(devInfo *d, std::string *outputLine);
+	ze_result_t listamcversions(devInfo *d, std::string *outputLine);
 
-	ze_result_t deviceID(devInfo *d, string *outputLine);
-	ze_result_t deviceName(devInfo *d, string *outputLine);
-	ze_result_t vendorName(devInfo *d, string *outputLine);
-	ze_result_t socUuid(devInfo *d, string *outputLine);
-	ze_result_t serialNumber(devInfo *d, string *outputLine);
-	ze_result_t coreClockRate(devInfo *d, string *outputLine);
-	ze_result_t stepping(devInfo *d, string *outputLine);
-	ze_result_t driverVersion(devInfo *d, string *outputLine);
-	ze_result_t gfxFirmwareVersion(devInfo *d, string *outputLine);
-	ze_result_t gfxDataFirmwareVersion(devInfo *d, string *outputLine);
-	ze_result_t pciBDFAddress(devInfo *d, string *outputLine);
-	ze_result_t pciSlot(devInfo *d, string *outputLine);
-	ze_result_t pcieGeneration(devInfo *d, string *outputLine);
-	ze_result_t pcieMaxLinkWidth(devInfo *d, string *outputLine);
-	ze_result_t oamSocketID(devInfo *d, string *outputLine);
-	ze_result_t memoryPhysicalSize(devInfo *d, string *outputLine);
-	ze_result_t memoryChannels(devInfo *d, string *outputLine);
-	ze_result_t memoryBusWidth(devInfo *d, string *outputLine);
-	ze_result_t eus(devInfo *d, string *outputLine);
-	ze_result_t mediaEngines(devInfo *d, string *outputLine);
-	ze_result_t mediaEnhancementEngines(devInfo *d, string *outputLine);
-	ze_result_t gfxFirmwareStatus(devInfo *d, string *outputLine);
-	ze_result_t pciVendorID(devInfo *d, string *outputLine);
-	ze_result_t pciDeviceID(devInfo *d, string *outputLine);
+	ze_result_t deviceID(devInfo *d, std::string *outputLine);
+	ze_result_t deviceName(devInfo *d, std::string *outputLine);
+	ze_result_t vendorName(devInfo *d, std::string *outputLine);
+	ze_result_t socUuid(devInfo *d, std::string *outputLine);
+	ze_result_t serialNumber(devInfo *d, std::string *outputLine);
+	ze_result_t coreClockRate(devInfo *d, std::string *outputLine);
+	ze_result_t stepping(devInfo *d, std::string *outputLine);
+	ze_result_t driverVersion(devInfo *d, std::string *outputLine);
+	ze_result_t gfxFirmwareVersion(devInfo *d, std::string *outputLine);
+	ze_result_t gfxDataFirmwareVersion(devInfo *d, std::string *outputLine);
+	ze_result_t pciBDFAddress(devInfo *d, std::string *outputLine);
+	ze_result_t pciSlot(devInfo *d, std::string *outputLine);
+	ze_result_t pcieGeneration(devInfo *d, std::string *outputLine);
+	ze_result_t pcieMaxLinkWidth(devInfo *d, std::string *outputLine);
+	ze_result_t oamSocketID(devInfo *d, std::string *outputLine);
+	ze_result_t memoryPhysicalSize(devInfo *d, std::string *outputLine);
+	ze_result_t memoryChannels(devInfo *d, std::string *outputLine);
+	ze_result_t memoryBusWidth(devInfo *d, std::string *outputLine);
+	ze_result_t eus(devInfo *d, std::string *outputLine);
+	ze_result_t mediaEngines(devInfo *d, std::string *outputLine);
+	ze_result_t mediaEnhancementEngines(devInfo *d, std::string *outputLine);
+	ze_result_t gfxFirmwareStatus(devInfo *d, std::string *outputLine);
+	ze_result_t pciVendorID(devInfo *d, std::string *outputLine);
+	ze_result_t pciDeviceID(devInfo *d, std::string *outputLine);
 
 	int run(arg_struct *args);
 };
 
 using discoveryHeadingFunc = ze_result_t (cmdDiscovery::*)();
-using discoverySubCmdFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, string *outputLine);
+using discoverySubCmdFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, std::string *outputLine);
 
 struct discoveryCmdStruct
 {
@@ -128,13 +128,13 @@ struct discoveryCmdStruct
 	discoverySubCmdFunc func;
 	discoveryHeadingFunc headingFunc;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 struct discoveryDumpStruct
 {
 	discoverySubCmdFunc func;
-	string heading;
+	std::string heading;
 };
 
 #endif

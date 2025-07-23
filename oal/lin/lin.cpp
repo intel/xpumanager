@@ -105,9 +105,13 @@ bool privilegeCheck()
 	if (ngroups == 0) {
 		return false;
 	}
-	vector<gid_t> groups(ngroups);
-	getgrouplist(pw->pw_name, pw->pw_gid, groups.data(), &ngroups);
-	string xpum_grp("xpum");
+	std::vector<gid_t> groups(ngroups);
+	int rc = getgrouplist(pw->pw_name, pw->pw_gid, groups.data(), &ngroups);
+	if (rc < 0) {
+		ERR("getgrouplist ngroups is too small\n");
+		return false;
+	}
+	std::string xpum_grp("xpum");
 	bool has_privilege = false;
 	for (int i = 0; i < ngroups; i++) {
 		struct group *gr = getgrgid(groups[i]);
@@ -115,7 +119,7 @@ bool privilegeCheck()
 			ERR("getgrgid error\n");
 			return false;
 		}
-		string grp_name(gr->gr_name);
+		std::string grp_name(gr->gr_name);
 		if (grp_name == xpum_grp) {
 			has_privilege = true;
 		}
@@ -124,35 +128,35 @@ bool privilegeCheck()
 	return has_privilege;
 }
 
-string getProcessName(uint32_t processId)
+std::string getProcessName(uint32_t processId)
 {
-	string processName = "";
-	ifstream pinfo;
+	std::string processName = "";
+	std::ifstream pinfo;
 	char path[255];
 	sprintf(path, "/proc/%d/cmdline", processId);
 	pinfo.open(path);
 	if (pinfo.is_open()) {
-		getline(pinfo, processName);
+		std::getline(pinfo, processName);
 		pinfo.close();
 	}
 	return processName;
 }
 
-vector<string> findI2CDevices()
+std::vector<std::string> findI2CDevices()
 {
-	vector<string> devices;
-	string devicesPath = "/sys/bus/i2c/devices";
+	std::vector<std::string> devices;
+	std::string devicesPath = "/sys/bus/i2c/devices";
 
 	// Check if the directory exists
-	if (!filesystem::exists(devicesPath)) {
+	if (!std::filesystem::exists(devicesPath)) {
 		ERR("I2C devices directory does not exist: %s\n", devicesPath.c_str());
 		return devices;
 	}
 
 	// Iterate through all entries in the directory
-	for (const auto &entry : filesystem::directory_iterator(devicesPath)) {
+	for (const auto &entry : std::filesystem::directory_iterator(devicesPath)) {
 		if (entry.is_directory()) {
-			string dirname = entry.path().filename().string();
+			std::string dirname = entry.path().filename().string();
 			devices.push_back(entry.path().string());
 		}
 	}
@@ -160,28 +164,28 @@ vector<string> findI2CDevices()
 	return devices;
 }
 
-string getI2CDeviceName(const string &devicePath)
+std::string getI2CDeviceName(const std::string &devicePath)
 {
-	string name;
-	ifstream nameFile(devicePath + "/name");
+	std::string name;
+	std::ifstream nameFile(devicePath + "/name");
 	if (nameFile.is_open()) {
-		getline(nameFile, name);
+		std::getline(nameFile, name);
 		nameFile.close();
 	}
 	return name;
 }
 
-long long openI2C(const string &deviceName)
+long long openI2C(const std::string &deviceName)
 {
-	vector<string> devices = findI2CDevices();
+	std::vector<std::string> devices = findI2CDevices();
 	for (const auto &device : devices) {
-		string name = getI2CDeviceName(device);
+		std::string name = getI2CDeviceName(device);
 		if (name == deviceName) {
 			// Found the device with the specified name, the first character of the path
 			// Example: "/sys/bus/i2c/devices/7-0040" -> "7"
 			// This needs to be added to i2c- so that we can open the device
 			// Example: "/dev/i2c-7"
-			string i2cDevice = "/dev/i2c-" + device.substr(device.find_last_of('/') + 1, 1);
+			std::string i2cDevice = "/dev/i2c-" + device.substr(device.find_last_of('/') + 1, 1);
 			// Open the I2C device
 			return (long long)open(i2cDevice.c_str(), O_RDWR | O_NONBLOCK);
 		}
@@ -191,9 +195,9 @@ long long openI2C(const string &deviceName)
 
 int closeI2C(long long fd) { return close((int)fd); }
 
-string timestamp()
+std::string timestamp()
 {
-	string timestamp_str = "";
+	std::string timestamp_str = "";
 	time_t now;
 	struct tm *time_info;
 
@@ -211,7 +215,7 @@ string timestamp()
 		ERR("gettimeofday failed\n");
 		return timestamp_str;
 	}
-	timestamp_str = format("{:02d}:{:02d}:{:02d}.{:03d}", time_info->tm_hour, time_info->tm_min, time_info->tm_sec,
+	timestamp_str = std::format("{:02d}:{:02d}:{:02d}.{:03d}", time_info->tm_hour, time_info->tm_min, time_info->tm_sec,
 						   (int)tv.tv_usec / 1000);
 	return timestamp_str;
 }

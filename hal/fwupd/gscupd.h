@@ -31,8 +31,6 @@
 #include <vector>
 #include <zes_api.h>
 
-using namespace std;
-
 enum GfxFwStatus
 {
 	RESET,
@@ -80,9 +78,9 @@ public:
 
 	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
-	vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
-	GfxFwStatus getGfxFwStatus(string meiPath);
-	int firmware_check_hw_config(struct igsc_device_handle *handle, vector<char> &buffer);
+	std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
+	GfxFwStatus getGfxFwStatus(std::string meiPath);
+	int firmware_check_hw_config(struct igsc_device_handle *handle, std::vector<char> &buffer);
 	const char *transGfxFwStatusToString(GfxFwStatus status);
 };
 

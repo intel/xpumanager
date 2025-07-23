@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright Â© 2025 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -45,9 +45,9 @@ void wait_for_thread(thread_id *tid)
 	delete tid; // Clean up the thread_id object after waiting
 }
 
-string timestamp()
+std::string timestamp()
 {
-	string timestamp_str = "";
+	std::string timestamp_str = "";
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 	char buffer[64];
@@ -56,9 +56,9 @@ string timestamp()
 	return timestamp_str;
 }
 
-string getProcessName(uint32_t processId)
+std::string getProcessName(uint32_t processId)
 {
-	string processName = "<unknown>";
+	std::string processName = "<unknown>";
 
 	// Open the process with the necessary access rights
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);

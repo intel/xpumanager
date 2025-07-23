@@ -50,8 +50,6 @@
 #pragma warning(pop)
 #endif
 
-using namespace std;
-
 enum fwType
 {
 	GFX,
@@ -77,18 +75,18 @@ struct firmwareInfo
 	bool assumeYes;
 	bool forceUpdate;
 	bool recoveryMode;
-	string deviceId;
+	std::string deviceId;
 	int fwType;			 // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
-	string firmwareType; // This is the string representation of fwType
-	string filePath;
-	string username;
-	string password;
+	std::string firmwareType; // This is the string representation of fwType
+	std::string filePath;
+	std::string username;
+	std::string password;
 	device *dev;
 	ze_device_handle_t deviceHdl;
 	fwupdPreference preference;
 
 	igsc_device_handle handle;
-	vector<char> buffer;
+	std::vector<char> buffer;
 	igsc_fwdata_image *oimg;
 
 	zes_firmware_handle_t firmwareHandle;
@@ -100,7 +98,7 @@ class fwupd
 public:
 	fwupd() {}
 	virtual ~fwupd() {}
-	vector<char> readImageContent(const char *filePath);
+	std::vector<char> readImageContent(const char *filePath);
 	ze_result_t updateFW(firmwareInfo *fwInfo);
 	virtual ze_result_t preUpdateAMC(firmwareInfo *fwInfo)
 	{
@@ -214,14 +212,14 @@ using updateFW = ze_result_t (fwupd::*)(firmwareInfo *fwInfo);
 struct updateFWCmdStruct
 {
 	int fw;
-	string fwName;
+	std::string fwName;
 	fwupdPreference preference;
 	updateFW preUpdateFunc;
 	updateFW updateFunc;
 	updateFW postUpdateFunc;
 	zes_firmware_handle_t firmwareHandle;
-	string name;
-	string version;
+	std::string name;
+	std::string version;
 };
 
 #endif

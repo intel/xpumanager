@@ -28,8 +28,6 @@
 #include <os.h>
 #include <sys/stat.h>
 
-using namespace std;
-
 const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
 {
 #define CASE(x)                                                                                                        \
@@ -61,7 +59,7 @@ static void progPercentFunc(uint32_t done, uint32_t total, void *ctx)
 	fwInfo->dev->setProgress(percent);
 }
 
-int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, vector<char> &buffer)
+int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, std::vector<char> &buffer)
 {
 	struct igsc_hw_config device_hw_config;
 	struct igsc_hw_config image_hw_config;
@@ -370,7 +368,7 @@ bool gscupd::isGscRightType(std::vector<char> &buffer, int expectedType)
 	return type == expectedType;
 }
 
-vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
+std::vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 {
 	std::vector<pci_addr_mei_device> devicesVec = {};
 	struct igsc_device_iterator *iter;
@@ -406,7 +404,7 @@ vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 	return devicesVec;
 }
 
-GfxFwStatus gscupd::getGfxFwStatus(string meiPath)
+GfxFwStatus gscupd::getGfxFwStatus(std::string meiPath)
 {
 	TRACING();
 	uint32_t status = 0x10;

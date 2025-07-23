@@ -61,7 +61,7 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 void cmdConfig::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Get and change the GPU settings"));
 	helpList.push_back(helpCmd(BLANK));
@@ -139,16 +139,16 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 	ze_result_t result;
 
 	// Parse the frequency range from the option string
-	string rangeStr = configCmds[configCmdType::FREQUENCYRANGE].val;
+	std::string rangeStr = configCmds[configCmdType::FREQUENCYRANGE].val;
 	size_t commaPos = rangeStr.find(',');
 
-	if (commaPos == string::npos) {
+	if (commaPos == std::string::npos) {
 		ERR("Invalid frequency range format. Expected format: minFrequency,maxFrequency\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	string minFreqStr = rangeStr.substr(0, commaPos);
-	string maxFreqStr = rangeStr.substr(commaPos + 1);
+	std::string minFreqStr = rangeStr.substr(0, commaPos);
+	std::string maxFreqStr = rangeStr.substr(commaPos + 1);
 	float minFreq = stof(minFreqStr);
 	float maxFreq = stof(maxFreqStr);
 
@@ -211,7 +211,7 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 	TRACING();
 
 	// Set standby mode. Valid options are default and never
-	string standbyMode = configCmds[configCmdType::STANDBYMODE].val;
+	std::string standbyMode = configCmds[configCmdType::STANDBYMODE].val;
 	if (standbyMode != "default" && standbyMode != "never") {
 		ERR("Invalid standby mode. Valid options are default and never.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -243,9 +243,9 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 
 	// Set scheduler mode. Valid options are  \"timeout\",timeoutValue (us) or
 	// \"timeslice\",interval (us),yieldtimeout (us) or \"exclusive\"
-	string schedulerMode = configCmds[configCmdType::SCHEDULERMODE].val;
+	std::string schedulerMode = configCmds[configCmdType::SCHEDULERMODE].val;
 	size_t commaPos = schedulerMode.find(',');
-	if (commaPos == string::npos && schedulerMode != "exclusive") {
+	if (commaPos == std::string::npos && schedulerMode != "exclusive") {
 		ERR("Invalid scheduler mode format. Expected format: mode,timeoutValue (us)\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -256,20 +256,20 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	string timeoutValueStr = schedulerMode.substr(commaPos + 1);
+	std::string timeoutValueStr = schedulerMode.substr(commaPos + 1);
 	float timeoutValue = stof(timeoutValueStr);
 
 	if (schedulerMode == "timeout") {
 		result = sched->setTimeoutMode(timeoutValue);
 	} else if (schedulerMode == "timeslice") {
 		size_t secondCommaPos = timeoutValueStr.find(',', commaPos + 1);
-		if (secondCommaPos == string::npos) {
+		if (secondCommaPos == std::string::npos) {
 			ERR("Invalid scheduler mode format. Expected format: mode,timeoutValue (us)\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 
-		string intervalStr = timeoutValueStr.substr(0, secondCommaPos);
-		string yieldTimeoutStr = timeoutValueStr.substr(secondCommaPos + 1);
+		std::string intervalStr = timeoutValueStr.substr(0, secondCommaPos);
+		std::string yieldTimeoutStr = timeoutValueStr.substr(secondCommaPos + 1);
 		float interval = stof(intervalStr);
 		float yieldTimeout = stof(yieldTimeoutStr);
 
@@ -450,14 +450,14 @@ ze_result_t cmdConfig::forcePpr(devInfo *d)
 int cmdConfig::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	configCmdType cmdType = configCmdType::TOTAL_CONFIG;
 	ze_result_t result;
 	int opt;
 	int optionIndex = 0;
 	bool found = false;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(configCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();

@@ -32,7 +32,7 @@ class LIBXPUM_API process : public sysman
 public:
 	process() {}
 	~process() {}
-	ze_result_t getState(zes_device_handle_t device, vector<zes_process_state_t> *processList);
+	ze_result_t getState(zes_device_handle_t device, std::vector<zes_process_state_t> *processList);
 	ze_result_t zesRun(zes_device_handle_t device);
 };
 

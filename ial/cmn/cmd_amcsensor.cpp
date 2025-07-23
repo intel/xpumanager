@@ -27,7 +27,7 @@
 
 void cmdAmcSensor::help(HELP helpType)
 {
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "List the AMC real-time sensor readings."));
 	helpList.push_back(helpCmd(BLANK));

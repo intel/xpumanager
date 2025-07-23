@@ -5,7 +5,7 @@
 void cmdOOB::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Out-of-Band (OOB) Management Commands"));
 	helpList.push_back(helpCmd(BLANK));

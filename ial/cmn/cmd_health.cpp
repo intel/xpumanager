@@ -44,7 +44,7 @@ static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
 void cmdHealth::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Get the GPU device component health status"));
 	helpList.push_back(helpCmd(BLANK));
@@ -221,12 +221,12 @@ int cmdHealth::run(arg_struct *args)
 {
 	TRACING();
 	UNUSED(args);
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(healthCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();

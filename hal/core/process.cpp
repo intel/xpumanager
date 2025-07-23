@@ -25,9 +25,7 @@
 #include "sysprocess.h"
 #include <vector>
 
-using namespace std;
-
-ze_result_t process::getState(zes_device_handle_t device, vector<zes_process_state_t> *processList)
+ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_process_state_t> *processList)
 {
 	// Get processes running on the device
 	uint32_t processCount = 0;
@@ -59,6 +57,6 @@ ze_result_t process::zesRun(zes_device_handle_t device)
 {
 	TRACING();
 
-	vector<zes_process_state_t> processList;
+	std::vector<zes_process_state_t> processList;
 	return getState(device, &processList);
 }

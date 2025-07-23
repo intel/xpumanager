@@ -32,8 +32,6 @@
 #include <process.h>
 #include <conio.h>
 
-using namespace std;
-
 #ifdef LIBXPUM_EXPORTS
 #define LIBXPUM_API __declspec(dllexport)
 #else
@@ -99,9 +97,9 @@ LIBXPUM_API int getopt_long(int argc, char *const argv[], const char *optstring,
 void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
-string getProcessName(uint32_t processId);
-long long openI2C(const string &deviceName);
+std::string getProcessName(uint32_t processId);
+long long openI2C(const std::string &deviceName);
 int closeI2C(long long fd);
-string timestamp();
+std::string timestamp();
 
 #endif

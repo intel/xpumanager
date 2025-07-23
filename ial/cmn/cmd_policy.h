@@ -69,7 +69,7 @@ struct policyCmdStruct
 	option opt;
 	policySubCmdFunc func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 #endif

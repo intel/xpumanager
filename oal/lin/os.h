@@ -34,8 +34,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-using namespace std;
-
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
@@ -78,10 +76,10 @@ public:
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 bool privilegeCheck();
-string getProcessName(uint32_t processId);
-long long openI2C(const string &deviceName);
+std::string getProcessName(uint32_t processId);
+long long openI2C(const std::string &deviceName);
 int closeI2C(long long fd);
 char getch();
-string timestamp();
+std::string timestamp();
 
 #endif

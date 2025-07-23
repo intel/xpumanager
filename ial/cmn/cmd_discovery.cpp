@@ -94,7 +94,7 @@ static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
 void cmdDiscovery::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(
 		helpCmd(TITLE, "Discover the GPU devices installed on this machine and provide the device info"));
@@ -159,9 +159,9 @@ void cmdDiscovery::help(HELP helpType)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::preCheck(vector<string> *dumpArgs)
+ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
 {
-	string val = discCmds[discCmdType::DISC_DUMP].val;
+	std::string val = discCmds[discCmdType::DISC_DUMP].val;
 
 	// Check if the dump command argument is valid
 	if (val.empty()) {
@@ -173,12 +173,12 @@ ze_result_t cmdDiscovery::preCheck(vector<string> *dumpArgs)
 	if (val == "-1") {
 		// push all dump command types to the vector
 		for (int i = 1; i < TOTAL_DISC_DUMPS; i++) {
-			dumpArgs->push_back(to_string(i));
+			dumpArgs->push_back(std::to_string(i));
 		}
 	} else {
 		// Split the dump command argument by commas
-		stringstream ss(val.c_str());
-		string token;
+		std::stringstream ss(val.c_str());
+		std::string token;
 		while (getline(ss, token, ',')) {
 			dumpArgs->push_back(token);
 		}
@@ -204,10 +204,10 @@ ze_result_t cmdDiscovery::preCheck(vector<string> *dumpArgs)
 ze_result_t cmdDiscovery::dumpHeading()
 {
 	TRACING();
-	vector<string> dumpArgs;
+	std::vector<std::string> dumpArgs;
 	ze_result_t result;
 	bool found = false;
-	string val = discCmds[discCmdType::DISC_DUMP].val;
+	std::string val = discCmds[discCmdType::DISC_DUMP].val;
 
 	result = preCheck(&dumpArgs);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -248,12 +248,12 @@ ze_result_t cmdDiscovery::dumpHeading()
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dump(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::dump(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	vector<string> dumpArgs;
-	string val = discCmds[discCmdType::DISC_DUMP].val;
+	std::vector<std::string> dumpArgs;
+	std::string val = discCmds[discCmdType::DISC_DUMP].val;
 	bool found = false;
 
 	result = preCheck(&dumpArgs);
@@ -304,7 +304,7 @@ ze_result_t cmdDiscovery::dump(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dumpAll(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::dumpAll(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -338,11 +338,11 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::deviceID(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::deviceID(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	*outputLine = to_string(d->index);
+	*outputLine = std::to_string(d->index);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -354,7 +354,7 @@ ze_result_t cmdDiscovery::deviceID(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::deviceName(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::deviceName(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -379,7 +379,7 @@ ze_result_t cmdDiscovery::deviceName(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::vendorName(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::vendorName(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -405,7 +405,7 @@ ze_result_t cmdDiscovery::vendorName(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::socUuid(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::socUuid(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -438,7 +438,7 @@ ze_result_t cmdDiscovery::socUuid(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::serialNumber(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -464,7 +464,7 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::coreClockRate(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::coreClockRate(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -477,7 +477,7 @@ ze_result_t cmdDiscovery::coreClockRate(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	*outputLine = to_string(zeDevProp.coreClockRate) + " MHz";
+	*outputLine = std::to_string(zeDevProp.coreClockRate) + " MHz";
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -490,7 +490,7 @@ ze_result_t cmdDiscovery::coreClockRate(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::stepping(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::stepping(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -507,7 +507,7 @@ ze_result_t cmdDiscovery::stepping(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::driverVersion(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -532,7 +532,7 @@ ze_result_t cmdDiscovery::driverVersion(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 	char version[MAX_PATH] = {0};
@@ -552,7 +552,7 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxDataFirmwareVersion(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::gfxDataFirmwareVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 	char version[MAX_PATH] = {0};
@@ -572,7 +572,7 @@ ze_result_t cmdDiscovery::gfxDataFirmwareVersion(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -604,7 +604,7 @@ ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciSlot(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::pciSlot(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -623,7 +623,7 @@ ze_result_t cmdDiscovery::pciSlot(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -637,7 +637,7 @@ ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	*outputLine = to_string(pciProps.maxSpeed.gen);
+	*outputLine = std::to_string(pciProps.maxSpeed.gen);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -649,7 +649,7 @@ ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -662,7 +662,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, string *outputLine)
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	*outputLine = to_string(pciProps.maxSpeed.width);
+	*outputLine = std::to_string(pciProps.maxSpeed.width);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -675,7 +675,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::oamSocketID(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::oamSocketID(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -694,7 +694,7 @@ ze_result_t cmdDiscovery::oamSocketID(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -709,8 +709,8 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	stringstream stream;
-	stream << fixed << setprecision(2) << (double)physicalSize / 1024 / 1024;
+	std::stringstream stream;
+	stream << std::fixed << std::setprecision(2) << (double)physicalSize / 1024 / 1024;
 	*outputLine = stream.str() + " MiB";
 	return ZE_RESULT_SUCCESS;
 }
@@ -723,7 +723,7 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::memoryChannels(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -738,7 +738,7 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	*outputLine = to_string(channels);
+	*outputLine = std::to_string(channels);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -750,7 +750,7 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -765,7 +765,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	*outputLine = to_string(busWidth);
+	*outputLine = std::to_string(busWidth);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -777,7 +777,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::eus(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -799,7 +799,7 @@ ze_result_t cmdDiscovery::eus(devInfo *d, string *outputLine)
 
 	if (zeDevProp.pNext != nullptr) {
 		ze_eu_count_ext_t *eu_count_ext = (ze_eu_count_ext_t *)(zeDevProp.pNext);
-		*outputLine = to_string(eu_count_ext->numTotalEUs);
+		*outputLine = std::to_string(eu_count_ext->numTotalEUs);
 	}
 
 	delete extendedPropertiesPtr;
@@ -814,7 +814,7 @@ ze_result_t cmdDiscovery::eus(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::mediaEngines(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -831,7 +831,7 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	*outputLine = to_string(mediaEnginesCount);
+	*outputLine = std::to_string(mediaEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -843,7 +843,7 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -860,7 +860,7 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, string *outputLine
 		return result;
 	}
 
-	*outputLine = to_string(mediaEnhancementEnginesCount);
+	*outputLine = std::to_string(mediaEnhancementEnginesCount);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -872,7 +872,7 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, string *outputLine
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -889,7 +889,7 @@ ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciVendorID(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::pciVendorID(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -902,9 +902,9 @@ ze_result_t cmdDiscovery::pciVendorID(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	stringstream stream;
-	stream << hex << zeDevProp.vendorId;
-	string hexString = stream.str();
+	std::stringstream stream;
+	stream << std::hex << zeDevProp.vendorId;
+	std::string hexString = stream.str();
 	*outputLine = "0x" + hexString;
 	return ZE_RESULT_SUCCESS;
 }
@@ -917,7 +917,7 @@ ze_result_t cmdDiscovery::pciVendorID(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -930,9 +930,9 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, string *outputLine)
 		return result;
 	}
 
-	stringstream stream;
-	stream << hex << zeDevProp.deviceId;
-	string hexString = stream.str();
+	std::stringstream stream;
+	stream << std::hex << zeDevProp.deviceId;
+	std::string hexString = stream.str();
 	*outputLine = "0x" + hexString;
 	return ZE_RESULT_SUCCESS;
 }
@@ -945,7 +945,7 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::physicalFunction(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::physicalFunction(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -962,7 +962,7 @@ ze_result_t cmdDiscovery::physicalFunction(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::virtualFunction(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::virtualFunction(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -979,7 +979,7 @@ ze_result_t cmdDiscovery::virtualFunction(devInfo *d, string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::listamcversions(devInfo *d, string *outputLine)
+ze_result_t cmdDiscovery::listamcversions(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
@@ -996,14 +996,14 @@ ze_result_t cmdDiscovery::listamcversions(devInfo *d, string *outputLine)
 int cmdDiscovery::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false, headingFirst = true;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
-	string outputLine = "";
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
+	std::string outputLine = "";
 
 	processOptions(discCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();

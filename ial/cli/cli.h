@@ -28,8 +28,6 @@
 #include <cmds.h>
 #include <functional>
 
-using namespace std;
-
 #define STRINGIFY(x) #x
 #define CONCATENATE_WITH_DOT(a, b) "v" STRINGIFY(a) "." STRINGIFY(b)
 #define CONCATENATE_WITH_DOTS(a, b, c, d) STRINGIFY(a) "." STRINGIFY(b) "." STRINGIFY(c) "." STRINGIFY(d)
@@ -47,7 +45,7 @@ enum class OSTYPE
 /* Structure to hold function and OS type */
 struct function_entry
 {
-	function<cmds *()> create_func;
+	std::function<cmds *()> create_func;
 	DAEMONCAP daemon_cap;
 	OSTYPE os_type;
 };

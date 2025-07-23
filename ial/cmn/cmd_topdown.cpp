@@ -28,7 +28,7 @@
 void cmdTopdown::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Show topdown information"));
 	helpList.push_back(helpCmd(BLANK));
@@ -110,12 +110,12 @@ int cmdTopdown::run(arg_struct *args)
 										   {0, 0, 0, 0}};
 
 	ze_result_t result;
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	int opt;
 	int option_index = 0;
-	string deviceId;
-	string tileId;
-	string samplingInterval;
+	std::string deviceId;
+	std::string tileId;
+	std::string samplingInterval;
 	bool jsonOutput = false;
 
 	// Skip the first two arguments (process and command name)

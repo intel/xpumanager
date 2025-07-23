@@ -65,7 +65,7 @@ struct statsCmdStruct
 	option opt;
 	statsSubCmdFunc func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 #endif

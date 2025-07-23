@@ -57,8 +57,8 @@ public:
 	ze_result_t getDriverProperties(ze_driver_handle_t driver);
 	ze_result_t getIpcProperties(ze_driver_handle_t driver);
 	ze_result_t getExtensionProperties(ze_driver_handle_t driver);
-	void getLoaderVersion(string *lzVersion);
-	ze_result_t findDevice(const char *bdf, vector<devInfo> *dev);
+	void getLoaderVersion(std::string *lzVersion);
+	ze_result_t findDevice(const char *bdf, std::vector<devInfo> *dev);
 	ze_result_t run();
 };
 

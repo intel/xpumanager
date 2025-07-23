@@ -49,7 +49,7 @@ static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
 void cmdVgpu::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Create and remove virtual GPUs in SRIOV configuration"));
 	helpList.push_back(helpCmd(BLANK));
@@ -149,13 +149,13 @@ ze_result_t cmdVgpu::lmem(devInfo *d)
 int cmdVgpu::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(vgpuCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();

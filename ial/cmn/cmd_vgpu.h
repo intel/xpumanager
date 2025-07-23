@@ -71,7 +71,7 @@ struct vgpuCmdStruct
 	option opt;
 	vgpuSubCmdFunc func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 #endif

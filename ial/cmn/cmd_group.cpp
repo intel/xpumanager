@@ -41,7 +41,7 @@ static std::unordered_map<groupCmdType, groupCmdStruct> groupCmds = {
 void cmdGroup::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Group the managed GPU devices"));
 	helpList.push_back(helpCmd(BLANK));
@@ -118,12 +118,12 @@ ze_result_t cmdGroup::remove(devInfo *d)
 int cmdGroup::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(groupCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
