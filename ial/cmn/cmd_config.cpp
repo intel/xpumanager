@@ -160,7 +160,7 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	frequency *fq = (frequency *)d->dev->getFrequency();
+	frequency *fq = d->dev->getFrequency();
 	if (fq == nullptr) {
 		ERR("Error: Frequency pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -189,7 +189,7 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	power *pwr = (power *)d->dev->getPower();
+	power *pwr = d->dev->getPower();
 	if (pwr == nullptr) {
 		ERR("Error: Power pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -220,7 +220,7 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 	}
 
 	// Set the standby mode using the device class
-	standby *stby = (standby *)d->dev->getStandby();
+	standby *stby = d->dev->getStandby();
 	if (stby == nullptr) {
 		ERR("Error: Standby pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -252,7 +252,7 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	scheduler *sched = (scheduler *)d->dev->getScheduler();
+	scheduler *sched = d->dev->getScheduler();
 	if (sched == nullptr) {
 		ERR("Error: Scheduler pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -327,7 +327,7 @@ ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	performance *perf = (performance *)d->dev->getPerformance();
+	performance *perf = d->dev->getPerformance();
 	if (perf == nullptr) {
 		ERR("Error: Performance pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -361,7 +361,7 @@ ze_result_t cmdConfig::setXeLinkPort(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	// Set the Xe Link port using the device class
-	fabric *f = (fabric *)d->dev->getFabric();
+	fabric *f = d->dev->getFabric();
 	if (f == nullptr) {
 		ERR("Error: Fabric pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -389,7 +389,7 @@ ze_result_t cmdConfig::setXeLinkPortBeaconing(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	// Set the Xe Link port beaconing using the device class
-	fabric *f = (fabric *)d->dev->getFabric();
+	fabric *f = d->dev->getFabric();
 	if (f == nullptr) {
 		ERR("Error: Fabric pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -417,7 +417,7 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	// Set the memory ECC using the device class
-	ecc *e = (ecc *)d->dev->getECC();
+	ecc *e = d->dev->getECC();
 	if (e == nullptr) {
 		ERR("Error: ECC pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;

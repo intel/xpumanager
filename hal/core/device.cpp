@@ -23,26 +23,22 @@
  */
 
 #include "device.h"
-#include "diagnostic.h"
-#include "ecc.h"
-#include "enginegroup.h"
-#include "fabric.h"
-#include "fan.h"
 #include "firmware.h"
-#include "frequency.h"
-#include "memory.h"
-#include "metric.h"
-#include "performance.h"
-#include "power.h"
-#include "sysprocess.h"
-#include "ras.h"
-#include "scheduler.h"
-#include "standby.h"
-#include "temperature.h"
-#include "vf.h"
 #include <cinttypes>
 #include <cstring>
 #include <vector>
+#include <memory>
+
+/**
+ * @brief Constructor for the device class.
+ *
+ * This constructor initializes member variables to their default values
+ * and creates an instance of the firmware class.
+ */
+device::device()
+	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), fwupdateProgress(0), igpu(false),
+	  firmwareInstance(new firmware())
+{}
 
 /**
  * @brief Destructor for the device class.
@@ -69,20 +65,10 @@ device::~device()
 		delete[] deviceProperties.zeCmdQueueProps;
 	}
 
-	// Clean up zes_func_table
-	for (uint32_t i = 0; i < TOTAL_ZES; i++) {
-		delete zes_func_table[i].func;
-	}
-	if (zes_func_table) {
-		delete[] zes_func_table;
-	}
-
-	// Clean up zet_func_table
-	for (uint32_t i = 0; i < TOTAL_ZET; i++) {
-		delete zet_func_table[i].func;
-	}
-	if (zet_func_table) {
-		delete[] zet_func_table;
+	// Clean up firmwareInstance raw pointer
+	if (firmwareInstance) {
+		delete firmwareInstance;
+		firmwareInstance = nullptr;
 	}
 }
 
@@ -644,17 +630,45 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 	return result;
 }
 
-/**
- * @brief Template function to create an instance of a sysman-derived class
+/*
+ * @brief Returns a vector of pointers to sysman instances for ZES functions.
  *
- * This template function creates and returns a new instance of a class that
- * inherits from the sysman base class. It provides a generic factory pattern
- * for instantiating different sysman component classes.
+ * This function returns a vector containing pointers to various sysman instances
+ * that provide functionality for ZES (Ze System Management) APIs.
  *
- * @tparam T The type of sysman-derived class to instantiate
- * @return sysman* Pointer to the newly created instance of type T
+ * @return A vector of pointers to sysman instances.
  */
-template <typename T> sysman *createInstance() { return new T(); }
+std::vector<sysman *> device::zesFunctionTable()
+{
+	return std::vector<sysman *>{
+		// clang-format off
+		&pciInstance,
+		&processInstance,
+		&diagnosticInstance,
+		&eccInstance,
+		&enginegroupInstance,
+		&fabricInstance,
+		&fanInstance,
+		firmwareInstance,
+		&frequencyInstance,
+		&memoryInstance,
+		&performanceInstance,
+		&powerInstance,
+		&rasInstance,
+		&schedulerInstance,
+		&standbyInstance,
+		&temperatureInstance,
+		&vfInstance,
+		// clang-format on
+	};
+}
+
+std::vector<sysman *> device::zetFunctionTable()
+{
+	return std::vector<sysman *>{
+		&metricInstance,
+	};
+}
 
 /**
  * @brief Initializes the device object.
@@ -726,41 +740,17 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 		return ZE_RESULT_ERROR_INVALID_ENUMERATION;
 	}
 
-	zes_func_table = new zesInfo[TOTAL_ZES]{
-		{PCI, createInstance<pci>()},
-		{PROCESS, createInstance<process>()},
-		{DIAGNOSTIC, createInstance<diagnostic>()},
-		{ECC, createInstance<ecc>()},
-		{ENGINEGROUP, createInstance<enginegroup>()},
-		{FABRIC, createInstance<fabric>()},
-		{FAN, createInstance<fan>()},
-		{FIRMWARE, createInstance<firmware>()},
-		{FREQUENCY, createInstance<frequency>()},
-		{MEMORY, createInstance<memory>()},
-		{PERFORMANCE, createInstance<performance>()},
-		{POWER, createInstance<power>()},
-		{RAS, createInstance<ras>()},
-		{SCHEDULER, createInstance<scheduler>()},
-		{STANDBY, createInstance<standby>()},
-		{TEMPERATURE, createInstance<temperature>()},
-		{VF, createInstance<vf>()},
-	};
-
 	/*
 	 * For whichever inherited classes of sysman that support the init function,
 	 * call it so that their data can be used later.
 	 */
-	for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
-		auto ptr = &zes_func_table[j];
+	for (auto func : zesFunctionTable()) {
 		// Don't check the return value of init, as they may not all return success
 		// and we don't want to fail the entire initialization process for the rest
 		// of the classes
-		ptr->func->init(zesDevice);
+		func->init(zesDevice);
 	}
 
-	zet_func_table = new zetInfo[TOTAL_ZET]{
-		{METRIC, createInstance<metric>()},
-	};
 	DBG("\n==============================================\n");
 	return ZE_RESULT_SUCCESS;
 }
@@ -774,8 +764,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 bool device::isBDF(const char *bdf)
 {
 	// BDF is stored in the PCI device properties so get it from there
-	pci *p = (pci *)zes_func_table[PCI].func;
-	return p->isBDF(bdf);
+	return pciInstance.isBDF(bdf);
 }
 
 /**
@@ -790,8 +779,8 @@ bool device::isBDF(const char *bdf)
  */
 void device::getBDF(bdfID &bdf) const
 {
-	pci *p = (pci *)zes_func_table[PCI].func;
-	p->getBDF(bdf);
+	TRACING();
+	pciInstance.getBDF(bdf);
 }
 
 /**
@@ -803,9 +792,8 @@ void device::getBDF(bdfID &bdf) const
  */
 std::string device::getBDFStr()
 {
-	// BDF is stored in the PCI device properties so get it from there
-	pci *p = (pci *)zes_func_table[PCI].func;
-	return p->getBDFStr();
+	TRACING();
+	return pciInstance.getBDFStr();
 }
 
 /**
@@ -884,17 +872,15 @@ ze_result_t device::run()
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	for (uint32_t j = 0; j < TOTAL_ZES; ++j) {
+	for (auto func : zesFunctionTable()) {
 		// Run each tool function
-		auto ptr = &zes_func_table[j];
-		ptr->func->zesRun(zesDevice);
+		func->zesRun(zesDevice);
 	}
 	DBG("\n==============================================\n");
 
 	// Run each tool function
-	for (uint32_t j = 0; j < TOTAL_ZET; ++j) {
-		auto ptr = &zet_func_table[j];
-		ptr->func->zeRun(zeDevice, &context);
+	for (auto func : zetFunctionTable()) {
+		func->zeRun(zeDevice, &context);
 	}
 	return ZE_RESULT_SUCCESS;
 }

@@ -367,7 +367,7 @@ std::string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flag
 ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU)
 {
 	TRACING();
-	power *p = (power *)d->dev->getPower();
+	power *p = d->dev->getPower();
 	if (p == nullptr) {
 		ERR("Failed to get power handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -398,7 +398,7 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 	double utilizationDiff = 0.0;
 	ze_result_t result;
 
-	enginegroup *eg = (enginegroup *)d->dev->getEngineGroup();
+	enginegroup *eg = d->dev->getEngineGroup();
 	if (eg == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -499,7 +499,7 @@ ze_result_t cmdDump::gpuFrequency(devInfo *d, std::string *outputLine, UNUSED th
 	TRACING();
 	double curFreq = 0.0;
 
-	frequency *fq = (frequency *)d->dev->getFrequency();
+	frequency *fq = d->dev->getFrequency();
 	if (fq == nullptr) {
 		ERR("Failed to get frequency handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -530,7 +530,7 @@ ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, UNU
 	TRACING();
 	double coreTemp = 0.0;
 
-	temperature *t = (temperature *)d->dev->getTemperature();
+	temperature *t = d->dev->getTemperature();
 	if (t == nullptr) {
 		ERR("Failed to get temperature handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -561,7 +561,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, U
 	TRACING();
 	double memoryTemp = 0.0;
 
-	temperature *t = (temperature *)d->dev->getTemperature();
+	temperature *t = d->dev->getTemperature();
 	if (t == nullptr) {
 		ERR("Failed to get temperature handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -591,7 +591,7 @@ ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, std::string *outputLine, U
 	TRACING();
 	double memoryUtilization = 0;
 
-	memory *mem = (memory *)d->dev->getMemory();
+	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -620,7 +620,7 @@ ze_result_t cmdDump::gpuMemoryRead(devInfo *d, std::string *outputLine, threadDa
 {
 	TRACING();
 
-	memory *mem = (memory *)d->dev->getMemory();
+	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -660,7 +660,7 @@ ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, std::string *outputLine, threadD
 {
 	TRACING();
 
-	memory *mem = (memory *)d->dev->getMemory();
+	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -932,7 +932,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, std::string *outp
 	uint64_t maxBandwidth = 0;
 	double memoryBW[2] = {0}, memoryBWDiff = 0;
 
-	memory *mem = (memory *)d->dev->getMemory();
+	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -978,7 +978,7 @@ ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, std::string *outputLine, UNUSED t
 	TRACING();
 	uint64_t memoryUsed = 0;
 
-	memory *mem = (memory *)d->dev->getMemory();
+	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -1009,7 +1009,7 @@ ze_result_t cmdDump::pcieRead(devInfo *d, std::string *outputLine, threadData *t
 	TRACING();
 	uint64_t pciDiff = 0;
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -1051,7 +1051,7 @@ ze_result_t cmdDump::pcieWrite(devInfo *d, std::string *outputLine, threadData *
 	TRACING();
 	uint64_t pciDiff = 0;
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -1336,7 +1336,7 @@ ze_result_t cmdDump::throttleReason(devInfo *d, std::string *outputLine, UNUSED 
 	TRACING();
 	zes_freq_throttle_reason_flags_t throttleReasons;
 
-	frequency *fq = (frequency *)d->dev->getFrequency();
+	frequency *fq = d->dev->getFrequency();
 	if (fq == nullptr) {
 		ERR("Failed to get frequency handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -1368,7 +1368,7 @@ ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, U
 	TRACING();
 	double curFreq = 0.0;
 
-	frequency *fq = (frequency *)d->dev->getFrequency();
+	frequency *fq = d->dev->getFrequency();
 	if (fq == nullptr) {
 		ERR("Failed to get frequency handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;

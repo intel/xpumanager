@@ -24,49 +24,27 @@
 #ifndef _DEVICE_H
 #define _DEVICE_H
 
+#include <vector>
+#include <memory>
 #include "sysman.h"
 #include "pci.h"
-#include <vector>
-
-enum zesCmdType
-{
-	PCI,
-	PROCESS,
-	DIAGNOSTIC,
-	ECC,
-	ENGINEGROUP,
-	FABRIC,
-	FAN,
-	FIRMWARE,
-	FREQUENCY,
-	MEMORY,
-	PERFORMANCE,
-	POWER,
-	RAS,
-	SCHEDULER,
-	STANDBY,
-	TEMPERATURE,
-	VF,
-	TOTAL_ZES,
-};
-
-struct zesInfo
-{
-	zesCmdType type;
-	sysman *func;
-};
-
-enum zetCmdType
-{
-	METRIC,
-	TOTAL_ZET,
-};
-
-struct zetInfo
-{
-	zetCmdType type;
-	sysman *func;
-};
+#include "diagnostic.h"
+#include "ecc.h"
+#include "enginegroup.h"
+#include "fabric.h"
+#include "fan.h"
+#include "frequency.h"
+#include "memory.h"
+#include "metric.h"
+#include "pci.h"
+#include "performance.h"
+#include "power.h"
+#include "sysprocess.h"
+#include "ras.h"
+#include "scheduler.h"
+#include "standby.h"
+#include "temperature.h"
+#include "vf.h"
 
 struct devProps
 {
@@ -88,6 +66,7 @@ struct devProps
 };
 
 class device;
+class firmware;
 
 struct devInfo
 {
@@ -106,16 +85,34 @@ private:
 	zes_device_handle_t zesDevice;
 	uint32_t deviceCount;
 	devProps deviceProperties;
-	zesInfo *zes_func_table;
-	zetInfo *zet_func_table;
 	uint32_t fwupdateProgress;
 	bool igpu;
 
+	std::vector<sysman *> zesFunctionTable();
+	std::vector<sysman *> zetFunctionTable();
+
+	pci pciInstance;
+	process processInstance;
+	diagnostic diagnosticInstance;
+	ecc eccInstance;
+	enginegroup enginegroupInstance;
+	fabric fabricInstance;
+	fan fanInstance;
+	// firmwareInstance is a pointer due to circular dependency.
+	firmware *firmwareInstance;
+	frequency frequencyInstance;
+	memory memoryInstance;
+	performance performanceInstance;
+	power powerInstance;
+	ras rasInstance;
+	scheduler schedulerInstance;
+	standby standbyInstance;
+	temperature temperatureInstance;
+	vf vfInstance;
+	metric metricInstance;
+
 public:
-	device()
-		: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), zes_func_table(nullptr),
-		  zet_func_table(nullptr), fwupdateProgress(0), igpu(false)
-	{}
+	device();
 	~device();
 	void printFlag(const char *flagName, ze_device_fp_flags_t flag);
 	void printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap);
@@ -146,23 +143,23 @@ public:
 	ze_result_t run();
 	ze_context_handle_t getContext() const { return context; }
 
-	sysman *getPCI() { return zes_func_table[PCI].func; }
-	sysman *getProcess() { return zes_func_table[PROCESS].func; }
-	sysman *getDiagnostic() { return zes_func_table[DIAGNOSTIC].func; }
-	sysman *getECC() { return zes_func_table[ECC].func; }
-	sysman *getEngineGroup() { return zes_func_table[ENGINEGROUP].func; }
-	sysman *getFabric() { return zes_func_table[FABRIC].func; }
-	sysman *getFan() { return zes_func_table[FAN].func; }
-	sysman *getFirmware() { return zes_func_table[FIRMWARE].func; }
-	sysman *getFrequency() { return zes_func_table[FREQUENCY].func; }
-	sysman *getMemory() { return zes_func_table[MEMORY].func; }
-	sysman *getPerformance() { return zes_func_table[PERFORMANCE].func; }
-	sysman *getPower() { return zes_func_table[POWER].func; }
-	sysman *getRAS() { return zes_func_table[RAS].func; }
-	sysman *getScheduler() { return zes_func_table[SCHEDULER].func; }
-	sysman *getStandby() { return zes_func_table[STANDBY].func; }
-	sysman *getTemperature() { return zes_func_table[TEMPERATURE].func; }
-	sysman *getVF() { return zes_func_table[VF].func; }
+	pci *getPCI() { return &pciInstance; }
+	process *getProcess() { return &processInstance; }
+	diagnostic *getDiagnostic() { return &diagnosticInstance; }
+	ecc *getECC() { return &eccInstance; }
+	enginegroup *getEngineGroup() { return &enginegroupInstance; }
+	fabric *getFabric() { return &fabricInstance; }
+	fan *getFan() { return &fanInstance; }
+	firmware *getFirmware() { return firmwareInstance; }
+	frequency *getFrequency() { return &frequencyInstance; }
+	memory *getMemory() { return &memoryInstance; }
+	performance *getPerformance() { return &performanceInstance; }
+	power *getPower() { return &powerInstance; }
+	ras *getRAS() { return &rasInstance; }
+	scheduler *getScheduler() { return &schedulerInstance; }
+	standby *getStandby() { return &standbyInstance; }
+	temperature *getTemperature() { return &temperatureInstance; }
+	vf *getVF() { return &vfInstance; }
 
 	void getBDF(bdfID &bdf) const;
 	std::string getBDFStr();

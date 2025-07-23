@@ -109,7 +109,7 @@ ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo, bool checkType)
 	TRACING();
 	int ret;
 
-	pci *p = (pci *)fwInfo->dev->getPCI();
+	pci *p = fwInfo->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI device properties.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;

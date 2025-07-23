@@ -363,7 +363,7 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::json *jsonObj)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_mem_health_t health;
 
-	memory *mem = (memory *)d->dev->getMemory();
+	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;

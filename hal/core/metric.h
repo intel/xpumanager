@@ -28,7 +28,7 @@
 #include "sysman.h"
 #include <zet_api.h>
 
-class metric : public sysman
+class LIBXPUM_API metric : public sysman
 {
 private:
 	uint32_t metricCount;

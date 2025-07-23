@@ -178,7 +178,7 @@ ze_result_t cmdDiag::printPrecheckInfo(devInfo *d, bool gpuOnly)
 	ze_result_t result;
 	std::string outputLine;
 
-	pci *p = (pci *)d->dev->getPCI();
+	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI device properties.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
