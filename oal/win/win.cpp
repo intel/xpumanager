@@ -133,7 +133,7 @@ int getopt_long(int argc, char *const argv[], const char *optstring, const struc
 
 void *align_alloc(size_t size) { return malloc(size); }
 
-long long openI2C(const string &deviceName)
+long long openI2C(const std::string &deviceName)
 {
 	HANDLE amchandle = nullptr;
 	// For now, the device name is not used because we have a hardcoded path

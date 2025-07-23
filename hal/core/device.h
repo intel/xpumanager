@@ -27,8 +27,6 @@
 #include "sysman.h"
 #include <vector>
 
-using namespace std;
-
 enum zesCmdType
 {
 	PCI,
@@ -140,7 +138,7 @@ public:
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
 	bool isIGPU() const { return igpu; }
 	bool isBDF(const char *bdf);
-	void addInfo(vector<devInfo> *devList, uint32_t devIndex);
+	void addInfo(std::vector<devInfo> *devList, uint32_t devIndex);
 
 	ze_result_t init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
 					 uint32_t totalZesDeviceCount);

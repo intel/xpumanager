@@ -1,6 +1,6 @@
 #include "cmds.h"
 
-void cmds::printHelp(vector<helpCmd> helpList, HELP helpType)
+void cmds::printHelp(std::vector<helpCmd> helpList, HELP helpType)
 {
 	if (helpType == SHORT_HELP) {
 		/* Just print the first line of each subcommand's help because it contains the description */

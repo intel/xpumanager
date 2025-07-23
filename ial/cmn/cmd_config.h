@@ -80,7 +80,7 @@ struct configCmdStruct
 	option opt;
 	configSubCmdFunc func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 #endif

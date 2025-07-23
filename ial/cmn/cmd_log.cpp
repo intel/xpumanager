@@ -34,7 +34,7 @@
 void cmdLogs::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Collect GPU debug logs"));
 	helpList.push_back(helpCmd(BLANK));

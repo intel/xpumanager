@@ -69,7 +69,7 @@ static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
 void cmdDiag::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Run some test suites to diagnose GPU"));
 	helpList.push_back(helpCmd(BLANK));
@@ -468,17 +468,16 @@ uint64_t cmdDiag::setWorkgroups(ze_device_compute_properties_t *device_compute_p
 	return final_work_items;
 }
 
-ze_result_t cmdDiag::loadBinaryFile(const string &file_path, vector<uint8_t> *binary_file)
+ze_result_t cmdDiag::loadBinaryFile(const std::string &file_path, std::vector<uint8_t> *binary_file)
 {
-	string folder = string(XPUM_RESOURCES_DIR) + string("kernels/");
+	std::string folder = std::string(XPUM_RESOURCES_DIR) + std::string("kernels/");
 	if (!isPathExist(folder)) {
 		ERR("Kernel folder does not exist: %s\n", folder.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	string absolute_file_path = folder + file_path;
-	ifstream stream(absolute_file_path, ios::in | ios::binary);
-	;
+	std::string absolute_file_path = folder + file_path;
+	std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
 
 	if (!stream.good()) {
 		ERR("Failed to open kernel file: %s\n", absolute_file_path.c_str());
@@ -532,7 +531,7 @@ ze_result_t cmdDiag::computation(devInfo *d)
 
 	long double timed;
 	std::size_t flops_per_work_item = 4096;
-	vector<uint8_t> binary_file;
+	std::vector<uint8_t> binary_file;
 	ze_result_t ret = loadBinaryFile("ze_sp_compute.spv", &binary_file);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
@@ -547,7 +546,7 @@ ze_result_t cmdDiag::computation(devInfo *d)
 	uint64_t max_work_items = (uint64_t)zeDevProp.numSlices * zeDevProp.numSubslicesPerSlice *
 							  zeDevProp.numEUsPerSubslice * zeComputeProp.maxGroupCountX * 2048;
 	uint64_t max_number_of_allocated_items = zeDevProp.maxMemAllocSize / sizeof(float);
-	uint64_t number_of_work_items = min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
+	uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
 	ZeWorkGroups workgroup_info;
 	number_of_work_items = setWorkgroups(&zeComputeProp, number_of_work_items, &workgroup_info);
 
@@ -788,13 +787,13 @@ ze_result_t cmdDiag::runSince(devInfo *d)
 int cmdDiag::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(diagCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();

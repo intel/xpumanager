@@ -128,54 +128,54 @@ public:
 	~cmdDump() {};
 	void help(HELP helpType = FULL_HELP);
 
-	ze_result_t gpuUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuPower(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuFrequency(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuCoreTemperature(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryTemperature(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryRead(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryWrite(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEnergyConsumed(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayActive(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayStall(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayIdle(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayResetCounter(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayProgrammingErrors(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayDriverErrors(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayCacheErrorsCorrectable(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuEuArrayCacheErrorsUncorrectable(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryBandwidthUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryUsed(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t pcieRead(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t pcieWrite(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t xeLinkThroughput(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t computeEngineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t renderEngineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t mediaDecoderEngineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t mediaEncoderEngineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t copyEngineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t mediaEnhancementEngineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t engineUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryErrorsCorrectable(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t gpuMemoryErrorsUncorrectable(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t computeEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t renderEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t mediaEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t copyEngineGroupUtilization(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t throttleReason(devInfo *d, string *outputLine, threadData *td);
-	ze_result_t mediaEngineFrequency(devInfo *d, string *outputLine, threadData *td);
+	ze_result_t gpuUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuPower(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuFrequency(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuCoreTemperature(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryTemperature(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryRead(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryWrite(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEnergyConsumed(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayActive(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayStall(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayIdle(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayResetCounter(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayProgrammingErrors(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayDriverErrors(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayCacheErrorsCorrectable(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuEuArrayCacheErrorsUncorrectable(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryBandwidthUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryUsed(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t pcieRead(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t pcieWrite(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t xeLinkThroughput(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t computeEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t renderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t mediaDecoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t mediaEncoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t copyEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t mediaEnhancementEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t engineUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryErrorsCorrectable(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t gpuMemoryErrorsUncorrectable(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t computeEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t renderEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t mediaEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t copyEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t throttleReason(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t mediaEngineFrequency(devInfo *d, std::string *outputLine, threadData *td);
 
-	ze_result_t utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, string *outputLine,
+	ze_result_t utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, std::string *outputLine,
 							threadData *td);
 	ze_result_t gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU);
-	string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
+	std::string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 
 	static THREAD_RET metrics(void *args);
 	int run(arg_struct *args);
 };
 
-using dumpSubCmdFunc = ze_result_t (cmdDump::*)(devInfo *d, string *outputLine, threadData *td);
+using dumpSubCmdFunc = ze_result_t (cmdDump::*)(devInfo *d, std::string *outputLine, threadData *td);
 using dumpHeadingFunc = ze_result_t (cmdDump::*)();
 
 struct dumpCmdStruct
@@ -183,13 +183,13 @@ struct dumpCmdStruct
 	option opt;
 	funcptr func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 struct dumpCmdSubStruct
 {
 	dumpSubCmdFunc func;
-	string heading;
+	std::string heading;
 	bool availableForIGPU;
 };
 
@@ -197,8 +197,8 @@ struct threadArgs
 {
 	cmdDump *cmdDumpInstance;
 	devInfo *d;
-	string cmdName;
-	string outputLine;
+	std::string cmdName;
+	std::string outputLine;
 	threadData td;
 };
 

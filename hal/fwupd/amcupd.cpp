@@ -30,7 +30,7 @@ ze_result_t amcupd::preUpdateAMC(firmwareInfo *fwInfo)
 {
 	TRACING();
 	UNUSED(fwInfo);
-	string amc = "amc";
+	std::string amc = "amc";
 	DBG("Pre-update AMC firmware...\n");
 
 	deviceHandle = OPENI2C(amc);

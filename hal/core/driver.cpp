@@ -25,8 +25,6 @@
 #include <loader/ze_loader.h>
 #include <vector>
 
-using namespace std;
-
 #ifdef _DEBUG
 int dbg_lvl = DBG;
 #else
@@ -428,7 +426,7 @@ ze_result_t driver::run()
  *
  * This function retrieves and prints the versions of the Level Zero loader components.
  */
-void driver::getLoaderVersion(string *lzVersion)
+void driver::getLoaderVersion(std::string *lzVersion)
 {
 	zel_component_version_t *versions;
 	size_t size = 0;
@@ -438,9 +436,9 @@ void driver::getLoaderVersion(string *lzVersion)
 	zelLoaderGetVersions(&size, versions);
 
 	if (size > 0) {
-		*lzVersion = to_string(versions[0].component_lib_version.major) + ".";
-		*lzVersion += to_string(versions[0].component_lib_version.minor) + ".";
-		*lzVersion += to_string(versions[0].component_lib_version.patch);
+		*lzVersion = std::to_string(versions[0].component_lib_version.major) + ".";
+		*lzVersion += std::to_string(versions[0].component_lib_version.minor) + ".";
+		*lzVersion += std::to_string(versions[0].component_lib_version.patch);
 	}
 
 	delete[] versions;
@@ -456,7 +454,7 @@ void driver::getLoaderVersion(string *lzVersion)
  * @param devList A pointer to a vector to store the device information.
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::findDevice(const char *bdf, vector<devInfo> *devList)
+ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 {
 	uint32_t deviceIndex = 0;
 

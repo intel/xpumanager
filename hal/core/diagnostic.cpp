@@ -25,8 +25,6 @@
 #include "diagnostic.h"
 #include <vector>
 
-using namespace std;
-
 diagnostic::~diagnostic()
 {
 	if (testSuites) {
@@ -83,7 +81,7 @@ int diagnostic::getTests(zes_diag_handle_t testSuite)
 		return 0;
 	}
 
-	vector<zes_diag_test_t> tests(testCount);
+	std::vector<zes_diag_test_t> tests(testCount);
 	result = zesDiagnosticsGetTests(testSuite, &testCount, tests.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get diagnostic tests: 0x%X (%s)\n", result, l0_error_to_string(result));

@@ -34,7 +34,7 @@
 void cmdTopology::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Get the system topology"));
 	helpList.push_back(helpCmd(BLANK));

@@ -2,7 +2,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-vector<char> fwupd::readImageContent(const char *filePath)
+std::vector<char> fwupd::readImageContent(const char *filePath)
 {
 	struct stat s;
 	if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))

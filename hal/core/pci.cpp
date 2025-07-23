@@ -28,8 +28,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProps)
 {
 	assert(pciProps);
@@ -85,7 +83,7 @@ ze_result_t pci::getBars(zes_device_handle_t device)
 		return result;
 	}
 
-	vector<zes_pci_bar_properties_t> bars(barCount);
+	std::vector<zes_pci_bar_properties_t> bars(barCount);
 	result = zesDevicePciGetBars(device, &barCount, bars.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI BAR properties: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -141,15 +139,15 @@ ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 bool pci::isBDF(const char *bdf)
 {
 	bool isValid = false;
-	string bdfStr(bdf);
-	regex regexPattern(R"((\d+):(\d+):(\d+)\.(\d+))");
-	smatch match;
+	std::string bdfStr(bdf);
+	std::regex regexPattern(R"((\d+):(\d+):(\d+)\.(\d+))");
+	std::smatch match;
 
-	if (regex_match(bdfStr, match, regexPattern)) {
-		string domain = match[1];
-		string bus = match[2];
-		string device = match[3];
-		string function = match[4];
+	if (std::regex_match(bdfStr, match, regexPattern)) {
+		std::string domain = match[1];
+		std::string bus = match[2];
+		std::string device = match[3];
+		std::string function = match[4];
 
 		if (domain.length() > 4 || bus.length() > 2 || device.length() > 2 || function.length() > 1) {
 			ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
@@ -177,7 +175,7 @@ ze_result_t pci::init(zes_device_handle_t device)
 	}
 
 	gscupd gsc;
-	vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
+	std::vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
 
 	for (const auto &dev : devicesVec) {
 		if (dev.pciProps.address.domain == deviceProperties.pciProps.address.domain &&

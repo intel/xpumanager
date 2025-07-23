@@ -67,7 +67,7 @@ struct groupCmdStruct
 	option opt;
 	groupSubCmdFunc func;
 	bool enabled;
-	string val;
+	std::string val;
 };
 
 #endif

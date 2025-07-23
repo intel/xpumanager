@@ -45,7 +45,7 @@ static std::unordered_map<statsCmdType, statsCmdStruct> statsCmds = {
 void cmdStats::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "List the GPU statistics"));
 	helpList.push_back(helpCmd(BLANK));
@@ -123,13 +123,13 @@ ze_result_t cmdStats::utils(devInfo *d)
 int cmdStats::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(statsCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();

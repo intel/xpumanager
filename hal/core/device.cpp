@@ -778,7 +778,7 @@ bool device::isBDF(const char *bdf)
  * @param devList A pointer to the vector of device information.
  * @param devIndex The index of the device.
  */
-void device::addInfo(vector<devInfo> *devList, uint32_t devIndex)
+void device::addInfo(std::vector<devInfo> *devList, uint32_t devIndex)
 {
 	devInfo d;
 	d.index = devIndex;

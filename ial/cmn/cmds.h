@@ -40,9 +40,7 @@ enum DAEMONCAP
 };
 
 extern DAEMONCAP curDaemonMode;
-extern string progName;
-
-using namespace std;
+extern std::string progName;
 
 enum GAP
 {
@@ -100,7 +98,7 @@ public:
 	cmds() {};
 	char *get_name() { return name; }
 	virtual ~cmds() {};
-	void printHelp(vector<helpCmd> helpList, HELP helpType = FULL_HELP);
+	void printHelp(std::vector<helpCmd> helpList, HELP helpType = FULL_HELP);
 	virtual void help(HELP helpType = FULL_HELP) = 0;
 	virtual int run(arg_struct *args) = 0;
 };
@@ -133,7 +131,7 @@ concept IsUnorderedMap = requires(Container c) {
 };
 
 template <IsUnorderedMap MapType>
-void processOptions(const MapType &mapData, string &shortOpts, vector<struct option> &longOptsVec)
+void processOptions(const MapType &mapData, std::string &shortOpts, std::vector<struct option> &longOptsVec)
 {
 	for (const auto &pair : mapData) {
 		longOptsVec.push_back(pair.second.opt);

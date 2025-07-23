@@ -34,7 +34,7 @@
 void cmdUpdateFW::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Update GPU firmware"));
 	helpList.push_back(helpCmd(BLANK));
@@ -81,7 +81,7 @@ int cmdUpdateFW::run(arg_struct *args)
 {
 	TRACING();
 	firmwareInfo fwInfo = {};
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 
 	int opt;

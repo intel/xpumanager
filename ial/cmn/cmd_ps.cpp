@@ -35,7 +35,7 @@
 void cmdPs::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "List status of processes"));
 	helpList.push_back(helpCmd(BLANK));
@@ -71,12 +71,12 @@ int cmdPs::run(arg_struct *args)
 {
 	TRACING();
 	ze_result_t result;
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	int opt;
 	int optionIndex = 0;
 	bool json = false;
-	string deviceId;
-	vector<zes_process_state_t> processList;
+	std::string deviceId;
+	std::vector<zes_process_state_t> processList;
 
 	static struct option long_options[] = {{"help", no_argument, 0, 'h'},
 										   {"json", no_argument, 0, 'j'},

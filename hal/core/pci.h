@@ -27,12 +27,10 @@
 #include "sysman.h"
 #include <string>
 
-using namespace std;
-
 typedef struct pci_addr_mei_device
 {
 	zes_pci_properties_t pciProps;
-	string meiDevicePath;
+	std::string meiDevicePath;
 } pci_addr_mei_device;
 
 class LIBXPUM_API pci : public sysman
@@ -50,7 +48,7 @@ public:
 	ze_result_t getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats);
 	ze_result_t zesRun(zes_device_handle_t device);
 	bool isBDF(const char *bdf);
-	string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
+	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
 };
 
 #endif

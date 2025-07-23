@@ -45,7 +45,7 @@ static std::unordered_map<policyCmdType, policyCmdStruct> policyCmds = {
 void cmdPolicy::help(HELP helpType)
 {
 	TRACING();
-	vector<helpCmd> helpList;
+	std::vector<helpCmd> helpList;
 	helpList.push_back(helpCmd(TITLE, "Get and set the GPU policies."));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s policy [Options]", progName.c_str()));
@@ -135,13 +135,13 @@ ze_result_t cmdPolicy::remove(devInfo *d)
 int cmdPolicy::run(arg_struct *args)
 {
 	TRACING();
-	vector<devInfo> deviceList;
+	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
 	int opt;
 	int optionIndex = 0;
-	string shortOpts;
-	vector<struct option> longOptsVec;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
 
 	processOptions(policyCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
