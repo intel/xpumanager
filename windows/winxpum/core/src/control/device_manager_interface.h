@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "device/device.h"
+#include "device/memoryEcc.h"
 #include "infrastructure/init_close_interface.h"
 
 namespace xpum {
@@ -33,6 +34,8 @@ namespace xpum {
         virtual bool setDevicePowerSustainedLimits(const std::string& id, int powerLimit) = 0;
 
         virtual void getSimpleEccState(const std::string& id, uint8_t& current, uint8_t& pending) = 0;
+
+        virtual bool getEccState(const std::string& id, MemoryEcc& ecc) = 0;
 
         virtual void getDeviceFrequencyRange(const std::string& id, int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) = 0;
 

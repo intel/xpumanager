@@ -15,13 +15,15 @@ RuntimeDirectory=xpum
 
 LimitNOFILE=16384
 LimitCORE=infinity
+
+EnvironmentFile=/etc/environment
 ExecStartPre=/bin/sh -c "ulimit -c unlimited"
 
 Environment="LD_LIBRARY_PATH=@CPACK_PACKAGING_INSTALL_PREFIX@/@CPACK_XPUM_LIB_INSTALL_DIR@:/$LD_LIBRARY_PATH"
 
 ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  -p /var/xpum_daemon.pid -d @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/dump
 
-ExecStop=/bin/kill -s -TERM $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
 
 [Install]
 WantedBy=multi-user.target

@@ -80,6 +80,7 @@ namespace xpum {
         XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER,    ///< The number of lanes per the receive side of the port
         XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_TX_LANES_NUMBER,    ///< The number of lanes per the transmit side of the port
         XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE,                       ///< The type of SKU
+        XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_BANDWIDTH,             ///< PCIe max link speed
         XPUM_DEVICE_PROPERTY_INTERNAL_MAX
     } xpum_device_internal_property_name_t;
 

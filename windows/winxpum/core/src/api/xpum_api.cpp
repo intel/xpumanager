@@ -9,6 +9,7 @@
 #include "pch.h"
 #include "xpum_api.h"
 #include "internal_api.h"
+#include "device_model.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
@@ -48,6 +49,8 @@ const char* getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
             return "PCIE_GENERATION";
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return "PCIE_MAX_LINK_WIDTH";
+        case XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH:
+            return "PCIE_MAX_BANDWIDTH";
         case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
             return "DEVICE_STEPPING";
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
@@ -313,6 +316,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION;
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH;
+        case XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_BANDWIDTH;
         case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
             return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING;
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
@@ -751,22 +756,53 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, const xpum_
             return XPUM_NOT_INITIALIZED;
         }
 
-        auto fwMgr = Core::instance().getFirmwareManager();
-
         res = validateDeviceId(deviceId);
         if (res != XPUM_OK) {
             return res;
         }
-        uint8_t currentEcc, pendingEcc;
-        currentEcc = 0xFF;
-        pendingEcc = 0xFF;
-        fwMgr->getSimpleEccState(deviceId, currentEcc, pendingEcc);
-        *available = true;
-        *configurable = true;
-        *action = XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT;
-        currentEcc == 1 ? (*current) = XPUM_ECC_STATE_ENABLED : (*current) = XPUM_ECC_STATE_DISABLED;
-        pendingEcc == 1 ? (*pending) = XPUM_ECC_STATE_ENABLED : (*pending) = XPUM_ECC_STATE_DISABLED;
-        return XPUM_OK;
+
+        std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (device == nullptr) {
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        }
+
+        if(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
+            *available = true;
+            *configurable = false;
+
+            *current = XPUM_ECC_STATE_ENABLED;
+            *pending = XPUM_ECC_STATE_ENABLED;
+
+            *action = XPUM_ECC_ACTION_NONE;
+
+            return XPUM_OK;
+        }
+
+        if (device->getDeviceModel() < XPUM_DEVICE_MODEL_BMG) {
+            auto fwMgr = Core::instance().getFirmwareManager();
+
+            uint8_t currentEcc, pendingEcc;
+            currentEcc = 0xFF;
+            pendingEcc = 0xFF;
+            fwMgr->getSimpleEccState(deviceId, currentEcc, pendingEcc);
+            *available = true;
+            *configurable = true;
+            *action = XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT;
+            currentEcc == 1 ? (*current) = XPUM_ECC_STATE_ENABLED : (*current) = XPUM_ECC_STATE_DISABLED;
+            pendingEcc == 1 ? (*pending) = XPUM_ECC_STATE_ENABLED : (*pending) = XPUM_ECC_STATE_DISABLED;
+            return XPUM_OK;
+        }
+
+        MemoryEcc* ecc = new MemoryEcc();
+        if (Core::instance().getDeviceManager()->getEccState(std::to_string(deviceId), *ecc)) {
+            *available = ecc->getAvailable();
+            *configurable = ecc->getConfigurable();
+            *current = (xpum_ecc_state_t)(ecc->getCurrent());
+            *pending = (xpum_ecc_state_t)(ecc->getPending());
+            *action = (xpum_ecc_action_t)(ecc->getAction());
+            return XPUM_OK;
+        }
+        return XPUM_GENERIC_ERROR;
     }
 
     xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,

@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "device.h"
+#include "api/device_model.h"
 
 namespace xpum {
     Device::Device() {
@@ -63,5 +64,16 @@ namespace xpum {
         }
 
         this->properties.push_back(prop);
+    }
+
+    int Device::getDeviceModel() {
+        Property prop;
+        bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
+        if (!res)
+            return XPUM_DEVICE_MODEL_UNKNOWN;
+        std::string strValue = prop.getValue();
+        std::string stripped = strValue.substr(2); // remove 0x prefix
+        int deviceId = std::stoi(stripped, nullptr, 16);
+        return getDeviceModelByPciDeviceId(deviceId);
     }
 }

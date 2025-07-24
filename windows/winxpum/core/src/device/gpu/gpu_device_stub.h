@@ -11,12 +11,15 @@
 
 #include "device/device.h"
 #include "device/performancefactor.h"
+#include "device/pcie_manager.h"
 
 namespace xpum {
 
     class GPUDeviceStub {
     public:
         static GPUDeviceStub& instance();
+
+        static PCIeManager pcie_manager;
 
         static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
 
@@ -25,6 +28,8 @@ namespace xpum {
         bool toSetPowerSustainedLimits(const zes_device_handle_t& device, int32_t powerLimit) noexcept;
 
         void toGetDeviceFrequencyRange(const zes_device_handle_t& device, int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) noexcept;
+
+        bool getEccState(const zes_device_handle_t& device, MemoryEcc& ecc);
 
         bool toSetDeviceFrequencyRange(const zes_device_handle_t& device, int32_t tileId, double min, double max) noexcept;
 

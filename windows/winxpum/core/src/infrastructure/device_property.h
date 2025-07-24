@@ -86,6 +86,8 @@ namespace xpum {
 
         static const std::string PCIE_MAX_LINK_WIDTH;
 
+        static const std::string PCIE_MAX_BANDWIDTH;
+
         static const std::string MEM_BUS_WIDTH;
 
         static const std::string MEM_CHANNEL_NUM;

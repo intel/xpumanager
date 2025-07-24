@@ -70,6 +70,8 @@ namespace xpum {
 
         void getSimpleEccState(uint8_t& current, uint8_t& pending) noexcept override;
 
+        bool getEccState(MemoryEcc& ecc) noexcept override;
+
 		void getDeviceFrequencyRange(int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) noexcept override;
 
 		bool setDeviceFrequencyRange(int32_t tileId, double min, double max) noexcept override;

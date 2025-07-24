@@ -492,6 +492,8 @@ class CharTableRowBase {
 
     virtual inline const int numberOfCells() const = 0;
 
+    virtual inline bool findRow(const std::string& title) const = 0;
+
     virtual const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const = 0;
 
     virtual void show(std::ostream& out, const std::vector<unsigned int>& colSetting) = 0;
@@ -512,6 +514,15 @@ class CharTableRow : public CharTableRowBase {
 
     inline const int numberOfCells() const override {
         return cells.size();
+    }
+
+    inline bool findRow(const std::string& title) const override {
+        for (unsigned i = 0; i < cells.size(); ++i) {
+		std::string cStr = *(cells[i]);
+		if(title == cStr)
+			return true;
+        }
+	return false;
     }
 
     inline void setCell(const std::string& cellValue, const int colIndex = -1) {
@@ -578,6 +589,10 @@ class CharTableRowSeparator : public CharTableRowBase {
         return 0;
     }
 
+    inline bool findRow(const std::string& title) const override {
+        return 0;
+    }
+
     inline ~CharTableRowSeparator() override {
     }
 
@@ -614,6 +629,8 @@ class CharTable {
     inline void removeLatestRow() {
         rows.pop_back();
     }
+
+    void removeRow(const std::string& rowtitle);
 
     inline CharTableRowSeparator& addSeparator() {
         rows.push_back(new CharTableRowSeparator());

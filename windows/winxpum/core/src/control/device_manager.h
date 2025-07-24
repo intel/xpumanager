@@ -41,6 +41,8 @@ namespace xpum {
 
         void getSimpleEccState(const std::string& id, uint8_t& current, uint8_t& pending) override;
 
+        bool getEccState(const std::string& id, MemoryEcc& ecc) override;
+
         void getDeviceFrequencyRange(const std::string& id, int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) override;
 
         bool setDeviceFrequencyRange(const std::string& id, int32_t tileId, double min, double max) override;

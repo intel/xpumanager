@@ -373,4 +373,17 @@ void CharTable::show(std::ostream& out) {
     }
 }
 
+void CharTable::removeRow(const std::string& rowTitle) {
+
+    for (auto it = rows.begin(); it != rows.end(); ) {
+        if ((*it)->findRow(rowTitle) ) {
+            it = rows.erase(it);
+	    break;
+	}
+        else
+            ++it;
+    }
+
+}
+
 } // namespace xpum::cli

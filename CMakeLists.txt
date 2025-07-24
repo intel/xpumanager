@@ -43,6 +43,19 @@ set(CMAKE_CXX_FLAGS
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 
+# Run configuration step with cmake -DCMAKE_BUILD_TYPE=Coverage
+if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(--coverage -O0 -g)
+    add_link_options(--coverage)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      add_compile_options(-fprofile-abs-path)
+    endif()
+  else()
+    message(FATAL_ERROR "Code coverage only supported with GCC or Clang")
+  endif()
+endif()
+
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} -z noexecstack -z relro -z now")
 set(CMAKE_EXE_LINKER_FLAGS

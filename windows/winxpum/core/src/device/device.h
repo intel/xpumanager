@@ -18,6 +18,7 @@
 #include "infrastructure/measurement_type.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/property.h"
+#include "device/memoryEcc.h"
 
 namespace xpum {
     class Device {
@@ -84,6 +85,8 @@ namespace xpum {
 
         virtual void getSimpleEccState(uint8_t& current, uint8_t& pending) noexcept = 0;
 
+        virtual bool getEccState(MemoryEcc& ecc) noexcept = 0;
+
         virtual void getDeviceFrequencyRange(int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) noexcept = 0;
 
         virtual bool setDeviceFrequencyRange(int32_t tileId, double min, double max) noexcept = 0;
@@ -92,6 +95,8 @@ namespace xpum {
 
         virtual void getFreqAvailableClocks(int32_t tileId, std::vector<double>& clocksList) noexcept = 0;
         virtual ~Device() {}
+
+        int getDeviceModel();
 
     protected:
         std::string id;

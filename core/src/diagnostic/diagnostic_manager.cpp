@@ -65,7 +65,7 @@ void DiagnosticManager::close() {
 
 std::map<std::string, std::map<std::string, int>> DiagnosticManager::thresholds;
 std::map<ze_device_handle_t, std::string> DiagnosticManager::device_names;
-std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
+std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/bin/";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = "test_stream_1080p.265";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = "test_stream_4K.265";
 std::string DiagnosticManager::MEDIA_CODEC_TOOLS_LIGHT_FILE = "test_stream.264";
@@ -1087,11 +1087,7 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
         bool sample_multi_transcode_tool_exist = true;
         std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
         if (!file_transcode.good()) {
-            std::ifstream file_transcode_retry("/usr/bin/sample_multi_transcode");
-            if (!file_transcode_retry.good())
-                sample_multi_transcode_tool_exist = false;
-            else
-                DiagnosticManager::MEDIA_CODER_TOOLS_PATH="/usr/bin/";
+            sample_multi_transcode_tool_exist = false;
         }
 
         bool h265_1080p_file_exist = true;

@@ -113,6 +113,17 @@ namespace xpum {
         }
         return;
     }
+
+    bool DeviceManager::getEccState(const std::string& id, MemoryEcc& ecc) {
+        std::unique_lock<std::mutex> lock(this->mutex);
+        for (auto& p_device : this->devices) {
+            if (p_device->getId() == id) {
+                return p_device->getEccState(ecc);
+            }
+        }
+        return false;
+    }
+
     std::shared_ptr<Device> DeviceManager::getDevicebyBDF(const std::string& bdf) {
         std::unique_lock<std::mutex> lock(this->mutex);
         for (auto& p_device : this->devices) {

@@ -63,7 +63,42 @@ zelLoaderTranslateHandle(
    zel_handle_type_t handleType,   //Handle Type
    void *handleIn,                  //Input: handle to translate from loader handle to driver handle
    void **handleOut);                //Output: Pointer to handleOut is set to driver handle if successful
-   
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Exported function for handling calls to released drivers in teardown.
+///
+ZE_DLLEXPORT ze_result_t ZE_APICALL
+zelSetDriverTeardown();
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Exported function for informing the loader to delay teardown of its context until the call to zelLoaderContextTeardown().Only applies during static loader usage.
+/// NOTE: This function is a work around for legacy stacks that use L0 apis after the application is already in teardown. Unless you need to use the L0 apis during teardown, do not use this function. 
+ZE_DLLEXPORT void ZE_APICALL
+zelSetDelayLoaderContextTeardown();
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Exported function for explicitly tearing down the loader's context. Only applies during static loader usage.
+/// NOTE: This function is a work around for legacy stacks that use L0 apis after the application is already in teardown. Unless you need to use the L0 apis during teardown, do not use this function. 
+ZE_DLLEXPORT void ZE_APICALL
+zelLoaderContextTeardown();
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Exported function for Enabling the Tracing Layer During Runtime.
+///
+ZE_DLLEXPORT ze_result_t ZE_APICALL
+zelEnableTracingLayer();
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Exported function for Checking if the Loader is torndown.
+///
+ZE_DLLEXPORT bool ZE_APICALL
+zelCheckIsLoaderInTearDown();
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Exported function for Disabling the Tracing Layer During Runtime.
+///
+ZE_DLLEXPORT ze_result_t ZE_APICALL
+zelDisableTracingLayer();
 
 #if defined(__cplusplus)
 } // extern "C"

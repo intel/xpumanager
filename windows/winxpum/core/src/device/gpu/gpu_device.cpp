@@ -65,6 +65,10 @@ namespace xpum {
         return;
     }
 
+    bool GPUDevice::getEccState(MemoryEcc& ecc) noexcept {        
+        return GPUDeviceStub::instance().getEccState(this->zes_device_handle, ecc);
+    }
+
     /* void* GPUDevice::getZesDeviceHandle() noexcept {
         return zes_device_handle;
     }*/

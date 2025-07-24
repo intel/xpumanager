@@ -805,6 +805,11 @@ static void showDeviceStatistics(std::ostream& out, std::shared_ptr<nlohmann::js
 #else
     CharTable table(noTile ? ComletConfigDeviceStatisticsDeviceLevel: ComletConfigDeviceStatistics, json, cont);
 #endif
+
+    //Remove 3d Utilization row, if its not supported
+    if (!json.contains("3d_engine_util") || json["3d_engine_util"].is_null() || json["3d_engine_util"] == "")
+         table.removeRow("3D Engine Util (%) ");
+
     table.show(out);
 }
 

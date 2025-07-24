@@ -39,10 +39,12 @@ namespace xpum {
         return stub;
     }
 
+    PCIeManager GPUDeviceStub::pcie_manager;
+
     void GPUDeviceStub::init() {
         initialized = true;
 
-        _putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
+        _putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=0"));
         _putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
 
         if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
@@ -53,6 +55,12 @@ namespace xpum {
         if (ret != ZE_RESULT_SUCCESS) {
             XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
             throw LevelZeroInitializationException("zeInit error");
+        }
+
+        ret = zesInit(0);
+        if (ret != ZE_RESULT_SUCCESS) {
+            XPUM_LOG_ERROR("GPUDeviceStub::init zesInit error: {0:x}", ret);
+            throw LevelZeroInitializationException("zesInit error");
         }
         openPDHQuery();
     }
@@ -165,6 +173,12 @@ namespace xpum {
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION, std::to_string(pci_props.maxSpeed.gen)));
                         if (pci_props.maxSpeed.width > 0)
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH, std::to_string(pci_props.maxSpeed.width)));
+                        
+                        double max_bw;
+                        std::ostringstream max_bw_stream;
+                        max_bw = (double)pci_props.maxSpeed.maxBandwidth / (1000 * 1000 * 1000); // Convert to GB/s
+                        max_bw_stream << std::fixed << std::setprecision(2) << max_bw;
+                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_BANDWIDTH, max_bw_stream.str() + " GB/s"));
                         // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                         // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
                         // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
@@ -1428,27 +1442,91 @@ namespace xpum {
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeReadThroughput(const zes_device_handle_t& device) noexcept {
+        if (device == nullptr) {
+            throw BaseException("toGetPCIeReadThroughput error");
+        }
+
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-        ret->setErrors("UNSUPPORTED");
+        auto value = pcie_manager.getLatestPCIeReadThroughput(device);
+        ret->setCurrent(value);
         return ret;
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWriteThroughput(const zes_device_handle_t& device) noexcept {
+        if (device == nullptr) {
+            throw BaseException("toGetPCIeWriteThroughput error");
+        }
+
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-        ret->setErrors("UNSUPPORTED");
+        auto value = pcie_manager.getLatestPCIeWriteThroughput(device);
+        ret->setCurrent(value);
         return ret;
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeRead(const zes_device_handle_t& device) noexcept {
+        if (device == nullptr) {
+            throw BaseException("toGetPCIeRead error");
+        }
+
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-        ret->setErrors("UNSUPPORTED");
+        auto value = pcie_manager.getLatestPCIeRead(device);
+        ret->setCurrent(value);
         return ret;
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWrite(const zes_device_handle_t& device) noexcept {
+        if (device == nullptr) {
+            throw BaseException("toGetPCIeRead error");
+        }
+
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-        ret->setErrors("UNSUPPORTED");
+        auto value = pcie_manager.getLatestPCIeWrite(device);
+        ret->setCurrent(value);
         return ret;
+    }
+
+    bool GPUDeviceStub::getEccState(const zes_device_handle_t& device, MemoryEcc& ecc) {
+        ecc.setAvailable(false);
+        ecc.setConfigurable(false);
+        ecc.setCurrent(ECC_STATE_UNAVAILABLE);
+        ecc.setPending(ECC_STATE_UNAVAILABLE);
+        ecc.setAction(ECC_ACTION_NONE);
+
+        if (device == nullptr) {
+            return false;
+        }
+
+        ze_result_t res;
+        ze_bool_t boolValue = false;
+
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEccAvailable(device,  &boolValue));
+        if (res != ZE_RESULT_SUCCESS) {
+            return false;
+        }
+        if (boolValue == false) {
+            return true;
+        }
+        ecc.setAvailable(true);
+
+        boolValue = false;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEccConfigurable(device,  &boolValue));
+        if (res != ZE_RESULT_SUCCESS) {
+            return false;
+        }
+        if (boolValue == false) {
+            return true;
+        }
+        ecc.setConfigurable(true);
+
+        zes_device_ecc_properties_t props = {};
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetEccState(device, &props));
+        if (res != ZE_RESULT_SUCCESS) {
+            return false;
+        }
+        ecc.setCurrent(static_cast<ecc_state_t>(props.currentState));
+        ecc.setPending(static_cast<ecc_state_t>(props.pendingState));
+        ecc.setAction(static_cast<ecc_action_t>(props.pendingAction));
+        return true;
     }
 
     std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFabricThroughput(const zes_device_handle_t& device) noexcept {
