@@ -37,17 +37,17 @@
 // Enum to represent OS types
 enum class OSTYPE
 {
-	Windows,
-	Linux,
-	Both,
+	WINDOWS,
+	LINUX,
+	BOTH,
 };
 
 /* Structure to hold function and OS type */
 struct function_entry
 {
-	std::function<cmds *()> create_func;
-	DAEMONCAP daemon_cap;
-	OSTYPE os_type;
+	std::function<cmds *()> createFunc;
+	DAEMONCAP daemonCap;
+	OSTYPE osType;
 };
 
 #endif

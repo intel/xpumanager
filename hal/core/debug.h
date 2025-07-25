@@ -49,7 +49,7 @@ enum
  * 2 = Errors + Info messages + Debug messages
  * 3 = Errors + Info messages + Debug messages + Trace calls
  */
-extern int dbg_lvl;
+extern int dbgLvl;
 
 #define _PRINT(prefix, fmt, ...)                                                                                       \
 	if (1) {                                                                                                           \
@@ -60,16 +60,16 @@ extern int dbg_lvl;
 
 #define PRINT(fmt, ...) _PRINT("", fmt, ##__VA_ARGS__)
 #define ERR(fmt, ...)                                                                                                  \
-	if (dbg_lvl >= ERR)                                                                                                \
+	if (dbgLvl >= ERR)                                                                                                 \
 	_PRINT("[Error] ", fmt, ##__VA_ARGS__)
 #define INFO(fmt, ...)                                                                                                 \
-	if (dbg_lvl >= INFO)                                                                                               \
+	if (dbgLvl >= INFO)                                                                                                \
 	_PRINT("[Info] ", fmt, ##__VA_ARGS__)
 #define DBG(fmt, ...)                                                                                                  \
-	if (dbg_lvl >= DBG)                                                                                                \
+	if (dbgLvl >= DBG)                                                                                                 \
 	_PRINT("[DBG] ", fmt, ##__VA_ARGS__)
 #define TRACE(fmt, ...)                                                                                                \
-	if (dbg_lvl >= TRACE)                                                                                              \
+	if (dbgLvl >= TRACE)                                                                                               \
 	PRINT(fmt, ##__VA_ARGS__)
 
 #ifdef __cplusplus
@@ -98,12 +98,12 @@ inline int setDbgLvl(int lvl)
 {
 	int ret = 1;
 	if (lvl >= NO_PRINT && lvl <= TRACE) {
-		dbg_lvl = lvl;
+		dbgLvl = lvl;
 		ret = 0;
 	}
 	return ret;
 }
 
-inline int getDbgLvl() { return dbg_lvl; }
+inline int getDbgLvl() { return dbgLvl; }
 
 #endif

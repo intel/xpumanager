@@ -58,9 +58,9 @@ std::string progName = "xpu-smi";
 #endif
 
 #ifdef _DEBUG
-int dbg_lvl = DBG;
+int dbgLvl = DBG;
 #else
-int dbg_lvl = INFO;
+int dbgLvl = INFO;
 #endif
 
 /**
@@ -73,14 +73,14 @@ template <typename T> cmds *createInstance() { return new T(); }
 /**
  * @brief Deletes all elements in a list of pointers and the list itself
  * @tparam T The type of objects in the list
- * @param generic_list The list of pointers to delete
+ * @param genericList The list of pointers to delete
  */
-template <typename T> void deleteList(std::list<T *> *generic_list)
+template <typename T> void deleteList(std::list<T *> *genericList)
 {
-	for (auto &it : *generic_list) {
+	for (auto &it : *genericList) {
 		delete it;
 	}
-	delete generic_list;
+	delete genericList;
 }
 
 /**
@@ -102,11 +102,11 @@ void printVersion(arg_struct *arg)
 
 /**
  * @brief Prints all available subcommands with short help text
- * @param cmd_list List of command objects to display
+ * @param cmdList List of command objects to display
  */
-void printSubCommands(std::list<cmds *> *cmd_list)
+void printSubCommands(std::list<cmds *> *cmdList)
 {
-	for (const auto &it : *cmd_list) {
+	for (const auto &it : *cmdList) {
 		it->help(SHORT_HELP);
 	}
 }
@@ -139,9 +139,9 @@ void helpsmi()
 
 /**
  * @brief Displays comprehensive help information including usage, options, and subcommands
- * @param cmd_list List of command objects to include in help output
+ * @param cmdList List of command objects to include in help output
  */
-void help(std::list<cmds *> *cmd_list)
+void help(std::list<cmds *> *cmdList)
 {
 	if (curDaemonMode == DAEMONCAP::DAEMON) {
 		helpcli();
@@ -162,7 +162,7 @@ void help(std::list<cmds *> *cmd_list)
 	PRINT("  -v,--version                Display version information and exit\n\n");
 
 	PRINT("Subcommands:\n");
-	printSubCommands(cmd_list);
+	printSubCommands(cmdList);
 }
 
 void setPrintLvl(arg_struct *arg, int lvl)
@@ -216,64 +216,64 @@ int main(int argc, char *argv[])
 	setPrintLvl(&arg, dbgLvl);
 
 	/* Create a list of commands */
-	std::list<cmds *> *cmd_list = new std::list<cmds *>;
+	std::list<cmds *> *cmdList = new std::list<cmds *>;
 
-	std::vector<function_entry> function_table = {
-		{createInstance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{createInstance<cmdConfig>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{createInstance<cmdPs>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdVgpu>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{createInstance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::Both},
-		{createInstance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdOOB>, DAEMONCAP::BOTH, OSTYPE::Linux},
-		{createInstance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{createInstance<cmdAgentSet>, DAEMONCAP::DAEMON, OSTYPE::Linux},
-		{createInstance<cmdAmcSensor>, DAEMONCAP::DAEMON, OSTYPE::Linux},
+	std::vector<function_entry> functionTable = {
+		{createInstance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::BOTH},
+		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::BOTH},
+		{createInstance<cmdConfig>, DAEMONCAP::BOTH, OSTYPE::BOTH},
+		{createInstance<cmdPs>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdVgpu>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::BOTH},
+		{createInstance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::BOTH},
+		{createInstance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdOOB>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
+		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
+		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
+		{createInstance<cmdAgentSet>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
+		{createInstance<cmdAmcSensor>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 	};
 
-	OSTYPE current_os = is_windows ? OSTYPE::Windows : OSTYPE::Linux;
+	OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;
 	DBG("Is Daemon mode: %s\n", (curDaemonMode == DAEMONCAP::DAEMON) ? "true" : "false");
 	arg.argc = argc;
 	arg.argv = argv;
 
-	for (const auto &entry : function_table) {
-		if ((entry.os_type == OSTYPE::Both || entry.os_type == current_os) &&
-			(entry.daemon_cap == DAEMONCAP::BOTH || entry.daemon_cap == curDaemonMode)) {
+	for (const auto &entry : functionTable) {
+		if ((entry.osType == OSTYPE::BOTH || entry.osType == currentOS) &&
+			(entry.daemonCap == DAEMONCAP::BOTH || entry.daemonCap == curDaemonMode)) {
 			/* Create an instance of the command and add it to the list */
-			cmds *cmd = entry.create_func();
-			DBG("Adding %s to command list\n", cmd->get_name());
-			cmd_list->push_back(cmd);
+			cmds *cmd = entry.createFunc();
+			DBG("Adding %s to command list\n", cmd->getName());
+			cmdList->push_back(cmd);
 		}
 	}
 
 	/* If no command line args are provided, just print help message and exit */
 	if (argc == 1) {
-		help(cmd_list);
-		deleteList(cmd_list);
+		help(cmdList);
+		deleteList(cmdList);
 		return 0;
 	}
 
 	/* Print out version info if -v command line arg specified */
 	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
 		printVersion(&arg);
-		deleteList(cmd_list);
+		deleteList(cmdList);
 		return 0;
 	}
 
 	/* Parse command line and run the command that the user wants */
-	for (const auto &it : *cmd_list) {
-		if (!STRCASECMP(it->get_name(), argv[1])) {
+	for (const auto &it : *cmdList) {
+		if (!STRCASECMP(it->getName(), argv[1])) {
 			/* If the second argument is -h or --help, then just print their help */
 			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help"))) {
 				it->help(FULL_HELP);
-				deleteList(cmd_list);
+				deleteList(cmdList);
 				return 0;
 			}
 			/* Run the command */
@@ -286,9 +286,9 @@ int main(int argc, char *argv[])
 
 	/* If we can't parse the user's command line, then print help */
 	if (!found) {
-		help(cmd_list);
+		help(cmdList);
 	}
 
-	deleteList(cmd_list);
+	deleteList(cmdList);
 	return 0;
 }

@@ -26,9 +26,9 @@
 #include <vector>
 
 #ifdef _DEBUG
-int dbg_lvl = DBG;
+int dbgLvl = DBG;
 #else
-int dbg_lvl = INFO;
+int dbgLvl = INFO;
 #endif
 
 /**
