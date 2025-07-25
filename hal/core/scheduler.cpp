@@ -187,10 +187,9 @@ ze_result_t scheduler::setExclusiveMode()
 
 ze_result_t scheduler::init(zes_device_handle_t device) { return enumSchedulers(device); }
 
-ze_result_t scheduler::zesRun(zes_device_handle_t device)
+ze_result_t scheduler::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(device);
 
 	for (uint32_t i = 0; i < schedulerCount; ++i) {
 		result = getProperties(schedulerHandles[i]);

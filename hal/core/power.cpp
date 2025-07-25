@@ -260,13 +260,12 @@ ze_result_t power::init(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t power::zesRun(zes_device_handle_t device)
+ze_result_t power::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_power_energy_counter_t energyCounter;
 	zes_power_properties_t properties;
 	zes_power_ext_properties_t extProps;
-	UNUSED(device);
 
 	for (uint32_t i = 0; i < powerCount; ++i) {
 		result = getProperties(powerHandles[i], &properties, &extProps);

@@ -149,24 +149,21 @@ void cmdDiag::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdDiag::precheck(devInfo *d)
+ze_result_t cmdDiag::precheck(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::stress(devInfo *d)
+ze_result_t cmdDiag::stress(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::level(devInfo *d)
+ze_result_t cmdDiag::level(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 
 	// Check if the level is valid
 	if (diagCmds[diagCmdType::LEVEL].val.empty()) {
@@ -646,66 +643,57 @@ ze_result_t cmdDiag::computation(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::memoryError(devInfo *d)
+ze_result_t cmdDiag::memoryError(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::memoryBandwidth(devInfo *d)
+ze_result_t cmdDiag::memoryBandwidth(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::mediaCodec(devInfo *d)
+ze_result_t cmdDiag::mediaCodec(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
+ze_result_t cmdDiag::pcieBandwidth(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::power(devInfo *d)
+ze_result_t cmdDiag::power(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::computationFuncTest(devInfo *d)
+ze_result_t cmdDiag::computationFuncTest(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::mediaFuncTest(devInfo *d)
+ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::xeLinkThroughput(devInfo *d)
+ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::xeLinkAllToAllThroughput(devInfo *d)
+ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -714,10 +702,9 @@ static void printPretty()
 	PRINT("+------------+-----------------------------------+----------------------+----------------+\n");
 }
 
-ze_result_t cmdDiag::listTypes(devInfo *d)
+ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 
 	if (!diagCmds[diagCmdType::PRECHECK].enabled) {
 		ERR("--listtypes requires --precheck.\n");
@@ -765,17 +752,15 @@ ze_result_t cmdDiag::listTypes(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::gpu(devInfo *d)
+ze_result_t cmdDiag::gpu(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdDiag::runSince(devInfo *d)
+ze_result_t cmdDiag::runSince(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 

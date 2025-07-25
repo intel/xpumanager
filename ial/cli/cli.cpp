@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	arg_struct arg;
 	int dbgLvl;
 	bool priv = PRIVILEGECHECK();
-	UNUSED(priv);
+	UNUSED_VAR(priv);
 
 	// Get current debug level
 	dbgLvl = getDbgLvl();

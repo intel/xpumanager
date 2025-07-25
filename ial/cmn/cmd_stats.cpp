@@ -80,38 +80,33 @@ void cmdStats::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdStats::eu(devInfo *d)
+ze_result_t cmdStats::eu(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::ras(devInfo *d)
+ze_result_t cmdStats::ras(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::x(devInfo *d)
+ze_result_t cmdStats::x(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::xelink(devInfo *d)
+ze_result_t cmdStats::xelink(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdStats::utils(devInfo *d)
+ze_result_t cmdStats::utils(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 

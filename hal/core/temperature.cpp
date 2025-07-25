@@ -112,10 +112,9 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
 	return result;
 }
 
-ze_result_t temperature::getTemp(zes_device_handle_t device, zes_temp_sensors_t type, double *coreTemp)
+ze_result_t temperature::getTemp(UNUSED zes_device_handle_t device, zes_temp_sensors_t type, double *coreTemp)
 {
 	TRACING();
-	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_temp_properties_t properties;
 	*coreTemp = 0.0; // Default value if no temperature found
@@ -146,11 +145,10 @@ ze_result_t temperature::getMemoryTemp(zes_device_handle_t device, double *coreT
 	return getTemp(device, ZES_TEMP_SENSORS_MEMORY, coreTemp);
 }
 
-ze_result_t temperature::getCoreThreshold(zes_device_handle_t device, uint32_t *throttleThreshold,
+ze_result_t temperature::getCoreThreshold(UNUSED zes_device_handle_t device, uint32_t *throttleThreshold,
 										  uint32_t *shutdownThreshold)
 {
 	TRACING();
-	UNUSED(device);
 
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
@@ -159,11 +157,10 @@ ze_result_t temperature::getCoreThreshold(zes_device_handle_t device, uint32_t *
 	return result;
 }
 
-ze_result_t temperature::getMemoryThreshold(zes_device_handle_t device, uint32_t *throttleThreshold,
+ze_result_t temperature::getMemoryThreshold(UNUSED zes_device_handle_t device, uint32_t *throttleThreshold,
 											uint32_t *shutdownThreshold)
 {
 	TRACING();
-	UNUSED(device);
 
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
@@ -178,9 +175,8 @@ ze_result_t temperature::init(zes_device_handle_t device)
 	return enumTemperatureDomains(device);
 }
 
-ze_result_t temperature::zesRun(zes_device_handle_t device)
+ze_result_t temperature::zesRun(UNUSED zes_device_handle_t device)
 {
-	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_temp_properties_t properties;
 	double temp;

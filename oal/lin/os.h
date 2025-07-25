@@ -42,7 +42,8 @@
 #define MAX_PATH 256
 #endif
 #define LIBXPUM_API
-#define UNUSED(x) (void)(x)
+#define UNUSED_VAR(x) (void)(x)
+#define UNUSED [[maybe_unused]]
 #define STRCPY_S(dest, sz, src) strcpy(dest, src)
 #define STRNCPY_S(dest, src, sz) strncpy(dest, src, sz)
 #define STRTOK_S(str, delimiters, context) strtok(str, delimiters)

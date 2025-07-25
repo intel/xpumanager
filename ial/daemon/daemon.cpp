@@ -48,10 +48,8 @@
 
 std::string progName = "xpumd";
 
-int main(int argc, char *argv[])
+int main(UNUSED int argc, UNUSED char *argv[])
 {
-	UNUSED(argc);
-	UNUSED(argv);
 	arg_struct arg;
 
 	// Create sysman driver instance

@@ -84,6 +84,6 @@ int cmdAmcSensor::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	UNUSED(showJson);
+	UNUSED_VAR(showJson);
 	return 0;
 }

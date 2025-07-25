@@ -161,7 +161,7 @@ int cmdTopdown::run(arg_struct *args)
 		return result;
 	}
 
-	UNUSED(jsonOutput);
+	UNUSED_VAR(jsonOutput);
 
 	return ZE_RESULT_SUCCESS;
 }

@@ -70,42 +70,37 @@ void cmdGroup::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdGroup::create(devInfo *d)
+ze_result_t cmdGroup::create(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	DBG("Creating group...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdGroup::deleteGroup(devInfo *d)
+ze_result_t cmdGroup::deleteGroup(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	DBG("Deleting group...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdGroup::listGroup(devInfo *d)
+ze_result_t cmdGroup::listGroup(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	DBG("Listing group...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdGroup::add(devInfo *d)
+ze_result_t cmdGroup::add(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	DBG("Adding to group...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdGroup::remove(devInfo *d)
+ze_result_t cmdGroup::remove(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	DBG("Removing from group...\n");
 	return ZE_RESULT_SUCCESS;
 }

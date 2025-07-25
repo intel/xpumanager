@@ -30,10 +30,9 @@ void cmdOOB::help(HELP helpType)
 	helpList.clear();
 }
 
-int cmdOOB::run(arg_struct *args)
+int cmdOOB::run(UNUSED arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
 	// Implement the command logic here
 	return 0;
 }

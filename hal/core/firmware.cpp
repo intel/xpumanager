@@ -116,10 +116,9 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	return result;
 }
 
-ze_result_t firmware::getFWversion(fwType type, char *version, uint32_t size)
+ze_result_t firmware::getFWversion(fwType type, char *version, UNUSED uint32_t size)
 {
 	TRACING();
-	UNUSED(size);
 
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	if (type < GFX || type >= MAX_FW_TYPE) {
@@ -208,8 +207,4 @@ ze_result_t firmware::init(zes_device_handle_t device)
 	return result;
 }
 
-ze_result_t firmware::zesRun(zes_device_handle_t device)
-{
-	UNUSED(device);
-	return ZE_RESULT_SUCCESS;
-}
+ze_result_t firmware::zesRun(UNUSED zes_device_handle_t device) { return ZE_RESULT_SUCCESS; }

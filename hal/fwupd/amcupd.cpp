@@ -26,10 +26,9 @@
 #include <debug.h>
 #include <os.h>
 
-ze_result_t amcupd::preUpdateAMC(firmwareInfo *fwInfo)
+ze_result_t amcupd::preUpdateAMC(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
 	std::string amc = "amc";
 	DBG("Pre-update AMC firmware...\n");
 
@@ -43,18 +42,16 @@ ze_result_t amcupd::preUpdateAMC(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
+ze_result_t amcupd::updateAMC(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
 	DBG("Updating AMC firmware...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t amcupd::postUpdateAMC(firmwareInfo *fwInfo)
+ze_result_t amcupd::postUpdateAMC(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
 	DBG("Post-update AMC firmware...\n");
 	// Close the I2C device
 	CLOSEI2C(deviceHandle);

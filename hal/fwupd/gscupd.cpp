@@ -279,17 +279,15 @@ ze_result_t gscupd::postUpdateGfxData(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t gscupd::updateGfxCodeData(firmwareInfo *fwInfo)
+ze_result_t gscupd::updateGfxCodeData(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t gscupd::updateGfxPscBin(firmwareInfo *fwInfo)
+ze_result_t gscupd::updateGfxPscBin(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	UNUSED(fwInfo);
 	return ZE_RESULT_SUCCESS;
 }
 

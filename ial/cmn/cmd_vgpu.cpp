@@ -91,53 +91,46 @@ void cmdVgpu::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdVgpu::precheck(devInfo *d)
+ze_result_t cmdVgpu::precheck(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	DBG("Precheck vGPU...\n");
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::addKernelParam(devInfo *d)
+ze_result_t cmdVgpu::addKernelParam(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::create(devInfo *d)
+ze_result_t cmdVgpu::create(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::remove(devInfo *d)
+ze_result_t cmdVgpu::remove(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::listGpus(devInfo *d)
+ze_result_t cmdVgpu::listGpus(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::stats(devInfo *d)
+ze_result_t cmdVgpu::stats(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdVgpu::lmem(devInfo *d)
+ze_result_t cmdVgpu::lmem(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 

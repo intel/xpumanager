@@ -247,9 +247,8 @@ ze_result_t frequency::getThrottleReason(zes_freq_throttle_reason_flags_t *throt
 
 ze_result_t frequency::init(zes_device_handle_t device) { return enumFrequencies(device); }
 
-ze_result_t frequency::zesRun(zes_device_handle_t device)
+ze_result_t frequency::zesRun(UNUSED zes_device_handle_t device)
 {
-	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_freq_properties_t properties = {};
 	zes_freq_state_t state = {};
