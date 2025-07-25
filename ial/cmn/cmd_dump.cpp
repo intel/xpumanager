@@ -297,7 +297,7 @@ THREAD_RET cmdDump::metrics(void *args)
 	cmdDump *cmdDumpInstance = metricArgs->cmdDumpInstance;
 	devInfo *d = metricArgs->d;
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(result);
+	UNUSED_VAR(result);
 	bool found = false;
 
 	// Iterate through the dump commands and execute the metrics function for each
@@ -384,7 +384,6 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 								 threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	double utilizationDiff = 0.0;
 	ze_result_t result;
 
@@ -484,10 +483,9 @@ ze_result_t cmdDump::gpuPower(devInfo *d, std::string *outputLine, threadData *t
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuFrequency(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuFrequency(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	double curFreq = 0.0;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -516,10 +514,9 @@ ze_result_t cmdDump::gpuFrequency(devInfo *d, std::string *outputLine, threadDat
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	double coreTemp = 0.0;
 
 	temperature *t = (temperature *)d->dev->getTemperature();
@@ -548,10 +545,9 @@ ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, thr
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	double memoryTemp = 0.0;
 
 	temperature *t = (temperature *)d->dev->getTemperature();
@@ -579,10 +575,9 @@ ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, t
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	double memoryUtilization = 0;
 
 	memory *mem = (memory *)d->dev->getMemory();
@@ -690,10 +685,9 @@ ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, std::string *outputLine, threadD
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEnergyConsumed(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEnergyConsumed(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t gpuPower1 = 0;
 	uint64_t timeStamp1 = 0;
 
@@ -719,12 +713,9 @@ ze_result_t cmdDump::gpuEnergyConsumed(devInfo *d, std::string *outputLine, thre
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayActive(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -739,12 +730,9 @@ ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, std::string *outputLine, threa
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayStall(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayStall(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -758,12 +746,9 @@ ze_result_t cmdDump::gpuEuArrayStall(devInfo *d, std::string *outputLine, thread
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayIdle(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayIdle(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -776,10 +761,9 @@ ze_result_t cmdDump::gpuEuArrayIdle(devInfo *d, std::string *outputLine, threadD
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayResetCounter(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayResetCounter(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -807,10 +791,9 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(devInfo *d, std::string *outputLine,
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayProgrammingErrors(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayProgrammingErrors(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -839,10 +822,9 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(devInfo *d, std::string *output
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayDriverErrors(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayDriverErrors(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -871,10 +853,9 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(devInfo *d, std::string *outputLine,
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -903,10 +884,9 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(devInfo *d, std::string *o
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t rasCounter;
 	ras *r = (ras *)d->dev->getRAS();
 	if (r == nullptr) {
@@ -982,10 +962,9 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, std::string *outp
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	uint64_t memoryUsed = 0;
 
 	memory *mem = (memory *)d->dev->getMemory();
@@ -1098,12 +1077,9 @@ ze_result_t cmdDump::pcieWrite(devInfo *d, std::string *outputLine, threadData *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::xeLinkThroughput(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::xeLinkThroughput(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1219,12 +1195,9 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(devInfo *d, std::string *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::engineUtilization(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::engineUtilization(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1239,12 +1212,10 @@ ze_result_t cmdDump::engineUtilization(devInfo *d, std::string *outputLine, thre
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsCorrectable(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryErrorsCorrectable(UNUSED devInfo *d, UNUSED std::string *outputLine,
+												UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1259,12 +1230,10 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(devInfo *d, std::string *outputL
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(UNUSED devInfo *d, UNUSED std::string *outputLine,
+												  UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(d);
-	UNUSED(outputLine);
-	UNUSED(td);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1351,10 +1320,9 @@ ze_result_t cmdDump::copyEngineGroupUtilization(devInfo *d, std::string *outputL
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::throttleReason(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::throttleReason(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	zes_freq_throttle_reason_flags_t throttleReasons;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -1384,10 +1352,9 @@ ze_result_t cmdDump::throttleReason(devInfo *d, std::string *outputLine, threadD
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, threadData *td)
+ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
-	UNUSED(td);
 	double curFreq = 0.0;
 
 	frequency *fq = (frequency *)d->dev->getFrequency();
@@ -1417,7 +1384,6 @@ ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, t
 int cmdDump::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
@@ -1571,7 +1537,6 @@ int cmdDump::run(arg_struct *args)
 				}
 			}
 		});
-	
 	}
 
 	first = true;

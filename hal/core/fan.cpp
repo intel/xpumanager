@@ -111,9 +111,8 @@ ze_result_t fan::getConfig(zes_fan_handle_t fanHandle)
 
 ze_result_t fan::init(zes_device_handle_t device) { return enumFans(device); }
 
-ze_result_t fan::zesRun(zes_device_handle_t device)
+ze_result_t fan::zesRun(UNUSED zes_device_handle_t device)
 {
-	UNUSED(device);
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < fanCount; i++) {

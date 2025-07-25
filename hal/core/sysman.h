@@ -36,22 +36,9 @@ class LIBXPUM_API sysman
 public:
 	sysman() {}
 	virtual ~sysman() {}
-	virtual ze_result_t init(zes_device_handle_t device)
-	{
-		UNUSED(device);
-		return ZE_RESULT_SUCCESS;
-	}
-	virtual ze_result_t zesRun(zes_device_handle_t device)
-	{
-		UNUSED(device);
-		return ZE_RESULT_SUCCESS;
-	}
-	virtual ze_result_t zeRun(ze_device_handle_t device, void *args)
-	{
-		UNUSED(device);
-		UNUSED(args);
-		return ZE_RESULT_SUCCESS;
-	}
+	virtual ze_result_t init(UNUSED zes_device_handle_t device) { return ZE_RESULT_SUCCESS; }
+	virtual ze_result_t zesRun(UNUSED zes_device_handle_t device) { return ZE_RESULT_SUCCESS; }
+	virtual ze_result_t zeRun(UNUSED ze_device_handle_t device, UNUSED void *args) { return ZE_RESULT_SUCCESS; }
 	void printEngines(zes_engine_type_flags_t engines);
 };
 

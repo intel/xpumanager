@@ -96,38 +96,34 @@ void cmdPolicy::help(HELP helpType)
 	helpList.clear();
 }
 
-ze_result_t cmdPolicy::create(devInfo *d)
+ze_result_t cmdPolicy::create(UNUSED devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(d);
 
 	return result;
 }
 
-ze_result_t cmdPolicy::listPolicies(devInfo *d)
+ze_result_t cmdPolicy::listPolicies(UNUSED devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(d);
 
 	return result;
 }
 
-ze_result_t cmdPolicy::listTypes(devInfo *d)
+ze_result_t cmdPolicy::listTypes(UNUSED devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(d);
 
 	return result;
 }
 
-ze_result_t cmdPolicy::remove(devInfo *d)
+ze_result_t cmdPolicy::remove(UNUSED devInfo *d)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED(d);
 
 	return result;
 }

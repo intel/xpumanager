@@ -294,10 +294,9 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
+ze_result_t cmdConfig::setPerformanceFactor(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -413,10 +412,9 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::applyPpr(devInfo *d)
+ze_result_t cmdConfig::applyPpr(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
 	PRINT("  PPR: N/A\n");
@@ -431,10 +429,9 @@ ze_result_t cmdConfig::applyPpr(devInfo *d)
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::forcePpr(devInfo *d)
+ze_result_t cmdConfig::forcePpr(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
 	PRINT("  PPR: N/A\n");

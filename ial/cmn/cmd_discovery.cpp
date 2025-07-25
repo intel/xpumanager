@@ -490,12 +490,10 @@ ze_result_t cmdDiscovery::coreClockRate(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::stepping(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::stepping(UNUSED devInfo *d, UNUSED std::string *outputLine)
 {
 	TRACING();
 
-	UNUSED(d);
-	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -604,11 +602,9 @@ ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::pciSlot(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::pciSlot(UNUSED devInfo *d, std::string *outputLine)
 {
 	TRACING();
-
-	UNUSED(d);
 
 	// Not implemented in XPUM for Windows. Linux version only.
 	*outputLine = "";
@@ -675,11 +671,10 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::oamSocketID(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::oamSocketID(UNUSED devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	UNUSED(d);
 	// This was only implemented on PVC GPUs so should we simply return NA going forward?
 
 	*outputLine = "N/A";
@@ -872,12 +867,10 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::gfxFirmwareStatus(UNUSED devInfo *d, UNUSED std::string *outputLine)
 {
 	TRACING();
 
-	UNUSED(d);
-	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -945,12 +938,10 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::physicalFunction(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::physicalFunction(UNUSED devInfo *d, UNUSED std::string *outputLine)
 {
 	TRACING();
 
-	UNUSED(d);
-	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -962,12 +953,10 @@ ze_result_t cmdDiscovery::physicalFunction(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::virtualFunction(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::virtualFunction(UNUSED devInfo *d, UNUSED std::string *outputLine)
 {
 	TRACING();
 
-	UNUSED(d);
-	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -979,12 +968,10 @@ ze_result_t cmdDiscovery::virtualFunction(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::listamcversions(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED std::string *outputLine)
 {
 	TRACING();
 
-	UNUSED(d);
-	UNUSED(outputLine);
 	return ZE_RESULT_SUCCESS;
 }
 

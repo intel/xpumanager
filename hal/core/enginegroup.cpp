@@ -233,11 +233,10 @@ ze_result_t enginegroup::init(zes_device_handle_t device)
 	return enumGroups(device);
 }
 
-ze_result_t enginegroup::zesRun(zes_device_handle_t device)
+ze_result_t enginegroup::zesRun(UNUSED zes_device_handle_t device)
 {
 	zes_engine_properties_t engineProperties;
 	zes_engine_stats_t engineStats;
-	UNUSED(device);
 	TRACING();
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {

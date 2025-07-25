@@ -66,7 +66,9 @@ struct option
 #endif
 
 #define AMC_PATH L"\\\\.\\NF_I2C_BUS_00_0x0040"
-#define UNUSED(x) (void)(x)
+#define UNUSED_VAR(x) (void)(x)
+#define UNUSED [[maybe_unused]]
+
 #define TWO_MB (2 * 1024 * 1024)
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
 #define STRNCPY_S(dest, src, sz) strncpy_s(dest, src, sz)

@@ -153,13 +153,12 @@ ze_result_t ras::init(zes_device_handle_t device)
 	return enumRasErrorSets(device);
 }
 
-ze_result_t ras::zesRun(zes_device_handle_t device)
+ze_result_t ras::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_ras_properties_t properties = {};
 	zes_ras_config_t config = {};
 	zes_ras_state_t state = {};
-	UNUSED(device);
 
 	for (uint32_t i = 0; i < rasCount; ++i) {
 		result = getProperties(rasHandles[i], &properties);

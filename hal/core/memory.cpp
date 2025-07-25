@@ -404,10 +404,8 @@ ze_result_t memory::init(zes_device_handle_t device)
 	return enumMemoryModules(device);
 }
 
-ze_result_t memory::zesRun(zes_device_handle_t device)
+ze_result_t memory::zesRun(UNUSED zes_device_handle_t device)
 {
-	UNUSED(device);
-
 	zes_mem_state_t state = {};
 	zes_mem_properties_t properties = {};
 	zes_mem_bandwidth_t bandwidth = {};

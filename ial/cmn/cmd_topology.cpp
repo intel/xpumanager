@@ -71,9 +71,8 @@ void cmdTopology::help(HELP helpType)
  *
  * @return int Returns 0 on success.
  */
-int cmdTopology::run(arg_struct *args)
+int cmdTopology::run(UNUSED arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
 	return 0;
 }

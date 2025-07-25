@@ -159,10 +159,9 @@ ze_result_t cmdHealth::memoryTemperature(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::power(devInfo *d)
+ze_result_t cmdHealth::power(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -198,17 +197,15 @@ ze_result_t cmdHealth::healthMemory(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::xeLinkPort(devInfo *d)
+ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
-ze_result_t cmdHealth::frequency(devInfo *d)
+ze_result_t cmdHealth::frequency(UNUSED devInfo *d)
 {
 	TRACING();
-	UNUSED(d);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -220,7 +217,6 @@ ze_result_t cmdHealth::frequency(devInfo *d)
 int cmdHealth::run(arg_struct *args)
 {
 	TRACING();
-	UNUSED(args);
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	int opt;
