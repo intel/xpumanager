@@ -96,7 +96,7 @@ protected:
 
 public:
 	cmds() {};
-	char *get_name() { return name; }
+	char *getName() { return name; }
 	virtual ~cmds() {};
 	void printHelp(std::vector<helpCmd> helpList, HELP helpType = FULL_HELP);
 	virtual void help(HELP helpType = FULL_HELP) = 0;
