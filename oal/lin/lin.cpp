@@ -295,3 +295,63 @@ std::string timestamp()
 								(int)tv.tv_usec / 1000);
 	return timestamp_str;
 }
+
+/**
+ * @brief Reads a line from a sysfs file for a given PCI device
+ *
+ * This function constructs a path to a sysfs file for a specific PCI device
+ * using the Bus:Device:Function (BDF) address and a suffix, then reads the
+ * first line from that file. It provides generic sysfs access capabilities
+ * for PCI device information retrieval.
+ *
+ * @param bdf String containing the PCI Bus:Device:Function address
+ * @param suffix String containing the sysfs file suffix to append to the device path
+ * @return std::string Content of the first line from the sysfs file, empty string if file cannot be read
+ */
+std::string getSysfsLine(std::string bdf, std::string suffix)
+{
+	TRACING();
+	std::string affinity = "";
+	std::ifstream infile;
+	std::string file = std::string("/sys/bus/pci/devices/") + bdf + suffix;
+
+	infile.open(file.data());
+	if (infile.is_open()) {
+		std::getline(infile, affinity);
+	}
+
+	infile.close();
+	return affinity;
+}
+
+/**
+ * @brief Retrieves the local CPU affinity mask for a PCI device
+ *
+ * This function reads the local_cpus sysfs attribute for a given PCI device,
+ * which contains a CPU affinity mask indicating which CPUs are local to the
+ * device. It provides NUMA topology information for optimal CPU-device affinity.
+ *
+ * @param bdf String containing the PCI Bus:Device:Function address
+ * @return std::string CPU affinity mask as hexadecimal string, empty string if not available
+ */
+std::string getLocalCpus(std::string bdf)
+{
+	TRACING();
+	return getSysfsLine(bdf, "/local_cpus");
+}
+
+/**
+ * @brief Retrieves the local CPU list for a PCI device
+ *
+ * This function reads the local_cpulist sysfs attribute for a given PCI device,
+ * which contains a human-readable list of CPU IDs that are local to the device.
+ * It provides NUMA topology information in a more readable format than the CPU mask.
+ *
+ * @param bdf String containing the PCI Bus:Device:Function address
+ * @return std::string Comma-separated list of local CPU IDs, empty string if not available
+ */
+std::string getCpuList(std::string bdf)
+{
+	TRACING();
+	return getSysfsLine(bdf, "/local_cpulist");
+}

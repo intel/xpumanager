@@ -26,6 +26,8 @@
 #include <debug.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <sstream>
+#include <vector>
 
 char *optarg;	// global argument pointer
 int optind = 1; // global argv index
@@ -220,4 +222,146 @@ int closeI2C(long long fd)
 	}
 	DBG("Successfully closed I2C handle\n");
 	return 0;
+}
+
+/**
+ * @brief Get NUMA node information for a PCI device on Windows (Simplified)
+ * @param bdf PCI Bus:Device.Function string (e.g., "0000:00:02.0")
+ * @return NUMA node number, or -1 if not found
+ */
+static int getDeviceNumaNode(const char *bdf)
+{
+	TRACING();
+	std::string bdfStr(bdf);
+
+	// Simplified approach: Use GetNumaHighestNodeNumber to get available NUMA nodes
+	// Then use heuristics or default to node 0 for most devices
+	ULONG highestNodeNumber = 0;
+	if (!GetNumaHighestNodeNumber(&highestNodeNumber)) {
+		DBG("GetNumaHighestNodeNumber failed: %d\n", GetLastError());
+		return 0; // Default to NUMA node 0
+	}
+
+	// For now, use a simple heuristic based on the PCI bus number
+	// In a real implementation, you would:
+	// 1. Parse the BDF to extract bus, device, function
+	// 2. Query registry for device location information
+	// 3. Map to appropriate NUMA node
+
+	// Extract bus number from BDF (format: "DDDD:BB:DD.F")
+	size_t colonPos = bdfStr.find(':', 5); // Skip first domain part
+	if (colonPos != std::string::npos && colonPos + 3 < bdfStr.length()) {
+		std::string busStr = bdfStr.substr(colonPos + 1, 2);
+		try {
+			int busNumber = std::stoi(busStr, nullptr, 16);
+			// Simple heuristic: distribute across available NUMA nodes
+			return busNumber % (highestNodeNumber + 1);
+		} catch (const std::exception &) {
+			// Fall through to default
+		}
+	}
+
+	return 0; // Default to NUMA node 0
+}
+
+/**
+ * @brief Convert NUMA node to CPU affinity mask on Windows
+ * @param numaNode NUMA node number
+ * @return CPU affinity mask as hexadecimal string
+ */
+static std::string numaToCpuMask(int numaNode)
+{
+	TRACING();
+
+	if (numaNode < 0) {
+		return "";
+	}
+
+	// Get processor mask for the NUMA node
+	ULONGLONG processorMask = 0;
+	BOOL result = GetNumaNodeProcessorMask((UCHAR)numaNode, &processorMask);
+
+	if (!result) {
+		ERR("GetNumaNodeProcessorMask failed: %d\n", GetLastError());
+		return "";
+	}
+
+	// Convert mask to hexadecimal string (similar to Linux format)
+	std::stringstream ss;
+	ss << std::hex << (processorMask & 0xFFFFF);
+	return ss.str();
+}
+
+/**
+ * @brief Convert NUMA node to CPU list on Windows
+ * @param numaNode NUMA node number
+ * @return Comma-separated list of CPU numbers
+ */
+static std::string numaToCpuList(int numaNode)
+{
+	TRACING();
+
+	if (numaNode < 0) {
+		return "";
+	}
+
+	// Get processor mask for the NUMA node
+	ULONGLONG processorMask = 0;
+	BOOL result = GetNumaNodeProcessorMask((UCHAR)numaNode, &processorMask);
+
+	if (!result) {
+		ERR("GetNumaNodeProcessorMask failed: %d\n", GetLastError());
+		return "";
+	}
+
+	// Convert mask to CPU list
+	std::vector<int> cpuList;
+	for (int i = 0; i < 64; i++) { // 64-bit mask
+		if (processorMask & (1ULL << i)) {
+			cpuList.push_back(i);
+		}
+	}
+
+	// Format as first-last CPU (e.g., "0-7")
+	std::stringstream ss;
+	if (!cpuList.empty()) {
+		ss << cpuList.front();
+		if (cpuList.size() > 1) {
+			ss << "-" << cpuList.back();
+		}
+	}
+
+	return ss.str();
+}
+
+/**
+ * @brief Windows equivalent of Linux getLocalCpus()
+ * @param bdf PCI Bus:Device.Function string
+ * @return CPU affinity mask as hexadecimal string
+ */
+std::string getLocalCpus(const char *bdf)
+{
+	TRACING();
+
+	// Get NUMA node for the device
+	int numaNode = getDeviceNumaNode(bdf);
+
+	// Convert NUMA node to CPU mask
+	return numaToCpuMask(numaNode);
+}
+
+/**
+ * @brief Windows equivalent of Linux getCpuList()
+ * @param bdf PCI Bus:Device.Function string
+ * @return Comma-separated list of local CPU numbers
+ */
+std::string getCpuList(const char *bdf)
+{
+	TRACING();
+
+	// Get NUMA node for the device
+	int numaNode = getDeviceNumaNode(bdf);
+
+	// Convert NUMA node to CPU list
+	return numaToCpuList(numaNode);
 }

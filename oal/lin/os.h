@@ -60,6 +60,8 @@
 #define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
 #define GETCH getch
 #define TIMESTAMP timestamp
+#define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
+#define GET_CPU_LIST(bdf) getCpuList(bdf)
 
 typedef void *(*funcptr)(void *input_params);
 
@@ -82,5 +84,7 @@ long long openI2C(const std::string &deviceName);
 int closeI2C(long long fd);
 char getch();
 std::string timestamp();
+std::string getLocalCpus(std::string bdf);
+std::string getCpuList(std::string bdf);
 
 #endif

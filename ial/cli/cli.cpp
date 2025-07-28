@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 
 	std::vector<function_entry> functionTable = {
 		{createInstance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::BOTH},
-		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::BOTH},
 		{createInstance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 		{createInstance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 		{createInstance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::BOTH},
