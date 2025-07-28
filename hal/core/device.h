@@ -164,6 +164,8 @@ public:
 	sysman *getVF() { return zes_func_table[VF].func; }
 
 	const char *getBDF();
+	std::string getCPUList();
+	std::string getLocalCPUs();
 	void setProgress(uint32_t progress) { fwupdateProgress = progress; }
 };
 

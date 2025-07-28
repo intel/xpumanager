@@ -28,6 +28,18 @@
 #include "cmds.h"
 #include <os.h>
 
+enum topologyCmdType
+{
+	TOPOLOGY_HELP,
+	TOPOLOGY_JSON,
+	TOPOLOGY_DEVICE,
+	TOPOLOGY_FILE,
+	TOPOLOGY_MATRIX,
+	TOTAL_TOPOLOGY,
+};
+
+struct topologyCmdStruct;
+
 class cmdTopology : public cmds
 {
 
@@ -35,7 +47,20 @@ public:
 	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
 	~cmdTopology() {};
 	void help(HELP helpType = FULL_HELP);
+	ze_result_t showTopology(devInfo *d);
+	ze_result_t generateFile(devInfo *d);
+	ze_result_t showMatrix(devInfo *d);
 	int run(arg_struct *args);
+};
+
+using topologySubCmdFunc = ze_result_t (cmdTopology::*)(devInfo *d);
+
+struct topologyCmdStruct
+{
+	option opt;
+	topologySubCmdFunc func;
+	bool enabled;
+	std::string val;
 };
 
 #endif
