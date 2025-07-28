@@ -771,6 +771,20 @@ bool device::isBDF(const char *bdf)
 }
 
 /**
+ * @brief Retrieves the BDF (Bus-Device-Function) of the device.
+ *
+ * This function retrieves the BDF of the device from the PCI properties.
+ *
+ * @return A string representing the BDF of the device.
+ */
+const char * device::getBDF()
+{
+	// BDF is stored in the PCI device properties so get it from there
+	pci *p = (pci *)zes_func_table[PCI].func;
+	return p->getBDF();
+}
+
+/**
  * @brief Adds device information to the device list.
  *
  * This function adds the device's information to the provided device list.

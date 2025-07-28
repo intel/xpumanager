@@ -27,6 +27,8 @@
 #include "sysman.h"
 #include <string>
 
+#define BDF_STR_LEN 64
+
 typedef struct pci_addr_mei_device
 {
 	zes_pci_properties_t pciProps;
@@ -38,6 +40,7 @@ class LIBXPUM_API pci : public sysman
 {
 private:
 	pci_addr_mei_device deviceProperties;
+	char bdfStr[BDF_STR_LEN];
 
 public:
 	pci() : deviceProperties{} { deviceProperties.fwStatus = "unknown"; }
@@ -51,6 +54,7 @@ public:
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
 	std::string getFWStatus() { return deviceProperties.fwStatus; }
+	const char *getBDF() const { return bdfStr; }
 };
 
 #endif
