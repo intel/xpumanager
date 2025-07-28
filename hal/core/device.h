@@ -163,6 +163,7 @@ public:
 	sysman *getTemperature() { return zes_func_table[TEMPERATURE].func; }
 	sysman *getVF() { return zes_func_table[VF].func; }
 
+	const char *getBDF();
 	void setProgress(uint32_t progress) { fwupdateProgress = progress; }
 };
 

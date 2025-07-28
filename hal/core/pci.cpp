@@ -192,11 +192,11 @@ ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 bool pci::isBDF(const char *bdf)
 {
 	bool isValid = false;
-	std::string bdfStr(bdf);
+	std::string bdfS(bdf);
 	std::regex regexPattern(R"((\d+):(\d+):(\d+)\.(\d+))");
 	std::smatch match;
 
-	if (std::regex_match(bdfStr, match, regexPattern)) {
+	if (std::regex_match(bdfS, match, regexPattern)) {
 		std::string domain = match[1];
 		std::string bus = match[2];
 		std::string device = match[3];
@@ -236,6 +236,10 @@ ze_result_t pci::init(zes_device_handle_t device)
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
+
+	snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", deviceProperties.pciProps.address.domain,
+			 deviceProperties.pciProps.address.bus, deviceProperties.pciProps.address.device,
+			 deviceProperties.pciProps.address.function);
 
 	gscupd gsc;
 	std::vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
