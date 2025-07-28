@@ -777,11 +777,37 @@ bool device::isBDF(const char *bdf)
  *
  * @return A string representing the BDF of the device.
  */
-const char * device::getBDF()
+const char *device::getBDF()
 {
 	// BDF is stored in the PCI device properties so get it from there
 	pci *p = (pci *)zes_func_table[PCI].func;
 	return p->getBDF();
+}
+
+/**
+ * @brief Retrieves the list of CPUs associated with the device.
+ *
+ * This function retrieves the list of CPUs associated with the device's BDF.
+ *
+ * @return A string containing the list of CPUs.
+ */
+std::string device::getCPUList()
+{
+	TRACING();
+	return GET_CPU_LIST(getBDF());
+}
+
+/**
+ * @brief Retrieves the local CPUs associated with the device.
+ *
+ * This function retrieves the local CPUs associated with the device's BDF.
+ *
+ * @return A string containing the list of local CPUs.
+ */
+std::string device::getLocalCPUs()
+{
+	TRACING();
+	return GET_LOCAL_CPUS(getBDF());
 }
 
 /**

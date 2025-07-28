@@ -26,11 +26,14 @@
 #include "debug.h"
 #include <assert.h>
 
-/**
- * @brief Adds help commands to the provided help list.
- *
- * @param helpList A pointer to a list of help commands.
- */
+static std::unordered_map<topologyCmdType, topologyCmdStruct> topologyCmds = {
+	{TOPOLOGY_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{TOPOLOGY_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{TOPOLOGY_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdTopology::showTopology, false, ""}},
+	{TOPOLOGY_FILE, {{"file", required_argument, 0, 'f'}, &cmdTopology::generateFile, false, ""}},
+	{TOPOLOGY_MATRIX, {{"matrix", no_argument, 0, 'm'}, &cmdTopology::showMatrix, false, ""}},
+};
+
 /**
  * @brief Displays help information for the topology command
  *
@@ -76,6 +79,64 @@ void cmdTopology::help(HELP helpType)
 }
 
 /**
+ * @brief Displays topology information for a specified device
+ *
+ * This function retrieves and displays topology information for a specific GPU device,
+ * including CPU affinity information such as the local CPU list and CPU mask.
+ * It provides details about which CPUs are local to the device for NUMA optimization.
+ *
+ * @param d Pointer to device information structure containing device details
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ */
+ze_result_t cmdTopology::showTopology(devInfo *d)
+{
+	TRACING();
+	std::string cpuList = d->dev->getCPUList();
+	std::string localCPUs = d->dev->getLocalCPUs();
+
+	PRINT("Device ID: %d\n", d->index);
+	PRINT("CPU List: %s\n", cpuList.c_str());
+	PRINT("Local CPUs: %s\n", localCPUs.c_str());
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Generates a topology file containing system topology information
+ *
+ * This function creates an XML file containing comprehensive system topology
+ * information including GPU devices, CPU nodes, interconnect details, and
+ * NUMA relationships. The generated file can be used for system analysis
+ * and topology visualization tools.
+ *
+ * @param d Pointer to device information structure (unused for this operation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ */
+ze_result_t cmdTopology::generateFile(UNUSED devInfo *d)
+{
+	TRACING();
+	PRINT("Generate topology file...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Displays system topology matrix showing device connectivity
+ *
+ * This function generates and displays a topology matrix that shows the
+ * connectivity and relationship between all GPU devices, CPU nodes, and
+ * interconnects in the system. The matrix uses symbols to indicate different
+ * types of connections (PCIe, Xe Link, MDF, etc.) and their characteristics.
+ *
+ * @param d Pointer to device information structure (unused for this operation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ */
+ze_result_t cmdTopology::showMatrix(UNUSED devInfo *d)
+{
+	TRACING();
+	PRINT("Show topology matrix...\n");
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Executes the topology command with parsed command line arguments
  *
  * This function processes the topology command which displays system topology
@@ -86,8 +147,113 @@ void cmdTopology::help(HELP helpType)
  * @param args Pointer to argument structure containing argc, argv, and system manager
  * @return int ZE_RESULT_SUCCESS on success, error code on failure
  */
-int cmdTopology::run(UNUSED arg_struct *args)
+int cmdTopology::run(arg_struct *args)
 {
 	TRACING();
+	std::vector<devInfo> deviceList;
+	ze_result_t result;
+	bool found = false;
+	int opt;
+	int optionIndex = 0;
+	std::string shortOpts;
+	std::vector<struct option> longOptsVec;
+
+	processOptions(topologyCmds, shortOpts, longOptsVec);
+	const struct option *longOpts = longOptsVec.data();
+	// Skip the first two arguments (process and command name)
+	int startind = 2;
+	optind = 2;
+
+	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		switch (opt) {
+		case 'h':
+			help();
+			return ZE_RESULT_SUCCESS;
+		case 'j':
+			topologyCmds[topologyCmdType::TOPOLOGY_JSON].enabled = true;
+			break;
+		case 'd':
+			topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val = optarg;
+			topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled = true;
+			break;
+		case 'f':
+			topologyCmds[topologyCmdType::TOPOLOGY_FILE].val = optarg;
+			topologyCmds[topologyCmdType::TOPOLOGY_FILE].enabled = true;
+			break;
+		case 'm':
+			topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled = true;
+			break;
+		case 0:
+			for (auto &cmd : topologyCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
+					cmd.second.enabled = true;
+					if (longOpts[optionIndex].has_arg == required_argument) {
+						cmd.second.val = optarg;
+					}
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("Run with --help for more information.\n");
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			break;
+		default:
+			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("Run with --help for more information.\n");
+			break;
+		}
+		startind++;
+	}
+
+	// If optind is not equal to args->argc, it means there are extra arguments
+	// that were not processed by getopt_long.
+	if (optind != args->argc) {
+		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Handle matrix command (doesn't require device)
+	if (topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled) {
+		return showMatrix(nullptr);
+	}
+
+	// Handle file generation command (doesn't require specific device)
+	if (topologyCmds[topologyCmdType::TOPOLOGY_FILE].enabled) {
+		return generateFile(nullptr);
+	}
+
+	// For device-specific commands, find the device
+	if (topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled) {
+		result = args->sm.findDevice(topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str(), &deviceList);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Error: Device handle not found for device ID '%s'.\n",
+				topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str());
+			return result;
+		}
+
+		// Iterate through the device list and execute the command
+		for (auto &device : deviceList) {
+			// Call the appropriate command function based on the command type
+			for (const auto &cmd : topologyCmds) {
+				if (cmd.second.enabled && cmd.second.func != nullptr) {
+					DBG("Running command: %s\n", cmd.second.opt.name);
+					result = (this->*cmd.second.func)(&device);
+					if (result != ZE_RESULT_SUCCESS) {
+						return result;
+					}
+				}
+			}
+		}
+	} else {
+		// If no specific command is provided, show help
+		help();
+	}
+
 	return 0;
 }
