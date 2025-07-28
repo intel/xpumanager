@@ -89,6 +89,8 @@ struct option
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH (char) _getch
 #define TIMESTAMP timestamp
+#define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
+#define GET_CPU_LIST(bdf) getCpuList(bdf)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;
@@ -100,6 +102,8 @@ void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 std::string getProcessName(uint32_t processId);
+std::string getLocalCpus(const char *bdf);
+std::string getCpuList(const char *bdf);
 long long openI2C(const std::string &deviceName);
 int closeI2C(long long fd);
 std::string timestamp();
