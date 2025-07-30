@@ -1,0 +1,8 @@
+[wrap-git]
+directory = metee
+url = https://github.com/intel/metee.git
+revision = 6.0.0
+depth = 1
+
+[provide]
+metee = metee_dep_static

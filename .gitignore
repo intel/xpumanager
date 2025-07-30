@@ -9,3 +9,8 @@ xpumd
 tags
 release
 x64
+build
+builddir
+subprojects/igsc
+subprojects/metee
+subprojects/level-zero
