@@ -1,0 +1,21 @@
+# Meson options for XPUM project
+
+option('dev', type : 'boolean', value : false,
+       description : 'Development mode: disable warnings as errors')
+
+option('shared_library', type : 'boolean', value : true,
+       description : 'Properly export shared library (Windows only)')
+
+# Dependency options
+option('use_system_levelzero', type : 'boolean', value : false,
+       description : '(Not preferred) Use system Level Zero installation instead of automatic management')
+
+option('use_system_igsc', type : 'boolean', value : false,
+       description : '(Not preferred) Use system IGSC installation instead of automatic management')
+
+# ---- Not quite supported but in the meson files
+option('static_library', type : 'boolean', value : false,
+       description : 'Install static library (libxpum.a/.lib)')
+
+option('install_headers', type : 'boolean', value : false,
+       description : 'Install development headers')

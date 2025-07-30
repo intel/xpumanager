@@ -1,0 +1,50 @@
+# IAL CLI build
+
+cli_sources = files('cli.cpp')
+cli_inc = include_directories('.')
+
+# CLI dependencies
+cli_deps = [
+  libxpum_dep,
+  oal_dep, 
+  ial_cmn_dep,
+  levelzero_dep,
+  igsc_dep
+]
+
+if is_linux
+  cli_deps += [pciaccess_dep]
+endif
+
+# xpu-smi executable (SMI mode)
+xpu_smi_exe = executable('xpu-smi',
+  cli_sources,
+  include_directories : [
+    global_inc,
+    cli_inc,
+    oal_inc_dirs,
+    include_directories('../cmn'),
+    include_directories('../../hal/core'),
+    include_directories('../../hal/fwupd')
+  ],
+  dependencies : cli_deps + windows_deps,
+  install : true,
+  install_dir : get_option('bindir')
+)
+
+# xpumcli executable (CLI/daemon mode)
+xpumcli_exe = executable('xpumcli',
+  cli_sources,
+  include_directories : [
+    global_inc,
+    cli_inc,
+    oal_inc_dirs,
+    include_directories('../cmn'),
+    include_directories('../../hal/core'),
+    include_directories('../../hal/fwupd')
+  ],
+  dependencies : cli_deps + windows_deps,
+  cpp_args : ['-DDAEMONMODE'],
+  install : true,
+  install_dir : get_option('bindir')
+)

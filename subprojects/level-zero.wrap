@@ -1,0 +1,9 @@
+[wrap-git]
+directory = level-zero
+url = https://github.com/oneapi-src/level-zero.git
+revision = v1.23.1
+depth = 1
+method = cmake
+
+[provide]
+ze_loader = ze_loader_dep
