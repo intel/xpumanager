@@ -36,7 +36,7 @@ public:
 	performance() : perfCount(0), perfHandles(nullptr) {}
 	~performance();
 	ze_result_t enumPerformanceFactorDomains(zes_device_handle_t device);
-	ze_result_t getProperties(zes_perf_handle_t perfHandle);
+	ze_result_t getProperties(zes_perf_handle_t perfHandle, zes_perf_properties_t *properties);
 	ze_result_t getConfig(zes_perf_handle_t perfHandle);
 
 	ze_result_t init(zes_device_handle_t device) override;
