@@ -124,6 +124,22 @@ ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
 }
 
 /**
+ * @brief Initializes the performance monitoring subsystem for a device
+ *
+ * This function performs initialization of the performance monitoring capabilities
+ * by enumerating all available performance factor domains on the specified device.
+ * This is typically called during device setup to prepare performance tuning functionality.
+ *
+ * @param device Handle to the Level Zero Sysman device to initialize
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
+ze_result_t performance::init(zes_device_handle_t device)
+{
+	TRACING();
+	return enumPerformanceFactorDomains(device);
+}
+
+/**
  * @brief Performs comprehensive performance factor monitoring runtime operations
  *
  * This function executes a complete performance factor monitoring cycle including
@@ -133,10 +149,9 @@ ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
  * @param device Handle to the device for performance factor operations
  * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
  */
-ze_result_t performance::zesRun(zes_device_handle_t device)
+ze_result_t performance::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	enumPerformanceFactorDomains(device);
 
 	for (uint32_t i = 0; i < perfCount; ++i) {
 		result = getProperties(perfHandles[i]);
