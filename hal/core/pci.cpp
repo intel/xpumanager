@@ -46,6 +46,7 @@ ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t 
 		ERR("Invalid argument: pciProps is null\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+	memset(pciProps, 0, sizeof(zes_pci_properties_t));
 
 	ze_result_t result = zesDevicePciGetProperties(device, pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
