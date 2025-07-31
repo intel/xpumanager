@@ -30,7 +30,9 @@
 #include <frequency.h>
 #include <power.h>
 #include <scheduler.h>
+#include <performance.h>
 #include <standby.h>
+#include <stdexcept>
 
 static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGHELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
@@ -108,7 +110,7 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "--ppr                       Apply ppr to the device"));
 	helpList.push_back(helpCmd(HEADING, "--force                     Force PPR to run"));
 	helpList.push_back(helpCmd(HEADING, "--performancefactor         Set the tile-level performance factor. Valid "
-										"options: \"compute/media\";factorValue. The factor value should be"));
+										"options: \"compute/media\",factorValue. The factor value should be"));
 	helpList.push_back(helpCmd(SUB_HEADING, "between 0 to 100. 100 means that the workload is completely compute "
 											"bounded and requires very little support from the memory support"));
 	helpList.push_back(helpCmd(SUB_HEADING, "0 means that the workload is completely memory bounded and the "
@@ -294,10 +296,52 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::setPerformanceFactor(UNUSED devInfo *d)
+ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	double factorValue = 0.0;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	// Set the performance factor. Valid options are "compute/media",factorValue.
+	std::string performanceFactor = configCmds[configCmdType::PERFORMANCEFACTOR].val;
+	size_t commaPos = performanceFactor.find(',');
+	if (commaPos == std::string::npos) {
+		ERR("Invalid performance factor format. Expected format: engineType,factorValue\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	std::string engineType = performanceFactor.substr(0, commaPos);
+	if (engineType != "compute" && engineType != "media") {
+		ERR("Invalid engine type. Valid options are 'compute' or 'media'.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::string factorValueStr = performanceFactor.substr(commaPos + 1);
+	try {
+		factorValue = stod(factorValueStr);
+		if (factorValue < 0 || factorValue > 100) {
+			ERR("Invalid performance factor value. Valid range is between 0 to 100.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	} catch (const std::exception &e) {
+		ERR("Error parsing factor value: %s\n", e.what());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	performance *perf = (performance *)d->dev->getPerformance();
+	if (perf == nullptr) {
+		ERR("Error: Performance pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	zes_engine_type_flag_t engineTypeFlag =
+		(engineType == "compute") ? ZES_ENGINE_TYPE_FLAG_COMPUTE : ZES_ENGINE_TYPE_FLAG_MEDIA;
+
+	result = perf->setConfig(engineTypeFlag, factorValue);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set performance factor: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	return result;
 }
 
 /**
@@ -448,7 +492,6 @@ int cmdConfig::run(arg_struct *args)
 {
 	TRACING();
 	std::vector<devInfo> deviceList;
-	configCmdType cmdType = configCmdType::TOTAL_CONFIG;
 	ze_result_t result;
 	int opt;
 	int optionIndex = 0;
@@ -531,7 +574,7 @@ int cmdConfig::run(arg_struct *args)
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : configCmds) {
-			if (cmd.first == cmdType && cmd.second.func != nullptr) {
+			if (cmd.second.enabled && cmd.second.func != nullptr) {
 				result = (this->*cmd.second.func)(&device);
 				break;
 			}
