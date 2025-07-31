@@ -24,21 +24,6 @@
 #include "performance.h"
 
 /**
- * @brief Destructor for the performance class
- *
- * This destructor performs cleanup operations for the performance management
- * object, releasing allocated memory for performance factor domain handles and
- * ensuring proper resource deallocation when the performance object is destroyed.
- */
-performance::~performance()
-{
-	if (perfHandles) {
-		delete[] perfHandles;
-		perfHandles = nullptr;
-	}
-}
-
-/**
  * @brief Enumerates available performance factor domains for a device
  *
  * This function discovers and catalogs all performance factor domains available
@@ -50,6 +35,7 @@ performance::~performance()
  */
 ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device)
 {
+	uint32_t perfCount = 0;
 	// Get the perfCount of performance factor domains
 	ze_result_t result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || perfCount == 0) {
@@ -58,10 +44,11 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 		return result;
 	}
 
-	perfHandles = new zes_perf_handle_t[perfCount];
+	perfHandles->clear();
+	perfHandles->resize(perfCount);
 
 	// Retrieve the performance factor domain handles
-	result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, perfHandles);
+	result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, perfHandles->data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate performance factor domains. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -130,6 +117,54 @@ ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
 }
 
 /**
+ * @brief Sets the performance factor configuration for a specific engine type
+ *
+ * This function configures the performance factor for performance domains that match
+ * the specified engine type. It validates the factor value and applies the configuration
+ * to all matching performance factor domains on the device.
+ *
+ * @param engineType The engine type flag specifying which execution engines to configure
+ * @param factor The performance factor value (0-100) to set for the matching domains
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful configuration, error code otherwise
+ */
+ze_result_t performance::setConfig(zes_engine_type_flag_t engineType, double factor)
+{
+	TRACING();
+
+	// Assume that this feature is not supported
+	ze_result_t result = ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+
+	// Validate the factor value
+	if (factor < 0 || factor > 100) {
+		ERR("Invalid performance factor value: %f. Must be between 0 and 100.\n", factor);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	for (uint32_t i = 0; i < perfHandles->size(); ++i) {
+		zes_perf_properties_t properties = {};
+
+		result = getProperties(perfHandles->at(i), &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		// Check if the engine type matches the properties of the performance factor domain
+		if (properties.engines & engineType) {
+
+			DBG("Setting config for performance factor domain %d with factor %f\n", i, factor);
+			// Set the performance factor configuration
+			result = zesPerformanceFactorSetConfig(perfHandles->at(i), factor);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to set config for performance factor domain 0x%X (%s)\n", result,
+					l0_error_to_string(result));
+				return result;
+			}
+		}
+	}
+	return result;
+}
+
+/**
  * @brief Initializes the performance monitoring subsystem for a device
  *
  * This function performs initialization of the performance monitoring capabilities
@@ -159,15 +194,15 @@ ze_result_t performance::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	for (uint32_t i = 0; i < perfCount; ++i) {
+	for (uint32_t i = 0; i < perfHandles->size(); ++i) {
 		zes_perf_properties_t properties = {};
 
-		result = getProperties(perfHandles[i], &properties);
+		result = getProperties(perfHandles->at(i), &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = getConfig(perfHandles[i]);
+		result = getConfig(perfHandles->at(i));
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
