@@ -81,19 +81,25 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
  * @param perfHandle Handle to the specific performance factor domain
  * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
  */
-ze_result_t performance::getProperties(zes_perf_handle_t perfHandle)
+ze_result_t performance::getProperties(zes_perf_handle_t perfHandle, zes_perf_properties_t *properties)
 {
-	zes_perf_properties_t properties = {};
-	ze_result_t result = zesPerformanceFactorGetProperties(perfHandle, &properties);
+	TRACING();
+
+	if (properties == nullptr) {
+		ERR("Invalid properties pointer provided.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	ze_result_t result = zesPerformanceFactorGetProperties(perfHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get properties for performance factor domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Performance Factor Properties:\n");
-	DBG("  onSubdevice: %d\n", properties.onSubdevice);
-	DBG("  subdeviceId: %d\n", properties.subdeviceId);
-	printEngines(properties.engines);
+	DBG("  onSubdevice: %d\n", properties->onSubdevice);
+	DBG("  subdeviceId: %d\n", properties->subdeviceId);
+	printEngines(properties->engines);
 
 	return result;
 }
@@ -154,7 +160,9 @@ ze_result_t performance::zesRun(UNUSED zes_device_handle_t device)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < perfCount; ++i) {
-		result = getProperties(perfHandles[i]);
+		zes_perf_properties_t properties = {};
+
+		result = getProperties(perfHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
