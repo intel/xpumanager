@@ -38,6 +38,7 @@
     <ClCompile Include="..\cmn\cmd_topology.cpp" />
     <ClCompile Include="..\cmn\cmd_updatefw.cpp" />
     <ClCompile Include="..\cmn\cmd_vgpu.cpp" />
+    <ClCompile Include="..\cmn\printer.cpp" />
     <ClCompile Include="cli.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -115,11 +116,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\oal\win;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\oal\win;..\third_party;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\oal\win;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\oal\win;..\third_party;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

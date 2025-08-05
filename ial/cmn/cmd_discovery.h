@@ -26,7 +26,28 @@
 #define _CMD_DISCOVERY_H
 
 #include "cmds.h"
+#include "printer.h"
 #include <os.h>
+
+/**
+ * @brief Discovery-specific JSON printer that formats discovery output as JSON
+ */
+class DiscoveryJsonPrinter : public JsonPrinter
+{
+public:
+	DiscoveryJsonPrinter();
+	void print(nlohmann::json *jsonObj) override;
+};
+
+/**
+ * @brief Discovery-specific text printer that formats discovery output as human-readable text
+ */
+class DiscoveryTextPrinter : public TextPrinter
+{
+public:
+	DiscoveryTextPrinter();
+	void print(nlohmann::json *jsonObj) override;
+};
 
 enum discCmdType
 {
@@ -84,12 +105,12 @@ public:
 	~cmdDiscovery() {};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t preCheck(std::vector<std::string> *dumpArgs);
-	ze_result_t dumpHeading();
-	ze_result_t dumpAll(devInfo *d, std::string *outputLine);
-	ze_result_t dump(devInfo *d, std::string *outputLine);
-	ze_result_t physicalFunction(devInfo *d, std::string *outputLine);
-	ze_result_t virtualFunction(devInfo *d, std::string *outputLine);
-	ze_result_t listamcversions(devInfo *d, std::string *outputLine);
+	ze_result_t dumpHeading(nlohmann::json *jsonObj);
+	ze_result_t dump(devInfo *d, nlohmann::json *jsonObj);
+	ze_result_t dumpAll(devInfo *d, nlohmann::json *jsonObj);
+	ze_result_t physicalFunction(devInfo *d, nlohmann::json *jsonObj);
+	ze_result_t virtualFunction(devInfo *d, nlohmann::json *jsonObj);
+	ze_result_t listamcversions(devInfo *d, nlohmann::json *jsonObj);
 
 	ze_result_t deviceID(devInfo *d, std::string *outputLine);
 	ze_result_t deviceName(devInfo *d, std::string *outputLine);
@@ -116,16 +137,19 @@ public:
 	ze_result_t pciVendorID(devInfo *d, std::string *outputLine);
 	ze_result_t pciDeviceID(devInfo *d, std::string *outputLine);
 
+	std::unique_ptr<nlohmann::json> printDeviceDetail(devInfo *device);
+
 	int run(arg_struct *args);
 };
 
-using discoveryHeadingFunc = ze_result_t (cmdDiscovery::*)();
+using discoveryHeadingFunc = ze_result_t (cmdDiscovery::*)(nlohmann::json *headingJson);
 using discoverySubCmdFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, std::string *outputLine);
+using discoveryFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, nlohmann::json *cmdJson);
 
 struct discoveryCmdStruct
 {
 	option opt;
-	discoverySubCmdFunc func;
+	discoveryFunc func;
 	discoveryHeadingFunc headingFunc;
 	bool enabled;
 	std::string val;
