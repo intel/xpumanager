@@ -1,8 +1,0 @@
-[wrap-git]
-directory = igsc
-url = https://github.com/intel/igsc.git
-revision = V0.9.6
-depth = 1
-
-[provide]
-igsc = igsc_dep
