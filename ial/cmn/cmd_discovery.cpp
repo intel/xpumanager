@@ -24,6 +24,7 @@
 
 #include "cmd_discovery.h"
 #include "debug.h"
+#include "printer.h"
 #include <assert.h>
 #include <enginegroup.h>
 #include <firmware.h>
@@ -33,7 +34,7 @@
 #include <iomanip>
 #include <format>
 
-/*
+/**
  * @brief This structure serves two purposes:
  * 1. It defines the command parsing for discovery commands.
  * 2. It allows for easy addition of new commands by simply adding a new entry to the map.
@@ -85,6 +86,115 @@ static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
 	{DUMP_PCIVENDORID, {&cmdDiscovery::pciVendorID, "PCI Vendor ID"}},
 	{DUMP_PCIDEVICEID, {&cmdDiscovery::pciDeviceID, "PCI Device ID"}},
 };
+
+/**
+ * @brief Constructor for DiscoveryJsonPrinter class
+ */
+DiscoveryJsonPrinter::DiscoveryJsonPrinter() : JsonPrinter() {}
+
+/**
+ * @brief Prints JSON output with pretty formatting for discovery command
+ *
+ * @param jsonObj Pointer to the JSON object to be printed
+ */
+void DiscoveryJsonPrinter::print(nlohmann::json *jsonObj)
+{
+	// Pretty print JSON with 4 spaces indentation for discovery command output
+	PRINT("%s\n", jsonObj->dump(4).c_str());
+}
+
+/**
+ * @brief Constructor for DiscoveryTextPrinter class
+ */
+DiscoveryTextPrinter::DiscoveryTextPrinter() : TextPrinter() {}
+
+/**
+ * @brief Prints text output with custom formatting for discovery command
+ *
+ * @param jsonObj Pointer to the JSON object to be formatted and printed as text
+ */
+void DiscoveryTextPrinter::print(nlohmann::json *jsonObj)
+{
+	// Custom formatting for discovery text output
+	if (jsonObj->contains("heading")) {
+		// Print CSV-style headers for dump command
+		const auto &headers = (*jsonObj)["heading"];
+		for (size_t i = 0; i < headers.size(); ++i) {
+			PRINT("%s", headers[i].get<std::string>().c_str());
+			if (i < headers.size() - 1) {
+				PRINT(", ");
+			}
+		}
+		PRINT("\n");
+
+		// Print values for each device
+		for (auto &deviceItem : jsonObj->items()) {
+			if (deviceItem.key() != "heading") {
+				const auto &values = deviceItem.value();
+				for (size_t i = 0; i < values.size(); ++i) {
+					PRINT("%s", values[i].get<std::string>().c_str());
+					if (i < values.size() - 1) {
+						PRINT(", ");
+					}
+				}
+				PRINT("\n");
+			}
+		}
+	} else if (jsonObj->contains("device_list")) {
+		// Handle JSON object with device_list field - print device information in a formatted table-like structure
+		for (auto &device : (*jsonObj)["device_list"]) {
+			bool firstItem = true;
+			for (auto &item : device.items()) {
+				if (firstItem) {
+					// For the first item, print it as the main device identifier
+					std::string deviceLine = "| " + item.value().get<std::string>();
+					PRINT("%-70s|\n", deviceLine.c_str());
+
+					firstItem = false;
+				} else {
+					// For subsequent items, print them indented
+					std::string detailLine = "      | " + item.key() + ": " + item.value().get<std::string>();
+					PRINT("%-70s|\n", detailLine.c_str());
+				}
+			}
+			PRINT("\n");
+		}
+	} else {
+		// Handle single device or key-value pairs
+		for (auto &item : jsonObj->items()) {
+			std::string detailLine = "| " + item.key() + ": " + item.value().get<std::string>();
+			PRINT("%-70s |\n", detailLine.c_str());
+		}
+	}
+}
+
+/**
+ * @brief Prints detailed device information in JSON format
+ *
+ * @param device Pointer to the device info structure
+ * @return std::unique_ptr<nlohmann::json> JSON object containing device details
+ */
+std::unique_ptr<nlohmann::json> cmdDiscovery::printDeviceDetail(devInfo *device)
+{
+	auto jsonObj = std::make_unique<nlohmann::json>();
+	std::string outputLine;
+
+	// Get string values first, then assign to JSON
+	(*jsonObj)["device_id"] = std::to_string(device->index);
+	deviceName(device, &outputLine);
+	(*jsonObj)["device_name"] = outputLine;
+
+	vendorName(device, &outputLine);
+	(*jsonObj)["vendor_name"] = outputLine;
+
+	socUuid(device, &outputLine);
+	(*jsonObj)["soc_uuid"] = outputLine;
+
+	pciBDFAddress(device, &outputLine);
+	(*jsonObj)["pci_bdf_address"] = outputLine;
+
+	return jsonObj;
+}
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -203,13 +313,14 @@ ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dumpHeading()
+ze_result_t cmdDiscovery::dumpHeading(nlohmann::json *jsonObj)
 {
 	TRACING();
 	std::vector<std::string> dumpArgs;
 	ze_result_t result;
 	bool found = false;
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
+	auto headingJson = std::make_unique<nlohmann::json>();
 
 	result = preCheck(&dumpArgs);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -219,13 +330,8 @@ ze_result_t cmdDiscovery::dumpHeading()
 	for (const auto &arg : dumpArgs) {
 		for (const auto &cmd : discDumpCmds) {
 			if (cmd.first == stoi(arg)) {
-				// found will only be true if we have printed at least one heading, so add a comma before the next
-				// heading
-				if (found) {
-					PRINT(", ");
-				}
-				PRINT("%s", cmd.second.heading.c_str());
 				found = true;
+				headingJson->push_back(cmd.second.heading);
 			}
 		}
 	}
@@ -234,11 +340,8 @@ ze_result_t cmdDiscovery::dumpHeading()
 		ERR("The following argument was not expected: '%s'.\n", val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	} else {
-		// Print a new line after the heading
-		PRINT("\n");
 	}
-
+	(*jsonObj)["heading"] = *headingJson;
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -250,12 +353,13 @@ ze_result_t cmdDiscovery::dumpHeading()
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dump(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	std::vector<std::string> dumpArgs;
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
+	auto valuesJson = std::make_unique<nlohmann::json>();
 	bool found = false;
 
 	result = preCheck(&dumpArgs);
@@ -263,22 +367,16 @@ ze_result_t cmdDiscovery::dump(devInfo *d, std::string *outputLine)
 		return result;
 	}
 
+	std::string outputLine;
 	for (const auto &arg : dumpArgs) {
 		for (const auto &cmd : discDumpCmds) {
 			if (cmd.first == stoi(arg)) {
 				DBG("Running command: %d\n", cmd.first);
-				result = (this->*cmd.second.func)(d, outputLine);
+				result = (this->*cmd.second.func)(d, &outputLine);
 				if (result != ZE_RESULT_SUCCESS) {
 					return result;
 				}
-				// found will only be true if we have printed at least one output, so add a comma before the next
-				// output
-				if (found) {
-					PRINT(", ");
-				}
-				PRINT("%s", outputLine->c_str());
-				// Clear the output line for the next command
-				outputLine->clear();
+				valuesJson->push_back(outputLine);
 				// Set found to true to indicate that we have printed at least one command
 				found = true;
 				break;
@@ -290,11 +388,8 @@ ze_result_t cmdDiscovery::dump(devInfo *d, std::string *outputLine)
 		ERR("The following argument was not expected: '%s'.\n", val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	} else {
-		// Print a new line after the output
-		PRINT("\n");
 	}
-
+	(*jsonObj)[std::to_string(d->index)] = *valuesJson;
 	return result;
 }
 
@@ -306,14 +401,15 @@ ze_result_t cmdDiscovery::dump(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dumpAll(devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
+	std::string outputLine;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	// We should dump all properties for a device only when no other command line options are specified.
 	for (const auto &cmd : discCmds) {
-		if (cmd.second.enabled && cmd.first != discCmdType::DISC_DEVICE) {
+		if (cmd.second.enabled && (cmd.first != discCmdType::DISC_DEVICE && cmd.first != discCmdType::DISC_JSON)) {
 			// Silently return if any other command line options are specified
 			return result;
 		}
@@ -321,12 +417,11 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, std::string *outputLine)
 
 	// Iterate over all dump commands and execute them
 	for (const auto &cmd : discDumpCmds) {
-		result = (this->*cmd.second.func)(d, outputLine);
+		result = (this->*cmd.second.func)(d, &outputLine);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
-		PRINT("%s: %s\n", cmd.second.heading.c_str(), outputLine->c_str());
-		outputLine->clear();
+		(*jsonObj)[cmd.second.heading] = outputLine;
 	}
 
 	return result;
@@ -948,7 +1043,7 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::physicalFunction(UNUSED devInfo *d, UNUSED std::string *outputLine)
+ze_result_t cmdDiscovery::physicalFunction(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
 {
 	TRACING();
 
@@ -963,7 +1058,7 @@ ze_result_t cmdDiscovery::physicalFunction(UNUSED devInfo *d, UNUSED std::string
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::virtualFunction(UNUSED devInfo *d, UNUSED std::string *outputLine)
+ze_result_t cmdDiscovery::virtualFunction(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
 {
 	TRACING();
 
@@ -978,7 +1073,7 @@ ze_result_t cmdDiscovery::virtualFunction(UNUSED devInfo *d, UNUSED std::string 
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED std::string *outputLine)
+ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
 {
 	TRACING();
 
@@ -998,9 +1093,9 @@ int cmdDiscovery::run(arg_struct *args)
 	bool found = false, headingFirst = true;
 	int opt;
 	int optionIndex = 0;
+	std::unique_ptr<Printer> printer;
 	std::string shortOpts;
 	std::vector<struct option> longOptsVec;
-	std::string outputLine = "";
 
 	processOptions(discCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
@@ -1057,7 +1152,11 @@ int cmdDiscovery::run(arg_struct *args)
 		}
 		startind++;
 	}
-
+	if (discCmds[discCmdType::DISC_JSON].enabled == true) {
+		printer = std::make_unique<DiscoveryJsonPrinter>();
+	} else {
+		printer = std::make_unique<DiscoveryTextPrinter>();
+	}
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
@@ -1079,26 +1178,20 @@ int cmdDiscovery::run(arg_struct *args)
 	//      | PCI BDF Address: 0000:03:00.0                                                        |
 	//      | DRM Device: /dev/dri/card1                                                           |
 	//      | Function Type: physical                                                              |
-	if (args->argc == 2) {
+	if (args->argc == 2 || (args->argc == 3 && discCmds[discCmdType::DISC_JSON].enabled)) {
 		// Print out the device information
+		auto devicesJson = std::make_unique<nlohmann::json>();
+		auto deviceListJson = std::make_unique<nlohmann::json>();
 		for (auto &device : deviceList) {
-			deviceName(&device, &outputLine);
-			PRINT("deviceID: %s\n", outputLine.c_str());
-			outputLine.clear();
-			vendorName(&device, &outputLine);
-			PRINT("vendorName: %s\n", outputLine.c_str());
-			outputLine.clear();
-			socUuid(&device, &outputLine);
-			PRINT("socUuid: %s\n", outputLine.c_str());
-			outputLine.clear();
-			pciBDFAddress(&device, &outputLine);
-			PRINT("pciBDFAddress: %s\n", outputLine.c_str());
-			PRINT("==============================================\n");
+			auto deviceJson = printDeviceDetail(&device);
+			deviceListJson->push_back(*deviceJson);
 		}
+		(*devicesJson)["device_list"] = *deviceListJson;
+		printer->print(devicesJson.get());
 	} else {
 		// Iterate through the device list and execute the command
+		auto jsonObj = std::make_unique<nlohmann::json>();
 		for (auto &device : deviceList) {
-			outputLine.clear();
 
 			// Call the appropriate command function based on the command type
 			for (const auto &cmd : discCmds) {
@@ -1106,20 +1199,22 @@ int cmdDiscovery::run(arg_struct *args)
 					// If there is a heading function, call it first
 					if (cmd.second.headingFunc != nullptr && headingFirst) {
 						headingFirst = false;
-						result = (this->*cmd.second.headingFunc)();
+
+						result = (this->*cmd.second.headingFunc)(jsonObj.get());
 						if (result != ZE_RESULT_SUCCESS) {
 							return result;
 						}
 					}
 
 					DBG("Running command: %s\n", cmd.second.opt.name);
-					result = (this->*cmd.second.func)(&device, &outputLine);
+					result = (this->*cmd.second.func)(&device, jsonObj.get());
 					if (result != ZE_RESULT_SUCCESS) {
 						return result;
 					}
 				}
 			}
 		}
+		printer->print(jsonObj.get());
 	}
 	return 0;
 }
