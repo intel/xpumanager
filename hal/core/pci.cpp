@@ -28,6 +28,17 @@
 #include <string>
 #include <vector>
 
+/**
+ * @brief Gets PCI properties for a device
+ *
+ * This function retrieves comprehensive PCI configuration information for the
+ * specified device, including PCI address, speed capabilities, bandwidth limits,
+ * and generation information for system topology analysis.
+ *
+ * @param device Handle to the device
+ * @param pciProps Pointer to structure to store PCI properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProps)
 {
 	assert(pciProps);
@@ -54,6 +65,16 @@ ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t 
 	return result;
 }
 
+/**
+ * @brief Gets the current PCI state for a device
+ *
+ * This function retrieves the current PCI state information for the specified
+ * device, including current speed, width, and bandwidth utilization for
+ * real-time PCI performance monitoring.
+ *
+ * @param device Handle to the device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
 ze_result_t pci::getState(zes_device_handle_t device)
 {
 	zes_pci_state_t pciState = {};
@@ -72,6 +93,16 @@ ze_result_t pci::getState(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets PCI Base Address Registers (BARs) information for a device
+ *
+ * This function retrieves PCI BAR information for the specified device,
+ * including memory-mapped I/O regions and their sizes for low-level
+ * hardware access and memory mapping analysis.
+ *
+ * @param device Handle to the device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful BAR retrieval, error code otherwise
+ */
 ze_result_t pci::getBars(zes_device_handle_t device)
 {
 	// This function is currently a placeholder.
@@ -110,6 +141,17 @@ ze_result_t pci::getBars(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets PCI statistics for a device
+ *
+ * This function retrieves comprehensive PCI performance statistics for the
+ * specified device, including bandwidth utilization, packet counts, and
+ * replay counters for detailed PCI performance analysis.
+ *
+ * @param device Handle to the device
+ * @param pciStats Pointer to structure to store PCI statistics
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful statistics retrieval, error code otherwise
+ */
 ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 {
 	TRACING();
@@ -136,6 +178,16 @@ ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 	return result;
 }
 
+/**
+ * @brief Checks if a string matches the Bus:Device.Function (BDF) format
+ *
+ * This function validates whether the provided string conforms to the standard
+ * PCI BDF address format (domain:bus:device.function) and matches the device's
+ * actual PCI address for device identification and filtering.
+ *
+ * @param bdf String containing the BDF address to validate
+ * @return bool True if the BDF format is valid and matches this device, false otherwise
+ */
 bool pci::isBDF(const char *bdf)
 {
 	bool isValid = false;
@@ -165,6 +217,16 @@ bool pci::isBDF(const char *bdf)
 	return isValid;
 }
 
+/**
+ * @brief Initializes the PCI management module for a device
+ *
+ * This function performs initial setup of PCI monitoring capabilities by
+ * retrieving PCI properties and current state information for the specified
+ * device for subsequent PCI analysis operations.
+ *
+ * @param device Handle to the device for PCI initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t pci::init(zes_device_handle_t device)
 {
 	ze_result_t result;
@@ -193,6 +255,16 @@ ze_result_t pci::init(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Performs comprehensive PCI monitoring runtime operations
+ *
+ * This function executes a complete PCI monitoring cycle including statistics
+ * retrieval, state checking, and BAR information gathering for thorough PCI
+ * performance analysis and system topology assessment.
+ *
+ * @param device Handle to the device for PCI operations
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t pci::zesRun(zes_device_handle_t device)
 {
 	zes_pci_stats_t pciStats = {};

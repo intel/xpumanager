@@ -23,6 +23,13 @@
  */
 #include "temperature.h"
 
+/**
+ * @brief Destructor for the temperature class
+ *
+ * This destructor performs cleanup operations for the temperature management
+ * object, releasing allocated memory for temperature sensor handles and ensuring
+ * proper resource deallocation when the temperature object is destroyed.
+ */
 temperature::~temperature()
 {
 	if (temperatureHandles) {
@@ -31,6 +38,16 @@ temperature::~temperature()
 	}
 }
 
+/**
+ * @brief Enumerates available temperature sensor domains for a device
+ *
+ * This function discovers and catalogs all temperature sensors available on the
+ * specified device. Temperature sensors monitor thermal conditions across
+ * different components and regions of the device.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t temperature::enumTemperatureDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumTemperatureSensors(device, &temperatureCount, nullptr);
@@ -50,6 +67,16 @@ ze_result_t temperature::enumTemperatureDomains(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific temperature sensor
+ *
+ * This function retrieves detailed properties and capabilities for a
+ * specific temperature sensor, including sensor type and critical thresholds.
+ *
+ * @param temperatureHandle Handle to the specific temperature sensor
+ * @param properties Pointer to structure to store temperature sensor properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_temp_properties_t *properties)
 {
 	ze_result_t result = zesTemperatureGetProperties(temperatureHandle, properties);
@@ -98,6 +125,17 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_
 	return result;
 }
 
+/**
+ * @brief Gets the current temperature state for a specific sensor
+ *
+ * This function retrieves the current temperature reading from a specific
+ * temperature sensor, providing real-time thermal monitoring capabilities
+ * for device safety and performance optimization.
+ *
+ * @param temperatureHandle Handle to the specific temperature sensor
+ * @param temp Pointer to store the current temperature value in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful temperature retrieval, error code otherwise
+ */
 ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *temp)
 {
 	ze_result_t result = zesTemperatureGetState(temperatureHandle, temp);
@@ -112,6 +150,18 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
 	return result;
 }
 
+/**
+ * @brief Gets temperature for a specific sensor type
+ *
+ * This function searches for temperature sensors matching the specified type
+ * and retrieves the current temperature reading, providing targeted thermal
+ * monitoring for specific device components.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @param type The specific temperature sensor type to query
+ * @param coreTemp Pointer to store the temperature value in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS if temperature retrieved successfully, error code otherwise
+ */
 ze_result_t temperature::getTemp(UNUSED zes_device_handle_t device, zes_temp_sensors_t type, double *coreTemp)
 {
 	TRACING();
@@ -133,18 +183,52 @@ ze_result_t temperature::getTemp(UNUSED zes_device_handle_t device, zes_temp_sen
 	return result;
 }
 
+/**
+ * @brief Gets the current GPU core temperature
+ *
+ * This function retrieves the current temperature reading from the GPU core
+ * temperature sensor, providing essential thermal monitoring for GPU performance
+ * and safety management.
+ *
+ * @param device Handle to the device
+ * @param coreTemp Pointer to store the GPU core temperature in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS if core temperature retrieved successfully, error code otherwise
+ */
 ze_result_t temperature::getCoreTemp(zes_device_handle_t device, double *coreTemp)
 {
 	TRACING();
 	return getTemp(device, ZES_TEMP_SENSORS_GPU, coreTemp);
 }
 
+/**
+ * @brief Gets the current memory temperature
+ *
+ * This function retrieves the current temperature reading from the memory
+ * temperature sensor, providing thermal monitoring capabilities for memory
+ * subsystem safety and performance optimization.
+ *
+ * @param device Handle to the device
+ * @param coreTemp Pointer to store the memory temperature in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS if memory temperature retrieved successfully, error code otherwise
+ */
 ze_result_t temperature::getMemoryTemp(zes_device_handle_t device, double *coreTemp)
 {
 	TRACING();
 	return getTemp(device, ZES_TEMP_SENSORS_MEMORY, coreTemp);
 }
 
+/**
+ * @brief Gets GPU core temperature threshold values
+ *
+ * This function retrieves the thermal threshold values for GPU core components,
+ * including throttle and shutdown temperature limits used for thermal protection
+ * and performance management.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @param throttleThreshold Pointer to store the throttle temperature threshold
+ * @param shutdownThreshold Pointer to store the shutdown temperature threshold
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful threshold retrieval, error code otherwise
+ */
 ze_result_t temperature::getCoreThreshold(UNUSED zes_device_handle_t device, uint32_t *throttleThreshold,
 										  uint32_t *shutdownThreshold)
 {
@@ -157,6 +241,18 @@ ze_result_t temperature::getCoreThreshold(UNUSED zes_device_handle_t device, uin
 	return result;
 }
 
+/**
+ * @brief Gets memory temperature threshold values
+ *
+ * This function retrieves the thermal threshold values for memory components,
+ * including throttle and shutdown temperature limits used for memory thermal
+ * protection and system stability management.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @param throttleThreshold Pointer to store the memory throttle temperature threshold
+ * @param shutdownThreshold Pointer to store the memory shutdown temperature threshold
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful threshold retrieval, error code otherwise
+ */
 ze_result_t temperature::getMemoryThreshold(UNUSED zes_device_handle_t device, uint32_t *throttleThreshold,
 											uint32_t *shutdownThreshold)
 {
@@ -169,12 +265,32 @@ ze_result_t temperature::getMemoryThreshold(UNUSED zes_device_handle_t device, u
 	return result;
 }
 
+/**
+ * @brief Initializes the temperature management module for a device
+ *
+ * This function performs initial setup of temperature monitoring capabilities
+ * by enumerating all available temperature sensors on the specified device
+ * for subsequent thermal monitoring operations.
+ *
+ * @param device Handle to the device for temperature initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t temperature::init(zes_device_handle_t device)
 {
 	TRACING();
 	return enumTemperatureDomains(device);
 }
 
+/**
+ * @brief Performs comprehensive temperature monitoring runtime operations
+ *
+ * This function executes a complete temperature monitoring cycle for all
+ * temperature sensors, including property retrieval and current temperature
+ * readings for comprehensive thermal analysis and system health monitoring.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t temperature::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

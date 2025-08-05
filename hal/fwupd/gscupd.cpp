@@ -28,6 +28,16 @@
 #include <os.h>
 #include <sys/stat.h>
 
+/**
+ * @brief Translates Graphics Firmware Status enumeration to human-readable string
+ *
+ * This function converts GPU Graphics Firmware Status codes into descriptive
+ * string representations for debugging, logging, and user interface display
+ * during firmware update operations and system diagnostics.
+ *
+ * @param status The Graphics Firmware Status enumeration value
+ * @return const char* Human-readable string description of the firmware status
+ */
 const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
 {
 #define CASE(x)                                                                                                        \
@@ -49,6 +59,17 @@ const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
 	}
 }
 
+/**
+ * @brief Progress callback function for firmware update operations
+ *
+ * This static callback function is invoked during firmware update operations to
+ * report progress status. It calculates the completion percentage and updates
+ * the firmware information structure with the current progress for monitoring.
+ *
+ * @param done Number of bytes or units completed in the update process
+ * @param total Total number of bytes or units in the update process
+ * @param ctx Context pointer to firmwareInfo structure for progress tracking
+ */
 static void progPercentFunc(uint32_t done, uint32_t total, void *ctx)
 {
 	uint32_t percent = (done * 100) / total;
@@ -59,6 +80,17 @@ static void progPercentFunc(uint32_t done, uint32_t total, void *ctx)
 	fwInfo->dev->setProgress(percent);
 }
 
+/**
+ * @brief Checks hardware configuration compatibility between device and firmware image
+ *
+ * This function validates that the firmware image's hardware configuration is
+ * compatible with the target device's hardware configuration, ensuring safe
+ * firmware updates and preventing incompatible firmware installation.
+ *
+ * @param handle Pointer to the GSC device handle
+ * @param buffer Reference to vector containing the firmware image data
+ * @return int IGSC_SUCCESS if compatible, error code otherwise
+ */
 int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, std::vector<char> &buffer)
 {
 	struct igsc_hw_config device_hw_config;
@@ -81,6 +113,17 @@ int gscupd::firmware_check_hw_config(struct igsc_device_handle *handle, std::vec
 	return igsc_hw_config_compatible(&image_hw_config, &device_hw_config);
 }
 
+/**
+ * @brief Performs common pre-update operations for firmware updates
+ *
+ * This function executes shared preparation steps for all firmware update types,
+ * including GSC device initialization, firmware image validation, type checking,
+ * and Graphics Firmware status verification for safe update operations.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @param checkType Boolean flag indicating whether to perform firmware type validation
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful preparation, error code otherwise
+ */
 ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo, bool checkType)
 {
 	TRACING();
@@ -126,6 +169,16 @@ ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo, bool checkType)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs specialized pre-update operations for Graphics Firmware
+ *
+ * This function handles Graphics Firmware-specific preparation including device
+ * readiness verification, Graphics Firmware status checking, and compatibility
+ * validation before initiating the Graphics Firmware update process.
+ *
+ * @param fwInfo Pointer to firmware information structure containing GFX update details
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful GFX preparation, error code otherwise
+ */
 ze_result_t gscupd::preUpdateGfx(firmwareInfo *fwInfo)
 {
 	struct igsc_fw_version device_fw_version;
@@ -172,6 +225,16 @@ ze_result_t gscupd::preUpdateGfx(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Executes Graphics Firmware update operation
+ *
+ * This function performs the actual Graphics Firmware update process using the Intel
+ * Graphics System Controller (GSC) interface. It handles the firmware image transfer,
+ * update progress monitoring, and completion verification for Graphics Firmware.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update parameters
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful update, error code otherwise
+ */
 ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -193,6 +256,16 @@ ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs post-update operations for Graphics Firmware
+ *
+ * This function executes cleanup and verification tasks after Graphics Firmware
+ * update completion, including status validation, resource cleanup, and update
+ * result confirmation for proper system state restoration.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful post-update, error code otherwise
+ */
 ze_result_t gscupd::postUpdateGfx(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -200,6 +273,16 @@ ze_result_t gscupd::postUpdateGfx(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs pre-update operations for Graphics Firmware data
+ *
+ * This function handles preparation steps specific to Graphics Firmware data
+ * components, including data validation, compatibility checking, and system
+ * readiness verification before initiating Graphics Firmware data updates.
+ *
+ * @param fwInfo Pointer to firmware information structure containing GFX data update details
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful preparation, error code otherwise
+ */
 ze_result_t gscupd::preUpdateGfxData(firmwareInfo *fwInfo)
 {
 	struct igsc_fwdata_version dev_version;
@@ -247,6 +330,16 @@ ze_result_t gscupd::preUpdateGfxData(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Updates Graphics Firmware data partition
+ *
+ * This function handles updates to the Graphics Firmware data section, managing
+ * data partition validation, transfer operations, and verification for Graphics
+ * Firmware data components separate from the main firmware update process.
+ *
+ * @param fwInfo Pointer to firmware information structure containing data update details
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful data update, error code otherwise
+ */
 ze_result_t gscupd::updateGfxData(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -271,6 +364,16 @@ ze_result_t gscupd::updateGfxData(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs post-update operations for Graphics Firmware data
+ *
+ * This function executes cleanup and verification tasks after Graphics Firmware
+ * data update completion, including data integrity validation, system state
+ * restoration, and update result confirmation for data components.
+ *
+ * @param fwInfo Pointer to firmware information structure containing data update context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful post-update, error code otherwise
+ */
 ze_result_t gscupd::postUpdateGfxData(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -279,18 +382,48 @@ ze_result_t gscupd::postUpdateGfxData(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Updates Graphics Firmware code data components
+ *
+ * This function handles updates to Graphics Firmware code data sections,
+ * managing executable code validation, transfer operations, and verification
+ * for Graphics Firmware code components that contain GPU executable instructions.
+ *
+ * @param fwInfo Pointer to firmware information structure (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful code data update, error code otherwise
+ */
 ze_result_t gscupd::updateGfxCodeData(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Updates Graphics Firmware PSC binary components
+ *
+ * This function handles updates to Graphics Firmware Platform Service Controller
+ * (PSC) binary components, managing PSC binary validation, transfer operations,
+ * and verification for PSC firmware that provides platform-level services.
+ *
+ * @param fwInfo Pointer to firmware information structure (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful PSC binary update, error code otherwise
+ */
 ze_result_t gscupd::updateGfxPscBin(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Handles late binding firmware update operations
+ *
+ * This function manages firmware updates that require late binding resolution,
+ * including dynamic address assignment, dependency resolution, and deferred
+ * update operations for firmware components with runtime binding requirements.
+ *
+ * @param fwInfo Pointer to firmware information structure containing late binding context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful late binding update, error code otherwise
+ */
 ze_result_t gscupd::updateLateBinding(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -321,6 +454,16 @@ ze_result_t gscupd::updateLateBinding(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs pre-update operations for fan table firmware
+ *
+ * This function handles preparation steps for fan table firmware updates,
+ * including fan configuration validation, thermal system readiness checking,
+ * and compatibility verification before updating fan control tables.
+ *
+ * @param fwInfo Pointer to firmware information structure containing fan table update details
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful preparation, error code otherwise
+ */
 ze_result_t gscupd::preUpdateFanTable(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -335,18 +478,48 @@ ze_result_t gscupd::preUpdateFanTable(firmwareInfo *fwInfo)
 	return result;
 }
 
+/**
+ * @brief Updates fan table firmware configuration
+ *
+ * This function executes fan table firmware update operations, managing fan
+ * control table transfer, configuration validation, and thermal system
+ * integration for updated fan control parameters and behaviors.
+ *
+ * @param fwInfo Pointer to firmware information structure containing fan table data
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful fan table update, error code otherwise
+ */
 ze_result_t gscupd::updateFanTable(firmwareInfo *fwInfo)
 {
 	TRACING();
 	return updateLateBinding(fwInfo);
 }
 
+/**
+ * @brief Updates voltage regulator (VR) configuration firmware
+ *
+ * This function handles voltage regulator configuration firmware updates,
+ * managing VR parameter validation, configuration transfer, and power system
+ * integration for updated voltage regulation settings and behaviors.
+ *
+ * @param fwInfo Pointer to firmware information structure containing VR config data
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful VR config update, error code otherwise
+ */
 ze_result_t gscupd::updateVrConfig(firmwareInfo *fwInfo)
 {
 	TRACING();
 	return updateLateBinding(fwInfo);
 }
 
+/**
+ * @brief Performs post-update operations for fan table firmware
+ *
+ * This function executes cleanup and verification tasks after fan table
+ * firmware update completion, including thermal system validation, fan
+ * operation testing, and update result confirmation for fan control systems.
+ *
+ * @param fwInfo Pointer to firmware information structure containing fan table context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful post-update, error code otherwise
+ */
 ze_result_t gscupd::postUpdateFanTable(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -354,6 +527,17 @@ ze_result_t gscupd::postUpdateFanTable(firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Validates Graphics System Controller firmware type compatibility
+ *
+ * This function checks whether the provided firmware image buffer contains
+ * the expected GSC firmware type, ensuring compatibility before proceeding
+ * with firmware update operations on the target graphics device.
+ *
+ * @param buffer Reference to vector containing firmware image data
+ * @param expectedType Integer representing the expected GSC firmware type
+ * @return bool True if firmware type matches expected type, false otherwise
+ */
 bool gscupd::isGscRightType(std::vector<char> &buffer, int expectedType)
 {
 	TRACING();
@@ -366,6 +550,15 @@ bool gscupd::isGscRightType(std::vector<char> &buffer, int expectedType)
 	return type == expectedType;
 }
 
+/**
+ * @brief Retrieves PCI addresses and MEI device information
+ *
+ * This function discovers and enumerates all available PCI graphics devices
+ * and their corresponding Management Engine Interface (MEI) devices, providing
+ * device addressing information required for firmware update operations.
+ *
+ * @return std::vector<pci_addr_mei_device> Vector containing PCI address and MEI device pairs
+ */
 std::vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 {
 	std::vector<pci_addr_mei_device> devicesVec = {};
@@ -402,6 +595,16 @@ std::vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 	return devicesVec;
 }
 
+/**
+ * @brief Retrieves Graphics Firmware status from MEI device
+ *
+ * This function queries the Graphics Firmware status through the Management
+ * Engine Interface (MEI) device, providing current firmware state information
+ * including operational status, version details, and readiness indicators.
+ *
+ * @param meiPath String containing the path to the MEI device
+ * @return GfxFwStatus Enumerated status value representing current Graphics Firmware state
+ */
 GfxFwStatus gscupd::getGfxFwStatus(std::string meiPath)
 {
 	TRACING();

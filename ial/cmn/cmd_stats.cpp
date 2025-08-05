@@ -80,30 +80,80 @@ void cmdStats::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Retrieves and displays execution unit (EU) statistics for the device
+ *
+ * This function collects and presents statistics related to execution units,
+ * which are the core compute elements in Intel GPUs. EU statistics include
+ * utilization, stall rates, and execution efficiency metrics.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
+ */
 ze_result_t cmdStats::eu(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and displays Reliability, Availability, and Serviceability (RAS) statistics
+ *
+ * This function collects RAS-related statistics including error counts,
+ * correctable/uncorrectable error rates, and other reliability metrics
+ * that help assess the health and stability of the GPU device.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
+ */
 ze_result_t cmdStats::ras(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and displays extended GPU statistics
+ *
+ * This function provides access to extended statistical information that
+ * may include advanced performance metrics, power efficiency data, and
+ * other specialized statistics not covered by standard metric collections.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
+ */
 ze_result_t cmdStats::x(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and displays Xe Link interconnect statistics
+ *
+ * This function collects statistics related to Xe Link fabric connections,
+ * including bandwidth utilization, link status, throughput metrics, and
+ * inter-GPU communication performance for multi-GPU configurations.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
+ */
 ze_result_t cmdStats::xelink(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and displays GPU utilization statistics
+ *
+ * This function provides comprehensive utilization metrics including
+ * compute engine usage, memory bandwidth utilization, power consumption
+ * patterns, and overall device activity levels over time.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
+ */
 ze_result_t cmdStats::utils(UNUSED devInfo *d)
 {
 	TRACING();

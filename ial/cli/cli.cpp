@@ -165,6 +165,16 @@ void help(std::list<cmds *> *cmdList)
 	printSubCommands(cmdList);
 }
 
+/**
+ * @brief Sets the print/debug level for both global debugging and system manager
+ *
+ * This function configures the verbosity level for debug output and logging.
+ * It sets both the global debug level and the system manager's print level
+ * to ensure consistent logging behavior throughout the application.
+ *
+ * @param arg Pointer to argument structure containing system manager instance
+ * @param lvl Debug level to set (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
+ */
 void setPrintLvl(arg_struct *arg, int lvl)
 {
 	setDbgLvl(lvl);

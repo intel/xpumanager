@@ -48,6 +48,18 @@
 
 std::string progName = "xpumd";
 
+/**
+ * @brief Main entry point for the XPU Manager daemon
+ *
+ * This function initializes the XPU Manager daemon (xpumd) by setting up
+ * the Level Zero Sysman driver interface and preparing the system for
+ * GPU monitoring and management operations. It handles driver initialization
+ * and provides appropriate feedback on startup status.
+ *
+ * @param argc Number of command line arguments (currently unused)
+ * @param argv Array of command line argument strings (currently unused)
+ * @return int Exit status: 0 on success, non-zero on failure
+ */
 int main(UNUSED int argc, UNUSED char *argv[])
 {
 	arg_struct arg;

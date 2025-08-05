@@ -23,6 +23,13 @@
  */
 #include "ras.h"
 
+/**
+ * @brief Destructor for the RAS (Reliability, Availability, Serviceability) class
+ *
+ * This destructor performs cleanup operations for the RAS management object,
+ * releasing allocated memory for RAS error set handles and ensuring proper
+ * resource deallocation when the RAS object is destroyed.
+ */
 ras::~ras()
 {
 	if (rasHandles) {
@@ -31,6 +38,16 @@ ras::~ras()
 	}
 }
 
+/**
+ * @brief Enumerates available RAS error sets for a device
+ *
+ * This function discovers and catalogs all RAS error sets available on the
+ * specified device. RAS error sets provide hardware reliability monitoring
+ * and error detection capabilities for different device components.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumRasErrorSets(device, &rasCount, nullptr);
@@ -50,6 +67,17 @@ ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific RAS error set
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific RAS error set, including error types, subdevice association,
+ * and monitoring capabilities for reliability assessment.
+ *
+ * @param rasHandle Handle to the specific RAS error set
+ * @param properties Pointer to structure to store RAS properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t *properties)
 {
 	ze_result_t result = zesRasGetProperties(rasHandle, properties);
@@ -76,6 +104,17 @@ ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t 
 	return result;
 }
 
+/**
+ * @brief Gets the configuration for a RAS error set
+ *
+ * This function retrieves the current configuration settings for a specific
+ * RAS error set, including error detection thresholds and reporting
+ * configuration for reliability monitoring management.
+ *
+ * @param rasHandle Handle to the specific RAS error set
+ * @param config Pointer to structure to store RAS configuration
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful configuration retrieval, error code otherwise
+ */
 ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
 {
 	ze_result_t result = zesRasGetConfig(rasHandle, config);
@@ -93,6 +132,17 @@ ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
 	return result;
 }
 
+/**
+ * @brief Gets the current state for a RAS error set
+ *
+ * This function retrieves the current error state and statistics for a specific
+ * RAS error set, including error counts and categories for reliability
+ * monitoring and system health assessment.
+ *
+ * @param rasHandle Handle to the specific RAS error set
+ * @param state Pointer to structure to store RAS state information
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
 ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 {
 	ze_result_t result = zesRasGetState(rasHandle, 0, state);
@@ -109,6 +159,18 @@ ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 	return result;
 }
 
+/**
+ * @brief Gets specific RAS error counts by category and type
+ *
+ * This function retrieves error counts for a specific error category and type
+ * across all RAS error sets, providing targeted reliability monitoring for
+ * specific hardware components and error conditions.
+ *
+ * @param type The RAS error category to query
+ * @param errorType The specific error type (correctable or uncorrectable)
+ * @param rasCounter Pointer to store the accumulated error count
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful error count retrieval, error code otherwise
+ */
 ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorType, uint64_t *rasCounter)
 {
 	TRACING();
@@ -147,12 +209,32 @@ ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorT
 	return result;
 }
 
+/**
+ * @brief Initializes the RAS management module for a device
+ *
+ * This function performs initial setup of RAS monitoring capabilities by
+ * enumerating all available RAS error sets on the specified device for
+ * subsequent reliability monitoring and error detection operations.
+ *
+ * @param device Handle to the device for RAS initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t ras::init(zes_device_handle_t device)
 {
 	TRACING();
 	return enumRasErrorSets(device);
 }
 
+/**
+ * @brief Performs comprehensive RAS monitoring runtime operations
+ *
+ * This function executes a complete RAS monitoring cycle including property
+ * retrieval, configuration checking, and state monitoring for all RAS error
+ * sets to provide comprehensive reliability and serviceability assessment.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t ras::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

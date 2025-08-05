@@ -323,6 +323,17 @@ THREAD_RET cmdDump::metrics(void *args)
 	return 0;
 }
 
+/**
+ * @brief Converts GPU frequency throttle reason flags to human-readable string
+ *
+ * This function analyzes the frequency throttle reason flags from the Level Zero
+ * Sysman API and returns a descriptive string explaining why the GPU frequency
+ * is being throttled. It checks various throttle reasons including power limits,
+ * thermal limits, current limits, and software/hardware constraints.
+ *
+ * @param flags Frequency throttle reason flags from zes_freq_throttle_reason_flags_t
+ * @return std::string Human-readable description of the throttle reason
+ */
 std::string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flags)
 {
 	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP)

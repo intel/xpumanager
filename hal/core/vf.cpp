@@ -23,6 +23,13 @@
  */
 #include "vf.h"
 
+/**
+ * @brief Destructor for the Virtual Function (VF) class
+ *
+ * This destructor performs cleanup operations for the VF management object,
+ * releasing allocated memory for both active and enabled VF handle arrays
+ * and ensuring proper resource deallocation when the VF object is destroyed.
+ */
 vf::~vf()
 {
 	if (vfActiveHandles) {
@@ -35,6 +42,16 @@ vf::~vf()
 	}
 }
 
+/**
+ * @brief Enumerates all active Virtual Functions for a device
+ *
+ * This function discovers and catalogs all currently active VFs on the
+ * specified device. Active VFs are those that are currently running and
+ * accessible for monitoring and management operations in the SR-IOV environment.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t vf::enumActiveVF(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumActiveVFExp(device, &vfActiveCount, nullptr);
@@ -58,6 +75,16 @@ ze_result_t vf::enumActiveVF(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Enumerates all enabled Virtual Functions for a device
+ *
+ * This function discovers and catalogs all VFs that are enabled on the
+ * specified device. Enabled VFs are those that have been configured and
+ * are available for activation in the SR-IOV virtualization framework.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumEnabledVFExp(device, &vfEnabledCount, nullptr);
@@ -81,6 +108,16 @@ ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets capabilities and configuration information for a Virtual Function
+ *
+ * This function retrieves comprehensive capability information for a specific VF,
+ * including VF ID, PCI address details (domain, bus, device, function), and
+ * device memory size allocation for virtualization management.
+ *
+ * @param vfHandle Handle to the specific Virtual Function
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful capability retrieval, error code otherwise
+ */
 ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle)
 {
 	zes_vf_exp_capabilities_t capabilities = {};
@@ -101,6 +138,16 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle)
 	return result;
 }
 
+/**
+ * @brief Gets memory utilization statistics for a Virtual Function
+ *
+ * This function retrieves detailed memory usage information for a specific VF,
+ * including memory location (system or device memory) and the amount of
+ * memory currently utilized by the VF for performance monitoring.
+ *
+ * @param vfHandle Handle to the specific Virtual Function
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful memory utilization retrieval, error code otherwise
+ */
 ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle)
 {
 	uint32_t memoryUtilCount = 0;
@@ -130,6 +177,16 @@ ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle)
 	return result;
 }
 
+/**
+ * @brief Gets engine utilization statistics for a Virtual Function
+ *
+ * This function retrieves comprehensive engine usage information for a specific VF,
+ * including engine type classification (compute, render, media, copy engines),
+ * active counter values, and sampling counter values for detailed performance analysis.
+ *
+ * @param vfHandle Handle to the specific Virtual Function
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful engine utilization retrieval, error code otherwise
+ */
 ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 {
 	uint32_t engineUtilCount = 0;
@@ -199,6 +256,16 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 	return result;
 }
 
+/**
+ * @brief Initializes the Virtual Function management module for a device
+ *
+ * This function performs initial setup of VF monitoring capabilities by
+ * enumerating both active and enabled Virtual Functions on the specified
+ * device for subsequent VF management and monitoring operations.
+ *
+ * @param device Handle to the device for VF initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t vf::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumActiveVF(device);
@@ -215,6 +282,16 @@ ze_result_t vf::init(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Performs comprehensive Virtual Function runtime monitoring operations
+ *
+ * This function executes a complete VF monitoring cycle for all active VFs,
+ * including capability retrieval, memory utilization monitoring, and engine
+ * utilization tracking for comprehensive SR-IOV performance analysis.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t vf::zesRun(UNUSED zes_device_handle_t device)
 {
 	for (uint32_t i = 0; i < vfActiveCount; i++) {

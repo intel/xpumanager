@@ -25,6 +25,13 @@
 #include "diagnostic.h"
 #include <vector>
 
+/**
+ * @brief Destructor for the diagnostic class
+ *
+ * This destructor performs cleanup operations for the diagnostic management
+ * object, releasing allocated memory for diagnostic test suite handles and
+ * ensuring proper resource deallocation when the diagnostic object is destroyed.
+ */
 diagnostic::~diagnostic()
 {
 	if (testSuites) {
@@ -33,6 +40,16 @@ diagnostic::~diagnostic()
 	}
 }
 
+/**
+ * @brief Enumerates available diagnostic test suites for a device
+ *
+ * This function discovers and catalogs all diagnostic test suites available on
+ * the specified device. Diagnostic test suites provide comprehensive hardware
+ * validation and health checking capabilities for GPU components.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 {
 	// Enumerate diagnostic test suites
@@ -54,6 +71,16 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific diagnostic test suite
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific diagnostic test suite, including suite name, type, test availability,
+ * and subdevice association information for comprehensive diagnostic analysis.
+ *
+ * @param testSuite Handle to the specific diagnostic test suite
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -71,6 +98,16 @@ ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
 	return result;
 }
 
+/**
+ * @brief Gets available tests within a diagnostic test suite
+ *
+ * This function retrieves all individual diagnostic tests available within
+ * a specific test suite, providing detailed information about test indices
+ * and names for comprehensive hardware validation capabilities.
+ *
+ * @param testSuite Handle to the specific diagnostic test suite
+ * @return int Number of test suites available, or 0 on error
+ */
 int diagnostic::getTests(zes_diag_handle_t testSuite)
 {
 	uint32_t testCount = 0;
@@ -97,6 +134,17 @@ int diagnostic::getTests(zes_diag_handle_t testSuite)
 	return testSuiteCount;
 }
 
+/**
+ * @brief Executes diagnostic tests within a test suite
+ *
+ * This function runs the specified number of diagnostic tests within a test suite,
+ * performing comprehensive hardware validation and health checking to ensure
+ * device functionality and identify potential issues.
+ *
+ * @param testSuite Handle to the specific diagnostic test suite
+ * @param testCount Number of tests to execute within the suite
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test execution, error code otherwise
+ */
 ze_result_t diagnostic::runTests(zes_diag_handle_t testSuite, uint32_t testCount)
 {
 	// Run diagnostic tests
@@ -110,6 +158,16 @@ ze_result_t diagnostic::runTests(zes_diag_handle_t testSuite, uint32_t testCount
 	return result;
 }
 
+/**
+ * @brief Performs comprehensive diagnostic runtime operations
+ *
+ * This function executes a complete diagnostic cycle including test suite
+ * enumeration, property retrieval, test discovery, and test execution for
+ * thorough hardware validation and device health assessment.
+ *
+ * @param device Handle to the device for diagnostic operations
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t diagnostic::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = enumDiag(device);

@@ -76,6 +76,16 @@ void cmdHealth::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Performs comprehensive component health assessment for the device
+ *
+ * This function executes a series of health checks across various device
+ * components including temperatures, power consumption, memory health,
+ * and overall system status. It provides a holistic view of device health.
+ *
+ * @param d Pointer to device information structure containing device handles and properties
+ * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, error code otherwise
+ */
 ze_result_t cmdHealth::component(devInfo *d)
 {
 	TRACING();
@@ -110,6 +120,16 @@ ze_result_t cmdHealth::component(devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Retrieves and displays GPU core temperature thresholds
+ *
+ * This function queries the device's core temperature monitoring system to
+ * obtain throttle and shutdown threshold values. These thresholds are critical
+ * for thermal management and preventing hardware damage due to overheating.
+ *
+ * @param d Pointer to device information structure containing device handles
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
 ze_result_t cmdHealth::coreTemperature(devInfo *d)
 {
 	TRACING();
@@ -135,6 +155,17 @@ ze_result_t cmdHealth::coreTemperature(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and displays GPU memory temperature thresholds
+ *
+ * This function queries the device's memory temperature monitoring system to
+ * obtain throttle and shutdown threshold values. Memory temperature monitoring
+ * is essential for maintaining optimal performance and preventing thermal damage
+ * to high-bandwidth memory components.
+ *
+ * @param d Pointer to device information structure containing device handles
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
 ze_result_t cmdHealth::memoryTemperature(devInfo *d)
 {
 	TRACING();
@@ -159,12 +190,34 @@ ze_result_t cmdHealth::memoryTemperature(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs GPU power subsystem health assessment
+ *
+ * This function evaluates the health status of the device's power management
+ * subsystem, including power consumption patterns, voltage regulation, and
+ * power delivery efficiency. Currently implemented as a placeholder for
+ * future power health monitoring capabilities.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
+ */
 ze_result_t cmdHealth::power(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves and displays GPU memory health status
+ *
+ * This function queries the device's memory subsystem to determine the current
+ * health status of GPU memory components. It evaluates memory integrity,
+ * error rates, and overall memory subsystem health, providing critical
+ * information for system reliability assessment.
+ *
+ * @param d Pointer to device information structure containing device handles
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful health check, error code otherwise
+ */
 ze_result_t cmdHealth::healthMemory(devInfo *d)
 {
 	TRACING();
@@ -197,12 +250,36 @@ ze_result_t cmdHealth::healthMemory(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs Xe Link port health assessment
+ *
+ * This function evaluates the health and operational status of Xe Link
+ * interconnect ports used for high-speed GPU-to-GPU communication.
+ * It monitors link integrity, bandwidth availability, and error rates
+ * for multi-GPU configurations. Currently implemented as a placeholder
+ * for future Xe Link health monitoring capabilities.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
+ */
 ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs GPU frequency subsystem health assessment
+ *
+ * This function evaluates the health and stability of the device's frequency
+ * management system, including clock generation, frequency scaling capabilities,
+ * and thermal/power throttling mechanisms. It ensures that frequency control
+ * systems are operating within specification. Currently implemented as a
+ * placeholder for future frequency health monitoring capabilities.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
+ */
 ze_result_t cmdHealth::frequency(UNUSED devInfo *d)
 {
 	TRACING();

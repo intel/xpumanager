@@ -24,6 +24,15 @@
 
 #include "metric.h"
 
+/**
+ * @brief Prints the metric type information for debugging
+ *
+ * This function outputs detailed information about the specified metric type,
+ * including classification as duration, event, throughput, timestamp, flag,
+ * ratio, or other metric categories for debugging and analysis purposes.
+ *
+ * @param metricType The metric type enumeration to display
+ */
 void metric::printMetricType(zet_metric_type_t metricType)
 {
 	DBG("Metric Type:\n");
@@ -76,6 +85,15 @@ void metric::printMetricType(zet_metric_type_t metricType)
 	}
 }
 
+/**
+ * @brief Prints the metric result type information for debugging
+ *
+ * This function outputs detailed information about the specified metric result
+ * type, including data formats such as uint32, uint64, float32, float64, and
+ * boolean values for proper metric data interpretation.
+ *
+ * @param resultType The metric result type enumeration to display
+ */
 void metric::printResultType(zet_value_type_t resultType)
 {
 	DBG("Result Type:\n");
@@ -107,6 +125,15 @@ void metric::printResultType(zet_value_type_t resultType)
 	}
 }
 
+/**
+ * @brief Prints the metric group sampling type information for debugging
+ *
+ * This function outputs detailed information about the specified metric group
+ * sampling type flags, including time-based and event-based sampling modes
+ * for metric collection configuration and analysis.
+ *
+ * @param samplingType The metric group sampling type flags to display
+ */
 void metric::printMetricGroupSamplingType(zet_metric_group_sampling_type_flags_t samplingType)
 {
 	DBG("Sampling Type:\n");
@@ -126,6 +153,16 @@ void metric::printMetricGroupSamplingType(zet_metric_group_sampling_type_flags_t
 	}
 }
 
+/**
+ * @brief Gets metrics from a specific metric group
+ *
+ * This function retrieves all individual metrics within a specified metric group,
+ * including metric properties, names, descriptions, and data types for comprehensive
+ * performance monitoring and analysis capabilities.
+ *
+ * @param metricGroup Handle to the specific metric group
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful metric retrieval, error code otherwise
+ */
 ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 {
 	ze_result_t result;
@@ -169,6 +206,17 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Gets all metric groups available for a device
+ *
+ * This function enumerates and retrieves all metric groups available on the
+ * specified device, including group properties, sampling types, and associated
+ * metrics for comprehensive performance monitoring setup.
+ *
+ * @param device Handle to the Level Zero device
+ * @param context Handle to the Level Zero context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful group retrieval, error code otherwise
+ */
 ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t context)
 {
 	ze_result_t result;
@@ -239,6 +287,17 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Executes comprehensive metric collection operations
+ *
+ * This function performs a complete metric collection cycle including context
+ * creation, metric group enumeration, and detailed metric analysis for thorough
+ * performance monitoring and GPU utilization assessment.
+ *
+ * @param device Handle to the Level Zero device
+ * @param args Additional arguments (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t metric::zeRun(ze_device_handle_t device, void *args)
 {
 	groupGet(device, *((zet_context_handle_t *)args));

@@ -23,6 +23,15 @@
  */
 #include "ecc.h"
 
+/**
+ * @brief Prints the ECC (Error Correcting Code) state in human-readable format
+ *
+ * This utility function decodes and displays the ECC state for debugging
+ * and informational purposes, showing whether ECC is enabled, disabled,
+ * or unavailable on the device.
+ *
+ * @param state The ECC state enumeration value to decode and print
+ */
 void ecc::printEccState(const zes_device_ecc_state_t state)
 {
 	switch (state) {
@@ -41,6 +50,14 @@ void ecc::printEccState(const zes_device_ecc_state_t state)
 	}
 }
 
+/**
+ * @brief Prints the ECC pending action in human-readable format
+ *
+ * This utility function decodes and displays pending actions required
+ * for ECC configuration changes, such as system restart requirements.
+ *
+ * @param action The pending action enumeration value to decode and print
+ */
 void ecc::printEccPendingAction(const zes_device_action_t action)
 {
 	switch (action) {
@@ -62,6 +79,15 @@ void ecc::printEccPendingAction(const zes_device_action_t action)
 	}
 }
 
+/**
+ * @brief Checks if ECC functionality is available on the device
+ *
+ * This function determines whether Error Correcting Code (ECC) memory
+ * protection is available and supported on the specified device.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return bool True if ECC is available, false otherwise
+ */
 bool ecc::available(zes_device_handle_t device)
 {
 	ze_result_t result;
@@ -74,6 +100,15 @@ bool ecc::available(zes_device_handle_t device)
 	return (bool)eccAvailable;
 }
 
+/**
+ * @brief Checks if ECC configuration can be modified on the device
+ *
+ * This function determines whether ECC settings can be changed on the
+ * specified device, indicating if the device supports dynamic ECC configuration.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return bool True if ECC is configurable, false otherwise
+ */
 bool ecc::configurable(zes_device_handle_t device)
 {
 	ze_result_t result;
@@ -86,6 +121,16 @@ bool ecc::configurable(zes_device_handle_t device)
 	return (bool)eccConfigurable;
 }
 
+/**
+ * @brief Gets the current ECC state and configuration for a device
+ *
+ * This function retrieves the current ECC state information including
+ * current state, pending state changes, and any required actions for
+ * ECC configuration modifications.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
 ze_result_t ecc::getState(zes_device_handle_t device)
 {
 	zes_device_ecc_properties_t eccState = {};
@@ -105,6 +150,17 @@ ze_result_t ecc::getState(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Sets the ECC state for a device
+ *
+ * This function configures the ECC (Error Correcting Code) state on the
+ * specified device, enabling or disabling memory error correction. The
+ * change may require a system restart to take effect.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @param enable Boolean flag to enable (true) or disable (false) ECC
+ * @return ze_result_t ZE_RESULT_SUCCESS if ECC state set successfully, error code otherwise
+ */
 ze_result_t ecc::setState(zes_device_handle_t device, bool enable)
 {
 	zes_device_ecc_desc_t newState = {};
@@ -126,6 +182,18 @@ ze_result_t ecc::setState(zes_device_handle_t device, bool enable)
 	return result;
 }
 
+/**
+ * @brief Executes ECC monitoring and validation operations
+ *
+ * This function performs comprehensive ECC assessment by checking availability,
+ * configurability, and retrieving current state information. It validates that
+ * ECC functionality is supported before attempting to access ECC state.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS if ECC operations completed successfully,
+ *                    ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if ECC not available/configurable,
+ *                    error code otherwise
+ */
 ze_result_t ecc::zesRun(zes_device_handle_t device)
 {
 	if (!available(device)) {

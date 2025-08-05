@@ -25,6 +25,16 @@
 #include "cmd_topdown.h"
 #include "debug.h"
 
+/**
+ * @brief Displays help information for the topdown command
+ *
+ * This function provides comprehensive help information for the topdown command,
+ * including usage examples, detailed descriptions of GPU performance metrics,
+ * and available command-line options. The topdown analysis provides hierarchical
+ * performance bottleneck analysis for Intel GPU execution units and compute engines.
+ *
+ * @param helpType Type of help to display (FULL_HELP or SHORT_HELP)
+ */
 void cmdTopdown::help(HELP helpType)
 {
 	TRACING();
@@ -99,6 +109,18 @@ void cmdTopdown::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Executes the topdown command with parsed command-line arguments
+ *
+ * This function implements the main execution logic for the topdown performance
+ * analysis command. It parses command-line arguments to configure device selection,
+ * tile targeting, sampling intervals, and output formatting. The function performs
+ * hierarchical GPU performance analysis to identify bottlenecks in execution units,
+ * compute engines, and workload parallelism for Intel graphics devices.
+ *
+ * @param args Pointer to argument structure containing argc, argv, and system manager
+ * @return int ZE_RESULT_SUCCESS on successful execution, error code on failure
+ */
 int cmdTopdown::run(arg_struct *args)
 {
 	TRACING();

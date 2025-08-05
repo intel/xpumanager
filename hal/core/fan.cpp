@@ -23,6 +23,13 @@
  */
 #include "fan.h"
 
+/**
+ * @brief Destructor for the fan class
+ *
+ * This destructor performs cleanup operations for the fan management
+ * object, releasing allocated memory for fan handles and ensuring
+ * proper resource deallocation when the fan object is destroyed.
+ */
 fan::~fan()
 {
 	if (fanHandles) {
@@ -31,6 +38,16 @@ fan::~fan()
 	}
 }
 
+/**
+ * @brief Enumerates available fan controllers for a device
+ *
+ * This function discovers and catalogs all fan controllers available on the
+ * specified device. Fan controllers manage cooling fans and provide thermal
+ * management capabilities for the GPU device.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t fan::enumFans(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFans(device, &fanCount, nullptr);
@@ -51,6 +68,14 @@ ze_result_t fan::enumFans(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Prints supported fan speed control modes
+ *
+ * This utility function decodes and displays the supported fan speed control
+ * modes in a human-readable format, including default, fixed, and table modes.
+ *
+ * @param mode Bitfield containing supported fan speed mode flags
+ */
 void fan::printSupportedModes(const uint32_t mode)
 {
 	DBG("    - Supported Modes: %d\n", mode);
@@ -64,6 +89,16 @@ void fan::printSupportedModes(const uint32_t mode)
 	DBG("\n");
 }
 
+/**
+ * @brief Gets properties for a specific fan controller
+ *
+ * This function retrieves detailed properties and capabilities for a
+ * specific fan controller, including maximum RPM, control capabilities,
+ * and supported speed control modes.
+ *
+ * @param fanHandle Handle to the specific fan controller
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t fan::getProperties(zes_fan_handle_t fanHandle)
 {
 	zes_fan_properties_t properties = {};
@@ -84,6 +119,15 @@ ze_result_t fan::getProperties(zes_fan_handle_t fanHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current configuration for a specific fan controller
+ *
+ * This function retrieves the current fan configuration including speed mode,
+ * fixed speed settings, or speed table configurations for thermal management.
+ *
+ * @param fanHandle Handle to the specific fan controller
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful configuration retrieval, error code otherwise
+ */
 ze_result_t fan::getConfig(zes_fan_handle_t fanHandle)
 {
 	zes_fan_config_t config = {};
@@ -109,8 +153,28 @@ ze_result_t fan::getConfig(zes_fan_handle_t fanHandle)
 	return result;
 }
 
+/**
+ * @brief Initializes the fan management subsystem for a device
+ *
+ * This function initializes fan controller management by enumerating all
+ * available fan controllers on the device and preparing them for monitoring
+ * and configuration operations.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t fan::init(zes_device_handle_t device) { return enumFans(device); }
 
+/**
+ * @brief Executes comprehensive fan controller monitoring and data collection
+ *
+ * This function performs complete fan controller assessment by collecting
+ * properties and configuration information for all fan controllers,
+ * providing comprehensive thermal management monitoring.
+ *
+ * @param device Handle to the Level Zero Sysman device (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS if all fan operations completed successfully, error code otherwise
+ */
 ze_result_t fan::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
