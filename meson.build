@@ -10,9 +10,6 @@ project('xpum', 'cpp',
     ]
 )
 
-# Build level-zero
-cmake = import('cmake')
-
 # Project information
 project_description = 'Intel(R) XPU Manager and XPU System Management Interface'
 
@@ -147,27 +144,17 @@ endif
 # System dependencies
 thread_dep = dependency('threads')
 
-# level-zero
-if get_option('use_system_levelzero')
-  message('Searching for Level Zero dependency using CMake find_package or pkg-config...')
-  levelzero_dep = dependency('level-zero', required : true)
-else # Standard case using subprojects. This is preferred
-  # Try to download and build real Level Zero. See subprojects/level-zero.wrap
-  message('Downloading and building Level Zero from source...')
-  cmake_opts = cmake.subproject_options()
-  cmake_opts.set_install(true)
-  levelzero_proj = cmake.subproject('level-zero', options: cmake_opts)
-  levelzero_dep = levelzero_proj.get_variable('ze_loader_dep')
-endif
+# Dependencies managed by Conan
+levelzero_dep = dependency('level-zero', required : true)
+# igsc_dep = dependency('igsc', required : true)  # Uncomment when available in Conan
 
-if get_option('use_system_igsc')
-  message('Searching for IGSC dependency using CMake find_package or pkg-config...')
-  igsc_dep = dependency('igsc', required : true)
-else
+# Fallback for IGSC if not available in Conan
+igsc_dep = dependency('igsc', required : true)
+if not igsc_dep.found()
   # IGSC requires metee prior to compilation, if we need to install IGSC via Meson then
   # we first need to ensure metee is available. We will always install and build it manually
   # and not check our system to be consistent with the handling of IGSC
-  metee_dep_static = dependency('metee', required : false)
+  metee_dep_static = dependency('metee', required : true)
   if not metee_dep_static.found()
     metee_proj = subproject('metee')
     metee_dep_static = metee_proj.get_variable('metee_dep_static')
