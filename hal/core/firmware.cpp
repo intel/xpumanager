@@ -45,6 +45,13 @@ firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(n
 	};
 }
 
+/**
+ * @brief Destructor for the firmware class
+ *
+ * This destructor performs cleanup operations for the firmware management
+ * object, releasing allocated memory for firmware update command structures
+ * and firmware handle lists to ensure proper resource deallocation.
+ */
 firmware::~firmware()
 {
 	if (updateFWCmds) {
@@ -58,6 +65,16 @@ firmware::~firmware()
 	}
 }
 
+/**
+ * @brief Enumerates all available firmware modules for a device
+ *
+ * This function discovers and catalogs all firmware components available
+ * on the specified device, including graphics firmware, data firmware,
+ * and other system firmware modules.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t firmware::enumFirmwares(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFirmwares(device, &firmwareCount, nullptr);
@@ -78,6 +95,15 @@ ze_result_t firmware::enumFirmwares(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Retrieves properties for a specific firmware handle
+ *
+ * This function obtains detailed properties and information about a
+ * specific firmware component, including version, type, and capabilities.
+ *
+ * @param firmwareHandle Handle to the specific firmware component
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 {
 	TRACING();
@@ -116,6 +142,17 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the version string for a specific firmware type
+ *
+ * This function retrieves the version information for the specified
+ * firmware type and copies it to the provided buffer.
+ *
+ * @param type The firmware type to query
+ * @param version Pointer to buffer to store the version string
+ * @param size Size of the version buffer (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS if version retrieved, error code otherwise
+ */
 ze_result_t firmware::getFWversion(fwType type, char *version, UNUSED uint32_t size)
 {
 	TRACING();
@@ -131,6 +168,16 @@ ze_result_t firmware::getFWversion(fwType type, char *version, UNUSED uint32_t s
 	return result;
 }
 
+/**
+ * @brief Updates firmware with the provided firmware information
+ *
+ * This function performs a firmware update operation using the information
+ * provided in the firmware info structure. It handles the complete update
+ * process including pre-update, update, and post-update operations.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @return ze_result_t ZE_RESULT_SUCCESS if update successful, error code otherwise
+ */
 ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 {
 	TRACING();
@@ -194,6 +241,16 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	return result;
 }
 
+/**
+ * @brief Initializes the firmware management subsystem for a device
+ *
+ * This function initializes firmware management capabilities for the
+ * specified device, including enumeration of available firmware modules
+ * and preparation for firmware operations.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t firmware::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumFirmwares(device);
@@ -207,4 +264,13 @@ ze_result_t firmware::init(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Executes firmware-related runtime operations
+ *
+ * This function is called during runtime operations for firmware management.
+ * Currently serves as a placeholder for future firmware runtime functionality.
+ *
+ * @param device Handle to the Level Zero Sysman device (currently unused)
+ * @return ze_result_t Always returns ZE_RESULT_SUCCESS
+ */
 ze_result_t firmware::zesRun(UNUSED zes_device_handle_t device) { return ZE_RESULT_SUCCESS; }

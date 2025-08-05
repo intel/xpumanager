@@ -23,6 +23,13 @@
  */
 #include "fabric.h"
 
+/**
+ * @brief Destructor for the fabric class
+ *
+ * This destructor performs cleanup operations for the fabric management
+ * object, releasing allocated memory for fabric port handles and ensuring
+ * proper resource deallocation when the fabric object is destroyed.
+ */
 fabric::~fabric()
 {
 	if (ports) {
@@ -31,6 +38,16 @@ fabric::~fabric()
 	}
 }
 
+/**
+ * @brief Enumerates available fabric ports for a device
+ *
+ * This function discovers and catalogs all fabric ports available on the
+ * specified device. Fabric ports represent high-speed interconnect interfaces
+ * such as Xe Link ports for device-to-device communication.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t fabric::enumFabricPorts(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFabricPorts(device, &portCount, nullptr);
@@ -53,6 +70,16 @@ ze_result_t fabric::enumFabricPorts(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific fabric port
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific fabric port, including port identification, speed capabilities,
+ * and physical connection information.
+ *
+ * @param hFabricPort Handle to the specific fabric port
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -80,6 +107,16 @@ ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort)
 	return result;
 }
 
+/**
+ * @brief Gets the link type for a specific fabric port
+ *
+ * This function retrieves the link type information for a fabric port,
+ * which describes the physical connection technology and protocol used
+ * by the high-speed interconnect interface.
+ *
+ * @param hFabricPort Handle to the specific fabric port
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful link type retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetLinkType(zes_fabric_port_handle_t hFabricPort)
 {
 	zes_fabric_link_type_t linkType;
@@ -93,6 +130,15 @@ ze_result_t fabric::portGetLinkType(zes_fabric_port_handle_t hFabricPort)
 	return result;
 }
 
+/**
+ * @brief Gets the current configuration for a specific fabric port
+ *
+ * This function retrieves the current configuration settings for a fabric port,
+ * including whether the port is enabled and beaconing status for port identification.
+ *
+ * @param hFabricPort Handle to the specific fabric port
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful configuration retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetConfig(zes_fabric_port_handle_t hFabricPort)
 {
 	zes_fabric_port_config_t portConfig = {};
@@ -109,6 +155,16 @@ ze_result_t fabric::portGetConfig(zes_fabric_port_handle_t hFabricPort)
 	return result;
 }
 
+/**
+ * @brief Gets the current state for a specific fabric port
+ *
+ * This function retrieves the current operational state of a fabric port,
+ * including connection status, quality issues, failure reasons, and current
+ * transmission speeds for both receive and transmit directions.
+ *
+ * @param hFabricPort Handle to the specific fabric port
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort)
 {
 	zes_fabric_port_state_t portState = {};
@@ -133,6 +189,16 @@ ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort)
 	return result;
 }
 
+/**
+ * @brief Gets throughput statistics for a specific fabric port
+ *
+ * This function retrieves current throughput metrics for a fabric port,
+ * including receive and transmit byte counters along with timestamp
+ * information for bandwidth calculations.
+ *
+ * @param hFabricPort Handle to the specific fabric port
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful throughput retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetThroughput(zes_fabric_port_handle_t hFabricPort)
 {
 	zes_fabric_port_throughput_t throughput = {};
@@ -150,6 +216,16 @@ ze_result_t fabric::portGetThroughput(zes_fabric_port_handle_t hFabricPort)
 	return result;
 }
 
+/**
+ * @brief Gets error counters for a specific fabric port
+ *
+ * This function retrieves various error statistics for a fabric port,
+ * including link failure counts, degradation events, and firmware-related
+ * communication errors for reliability monitoring.
+ *
+ * @param hFabricPort Handle to the specific fabric port
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful error counter retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetFabricErrorCounters(zes_fabric_port_handle_t hFabricPort)
 {
 	zes_fabric_port_error_counters_t errorCounters = {};
@@ -168,6 +244,17 @@ ze_result_t fabric::portGetFabricErrorCounters(zes_fabric_port_handle_t hFabricP
 	return result;
 }
 
+/**
+ * @brief Gets throughput statistics for multiple fabric ports simultaneously
+ *
+ * This function efficiently retrieves throughput metrics for multiple fabric
+ * ports in a single operation, providing synchronized bandwidth measurements
+ * across all specified ports for system-wide performance analysis.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @param count Number of fabric ports to query
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful multi-port throughput retrieval, error code otherwise
+ */
 ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint32_t count)
 {
 	if (count == 0 || device == nullptr) {
@@ -195,6 +282,16 @@ ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint3
 	return result;
 }
 
+/**
+ * @brief Sets the configuration for all fabric ports
+ *
+ * This function configures the enabled/disabled state for all fabric ports
+ * on the device, allowing system-wide control of high-speed interconnect
+ * interfaces for power management or maintenance operations.
+ *
+ * @param enabled Boolean flag to enable (true) or disable (false) all fabric ports
+ * @return ze_result_t ZE_RESULT_SUCCESS if all ports configured successfully, error code otherwise
+ */
 ze_result_t fabric::setPortConfig(bool enabled)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -219,6 +316,16 @@ ze_result_t fabric::setPortConfig(bool enabled)
 	return result;
 }
 
+/**
+ * @brief Sets the beaconing configuration for all fabric ports
+ *
+ * This function configures the beaconing feature for all fabric ports,
+ * which enables or disables port identification signals useful for
+ * physical port location and troubleshooting in multi-device systems.
+ *
+ * @param enabled Boolean flag to enable (true) or disable (false) beaconing on all fabric ports
+ * @return ze_result_t ZE_RESULT_SUCCESS if beaconing configured successfully on all ports, error code otherwise
+ */
 ze_result_t fabric::setPortBeaconing(bool enabled)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -243,8 +350,28 @@ ze_result_t fabric::setPortBeaconing(bool enabled)
 	return result;
 }
 
+/**
+ * @brief Initializes the fabric management subsystem for a device
+ *
+ * This function initializes fabric port management by enumerating all
+ * available fabric ports on the device and preparing them for monitoring
+ * and configuration operations.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t fabric::init(zes_device_handle_t device) { return enumFabricPorts(device); }
 
+/**
+ * @brief Executes comprehensive fabric port monitoring and data collection
+ *
+ * This function performs a complete fabric port assessment by collecting
+ * properties, configuration, state, throughput, and error statistics for
+ * all fabric ports, providing comprehensive interconnect health monitoring.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS if all fabric operations completed successfully, error code otherwise
+ */
 ze_result_t fabric::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

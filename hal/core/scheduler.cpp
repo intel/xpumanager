@@ -23,6 +23,13 @@
  */
 #include "scheduler.h"
 
+/**
+ * @brief Destructor for the scheduler class
+ *
+ * This destructor performs cleanup operations for the scheduler management
+ * object, releasing allocated memory for scheduler handles and ensuring
+ * proper resource deallocation when the scheduler object is destroyed.
+ */
 scheduler::~scheduler()
 {
 	if (schedulerHandles) {
@@ -31,6 +38,16 @@ scheduler::~scheduler()
 	}
 }
 
+/**
+ * @brief Enumerates available scheduler controllers for a device
+ *
+ * This function discovers and catalogs all scheduler controllers available on the
+ * specified device. Scheduler controllers manage GPU compute engine scheduling
+ * and provide workload allocation and priority management capabilities.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t scheduler::enumSchedulers(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumSchedulers(device, &schedulerCount, nullptr);
@@ -50,6 +67,16 @@ ze_result_t scheduler::enumSchedulers(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific scheduler controller
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific scheduler controller, including supported engines, control capabilities,
+ * scheduling modes, and subdevice association for workload management.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t scheduler::getProperties(zes_sched_handle_t schedulerHandle)
 {
 	zes_sched_properties_t properties = {};
@@ -69,6 +96,16 @@ ze_result_t scheduler::getProperties(zes_sched_handle_t schedulerHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current scheduling mode for a scheduler controller
+ *
+ * This function retrieves the current active scheduling mode for a specific
+ * scheduler controller, indicating whether it's operating in timeout, timeslice,
+ * exclusive, or other scheduling modes for workload management analysis.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful mode retrieval, error code otherwise
+ */
 ze_result_t scheduler::getCurrentMode(zes_sched_handle_t schedulerHandle)
 {
 	zes_sched_mode_t mode = {};
@@ -83,6 +120,16 @@ ze_result_t scheduler::getCurrentMode(zes_sched_handle_t schedulerHandle)
 	return result;
 }
 
+/**
+ * @brief Gets timeout mode properties for a scheduler controller
+ *
+ * This function retrieves timeout mode configuration properties for a specific
+ * scheduler controller, including watchdog timeout values used for compute
+ * workload monitoring and hang detection mechanisms.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful timeout properties retrieval, error code otherwise
+ */
 ze_result_t scheduler::getTimeoutModeProperties(zes_sched_handle_t schedulerHandle)
 {
 	zes_sched_timeout_properties_t timeoutProperties = {};
@@ -98,6 +145,16 @@ ze_result_t scheduler::getTimeoutModeProperties(zes_sched_handle_t schedulerHand
 	return result;
 }
 
+/**
+ * @brief Gets timeslice mode properties for a scheduler controller
+ *
+ * This function retrieves timeslice mode configuration properties for a specific
+ * scheduler controller, including scheduling interval and yield timeout values
+ * used for time-sharing workload management and GPU resource allocation.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful timeslice properties retrieval, error code otherwise
+ */
 ze_result_t scheduler::getTimesliceProperties(zes_sched_handle_t schedulerHandle)
 {
 	zes_sched_timeslice_properties_t timesliceProperties = {};
@@ -114,6 +171,16 @@ ze_result_t scheduler::getTimesliceProperties(zes_sched_handle_t schedulerHandle
 	return result;
 }
 
+/**
+ * @brief Sets timeout mode for all scheduler controllers
+ *
+ * This function configures timeout mode across all scheduler controllers with
+ * the specified watchdog timeout value, enabling compute workload monitoring
+ * and automatic hang detection for system stability and reliability.
+ *
+ * @param timeoutValue Timeout value in microseconds for watchdog monitoring
+ * @return ze_result_t ZE_RESULT_SUCCESS if timeout mode set successfully, error code otherwise
+ */
 ze_result_t scheduler::setTimeoutMode(float timeoutValue)
 {
 	zes_sched_timeout_properties_t timeoutProperties = {};
@@ -138,6 +205,17 @@ ze_result_t scheduler::setTimeoutMode(float timeoutValue)
 	return result;
 }
 
+/**
+ * @brief Sets timeslice mode for all scheduler controllers
+ *
+ * This function configures timeslice mode across all scheduler controllers with
+ * specified interval and yield timeout values, enabling time-sharing workload
+ * management for fair GPU resource allocation among multiple processes.
+ *
+ * @param timesliceValue Timeslice interval in microseconds for scheduling quantum
+ * @param yieldTimeoutValue Yield timeout in microseconds for preemption control
+ * @return ze_result_t ZE_RESULT_SUCCESS if timeslice mode set successfully, error code otherwise
+ */
 ze_result_t scheduler::setTimesliceMode(float timesliceValue, float yieldTimeoutValue)
 {
 	zes_sched_timeslice_properties_t timesliceProperties = {};
@@ -163,6 +241,15 @@ ze_result_t scheduler::setTimesliceMode(float timesliceValue, float yieldTimeout
 	return result;
 }
 
+/**
+ * @brief Sets exclusive mode for all scheduler controllers
+ *
+ * This function configures exclusive mode across all scheduler controllers,
+ * allowing a single process to have dedicated access to GPU compute resources
+ * without time-sharing or preemption for maximum performance scenarios.
+ *
+ * @return ze_result_t ZE_RESULT_SUCCESS if exclusive mode set successfully, error code otherwise
+ */
 ze_result_t scheduler::setExclusiveMode()
 {
 	ze_bool_t pNeedReload;
@@ -185,8 +272,32 @@ ze_result_t scheduler::setExclusiveMode()
 	return result;
 }
 
-ze_result_t scheduler::init(zes_device_handle_t device) { return enumSchedulers(device); }
+/**
+ * @brief Initializes the scheduler management module for a device
+ *
+ * This function performs initial setup of scheduler monitoring capabilities by
+ * enumerating all available scheduler controllers on the specified device for
+ * subsequent workload management and scheduling operations.
+ *
+ * @param device Handle to the device for scheduler initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
+ze_result_t scheduler::init(zes_device_handle_t device)
+{
+	TRACING();
+	return enumSchedulers(device);
+}
 
+/**
+ * @brief Performs comprehensive scheduler monitoring runtime operations
+ *
+ * This function executes a complete scheduler monitoring cycle including property
+ * retrieval, current mode checking, timeout properties, and timeslice properties
+ * for all scheduler controllers to provide comprehensive scheduling analysis.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t scheduler::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

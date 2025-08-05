@@ -23,6 +23,13 @@
  */
 #include "memory.h"
 
+/**
+ * @brief Destructor for the memory class
+ *
+ * This destructor performs cleanup operations for the memory management
+ * object, releasing allocated memory for memory module handles and ensuring
+ * proper resource deallocation when the memory object is destroyed.
+ */
 memory::~memory()
 {
 	if (memoryModules) {
@@ -31,6 +38,16 @@ memory::~memory()
 	}
 }
 
+/**
+ * @brief Enumerates available memory modules for a device
+ *
+ * This function discovers and catalogs all memory modules available on the
+ * specified device. Memory modules represent different memory banks or
+ * memory controllers that can be monitored and managed independently.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumMemoryModules(device, &memoryModulesCount, nullptr);
@@ -50,6 +67,18 @@ ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Retrieves memory properties for a specified memory module
+ *
+ * This function queries comprehensive properties of a memory module including
+ * memory type (HBM, DDR, GDDR), location, physical size, bus width, and
+ * channel configuration. It provides detailed memory subsystem information
+ * for monitoring and management operations.
+ *
+ * @param memhandle Handle to the memory module
+ * @param properties Pointer to structure that will receive memory properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties)
 {
 	ze_result_t result = zesMemoryGetProperties(memhandle, properties);
@@ -147,6 +176,17 @@ ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties
 	return result;
 }
 
+/**
+ * @brief Retrieves current memory state and health information
+ *
+ * This function queries the current state of a memory module including
+ * available free memory, total size, and health status. It provides
+ * real-time memory utilization and health monitoring capabilities.
+ *
+ * @param memhandle Handle to the memory module
+ * @param state Pointer to structure that will receive memory state information
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
 ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 {
 	ze_result_t result = zesMemoryGetState(memhandle, state);
@@ -180,6 +220,17 @@ ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 	return result;
 }
 
+/**
+ * @brief Retrieves memory bandwidth utilization statistics
+ *
+ * This function queries memory bandwidth metrics including read and write
+ * counters, maximum theoretical bandwidth, and timestamp information.
+ * It provides performance monitoring capabilities for memory subsystem analysis.
+ *
+ * @param memhandle Handle to the memory module
+ * @param bandwidth Pointer to structure that will receive bandwidth statistics
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful bandwidth retrieval, error code otherwise
+ */
 ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t *bandwidth)
 {
 	ze_result_t result = zesMemoryGetBandwidth(memhandle, bandwidth);
@@ -197,6 +248,16 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t
 	return result;
 }
 
+/**
+ * @brief Calculates total memory size across all memory modules
+ *
+ * This function aggregates the total memory size from all available memory
+ * modules on the device. It provides comprehensive memory capacity information
+ * for system monitoring and resource management operations.
+ *
+ * @param size Pointer to variable that will receive total memory size in bytes
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful size calculation, error code otherwise
+ */
 ze_result_t memory::getMemorySize(uint64_t *size)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -219,6 +280,16 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 	return result;
 }
 
+/**
+ * @brief Determines overall memory health status across all modules
+ *
+ * This function evaluates the health status of all memory modules and returns
+ * the most severe health condition found. It prioritizes critical/replace status
+ * over degraded, and degraded over OK, providing comprehensive memory health assessment.
+ *
+ * @param health Pointer to variable that will receive overall memory health status
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful health assessment, error code otherwise
+ */
 ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -264,6 +335,16 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 	return result;
 }
 
+/**
+ * @brief Retrieves memory channel configuration information
+ *
+ * This function queries the number of memory channels available across
+ * memory modules. Memory channels represent parallel data paths that
+ * affect memory bandwidth and performance characteristics.
+ *
+ * @param channels Pointer to variable that will receive number of memory channels
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful channel retrieval, error code otherwise
+ */
 ze_result_t memory::getMemoryChannels(uint32_t *channels)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -287,6 +368,16 @@ ze_result_t memory::getMemoryChannels(uint32_t *channels)
 	return result;
 }
 
+/**
+ * @brief Retrieves memory bus width configuration
+ *
+ * This function queries the memory bus width in bits across memory modules.
+ * Bus width determines the amount of data that can be transferred per clock
+ * cycle and directly affects memory bandwidth performance.
+ *
+ * @param busWidth Pointer to variable that will receive memory bus width in bits
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful bus width retrieval, error code otherwise
+ */
 ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -310,6 +401,17 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 	return result;
 }
 
+/**
+ * @brief Calculates memory usage statistics and utilization percentage
+ *
+ * This function determines current memory usage by calculating the difference
+ * between total and free memory across all modules. It provides both absolute
+ * usage in bytes and utilization as a percentage for monitoring purposes.
+ *
+ * @param used Pointer to variable that will receive used memory in bytes (can be null)
+ * @param utilization Pointer to variable that will receive utilization percentage (can be null)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful usage calculation, error code otherwise
+ */
 ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -350,6 +452,19 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 	return result;
 }
 
+/**
+ * @brief Retrieves memory read/write statistics and bandwidth information
+ *
+ * This function aggregates memory bandwidth metrics across all memory modules
+ * including read and write counters, maximum bandwidth capability, and timing
+ * information for comprehensive memory performance analysis.
+ *
+ * @param read Pointer to variable that will receive total read counter (can be null)
+ * @param write Pointer to variable that will receive total write counter (can be null)
+ * @param maxBandwidth Pointer to variable that will receive maximum bandwidth (can be null)
+ * @param timeStamp Pointer to variable that will receive timestamp (can be null)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful bandwidth retrieval, error code otherwise
+ */
 ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBandwidth, uint64_t *timeStamp)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -398,12 +513,32 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBa
 	return result;
 }
 
+/**
+ * @brief Initializes the memory management subsystem
+ *
+ * This function performs initialization of the memory management system by
+ * enumerating all available memory modules on the specified device. It serves
+ * as the entry point for memory subsystem setup and configuration.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t memory::init(zes_device_handle_t device)
 {
 	TRACING();
 	return enumMemoryModules(device);
 }
 
+/**
+ * @brief Executes comprehensive memory system diagnostics and data collection
+ *
+ * This function performs a complete memory system scan by retrieving properties,
+ * state, and bandwidth information for all memory modules. It serves as a
+ * diagnostic routine for memory subsystem health and performance assessment.
+ *
+ * @param device Handle to the Level Zero Sysman device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful diagnostic completion
+ */
 ze_result_t memory::zesRun(UNUSED zes_device_handle_t device)
 {
 	zes_mem_state_t state = {};

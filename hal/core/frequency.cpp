@@ -23,6 +23,13 @@
  */
 #include "frequency.h"
 
+/**
+ * @brief Destructor for the frequency class
+ *
+ * This destructor performs cleanup operations for the frequency management
+ * object, releasing allocated memory for frequency domain handles and ensuring
+ * proper resource deallocation when the frequency object is destroyed.
+ */
 frequency::~frequency()
 {
 	if (frequencyHandles) {
@@ -31,6 +38,16 @@ frequency::~frequency()
 	}
 }
 
+/**
+ * @brief Enumerates available frequency domains for a device
+ *
+ * This function discovers and catalogs all frequency domains available on the
+ * specified device. Frequency domains represent different clock domains such as
+ * GPU core, memory, and media engines that can be monitored and controlled independently.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t frequency::enumFrequencies(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFrequencyDomains(device, &frequencyCount, nullptr);
@@ -52,6 +69,17 @@ ze_result_t frequency::enumFrequencies(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific frequency domain
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific frequency domain, including domain type, frequency limits,
+ * control capabilities, and throttling support information.
+ *
+ * @param frequencyHandle Handle to the specific frequency domain
+ * @param properties Pointer to structure to store frequency domain properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq_properties_t *properties)
 {
 	TRACING();
@@ -84,6 +112,16 @@ ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq
 	return result;
 }
 
+/**
+ * @brief Gets available discrete clock frequencies for a frequency domain
+ *
+ * This function retrieves all available discrete clock frequencies that
+ * can be set for the specified frequency domain, providing a list of
+ * supported frequency values for precise clock control.
+ *
+ * @param frequencyHandle Handle to the specific frequency domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful clock retrieval, error code otherwise
+ */
 ze_result_t frequency::getAvailableClocks(zes_freq_handle_t frequencyHandle)
 {
 	uint32_t count = 0;
@@ -115,6 +153,16 @@ ze_result_t frequency::getAvailableClocks(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current frequency range settings for a frequency domain
+ *
+ * This function retrieves the currently configured minimum and maximum
+ * frequency limits for the specified frequency domain, showing the
+ * allowed operating frequency range.
+ *
+ * @param frequencyHandle Handle to the specific frequency domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful range retrieval, error code otherwise
+ */
 ze_result_t frequency::getRange(zes_freq_handle_t frequencyHandle)
 {
 	zes_freq_range_t range;
@@ -131,6 +179,17 @@ ze_result_t frequency::getRange(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current frequency for a specific frequency domain type
+ *
+ * This function searches for frequency domains matching the specified type
+ * and retrieves the current actual operating frequency, useful for monitoring
+ * real-time clock speeds across different GPU subsystems.
+ *
+ * @param currentFreq Pointer to store the current frequency value (in MHz)
+ * @param domain The frequency domain type to query (GPU, memory, media, etc.)
+ * @return ze_result_t ZE_RESULT_SUCCESS if frequency retrieved successfully, error code otherwise
+ */
 ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 {
 	TRACING();
@@ -159,6 +218,17 @@ ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 	return result;
 }
 
+/**
+ * @brief Sets the frequency range for all frequency domains
+ *
+ * This function configures the minimum and maximum frequency limits for
+ * all frequency domains on the device, allowing control over power consumption
+ * and performance characteristics across the entire GPU.
+ *
+ * @param minFreq Minimum frequency limit in MHz
+ * @param maxFreq Maximum frequency limit in MHz
+ * @return ze_result_t ZE_RESULT_SUCCESS if frequency range set successfully, error code otherwise
+ */
 ze_result_t frequency::setRange(double minFreq, double maxFreq)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -181,6 +251,17 @@ ze_result_t frequency::setRange(double minFreq, double maxFreq)
 	return result;
 }
 
+/**
+ * @brief Gets the current state information for a frequency domain
+ *
+ * This function retrieves comprehensive frequency state information including
+ * current voltage, requested frequency, actual frequency, throttle reasons,
+ * and efficiency metrics for detailed performance monitoring.
+ *
+ * @param frequencyHandle Handle to the specific frequency domain
+ * @param state Pointer to structure to store frequency state information
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
 ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle, zes_freq_state_t *state)
 {
 	ze_result_t result = zesFrequencyGetState(frequencyHandle, state);
@@ -200,6 +281,16 @@ ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle, zes_freq_stat
 	return result;
 }
 
+/**
+ * @brief Gets accumulated throttle time for a frequency domain
+ *
+ * This function retrieves the total time that the frequency domain has been
+ * throttled, providing insights into thermal and power management behavior
+ * and system performance constraints over time.
+ *
+ * @param frequencyHandle Handle to the specific frequency domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful throttle time retrieval, error code otherwise
+ */
 ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 {
 	zes_freq_throttle_time_t throttleTime;
@@ -216,6 +307,16 @@ ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current throttle reasons for GPU frequency domains
+ *
+ * This function retrieves a bitmask indicating the active throttle reasons
+ * affecting GPU frequency domains, including thermal, power, current, and
+ * other hardware-based throttling mechanisms for diagnostic purposes.
+ *
+ * @param throttleReasons Pointer to variable to store throttle reason flags bitmask
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful throttle reason retrieval, error code otherwise
+ */
 ze_result_t frequency::getThrottleReason(zes_freq_throttle_reason_flags_t *throttleReasons)
 {
 	TRACING();
@@ -245,8 +346,28 @@ ze_result_t frequency::getThrottleReason(zes_freq_throttle_reason_flags_t *throt
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Initializes the frequency management module for a device
+ *
+ * This function performs initial setup of frequency monitoring capabilities
+ * by enumerating all available frequency domains (GPU, memory, media) on
+ * the specified device for subsequent frequency operations.
+ *
+ * @param device Handle to the device for frequency initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t frequency::init(zes_device_handle_t device) { return enumFrequencies(device); }
 
+/**
+ * @brief Performs comprehensive frequency domain runtime operations
+ *
+ * This function executes a complete frequency monitoring cycle including
+ * property retrieval, available clocks enumeration, range configuration,
+ * state monitoring, and throttle time tracking for all frequency domains.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t frequency::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

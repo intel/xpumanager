@@ -37,6 +37,15 @@
 #include <unistd.h>
 #include <format>
 
+/**
+ * @brief Gets a single character from standard input without echo
+ *
+ * This function reads a single character from standard input without waiting
+ * for Enter and without echoing the character to the terminal. It temporarily
+ * modifies terminal attributes to achieve this behavior.
+ *
+ * @return char The character read from standard input
+ */
 char getch()
 {
 	char buf = 0;
@@ -89,6 +98,15 @@ void wait_for_thread(thread_id *tid)
 	}
 }
 
+/**
+ * @brief Checks if the current user has privilege to access XPUM resources
+ *
+ * This function verifies whether the current user has the necessary privileges
+ * to access XPUM resources. It checks if the user is root or belongs to the
+ * 'xpum' group, which grants the required permissions.
+ *
+ * @return bool True if user has privileges, false otherwise
+ */
 bool privilegeCheck()
 {
 	uid_t uid = getuid();
@@ -128,6 +146,16 @@ bool privilegeCheck()
 	return has_privilege;
 }
 
+/**
+ * @brief Retrieves the process name for a given process ID
+ *
+ * This function reads the command line information from the Linux /proc filesystem
+ * to obtain the process name associated with the specified process ID. It provides
+ * process identification capabilities for system monitoring and management operations.
+ *
+ * @param processId 32-bit unsigned integer representing the target process ID
+ * @return std::string Process name if found, empty string if process not found or error occurs
+ */
 std::string getProcessName(uint32_t processId)
 {
 	std::string processName = "";
@@ -142,6 +170,15 @@ std::string getProcessName(uint32_t processId)
 	return processName;
 }
 
+/**
+ * @brief Discovers and enumerates available I2C devices on the system
+ *
+ * This function scans the Linux system for available I2C (Inter-Integrated Circuit)
+ * devices by examining the /dev directory. It provides device discovery capabilities
+ * for hardware monitoring and sensor access operations on Intel graphics devices.
+ *
+ * @return std::vector<std::string> Vector containing paths to available I2C devices
+ */
 std::vector<std::string> findI2CDevices()
 {
 	std::vector<std::string> devices;
@@ -164,6 +201,16 @@ std::vector<std::string> findI2CDevices()
 	return devices;
 }
 
+/**
+ * @brief Retrieves the name of an I2C device from its device path
+ *
+ * This function reads the name attribute of an I2C device by accessing the
+ * 'name' file in the device's sysfs directory. It provides device identification
+ * capabilities for I2C hardware discovery and sensor management operations.
+ *
+ * @param devicePath String reference containing the full path to the I2C device directory in sysfs
+ * @return std::string Device name if found, empty string if name file cannot be read
+ */
 std::string getI2CDeviceName(const std::string &devicePath)
 {
 	std::string name;
@@ -175,6 +222,16 @@ std::string getI2CDeviceName(const std::string &devicePath)
 	return name;
 }
 
+/**
+ * @brief Opens an I2C device for communication and returns file descriptor
+ *
+ * This function establishes communication with the specified I2C device by
+ * opening the device file and returning a file descriptor. It provides low-level
+ * I2C access capabilities for direct hardware communication and sensor operations.
+ *
+ * @param deviceName String reference containing the name of the I2C device to open
+ * @return long long File descriptor if successful, negative value on error
+ */
 long long openI2C(const std::string &deviceName)
 {
 	std::vector<std::string> devices = findI2CDevices();
@@ -193,8 +250,27 @@ long long openI2C(const std::string &deviceName)
 	return -1;
 }
 
+/**
+ * @brief Closes an I2C device file descriptor
+ *
+ * This function safely closes the specified I2C device file descriptor,
+ * releasing the system resources and terminating the communication channel
+ * with the I2C device. It provides proper cleanup for I2C operations.
+ *
+ * @param fd File descriptor of the I2C device to close
+ * @return int 0 on success, -1 on error (per close() system call)
+ */
 int closeI2C(long long fd) { return close((int)fd); }
 
+/**
+ * @brief Generates a timestamp string for logging and diagnostic purposes
+ *
+ * This function creates a formatted timestamp string using the current system
+ * time. It provides consistent time formatting for logging, debugging, and
+ * diagnostic operations throughout the XPUM system.
+ *
+ * @return std::string Formatted timestamp string representing current system time
+ */
 std::string timestamp()
 {
 	std::string timestamp_str = "";
@@ -216,6 +292,6 @@ std::string timestamp()
 		return timestamp_str;
 	}
 	timestamp_str = std::format("{:02d}:{:02d}:{:02d}.{:03d}", time_info->tm_hour, time_info->tm_min, time_info->tm_sec,
-						   (int)tv.tv_usec / 1000);
+								(int)tv.tv_usec / 1000);
 	return timestamp_str;
 }

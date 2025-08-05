@@ -91,6 +91,15 @@ void cmdVgpu::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Performs pre-check validation for vGPU operations
+ *
+ * This function validates system requirements and prerequisites for vGPU functionality.
+ * Currently implemented as a placeholder for future vGPU validation logic.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful pre-check validation
+ */
 ze_result_t cmdVgpu::precheck(UNUSED devInfo *d)
 {
 	TRACING();
@@ -98,36 +107,90 @@ ze_result_t cmdVgpu::precheck(UNUSED devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Adds kernel parameters required for vGPU functionality
+ *
+ * This function configures kernel parameters necessary for vGPU operations.
+ * Currently implemented as a placeholder for future kernel parameter configuration.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful kernel parameter addition
+ */
 ze_result_t cmdVgpu::addKernelParam(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Creates a new virtual GPU instance
+ *
+ * This function implements the logic to create a new vGPU instance on the specified device.
+ * Currently implemented as a placeholder for future vGPU creation functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful vGPU creation
+ */
 ze_result_t cmdVgpu::create(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Removes an existing virtual GPU instance
+ *
+ * This function implements the logic to remove an existing vGPU instance.
+ * Currently implemented as a placeholder for future vGPU removal functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful vGPU removal
+ */
 ze_result_t cmdVgpu::remove(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Lists all available GPU devices for vGPU creation
+ *
+ * This function retrieves and displays all GPU devices available for vGPU operations.
+ * Currently implemented as a placeholder for future GPU device listing functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful device listing
+ */
 ze_result_t cmdVgpu::listGpus(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Retrieves statistics for virtual GPU instances
+ *
+ * This function collects and displays performance statistics for vGPU instances.
+ * Currently implemented as a placeholder for future vGPU statistics functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful statistics retrieval
+ */
 ze_result_t cmdVgpu::stats(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Manages local memory configuration for virtual GPU instances
+ *
+ * This function handles local memory allocation and configuration for vGPU instances.
+ * Currently implemented as a placeholder for future vGPU memory management functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful memory configuration
+ */
 ze_result_t cmdVgpu::lmem(UNUSED devInfo *d)
 {
 	TRACING();

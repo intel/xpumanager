@@ -25,6 +25,15 @@
 #include "cmd_amcsensor.h"
 #include "debug.h"
 
+/**
+ * @brief Displays help information for the AMC sensor command
+ *
+ * This function generates and displays comprehensive help information for the
+ * AMC (Advanced Management Controller) sensor command, including usage examples,
+ * available options, and command descriptions for real-time sensor monitoring.
+ *
+ * @param helpType Type of help to display (SHORT_HELP for brief, FULL_HELP for detailed)
+ */
 void cmdAmcSensor::help(HELP helpType)
 {
 	std::vector<helpCmd> helpList;
@@ -43,6 +52,17 @@ void cmdAmcSensor::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Executes the AMC sensor monitoring command
+ *
+ * This function implements the main execution logic for the AMC sensor command,
+ * parsing command line arguments and retrieving real-time sensor readings from
+ * the Advanced Management Controller. It supports both standard and JSON output
+ * formats for sensor data presentation.
+ *
+ * @param args Pointer to argument structure containing command line parameters
+ * @return int Return code: 0 on success, error code on failure
+ */
 int cmdAmcSensor::run(arg_struct *args)
 {
 	TRACING();

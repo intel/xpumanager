@@ -23,6 +23,13 @@
  */
 #include "performance.h"
 
+/**
+ * @brief Destructor for the performance class
+ *
+ * This destructor performs cleanup operations for the performance management
+ * object, releasing allocated memory for performance factor domain handles and
+ * ensuring proper resource deallocation when the performance object is destroyed.
+ */
 performance::~performance()
 {
 	if (perfHandles) {
@@ -31,6 +38,16 @@ performance::~performance()
 	}
 }
 
+/**
+ * @brief Enumerates available performance factor domains for a device
+ *
+ * This function discovers and catalogs all performance factor domains available
+ * on the specified device. Performance domains represent different execution
+ * engines (compute, media, etc.) that can have their performance factors tuned.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device)
 {
 	// Get the perfCount of performance factor domains
@@ -54,6 +71,16 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific performance factor domain
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific performance factor domain, including supported engines and
+ * subdevice association for performance tuning configuration.
+ *
+ * @param perfHandle Handle to the specific performance factor domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t performance::getProperties(zes_perf_handle_t perfHandle)
 {
 	zes_perf_properties_t properties = {};
@@ -71,6 +98,16 @@ ze_result_t performance::getProperties(zes_perf_handle_t perfHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current configuration for a performance factor domain
+ *
+ * This function retrieves the current performance factor configuration for a
+ * specific domain, returning the performance scaling factor that affects
+ * execution engine performance characteristics and power consumption.
+ *
+ * @param perfHandle Handle to the specific performance factor domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful configuration retrieval, error code otherwise
+ */
 ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
 {
 	double factor = 0.0;
@@ -86,6 +123,16 @@ ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
 	return result;
 }
 
+/**
+ * @brief Performs comprehensive performance factor monitoring runtime operations
+ *
+ * This function executes a complete performance factor monitoring cycle including
+ * domain enumeration, property retrieval, and configuration checking for all
+ * performance domains to provide comprehensive performance tuning analysis.
+ *
+ * @param device Handle to the device for performance factor operations
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t performance::zesRun(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

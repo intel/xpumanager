@@ -25,6 +25,14 @@
 #include "cmd_agentset.h"
 #include "debug.h"
 
+/**
+ * @brief Displays help information for the agentset command
+ *
+ * This function prints usage information, command line options, and examples
+ * for the agentset command which manages XPU Manager daemon settings.
+ *
+ * @param helpType The type of help to display (FULL_HELP or SHORT_HELP)
+ */
 void cmdAgentSet::help(HELP helpType)
 {
 	TRACING();
@@ -49,6 +57,17 @@ void cmdAgentSet::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Executes the agentset command with parsed command line arguments
+ *
+ * This function processes command line arguments for the agentset command,
+ * handling options for listing current settings, setting time intervals,
+ * and managing JSON output format. It validates input parameters and
+ * applies the requested configuration changes.
+ *
+ * @param args Pointer to argument structure containing argc, argv, and system manager
+ * @return int ZE_RESULT_SUCCESS on success, error code on failure
+ */
 int cmdAgentSet::run(arg_struct *args)
 {
 	TRACING();

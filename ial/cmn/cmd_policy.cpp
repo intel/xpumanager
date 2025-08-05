@@ -96,6 +96,15 @@ void cmdPolicy::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Creates a new GPU policy
+ *
+ * This function implements the logic to create a new policy for GPU management.
+ * Currently implemented as a placeholder for future policy creation functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful policy creation
+ */
 ze_result_t cmdPolicy::create(UNUSED devInfo *d)
 {
 	TRACING();
@@ -104,6 +113,15 @@ ze_result_t cmdPolicy::create(UNUSED devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Lists all existing GPU policies
+ *
+ * This function retrieves and displays all configured GPU policies.
+ * Currently implemented as a placeholder for future policy listing functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful policy retrieval
+ */
 ze_result_t cmdPolicy::listPolicies(UNUSED devInfo *d)
 {
 	TRACING();
@@ -112,6 +130,15 @@ ze_result_t cmdPolicy::listPolicies(UNUSED devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Lists all available GPU policy types
+ *
+ * This function retrieves and displays all available policy types that can be
+ * configured for GPU management. Currently implemented as a placeholder.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful policy type retrieval
+ */
 ze_result_t cmdPolicy::listTypes(UNUSED devInfo *d)
 {
 	TRACING();
@@ -120,6 +147,15 @@ ze_result_t cmdPolicy::listTypes(UNUSED devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Removes an existing GPU policy
+ *
+ * This function implements the logic to remove an existing GPU policy.
+ * Currently implemented as a placeholder for future policy removal functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful policy removal
+ */
 ze_result_t cmdPolicy::remove(UNUSED devInfo *d)
 {
 	TRACING();
@@ -128,6 +164,15 @@ ze_result_t cmdPolicy::remove(UNUSED devInfo *d)
 	return result;
 }
 
+/**
+ * @brief Runs the policy command with specified arguments
+ *
+ * This function parses command line arguments and executes the appropriate policy operation
+ * (create, list policies, list types, or remove) on the specified GPU devices.
+ *
+ * @param args Pointer to argument structure containing command line arguments and system manager
+ * @return int Returns 0 on success, non-zero on failure
+ */
 int cmdPolicy::run(arg_struct *args)
 {
 	TRACING();

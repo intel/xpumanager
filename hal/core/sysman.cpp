@@ -23,6 +23,14 @@
  */
 #include "sysman.h"
 
+/**
+ * @brief Prints a human-readable list of engine types from engine flags
+ *
+ * This utility function decodes engine type flags and prints the corresponding
+ * engine types in a readable format for debugging and informational purposes.
+ *
+ * @param engines Bitfield containing engine type flags to decode and print
+ */
 void sysman::printEngines(zes_engine_type_flags_t engines)
 {
 	if (engines & ZES_ENGINE_TYPE_FLAG_COMPUTE)

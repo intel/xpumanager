@@ -23,6 +23,13 @@
  */
 #include "power.h"
 
+/**
+ * @brief Destructor for the power class
+ *
+ * This destructor performs cleanup operations for the power management
+ * object, releasing allocated memory for power domain handles and ensuring
+ * proper resource deallocation when the power object is destroyed.
+ */
 power::~power()
 {
 	if (powerHandles) {
@@ -31,6 +38,16 @@ power::~power()
 	}
 }
 
+/**
+ * @brief Enumerates available power domains for a device
+ *
+ * This function discovers and catalogs all power domains available on the
+ * specified device. Power domains represent different power management
+ * zones that can be monitored and controlled independently.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t power::enumPowerDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumPowerDomains(device, &powerCount, nullptr);
@@ -50,6 +67,17 @@ ze_result_t power::enumPowerDomains(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific power domain
+ *
+ * This function retrieves detailed properties and capabilities for a
+ * specific power domain, including supported power limits and thresholds.
+ *
+ * @param powerHandle Handle to the specific power domain
+ * @param properties Pointer to structure to store power domain properties
+ * @param extProps Pointer to structure to store extended power domain properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t power::getProperties(zes_pwr_handle_t powerHandle, zes_power_properties_t *properties,
 								 zes_power_ext_properties_t *extProps)
 {
@@ -102,6 +130,15 @@ ze_result_t power::getProperties(zes_pwr_handle_t powerHandle, zes_power_propert
 	return result;
 }
 
+/**
+ * @brief Gets the energy threshold for a power domain
+ *
+ * This function retrieves the energy threshold settings for the specified
+ * power domain, which determines when energy-related events are triggered.
+ *
+ * @param powerHandle Handle to the specific power domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful threshold retrieval, error code otherwise
+ */
 ze_result_t power::getEnergyThreshold(zes_pwr_handle_t powerHandle)
 {
 	zes_energy_threshold_t energyThreshold;
@@ -119,6 +156,16 @@ ze_result_t power::getEnergyThreshold(zes_pwr_handle_t powerHandle)
 	return result;
 }
 
+/**
+ * @brief Gets the current energy counter for a power domain
+ *
+ * This function retrieves the current energy consumption counter value
+ * for the specified power domain, providing accumulated energy usage data.
+ *
+ * @param powerHandle Handle to the specific power domain
+ * @param energyCounter Pointer to structure to store energy counter data
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful counter retrieval, error code otherwise
+ */
 ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle, zes_power_energy_counter_t *energyCounter)
 {
 	memset(energyCounter, 0, sizeof(zes_power_energy_counter_t));
@@ -135,6 +182,15 @@ ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle, zes_power_ener
 	return result;
 }
 
+/**
+ * @brief Gets the current power limits for a power domain
+ *
+ * This function retrieves the current power limit configuration for the
+ * specified power domain, including both sustained and burst power limits.
+ *
+ * @param powerHandle Handle to the specific power domain
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful limit retrieval, error code otherwise
+ */
 ze_result_t power::getPowerLimits(zes_pwr_handle_t powerHandle)
 {
 	uint32_t powerLimitsCount = 0;
@@ -166,6 +222,15 @@ ze_result_t power::getPowerLimits(zes_pwr_handle_t powerHandle)
 	return result;
 }
 
+/**
+ * @brief Sets the power limit for the device
+ *
+ * This function applies a new power limit setting to the device's primary
+ * power domain, controlling the maximum sustained power consumption.
+ *
+ * @param powerLimit The new power limit value in watts
+ * @return ze_result_t ZE_RESULT_SUCCESS if power limit set successfully, error code otherwise
+ */
 ze_result_t power::setPowerLimit(double powerLimit)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -202,6 +267,18 @@ ze_result_t power::setPowerLimit(double powerLimit)
 	return result;
 }
 
+/**
+ * @brief Gets energy consumption data for specific power domains
+ *
+ * This function retrieves energy consumption information from either GPU or
+ * card-level power domains, providing accumulated energy usage and timestamp
+ * data for power analysis and monitoring purposes.
+ *
+ * @param pwr Pointer to store the energy consumption value (in joules)
+ * @param timeStamp Pointer to store the timestamp of the energy reading
+ * @param forGPU Flag indicating whether to get GPU domain (true) or card domain (false) energy
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful energy retrieval, error code otherwise
+ */
 ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -244,6 +321,16 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 	return result;
 }
 
+/**
+ * @brief Initializes the power management module for a device
+ *
+ * This function performs initial setup of power monitoring capabilities by
+ * enumerating all available power domains and retrieving their power limits
+ * for subsequent power management and monitoring operations.
+ *
+ * @param device Handle to the device for power initialization
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t power::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumPowerDomains(device);
@@ -260,6 +347,16 @@ ze_result_t power::init(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Performs comprehensive power monitoring runtime operations
+ *
+ * This function executes a complete power monitoring cycle for all power domains,
+ * including property retrieval, energy counter reading, threshold checking, and
+ * power limit analysis for comprehensive power management assessment.
+ *
+ * @param device Handle to the device (unused in current implementation)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ */
 ze_result_t power::zesRun(UNUSED zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;

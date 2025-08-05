@@ -30,6 +30,18 @@
 LIBXPUM_API char *optarg;	// global argument pointer
 LIBXPUM_API int optind = 1; // global argv index
 
+/**
+ * @brief Windows implementation of getopt for command line argument parsing
+ *
+ * This function provides Windows compatibility for the POSIX getopt function,
+ * enabling standard command line argument parsing on Windows platforms.
+ * It processes short options and handles option arguments.
+ *
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @param optstring String specifying the legitimate option characters
+ * @return int The next option character, EOF when done, or '?' for unknown option
+ */
 int getopt(int argc, char *argv[], char *optstring)
 {
 	static char *next = NULL;
@@ -84,6 +96,20 @@ int getopt(int argc, char *argv[], char *optstring)
 	return c;
 }
 
+/**
+ * @brief Windows implementation of getopt_long for extended command line parsing
+ *
+ * This function provides Windows compatibility for the GNU getopt_long function,
+ * enabling parsing of both short and long command line options. It handles
+ * required and optional arguments for long options.
+ *
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @param optstring String specifying the legitimate short option characters
+ * @param longopts Array of option structures for long options
+ * @param longindex Pointer to store the index of the matched long option
+ * @return int The option character, -1 when done, or '?' for unknown option
+ */
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex)
 {
 	if (optind >= argc) {
@@ -131,8 +157,29 @@ int getopt_long(int argc, char *const argv[], const char *optstring, const struc
 	return '?'; // Unknown option
 }
 
+/**
+ * @brief Windows implementation of aligned memory allocation
+ *
+ * This function provides a Windows-compatible wrapper for aligned memory allocation.
+ * Currently implemented as a simple malloc wrapper, but could be extended to
+ * provide actual aligned allocation if needed.
+ *
+ * @param size Size of memory block to allocate in bytes
+ * @return void* Pointer to allocated memory block, or NULL on failure
+ */
 void *align_alloc(size_t size) { return malloc(size); }
 
+/**
+ * @brief Opens an I2C device for communication on Windows platform
+ *
+ * This function establishes communication with the AMC (Advanced Management Controller)
+ * device on Windows systems by opening the device handle. It provides Windows-specific
+ * I2C access capabilities for hardware sensor monitoring and device communication.
+ * The function uses Windows CreateFileW API to open the AMC device path.
+ *
+ * @param deviceName String reference containing the device name (currently unused on Windows)
+ * @return long long File handle if successful, -1 on error
+ */
 long long openI2C(UNUSED const std::string &deviceName)
 {
 	HANDLE amchandle = nullptr;
@@ -150,6 +197,17 @@ long long openI2C(UNUSED const std::string &deviceName)
 	return (long long)amchandle;
 }
 
+/**
+ * @brief Closes an I2C device handle on Windows platform
+ *
+ * This function safely closes the specified I2C device handle on Windows systems,
+ * releasing system resources and terminating the communication channel with the
+ * AMC device. It uses the Windows CloseHandle API to properly clean up the handle
+ * and includes error checking to ensure successful closure.
+ *
+ * @param fd File handle of the I2C device to close
+ * @return int 0 on success, -1 on error (invalid handle or closure failure)
+ */
 int closeI2C(long long fd)
 {
 	if (fd == -1) {

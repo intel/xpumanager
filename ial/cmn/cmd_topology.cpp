@@ -31,6 +31,15 @@
  *
  * @param helpList A pointer to a list of help commands.
  */
+/**
+ * @brief Displays help information for the topology command
+ *
+ * This function prints comprehensive usage information for the topology command,
+ * including options for device queries, matrix display, and file generation.
+ * It also explains the topology connection symbols used in the output.
+ *
+ * @param helpType The type of help to display (FULL_HELP or SHORT_HELP)
+ */
 void cmdTopology::help(HELP helpType)
 {
 	TRACING();
@@ -67,9 +76,15 @@ void cmdTopology::help(HELP helpType)
 }
 
 /**
- * @brief Executes the topology run.
+ * @brief Executes the topology command with parsed command line arguments
  *
- * @return int Returns 0 on success.
+ * This function processes the topology command which displays system topology
+ * information including GPU-to-CPU relationships, NUMA nodes, interconnect
+ * details, and device connectivity matrices. It can generate XML files,
+ * display topology matrices, or show device-specific topology information.
+ *
+ * @param args Pointer to argument structure containing argc, argv, and system manager
+ * @return int ZE_RESULT_SUCCESS on success, error code on failure
  */
 int cmdTopology::run(UNUSED arg_struct *args)
 {

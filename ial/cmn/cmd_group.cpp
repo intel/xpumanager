@@ -38,6 +38,15 @@ static std::unordered_map<groupCmdType, groupCmdStruct> groupCmds = {
 	{groupCmdType::GROUP_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
 };
 
+/**
+ * @brief Displays help information for the group command
+ *
+ * This function provides comprehensive help information for the group command,
+ * including usage examples, descriptions of options, and subcommand explanations
+ * for managing GPU device groups.
+ *
+ * @param helpType Type of help to display (FULL_HELP or SHORT_HELP)
+ */
 void cmdGroup::help(HELP helpType)
 {
 	TRACING();
@@ -70,6 +79,15 @@ void cmdGroup::help(HELP helpType)
 	helpList.clear();
 }
 
+/**
+ * @brief Creates a new GPU device group
+ *
+ * This function implements the logic to create a new group for managed GPU devices.
+ * Currently implemented as a placeholder for future group creation functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful group creation
+ */
 ze_result_t cmdGroup::create(UNUSED devInfo *d)
 {
 	TRACING();
@@ -77,6 +95,15 @@ ze_result_t cmdGroup::create(UNUSED devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Deletes an existing GPU device group
+ *
+ * This function implements the logic to delete a specified group of managed GPU devices.
+ * Currently implemented as a placeholder for future group deletion functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful group deletion
+ */
 ze_result_t cmdGroup::deleteGroup(UNUSED devInfo *d)
 {
 	TRACING();
@@ -84,6 +111,15 @@ ze_result_t cmdGroup::deleteGroup(UNUSED devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Lists all GPU device groups or specific group details
+ *
+ * This function implements the logic to list all groups or details of a specific group.
+ * Currently implemented as a placeholder for future group listing functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful group listing
+ */
 ze_result_t cmdGroup::listGroup(UNUSED devInfo *d)
 {
 	TRACING();
@@ -91,6 +127,15 @@ ze_result_t cmdGroup::listGroup(UNUSED devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Adds a device to a GPU device group
+ *
+ * This function implements the logic to add a device to an existing group.
+ * Currently implemented as a placeholder for future device addition functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful device addition
+ */
 ze_result_t cmdGroup::add(UNUSED devInfo *d)
 {
 	TRACING();
@@ -98,6 +143,15 @@ ze_result_t cmdGroup::add(UNUSED devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Removes a device from a GPU device group
+ *
+ * This function implements the logic to remove a device from an existing group.
+ * Currently implemented as a placeholder for future device removal functionality.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful device removal
+ */
 ze_result_t cmdGroup::remove(UNUSED devInfo *d)
 {
 	TRACING();
@@ -106,9 +160,13 @@ ze_result_t cmdGroup::remove(UNUSED devInfo *d)
 }
 
 /**
- * @brief Executes the discovery run.
+ * @brief Runs the group command with specified arguments
  *
- * @return int Returns 0 on success.
+ * This function parses command line arguments and executes the appropriate group operation
+ * (create, delete, list, add, or remove) on the specified GPU devices.
+ *
+ * @param args Pointer to argument structure containing command line arguments and system manager
+ * @return int Returns 0 on success, non-zero on failure
  */
 int cmdGroup::run(arg_struct *args)
 {

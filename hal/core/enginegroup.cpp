@@ -23,6 +23,13 @@
  */
 #include "enginegroup.h"
 
+/**
+ * @brief Destructor for the enginegroup class
+ *
+ * This destructor performs cleanup operations for the engine group management
+ * object, releasing allocated memory for engine group handles and ensuring
+ * proper resource deallocation when the enginegroup object is destroyed.
+ */
 enginegroup::~enginegroup()
 {
 	if (engineGroups) {
@@ -31,6 +38,17 @@ enginegroup::~enginegroup()
 	}
 }
 
+/**
+ * @brief Enumerates available engine groups for a device
+ *
+ * This function discovers and catalogs all engine groups available on the
+ * specified device. Engine groups represent different types of GPU execution
+ * units such as compute, media, copy, and render engines that can be monitored
+ * and managed independently.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
+ */
 ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -51,6 +69,17 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 	return result;
 }
 
+/**
+ * @brief Gets properties for a specific engine group
+ *
+ * This function retrieves detailed properties and characteristics for a
+ * specific engine group, including engine type, subdevice information,
+ * and execution unit classification for workload management.
+ *
+ * @param engineGroup Handle to the specific engine group
+ * @param engineProperties Pointer to structure to store engine group properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
+ */
 ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -117,6 +146,17 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 	return result;
 }
 
+/**
+ * @brief Gets activity statistics for a specific engine group
+ *
+ * This function retrieves current activity metrics for an engine group,
+ * including active time and timestamp information for utilization calculations
+ * and performance monitoring.
+ *
+ * @param engineGroup Handle to the specific engine group
+ * @param engineStats Pointer to structure to store engine activity statistics
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful activity retrieval, error code otherwise
+ */
 ze_result_t enginegroup::getActivity(zes_engine_handle_t engineGroup, zes_engine_stats_t *engineStats)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -133,6 +173,16 @@ ze_result_t enginegroup::getActivity(zes_engine_handle_t engineGroup, zes_engine
 	return result;
 }
 
+/**
+ * @brief Gets extended activity statistics for a specific engine group
+ *
+ * This function retrieves extended activity metrics for an engine group,
+ * providing additional performance monitoring capabilities beyond basic
+ * activity statistics for advanced workload analysis.
+ *
+ * @param engineGroup Handle to the specific engine group
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful extended activity retrieval, error code otherwise
+ */
 ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -149,6 +199,17 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 	return result;
 }
 
+/**
+ * @brief Counts the number of media engines of a specific type
+ *
+ * This function iterates through all engine groups to count how many
+ * engines match the specified media engine type, useful for system
+ * capability assessment and workload distribution planning.
+ *
+ * @param mediaEngines Pointer to variable to store the count of media engines
+ * @param type The specific engine group type to count
+ * @return ze_result_t ZE_RESULT_SUCCESS if counting completed successfully, error code otherwise
+ */
 ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_group_t type)
 {
 	zes_engine_properties_t engineProperties;
@@ -176,6 +237,19 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Gets utilization statistics for specific engine group types
+ *
+ * This function searches for engine groups matching the specified types
+ * and retrieves their utilization metrics, providing active time and
+ * timestamp data for performance analysis and monitoring.
+ *
+ * @param typeTable Array of engine group types to search for
+ * @param tableSize Number of entries in the type table
+ * @param utilization Pointer to store the utilization active time
+ * @param timestamp Pointer to store the measurement timestamp
+ * @return ze_result_t ZE_RESULT_SUCCESS if utilization retrieved successfully, error code otherwise
+ */
 ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t tableSize, uint64_t *utilization,
 										uint64_t *timestamp)
 {
@@ -227,12 +301,32 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t 
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Initializes the engine group management subsystem for a device
+ *
+ * This function initializes engine group management by enumerating all
+ * available engine groups on the device and preparing them for monitoring
+ * and utilization tracking operations.
+ *
+ * @param device Handle to the Level Zero Sysman device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
 ze_result_t enginegroup::init(zes_device_handle_t device)
 {
 	TRACING();
 	return enumGroups(device);
 }
 
+/**
+ * @brief Executes comprehensive engine group monitoring and data collection
+ *
+ * This function performs complete engine group assessment by collecting
+ * properties, activity statistics, and extended metrics for all engine groups,
+ * providing comprehensive GPU execution unit utilization monitoring.
+ *
+ * @param device Handle to the Level Zero Sysman device (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS if all engine operations completed successfully, error code otherwise
+ */
 ze_result_t enginegroup::zesRun(UNUSED zes_device_handle_t device)
 {
 	zes_engine_properties_t engineProperties;

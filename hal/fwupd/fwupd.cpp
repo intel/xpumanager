@@ -2,6 +2,16 @@
 #include <fstream>
 #include <sys/stat.h>
 
+/**
+ * @brief Reads firmware image content from a file
+ *
+ * This function reads the entire contents of a firmware image file into
+ * a vector buffer. It performs basic file validation to ensure the file
+ * exists and is a regular file before reading.
+ *
+ * @param filePath Path to the firmware image file to read
+ * @return std::vector<char> Buffer containing the file contents, empty if error
+ */
 std::vector<char> fwupd::readImageContent(const char *filePath)
 {
 	struct stat s;
@@ -23,6 +33,16 @@ std::vector<char> fwupd::readImageContent(const char *filePath)
 	return buffer;
 }
 
+/**
+ * @brief Updates firmware using the provided firmware information
+ *
+ * This function performs the actual firmware update operation by reading
+ * the firmware image file and flashing it to the device using the Level Zero
+ * Sysman firmware flash API.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @return ze_result_t ZE_RESULT_SUCCESS if update successful, error code otherwise
+ */
 ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
