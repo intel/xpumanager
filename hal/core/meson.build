@@ -39,7 +39,8 @@ libxpum_shared = shared_library('xpum',
     levelzero_dep, 
     igsc_dep, 
     oal_dep, 
-    fwupd_dep
+    fwupd_dep,
+    nlohmann_json_dep
   ] + windows_deps,
   cpp_args : is_windows ? ['-DLIBXPUM_EXPORTS'] : [],
   version : meson.project_version(),
@@ -60,7 +61,8 @@ libxpum_static = static_library('xpum',
     levelzero_dep,
     igsc_dep,
     oal_dep,
-    fwupd_dep
+    fwupd_dep,
+    nlohmann_json_dep
   ] + windows_deps,
   install : get_option('static_library'),
   install_dir : get_option('libdir')
@@ -70,7 +72,7 @@ libxpum_static = static_library('xpum',
 libxpum_dep = declare_dependency(
   link_with : get_option('shared_library') ? libxpum_shared : libxpum_static,
   include_directories : hal_core_inc,
-  dependencies : [levelzero_dep, igsc_dep]
+  dependencies : [levelzero_dep, igsc_dep, nlohmann_json_dep]
 )
 
 # Install headers (optional)

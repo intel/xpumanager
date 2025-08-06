@@ -7,12 +7,15 @@ This document describes how to build XPUM using either the new Conan-based build
 ### Prerequisites
 - Python 3.8+
 - Conan 2.0+
-- GCC/Clang with C++20 support
-- Meson and Ninja (will be installed automatically by Conan)
+- C++ compiler with C++20 support
+- Meson
+- (Windows only) `pkg-config`
+   - It is recommended to install `pkgconfiglite` via `choco`
+   - `choco` can be installed via `dt`
 
 ### Install Conan
 ```sh
-pip install conan>=2.0
+pip install "conan>=2.0"
 ```
 
 ### Configure Conan profile (first time only)
@@ -22,17 +25,85 @@ conan profile detect --force
 
 **Note: the `compiler.cppstd` field should be `20`**
 
-### Build Steps
-```sh
-# Clone the repository with submodules
-git clone --recurse-submodules <repository-url>
-cd xpum
+For Linux, a reasonable default profile would be:
+<details>
+<summary>Example Linux profile</summary>
 
-# Install dependencies and configure build
-conan install . --build=missing -s build_type=Release
+```sh
+$ conan profile show
+Host profile:
+[settings]
+arch=x86_64
+build_type=Release
+compiler=gcc
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+compiler.version=13
+os=Linux
+
+Build profile:
+[settings]
+arch=x86_64
+build_type=Release
+compiler=gcc
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+compiler.version=13
+os=Linux
+```
+
+</details>
+
+<details>
+<summary>Example Windows profile</summary>
+
+```sh
+$ conan profile show
+Host profile:
+[settings]
+arch=x86_64
+build_type=Release
+compiler=msvc
+compiler.cppstd=20
+compiler.runtime=dynamic
+compiler.runtime_type=Release
+compiler.version=194
+os=Windows
+
+Build profile:
+[settings]
+arch=x86_64
+build_type=Release
+compiler=msvc
+compiler.cppstd=20
+compiler.runtime=dynamic
+compiler.runtime_type=Release
+compiler.version=194
+os=Windows
+```
+
+</details>
+
+### Build Steps (first build)
+Optionally, when using Conan to manage our build dependencies (recommended), the recipes must be created via:
+```sh
+conan create recipes/level-zero --name=level-zero --version=1.23.1
+conan create recipes/metee --name=metee --version=6.0.0
+conan create recipes/igsc --name=igsc --version=0.9.6
+```
+Don't worry, they will be cached and do not need to be rebuilt outside of a version bump.
+
+Otherwise, the following dependencies can be manually cloned and built to be identified as system packages (Note: the version numbers should match what the Conan recipes have listed):
+1. https://github.com/intel/igsc
+2. https://github.com/oneapi-src/level-zero
+
+### Build steps (using Conan)
+```sh
+# (If using Conan) Install dependencies and configure build
+conan install . --output-folder=.conan/ --build=missing -s build_type=Release
 
 # Configure Meson build
-meson setup builddir --native-file conan_meson_native.ini
+meson setup builddir --native-file .conan/conan_meson_native.ini
 
 # Build the project
 meson compile -C builddir
@@ -41,23 +112,24 @@ meson compile -C builddir
 meson install -C builddir
 ```
 
-### Debug Build
+### Debug Build (using Conan)
 ```sh
-# For debug builds
-conan install . --build=missing -s build_type=Debug
-meson setup builddir --native-file conan_meson_native.ini -Dbuildtype=debug
+# For debug builds (note: this will build our dependencies in release but xpum in debug)
+conan install . --output-folder=.conan/ --build=missing -s build_type=Release
+meson setup builddir --native-file .conan/conan_meson_native.ini -D buildtype=debug
 meson compile -C builddir
 ```
 
-### Build Options
-You can customize the build with Conan options:
+### Build steps (using system packages)
+Note: the Intel IGSC and level-zero packages must be built and installed on your system:
 ```sh
-# Build with tests enabled
-conan install . -o with_tests=True --build=missing
-
-# Build shared libraries
-conan install . -o shared=True --build=missing
+meson setup builddir \
+      -D use_system_levelzero=true \
+      -D use_system_igsc=true
 ```
+
+### Build options
+The `meson_options.txt` file provides all custom options, including potentially useful toggles such as `-D dev=true` to temporarily disable warnings as errors.
 
 ---
 

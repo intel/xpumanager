@@ -110,7 +110,7 @@ int getopt(int argc, char *argv[], char *optstring)
  * @param longindex Pointer to store the index of the matched long option
  * @return int The option character, -1 when done, or '?' for unknown option
  */
-LIBXPUM_API int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex)
+int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex)
 {
 	if (optind >= argc) {
 		return -1;

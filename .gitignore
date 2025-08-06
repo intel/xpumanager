@@ -14,3 +14,9 @@ builddir
 subprojects/igsc
 subprojects/metee
 subprojects/level-zero
+**/conan_meson_native.ini
+**/*conan*.bat
+**/*conan*.sh
+**/*.pc
+**/compile_commands.json
+**/.conan

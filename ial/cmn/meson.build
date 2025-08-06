@@ -18,13 +18,14 @@ ial_cmn_sources = files(
   'cmd_topology.cpp',
   'cmd_updatefw.cpp',
   'cmd_vgpu.cpp',
-  'cmds.cpp'
+  'cmds.cpp',
+  'printer.cpp'
 )
 
 ial_cmn_inc = include_directories('.')
 
 # Platform-specific dependencies
-ial_cmn_deps = [libxpum_dep, oal_dep]
+ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif

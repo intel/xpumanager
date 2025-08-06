@@ -74,7 +74,7 @@ class LevelZeroConan(ConanFile):
         self.cpp_info.libs = ["ze_loader"]
         
         # Include directories
-        self.cpp_info.includedirs = ["include"]
+        self.cpp_info.includedirs = ["include/level_zero"]
         
         # System dependencies
         if self.settings.os == "Linux":

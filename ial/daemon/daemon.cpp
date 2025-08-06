@@ -48,6 +48,12 @@
 
 std::string progName = "xpumd";
 
+#ifdef _DEBUG
+int dbgLvl = DBG;
+#else
+int dbgLvl = INFO;
+#endif
+
 /**
  * @brief Main entry point for the XPU Manager daemon
  *
