@@ -28,7 +28,7 @@ class IgscConan(ConanFile):
     
     def requirements(self):
         # IGSC depends on METEE
-        self.requires("metee/4.0.0")
+        self.requires("metee/6.0.0")
     
     def configure(self):
         if self.options.shared:
@@ -83,4 +83,4 @@ class IgscConan(ConanFile):
         if self.settings.os == "Linux":
             self.cpp_info.system_libs = ["pthread", "udev"]
         elif self.settings.os == "Windows":
-            self.cpp_info.system_libs = ["kernel32", "user32", "advapi32", "setupapi"]
+            self.cpp_info.system_libs = ["kernel32", "user32", "advapi32", "setupapi", "cfgmgr32"]

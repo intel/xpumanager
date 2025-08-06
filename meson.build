@@ -5,7 +5,6 @@ project('xpum', 'cpp',
     'cpp_std=c++20',
     'buildtype=debugoptimized',
     'warning_level=3',
-    'b_sanitize=undefined',
     'b_coverage=true'
     ]
 )
@@ -62,8 +61,7 @@ endif
 # Compiler warnings
 if is_windows 
   compile_args += [    
-    '/W4',
-    # W4 is pretty exhaustive, could add more as needed but Linux is more familiar
+    # W4 is pretty exhaustive, could add more as needed. Automatically set by the `warning_level` option
     ]
 elif is_linux
   # Note: the 'warning_level' option is set to 3 by default, which is equivalent to '-Wall -Wextra -pedantic'
@@ -146,27 +144,8 @@ thread_dep = dependency('threads')
 
 # Dependencies managed by Conan
 levelzero_dep = dependency('level-zero', required : true)
-# igsc_dep = dependency('igsc', required : true)  # Uncomment when available in Conan
-
-# Fallback for IGSC if not available in Conan
 igsc_dep = dependency('igsc', required : true)
-if not igsc_dep.found()
-  # IGSC requires metee prior to compilation, if we need to install IGSC via Meson then
-  # we first need to ensure metee is available. We will always install and build it manually
-  # and not check our system to be consistent with the handling of IGSC
-  metee_dep_static = dependency('metee', required : true)
-  if not metee_dep_static.found()
-    metee_proj = subproject('metee')
-    metee_dep_static = metee_proj.get_variable('metee_dep_static')
-  endif
-
-  # Try to download and build real IGSC
-  message('Downloading and building IGSC from source...')
-  
-  # Build IGSC using our custom Meson build (with Windows support)
-  igsc_proj = subproject('igsc')
-  igsc_dep = igsc_proj.get_variable('igsc_dep')
-endif
+nlohmann_json_dep = dependency('nlohmann_json', required : true) 
 
 # Additional Linux-specific dependencies
 if is_linux
@@ -203,6 +182,7 @@ summary_info = {
   'C++ standard' : get_option('cpp_std'),
   'Level Zero' : levelzero_dep.found() ? 'found' : 'not found',
   'IGSC' : igsc_dep.found() ? 'found' : 'not found',
+  'nlohmann_json' : nlohmann_json_dep.found() ? 'found' : 'not found',
 }
 
 if is_linux

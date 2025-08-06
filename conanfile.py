@@ -1,5 +1,6 @@
-from conan import ConanFile
+from conan import ConanFile 
 from conan.tools.meson import MesonToolchain
+from conan.tools.gnu import PkgConfigDeps
 
 
 class XpumConan(ConanFile):
@@ -28,11 +29,11 @@ class XpumConan(ConanFile):
     
     def requirements(self):
         self.requires("level-zero/1.23.1")
-        self.requires("igsc/0.9.6") 
+        self.requires("igsc/0.9.6")
+        self.requires("nlohmann_json/3.11.3")
         
         # Platform-specific dependencies
         if self.settings.os == "Linux":
-            # You could add libpciaccess here if available in ConanCenter
             pass
         
 
@@ -55,6 +56,8 @@ class XpumConan(ConanFile):
             self.options.rm_safe("fPIC")
 
     def generate(self):
+        pc = PkgConfigDeps(self)
+        pc.generate()
         # Generate Meson toolchain
         tc = MesonToolchain(self)
         

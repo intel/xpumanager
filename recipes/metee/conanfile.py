@@ -6,7 +6,7 @@ import os
 
 class MeteeConan(ConanFile):
     name = "metee"
-    version = "4.0.0"
+    version = "6.0.0"
     
     # Package metadata
     license = "Apache-2.0"
@@ -68,11 +68,8 @@ class MeteeConan(ConanFile):
              dst=os.path.join(self.package_folder, "licenses"))
     
     def package_info(self):
-        # Main library name depends on build type
-        if self.options.shared:
-            self.cpp_info.libs = ["metee"]
-        else:
-            self.cpp_info.libs = ["metee_static"]
+        # Main library name - metee always builds as 'metee' regardless of shared/static
+        self.cpp_info.libs = ["metee"]
         
         # Include directories
         self.cpp_info.includedirs = ["include"]
@@ -81,4 +78,4 @@ class MeteeConan(ConanFile):
         if self.settings.os == "Linux":
             self.cpp_info.system_libs = ["pthread"]
         elif self.settings.os == "Windows":
-            self.cpp_info.system_libs = ["kernel32", "user32", "advapi32"]
+            self.cpp_info.system_libs = ["kernel32", "user32", "advapi32", "cfgmgr32"]
