@@ -184,11 +184,13 @@ ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
 		}
 	}
 
-	// Check if the dump command argument is a number between 1 and TOTAL_DISC_DUMPS
-	int dumpArg = atoi(val.c_str());
-	if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS) {
-		ERR("Invalid dump command argument. It must be between 1 and %d\n", TOTAL_DISC_DUMPS);
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	// Check if each dump command argument is a number between 1 and TOTAL_DISC_DUMPS
+	for (const auto& arg : *dumpArgs) {
+		int dumpArg = atoi(arg.c_str());
+		if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS) {
+			ERR("Invalid dump command argument '%s'. It must be between 1 and %d\n", arg.c_str(), TOTAL_DISC_DUMPS);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
 	}
 
 	return ZE_RESULT_SUCCESS;
