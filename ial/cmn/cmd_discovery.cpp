@@ -185,7 +185,7 @@ ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
 	}
 
 	// Check if each dump command argument is a number between 1 and TOTAL_DISC_DUMPS
-	for (const auto& arg : *dumpArgs) {
+	for (const auto &arg : *dumpArgs) {
 		int dumpArg = atoi(arg.c_str());
 		if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS) {
 			ERR("Invalid dump command argument '%s'. It must be between 1 and %d\n", arg.c_str(), TOTAL_DISC_DUMPS);
@@ -869,10 +869,18 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::gfxFirmwareStatus(UNUSED devInfo *d, UNUSED std::string *outputLine)
+ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
+	pci *p = (pci *)d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	auto fwStatus = p->getFWStatus();
+	*outputLine = fwStatus;
 	return ZE_RESULT_SUCCESS;
 }
 

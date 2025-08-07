@@ -31,6 +31,7 @@ typedef struct pci_addr_mei_device
 {
 	zes_pci_properties_t pciProps;
 	std::string meiDevicePath;
+	std::string fwStatus;
 } pci_addr_mei_device;
 
 class LIBXPUM_API pci : public sysman
@@ -39,7 +40,7 @@ private:
 	pci_addr_mei_device deviceProperties;
 
 public:
-	pci() : deviceProperties{} {}
+	pci() : deviceProperties{} { deviceProperties.fwStatus = "unknown"; }
 	~pci() {}
 	ze_result_t init(zes_device_handle_t device);
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);
@@ -49,6 +50,7 @@ public:
 	ze_result_t zesRun(zes_device_handle_t device);
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
+	std::string getFWStatus() { return deviceProperties.fwStatus; }
 };
 
 #endif

@@ -249,6 +249,8 @@ ze_result_t pci::init(zes_device_handle_t device)
 
 			// Found a matching device so copy the meiDevicePath
 			deviceProperties.meiDevicePath = dev.meiDevicePath;
+			// Also copy the fw status
+			deviceProperties.fwStatus = dev.fwStatus;
 			break;
 		}
 	}

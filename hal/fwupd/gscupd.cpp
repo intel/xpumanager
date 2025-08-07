@@ -575,21 +575,28 @@ std::vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 	}
 	info.name[0] = '\0';
 	while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
+		pci_addr_mei_device pciAddrMeiDevice = {};
+
 		ret = igsc_device_init_by_device_info(&handle, &info);
 		if (ret != IGSC_SUCCESS) {
 			/* make sure we have a printable name */
 			info.name[0] = '\0';
 			continue;
 		}
-		(void)igsc_device_close(&handle);
 
-		pci_addr_mei_device pciAddrMeiDevice;
+		pciAddrMeiDevice.fwStatus = igsc_translate_firmware_status(igsc_get_last_firmware_status(&handle));
+		// If fwStatus is "Success", change it to "normal"
+		if (pciAddrMeiDevice.fwStatus == "Success") {
+			pciAddrMeiDevice.fwStatus = "normal";
+		}
 		pciAddrMeiDevice.pciProps.address.domain = info.domain;
 		pciAddrMeiDevice.pciProps.address.bus = info.bus;
 		pciAddrMeiDevice.pciProps.address.device = info.dev;
 		pciAddrMeiDevice.pciProps.address.function = info.func;
 		pciAddrMeiDevice.meiDevicePath = info.name;
 		devicesVec.push_back(pciAddrMeiDevice);
+
+		(void)igsc_device_close(&handle);
 	}
 	igsc_device_iterator_destroy(iter);
 	return devicesVec;
