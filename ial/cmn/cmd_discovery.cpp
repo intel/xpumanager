@@ -45,12 +45,10 @@ static std::unordered_map<discCmdType, discoveryCmdStruct> discCmds = {
 	{discCmdType::DISC_HELP, {{"help", no_argument, 0, 'h'}, nullptr, nullptr, false, ""}},
 	{discCmdType::DISC_JSON, {{"json", no_argument, 0, 'j'}, nullptr, nullptr, false, ""}},
 	{discCmdType::DISC_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll, nullptr, false, ""}},
-	{discCmdType::DISC_PF, {{"pf", no_argument, 0, 0}, &cmdDiscovery::physicalFunction, nullptr, false, ""}},
-	{discCmdType::DISC_PHYSICALFUNCTION,
-	 {{"physicalFunction", no_argument, 0, 0}, &cmdDiscovery::physicalFunction, nullptr, false, ""}},
-	{discCmdType::DISC_VF, {{"vf", no_argument, 0, 0}, &cmdDiscovery::virtualFunction, nullptr, false, ""}},
-	{discCmdType::DISC_VIRTUALFUNCTION,
-	 {{"virtualFunction", no_argument, 0, 0}, &cmdDiscovery::virtualFunction, nullptr, false, ""}},
+	{discCmdType::DISC_PF, {{"pf", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_PHYSICALFUNCTION, {{"physicalFunction", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_VF, {{"vf", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
+	{discCmdType::DISC_VIRTUALFUNCTION, {{"virtualFunction", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
 	{discCmdType::DISC_DUMP,
 	 {{"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading, false, ""}},
 	{discCmdType::DISC_LISTAMCVERSIONS,
@@ -1036,36 +1034,6 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
 }
 
 /**
- * @brief Prints the physical function for a device
- *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
- */
-ze_result_t cmdDiscovery::physicalFunction(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
-{
-	TRACING();
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Prints the virtual function for a device
- *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
- */
-ze_result_t cmdDiscovery::virtualFunction(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
-{
-	TRACING();
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
  * @brief  Lists the AMC versions for a device
  *
  * @param d A pointer to the device info structure.
@@ -1076,6 +1044,78 @@ ze_result_t cmdDiscovery::virtualFunction(UNUSED devInfo *d, UNUSED nlohmann::js
 ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
 {
 	TRACING();
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief  Gets the function type of a device
+ *
+ * @param d A pointer to the device info structure.
+ *
+ * @return devFuncType Returns the function type of the device.
+ */
+devFuncType cmdDiscovery::getFuncType(devInfo *d)
+{
+	TRACING();
+	zes_pci_properties_t pciProps;
+	ze_result_t result;
+
+	if (d == nullptr) {
+		ERR("Invalid device info structure.\n");
+		return DEVICE_FUNCTION_TYPE_UNKNOWN;
+	}
+
+	pci *p = (pci *)d->dev->getPCI();
+	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return DEVICE_FUNCTION_TYPE_UNKNOWN;
+	}
+
+	return (pciProps.address.function == 0) ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL;
+}
+
+/**
+ * @brief Prints device information.
+ *
+ * @param deviceList A list of device information structures.
+ * @param type The type of device function to filter by.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ */
+ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer,
+										  devFuncType type)
+{
+	TRACING();
+	std::string outputLine = "";
+	bool found = false;
+	devFuncType foundType;
+
+	auto deviceListJson = std::make_unique<nlohmann::json>();
+
+	for (auto &device : deviceList) {
+		foundType = getFuncType(&device);
+		if (type != DEVICE_FUNCTION_TYPE_ALL && foundType != type) {
+			continue; // Skip devices that do not match the specified function type
+		}
+
+		found = true;
+		auto deviceJson = printDeviceDetail(&device);
+		deviceListJson->push_back(*deviceJson);
+	}
+
+	auto devicesJson = std::make_unique<nlohmann::json>();
+	if (!found) {
+		// Check if JSON output is enabled
+		if (discCmds[discCmdType::DISC_JSON].enabled) {
+			(*devicesJson)["device_list"] = nullptr;
+		} else {
+			(*devicesJson)["device_list"] = "No device discovered";
+		}
+	} else {
+		(*devicesJson)["device_list"] = *deviceListJson;
+	}
+	printer->print(devicesJson.get());
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1179,15 +1219,12 @@ int cmdDiscovery::run(arg_struct *args)
 	//      | DRM Device: /dev/dri/card1                                                           |
 	//      | Function Type: physical                                                              |
 	if (args->argc == 2 || (args->argc == 3 && discCmds[discCmdType::DISC_JSON].enabled)) {
-		// Print out the device information
-		auto devicesJson = std::make_unique<nlohmann::json>();
-		auto deviceListJson = std::make_unique<nlohmann::json>();
-		for (auto &device : deviceList) {
-			auto deviceJson = printDeviceDetail(&device);
-			deviceListJson->push_back(*deviceJson);
-		}
-		(*devicesJson)["device_list"] = *deviceListJson;
-		printer->print(devicesJson.get());
+		// Print all device information
+		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_ALL);
+	} else if (discCmds[discCmdType::DISC_PF].enabled || discCmds[discCmdType::DISC_PHYSICALFUNCTION].enabled) {
+		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_PHYSICAL);
+	} else if (discCmds[discCmdType::DISC_VF].enabled || discCmds[discCmdType::DISC_VIRTUALFUNCTION].enabled) {
+		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_VIRTUAL);
 	} else {
 		// Iterate through the device list and execute the command
 		auto jsonObj = std::make_unique<nlohmann::json>();
