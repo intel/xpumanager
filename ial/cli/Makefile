@@ -42,14 +42,14 @@ all::
 	@echo "Done"
 
 $(SMINAME):  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS)
-	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS) $(LIBS)
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@ $(OAL_OBJECTS) $(OBJECTS_SMI) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \
 	fi
 
 $(CLINAME):  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS)
-	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@  $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS) $(LIBS)
+	$(CMD_PREFIX)$(CC) $(DBG_FLAGS) -o $@ $(OAL_OBJECTS) $(OBJECTS_CLI) $(OTHER_OBJECTS) $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
 		echo "Stripping $@"; \
 		strip -x $@; \

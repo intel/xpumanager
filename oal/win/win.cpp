@@ -229,10 +229,9 @@ int closeI2C(long long fd)
  * @param bdf PCI Bus:Device.Function string (e.g., "0000:00:02.0")
  * @return NUMA node number, or -1 if not found
  */
-static int getDeviceNumaNode(const char *bdf)
+static int getDeviceNumaNode(std::string bdf)
 {
 	TRACING();
-	std::string bdfStr(bdf);
 
 	// Simplified approach: Use GetNumaHighestNodeNumber to get available NUMA nodes
 	// Then use heuristics or default to node 0 for most devices
@@ -249,9 +248,9 @@ static int getDeviceNumaNode(const char *bdf)
 	// 3. Map to appropriate NUMA node
 
 	// Extract bus number from BDF (format: "DDDD:BB:DD.F")
-	size_t colonPos = bdfStr.find(':', 5); // Skip first domain part
-	if (colonPos != std::string::npos && colonPos + 3 < bdfStr.length()) {
-		std::string busStr = bdfStr.substr(colonPos + 1, 2);
+	size_t colonPos = bdf.find(':', 5); // Skip first domain part
+	if (colonPos != std::string::npos && colonPos + 3 < bdf.length()) {
+		std::string busStr = bdf.substr(colonPos + 1, 2);
 		try {
 			int busNumber = std::stoi(busStr, nullptr, 16);
 			// Simple heuristic: distribute across available NUMA nodes
@@ -339,7 +338,7 @@ static std::string numaToCpuList(int numaNode)
  * @param bdf PCI Bus:Device.Function string
  * @return CPU affinity mask as hexadecimal string
  */
-std::string getLocalCpus(const char *bdf)
+std::string getLocalCpus(std::string bdf)
 {
 	TRACING();
 
@@ -355,7 +354,7 @@ std::string getLocalCpus(const char *bdf)
  * @param bdf PCI Bus:Device.Function string
  * @return Comma-separated list of local CPU numbers
  */
-std::string getCpuList(const char *bdf)
+std::string getCpuList(std::string bdf)
 {
 	TRACING();
 

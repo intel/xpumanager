@@ -197,17 +197,17 @@ bool pci::isBDF(const char *bdf)
 	std::smatch match;
 
 	if (std::regex_match(bdfS, match, regexPattern)) {
-		std::string domain = match[1];
-		std::string bus = match[2];
+		std::string dmn = match[1];
+		std::string b = match[2];
 		std::string device = match[3];
 		std::string function = match[4];
 
-		if (domain.length() > 4 || bus.length() > 2 || device.length() > 2 || function.length() > 1) {
+		if (dmn.length() > 4 || b.length() > 2 || device.length() > 2 || function.length() > 1) {
 			ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
 		} else {
 			DBG("Valid PCI address format: %s\n", bdf);
-			if (deviceProperties.pciProps.address.domain == strtoul(domain.c_str(), nullptr, 16) &&
-				deviceProperties.pciProps.address.bus == strtoul(bus.c_str(), nullptr, 16) &&
+			if (deviceProperties.pciProps.address.domain == strtoul(dmn.c_str(), nullptr, 16) &&
+				deviceProperties.pciProps.address.bus == strtoul(b.c_str(), nullptr, 16) &&
 				deviceProperties.pciProps.address.device == strtoul(device.c_str(), nullptr, 16) &&
 				deviceProperties.pciProps.address.function == strtoul(function.c_str(), nullptr, 16)) {
 				DBG("PCI address matches the device properties.\n");
@@ -237,6 +237,10 @@ ze_result_t pci::init(zes_device_handle_t device)
 		return result;
 	}
 
+	domain = deviceProperties.pciProps.address.domain;
+	bus = deviceProperties.pciProps.address.bus;
+	dev = deviceProperties.pciProps.address.device;
+	func = deviceProperties.pciProps.address.function;
 	snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", deviceProperties.pciProps.address.domain,
 			 deviceProperties.pciProps.address.bus, deviceProperties.pciProps.address.device,
 			 deviceProperties.pciProps.address.function);
@@ -244,17 +248,17 @@ ze_result_t pci::init(zes_device_handle_t device)
 	gscupd gsc;
 	std::vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
 
-	for (const auto &dev : devicesVec) {
-		if (dev.pciProps.address.domain == deviceProperties.pciProps.address.domain &&
-			dev.pciProps.address.bus == deviceProperties.pciProps.address.bus &&
-			dev.pciProps.address.device == deviceProperties.pciProps.address.device &&
-			dev.pciProps.address.function == deviceProperties.pciProps.address.function) {
-			DBG("Found matching device: %s\n", dev.meiDevicePath.c_str());
+	for (const auto &dv : devicesVec) {
+		if (dv.pciProps.address.domain == deviceProperties.pciProps.address.domain &&
+			dv.pciProps.address.bus == deviceProperties.pciProps.address.bus &&
+			dv.pciProps.address.device == deviceProperties.pciProps.address.device &&
+			dv.pciProps.address.function == deviceProperties.pciProps.address.function) {
+			DBG("Found matching device: %s\n", dv.meiDevicePath.c_str());
 
 			// Found a matching device so copy the meiDevicePath
-			deviceProperties.meiDevicePath = dev.meiDevicePath;
+			deviceProperties.meiDevicePath = dv.meiDevicePath;
 			// Also copy the fw status
-			deviceProperties.fwStatus = dev.fwStatus;
+			deviceProperties.fwStatus = dv.fwStatus;
 			break;
 		}
 	}

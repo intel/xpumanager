@@ -163,7 +163,8 @@ public:
 	sysman *getTemperature() { return zes_func_table[TEMPERATURE].func; }
 	sysman *getVF() { return zes_func_table[VF].func; }
 
-	const char *getBDF();
+	void getBDF(uint32_t &domain, uint32_t &bus, uint32_t &dev, uint32_t &func) const;
+	std::string getBDFStr();
 	std::string getCPUList();
 	std::string getLocalCPUs();
 	void setProgress(uint32_t progress) { fwupdateProgress = progress; }
