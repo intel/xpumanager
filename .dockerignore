@@ -1,0 +1,32 @@
+# Ignore build directories
+builddir*
+build
+.git
+*.vs
+x64
+release
+
+# Ignore generated files
+*.o
+*.so
+*.a
+tags
+xpu-smi
+xpumcli
+xpumd
+compile_commands.json
+
+# Ignore generated files
+conan_meson_native.ini
+*conan*.bat
+*conan*.sh
+*.pc
+.conan
+
+# Ignore IDE and editor files
+.vscode
+.vs
+
+# Keep only conanfile.py and docker files which are needed for Docker build
+!conanfile.py
+!.github/docker/

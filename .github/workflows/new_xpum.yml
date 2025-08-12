@@ -14,10 +14,12 @@ jobs:
     timeout-minutes: 60
     continue-on-error: true
     container: 
-      image: gar-registry.caas.intel.com/new-xpum/builder:ubuntu
+      image: gar-registry.caas.intel.com/new-xpum/builder-conan:ubuntu
       credentials:
         username: ${{ secrets.GAR_REGISTRY_USERNAME }}
         password: ${{ secrets.GAR_REGISTRY_PASSWORD }}
+    env:
+      CONAN_USER_HOME: "/conan"
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +67,50 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          
+      - name: Install Conan dependencies
+        run: |
+            echo "Installing Conan dependencies (using cached packages from Docker image)..."
+            conan profile detect --force
+            
+            # Ensure we have profiles (create them if copy failed)
+            if [ ! -f ~/.conan2/profiles/default ]; then
+              cat > ~/.conan2/profiles/default << 'EOF'
+            [settings]
+            arch=x86_64
+            build_type=Release
+            compiler=gcc
+            compiler.cppstd=20
+            compiler.libcxx=libstdc++11
+            compiler.version=13
+            os=Linux
+            
+            [conf]
+            tools.system.package_manager:mode=install
+            tools.system.package_manager:sudo=False
+            
+            [buildenv]
+            CC=gcc
+            CXX=g++
+            EOF
+              cp ~/.conan2/profiles/default ~/.conan2/profiles/build
+            fi
+            
+            # Set up Conan remotes
+            conan remote add conancenter https://center.conan.io --force || true
+            
+            # Create custom packages first (these are local recipes not available in public remotes)
+            echo "Creating custom Conan packages..."
+            conan create recipes/level-zero --name=level-zero --version=1.23.1
+            conan create recipes/metee --name=metee --version=6.0.0  
+            conan create recipes/igsc --name=igsc --version=0.9.6
+            
+            # Verify packages are available
+            echo "Checking available packages:"
+            conan list "*" || echo "No packages found in cache"
+            
+            # Install dependencies (should use cached packages or build if needed)
+            conan install . --build=missing -s build_type=${{ matrix.build_type.buildtype == 'debug' && 'Debug' || 'Release' }}
           
       - name: Cache submodules
         uses: actions/cache@v4
@@ -119,8 +165,6 @@ jobs:
                 --buildtype=${{ matrix.build_type.buildtype }} \
                 ${{ matrix.build_type.coverage == true && '-D b_coverage=true' || '' }} \
                 ${{ matrix.build_type.sanitizer != '' && format('-D b_sanitize={0}', matrix.build_type.sanitizer) || '' }} \
-                -D use_system_levelzero=true \
-                -D use_system_igsc=true \
                 -D dev=true
             else
               echo "Setting up new build directory..."
@@ -128,9 +172,8 @@ jobs:
                 --buildtype=${{ matrix.build_type.buildtype }} \
                 ${{ matrix.build_type.coverage == true && '-D b_coverage=true' || '' }} \
                 ${{ matrix.build_type.sanitizer != '' && format('-D b_sanitize={0}', matrix.build_type.sanitizer) || '' }} \
-                -D use_system_levelzero=true \
-                -D use_system_igsc=true \
-                -D dev=true
+                -D dev=true \
+                --native-file conan_meson_native.ini
             fi
               
       - name: Build project (${{ matrix.build_type.name }})
@@ -276,7 +319,7 @@ jobs:
     runs-on: ["innersource.prod.amr.dind"]
     needs: build
     container: 
-      image: gar-registry.caas.intel.com/new-xpum/builder:ubuntu
+      image: gar-registry.caas.intel.com/new-xpum/builder-conan:ubuntu
       credentials:
         username: ${{ secrets.GAR_REGISTRY_USERNAME }}
         password: ${{ secrets.GAR_REGISTRY_PASSWORD }}
@@ -285,6 +328,50 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          
+      - name: Install Conan dependencies for analysis
+        run: |
+            echo "Installing Conan dependencies for static analysis (using cached packages)..."
+            
+            # Copy Conan cache and profiles from Docker image location to CI location
+            sudo cp -r /root/.conan2 ~/.conan2 || echo "Could not copy from /root/.conan2, will create profiles manually"
+            
+            # Ensure we have profiles (create them if copy failed)
+            if [ ! -f ~/.conan2/profiles/default ]; then
+              echo "Creating Conan profiles..."
+              mkdir -p ~/.conan2/profiles
+              cat > ~/.conan2/profiles/default << 'EOF'
+            [settings]
+            arch=x86_64
+            build_type=Release
+            compiler=gcc
+            compiler.cppstd=20
+            compiler.libcxx=libstdc++11
+            compiler.version=13
+            os=Linux
+            
+            [conf]
+            tools.system.package_manager:mode=install
+            tools.system.package_manager:sudo=True
+            
+            [buildenv]
+            CC=gcc
+            CXX=g++
+            EOF
+              cp ~/.conan2/profiles/default ~/.conan2/profiles/build
+            fi
+            
+            # Verify packages are available
+            echo "Checking available packages:"
+            conan list "*" || echo "No packages found in cache"
+            
+            # Install dependencies (should use cached packages or build if needed)
+            conan create recipes/level-zero --name=level-zero --version=1.23.1
+            conan create recipes/metee --name=metee --version=6.0.0
+            conan create recipes/igsc --name=igsc --version=0.9.6
+            conan install . --build=missing -s build_type=Release
+            conan install . --build=missing -s build_type=Debug
+            conan install . --build=missing -s build_type=Release
           
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -297,9 +384,8 @@ jobs:
             echo "Setting up build directory for static analysis..."
             meson setup builddir \
               --buildtype=release \
-              -D use_system_levelzero=true \
-              -D use_system_igsc=true \
-              -D dev=true
+              -D dev=true \
+              --native-file conan_meson_native.ini
             
       - name: Generate compile commands
         run: |
