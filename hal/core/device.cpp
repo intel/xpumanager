@@ -32,7 +32,6 @@
 #include "frequency.h"
 #include "memory.h"
 #include "metric.h"
-#include "pci.h"
 #include "performance.h"
 #include "power.h"
 #include "sysprocess.h"
@@ -789,10 +788,10 @@ bool device::isBDF(const char *bdf)
  * @param dev A reference to store the device part of the BDF.
  * @param func A reference to store the function part of the BDF.
  */
-void device::getBDF(uint32_t &domain, uint32_t &bus, uint32_t &dev, uint32_t &func) const
+void device::getBDF(bdfID &bdf) const
 {
 	pci *p = (pci *)zes_func_table[PCI].func;
-	p->getBDF(domain, bus, dev, func);
+	p->getBDF(bdf);
 }
 
 /**
@@ -833,6 +832,23 @@ std::string device::getLocalCPUs()
 {
 	TRACING();
 	return GET_LOCAL_CPUS(getBDFStr());
+}
+
+/**
+ * @brief Retrieves the number of PCIe switches in the device's topology path
+ *
+ * This function calculates and returns the number of PCIe switches between
+ * the device and the root complex. It uses the device's BDF (Bus-Device-Function)
+ * to analyze the topology and count intermediate switches.
+ *
+ * @return int Number of PCIe switches in the path to the device
+ */
+int device::getSwitchCount(UNUSED std::string *switchDevicePath)
+{
+	TRACING();
+	bdfID bdf;
+	getBDF(bdf);
+	return GET_TOPOLOGY(bdf, switchDevicePath);
 }
 
 /**

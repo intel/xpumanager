@@ -28,7 +28,7 @@
 #include "cmds.h"
 #include <os.h>
 
-enum topologyCmdType
+enum class topologyCmdType
 {
 	TOPOLOGY_HELP,
 	TOPOLOGY_JSON,
@@ -37,8 +37,6 @@ enum topologyCmdType
 	TOPOLOGY_MATRIX,
 	TOTAL_TOPOLOGY,
 };
-
-struct topologyCmdStruct;
 
 class cmdTopology : public cmds
 {

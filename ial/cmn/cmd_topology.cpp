@@ -27,11 +27,11 @@
 #include <assert.h>
 
 static std::unordered_map<topologyCmdType, topologyCmdStruct> topologyCmds = {
-	{TOPOLOGY_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{TOPOLOGY_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{TOPOLOGY_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdTopology::showTopology, false, ""}},
-	{TOPOLOGY_FILE, {{"file", required_argument, 0, 'f'}, &cmdTopology::generateFile, false, ""}},
-	{TOPOLOGY_MATRIX, {{"matrix", no_argument, 0, 'm'}, &cmdTopology::showMatrix, false, ""}},
+	{topologyCmdType::TOPOLOGY_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{topologyCmdType::TOPOLOGY_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{topologyCmdType::TOPOLOGY_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdTopology::showTopology, false, ""}},
+	{topologyCmdType::TOPOLOGY_FILE, {{"file", required_argument, 0, 'f'}, &cmdTopology::generateFile, false, ""}},
+	{topologyCmdType::TOPOLOGY_MATRIX, {{"matrix", no_argument, 0, 'm'}, &cmdTopology::showMatrix, false, ""}},
 };
 
 /**
@@ -91,12 +91,16 @@ void cmdTopology::help(HELP helpType)
 ze_result_t cmdTopology::showTopology(devInfo *d)
 {
 	TRACING();
+	std::string switchDevicePath = "N/A";
 	std::string cpuList = d->dev->getCPUList();
 	std::string localCPUs = d->dev->getLocalCPUs();
+	int switchCount = d->dev->getSwitchCount(&switchDevicePath);
 
 	PRINT("Device ID: %d\n", d->index);
-	PRINT("CPU List: %s\n", cpuList.c_str());
+	PRINT("Local CPU List: %s\n", cpuList.c_str());
 	PRINT("Local CPUs: %s\n", localCPUs.c_str());
+	PRINT("PCIe Switch Count: %d\n", switchCount);
+	PRINT("PCIe Switch: %s\n", switchDevicePath.c_str());
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -218,6 +222,18 @@ int cmdTopology::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	result = args->sm.findDevice(topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str(), &deviceList);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Device handle not found for device ID '%s'.\n",
+			topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str());
+		return result;
+	}
+
+	if (deviceList.size() < 1) {
+		ERR("Device not found.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	// Handle matrix command (doesn't require device)
 	if (topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled) {
 		return showMatrix(nullptr);
@@ -230,13 +246,6 @@ int cmdTopology::run(arg_struct *args)
 
 	// For device-specific commands, find the device
 	if (topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled) {
-		result = args->sm.findDevice(topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str(), &deviceList);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Error: Device handle not found for device ID '%s'.\n",
-				topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str());
-			return result;
-		}
-
 		// Iterate through the device list and execute the command
 		for (auto &device : deviceList) {
 			// Call the appropriate command function based on the command type
