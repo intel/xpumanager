@@ -39,7 +39,6 @@ class XpumConan(ConanFile):
 
     def build_requirements(self):
         self.tool_requires("meson/1.3.2")
-        self.tool_requires("ninja/1.13.1")  # Use the version compatible with meson
         
         # Development tools
         if self.options.with_tests:
