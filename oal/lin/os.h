@@ -62,8 +62,17 @@
 #define TIMESTAMP timestamp
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
+#define GET_TOPOLOGY getTopology
 
 typedef void *(*funcptr)(void *input_params);
+
+struct bdfID
+{
+	uint32_t domain;
+	uint32_t bus;
+	uint32_t device;
+	uint32_t function;
+};
 
 class thread_id
 {
@@ -86,5 +95,6 @@ char getch();
 std::string timestamp();
 std::string getLocalCpus(std::string bdf);
 std::string getCpuList(std::string bdf);
+int getTopology(bdfID bdf, std::string *switchDevicePath);
 
 #endif

@@ -58,12 +58,12 @@ public:
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
 	std::string getFWStatus() { return deviceProperties.fwStatus; }
-	void getBDF(uint32_t &d, uint32_t &b, uint32_t &dv, uint32_t &f) const
+	void getBDF(bdfID &bdf) const
 	{
-		d = this->domain;
-		b = this->bus;
-		dv = this->dev;
-		f = this->func;
+		bdf.domain = this->domain;
+		bdf.bus = this->bus;
+		bdf.device = this->dev;
+		bdf.function = this->func;
 	}
 	std::string getBDFStr() const { return std::string(bdfStr); }
 };

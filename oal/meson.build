@@ -3,6 +3,7 @@
 # Platform-specific source files
 oal_sources = []
 oal_inc_dirs = []
+oal_deps = [thread_dep, levelzero_dep]
 
 if is_windows
   oal_sources = files(
@@ -11,11 +12,16 @@ if is_windows
     'win/win.cpp'
   )
   oal_inc_dirs = include_directories('win')
+  oal_deps += windows_deps
 elif is_linux
   oal_sources = files(
+    'lin/pci_database.cpp',
     'lin/lin.cpp'
   )
   oal_inc_dirs = include_directories('lin')
+  # Add hwloc dependency for Linux topology functionality
+  hwloc_dep = dependency('hwloc', required: true)
+  oal_deps += [hwloc_dep]
 endif
 
 # OAL static library
@@ -26,7 +32,7 @@ oal_lib = static_library('oal',
     oal_inc_dirs,
     include_directories('../hal/core')  # For debug.h
   ],
-  dependencies : [thread_dep, levelzero_dep] + windows_deps,
+  dependencies : oal_deps,
   cpp_args : is_windows ? ['-DLIBXPUM_EXPORTS'] : [],
   install : false
 )

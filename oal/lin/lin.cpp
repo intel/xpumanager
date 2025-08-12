@@ -36,6 +36,9 @@
 #include <termios.h>
 #include <unistd.h>
 #include <format>
+#include <hwloc.h>
+#include <filesystem>
+#include "pci_database.h"
 
 /**
  * @brief Gets a single character from standard input without echo
@@ -354,4 +357,213 @@ std::string getCpuList(std::string bdf)
 {
 	TRACING();
 	return getSysfsLine(bdf, "/local_cpulist");
+}
+
+/**
+ * @brief Checks if a hardware object represents a PCIe switch device
+ *
+ * This function determines whether the given hwloc object represents a PCIe switch
+ * by looking up its vendor ID and device ID in the PCI device database. PCIe switches
+ * are used to expand the number of PCIe slots and enable complex topologies.
+ *
+ * @param obj Hardware locality object representing a PCI device
+ * @return bool True if the object represents a PCIe switch device, false otherwise
+ */
+bool isSwitchDevice(hwloc_obj_t obj)
+{
+	int vendorId = obj->attr->pcidev.vendor_id;
+	int device_id = obj->attr->pcidev.device_id;
+	const PcieDevice *pDevice = PciDatabase::instance().getDevice(vendorId, device_id);
+	return (pDevice != nullptr);
+}
+
+/**
+ * @brief Counts the number of PCIe switches in the path to a device
+ *
+ * This function traverses the hardware topology hierarchy from a given PCI device
+ * up to the root complex, counting the number of PCIe switches encountered along
+ * the path. It helps determine the complexity of the device's connectivity path.
+ *
+ * @param pcidev Hardware locality object representing the target PCI device
+ * @return int Number of PCIe switches between the device and root complex
+ */
+int getSwitchCount(hwloc_obj_t pcidev)
+{
+	hwloc_obj_t obj = pcidev->parent;
+	int count = 0;
+	uint32_t preVendorId = -1, preDeviceId = -1;
+	while (obj != nullptr) {
+		if (obj->type == HWLOC_OBJ_BRIDGE) {
+			/* only host->pci and pci->pci bridge supported so far */
+			if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST) {
+				assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
+				obj = obj->parent;
+				continue;
+			} else {
+				assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
+				assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
+
+				if (preVendorId == obj->attr->bridge.upstream.pci.vendor_id &&
+					preDeviceId == obj->attr->bridge.upstream.pci.device_id) {
+					obj = obj->parent;
+					continue;
+				}
+				if (isSwitchDevice(obj)) {
+					preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
+					preDeviceId = obj->attr->bridge.upstream.pci.device_id;
+					count++;
+					DBG("Found Switch count %d.\n", count);
+				}
+			}
+		} else {
+			DBG("Unknown hwloc-obj type  %d.\n", obj->type);
+		}
+		obj = obj->parent;
+	}
+	return count;
+}
+
+/**
+ * @brief Converts a hardware object's PCI information to a BDF string representation
+ *
+ * This function extracts the PCI Bus:Device:Function (BDF) information from a
+ * hardware locality object and formats it as a standardized string in the format
+ * "DDDD:BB:DD.F" where D=domain, B=bus, D=device, F=function (all in hexadecimal).
+ *
+ * @param obj Hardware locality object containing PCI device information
+ * @return std::string Formatted BDF string representation
+ */
+std::string pci2RegxString(hwloc_obj_t obj)
+{
+	std::ostringstream os;
+	os << std::setfill('0') << std::setw(4) << std::hex << (uint32_t)obj->attr->pcidev.domain << std::string(":")
+	   << std::setw(2) << (uint32_t)obj->attr->pcidev.bus << std::string(":") << std::setw(2)
+	   << (uint32_t)obj->attr->pcidev.dev << std::string(".") << (uint32_t)obj->attr->pcidev.func;
+	return os.str();
+}
+
+/**
+ * @brief Finds the sysfs device path for a given BDF address
+ *
+ * This function searches the Linux sysfs filesystem (/sys/devices) to locate
+ * the device directory corresponding to a specific PCI Bus:Device:Function address.
+ * It performs a recursive search through the device hierarchy to find the matching path.
+ *
+ * @param bdf_address String containing the PCI BDF address to search for
+ * @return std::string Full path to the device directory in sysfs, empty string if not found
+ */
+std::string getDevicePath(const std::string &bdf_address)
+{
+	std::string devicePath = "/sys/devices";
+	std::string result;
+	namespace stdfs = std::filesystem;
+	const stdfs::recursive_directory_iterator end{};
+
+	for (stdfs::recursive_directory_iterator iter{devicePath}; iter != end; ++iter) {
+		if (iter->path().string().find(bdf_address, 0) == std::string::npos) {
+			continue;
+		}
+		if (stdfs::is_directory(*iter)) {
+			result = iter->path().string();
+			break;
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @brief Retrieves the device path for the first PCIe switch in the topology
+ *
+ * This function traverses the hardware topology hierarchy from a given PCI device
+ * up towards the root complex and finds the sysfs device path for the first PCIe
+ * switch encountered. This is useful for accessing switch-specific information
+ * and configuration.
+ *
+ * @param par_obj Hardware locality object representing the starting PCI device
+ * @param switchDevicePath Pointer to string where the switch device path will be stored
+ */
+void getSwitchDevicePath(hwloc_obj_t par_obj, std::string *switchDevicePath)
+{
+	hwloc_obj_t obj = par_obj->parent;
+	int count = 0;
+	uint32_t preVendorId = -1, preDeviceId = -1;
+	while (obj != nullptr) {
+		if (obj->type == HWLOC_OBJ_BRIDGE) {
+			/* only host->pci and pci->pci bridge supported so far */
+			if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST) {
+				assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
+				obj = obj->parent;
+				continue;
+			} else {
+				assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
+				assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
+				if (preVendorId == obj->attr->bridge.upstream.pci.vendor_id &&
+					preDeviceId == obj->attr->bridge.upstream.pci.device_id) {
+					obj = obj->parent;
+					continue;
+				}
+				if (isSwitchDevice(obj)) {
+					preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
+					preDeviceId = obj->attr->bridge.upstream.pci.device_id;
+					std::string address = pci2RegxString(obj);
+					if (address.length() > 0) {
+						std::string path = getDevicePath(address);
+						if (path.length() > 0) {
+							*switchDevicePath = path;
+						}
+						count++;
+					}
+				}
+			}
+		} else {
+			ERR("Unknown hwloc-obj type  %d.\n", obj->type);
+		}
+		obj = obj->parent;
+	}
+}
+
+/**
+ * @brief Analyzes system topology and counts PCIe switches for a specific device
+ *
+ * This function initializes the hardware locality (hwloc) topology, searches for
+ * a specific PCI device using its domain:bus:device:function coordinates, and
+ * counts the number of PCIe switches in the path from that device to the root
+ * complex. It provides topology analysis capabilities for performance optimization.
+ *
+ * @param bdf BDF ID structure containing the PCI coordinates of the target device
+ * @return int Number of PCIe switches in the path to the specified device
+ */
+int getTopology(bdfID bdf, std::string *switchDevicePath)
+{
+	// Initialize the topology object
+	hwloc_topology_t topology;
+	SETENV("HWLOC_COMPONENTS", "linux,stop");
+	hwloc_topology_init(&topology);
+	hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
+	hwloc_topology_load(topology);
+	int switchCount = 0;
+
+	// Get the first PCI device
+	hwloc_obj_t pcidev = hwloc_get_next_pcidev(topology, nullptr);
+
+	// Iterate over all PCI devices
+	while (pcidev != nullptr) {
+
+		if (pcidev->attr->pcidev.domain == bdf.domain && pcidev->attr->pcidev.bus == bdf.bus &&
+			pcidev->attr->pcidev.dev == bdf.device && pcidev->attr->pcidev.func == bdf.function) {
+			switchCount = getSwitchCount(pcidev);
+			if (switchCount > 0) {
+				getSwitchDevicePath(pcidev, switchDevicePath);
+			}
+			break;
+		}
+
+		// Get the next PCI device
+		pcidev = hwloc_get_next_pcidev(topology, pcidev);
+	}
+
+	// Destroy the topology object
+	hwloc_topology_destroy(topology);
+	return switchCount;
 }

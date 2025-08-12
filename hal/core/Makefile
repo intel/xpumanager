@@ -11,7 +11,7 @@ FWDIR  := ../fwupd
 CXX := g++
 export DBG_FLAGS?=-Ofast
 CXXFLAGS := -Wall -Wextra -Werror -pedantic -fPIC -std=c++20 -I. -I$(OALDIR) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
-LIBS :=-L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc
+LIBS :=-L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc -lhwloc
 INCLUDEDIR := include
 
 # Target libraries

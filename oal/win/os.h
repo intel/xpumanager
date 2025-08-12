@@ -57,6 +57,14 @@ struct option
 	int val;
 };
 
+struct bdfID
+{
+	uint32_t domain;
+	uint32_t bus;
+	uint32_t device;
+	uint32_t function;
+};
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
@@ -87,17 +95,17 @@ struct option
 #define CLOSEI2C closeI2C
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
-#define GETCH (char) _getch
+#define GETCH (char)_getch
 #define TIMESTAMP timestamp
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
+#define GET_TOPOLOGY(bdf, e) 0
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern LIBXPUM_API char *optarg;
 extern LIBXPUM_API int optind;
 int getopt(int argc, char *argv[], char *optstring);
-int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts,
-							int *longindex);
+int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);
 void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
