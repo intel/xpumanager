@@ -645,7 +645,16 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 	return result;
 }
 
-/* Function to create an instance of a class */
+/**
+ * @brief Template function to create an instance of a sysman-derived class
+ *
+ * This template function creates and returns a new instance of a class that
+ * inherits from the sysman base class. It provides a generic factory pattern
+ * for instantiating different sysman component classes.
+ *
+ * @tparam T The type of sysman-derived class to instantiate
+ * @return sysman* Pointer to the newly created instance of type T
+ */
 template <typename T> sysman *createInstance() { return new T(); }
 
 /**
@@ -773,15 +782,31 @@ bool device::isBDF(const char *bdf)
 /**
  * @brief Retrieves the BDF (Bus-Device-Function) of the device.
  *
+ * This function retrieves the BDF of the device and stores it in the provided parameters.
+ *
+ * @param domain A reference to store the domain part of the BDF.
+ * @param bus A reference to store the bus part of the BDF.
+ * @param dev A reference to store the device part of the BDF.
+ * @param func A reference to store the function part of the BDF.
+ */
+void device::getBDF(uint32_t &domain, uint32_t &bus, uint32_t &dev, uint32_t &func) const
+{
+	pci *p = (pci *)zes_func_table[PCI].func;
+	p->getBDF(domain, bus, dev, func);
+}
+
+/**
+ * @brief Retrieves the BDF (Bus-Device-Function) of the device.
+ *
  * This function retrieves the BDF of the device from the PCI properties.
  *
  * @return A string representing the BDF of the device.
  */
-const char *device::getBDF()
+std::string device::getBDFStr()
 {
 	// BDF is stored in the PCI device properties so get it from there
 	pci *p = (pci *)zes_func_table[PCI].func;
-	return p->getBDF();
+	return p->getBDFStr();
 }
 
 /**
@@ -794,7 +819,7 @@ const char *device::getBDF()
 std::string device::getCPUList()
 {
 	TRACING();
-	return GET_CPU_LIST(getBDF());
+	return GET_CPU_LIST(getBDFStr());
 }
 
 /**
@@ -807,7 +832,7 @@ std::string device::getCPUList()
 std::string device::getLocalCPUs()
 {
 	TRACING();
-	return GET_LOCAL_CPUS(getBDF());
+	return GET_LOCAL_CPUS(getBDFStr());
 }
 
 /**

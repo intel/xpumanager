@@ -40,6 +40,10 @@ class LIBXPUM_API pci : public sysman
 {
 private:
 	pci_addr_mei_device deviceProperties;
+	uint32_t domain;
+	uint32_t bus;
+	uint32_t dev;
+	uint32_t func;
 	char bdfStr[BDF_STR_LEN];
 
 public:
@@ -54,7 +58,14 @@ public:
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
 	std::string getFWStatus() { return deviceProperties.fwStatus; }
-	const char *getBDF() const { return bdfStr; }
+	void getBDF(uint32_t &d, uint32_t &b, uint32_t &dv, uint32_t &f) const
+	{
+		d = this->domain;
+		b = this->bus;
+		dv = this->dev;
+		f = this->func;
+	}
+	std::string getBDFStr() const { return std::string(bdfStr); }
 };
 
 #endif
