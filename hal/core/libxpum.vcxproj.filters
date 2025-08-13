@@ -130,6 +130,9 @@
     <ClCompile Include="..\amc\amclib.cpp">
       <Filter>amc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\oal\win\http_client.cpp">
+      <Filter>oal</Filter>
+    </ClCompile>
     <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -246,6 +249,9 @@
     </ClInclude>
     <ClInclude Include="..\amc\amclib.h">
       <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\http_client.h">
+      <Filter>oal</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

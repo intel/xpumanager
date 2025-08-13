@@ -157,6 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\oal\http_client.h" />
     <ClInclude Include="..\..\oal\i2c_interface.h" />
     <ClInclude Include="..\..\oal\win\os.h" />
     <ClInclude Include="..\amc\amclib.h" />
@@ -198,6 +199,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\oal\win\dllmain.cpp" />
+    <ClCompile Include="..\..\oal\win\http_client.cpp" />
     <ClCompile Include="..\..\oal\win\i2c_interface.cpp" />
     <ClCompile Include="..\..\oal\win\thread.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
