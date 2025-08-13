@@ -24,6 +24,9 @@ elif is_linux
   # Add hwloc dependency for Linux topology functionality
   hwloc_dep = dependency('hwloc', required: true)
   oal_deps += [hwloc_dep]
+  # Add curl dependency for Linux redfish functionality
+  curl_dep = dependency('libcurl', required: true)
+  oal_deps += [curl_dep]
 endif
 
 # Set correct CRT flags for Windows with override capability
