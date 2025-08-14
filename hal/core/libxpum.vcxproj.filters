@@ -82,6 +82,9 @@
     <ClCompile Include="..\..\oal\win\thread.cpp">
       <Filter>oal</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\oal\win\i2c_interface.cpp">
+      <Filter>oal</Filter>
+    </ClCompile>
     <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,6 +171,9 @@
     </ClInclude>
     <ClInclude Include="sysprocess.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\i2c_interface.h">
+      <Filter>oal</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

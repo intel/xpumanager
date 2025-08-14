@@ -1,0 +1,267 @@
+/*
+ * Copyright © 2025 Intel Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ *
+ */
+
+#include "os.h"
+#include <algorithm>
+#include <debug.h>
+#include <fcntl.h>
+#include <filesystem>
+#include <fstream>
+#include <i2c_interface.h>
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
+#include <sys/ioctl.h>
+
+/**
+ * @brief Constructor for I2CInterface class
+ * @param devpath Wide character std::string containing the device path to the I2C device
+ *
+ * Initializes the I2C interface by opening the AMC device and setting up peripheral access.
+ * Sets the init flag to true if successful, false otherwise.
+ */
+I2CInterface::I2CInterface(const wchar_t *devpath)
+{
+	TRACING();
+	amchandle = -1;
+	init = false;
+
+	if (openAmc(devpath) && open_amc_peripheral()) {
+		init = true;
+	} else {
+		ERR("Failed to open AMC device handle\n");
+		init = false;
+	}
+}
+
+/**
+ * @brief Destructor for I2CInterface class
+ *
+ * Cleans up resources by closing the AMC device handle if it was successfully initialized.
+ */
+I2CInterface::~I2CInterface()
+{
+	TRACING();
+	if (init && amchandle >= 0) {
+		closeAmc();
+		amchandle = -1;
+	}
+}
+
+/**
+ * @brief Finds all I2C devices in the system
+ * @return std::vector<std::string> List of device paths found in /sys/bus/i2c/devices
+ *
+ * Scans the /sys/bus/i2c/devices directory to discover all available I2C devices.
+ * Returns an empty std::vector if the directory doesn't exist or no devices are found.
+ */
+std::vector<std::string> findI2CDevices()
+{
+	TRACING();
+	std::vector<std::string> devices;
+	std::string devicesPath = "/sys/bus/i2c/devices";
+
+	// Check if the directory exists
+	if (!std::filesystem::exists(devicesPath)) {
+		ERR("I2C devices directory does not exist: %s\n", devicesPath.c_str());
+		return devices;
+	}
+
+	// Iterate through all entries in the directory
+	for (const auto &entry : std::filesystem::directory_iterator(devicesPath)) {
+		if (entry.is_directory()) {
+			std::string dirname = entry.path().filename().string();
+			devices.push_back(entry.path().string());
+		}
+	}
+
+	return devices;
+}
+
+/**
+ * @brief Retrieves the name of an I2C device
+ * @param devicePath Path to the I2C device in /sys/bus/i2c/devices
+ * @return std::string The device name read from the device's name file
+ *
+ * Reads the device name from the 'name' file in the specified device path.
+ * Returns empty std::string if the name file cannot be opened or read.
+ */
+std::string getI2CDeviceName(const std::string &devicePath)
+{
+	TRACING();
+	std::string name;
+	std::ifstream nameFile(devicePath + "/name");
+	if (nameFile.is_open()) {
+		getline(nameFile, name);
+		nameFile.close();
+	}
+	return name;
+}
+
+/**
+ * @brief Opens the AMC I2C device
+ * @param devpath Wide character std::string containing the device path
+ * @return bool True if device opened successfully, false otherwise
+ *
+ * Converts the wide character device path to a regular std::string and opens
+ * the I2C device with read/write and non-blocking flags.
+ */
+bool I2CInterface::openAmc(const wchar_t *devpath)
+{
+	TRACING();
+
+	// Convert wide character std::string to regular std::string
+	std::string devicePath;
+	if (devpath != nullptr) {
+		std::wstring wdevpath(devpath);
+		devicePath.assign(wdevpath.begin(), wdevpath.end());
+	} else {
+		ERR("Device path is null\n");
+		return false;
+	}
+
+	// Open the I2C device
+	amchandle = open(devicePath.c_str(), O_RDWR | O_NONBLOCK);
+	if (amchandle < 0) {
+		ERR("Failed to open I2C device %s: %s\n", devicePath.c_str(), strerror(errno));
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * @brief Establishes communication with the AMC peripheral device
+ * @return bool True if peripheral access established successfully, false otherwise
+ *
+ * Uses ioctl with I2C_SLAVE to acquire bus access and communicate with
+ * the AMC device at the predefined I2C address.
+ */
+bool I2CInterface::open_amc_peripheral()
+{
+	TRACING();
+	int rv;
+	if ((rv = ioctl(amchandle, I2C_SLAVE, AMC_I2C_ADDR)) < 0) {
+		ERR("Failed to acquire bus access and/or talk to slave. Error code: %d\n", rv);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Writes data to the AMC device
+ * @param writeBuffer Pointer to the data buffer to write
+ * @param writeSize Number of bytes to write
+ * @return bool True if write operation successful, false otherwise
+ *
+ * Performs a write operation to the I2C device using the established handle.
+ */
+bool I2CInterface::writeAmc(void *writeBuffer, size_t writeSize)
+{
+	TRACING();
+	if (amchandle < 0) {
+		ERR("Invalid I2C device handle\n");
+		return false;
+	}
+
+	ssize_t bytesWritten = write(amchandle, writeBuffer, writeSize);
+	if (bytesWritten < 0) {
+		ERR("Failed to write to I2C device: %s\n", strerror(errno));
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Reads data from the AMC device
+ * @param readBuffer Pointer to the buffer where read data will be stored
+ * @param readSize Number of bytes to read
+ * @return bool True if read operation successful, false otherwise
+ *
+ * Performs a read operation from the I2C device using the established handle.
+ */
+bool I2CInterface::readAmc(void *readBuffer, size_t readSize)
+{
+	TRACING();
+	if (amchandle < 0) {
+		ERR("Invalid I2C device handle\n");
+		return false;
+	}
+
+	ssize_t bytesRead = read(amchandle, readBuffer, readSize);
+	if (bytesRead < 0) {
+		ERR("Failed to read from I2C device: %s\n", strerror(errno));
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Closes the AMC device handle
+ * @return bool True if device closed successfully, false otherwise
+ *
+ * Closes the file descriptor for the I2C device.
+ */
+bool I2CInterface::closeAmc()
+{
+	TRACING();
+	return close(amchandle) == 0;
+}
+
+/**
+ * @brief Discovers AMC cards in the system
+ * @param amcDeviceList Pointer to std::vector that will be populated with found AMC device paths
+ * @return int Status code (0 for success)
+ *
+ * Scans all I2C devices in the system looking for devices named "amc".
+ * Extracts the I2C bus number from the device path and constructs the
+ * corresponding /dev/i2c-X device path for each AMC device found.
+ */
+int amcCardDiscovery(std::vector<std::basic_string<TCHAR>> *amcDeviceList)
+{
+	TRACING();
+	int cardsCount = 0;
+	std::vector<std::string> devices = findI2CDevices();
+	for (const auto &device : devices) {
+		std::string name = getI2CDeviceName(device);
+		if (name == "amc") {
+			// Found the device with the specified name, the first few characters of the path
+			// until a hyphen are the I2C bus number
+			// Example: "/sys/bus/i2c/devices/21-0040" -> "21"
+			// Another example: "/sys/bus/i2c/devices/7-0041" -> "7"
+			// This needs to be added to i2c- so that we can open the device
+			// Example: "/dev/i2c-21"
+			// Example: "/dev/i2c-7"
+			// Extract the filename portion after the last slash
+			std::string filename = device.substr(device.find_last_of('/') + 1);
+			// Find the hyphen in the filename
+			size_t hyphen_pos = filename.find('-');
+			std::string bus_number = (hyphen_pos != std::string::npos) ? filename.substr(0, hyphen_pos) : "";
+			std::string i2cDevice = "/dev/i2c-" + bus_number;
+			amcDeviceList->emplace_back(i2cDevice.begin(), i2cDevice.end());
+			DBG("Found AMC device: %s\n", i2cDevice.c_str());
+			cardsCount++;
+		}
+	}
+	return cardsCount;
+}
