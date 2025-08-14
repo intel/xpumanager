@@ -40,16 +40,7 @@
 ze_result_t amcupd::preUpdateAMC(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	std::string amc = "amc";
-	DBG("Pre-update AMC firmware...\n");
 
-	deviceHandle = OPENI2C(amc);
-	if (deviceHandle < 0) {
-		ERR("Failed to open I2C device for AMC\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// Open the I2C device
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -83,8 +74,6 @@ ze_result_t amcupd::updateAMC(UNUSED firmwareInfo *fwInfo)
 ze_result_t amcupd::postUpdateAMC(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
-	DBG("Post-update AMC firmware...\n");
-	// Close the I2C device
-	CLOSEI2C(deviceHandle);
+
 	return ZE_RESULT_SUCCESS;
 }
