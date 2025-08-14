@@ -5,6 +5,7 @@
 SRCDIR := .
 OBJDIR := obj
 HALCORE := ../../hal/core
+OALDIR := ..
 
 export PWD=$(shell pwd)
 BINNAME=oal
@@ -12,7 +13,7 @@ MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=
-export INCLUDES=-I$(LEVELZERO)/include -I. -I$(HALCORE)
+export INCLUDES=-I$(LEVELZERO)/include -I. -I$(HALCORE) -I$(OALDIR)
 export CFLAGS=-c -Wall -Wextra -Werror -pedantic -fPIC -std=c++20
 export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 export HEADERS := $(wildcard $(SRCDIR)/*.h)

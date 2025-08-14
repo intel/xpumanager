@@ -91,8 +91,6 @@ struct bdfID
 #define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
 #define PRIVILEGECHECK() true
 #define GETPROCESSNAME(processId) getProcessName(processId)
-#define OPENI2C openI2C
-#define CLOSEI2C closeI2C
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH (char)_getch
@@ -112,8 +110,6 @@ void wait_for_thread(thread_id *tid);
 std::string getProcessName(uint32_t processId);
 std::string getLocalCpus(std::string bdf);
 std::string getCpuList(std::string bdf);
-long long openI2C(const std::string &deviceName);
-int closeI2C(long long fd);
 std::string timestamp();
 
 #endif
