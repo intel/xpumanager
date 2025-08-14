@@ -33,6 +33,7 @@
 #include <string>
 #include <unistd.h>
 #include <sys/time.h>
+#include <vector>
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -54,6 +55,7 @@
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
 #define PRIVILEGECHECK() privilegeCheck()
 #define GETPROCESSNAME(processId) getProcessName(processId)
+#define ZERO_MEM(mem, size) memset(mem, 0, size)
 #define SETENV(name, value) setenv(name, value, 1)
 #define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
 #define GETCH getch
@@ -61,6 +63,16 @@
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY getTopology
+typedef wchar_t TCHAR;
+#define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
+
+static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
+{
+	*(pFile) = fopen(filename, mode);
+	return (*(pFile) != NULL) ? 0 : errno;
+}
+
+#define FOPEN_S(pFile, filename, mode) fopen_s_def((pFile), (filename), (mode))
 
 typedef void *(*funcptr)(void *input_params);
 
@@ -92,5 +104,6 @@ std::string timestamp();
 std::string getLocalCpus(std::string bdf);
 std::string getCpuList(std::string bdf);
 int getTopology(bdfID bdf, std::string *switchDevicePath);
+int amcCardDiscovery(std::vector<std::basic_string<TCHAR>> *amcDeviceList);
 
 #endif

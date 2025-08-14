@@ -7,6 +7,7 @@ oal_deps = [thread_dep, levelzero_dep]
 
 if is_windows
   oal_sources = files(
+    'win/i2c_interface.cpp',
     'win/dllmain.cpp',
     'win/thread.cpp', 
     'win/win.cpp'
@@ -16,6 +17,7 @@ if is_windows
 elif is_linux
   oal_sources = files(
     'lin/pci_database.cpp',
+    'lin/i2c_interface.cpp',
     'lin/lin.cpp'
   )
   oal_inc_dirs = include_directories('lin')
