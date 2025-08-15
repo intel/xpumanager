@@ -27,7 +27,7 @@
 #include <os.h>
 
 /**
- * @brief Prepares the AMC (Advanced Memory Controller) for firmware update
+ * @brief Prepares the AMC (Add-in Management Controller) for firmware update
  *
  * This function performs pre-update operations including opening the I2C
  * device connection required for AMC firmware communication. It establishes

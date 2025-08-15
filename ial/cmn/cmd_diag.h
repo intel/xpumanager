@@ -80,7 +80,7 @@ private:
 	bool driverLoaded;
 	bool sysInfoShown;
 	bool isPathExist(const std::string &s);
-	ze_result_t loadBinaryFile(const std::string &file_path, std::vector<uint8_t> *binary_file);
+	ze_result_t loadBinaryFile(const std::string &filePath, std::vector<uint8_t> *binary_file);
 	ze_result_t moduleCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device,
 							 std::vector<uint8_t> binary_file, ze_module_handle_t *module_handle);
 	void moduleDestroy(ze_module_handle_t hModule);

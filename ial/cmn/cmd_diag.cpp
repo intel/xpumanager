@@ -790,11 +790,11 @@ uint64_t cmdDiag::setWorkgroups(ze_device_compute_properties_t *device_compute_p
  * and loads it into memory for module creation. It provides kernel loading
  * capabilities for diagnostic compute operations.
  *
- * @param file_path Path to the SPIR-V binary file relative to kernels directory
+ * @param filePath Path to the SPIR-V binary file relative to kernels directory
  * @param binary_file Pointer to vector that will contain the loaded binary data
  * @return ze_result_t ZE_RESULT_SUCCESS on successful file loading, error code otherwise
  */
-ze_result_t cmdDiag::loadBinaryFile(const std::string &file_path, std::vector<uint8_t> *binary_file)
+ze_result_t cmdDiag::loadBinaryFile(const std::string &filePath, std::vector<uint8_t> *binary_file)
 {
 	std::string folder = std::string(XPUM_RESOURCES_DIR) + std::string("kernels/");
 	if (!isPathExist(folder)) {
@@ -802,7 +802,7 @@ ze_result_t cmdDiag::loadBinaryFile(const std::string &file_path, std::vector<ui
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	std::string absolute_file_path = folder + file_path;
+	std::string absolute_file_path = folder + filePath;
 	std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
 
 	if (!stream.good()) {

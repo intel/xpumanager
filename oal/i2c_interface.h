@@ -60,7 +60,7 @@ public:
 	bool writeAmc(void *writeBuffer, size_t writeSize);
 	bool readAmc(void *readBuffer, size_t readSize);
 	bool closeAmc();
-	bool is_init() { return init; }
+	bool isInit() { return init; }
 };
 
 #endif // _I2C_INTERFACE_H
