@@ -54,6 +54,7 @@ public:
 	int getPrintLvl();  // Add getter for current debug level
 	void forceDebugSync(int lvl);  // Add forced synchronization method
 	ze_result_t init();
+	bool isDriverLoaded() { return initialized; }
 	ze_result_t zeInitialize();
 	ze_result_t zesInitialize();
 	ze_result_t getDriverProperties(ze_driver_handle_t drvr);

@@ -77,6 +77,8 @@ struct diagCmdStruct;
 class cmdDiag : public cmds
 {
 private:
+	bool driverLoaded;
+	bool sysInfoShown;
 	bool isPathExist(const std::string &s);
 	ze_result_t loadBinaryFile(const std::string &file_path, std::vector<uint8_t> *binary_file);
 	ze_result_t moduleCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device,
@@ -94,8 +96,8 @@ private:
 								   ze_command_queue_handle_t *phCommandQueue, uint32_t flags);
 
 public:
-	cmdDiag() { STRCPY_S(name, MAX_PATH, "diag"); };
-	~cmdDiag() {};
+	cmdDiag() : driverLoaded(false), sysInfoShown(false) { STRCPY_S(name, MAX_PATH, "diag"); };
+	~cmdDiag(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(devInfo *d);
 	ze_result_t stress(devInfo *d);
