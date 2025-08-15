@@ -76,7 +76,7 @@ ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t 
  * @param device Handle to the device
  * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
  */
-ze_result_t pci::getState(zes_device_handle_t device)
+ze_result_t pci::getState(zes_device_handle_t device, zes_pci_link_status_t &pciLinkStatus)
 {
 	zes_pci_state_t pciState = {};
 	ze_result_t result = zesDevicePciGetState(device, &pciState);
@@ -84,6 +84,8 @@ ze_result_t pci::getState(zes_device_handle_t device)
 		ERR("Failed to get PCI state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
+
+	pciLinkStatus = pciState.status;
 
 	DBG("  - PCI State:");
 	DBG("    - Status: %d\n", pciState.status);
@@ -279,8 +281,9 @@ ze_result_t pci::init(zes_device_handle_t device)
 ze_result_t pci::zesRun(zes_device_handle_t device)
 {
 	zes_pci_stats_t pciStats = {};
+	zes_pci_link_status_t pciLinkStatus = ZES_PCI_LINK_STATUS_UNKNOWN;
 
-	getState(device);
+	getState(device, pciLinkStatus);
 	getBars(device);
 	getStats(device, &pciStats);
 

@@ -24,6 +24,7 @@
 
 #include "cmd_diag.h"
 #include "debug.h"
+#include <pci.h>
 #include <assert.h>
 #include <chrono>
 #include <fstream>
@@ -60,6 +61,15 @@ static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
 	{diagCmdType::SINCE, {{"since", required_argument, 0, 0}, &cmdDiag::runSince, false, ""}},
 	{diagCmdType::STRESSTIME, {{"stresstime", required_argument, 0, 0}, nullptr, false, ""}},
 };
+
+/**
+ * @brief Prints a dashed line.
+ *
+ */
+static void printPretty()
+{
+	PRINT("+------------+-----------------------------------+----------------------+----------------+\n");
+}
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -159,9 +169,64 @@ void cmdDiag::help(HELP helpType)
  * @param d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
  */
-ze_result_t cmdDiag::precheck(UNUSED devInfo *d)
+ze_result_t cmdDiag::precheck(devInfo *d)
 {
 	TRACING();
+
+	zes_pci_properties_t pciProps;
+	zes_pci_link_status_t pciLinkStatus;
+	std::string fwStatus;
+	ze_result_t result;
+	char output[256] = {0};
+	std::string outputLine = "";
+
+	pci *p = (pci *)d->dev->getPCI();
+	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	snprintf(output, 255, "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus, pciProps.address.device,
+			 pciProps.address.function);
+	outputLine = output;
+
+	printPretty();
+
+	if (!sysInfoShown) {
+		PRINT("| Component        |  Details                                                            |\n");
+		printPretty();
+
+		if (driverLoaded) {
+			PRINT("| Driver           |  Status: Pass                                                       |\n");
+		} else {
+			PRINT("| Driver           |  Status: Fail                                                       |\n");
+		}
+		printPretty();
+		PRINT("| CPU              |  CPU ID: 0                                                          |\n");
+		PRINT("|                  |  Status:                                                            |\n");
+		printPretty();
+		sysInfoShown = true;
+	}
+	PRINT("| GPU              |  BDF:                 %s\n", outputLine.c_str());
+
+	fwStatus = p->getFWStatus();
+	if (fwStatus != "normal") {
+		PRINT("|                  |  Status: Unknown                                                    |\n");
+	} else {
+		result = p->getState(d->zesDeviceHdl, pciLinkStatus);
+		if (result != ZE_RESULT_SUCCESS) {
+			pciLinkStatus = ZES_PCI_LINK_STATUS_UNKNOWN;
+		}
+
+		if (pciLinkStatus != ZES_PCI_LINK_STATUS_GOOD) {
+			PRINT("|                  |  Status: Unknown                                                    |\n");
+		} else {
+			PRINT("|                  |  Status: Pass                                                       |\n");
+		}
+	}
+	printPretty();
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1032,10 +1097,6 @@ ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d)
  * output displays, providing consistent visual formatting for tabular
  * diagnostic results and error type listings.
  */
-static void printPretty()
-{
-	PRINT("+------------+-----------------------------------+----------------------+----------------+\n");
-}
 
 ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
 {
@@ -1201,6 +1262,9 @@ int cmdDiag::run(arg_struct *args)
 		return result;
 	}
 
+	driverLoaded = args->sm.isDriverLoaded();
+	sysInfoShown = false;
+
 	INFO("Running diagnostics can take several minutes to complete.\n");
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
@@ -1214,7 +1278,10 @@ int cmdDiag::run(arg_struct *args)
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
 				DBG("Running command: %s\n", cmd.second.opt.name);
 				result = (this->*cmd.second.func)(&device);
-				break;
+				if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
+					DBG("Exitting command: %s\n", cmd.second.opt.name);
+					break;
+				}
 			}
 		}
 	}
