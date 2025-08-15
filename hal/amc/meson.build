@@ -14,6 +14,7 @@ amc_sources = files(
   'pldm_fwupdate_resp.cpp',
   'pldm_init.cpp',
   'pldm_protocol.cpp',
+  'oem_vrsync.cpp',
 )
 
 amc_inc = include_directories('.')

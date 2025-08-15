@@ -162,6 +162,7 @@
     <ClInclude Include="..\amc\common.h" />
     <ClInclude Include="..\amc\mctp.h" />
     <ClInclude Include="..\amc\mctp_constants.h" />
+    <ClInclude Include="..\amc\oem_vrsync.h" />
     <ClInclude Include="..\amc\pldm.h" />
     <ClInclude Include="..\amc\pldm_constants.h" />
     <ClInclude Include="..\amc\pldm_fwpackage.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="..\amc\mctp_control_resp.cpp" />
     <ClCompile Include="..\amc\mctp_init.cpp" />
     <ClCompile Include="..\amc\mctp_protocol.cpp" />
+    <ClCompile Include="..\amc\oem_vrsync.cpp" />
     <ClCompile Include="..\amc\pldm_discovery.cpp" />
     <ClCompile Include="..\amc\pldm_discovery_resp.cpp" />
     <ClCompile Include="..\amc\pldm_fwpackage.cpp" />
