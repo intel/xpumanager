@@ -85,6 +85,9 @@
     <ClCompile Include="..\..\oal\win\i2c_interface.cpp">
       <Filter>oal</Filter>
     </ClCompile>
+    <ClCompile Include="..\amc\common.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
     <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +178,9 @@
     <ClInclude Include="..\..\oal\i2c_interface.h">
       <Filter>oal</Filter>
     </ClInclude>
+    <ClInclude Include="..\amc\common.h">
+      <Filter>amc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="oal">
@@ -188,6 +194,9 @@
     </Filter>
     <Filter Include="fwupd">
       <UniqueIdentifier>{4c71b570-9bca-4fcd-811f-ad0f342f5ae1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="amc">
+      <UniqueIdentifier>{b24cbc08-ddad-426e-9bbf-cbf67f430520}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

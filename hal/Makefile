@@ -1,4 +1,4 @@
-DIRS = fwupd core
+DIRS = amc fwupd core
 .PHONY: $(DIRS)
 
 MAKE += --no-print-directory
