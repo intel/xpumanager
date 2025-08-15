@@ -1,0 +1,91 @@
+/*
+ * Copyright © 2025 Intel Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ *
+ */
+
+#ifndef __MCTP_CONSTANTS_H
+#define __MCTP_CONSTANTS_H
+
+#define MCTP_SUCCESS 0x00
+#define MCTP_FAILURE 0x01
+#define MCTP_HEADER_VERSION 0x01
+#define MCTP_HEADER_SIZE 0x09
+#define MCTP_HEADER_PEC_SIZE 0x01
+#define MCTP_DESTSLAVE_ADDR_B0 0x00
+#define MCTP_SRC_SLAVE_ADDR 0x30 // UA will configure this address
+#define MCTP_SRC_SLAVE_ADDR_B0 0x01
+#define MCTP_CMD_CODE 0x0F
+#define MCTP_RESERVED 0x00
+#define MCTP_INTEGRITY_CHECK 0x00
+#define MCTP_TAG_OWNER 0x01
+#define MCTP_DESTINATION_ENDPOINT_ID 0x00 // Initial value, will be updated after configuring SetEID in mctp control
+#define MCTP_SOURCE_ENDPOINT_ID 0x07	  // UA will configure this
+#define MCTP_DEST_SET_EID 0x09
+#define MCTP_REQUEST 0x01
+#define MCTP_RESPONSE 0x00
+
+#define MCTP_MAX_PAYLOAD_SIZE 20
+#define MCTP_MAX_RESPONSE_SIZE 32
+#define m_mctp_instance_id_MAX 32
+// mctp CONTROL CMD SIZE in bytes
+#define MCTP_SET_EID_CMD_SIZE 13
+#define MCTP_GET_EID_CMD_SIZE 11
+#define MCTP_GET_EID_UUID_CMD_SIZE 11
+#define MCTP_GET_VERSION_SIZE 12
+#define MCTP_GET_MSG_TYPE_SIZE 11
+#define MCTP_SOM 1
+#define MCTP_EOM 1
+#define MCTP_PAK_SEQ 0
+#define MCTL_PLDM_RESPONSE_PAYLOAD_SIZE 128
+
+enum mctpControlCode
+{
+	MCTP_SET_ENDPOINT_ID = 0x01,
+	MCTP_GET_ENDPOINT_ID = 0x02,
+	MCTP_GET_ENDPOINT_UUID = 0x03,
+	MCTP_GET_VERSION = 0x04,
+	MCTP_GET_MESSAGE_TYPE = 0x05,
+	MCTP_GET_VENDOR_DEFINED_MESSAGE_SUPPORT = 0x06
+};
+
+enum mctpMessageType
+{
+	MCTP_CONTROL = 0X00,
+	PLDM_OVER_MCTP = 0X01,
+	NCSI_OVER_MCTP = 0X02,
+	ETHERNET_OVER_MCTP = 0X03,
+	NVMEXPRESS_OVER_MCTP = 0X04,
+	VENDORDEFINED_PCI = 0X7E,
+	VENDORDEFINED_IANA = 0X7F
+};
+
+enum mctpCompletionCodes
+{
+	MCTP_COMPLETION_SUCCESS = 0x00,
+	MCTP_COMPLETION_ERROR = 0x01,
+	MCTP_INVALID_DATA = 0x02,
+	MCTP_INVALID_LENGTH = 0x03,
+	MCTP_ERROR_NOT_READY = 0x04,
+	MCTP_UNSUPPORTED_CMD = 0x05
+};
+
+#endif // __MCTP_CONSTANTS_H

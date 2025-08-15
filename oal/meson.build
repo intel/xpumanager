@@ -12,7 +12,7 @@ if is_windows
     'win/thread.cpp', 
     'win/win.cpp'
   )
-  oal_inc_dirs = include_directories('win')
+  oal_inc_dirs = [include_directories('win'), include_directories('.')]
   oal_deps += windows_deps
 elif is_linux
   oal_sources = files(
@@ -20,7 +20,7 @@ elif is_linux
     'lin/i2c_interface.cpp',
     'lin/lin.cpp'
   )
-  oal_inc_dirs = include_directories('lin')
+  oal_inc_dirs = [include_directories('lin'), include_directories('.')]
   # Add hwloc dependency for Linux topology functionality
   hwloc_dep = dependency('hwloc', required: true)
   oal_deps += [hwloc_dep]
@@ -43,9 +43,8 @@ oal_lib = static_library('oal',
   oal_sources,
   include_directories : [
     global_inc, 
-    oal_inc_dirs,
     include_directories('../hal/core')  # For debug.h
-  ],
+  ] + oal_inc_dirs,
   dependencies : oal_deps,
   cpp_args : oal_cpp_args,
   install : false

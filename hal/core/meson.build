@@ -39,7 +39,7 @@ libxpum_shared = shared_library('xpum',
   dependencies : [
     levelzero_dep, 
     igsc_dep, 
-    oal_dep, 
+    oal_dep,
     fwupd_dep,
     nlohmann_json_dep
   ] + windows_deps,
