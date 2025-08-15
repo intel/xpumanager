@@ -6,6 +6,14 @@ amc_sources = files(
   'mctp_control_resp.cpp',
   'mctp_init.cpp',
   'mctp_protocol.cpp',
+  'pldm_discovery.cpp',
+  'pldm_discovery_resp.cpp',
+  'pldm_fwpackage.cpp',
+  'pldm_fwupdate.cpp',
+  'pldm_fwupdate_helper.cpp',
+  'pldm_fwupdate_resp.cpp',
+  'pldm_init.cpp',
+  'pldm_protocol.cpp',
 )
 
 amc_inc = include_directories('.')

@@ -100,6 +100,30 @@
     <ClCompile Include="..\amc\mctp_protocol.cpp">
       <Filter>amc</Filter>
     </ClCompile>
+    <ClCompile Include="..\amc\pldm_discovery.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_discovery_resp.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fwpackage.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fwupdate.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fwupdate_helper.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fwupdate_resp.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_init.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_protocol.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
     <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +221,18 @@
       <Filter>amc</Filter>
     </ClInclude>
     <ClInclude Include="..\amc\mctp_constants.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\pldm.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\pldm_constants.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\pldm_fwpackage.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\pldm_fwupdate.h">
       <Filter>amc</Filter>
     </ClInclude>
   </ItemGroup>
