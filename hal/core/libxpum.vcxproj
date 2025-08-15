@@ -162,6 +162,10 @@
     <ClInclude Include="..\amc\common.h" />
     <ClInclude Include="..\amc\mctp.h" />
     <ClInclude Include="..\amc\mctp_constants.h" />
+    <ClInclude Include="..\amc\pldm.h" />
+    <ClInclude Include="..\amc\pldm_constants.h" />
+    <ClInclude Include="..\amc\pldm_fwpackage.h" />
+    <ClInclude Include="..\amc\pldm_fwupdate.h" />
     <ClInclude Include="..\fwupd\amcupd.h" />
     <ClInclude Include="..\fwupd\fwupd.h" />
     <ClInclude Include="..\fwupd\gscupd.h" />
@@ -200,6 +204,14 @@
     <ClCompile Include="..\amc\mctp_control_resp.cpp" />
     <ClCompile Include="..\amc\mctp_init.cpp" />
     <ClCompile Include="..\amc\mctp_protocol.cpp" />
+    <ClCompile Include="..\amc\pldm_discovery.cpp" />
+    <ClCompile Include="..\amc\pldm_discovery_resp.cpp" />
+    <ClCompile Include="..\amc\pldm_fwpackage.cpp" />
+    <ClCompile Include="..\amc\pldm_fwupdate.cpp" />
+    <ClCompile Include="..\amc\pldm_fwupdate_helper.cpp" />
+    <ClCompile Include="..\amc\pldm_fwupdate_resp.cpp" />
+    <ClCompile Include="..\amc\pldm_init.cpp" />
+    <ClCompile Include="..\amc\pldm_protocol.cpp" />
     <ClCompile Include="..\fwupd\amcupd.cpp" />
     <ClCompile Include="..\fwupd\fwupd.cpp" />
     <ClCompile Include="..\fwupd\gscupd.cpp" />

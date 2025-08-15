@@ -30,8 +30,8 @@
 #include <vector>
 
 // Define the variables without LIBXPUM_API to avoid DLL linkage issues
-char *optarg = nullptr;	// global argument pointer
-int optind = 1;         // global argv index
+char *optarg = nullptr; // global argument pointer
+int optind = 1;			// global argv index
 
 /**
  * @brief Windows implementation of getopt for command line argument parsing
@@ -113,8 +113,7 @@ int getopt(int argc, char *argv[], char *optstring)
  * @param longindex Pointer to store the index of the matched long option
  * @return int The option character, -1 when done, or '?' for unknown option
  */
-int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts,
-						   int *longindex)
+int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex)
 {
 	// Initialize optind if it hasn't been initialized yet
 	if (optind == 0) {
