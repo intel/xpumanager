@@ -2,6 +2,10 @@
 
 amc_sources = files(
   'common.cpp',
+  'mctp_control.cpp',
+  'mctp_control_resp.cpp',
+  'mctp_init.cpp',
+  'mctp_protocol.cpp',
 )
 
 amc_inc = include_directories('.')

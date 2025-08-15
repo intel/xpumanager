@@ -160,6 +160,8 @@
     <ClInclude Include="..\..\oal\i2c_interface.h" />
     <ClInclude Include="..\..\oal\win\os.h" />
     <ClInclude Include="..\amc\common.h" />
+    <ClInclude Include="..\amc\mctp.h" />
+    <ClInclude Include="..\amc\mctp_constants.h" />
     <ClInclude Include="..\fwupd\amcupd.h" />
     <ClInclude Include="..\fwupd\fwupd.h" />
     <ClInclude Include="..\fwupd\gscupd.h" />
@@ -194,6 +196,10 @@
     <ClCompile Include="..\..\oal\win\thread.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\amc\common.cpp" />
+    <ClCompile Include="..\amc\mctp_control.cpp" />
+    <ClCompile Include="..\amc\mctp_control_resp.cpp" />
+    <ClCompile Include="..\amc\mctp_init.cpp" />
+    <ClCompile Include="..\amc\mctp_protocol.cpp" />
     <ClCompile Include="..\fwupd\amcupd.cpp" />
     <ClCompile Include="..\fwupd\fwupd.cpp" />
     <ClCompile Include="..\fwupd\gscupd.cpp" />
