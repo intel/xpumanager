@@ -127,6 +127,9 @@
     <ClCompile Include="..\amc\oem_vrsync.cpp">
       <Filter>amc</Filter>
     </ClCompile>
+    <ClCompile Include="..\amc\amclib.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
     <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -239,6 +242,9 @@
       <Filter>amc</Filter>
     </ClInclude>
     <ClInclude Include="..\amc\oem_vrsync.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\amclib.h">
       <Filter>amc</Filter>
     </ClInclude>
   </ItemGroup>

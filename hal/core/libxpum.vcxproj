@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\oal\i2c_interface.h" />
     <ClInclude Include="..\..\oal\win\os.h" />
+    <ClInclude Include="..\amc\amclib.h" />
     <ClInclude Include="..\amc\common.h" />
     <ClInclude Include="..\amc\mctp.h" />
     <ClInclude Include="..\amc\mctp_constants.h" />
@@ -200,6 +201,7 @@
     <ClCompile Include="..\..\oal\win\i2c_interface.cpp" />
     <ClCompile Include="..\..\oal\win\thread.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
+    <ClCompile Include="..\amc\amclib.cpp" />
     <ClCompile Include="..\amc\common.cpp" />
     <ClCompile Include="..\amc\mctp_control.cpp" />
     <ClCompile Include="..\amc\mctp_control_resp.cpp" />
