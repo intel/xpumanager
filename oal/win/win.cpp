@@ -29,8 +29,9 @@
 #include <sstream>
 #include <vector>
 
-char *optarg;	// global argument pointer
-int optind = 1; // global argv index
+// Define the variables without LIBXPUM_API to avoid DLL linkage issues
+char *optarg = nullptr;	// global argument pointer
+int optind = 1;         // global argv index
 
 /**
  * @brief Windows implementation of getopt for command line argument parsing
@@ -47,15 +48,15 @@ int optind = 1; // global argv index
 int getopt(int argc, char *argv[], char *optstring)
 {
 	static char *next = NULL;
-	if (optind == 0)
+
+	if (optind == 0) {
+		optind = 1;
 		next = NULL;
+	}
 
 	optarg = NULL;
 
 	if (next == NULL || *next == '\0') {
-		if (optind == 0)
-			optind++;
-
 		if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0') {
 			optarg = NULL;
 			if (optind < argc)
@@ -114,6 +115,11 @@ int getopt(int argc, char *argv[], char *optstring)
  */
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex)
 {
+	// Initialize optind if it hasn't been initialized yet
+	if (optind == 0) {
+		optind = 1;
+	}
+
 	if (optind >= argc) {
 		return -1;
 	}
