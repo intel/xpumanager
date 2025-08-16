@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\oal\win\thread.cpp" />
+    <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\cmn\cmds.cpp" />
     <ClCompile Include="..\cmn\cmd_agentset.cpp" />
     <ClCompile Include="..\cmn\cmd_amcsensor.cpp" />
