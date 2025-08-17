@@ -19,7 +19,8 @@ ial_cmn_sources = files(
   'cmd_updatefw.cpp',
   'cmd_vgpu.cpp',
   'cmds.cpp',
-  'printer.cpp'
+  'printer.cpp',
+  '../../hal/core/debug.cpp',
 )
 
 ial_cmn_inc = include_directories('.')

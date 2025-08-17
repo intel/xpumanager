@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\hal\core\debug.cpp" />
     <ClCompile Include="..\..\oal\win\thread.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\cmn\cmds.cpp" />
