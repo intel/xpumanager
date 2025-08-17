@@ -25,11 +25,43 @@
 #include <loader/ze_loader.h>
 #include <vector>
 
-#ifdef _DEBUG
-int dbgLvl = DBG;
-#else
-int dbgLvl = INFO;
-#endif
+/**
+ * @brief Sets the print/debug level for the driver and synchronizes across modules
+ *
+ * This function ensures that debug level changes are properly synchronized between
+ * different compilation units (CLI and library) when using separate builds like meson.
+ *
+ * @param lvl Debug level to set (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
+ */
+void driver::setPrintLvl(int lvl)
+{
+	// Set the global dbgLvl variable using the enhanced function from debug.cpp
+	setDbgLvlExtended(lvl);
+}
+
+/**
+ * @brief Gets the current print/debug level for the driver
+ *
+ * @return int Current debug level
+ */
+int driver::getPrintLvl() { return getDbgLvlExtended(); }
+
+/**
+ * @brief Forces debug level synchronization across modules
+ *
+ * This function provides a more aggressive way to synchronize debug levels
+ * between CLI and library modules, especially useful for meson builds where
+ * they are separate compilation units.
+ *
+ * @param lvl Debug level to force (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
+ */
+void driver::forceDebugSync(int lvl)
+{
+	// Use the enhanced synchronization function multiple times
+	for (int i = 0; i < 5; i++) {
+		setDbgLvlExtended(lvl);
+	}
+}
 
 /**
  * @brief Initializes the Level Zero API.

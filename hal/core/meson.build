@@ -3,6 +3,7 @@
 hal_core_sources = files(
   'device.cpp',
   'diagnostic.cpp',
+  'debug.cpp',
   'driver.cpp',
   'ecc.cpp',
   'enginegroup.cpp',
