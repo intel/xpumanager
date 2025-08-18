@@ -46,7 +46,8 @@ libxpum_shared = shared_library('xpum',
   cpp_args : is_windows ? ['-DLIBXPUM_EXPORTS'] : [],
   version : meson.project_version(),
   install : true,
-  install_dir : get_option('libdir')
+  install_dir : get_option('libdir'),
+  link_args : is_windows ? ['/NODEFAULTLIB:LIBCMT'] : []
 )
 
 # Static library
