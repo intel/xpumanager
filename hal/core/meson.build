@@ -27,6 +27,26 @@ hal_core_sources = files(
 
 hal_core_inc = include_directories('.')
 
+# Determine correct CRT linker arguments for MSVC
+xpum_link_args = []
+xpum_cpp_args = []
+
+if is_windows
+  # Set correct CRT flags at target level
+  if get_option('buildtype').startswith('debug')
+    xpum_cpp_args += ['/MDd', '/D_DEBUG']  # Dynamic debug CRT for debug builds
+    xpum_link_args = []        # No CRT exclusion for debug builds
+  else
+    xpum_cpp_args += ['/MD', '/DNDEBUG']   # Dynamic release CRT for release builds
+    xpum_link_args = ['/NODEFAULTLIB:LIBCMT']  # Exclude LIBCMT for release builds
+  endif
+
+  xpum_cpp_args += ['-DLIBXPUM_EXPORTS']
+endif
+
+# Print cpp_args for debugging
+message('HAL Core xpum_cpp_args: ' + ' '.join(xpum_cpp_args))
+
 # Shared library
 libxpum_shared = shared_library('xpum',
   hal_core_sources,
@@ -43,11 +63,11 @@ libxpum_shared = shared_library('xpum',
     fwupd_dep,
     nlohmann_json_dep
   ] + windows_deps,
-  cpp_args : is_windows ? ['-DLIBXPUM_EXPORTS'] : [],
+  cpp_args : xpum_cpp_args,
   version : meson.project_version(),
   install : true,
   install_dir : get_option('libdir'),
-  link_args : is_windows ? ['/NODEFAULTLIB:LIBCMT'] : []
+  link_args : xpum_link_args
 )
 
 # Static library
@@ -66,6 +86,7 @@ libxpum_static = static_library('xpum',
     fwupd_dep,
     nlohmann_json_dep
   ] + windows_deps,
+  cpp_args : xpum_cpp_args,
   install : get_option('static_library'),
   install_dir : get_option('libdir')
 )

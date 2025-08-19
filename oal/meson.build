@@ -24,6 +24,30 @@ elif is_linux
   oal_deps += [hwloc_dep]
 endif
 
+# Set correct CRT flags for Windows with override capability
+oal_cpp_args = []
+if is_windows
+  oal_cpp_args += ['-DLIBXPUM_EXPORTS']
+  if get_option('buildtype').startswith('debug')
+    # Use /FORCE to override any previous /MD settings from dependencies
+    oal_cpp_args += ['/MDd', '/D_DEBUG']
+  else
+    oal_cpp_args += ['/MD', '/DNDEBUG']
+  endif
+endif
+
+# Set correct CRT flags for Windows with override capability
+oal_cpp_args = []
+if is_windows
+  oal_cpp_args += ['-DLIBXPUM_EXPORTS']
+  if get_option('buildtype').startswith('debug')
+    # Use /FORCE to override any previous /MD settings from dependencies
+    oal_cpp_args += ['/MDd', '/D_DEBUG']
+  else
+    oal_cpp_args += ['/MD', '/DNDEBUG']
+  endif
+endif
+
 # OAL static library
 oal_lib = static_library('oal',
   oal_sources,
@@ -33,7 +57,7 @@ oal_lib = static_library('oal',
     include_directories('../hal/core')  # For debug.h
   ],
   dependencies : oal_deps,
-  cpp_args : is_windows ? ['-DLIBXPUM_EXPORTS'] : [],
+  cpp_args : oal_cpp_args,
   install : false
 )
 

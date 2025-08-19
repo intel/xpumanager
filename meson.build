@@ -22,6 +22,11 @@ cpp = meson.get_compiler('cpp')
 # Common compiler arguments
 compile_args = []
 
+# Add _DEBUG flag
+if is_debug
+  compile_args += ['-D_DEBUG']
+endif
+
 # Platform detection
 host_system = host_machine.system()
 is_windows = host_system == 'windows'
@@ -37,10 +42,9 @@ endif
 
 # Standard compile flags
 if is_windows 
-  compile_args = [
+  compile_args += [
     '/DUNICODE',
     '/D_UNICODE',
-    '/MD',
     '/GS',
     '/permissive-',
     '/Zc:__cplusplus', 
@@ -49,11 +53,18 @@ if is_windows
     '-DWIN32',
     '-D_WINDOWS',
   ]
+
+  # Note: CRT flags (/MD, /MDd) are now set at target level to avoid conflicts
+  # with dependencies that may already set them. The warnings about overriding
+  # /MD with /MDd are expected and harmless when mixing release dependencies
+  # with debug builds. These warnings cannot be suppressed as they are
+  # command-line warnings (D9025), not compiler warnings.
+
   if get_option('shared_library')
     compile_args += ['-DLIBXPUM_EXPORTS']
   endif
 elif is_linux
-  compile_args = [
+  compile_args += [
     '-pedantic',
   ]
 endif
@@ -168,7 +179,6 @@ global_inc = include_directories('.')
 
 # Specify compile flags before any xpum targets are compiled
 add_project_arguments(compile_args, language : 'cpp')
-
 
 # Build subdirectories
 subdir('oal')
