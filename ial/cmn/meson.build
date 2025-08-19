@@ -31,6 +31,16 @@ if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif
 
+# Set correct CRT flags for Windows
+ial_cmn_cpp_args = []
+if is_windows
+  if get_option('buildtype').startswith('debug')
+    ial_cmn_cpp_args += ['/MDd', '/D_DEBUG']
+  else
+    ial_cmn_cpp_args += ['/MD', '/DNDEBUG']
+  endif
+endif
+
 # Common commands static library
 ial_cmn_lib = static_library('ial_cmn',
   ial_cmn_sources,
@@ -42,6 +52,7 @@ ial_cmn_lib = static_library('ial_cmn',
     include_directories('../../hal/fwupd')
   ],
   dependencies : ial_cmn_deps,
+  cpp_args : ial_cmn_cpp_args,
   install : false
 )
 
