@@ -18,6 +18,7 @@
 #include <thread>
 #include <vector>
 
+#include "level_zero/zes_api.h"
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 #include "logger.h"
@@ -1598,7 +1599,26 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["device_id"] = deviceId;
-            (*json)["power_limit"] = response.powerlimit();
+            for (uint i=0; i < response.pdcount(); i++) {
+                std::string domain = "card";
+                if (response.powerdomaindata(i).powerdomain() == static_cast<int32_t>(ZES_POWER_DOMAIN_PACKAGE)) {
+                    domain = "package";
+                }
+                for (uint j=0; j<response.powerdomaindata(i).plcount(); j++) {
+                    int32_t level = response.powerdomaindata(i).powerlimitdata(j).powerlevel();
+                    switch (level){
+                    case ZES_POWER_LEVEL_SUSTAINED:
+                        (*json)["pl_"+domain+"_sustain"] = response.powerdomaindata(i).powerlimitdata(j).powerlimit();
+                        break;
+                    case ZES_POWER_LEVEL_PEAK:
+                        (*json)["pl_"+domain+"_peak"] = response.powerdomaindata(i).powerlimitdata(j).powerlimit();
+                        break;
+                    case ZES_POWER_LEVEL_BURST:
+                        (*json)["pl_"+domain+"_burst"] = response.powerdomaindata(i).powerlimitdata(j).powerlimit();
+                        break;
+                    }
+                }
+            }
             (*json)["power_vaild_range"] = response.powerscope();
             //(*json)["power_average_window"] = response.interval();
             //(*json)["power_average_window_vaild_range"] = response.intervalscope();
@@ -1700,6 +1720,37 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceSchedulerMode(int deviceI
     }
     return json;
 }
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setDevicePowerlimitExt(int device_id, int tile_id,
+                                                       const xpum_power_limit_ext_t& plimit_ext) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    ConfigDevicePowerLimitExtRequest request;
+    request.set_deviceid(device_id);
+    request.set_tileid(tile_id);
+    request.set_powerlimit(plimit_ext.limit);
+    request.set_powertype(plimit_ext.level);
+
+    ConfigDeviceResultData response;
+    grpc::Status status = stub->setDevicePowerLimitExt(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set power limit %d, power level %d", plimit_ext.limit, plimit_ext.level);
+        } else {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = response.errorno();
+            XPUM_LOG_AUDIT("Fail to set power limit %s", response.errormsg().c_str());
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+        XPUM_LOG_AUDIT("Fail to set power limit %s", status.error_message().c_str());
+    }
+    return json;
+}
+
 std::unique_ptr<nlohmann::json> GrpcCoreStub::setDevicePowerlimit(int deviceId, int tileId, int power, int interval) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

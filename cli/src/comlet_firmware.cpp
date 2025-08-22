@@ -20,6 +20,7 @@
 #include "exit_code.h"
 #include "xpum_api.h"
 #include "psc.h"
+#include "local_functions.h"
 
 namespace xpum::cli {
 
@@ -126,7 +127,6 @@ void ComletFirmware::setupOptions() {
 #ifdef DAEMONLESS
     auto recoveryFlag = addFlag("--recovery", opts->recovery, "Update firmware under survivability mode. This parameter only works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series.");
     recoveryFlag->needs(fwTypeOpt);
-    recoveryFlag->excludes(deviceIdOpt);
 #endif
 }
 
@@ -170,10 +170,22 @@ nlohmann::json ComletFirmware::validateArguments() {
     }
 
     // recovery
-    if (opts->recovery && opts->firmwareType != "GFX" && opts->firmwareType != "GFX_DATA") {
-        result["error"] = "Recovery option only supported for GFX and GFX_DATA firmware.";
-        result["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
-        return result;
+    if (opts->recovery) {
+        if (opts->firmwareType != "GFX" && opts->firmwareType != "GFX_DATA") {
+            result["error"] = "Recovery option only supported for GFX and GFX_DATA firmware.";
+            result["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+            return result;
+        }
+
+        if (opts->deviceId != "") {
+            if (!isBDF(opts->deviceId)) {
+                result["error"] = "Only support bdf address device id when doing recovery.";
+                result["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+                return result;
+            }
+            setenv("_XPUM_FW_RECOVERY_DEVICE", opts->deviceId.c_str(), 1);
+            opts->deviceId = "";
+        }
     }
 
     return result;
@@ -344,6 +356,8 @@ static std::string print_devices_fw_versions(int type) {
     int ret;
     struct igsc_device_handle handle;
 
+    auto recover_single_device = getenv("_XPUM_FW_RECOVERY_DEVICE");
+
     memset(&handle, 0, sizeof(handle));
     ret = igsc_device_iterator_create(&iter);
     if (ret != IGSC_SUCCESS) {
@@ -355,6 +369,17 @@ static std::string print_devices_fw_versions(int type) {
         if (ret != IGSC_SUCCESS) {
             info.name[0] = '\0';
             continue;
+        }
+        if (recover_single_device) {
+            char bdf_str[32];
+            snprintf(bdf_str, sizeof(bdf_str), "%04x:%02x:%02x.%01x",
+                     info.domain,
+                     info.bus,
+                     info.dev,
+                     info.func);
+
+            if (strcmp(recover_single_device, bdf_str) != 0)
+                continue;
         }
         ss << "Device " << info.name;
         std::string version = "unknown";

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file power.h
  */
@@ -14,6 +14,11 @@
 #include "level_zero/zes_api.h"
 
 namespace xpum {
+
+struct Power_limit_ext_t {
+    int32_t limit; //in milliwatts
+    int32_t level;
+};
 
 struct Power_sustained_limit_t {
     bool enabled;

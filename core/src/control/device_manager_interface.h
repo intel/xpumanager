@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_manager_interface.h
  */
@@ -55,12 +55,14 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual void getDevicePowerProps(const std::string& id,
                                      std::vector<Power>& powers) = 0;
-
+    virtual xpum_result_t getDevicePowerLimitsExt(const std::string& id,
+                                                  std::vector<xpum_power_domain_ext_t>& power_domain_ext) = 0;
     virtual void getDevicePowerLimits(const std::string& id,
                                       Power_sustained_limit_t& sustained_limit,
                                       Power_burst_limit_t& burst_limit,
                                       Power_peak_limit_t& peak_limit) = 0;
-
+    virtual xpum_result_t setDevicePowerLimitsExt(const std::string& id, int32_t tileId,
+                                                  const Power_limit_ext_t& power_limit_ext) = 0;
     virtual bool setDevicePowerSustainedLimits(const std::string& id, int32_t tileId,
                                                const Power_sustained_limit_t& sustained_limit) = 0;
 

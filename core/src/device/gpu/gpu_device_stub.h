@@ -104,7 +104,8 @@ class GPUDeviceStub {
 
     static void getPowerProps(const zes_device_handle_t& device, std::vector<Power>& powers);
 
-    static void getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf);
+    static ze_result_t getPerformanceFactorForEngine(const zes_device_handle_t& device, zes_engine_type_flag_t flag, double *factor);
+    static ze_result_t getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf);
     static bool setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor& pf);
     bool getEccState(const zes_device_handle_t& device, MemoryEcc& ecc);
     bool setEccState(const zes_device_handle_t& device, ecc_state_t& newState, MemoryEcc& ecc);
@@ -112,7 +113,8 @@ class GPUDeviceStub {
     void getFabricThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getPerfMetrics(zes_device_handle_t& device, ze_driver_handle_t& driver, Callback_t callback) noexcept;
-
+    static xpum_result_t getPowerLimitsExt(const zes_device_handle_t& device,
+                                           std::vector<xpum_power_domain_ext_t>& power_domain_ext);
     static void getPowerLimits(const zes_device_handle_t& device,
                                Power_sustained_limit_t& sustained_limit,
                                Power_burst_limit_t& burst_limit,
@@ -131,6 +133,8 @@ class GPUDeviceStub {
 
     static bool setPowerPeakLimits(const zes_device_handle_t& device,
                                    const Power_peak_limit_t& peak_limit);
+    static xpum_result_t setPowerLimitsExt(const zes_device_handle_t& device, int32_t tileId,
+                                  const Power_limit_ext_t &power_limit_ext);
 
     static void getFrequencyRanges(const zes_device_handle_t& device,
                                    std::vector<Frequency>& frequencies);
@@ -275,6 +279,7 @@ private:
 
     static bool isDevEntry(const std::string& entryName);
 
+    static std::string buildSingleError(const std::string &ze_func_name, ze_result_t result, const char* func, uint32_t line);
     static std::string buildErrors(const std::map<std::string, ze_result_t>& exception_msgs, const char* func, uint32_t line);
     static std::string getProcessName(uint32_t processId);
 

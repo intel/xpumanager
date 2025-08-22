@@ -629,19 +629,20 @@ static bool unloadDriver(std::string &error) {
 }
 
 bool recoverable() {
-    std::string driverPath = "/sys/bus/pci/drivers/i915";
+    std::string i915driverPath = "/sys/bus/pci/drivers/i915";
+    std::string xeConfigPath = "/sys/kernel/config/xe";
     std::regex bdfPattern("[0-9a-f]{4}\\:[0-9a-f]{2}\\:[0-9a-f]{2}\\.[0-9a-f]");
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
     bool all_flex = true;
     std::string deviceIdStr;
 
-    pdir = opendir(driverPath.c_str());
+    pdir = opendir(i915driverPath.c_str());
     if (pdir) {
         while ((pdirent = readdir(pdir))) {
             if (std::regex_match(pdirent->d_name, bdfPattern)) {
                 std::string bdfAddr = pdirent->d_name;
-                std::string deviceIdPath = driverPath + "/" + bdfAddr + "/device";
+                std::string deviceIdPath = i915driverPath + "/" + bdfAddr + "/device";
                 std::fstream deviceId(deviceIdPath, std::ios_base::in);
                 std::string tmp;
                 if (deviceId && deviceId >> tmp) {
@@ -661,6 +662,26 @@ bool recoverable() {
         }
         closedir(pdir);
     }
+    else {
+        //Check for Survivability mode in XE
+        pdir = opendir(xeConfigPath.c_str());
+        all_flex = false;
+        if (pdir) {
+            while ((pdirent = readdir(pdir)) != NULL) {
+                if (std::regex_match(pdirent->d_name, bdfPattern)) {
+                    std::string bdfAddr = pdirent->d_name;
+                    std::string survivabilityPath = xeConfigPath + "/" + bdfAddr + "/survivability_mode";
+                    std::fstream deviceId(survivabilityPath, std::ios_base::in);
+                    std::string mode;
+                    if (deviceId && deviceId >> mode) {
+                        if ("1" == mode)
+                            all_flex = true;
+                    }
+                }
+            }
+            closedir(pdir);
+        }
+    }
     return all_flex;
 }
 
@@ -671,6 +692,12 @@ bool setSurvivabilityMode(bool enable, std::string &error, bool &modified) {
     std::string val;
     std::fstream modeFile(SURVIVABILITY_MODE_PATH, std::ios_base::in);
     if (!modeFile) {
+        //Check for XE Driver before returning error for i915 case
+        DIR* xeConfigDir = opendir("/sys/kernel/config/xe");
+        if (xeConfigDir) {
+            closedir(xeConfigDir);
+            return true;
+        }
         error = "Driver installed doesn't support survivability mode. Or please run recovery with superuser.";
         return false;
     }

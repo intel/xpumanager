@@ -18,9 +18,9 @@ namespace xpum {
 	public:
 		GPUDevice();
 		
-		GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, std::vector<DeviceCapability>& capabilities);
+		GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, const ze_device_handle_t& ze_device, std::vector<DeviceCapability>& capabilities);
 
-		GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, const ze_driver_handle_t& driver, std::vector<DeviceCapability>& capabilities);
+		GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, const ze_device_handle_t& ze_device, const ze_driver_handle_t& driver, std::vector<DeviceCapability>& capabilities);
 
 		void getPower(std::shared_ptr<MeasurementData>& data) noexcept override;
 
@@ -84,6 +84,8 @@ namespace xpum {
 	
 	private:
 		zes_device_handle_t zes_device_handle = nullptr;
+
+		ze_device_handle_t ze_device_handle = nullptr;
 
 		ze_driver_handle_t ze_driver_handle = nullptr;
 	};

@@ -94,16 +94,17 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 ## Supported Devices
 * Intel(R) Data Center Flex Series GPU ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
 * Intel(R) Data Center Max Series GPU ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
- 
+* Intel(R) Arc(TM) B Series GPU ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
+
 ## Supported OSes
 * XPU Manager
-	* Ubuntu 20.04.3/22.04
+	* Ubuntu 20.04.3/22.04/24.04
 	* RHEL 8.8/9.2
 	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9
 	* SLES 15 SP4/SP5
 * XPU-SMI
-	* Ubuntu 20.04.3/22.04
+	* Ubuntu 20.04.3/22.04/24.04
 	* RHEL 8.8/9.2
 	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9

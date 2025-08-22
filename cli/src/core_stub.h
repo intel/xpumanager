@@ -82,6 +82,7 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId)=0;
     virtual std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2)=0;
     virtual std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int tileId, int power, int interval)=0;
+    virtual std::unique_ptr<nlohmann::json> setDevicePowerlimitExt(int deviceId, int tileId, const xpum_power_limit_ext_t& plimit_ext) = 0;
     virtual std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, int mode)=0;
     virtual std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq)=0;
     virtual std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId)=0;

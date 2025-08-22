@@ -1,14 +1,15 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_config.cpp
  */
 
-#include "comlet_config.h"
-
 #include <nlohmann/json.hpp>
 #include <future>
+#include <unordered_map>
 
+#include "level_zero/zes_api.h"
+#include "comlet_config.h"
 #include "cli_table.h"
 #include "core_stub.h"
 #include "utility.h"
@@ -31,8 +32,14 @@ static CharTableConfig ComletDeviceConfiguration(R"({
         "cells": [
             { "rowTitle": "GPU" },
             "device_id", [
-                { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_vaild_range" },
+                { "rowTitle": "Power domain card:" },
+                { "label": "  sustain(w) ", "value": "pl_card_sustain" },
+                { "label": "  burst(w) ", "value": "pl_card_burst" },
+                { "label": "  peak(w) ", "value": "pl_card_peak" },
+                { "rowTitle": "Power domain package:" },
+                { "label": "  sustain(w) ", "value": "pl_package_sustain" },
+                { "label": "  burst(w) ", "value": "pl_package_burst" },
+                { "label": "  peak(w) ", "value": "pl_package_peak" },
                 {"rowTitle": " " },
                 { "rowTitle": "Memory ECC:" },
                 { "label": "  Current", "value": "memory_ecc_current_state" },
@@ -117,6 +124,7 @@ void ComletConfig::setupOptions() {
     addOption("-t,--tile", this->opts->tileId, "The tile ID");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
+    addOption("--powertype", this->opts->powertype, "Device-level power limit type. Valid options: \"sustain\"; \"peak\"; \"burst\"");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\". The valid range of all time values (us) is from 5000 to 100,000,000.");
     addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset). For Intel(R) Max Series GPU, when SR-IOV is enabled, please add \"pci=realloc=off\" into Linux kernel command line parameters. When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters.");
@@ -236,35 +244,38 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         } else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
-            std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
-            if (paralist.size() >= 1 && !paralist.at(0).empty()) {
-                int val1;
-                try {
-                    val1 = std::stoi(paralist.at(0));
-                } catch (std::exception &e) {
-                    (*json)["return"] = "invalid parameter: powerlimit";
-                    return json;
-                }
-
-                if (paralist.size() == 2 && paralist.at(1).empty()) {
-                    (*json)["return"] = "invalid parameter: please check help information";
-                    return json;
-                }
-                if (val1 <= 0) {
-                    (*json)["return"] = "invalid parameter: power limit should bigger than 0.";
-                    return json;
-                }
-                int val2 = 0; //std::stoi(paralist.at(1));
-                this->opts->tileId = -1;
-                json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1, val2);
-                if ((*json)["status"] == "OK") {
-                    (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) /*+
-                    " tile " + std::to_string(this->opts->tileId) */
-                                        + ".";
-                }
+            int power_limit = 0;
+            int32_t power_level;
+            std::unordered_map<std::string, int32_t> power_type = {
+                {"sustain", static_cast<int32_t>(ZES_POWER_LEVEL_SUSTAINED)},
+                {"peak", static_cast<int32_t>(ZES_POWER_LEVEL_PEAK)},
+                {"burst", static_cast<int32_t>(ZES_POWER_LEVEL_BURST)}
+            };
+            if (this->opts->powertype.empty()) {
+                power_level = static_cast<int32_t>(ZES_POWER_LEVEL_SUSTAINED);
+            }else if (power_type.find(this->opts->powertype) != power_type.end()) {
+                power_level = power_type[this->opts->powertype];
             } else {
-                (*json)["return"] = "invalid parameter: please check help information";
+                (*json)["return"] = "Invalid powertype value: " + this->opts->powertype;
                 return json;
+            }
+            try {
+                power_limit = std::stoi(this->opts->powerlimit);
+            } catch (std::exception &e) {
+                (*json)["return"] = "invalid parameter: powerlimit";
+                return json;
+            }
+            if (power_limit <= 0) {
+                (*json)["return"] = "invalid parameter: power limit should greater than 0.";
+                return json;
+            }
+            this->opts->tileId = -1;
+            xpum_power_limit_ext_t power_limit_ext = {power_limit, power_level};
+            json = this->coreStub->setDevicePowerlimitExt(this->opts->deviceId, this->opts->tileId, power_limit_ext);
+            if ((*json).contains("errno")) {
+                (*json)["error"] = getErrorString((*json)["errno"]);
+            }else if ((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId);
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
@@ -398,11 +409,12 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (!this->opts->setecc.empty()) {
             bool enabled = false;
             int eccVal;
-            try {
+            if (this->opts->setecc.length() == 1 &&
+                (this->opts->setecc[0] == '0' || this->opts->setecc[0] == '1')) {
                 eccVal = std::stoi(this->opts->setecc);
-            } catch (std::exception &e) {
+            } else {
                 (*json)["return"]="invalid parameter value";
-                return json;     
+                return json;
             }
             if (eccVal == 1) {
                 enabled = true;
@@ -414,25 +426,13 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             json = this->coreStub->setMemoryEccState(this->opts->deviceId, enabled);
             if((*json)["status"] == "OK") {
-                std::string available = (*json)["memory_ecc_available"];
-                std::string configurable = (*json)["memory_ecc_configurable"];
-                std::string current = (*json)["memory_ecc_current_state"];
-                std::string pending = (*json)["memory_ecc_pending_state"];
                 std::string pendingAction = (*json)["memory_ecc_pending_action"];
-                (*json)["return"] = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId)+". Please reset the GPU or reboot the OS for the change to take effect.";
-
-               /* (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
-                " configurable: " + configurable +
-                " current: " + current +
-                " pending: " + pending + 
-                " action: " +  pendingAction;
-                if (available.compare("true") == 0 && configurable.compare("true") == 0) {
-                    (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU "
-                + std::to_string(this->opts->deviceId) + ". Please reset GPU or reboot OS to take effect.";
+                (*json)["return"] = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId);
+                if (pendingAction.compare("none") == 0) {
+                    (*json)["return"] += ".";
                 } else {
-                    (*json)["return"] = "Failed to change the ECC mode. The current ECC mode is " + current + ", the pending ECC mode is " + pending +
-                    " and the pending action is "+ pendingAction; " on GPU "+ std::to_string(this->opts->deviceId);
-                }*/
+                    (*json)["return"] += ". Please reset the GPU or reboot the OS for the change to take effect.";
+                }
             }
             return json;  
         }
@@ -585,5 +585,4 @@ void ComletConfig::getTableResult(std::ostream &out) {
         showPureCommandOutput(out, json);
     }
 }
-
 } // end namespace xpum::cli

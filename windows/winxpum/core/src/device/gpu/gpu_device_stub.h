@@ -61,7 +61,7 @@ namespace xpum {
 
         std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device) noexcept;
 
-        std::shared_ptr<MeasurementData> toGetEuActiveStallIdle(const zes_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) noexcept;
+        std::shared_ptr<MeasurementData> toGetEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) noexcept;
 
         std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, MeasurementType type) noexcept;
 

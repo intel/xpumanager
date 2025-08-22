@@ -13,11 +13,15 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <vector>
 
 #if defined(__cplusplus)
 namespace xpum {
 extern "C" {
 #endif
+
+#define MILLIWATTS_TO_WATTS(x) (x/1000)
+#define WATTS_TO_MILLIWATS(x)  (x*1000)
 
 /**
  * Max string length
@@ -164,7 +168,12 @@ typedef enum xpum_result_enum {
     XPUM_PPR_NOT_FOUND = 63,
     XPUM_UPDATE_FIRMWARE_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE = 64,
     XPUM_RESULT_UNSUPPORTED_DEVICE = 65,
-    XPUM_GROUP_LIMIT_REACHED = 66
+    XPUM_GROUP_LIMIT_REACHED = 66,
+    XPUM_INVALID_POWER_LIMIT = 67,
+    XPUM_UNSUPPORTED_FEATURE_PL_SUSTAIN = 68,
+    XPUM_UNSUPPORTED_FEATURE_PL_PEAK = 69,
+    XPUM_UNSUPPORTED_FEATURE_PL_BURST = 70,
+    XPUM_UNSUPPORTED_FEATURE_PL_UNKNOWN = 71,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -812,6 +821,16 @@ typedef enum xpum_standby_mode_t {
     XPUM_NEVER = 1,
     XPUM_STANDBY_MODE_FORCE_UINT32 = 0x7fffffff
 } xpum_standby_mode_t;
+
+typedef struct xpum_power_limit_ext_t {
+    int32_t limit;
+    int32_t level;
+} xpum_power_limit_ext_t;
+
+typedef struct xpum_power_domain_ext_t {
+    int32_t power_domain;
+    std::vector<xpum_power_limit_ext_t> pl_ext;
+}xpum_power_domain_ext_t;
 
 typedef struct xpum_power_sustained_limit_t {
     bool enabled;

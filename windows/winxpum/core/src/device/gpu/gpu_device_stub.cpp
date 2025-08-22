@@ -106,26 +106,67 @@ namespace xpum {
         auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
         uint32_t driver_count = 0;
         ze_result_t res;
-        zeDriverGet(&driver_count, nullptr);
+        res = zeDriverGet(&driver_count, nullptr);
+        if (res != ZE_RESULT_SUCCESS) {
+            return p_devices;
+        }       
         std::vector<ze_driver_handle_t> drivers(driver_count);
-        zeDriverGet(&driver_count, drivers.data());
-
+        res = zeDriverGet(&driver_count, drivers.data());
+        if (res != ZE_RESULT_SUCCESS) {
+            return p_devices;
+        }
         for (auto& p_driver : drivers) {
             uint32_t device_count = 0;
-            XPUM_ZE_HANDLE_LOCK(p_driver, zeDeviceGet(p_driver, &device_count, nullptr));
+            XPUM_ZE_HANDLE_LOCK(p_driver, res = zeDeviceGet(p_driver, &device_count, nullptr));
+            if (res != ZE_RESULT_SUCCESS) {
+                return p_devices;
+            }
             std::vector<ze_device_handle_t> devices(device_count);
-            XPUM_ZE_HANDLE_LOCK(p_driver, zeDeviceGet(p_driver, &device_count, devices.data()));
+            XPUM_ZE_HANDLE_LOCK(p_driver, res = zeDeviceGet(p_driver, &device_count, devices.data()));
+            if (res != ZE_RESULT_SUCCESS) {
+                return p_devices;
+            }
             ze_driver_properties_t driver_prop = {};
-            XPUM_ZE_HANDLE_LOCK(p_driver, zeDriverGetProperties(p_driver, &driver_prop));
-
+            XPUM_ZE_HANDLE_LOCK(p_driver, res = zeDriverGetProperties(p_driver, &driver_prop));
+            if (res != ZE_RESULT_SUCCESS) {
+                return p_devices;
+            }
             for (auto& device : devices) {
                 std::vector<DeviceCapability> capabilities;
+                
+                ze_device_properties_t props_core = {};
+                props_core.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                props_core.pNext = nullptr;
+                XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetProperties(device, &props_core));
+                if (res != ZE_RESULT_SUCCESS) {
+                    return p_devices;
+                }
+                uint32_t zes_driver_count = 0;
+                zesDriverGet(&zes_driver_count, nullptr);
+                std::vector<zes_driver_handle_t> zes_drivers(zes_driver_count);
+                zesDriverGet(&zes_driver_count, zes_drivers.data());
+                
+                zes_uuid_t uuid = {};
+                memcpy(uuid.id, props_core.uuid.id, ZE_MAX_DEVICE_UUID_SIZE);
                 zes_device_handle_t zes_device = (zes_device_handle_t)device;
+                ze_bool_t on_subdevice;
+                uint32_t subdevice_id;
+
+                for (auto zes_driver : zes_drivers) {
+                    res = zesDriverGetDeviceByUuidExp(zes_driver, uuid, &zes_device, &on_subdevice, &subdevice_id);
+                    if (res == ZE_RESULT_SUCCESS) {
+                        break;
+                    }
+                }
+
                 zes_device_properties_t props = {};
                 props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(zes_device, zesDeviceGetProperties(zes_device, &props));
+                XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceGetProperties(zes_device, &props));
+                if (res != ZE_RESULT_SUCCESS) {
+                    return p_devices;
+                }
                 if (props.core.type == ZE_DEVICE_TYPE_GPU) {
-                    auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, p_driver, capabilities);
+                    auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE, std::string("GPU")));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
                     // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
@@ -138,14 +179,14 @@ namespace xpum {
                         vendor_name = "Intel(R) Corporation";
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME, vendor_name));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ, std::to_string(props.core.coreClockRate)));
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_MEM_ALLOC_SIZE_BYTE, std::to_string(props.core.maxMemAllocSize)));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_MEM_ALLOC_SIZE_BYTE, std::to_string(props_core.maxMemAllocSize)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS, std::to_string(props.core.maxHardwareContexts)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY, std::to_string(props.core.maxCommandQueuePriority)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS_PER_SUB_SLICE, std::to_string(props.core.numEUsPerSubslice)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUB_SLICES_PER_SLICE, std::to_string(props.core.numSubslicesPerSlice)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SLICES, std::to_string(props.core.numSlices)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_THREADS_PER_EU, std::to_string(props.core.numThreadsPerEU)));
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH, std::to_string(props.core.physicalEUSimdWidth)));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH, std::to_string(props_core.physicalEUSimdWidth)));
 
                     auto& uuidBuf = props.core.uuid.id;
                     char uuidStr[37] = {};
@@ -164,7 +205,7 @@ namespace xpum {
 
                     zes_pci_properties_t pci_props = {};
 
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+                    XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDevicePciGetProperties(zes_device, &pci_props));
                     if (res == ZE_RESULT_SUCCESS) {
                         std::string pciName = std::string(props.core.name);
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, pciName));
@@ -190,9 +231,9 @@ namespace xpum {
                     uint64_t physical_size = 0;
                     uint64_t free_size = 0;
                     uint32_t mem_module_count = 0;
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
+                    XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, nullptr));
                     std::vector<zes_mem_handle_t> mems(mem_module_count);
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
+                    XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, mems.data()));
                     if (res == ZE_RESULT_SUCCESS) {
                         for (auto& mem : mems) {
                             uint64_t mem_module_physical_size = 0;
@@ -238,7 +279,7 @@ namespace xpum {
 
                     uint32_t media_engine_count = 0;
                     uint32_t meida_enhancement_engine_count = 0;
-                    toGetDeviceMediaEngineCount(device, media_engine_count, meida_enhancement_engine_count, props.core.deviceId);
+                    toGetDeviceMediaEngineCount(zes_device, media_engine_count, meida_enhancement_engine_count, props.core.deviceId);
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
 
@@ -636,27 +677,26 @@ namespace xpum {
                 zes_freq_properties_t props = {};
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    if (props.type != ZES_FREQ_DOMAIN_GPU) {
-                        continue;
-                    }
                     zes_freq_state_t freq_state = {};
                     XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
-                    if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
-                        if (type == MeasurementType::METRIC_FREQUENCY)
-                            ret->setCurrent(freq_state.actual);
-                        else if (type == MeasurementType::METRIC_REQUEST_FREQUENCY)
-                            ret->setCurrent(freq_state.request);
-                        else if (type == MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY) {
-                            if (Utility::isATSMPlatform(device) == true) {
-                                std::vector<PerformanceFactor> pfs;
-                                getPerformanceFactor(device, pfs);
-                                for (auto& pf : pfs) {
-                                    if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
-                                        ret->setCurrent(freq_state.actual * pf.getFactor() / 100);
-                                        break;
-                                    }
+                    if (res == ZE_RESULT_SUCCESS) {
+                        if (props.type == ZES_FREQ_DOMAIN_GPU) {
+                            if (type == MeasurementType::METRIC_FREQUENCY) {
+                                ret->setCurrent(freq_state.actual);
+                            } else if (type == MeasurementType::METRIC_REQUEST_FREQUENCY) {
+                                ret->setCurrent(freq_state.request);
+                            }
+                        } else if (props.type == ZES_FREQ_DOMAIN_MEDIA && type == MeasurementType::METRIC_MEDIA_ENGINE_FREQUENCY) {
+                            double factor = 1;
+                            std::vector<PerformanceFactor> pfs;
+                            getPerformanceFactor(device, pfs);
+                            for (auto& pf : pfs) {
+                                if (pf.getEngine() == ZES_ENGINE_TYPE_FLAG_MEDIA) {
+                                    factor = pf.getFactor() / 100.0;
+                                    break;
                                 }
                             }
+                            ret->setCurrent(freq_state.actual * factor);
                         }
                     } else {
                         exception_msgs["zesFrequencyGetState"] = res;
@@ -1117,7 +1157,7 @@ namespace xpum {
         return ret;
     }
 
-    std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEuActiveStallIdle(const zes_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) noexcept {
+    std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) noexcept {
         std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
         if (device == nullptr) {
             ret->setErrors("toGetEuActiveStallIdle error");

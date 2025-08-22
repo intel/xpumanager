@@ -8,6 +8,18 @@
 
 #include "spdlog/cfg/env.h"
 #include "spdlog/spdlog.h"
+#include "spdlog/fmt/bundled/core.h"
+
+template<typename T, typename = std::enable_if<std::is_enum<T>::value, bool>>
+auto format_as(T t) -> typename std::underlying_type<T>::type {
+    return fmt::underlying(t);
+}
+namespace xpum {
+    template<typename T, typename = std::enable_if<std::is_enum<T>::value, bool>>
+    auto format_as(T t) -> typename std::underlying_type<T>::type {
+        return fmt::underlying(t);
+    }
+}
 
 #define XPUM_LOG_INFO(...) spdlog::info(__VA_ARGS__)
 #define XPUM_LOG_WARN(...) spdlog::warn(__VA_ARGS__)

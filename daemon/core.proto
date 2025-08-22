@@ -671,6 +671,17 @@ message DeviceDataRequest{
     uint32 tileId = 3;
 }
 
+message XpumPowerLimitExt {
+    int32 powerlimit = 1;
+    int32 powerlevel = 2;
+}
+
+message XpumPowerDomainExt {
+    int32 powerDomain = 1;
+    repeated XpumPowerLimitExt powerLimitData= 2;
+    uint32 plCount = 3;
+}
+
 message ConfigDeviceDataRequest{
     uint32 deviceId = 1;
     bool isTileData = 2;
@@ -706,13 +717,14 @@ message ConfigTileData {
 message ConfigDeviceData{
     uint32 deviceId = 1;    
     uint32 tileCount = 2;
-    uint32 powerLimit = 3;
+    repeated XpumPowerDomainExt powerDomainData= 3;
     string powerScope = 4;
     uint32 interval = 5;
     string intervalScope = 6; 
     repeated ConfigTileData tileConfigData = 7;
     string errorMsg = 8;
     int32 errorNo = 9;
+    uint32 pdCount = 10;
 }
 message ConfigDeviceSchdeulerModeRequest{
     uint32 deviceId = 1;
@@ -727,6 +739,12 @@ message ConfigDevicePowerLimitRequest{
     int32 tileId = 2;
     uint32 powerLimit = 3;
     uint32 intervalWindow = 4;
+}
+message ConfigDevicePowerLimitExtRequest{
+    uint32 deviceId = 1;
+    int32 tileId = 2;
+    int32 powerLimit = 3;
+    int32 powerType = 4;
 }
 message ConfigDeviceFrequencyRangeRequest{
     uint32 deviceId = 1;
@@ -1227,6 +1245,7 @@ service XpumCoreService {
     rpc applyPPR( ApplyPprRequest ) returns ( ApplyPprResponse );
     rpc setDeviceSchedulerMode( ConfigDeviceSchdeulerModeRequest ) returns ( ConfigDeviceResultData );
     rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );
+    rpc setDevicePowerLimitExt( ConfigDevicePowerLimitExtRequest ) returns ( ConfigDeviceResultData );    
     rpc setDeviceFrequencyRange( ConfigDeviceFrequencyRangeRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceStandbyMode( ConfigDeviceStandbyRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFabricPortEnabled( ConfigDeviceFabricPortEnabledRequest ) returns ( ConfigDeviceResultData );

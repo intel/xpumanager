@@ -20,6 +20,8 @@ std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices(){
     int ret;
     struct igsc_device_handle handle;
 
+    auto recover_single_device = getenv("_XPUM_FW_RECOVERY_DEVICE");
+
     memset(&handle, 0, sizeof(handle));
     ret = igsc_device_iterator_create(&iter);
     if (ret != IGSC_SUCCESS) {
@@ -35,6 +37,17 @@ std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices(){
             continue;
         }
         (void)igsc_device_close(&handle);
+        if (recover_single_device) {
+            char bdf_str[32];
+            snprintf(bdf_str, sizeof(bdf_str), "%04x:%02x:%02x.%01x",
+                     info.domain,
+                     info.bus,
+                     info.dev,
+                     info.func);
+
+            if (strcmp(recover_single_device, bdf_str) != 0)
+                continue;
+        }
 
         pci_address_t bdfAddr;
         bdfAddr.domain = info.domain;

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_config.h
  */
@@ -30,6 +30,7 @@ struct ComletConfigOptions {
     //std::string schedulerTimeout ="";
     //bool schedulerExclusive = false;
     std::string powerlimit = "";
+    std::string powertype = "";
     std::string standby = "";
     std::string frequencyrange = "";
 };

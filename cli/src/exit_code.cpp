@@ -1,12 +1,10 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file exit_code.cpp
  */
 
 #include "exit_code.h"
-
-#include "xpum_structs.h"
 
 int exit_code = XPUM_CLI_SUCCESS;
 
@@ -126,5 +124,27 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_CLI_ERROR_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+}
+
+std::string getErrorString(const xpum::xpum_result_t res) {
+    switch (res) {
+    case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+        return "Level Zero Initialization Error";
+    case XPUM_RESULT_DEVICE_NOT_FOUND:
+    case XPUM_RESULT_TILE_NOT_FOUND:
+        return "device Id or tile Id is invalid";
+    case XPUM_INVALID_POWER_LIMIT:
+        return "Provided powerlimit value is not valid";
+    case XPUM_UNSUPPORTED_FEATURE_PL_SUSTAIN:
+        return "powerlimit \"sustain\" is not supported on this device";
+    case XPUM_UNSUPPORTED_FEATURE_PL_PEAK:
+        return "powerlimit \"peak\" is not supported on this device";
+    case XPUM_UNSUPPORTED_FEATURE_PL_BURST:
+        return "powerlimit \"burst\" is not supported on this device";
+    case XPUM_UNSUPPORTED_FEATURE_PL_UNKNOWN:
+        return "Unknown powerlimit type. Valid options are sustain, burst, peak";
+    default:
+        return "Error";
     }
 }

@@ -5,7 +5,7 @@ FROM quay.io/centos/centos:stream9
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/4.0.0.tar.gz
 ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.9.5.tar.gz
-ARG ZLIB_VERSION=v1.3
+ARG ZLIB_VERSION=v1.3.1
 ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_29_0
 
@@ -36,8 +36,8 @@ RUN dnf update -y && \
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
     git pull https://github.com/madler/zlib $ZLIB_VERSION && \
-    # fix CVE-2023-45853 by removing minizip code
-    rm -rf contrib/minizip && \
+    #Fix cmake build directory interference issue
+    GIT_COMMITTER_NAME="sys_xpum" GIT_COMMITTER_EMAIL="sys_xpum@intel.com" git cherry-pick f1f503da85d52e56aae11557b4d79a42bcaa2b86 && \
     cd /grpc/third_party/cares/cares/ && \
     git pull https://github.com/c-ares/c-ares.git $CARES_VERSION && \
     cd /grpc && \

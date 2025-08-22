@@ -14,6 +14,7 @@
 #include <thread>
 #include <csignal>
 
+#include "level_zero/zes_api.h"
 #include "internal_api.h"
 #include "logger.h"
 #include "xpum_api.h"
@@ -1377,6 +1378,49 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::setDevicePowerLimitExt(::grpc::ServerContext* context,
+                                                           const ::ConfigDevicePowerLimitExtRequest* request,
+                                                           ::ConfigDeviceResultData* response) {
+    xpum_device_id_t device_id = request->deviceid();
+    int32_t tile_id = request->tileid();
+    int32_t pwr_mW = request->powerlimit() * 1000;
+    xpum_result_t res;
+    xpum_power_prop_data_t pwr_range_array[32];
+    uint32_t power_range_count = 32;
+
+    res = xpumGetDevicePowerProps(device_id, pwr_range_array, &power_range_count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Failed to get device power properties");        
+        response->set_errorno(res);
+        return grpc::Status::OK;
+    }
+
+    for (uint32_t i = 0; i < power_range_count; i++) {
+        if (pwr_range_array[i].subdevice_Id == (uint32_t)tile_id || tile_id == -1) {
+            int32_t max_limit = pwr_range_array[i].max_limit;
+            int32_t min_limit = pwr_range_array[i].min_limit;
+            int32_t default_limit = pwr_range_array[i].default_limit;
+            if (pwr_mW < 1 ||
+                (max_limit > 0  && pwr_mW > max_limit) ||
+                (min_limit > 0  && pwr_mW < min_limit) ||
+                (max_limit == -1  && default_limit > 0  && pwr_mW > default_limit)) {
+                response->set_errormsg("Invalid power limit value");
+                response->set_errorno(XPUM_INVALID_POWER_LIMIT);
+                return grpc::Status::OK;
+            }
+        }
+    }
+    xpum_power_limit_ext_t pwr_limit_ext = {request->powerlimit(), request->powertype()};
+    res = xpumSetDevicePowerLimitsExt(device_id, tile_id, pwr_limit_ext);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Failed to set device power limits");
+        response->set_errorno(res);
+        return grpc::Status::OK;
+    }
+    response->set_retcode(res);
+    return grpc::Status::OK;
+}
+    
 ::grpc::Status XpumCoreServiceImpl::setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request,
                                                         ::ConfigDeviceResultData* response) {
     xpum_device_id_t deviceId = request->deviceid();
@@ -2145,8 +2189,8 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
         }
     }
 
-    xpum_power_limits_t powerLimits;
-    res = xpumGetDevicePowerLimits(deviceId, 0, &powerLimits);
+    std::vector<xpum_power_domain_ext_t> power_domains_ext;    
+    res = xpumGetDevicePowerLimitsExt(deviceId, 0, power_domains_ext);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -2159,8 +2203,6 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
         response->set_errorno(res);
         return grpc::Status::OK;
     }
-    int32_t power = powerLimits.sustained_limit.power / 1000;
-    int32_t interval = powerLimits.sustained_limit.interval;
 
     bool available;
     bool configurable;
@@ -2273,9 +2315,17 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
         response->set_errorno(res);
         return grpc::Status::OK;
     }
-
-    response->set_powerlimit(power);
-    response->set_interval(interval);
+    response->set_pdcount(power_domains_ext.size());
+    for (auto& pd: power_domains_ext) {
+        XpumPowerDomainExt* pd_response = response->add_powerdomaindata();
+        pd_response->set_plcount(pd.pl_ext.size());
+        pd_response->set_powerdomain(pd.power_domain);
+        for (auto pl: pd.pl_ext) {
+            XpumPowerLimitExt* pl_response = pd_response->add_powerlimitdata();
+            pl_response->set_powerlimit(MILLIWATTS_TO_WATTS(pl.limit));
+            pl_response->set_powerlevel(pl.level);
+        }
+    }
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].on_subdevice == false) {

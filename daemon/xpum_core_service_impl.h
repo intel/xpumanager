@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2024 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_core_service_impl.h
  */
@@ -116,6 +116,9 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual ::grpc::Status getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) override;
     virtual ::grpc::Status setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request, ::ConfigDeviceResultData* response) override;
+    virtual ::grpc::Status setDevicePowerLimitExt(::grpc::ServerContext* context,
+						  const ::ConfigDevicePowerLimitExtRequest* request,
+						  ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request, ::ConfigDeviceResultData* response) override;

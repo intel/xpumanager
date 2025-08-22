@@ -16,6 +16,7 @@
 #include <thread>
 #include <vector>
 
+#include "level_zero/zes_api.h"
 #include "logger.h"
 #include "xpum_api.h"
 #include "xpum_structs.h"
@@ -983,8 +984,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
         }
     }
 
-    xpum_power_limits_t powerLimits;
-    res = xpumGetDevicePowerLimits(deviceId, 0, &powerLimits);
+    std::vector<xpum_power_domain_ext_t> power_domains_ext;
+    res = xpumGetDevicePowerLimitsExt(deviceId, 0, power_domains_ext);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -998,7 +999,6 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
         return json;
     }
 
-    int32_t power = powerLimits.sustained_limit.power / 1000;
     bool available;
     bool configurable;
     xpum_ecc_state_t current, pending;
@@ -1102,7 +1102,25 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
     }
 
     (*json)["device_id"] = deviceId;
-    (*json)["power_limit"] = power;
+    for (auto pd: power_domains_ext) {
+        std::string domain = "card";
+        if (pd.power_domain == static_cast<int32_t>(ZES_POWER_DOMAIN_PACKAGE)) {
+            domain = "package";
+        }
+        for (auto pl: pd.pl_ext) {
+            switch (pl.level){
+            case ZES_POWER_LEVEL_SUSTAINED:
+                (*json)["pl_"+domain+"_sustain"] = MILLIWATTS_TO_WATTS(pl.limit);
+                break;
+            case ZES_POWER_LEVEL_PEAK:
+                (*json)["pl_"+domain+"_peak"] = MILLIWATTS_TO_WATTS(pl.limit);
+                break;
+            case ZES_POWER_LEVEL_BURST:
+                (*json)["pl_"+domain+"_burst"] = MILLIWATTS_TO_WATTS(pl.limit);
+                break;      
+            }
+        }
+    }
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].on_subdevice == false) {
@@ -1283,6 +1301,50 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
 LOG_ERR:
     XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode,
                    (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::setDevicePowerlimitExt(int device_id, int tile_id,
+                                                                    const xpum_power_limit_ext_t& pwr_limit_ext) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res;
+    xpum_power_prop_data_t pwr_range_array[32];
+    uint32_t pwr_range_count = 32;
+    int32_t pwr_mW = WATTS_TO_MILLIWATS(pwr_limit_ext.limit);
+
+    res = xpumGetDevicePowerProps(device_id, pwr_range_array, &pwr_range_count);
+    if (res != XPUM_OK) {
+        (*json)["errno"] = res;
+	(*json)["error"] = getErrorString(res);
+        XPUM_LOG_AUDIT("Fail to set power limit %s",
+                       (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        return json;
+    }
+
+    for (uint32_t i = 0; i < pwr_range_count; i++) {
+        if (pwr_range_array[i].subdevice_Id == (uint32_t)tile_id || tile_id == -1) {
+            int32_t max_limit = pwr_range_array[i].max_limit;
+            int32_t min_limit = pwr_range_array[i].min_limit;
+            int32_t default_limit = pwr_range_array[i].default_limit;
+            if (pwr_mW < 1 ||
+                (max_limit > 0  && pwr_mW > max_limit) ||
+                (min_limit > 0  && pwr_mW < min_limit) ||
+                (max_limit == -1  && default_limit > 0  && pwr_mW > default_limit)) {
+                (*json)["errno"] = XPUM_INVALID_POWER_LIMIT;
+		(*json)["error"] = "Invalid power limit value";
+                XPUM_LOG_AUDIT("Fail to set power limit %s",
+                               (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
+                return json;
+            }
+        }
+    }
+    res = xpumSetDevicePowerLimitsExt(device_id, tile_id, pwr_limit_ext);
+    if (res != XPUM_OK) {
+        (*json)["error"] = getErrorString(res);
+	return json;
+    }
+    (*json)["status"] = "OK";
+    XPUM_LOG_AUDIT("Succeed to set power limit %d", pwr_limit_ext.limit);    
     return json;
 }
 

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2024 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_discovery.cpp
  */
@@ -323,7 +323,8 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         auto deviceList = (*deviceListJson)["device_list"];
         nlohmann::json deviceJsonList;
         for (auto& device : deviceList) {
-            auto deviceDetailedJson = this->coreStub->getDeviceProperties(device["device_id"], this->opts->username, this->opts->password);
+            auto deviceDetailedJson = this->coreStub->getDeviceProperties(device["device_id"],
+									  this->opts->username, this->opts->password);
             auto deviceJson = nlohmann::json::parse(deviceDetailedJson->dump());
             deviceJsonList.push_back(deviceJson);
         }

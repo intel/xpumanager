@@ -1,10 +1,14 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file exit_code.h
  */
 
 #pragma once
+
+#include <string>
+
+#include "xpum_structs.h"
 
 #define XPUM_CLI_SUCCESS                                                    0   // Success
 #define XPUM_CLI_ERROR_GENERIC_ERROR                                        1   // Generic error
@@ -74,3 +78,4 @@
 #define XPUM_CLI_ERROR_GFX_DATA_IMAGE_VERSION_LOWER_OR_EQUAL_TO_DEVICE      65 // The GFX_DATA version of the image is less than or equal to the device
 
 int errorNumTranslate(int coreErrNo);
+std::string getErrorString(const xpum::xpum_result_t res);

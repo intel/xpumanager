@@ -156,6 +156,12 @@
     <ClInclude Include="src\device\performancefactor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\device\memoryEcc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\device\pcie_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp">
@@ -240,6 +246,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\device\performancefactor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\device\memoryEcc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\device\pcie_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_manager.cpp
  */
@@ -233,12 +233,24 @@ void DeviceManager::getDevicePowerProps(const std::string& id, std::vector<Power
     GPUDeviceStub::instance().getPowerProps(getDeviceHandle(id), powers);
 }
 
+xpum_result_t DeviceManager::getDevicePowerLimitsExt(const std::string& id,
+						     std::vector<xpum_power_domain_ext_t>& power_domains_ext) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().getPowerLimitsExt(getDeviceHandle(id), power_domains_ext);
+}
+
 void DeviceManager::getDevicePowerLimits(const std::string& id,
                                          Power_sustained_limit_t& sustained_limit,
                                          Power_burst_limit_t& burst_limit,
                                          Power_peak_limit_t& peak_limit) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getPowerLimits(getDeviceHandle(id), sustained_limit, burst_limit, peak_limit);
+}
+
+xpum_result_t DeviceManager::setDevicePowerLimitsExt(const std::string& id, int32_t tileId,
+					    const Power_limit_ext_t& power_limit_ext) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setPowerLimitsExt(getDeviceHandle(id), tileId, power_limit_ext);
 }
 
 bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id, int32_t tileId,

@@ -17,17 +17,20 @@ namespace xpum {
 
     GPUDevice::GPUDevice(const std::string& id,
         const zes_device_handle_t& zes_device,
+        const ze_device_handle_t& ze_device,
         std::vector<DeviceCapability>& capabilities) {
         this->id = id;
+        this->ze_device_handle = ze_device;
         this->zes_device_handle = zes_device;
         for (DeviceCapability& cap : capabilities) {
             this->capabilities.push_back(cap);
         }
     }
 
-    GPUDevice::GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, const ze_driver_handle_t& ze_driver, std::vector<DeviceCapability>& capabilities) {
+    GPUDevice::GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, const ze_device_handle_t& ze_device, const ze_driver_handle_t& ze_driver, std::vector<DeviceCapability>& capabilities) {
         this->id = id;
         this->zes_device_handle = zes_device;
+        this->ze_device_handle = ze_device;
         this->ze_driver_handle = ze_driver;
         for (DeviceCapability& cap : capabilities) {
             this->capabilities.push_back(cap);
@@ -114,7 +117,7 @@ namespace xpum {
     }
 
     void GPUDevice::getEuActiveStallIdle(std::shared_ptr<MeasurementData>& data, MeasurementType type) noexcept {
-        data = GPUDeviceStub::instance().toGetEuActiveStallIdle(zes_device_handle, ze_driver_handle, type);
+        data = GPUDeviceStub::instance().toGetEuActiveStallIdle(ze_device_handle, ze_driver_handle, type);
     }
 
     void GPUDevice::getRasError(std::shared_ptr<MeasurementData>& data, MeasurementType type) noexcept {

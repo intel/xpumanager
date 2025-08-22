@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2024 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_api.h
  */
@@ -11,6 +11,7 @@
 #pragma once
 #endif
 
+#include <vector>
 #include "xpum_structs.h"
 
 #ifdef _WIN32
@@ -445,6 +446,36 @@ XPUM_API xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  * @note Support Platform: Linux, Windows
  */
 XPUM_API xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId, int32_t tileId, xpum_power_limits_t *pPowerLimits);
+
+ /**
+ * @brief Get device power limit
+ * @details This function is used to get the power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id. if tileId is -1, return device's powerlimit; otherwise return tile's powerlimit.
+ * @param power_limit_ext   IN/OUT: The detailed power limit extended data
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ * @note Support Platform: Linux, Windows
+ */
+XPUM_API xpum_result_t xpumGetDevicePowerLimitsExt(xpum_device_id_t deviceId,
+                                          int32_t tileId,
+					  std::vector<xpum_power_domain_ext_t>& power_limit_ext);
+/**
+ * @brief Set device extended power limit
+ * @details This function is used to set the extended power limit of different types
+ *
+ * @param device_id          IN: The device Id
+ * @param tile_id           IN: The tile Id
+ * @param power_limit_ext   IN: The extended power limit and its type.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ * @note Support Platform: Linux, Windows
+ */
+xpum_result_t xpumSetDevicePowerLimitsExt(xpum_device_id_t device_id, int32_t tile_id,
+					  const xpum_power_limit_ext_t& power_limit_ext);
 /**
  * @brief Set device sustained power limit
  * @details This function is used to set the sustained power limit of device
