@@ -669,23 +669,13 @@ ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	zes_pci_properties_t pciProps;
-	ze_result_t result;
-	char output[256] = {0};
-
 	pci *p = (pci *)d->dev->getPCI();
-	result = p->getProperties(d->zesDeviceHdl, &pciProps);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// Format the PCI BDF address as "domain:bus:device.function"
-	// Example: "0000:00:02.0"
-	// where domain is 4 digits, bus is 2 digits in hex, device is 2 digits, and function is 1 digit.
-	snprintf(output, 255, "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus, pciProps.address.device,
-			 pciProps.address.function);
-	*outputLine = output;
+	*outputLine = p->getBDFStr();
 	return ZE_RESULT_SUCCESS;
 }
 
