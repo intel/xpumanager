@@ -177,6 +177,7 @@ int cmdUpdateFW::run(arg_struct *args)
 	for (auto &device : deviceList) {
 		fwInfo.dev = device.dev;
 		fwInfo.deviceHdl = device.deviceHdl;
+		fwInfo.deviceIndex = device.index;
 		firmware *fw = (firmware *)device.dev->getFirmware();
 		if (fw == nullptr) {
 			ERR("Error: Firmware pointer not found.\n");

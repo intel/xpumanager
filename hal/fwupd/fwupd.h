@@ -67,6 +67,7 @@ enum fwupdPreference
 	FWUPD_PREFERENCE_GSC,
 	FWUPD_PREFERENCE_SYSMAN,
 	FWUPD_PREFERENCE_AMC,
+	FWUPD_PREFERENCE_MAX,
 };
 
 struct firmwareInfo
@@ -76,7 +77,8 @@ struct firmwareInfo
 	bool forceUpdate;
 	bool recoveryMode;
 	std::string deviceId;
-	int fwType;			 // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
+	uint32_t deviceIndex;
+	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
 	std::string firmwareType; // This is the string representation of fwType
 	std::string filePath;
 	std::string username;

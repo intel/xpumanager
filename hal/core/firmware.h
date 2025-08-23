@@ -37,6 +37,7 @@ private:
 	zes_firmware_handle_t *firmwareList;
 	zes_firmware_properties_t *propertiesList;
 	updateFWCmdStruct *updateFWCmds;
+	fwupd **fwupdArray;
 
 public:
 	firmware();
