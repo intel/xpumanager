@@ -173,24 +173,18 @@ ze_result_t cmdDiag::precheck(devInfo *d)
 {
 	TRACING();
 
-	zes_pci_properties_t pciProps;
 	zes_pci_link_status_t pciLinkStatus;
 	std::string fwStatus;
 	ze_result_t result;
-	char output[256] = {0};
-	std::string outputLine = "";
+	std::string outputLine;
 
 	pci *p = (pci *)d->dev->getPCI();
-	result = p->getProperties(d->zesDeviceHdl, &pciProps);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	snprintf(output, 255, "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus, pciProps.address.device,
-			 pciProps.address.function);
-	outputLine = output;
-
+	outputLine = p->getBDFStr();
 	printPretty();
 
 	if (!sysInfoShown) {
@@ -208,7 +202,8 @@ ze_result_t cmdDiag::precheck(devInfo *d)
 		printPretty();
 		sysInfoShown = true;
 	}
-	PRINT("| GPU              |  BDF:                 %s\n", outputLine.c_str());
+
+	PRINT("| GPU              |  BDF:                 %s                                  |\n", outputLine.c_str());
 
 	fwStatus = p->getFWStatus();
 	if (fwStatus != "normal") {
@@ -1279,7 +1274,7 @@ int cmdDiag::run(arg_struct *args)
 				DBG("Running command: %s\n", cmd.second.opt.name);
 				result = (this->*cmd.second.func)(&device);
 				if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
-					DBG("Exitting command: %s\n", cmd.second.opt.name);
+					DBG("Exiting command: %s\n", cmd.second.opt.name);
 					break;
 				}
 			}
