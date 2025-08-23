@@ -27,7 +27,7 @@
 #include <gscupd.h>
 #include <sysmanupd.h>
 
-firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr)
+firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr), fwupdArray(nullptr)
 {
 	updateFWCmds = new updateFWCmdStruct[MAX_FW_TYPE]{
 		{GFX, TOSTR(GFX), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx, nullptr,
@@ -62,6 +62,17 @@ firmware::~firmware()
 	if (firmwareList) {
 		delete[] firmwareList;
 		firmwareList = nullptr;
+	}
+
+	if (fwupdArray) {
+		for (uint32_t i = 0; i < FWUPD_PREFERENCE_MAX; i++) {
+			if (fwupdArray[i]) {
+				delete fwupdArray[i];
+				fwupdArray[i] = nullptr;
+			}
+		}
+		delete[] fwupdArray;
+		fwupdArray = nullptr;
 	}
 }
 
@@ -188,21 +199,12 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	for (i = 0; i < MAX_FW_TYPE; i++) {
 		// Find the matching firmware type
 		if (!STRCASECMP(fwInfo->firmwareType.c_str(), updateFWCmds[i].fwName.c_str())) {
-			// Allocate the appropriate firmware update class based on the update preference
-			switch (updateFWCmds[i].preference) {
-			case FWUPD_PREFERENCE_GSC:
-				fw = new gscupd();
-				break;
-			case FWUPD_PREFERENCE_SYSMAN:
-				fw = new sysmanupd();
-				break;
-			case FWUPD_PREFERENCE_AMC:
-				fw = new amcupd();
-				break;
-			default:
+			if (updateFWCmds[i].preference < 0 || updateFWCmds[i].preference >= FWUPD_PREFERENCE_MAX) {
 				ERR("Invalid firmware update preference.\n");
 				return ZE_RESULT_ERROR_UNKNOWN;
 			}
+			// The firmware update class is based on the update preference
+			fw = fwupdArray[updateFWCmds[i].preference];
 
 			fwInfo->fwType = updateFWCmds[i].fw;
 			fwInfo->firmwareHandle = updateFWCmds[i].firmwareHandle;
@@ -212,23 +214,19 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to pre-update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
-				delete fw;
 				return result;
 			}
 			result = (fw->*updateFWCmds[i].updateFunc)(fwInfo);
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
-				delete fw;
 				return result;
 			}
 			result = (fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
 			if (result != ZE_RESULT_SUCCESS) {
-				delete fw;
 				return result;
 			}
 
-			delete fw;
 			break;
 		}
 	}
@@ -255,12 +253,19 @@ ze_result_t firmware::init(zes_device_handle_t device)
 {
 	ze_result_t result = enumFirmwares(device);
 
+	// Create a fwupd array that holds all different types of firmware updates
+	fwupdArray = new fwupd *[FWUPD_PREFERENCE_MAX];
+	fwupdArray[FWUPD_PREFERENCE_GSC] = new gscupd();
+	fwupdArray[FWUPD_PREFERENCE_SYSMAN] = new sysmanupd();
+	fwupdArray[FWUPD_PREFERENCE_AMC] = new amcupd();
+
 	for (uint32_t i = 0; i < firmwareCount; i++) {
 		result = getProperties(firmwareList[i]);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 	}
+
 	return result;
 }
 
