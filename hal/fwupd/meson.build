@@ -11,11 +11,13 @@ fwupd_inc = include_directories('.')
 # Firmware update static library
 fwupd_lib = static_library('fwupd',
   fwupd_sources,
+  objects : amc_lib.extract_all_objects(recursive : true),
   include_directories : [
     global_inc, 
     fwupd_inc,
     oal_inc_dirs,
-    include_directories('../core')
+    include_directories('../core'),
+    include_directories('../amc')
   ],
   dependencies : [levelzero_dep, oal_dep, igsc_dep],
   install : false

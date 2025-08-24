@@ -23,6 +23,7 @@
  */
 
 #include "gscupd.h"
+#include "fwupd.h"
 #include <debug.h>
 #include <fstream>
 #include <os.h>
@@ -57,27 +58,6 @@ const char *gscupd::transGfxFwStatusToString(GfxFwStatus status)
 	default:
 		return "unknown";
 	}
-}
-
-/**
- * @brief Progress callback function for firmware update operations
- *
- * This static callback function is invoked during firmware update operations to
- * report progress status. It calculates the completion percentage and updates
- * the firmware information structure with the current progress for monitoring.
- *
- * @param done Number of bytes or units completed in the update process
- * @param total Total number of bytes or units in the update process
- * @param ctx Context pointer to firmwareInfo structure for progress tracking
- */
-static void progPercentFunc(uint32_t done, uint32_t total, void *ctx)
-{
-	uint32_t percent = (done * 100) / total;
-
-	DBG("Firmware update progress: %d%%\n", percent);
-	// store percent
-	firmwareInfo *fwInfo = (firmwareInfo *)ctx;
-	fwInfo->dev->setProgress(percent);
 }
 
 /**
@@ -251,7 +231,7 @@ ze_result_t gscupd::updateGfx(firmwareInfo *fwInfo)
 
 	flags.force_update = fwInfo->forceUpdate ? 1 : 0;
 	ret = igsc_device_fw_update_ex(&fwInfo->handle, (const uint8_t *)fwInfo->buffer.data(),
-								   (uint32_t)fwInfo->buffer.size(), progPercentFunc, fwInfo, flags);
+								   (uint32_t)fwInfo->buffer.size(), commonProgressCallback, fwInfo, flags);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -356,7 +336,7 @@ ze_result_t gscupd::updateGfxData(firmwareInfo *fwInfo)
 		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
 	}
 
-	ret = igsc_device_fwdata_image_update(&fwInfo->handle, fwInfo->oimg, progPercentFunc, fwInfo);
+	ret = igsc_device_fwdata_image_update(&fwInfo->handle, fwInfo->oimg, commonProgressCallback, fwInfo);
 	if (ret != IGSC_SUCCESS) {
 		ERR("Failed to update firmware %d\n", ret);
 		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
