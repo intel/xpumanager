@@ -24,6 +24,38 @@
 
 #include "common.h"
 #include <array>
+#include <fwupd.h>
+#include <debug.h>
+
+/**
+ * @brief Common progress callback function for firmware update operations
+ *
+ * This callback function can be used across all firmware update modules (GSC, AMC, etc.)
+ * to report progress status. It calculates the completion percentage and updates
+ * the firmware information structure with the current progress for monitoring.
+ *
+ * @param done Number of bytes or units completed in the update process
+ * @param total Total number of bytes or units in the update process
+ * @param ctx Context pointer to firmwareInfo structure for progress tracking
+ */
+void commonProgressCallback(uint32_t done, uint32_t total, void *ctx)
+{
+	if (total == 0) {
+		return; // Avoid division by zero
+	}
+
+	uint32_t percent = (done * 100) / total;
+
+	DBG("Firmware update progress: %d%%\n", percent);
+
+	// Store percent in firmwareInfo structure
+	if (ctx != nullptr) {
+		firmwareInfo *fwInfo = (firmwareInfo *)ctx;
+		if (fwInfo->dev != nullptr) {
+			fwInfo->dev->setProgress(percent);
+		}
+	}
+}
 
 /**
  * @brief Calculate CRC8 checksum using SMBus polynomial

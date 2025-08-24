@@ -7,11 +7,12 @@ OBJDIR := obj
 OALDIR := ../../oal/lin
 OALROOTDIR := ../../oal
 FWDIR  := ../fwupd
+AMCDIR := ../amc
 
 # Compiler and Flags
 CXX := g++
 export DBG_FLAGS?=-Ofast
-CXXFLAGS := -Wall -Wextra -Werror -pedantic -fPIC -std=c++20 -I. -I$(OALDIR) -I$(OALROOTDIR) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
+CXXFLAGS := -Wall -Wextra -Werror -pedantic -fPIC -std=c++20 -I. -I$(OALDIR) -I$(OALROOTDIR) -I$(FWDIR) -I$(AMCDIR) -I$(LEVELZERO)/include -I$(IGSC)/include
 LIBS :=-L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc -lhwloc
 INCLUDEDIR := include
 
@@ -26,7 +27,7 @@ OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 DEPS := $(OBJECTS:.o=.d)  # Dependency files corresponding to object files
 OAL_OBJECTS := $(wildcard $(OALDIR)/$(OBJDIR)/*.o)
 FWUPD_OBJECTS := $(wildcard $(FWDIR)/$(OBJDIR)/*.o)
-AMC_OBJECTS := $(wildcard $(AMCDIR)/$(OBJDIR)/*.o)
+AMC_OBJECTS := $(shell find $(AMCDIR)/$(OBJDIR) -name "*.o" 2>/dev/null)
 
 # Check if VERBOSE is set to 1, if not, silence the commands
 ifeq ($(VERBOSE),1)

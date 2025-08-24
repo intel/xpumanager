@@ -152,4 +152,6 @@ struct updateFWCmdStruct
 	std::string version;
 };
 
+void commonProgressCallback(uint32_t done, uint32_t total, void *ctx);
+
 #endif

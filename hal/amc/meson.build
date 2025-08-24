@@ -27,7 +27,8 @@ amc_lib = static_library('amc',
     global_inc, 
     amc_inc,
     oal_inc_dirs,
-    include_directories('../core')
+    include_directories('../core'),
+    include_directories('../fwupd')
   ],
   dependencies : [levelzero_dep, oal_dep, igsc_dep],
   install : false
