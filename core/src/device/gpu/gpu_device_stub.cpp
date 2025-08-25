@@ -4590,19 +4590,6 @@ bool GPUDeviceStub::setEccState(const zes_device_handle_t& device, ecc_state_t& 
     ecc.setCurrent(static_cast<ecc_state_t>(props.currentState));
     ecc.setPending(static_cast<ecc_state_t>(props.pendingState));
     ecc.setAction(static_cast<ecc_action_t>(props.pendingAction));
-
-    zes_reset_properties_t reset_props = {.stype = ZES_STRUCTURE_TYPE_RESET_PROPERTIES, .pNext = nullptr, .force = true};
-    if (ecc.getAction() == ECC_ACTION_WARM_CARD_RESET) {
-        reset_props.resetType = ZES_RESET_TYPE_WARM;
-    } else if (ecc.getAction() == ECC_ACTION_COLD_CARD_RESET) {
-        reset_props.resetType = ZES_RESET_TYPE_COLD;
-    } else {
-        return true;
-    }
-    res = zesDeviceResetExt(device, &reset_props);
-    if (res == ZE_RESULT_SUCCESS) {
-        ecc.setAction(ECC_ACTION_NONE);
-    }
     return true;
 }
 

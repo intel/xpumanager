@@ -426,13 +426,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             json = this->coreStub->setMemoryEccState(this->opts->deviceId, enabled);
             if((*json)["status"] == "OK") {
-                std::string pendingAction = (*json)["memory_ecc_pending_action"];
-                (*json)["return"] = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId);
-                if (pendingAction.compare("none") == 0) {
-                    (*json)["return"] += ".";
-                } else {
-                    (*json)["return"] += ". Please reset the GPU or reboot the OS for the change to take effect.";
-                }
+                (*json)["return"] = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId)+". Please reset the GPU or reboot the OS for the change to take effect.";
             }
             return json;  
         }
