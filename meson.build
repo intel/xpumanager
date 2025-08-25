@@ -4,8 +4,7 @@ project('xpum', 'cpp',
   default_options : [
     'cpp_std=c++20',
     'buildtype=debugoptimized',
-    'warning_level=3',
-    'b_coverage=true'
+    'warning_level=3'
     ]
 )
 
@@ -21,11 +20,14 @@ cpp = meson.get_compiler('cpp')
 
 # Common compiler arguments
 compile_args = []
+# Common link arguments
+link_args = []
 
 # Add _DEBUG flag
 if is_debug
   compile_args += ['-D_DEBUG']
 endif
+
 
 # Platform detection
 host_system = host_machine.system()
@@ -54,12 +56,6 @@ if is_windows
     '-D_WINDOWS',
   ]
 
-  # Note: CRT flags (/MD, /MDd) are now set at target level to avoid conflicts
-  # with dependencies that may already set them. The warnings about overriding
-  # /MD with /MDd are expected and harmless when mixing release dependencies
-  # with debug builds. These warnings cannot be suppressed as they are
-  # command-line warnings (D9025), not compiler warnings.
-
   if get_option('shared_library')
     compile_args += ['-DLIBXPUM_EXPORTS']
   endif
@@ -67,6 +63,32 @@ elif is_linux
   compile_args += [
     '-pedantic',
   ]
+endif
+
+# Handle CRT conflicts based on dependency vs application build type
+if is_windows
+  conan_deps_build_type = get_option('conan_deps_build_type')
+  conan_deps_runtime = get_option('conan_deps_runtime')
+
+  message('Conan dependencies built with: ' + conan_deps_build_type)
+  message('Conan dependencies runtime: ' + conan_deps_runtime)
+  deps_are_release = conan_deps_build_type == 'Release'
+  app_is_debug = is_debug
+
+  # Handle mixed runtime scenarios
+  if deps_are_release and app_is_debug
+    message('Mixed build: Release deps + Debug app')
+    # Dependencies built with /MD, app with /MDd
+    # Exclude the dynamic release CRT that deps pull in
+    link_args += ['/NODEFAULTLIB:MSVCRT']
+  elif not deps_are_release and not app_is_debug
+    message('Mixed build: Debug deps + Release app')
+    # Dependencies built with /MDd, app with /MD
+    # Exclude the dynamic debug CRT that deps pull in
+    link_args += ['/NODEFAULTLIB:MSVCRTD']
+  else
+    message('Consistent build: same debug level')
+  endif
 endif
 
 # Compiler warnings
@@ -179,6 +201,8 @@ global_inc = include_directories('.')
 
 # Specify compile flags before any xpum targets are compiled
 add_project_arguments(compile_args, language : 'cpp')
+# Specify link flags
+add_project_link_arguments(link_args, language: 'cpp')
 
 # Build subdirectories
 subdir('oal')
