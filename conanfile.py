@@ -59,10 +59,24 @@ class XpumConan(ConanFile):
         pc.generate()
         # Generate Meson toolchain
         tc = MesonToolchain(self)
-        
+
+        if self.settings.os == "Windows":
+            # Pass dependency build info to Meson
+            tc.project_options["conan_deps_build_type"] = str(self.settings.build_type)
+            tc.project_options["conan_deps_runtime"] = str(self.settings.compiler.runtime_type)
+
+            # Always use from_buildtype for the application
+            tc.b_vscrt = "from_buildtype"
+
+            # Handle CRT conflicts based on dependency runtime
+            if self.settings.compiler.runtime_type == "Debug":
+                # Dependencies use debug runtime, exclude static debug CRT
+                tc.cpp_link_args = ["/NODEFAULTLIB:LIBCMTD"]
+            else:
+                # Dependencies use release runtime, exclude static release CRT
+                tc.cpp_link_args = ["/NODEFAULTLIB:LIBCMT"]
         # Add custom meson options based on conan options
         if not self.options.with_igsc:
             tc.project_options["use_system_igsc"] = False
             
         tc.generate()
-        
