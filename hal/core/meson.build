@@ -34,7 +34,8 @@ libxpum_shared = shared_library('xpum',
     global_inc,
     hal_core_inc,
     oal_inc_dirs,
-    include_directories('../fwupd')
+    include_directories('../fwupd'),
+    include_directories('../amc')
   ],
   dependencies : [
     levelzero_dep, 
