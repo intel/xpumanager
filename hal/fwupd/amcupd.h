@@ -26,15 +26,21 @@
 #define _AMCUPD_H
 
 #include "fwupd.h"
+#include <amclib.h>
+#include <mutex>
 
 class amcupd : public fwupd
 {
 private:
-	long long deviceHandle;
+	int numOfCards;
+
+	// Thread synchronization members for safe amcobj initialization
+	static std::mutex amcobj_mutex;
+	static std::once_flag amcobj_init_flag;
 
 public:
-	amcupd() : deviceHandle(0) {}
-	~amcupd() {}
+	amcupd();
+	~amcupd();
 	ze_result_t preUpdateAMC(firmwareInfo *fwInfo) override;
 	ze_result_t updateAMC(firmwareInfo *fwInfo) override;
 	ze_result_t postUpdateAMC(firmwareInfo *fwInfo) override;
