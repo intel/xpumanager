@@ -36,18 +36,6 @@ if is_windows
   endif
 endif
 
-# Set correct CRT flags for Windows with override capability
-oal_cpp_args = []
-if is_windows
-  oal_cpp_args += ['-DLIBXPUM_EXPORTS']
-  if get_option('buildtype').startswith('debug')
-    # Use /FORCE to override any previous /MD settings from dependencies
-    oal_cpp_args += ['/MDd', '/D_DEBUG']
-  else
-    oal_cpp_args += ['/MD', '/DNDEBUG']
-  endif
-endif
-
 # OAL static library
 oal_lib = static_library('oal',
   oal_sources,
