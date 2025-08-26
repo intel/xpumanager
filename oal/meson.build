@@ -10,7 +10,8 @@ if is_windows
     'win/i2c_interface.cpp',
     'win/dllmain.cpp',
     'win/thread.cpp', 
-    'win/win.cpp'
+    'win/win.cpp',
+    'win/http_client.cpp'
   )
   oal_inc_dirs = [include_directories('win'), include_directories('.')]
   oal_deps += windows_deps
@@ -18,7 +19,8 @@ elif is_linux
   oal_sources = files(
     'lin/pci_database.cpp',
     'lin/i2c_interface.cpp',
-    'lin/lin.cpp'
+    'lin/lin.cpp',
+    'lin/http_client.cpp'
   )
   oal_inc_dirs = [include_directories('lin'), include_directories('.')]
   # Add hwloc dependency for Linux topology functionality

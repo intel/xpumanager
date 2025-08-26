@@ -177,6 +177,10 @@ int amclib::initialize()
 int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath)
 {
 	TRACING();
+	if (!pldmobj) {
+		ERR("PLDM objects not initialized\n");
+		return -1;
+	}
 	return pldmobj[cardNum]->fwupd(pkgFilePath);
 }
 
@@ -197,6 +201,10 @@ int amclib::amcFirmwareProgress(uint32_t cardNum)
 	TRACING();
 	if (cardNum >= (uint32_t)numCards) {
 		ERR("Invalid cardNum specified: %d. Max cards: %d\n", cardNum, numCards);
+		return -1;
+	}
+	if (!pldmobj) {
+		ERR("PLDM objects not initialized\n");
 		return -1;
 	}
 	return pldmobj[cardNum]->fwupdProgress();
@@ -226,4 +234,134 @@ int amclib::oemVrsync(uint8_t cmd)
 		}
 	}
 	return 0;
+}
+
+/**
+ * @brief Initialize Redfish connection with manual configuration
+ *
+ * Initializes a Redfish connection using provided credentials and IP address.
+ *
+ * @param ip BMC IP address
+ * @param username BMC username for authentication
+ * @param password BMC password for authentication
+ * @param port BMC port number (default: 443)
+ *
+ * @return Status of Redfish initialization
+ * @retval 0 Redfish connection initialized successfully
+ * @retval -1 Failed to initialize Redfish connection
+ *
+ * @note Ip, username and password are required parameters
+ */
+int amclib::redfishInitialize(const std::string &ip, const std::string &username, const std::string &password,
+							  uint16_t port)
+{
+	TRACING();
+
+	if (ip.empty()) {
+		ERR("Ip address is required\n");
+		return -1;
+	}
+
+	if (username.empty()) {
+		ERR("Username is required\n");
+		return -1;
+	}
+
+	if (password.empty()) {
+		ERR("Password is required\n");
+		return -1;
+	}
+
+	// Manual configuration with provided IP
+	return redfishObj.initialize(ip, username, password, port);
+}
+
+/**
+ * @brief Discover Intel GPU devices via Redfish protocol
+ *
+ * Performs discovery of Intel GPU devices accessible through the Redfish BMC interface.
+ * Dynamically allocates memory for discovered devices and returns device information.
+ * Uses parallel processing for improved discovery performance.
+ *
+ * @param gpu_devices Pointer to array pointer that will be allocated and populated with discovered devices
+ * @param found_count Pointer to integer that will contain the number of discovered devices
+ *
+ * @return Status of GPU discovery operation
+ * @retval 0 Discovery completed successfully, devices found
+ * @retval -1 Discovery failed or no devices found
+ *
+ * @note Redfish must be initialized before calling this function
+ * @note Caller must call freeGpuDevices() to release allocated memory
+ * @note Memory is allocated using new[] and must be freed with delete[]
+ */
+int amclib::redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount)
+{
+	TRACING();
+
+	if (!gpuDevices || !foundCount) {
+		ERR("Invalid parameters for Redfish discovery\n");
+		return -1;
+	}
+
+	*gpuDevices = nullptr;
+	*foundCount = 0;
+
+	if (!redfishObj.isInit()) {
+		ERR("Redfish not initialized\n");
+		return -1;
+	}
+
+	// Get the first system ID automatically
+	std::string systemId;
+	if (redfishObj.getFirstSystemId(&systemId) != REDFISH_SUCCESS) {
+		ERR("Redfish: Failed to get system ID\n");
+		return -1;
+	}
+
+	// Use a reasonably large temporary buffer for discovery
+	RedfishGPUDevice tempDevices[MAX_TEMP_GPUS];
+	int tempCount = 0;
+
+	int result = redfishObj.discoverIntelGpus(systemId, tempDevices, MAX_TEMP_GPUS, &tempCount);
+
+	if (result != REDFISH_SUCCESS || tempCount <= 0) {
+		INFO("Redfish: No Intel GPUs found or discovery failed\n");
+		return -1;
+	}
+
+	// Dynamically allocate exact amount needed
+	*gpuDevices = new (std::nothrow) RedfishGPUDevice[tempCount];
+	if (!*gpuDevices) {
+		ERR("Redfish: Failed to allocate memory for %d GPU devices\n", tempCount);
+		return -1;
+	}
+
+	// Copy discovered devices to dynamically allocated array
+	for (int i = 0; i < tempCount; i++) {
+		(*gpuDevices)[i] = tempDevices[i];
+	}
+	*foundCount = tempCount;
+
+	return 0;
+}
+
+/**
+ * @brief Free memory allocated for GPU device array
+ *
+ * Releases memory previously allocated by the redfishDiscovery() function for
+ * the GPU device array. This function should be called after processing
+ * the discovered GPU devices to prevent memory leaks.
+ *
+ * @param gpu_devices Pointer to GPU device array allocated by redfishDiscovery()
+ *
+ * @note This function can safely handle NULL pointers
+ * @note Only call this function on arrays allocated by redfishDiscovery()
+ */
+void amclib::freeGpuDevices(RedfishGPUDevice *gpuDevices)
+{
+	TRACING();
+
+	if (gpuDevices) {
+		delete[] gpuDevices;
+	}
 }
