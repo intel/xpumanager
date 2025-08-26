@@ -133,6 +133,12 @@
     <ClCompile Include="..\..\oal\win\http_client.cpp">
       <Filter>oal</Filter>
     </ClCompile>
+    <ClCompile Include="..\amc\redfish.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\threading.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
     <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -252,6 +258,12 @@
     </ClInclude>
     <ClInclude Include="..\..\oal\http_client.h">
       <Filter>oal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\redfish.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\threading.h">
+      <Filter>amc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

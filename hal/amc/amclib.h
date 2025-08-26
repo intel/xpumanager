@@ -26,7 +26,9 @@
 #define _AMCLIB_H
 
 #include <vector>
+#include <string>
 #include "pldm.h"
+#include "redfish.h"
 
 enum oemVrsync
 {
@@ -40,6 +42,7 @@ private:
 	pldm **pldmobj;
 	std::vector<std::basic_string<TCHAR>> *amcDeviceList;
 	int numCards;
+	redfish redfishObj;
 	int initialize();
 
 public:
@@ -49,6 +52,10 @@ public:
 	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath);
 	int amcFirmwareProgress(uint32_t cardNum);
 	int oemVrsync(uint8_t cmd);
+	int redfishInitialize(const std::string &ip, const std::string &username, const std::string &password,
+						  uint16_t port = 443);
+	int redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount); // Dynamically allocate and return GPU devices
+	void freeGpuDevices(RedfishGPUDevice *gpuDevices);					  // Free dynamically allocated GPU devices
 };
 
 #endif
