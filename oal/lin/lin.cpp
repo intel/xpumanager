@@ -36,9 +36,17 @@
 #include <termios.h>
 #include <unistd.h>
 #include <format>
-#include <hwloc.h>
 #include <filesystem>
 #include "pci_database.h"
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+#include <hwloc.h>
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 /**
  * @brief Gets a single character from standard input without echo

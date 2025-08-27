@@ -1,6 +1,7 @@
 from conan import ConanFile 
 from conan.tools.meson import MesonToolchain
 from conan.tools.gnu import PkgConfigDeps
+import os
 
 
 class XpumConan(ConanFile):
@@ -34,8 +35,7 @@ class XpumConan(ConanFile):
         
         # Platform-specific dependencies
         if self.settings.os == "Linux":
-            pass
-        
+            self.requires("hwloc/2.9.3")
 
     def build_requirements(self):
         self.tool_requires("meson/1.3.2")
