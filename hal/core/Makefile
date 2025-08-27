@@ -26,6 +26,7 @@ OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 DEPS := $(OBJECTS:.o=.d)  # Dependency files corresponding to object files
 OAL_OBJECTS := $(wildcard $(OALDIR)/$(OBJDIR)/*.o)
 FWUPD_OBJECTS := $(wildcard $(FWDIR)/$(OBJDIR)/*.o)
+AMC_OBJECTS := $(wildcard $(AMCDIR)/$(OBJDIR)/*.o)
 
 # Check if VERBOSE is set to 1, if not, silence the commands
 ifeq ($(VERBOSE),1)
@@ -38,7 +39,7 @@ endif
 all: $(TARGET_SHARED) $(TARGET_STATIC)
 
 # Shared library
-$(TARGET_SHARED): $(OBJECTS) $(OAL_OBJECTS) $(FWUPD_OBJECTS)
+$(TARGET_SHARED): $(OBJECTS) $(OAL_OBJECTS) $(FWUPD_OBJECTS) $(AMC_OBJECTS)
 	$(CMD_PREFIX)echo "Creating shared library..."
 	$(CMD_PREFIX)$(CXX) -Wall -Wextra -Werror -pedantic -shared $(DBG_FLAGS) -o $@ $^ $(LIBS)
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \
@@ -47,7 +48,7 @@ $(TARGET_SHARED): $(OBJECTS) $(OAL_OBJECTS) $(FWUPD_OBJECTS)
 	fi
 
 # Static library
-$(TARGET_STATIC): $(OBJECTS) $(OAL_OBJECTS) $(FWUPD_OBJECTS)
+$(TARGET_STATIC): $(OBJECTS) $(OAL_OBJECTS) $(FWUPD_OBJECTS) $(AMC_OBJECTS)
 	$(CMD_PREFIX)echo "Creating static library..."
 	$(CMD_PREFIX)ar rcs $@ $^
 	@if [ "$(DBG_FLAGS)" = "-Ofast" ]; then \

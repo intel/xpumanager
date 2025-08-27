@@ -55,13 +55,15 @@ libxpum_static = static_library('xpum',
     global_inc,
     hal_core_inc, 
     oal_inc_dirs,
-    include_directories('../fwupd')
+    include_directories('../fwupd'),
+    include_directories('../amc')
   ],
   dependencies : [
     levelzero_dep,
     igsc_dep,
     oal_dep,
     fwupd_dep,
+    amc_dep,
     nlohmann_json_dep
   ] + windows_deps,
   install : get_option('static_library'),

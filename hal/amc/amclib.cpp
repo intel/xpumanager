@@ -38,7 +38,7 @@ amclib::amclib()
 {
 	TRACING();
 
-	// Initilize the number of cards to 0
+	// Initialize the number of cards to 0
 	numCards = 0;
 
 	amcDeviceList = new std::vector<std::basic_string<TCHAR>>();
@@ -57,7 +57,7 @@ amclib::amclib()
  * - AMC device list vector
  * Ensures proper resource deallocation and prevents memory leaks.
  */
-amclib ::~amclib()
+amclib::~amclib()
 {
 	TRACING();
 
