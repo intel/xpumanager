@@ -182,6 +182,7 @@ nlohmann_json_dep = dependency('nlohmann_json', required : true)
 
 # Additional Linux-specific dependencies
 if is_linux
+  hwloc_dep = dependency('hwloc', required : true)
   pciaccess_dep = dependency('pciaccess', required : true)
 endif
 
