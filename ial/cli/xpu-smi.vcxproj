@@ -119,11 +119,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\oal\win;..\third_party;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\amc;..\..\hal\core;..\..\oal;..\..\oal\win;..\third_party;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\oal\win;..\third_party;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\cmn;..\..\hal\fwupd;..\..\hal\core;..\..\hal\amc;..\..\oal;..\..\oal\win;..\third_party;$(IGSC)\include;$(LEVELZERO)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LEVELZERO)\build\lib\Debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
