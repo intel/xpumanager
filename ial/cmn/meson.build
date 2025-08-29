@@ -19,7 +19,8 @@ ial_cmn_sources = files(
   'cmd_updatefw.cpp',
   'cmd_vgpu.cpp',
   'cmds.cpp',
-  'printer.cpp'
+  'printer.cpp',
+  '../../hal/core/debug.cpp',
 )
 
 ial_cmn_inc = include_directories('.')
@@ -29,6 +30,7 @@ ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif
+
 
 # Common commands static library
 ial_cmn_lib = static_library('ial_cmn',

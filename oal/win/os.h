@@ -102,8 +102,8 @@ struct bdfID
 #define GET_TOPOLOGY(bdf, e) 0
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
-extern LIBXPUM_API char *optarg;
-extern LIBXPUM_API int optind;
+extern char *optarg;
+extern int optind;
 int getopt(int argc, char *argv[], char *optstring);
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);
 void *align_alloc(size_t size);

@@ -1,6 +1,9 @@
 # IAL CLI build
 
-cli_sources = files('cli.cpp')
+cli_sources = files(
+    'cli.cpp',
+    '../../hal/core/debug.cpp',
+)
 cli_inc = include_directories('.')
 
 # CLI dependencies
