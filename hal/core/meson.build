@@ -3,6 +3,7 @@
 hal_core_sources = files(
   'device.cpp',
   'diagnostic.cpp',
+  'debug.cpp',
   'driver.cpp',
   'ecc.cpp',
   'enginegroup.cpp',
@@ -42,10 +43,9 @@ libxpum_shared = shared_library('xpum',
     fwupd_dep,
     nlohmann_json_dep
   ] + windows_deps,
-  cpp_args : is_windows ? ['-DLIBXPUM_EXPORTS'] : [],
   version : meson.project_version(),
   install : true,
-  install_dir : get_option('libdir')
+  install_dir : get_option('libdir'),
 )
 
 # Static library

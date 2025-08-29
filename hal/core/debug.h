@@ -131,4 +131,8 @@ inline int setDbgLvl(int lvl)
 
 inline int getDbgLvl() { return dbgLvl; }
 
+// Enhanced debug level functions for cross-module synchronization
+int setDbgLvlExtended(int lvl);
+int getDbgLvlExtended();
+
 #endif

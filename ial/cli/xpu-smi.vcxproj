@@ -19,7 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\hal\core\debug.cpp" />
     <ClCompile Include="..\..\oal\win\thread.cpp" />
+    <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\cmn\cmds.cpp" />
     <ClCompile Include="..\cmn\cmd_agentset.cpp" />
     <ClCompile Include="..\cmn\cmd_amcsensor.cpp" />
@@ -67,8 +69,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{37959f03-0c0f-449c-8724-24ffbd6b3180}</ProjectGuid>
-    <RootNamespace>xpumsmi</RootNamespace>
+    <RootNamespace>xpusmi</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>xpu-smi</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

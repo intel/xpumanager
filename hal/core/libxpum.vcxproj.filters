@@ -82,6 +82,7 @@
     <ClCompile Include="..\..\oal\win\thread.cpp">
       <Filter>oal</Filter>
     </ClCompile>
+    <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h">

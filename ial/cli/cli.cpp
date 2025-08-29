@@ -57,12 +57,6 @@ DAEMONCAP curDaemonMode = DAEMONLESS;
 std::string progName = "xpu-smi";
 #endif
 
-#ifdef _DEBUG
-int dbgLvl = DBG;
-#else
-int dbgLvl = INFO;
-#endif
-
 /**
  * @brief Creates an instance of a command class
  * @tparam T The command class type to instantiate
@@ -166,19 +160,43 @@ void help(std::list<cmds *> *cmdList)
 }
 
 /**
- * @brief Sets the print/debug level for both global debugging and system manager
+ * @brief Enhanced print level setting that works across different build systems
  *
- * This function configures the verbosity level for debug output and logging.
- * It sets both the global debug level and the system manager's print level
- * to ensure consistent logging behavior throughout the application.
+ * This function sets the debug level for both the CLI and library components.
+ * For meson builds where CLI and library are separate modules, it implements
+ * aggressive synchronization to ensure both modules use the same debug level.
  *
  * @param arg Pointer to argument structure containing system manager instance
  * @param lvl Debug level to set (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
  */
 void setPrintLvl(arg_struct *arg, int lvl)
 {
-	setDbgLvl(lvl);
+	// Set the CLI's debug level first using the enhanced function
+	setDbgLvlExtended(lvl);
+
+	// Set the library's debug level using standard method
 	arg->sm.setPrintLvl(lvl);
+
+	// For meson builds, we need additional synchronization for critical levels
+	if (lvl == NO_PRINT) {
+		// Use the forced synchronization method for NO_PRINT level
+		// This is especially important during initialization when we want
+		// to suppress library initialization messages
+		arg->sm.forceDebugSync(lvl);
+
+		// Also force the CLI level multiple times to ensure consistency
+		setDbgLvlExtended(lvl);
+
+		// Verify synchronization by checking if both levels match
+		int cliLevel = getDbgLvlExtended();
+		int libLevel = arg->sm.getPrintLvl();
+
+		// If levels don't match, try one more aggressive sync
+		if (cliLevel != libLevel && cliLevel != NO_PRINT) {
+			arg->sm.forceDebugSync(NO_PRINT);
+			setDbgLvlExtended(NO_PRINT);
+		}
+	}
 }
 
 /**
