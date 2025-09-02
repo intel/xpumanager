@@ -5,6 +5,7 @@
 SRCDIR := .
 OBJDIR := obj
 CMNDIR := ../cmn
+OALROOTDIR := ../../oal
 OALDIR := ../../oal/lin
 HALCORE := ../../hal/core
 FWDIR  := ../../hal/fwupd
@@ -15,7 +16,7 @@ MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
 export LIBS=-L$(HALCORE) -lxpum -L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc -lhwloc -lcurl
-export INCLUDES=-I. -I$(CMNDIR) -I$(OALDIR) -I$(HALCORE) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include -I../third_party
+export INCLUDES=-I. -I$(CMNDIR) -I$(OALROOTDIR) -I$(OALDIR) -I$(HALCORE) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include -I../third_party
 export CFLAGS=-c -Wall -Wextra -Werror -pedantic -std=c++20
 export SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 export HEADERS := $(wildcard $(SRCDIR)/*.h)

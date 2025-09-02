@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef _OS_H
-#define _OS_H
+#ifndef _OSLIN_H
+#define _OSLIN_H
 
 #include <cstddef>
 #include <cstdint>
@@ -35,16 +35,11 @@
 #include <sys/time.h>
 #include <vector>
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-#endif
-
 #ifndef MAX_PATH
 #define MAX_PATH 256
 #endif
+
 #define LIBXPUM_API
-#define UNUSED_VAR(x) (void)(x)
-#define UNUSED [[maybe_unused]]
 #define STRCPY_S(dest, sz, src) strcpy(dest, src)
 #define STRNCPY_S(dest, src, sz) strncpy(dest, src, sz)
 #define STRCASECMP strcasecmp
@@ -73,14 +68,6 @@ static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mo
 #define FOPEN_S(pFile, filename, mode) fopen_s_def((pFile), (filename), (mode))
 
 typedef void *(*funcptr)(void *input_params);
-
-struct bdfID
-{
-	uint32_t domain;
-	uint32_t bus;
-	uint32_t device;
-	uint32_t function;
-};
 
 class thread_id
 {

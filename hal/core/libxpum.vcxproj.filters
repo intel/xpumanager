@@ -208,9 +208,6 @@
     <ClInclude Include="vf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\oal\win\os.h">
-      <Filter>oal</Filter>
-    </ClInclude>
     <ClInclude Include="..\fwupd\fwupd.h">
       <Filter>fwupd</Filter>
     </ClInclude>
@@ -225,6 +222,9 @@
     </ClInclude>
     <ClInclude Include="sysprocess.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\os.h">
+      <Filter>oal</Filter>
     </ClInclude>
     <ClInclude Include="..\..\oal\i2c_interface.h">
       <Filter>oal</Filter>
