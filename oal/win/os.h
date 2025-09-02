@@ -106,13 +106,10 @@ struct bdfID
 #define UNUSED_VAR(x) (void)(x)
 #define UNUSED [[maybe_unused]]
 
-#define TWO_MB (2 * 1024 * 1024)
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
 #define STRNCPY_S(dest, src, sz) strncpy_s(dest, src, sz)
-#define STRTOK_S(str, delimiters, context) strtok_s(str, delimiters, context)
 #define STRCASECMP _stricmp
 #define THREAD_RET DWORD WINAPI
-#define GETOPT getopt
 #define GETOPT_LONG getopt_long
 #define no_argument 0
 #define required_argument 1

@@ -47,10 +47,8 @@
 #define UNUSED [[maybe_unused]]
 #define STRCPY_S(dest, sz, src) strcpy(dest, src)
 #define STRNCPY_S(dest, src, sz) strncpy(dest, src, sz)
-#define STRTOK_S(str, delimiters, context) strtok(str, delimiters)
 #define STRCASECMP strcasecmp
 #define THREAD_RET void *
-#define GETOPT getopt
 #define GETOPT_LONG getopt_long
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
 #define PRIVILEGECHECK() privilegeCheck()
