@@ -1,11 +1,14 @@
 # Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: MIT
 
+OALROOTDIR := ../../oal
+OALDIR := ../../oal/lin
+
 export PWD=$(shell pwd)
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
-export INCLUDES=-I. -I../../oal -I../../oal/lin -I../core -I../amc -I$(LEVELZERO)/include -I$(IGSC)/include
+export INCLUDES=-I. -I$(OALROOTDIR) -I$(OALDIR) -I../core -I../amc -I$(LEVELZERO)/include -I$(IGSC)/include
 export CFLAGS=-c -Wall -Wextra -Werror -pedantic -fPIC -std=c++20
 SRCDIR := .
 OBJDIR := obj

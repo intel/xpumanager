@@ -22,10 +22,9 @@
  *
  */
 
-#ifndef _OS_H
-#define _OS_H
+#ifndef _OSWIN_H
+#define _OSWIN_H
 
-#include <cstddef>
 #define NOMINMAX
 #include <string>
 #include <windows.h>
@@ -58,22 +57,6 @@ struct option
 	int val;
 };
 
-struct bdfID
-{
-	uint32_t domain;
-	uint32_t bus;
-	uint32_t device;
-	uint32_t function;
-};
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-#endif
-
-#ifndef MAX_PATH
-#define MAX_PATH 256
-#endif
-
 #define ZERO_MEM(ptr, size) SecureZeroMemory(ptr, size)
 #define AMC_PATH L"\\\\.\\NF_I2C_BUS_00_0x0040"
 #define FOPEN_S(pFile, filename, mode) fopen_s((pFile), (filename), (mode))
@@ -102,10 +85,6 @@ struct bdfID
 #define IOCTL_SPBTESTTOOL_DELAYEDWRITECANCEL                                                                           \
 	CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x716, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_SPBTESTTOOL_PDI CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x717, METHOD_BUFFERED, FILE_ANY_ACCESS)
-
-#define UNUSED_VAR(x) (void)(x)
-#define UNUSED [[maybe_unused]]
-
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
 #define STRNCPY_S(dest, src, sz) strncpy_s(dest, src, sz)
 #define STRCASECMP _stricmp
@@ -128,6 +107,7 @@ struct bdfID
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;
 extern int optind;
+
 int getopt(int argc, char *argv[], char *optstring);
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);
 void *align_alloc(size_t size);

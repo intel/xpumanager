@@ -22,7 +22,7 @@ TARGET_STATIC := libxpum.a
 
 # Find source files, create a list of object files
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
-HEADERS := $(wildcard $(SRCDIR)/*.h $(OALDIR)/*.h)
+HEADERS := $(wildcard $(SRCDIR)/*.h $(OALROOTDIR)/*.h $(OALDIR)/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 DEPS := $(OBJECTS:.o=.d)  # Dependency files corresponding to object files
 OAL_OBJECTS := $(wildcard $(OALDIR)/$(OBJDIR)/*.o)

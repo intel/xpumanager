@@ -2,7 +2,7 @@
 
 # Platform-specific source files
 oal_sources = []
-oal_inc_dirs = []
+oal_inc_dirs = [include_directories('.')]  # Include the oal folder itself
 oal_deps = [thread_dep, levelzero_dep]
 
 if is_windows
