@@ -32,8 +32,17 @@ static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
 	{healthCmdType::HEALTH_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
 	{healthCmdType::HEALTH_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
 	{healthCmdType::HEALTH_LIST, {{"list", no_argument, 0, 'l'}, nullptr, false, ""}},
-	{healthCmdType::HEALTH_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{healthCmdType::HEALTH_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdHealth::allComponents, false, ""}},
 	{healthCmdType::HEALTH_COMPONENT, {{"component", required_argument, 0, 'c'}, &cmdHealth::component, false, ""}},
+};
+
+healthSubCmdStruct componentCmds[] = {
+	{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
+	{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
+	{healthSubCmdType::HEALTH_POWER, &cmdHealth::power},
+	{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
+	{healthSubCmdType::HEALTH_XELINKPORT, &cmdHealth::xeLinkPort},
+	{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
 };
 
 /**
@@ -77,6 +86,60 @@ void cmdHealth::help(HELP helpType)
 }
 
 /**
+ * @brief Lists health status of all components for all devices
+ *
+ * This function iterates through all discovered devices and runs comprehensive
+ * health checks on each one. For every device, it executes all available component
+ * tests including temperature monitoring, power assessment, memory health evaluation,
+ * Xe Link port status, and frequency subsystem checks.
+ *
+ * @param devList Pointer to vector of device information structures
+ * @return ze_result_t ZE_RESULT_SUCCESS if all checks pass, or the first encountered error code
+ */
+
+ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	for (auto &d : *devList) {
+		PRINT("device id: %d\n", d.index);
+		result = this->allComponents(&d);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Health check failed for device id: %d\n", d.index);
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @brief Performs health checks on all components for a single device
+ *
+ * This function iterates through all available component health tests and
+ * executes them for the specified device. It provides a comprehensive health
+ * assessment covering core temperature, memory temperature, power, memory health,
+ * Xe Link ports, and frequency subsystems.
+ *
+ * @param d Pointer to device information structure containing device handles and properties
+ * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, or the first encountered error code
+ */
+
+ze_result_t cmdHealth::allComponents(devInfo *d)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	for (const auto &test : componentCmds) {
+		DBG("Running test: %d\n", test.type);
+		result = (this->*test.func)(d);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Health check failed for device id: %d\n", d->index);
+			break;
+		}
+	}
+
+	return result;
+}
+/**
  * @brief Performs comprehensive component health assessment for the device
  *
  * This function executes a series of health checks across various device
@@ -91,15 +154,6 @@ ze_result_t cmdHealth::component(devInfo *d)
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	bool found = false;
-
-	healthSubCmdStruct componentCmds[] = {
-		{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
-		{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
-		{healthSubCmdType::HEALTH_POWER, &cmdHealth::power},
-		{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
-		{healthSubCmdType::HEALTH_XELINKPORT, &cmdHealth::xeLinkPort},
-		{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
-	};
 
 	for (const auto &test : componentCmds) {
 		if (test.type == stoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val)) {
@@ -362,6 +416,14 @@ int cmdHealth::run(arg_struct *args)
 		return result;
 	}
 
+	if (healthCmds[healthCmdType::HEALTH_LIST].enabled) {
+		// List all devices
+		result = this->allComponentsAllDevices(&deviceList);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Error: Unable to retrieve health info for devices.\n");
+		}
+		return result;
+	}
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type

@@ -66,6 +66,8 @@ public:
 	ze_result_t frequency(devInfo *d);
 
 	ze_result_t component(devInfo *d);
+	ze_result_t allComponents(devInfo *d);
+	ze_result_t allComponentsAllDevices(std::vector<devInfo> *devList);
 	int run(arg_struct *args);
 };
 
