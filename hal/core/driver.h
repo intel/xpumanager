@@ -51,8 +51,8 @@ public:
 	{}
 	~driver();
 	void setPrintLvl(int lvl);
-	int getPrintLvl();  // Add getter for current debug level
-	void forceDebugSync(int lvl);  // Add forced synchronization method
+	int getPrintLvl();			  // Add getter for current debug level
+	void forceDebugSync(int lvl); // Add forced synchronization method
 	ze_result_t init();
 	bool isDriverLoaded() { return initialized; }
 	ze_result_t zeInitialize();
@@ -62,6 +62,7 @@ public:
 	ze_result_t getExtensionProperties(ze_driver_handle_t drvr);
 	void getLoaderVersion(std::string *lzVersion);
 	ze_result_t findDevice(const char *bdf, std::vector<devInfo> *dev);
+	ze_result_t getLogs(std::string fileName);
 	ze_result_t run();
 };
 

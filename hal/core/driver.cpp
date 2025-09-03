@@ -476,6 +476,20 @@ void driver::getLoaderVersion(std::string *lzVersion)
 	delete[] versions;
 }
 
+/*
+ * @brief Retrieves logs and saves them to a specified file.
+ *
+ * This function retrieves logs using the GETLOGS macro and saves them to the specified file.
+ *
+ * @param fileName The name of the file to save the logs to.
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t driver::getLogs(std::string fileName)
+{
+	TRACING();
+	return (GETLOGS(fileName) == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
+}
+
 /**
  * @brief Finds a device based on its BDF (Bus-Device-Function) address or index.
  *

@@ -253,7 +253,7 @@ std::string getSysfsLine(std::string bdf, std::string suffix)
  * @param bdf String containing the PCI Bus:Device:Function address
  * @return std::string CPU affinity mask as hexadecimal string, empty string if not available
  */
-std::string getLocalCpus(std::string bdf)
+std::string getLocalCpus(const std::string &bdf)
 {
 	TRACING();
 	return getSysfsLine(bdf, "/local_cpus");
@@ -269,7 +269,7 @@ std::string getLocalCpus(std::string bdf)
  * @param bdf String containing the PCI Bus:Device:Function address
  * @return std::string Comma-separated list of local CPU IDs, empty string if not available
  */
-std::string getCpuList(std::string bdf)
+std::string getCpuList(const std::string &bdf)
 {
 	TRACING();
 	return getSysfsLine(bdf, "/local_cpulist");

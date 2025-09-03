@@ -20,7 +20,8 @@ elif is_linux
     'lin/pci_database.cpp',
     'lin/i2c_interface.cpp',
     'lin/lin.cpp',
-    'lin/http_client.cpp'
+    'lin/http_client.cpp',
+    'lin/dbg_log.cpp',
   )
   oal_inc_dirs = [include_directories('lin'), include_directories('.')]
   # Add hwloc dependency for Linux topology functionality

@@ -25,6 +25,7 @@
 #include "cmd_log.h"
 #include "debug.h"
 #include <assert.h>
+#include <filesystem>
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -69,6 +70,7 @@ int cmdLogs::run(arg_struct *args)
 	int optionIndex = 0;
 	std::string fileName;
 	bool jsonOutput = false;
+	ze_result_t result;
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
 	optind = 2;
@@ -101,7 +103,35 @@ int cmdLogs::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	// Your logic to handle fileName and jsonOutput goes here
+	// Return an error if the filename wasn't provided
+	if (fileName.empty()) {
+		ERR("Filename can't be empty\n");
+		help();
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Check to make sure that the file doesn't exist in the current folder
+	if (std::filesystem::exists(fileName)) {
+		ERR("File '%s' already exists. Please choose a different name or remove the existing file.\n",
+			fileName.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	DBG("fileName: %s, jsonOutput: %d", fileName.c_str(), jsonOutput);
-	return ZE_RESULT_SUCCESS;
+	result = args->sm.getLogs(fileName);
+	if (result == ZE_RESULT_SUCCESS) {
+		if (jsonOutput) {
+			PRINT("{\n    \"status\": \"OK\"\n}\n");
+		} else {
+			PRINT("Logs collected successfully in file: %s\n", fileName.c_str());
+		}
+	} else {
+		if (jsonOutput) {
+			PRINT("{\n    \"errno\": %d,\n    \"error\": \"Error\"\n}\n", result);
+		} else {
+			ERR("Error collecting logs in file: %s, error code: %d\n", fileName.c_str(), result);
+		}
+	}
+
+	return result;
 }

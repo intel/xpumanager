@@ -58,6 +58,7 @@
 #define GET_TOPOLOGY getTopology
 typedef wchar_t TCHAR;
 #define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
+#define GETLOGS(f) getLinLogs(f)
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
@@ -86,10 +87,10 @@ bool privilegeCheck();
 std::string getProcessName(uint32_t processId);
 char getch();
 std::string timestamp();
-std::string getLocalCpus(std::string bdf);
-std::string getCpuList(std::string bdf);
+std::string getLocalCpus(const std::string &bdf);
+std::string getCpuList(const std::string &bdf);
 int getTopology(bdfID bdf, std::string *switchDevicePath);
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
-int getLinLogs(std::string fileName);
+int getLinLogs(const std::string &fileName);
 
 #endif

@@ -344,7 +344,7 @@ static std::string numaToCpuList(int numaNode)
  * @param bdf PCI Bus:Device.Function string
  * @return CPU affinity mask as hexadecimal string
  */
-std::string getLocalCpus(std::string bdf)
+std::string getLocalCpus(const std::string &bdf)
 {
 	TRACING();
 
@@ -360,7 +360,7 @@ std::string getLocalCpus(std::string bdf)
  * @param bdf PCI Bus:Device.Function string
  * @return Comma-separated list of local CPU numbers
  */
-std::string getCpuList(std::string bdf)
+std::string getCpuList(const std::string &bdf)
 {
 	TRACING();
 
