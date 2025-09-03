@@ -86,7 +86,7 @@ struct arg_struct
 {
 	int argc;
 	char **argv;
-	driver sm;
+	driver sm; // sm is short for sysman
 };
 
 class cmds

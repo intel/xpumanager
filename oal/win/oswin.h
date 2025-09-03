@@ -103,6 +103,7 @@ struct option
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY(bdf, e) 0
+#define GETLOGS(f) 0
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;
@@ -114,8 +115,8 @@ void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 std::string getProcessName(uint32_t processId);
-std::string getLocalCpus(std::string bdf);
-std::string getCpuList(std::string bdf);
+std::string getLocalCpus(const std::string &bdf);
+std::string getCpuList(const std::string &bdf);
 std::string timestamp();
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 
