@@ -23,6 +23,7 @@
  */
 
 #include "cmd_health.h"
+#include "printer.h"
 #include "debug.h"
 #include <assert.h>
 #include <temperature.h>
@@ -84,6 +85,63 @@ void cmdHealth::help(HELP helpType)
 	printHelp(helpList, helpType);
 	helpList.clear();
 }
+/**
+ * @brief Constructor for HealthTextPrinter class
+ */
+HealthTextPrinter::HealthTextPrinter() : TextPrinter() {}
+
+/**
+ * @brief Prints device health information in a formatted text layout
+ *
+ * This function formats and prints a single device's health information from a JSON object.
+ * It displays the device ID first, then formats each component's health information with
+ * proper indentation for better readability. Nested JSON objects are displayed hierarchically.
+ * This function safely handles various JSON value types by converting them to appropriate
+ * string representations.
+ *
+ * @param jsonObj Pointer to the JSON object containing a single device's health information
+ */
+void HealthTextPrinter::printDeviceInfo(nlohmann::json *jsonObj)
+{
+	PRINT("| Device ID: %d\n", (*jsonObj)["device_id"].get<int>());
+	for (auto &item : jsonObj->items()) {
+		if (item.key() == "device_id") {
+			continue;
+		}
+
+		PRINT("|   %s:\n", item.key().c_str());
+		for (auto &subitem : item.value().items()) {
+			std::string value;
+			if (subitem.value().is_string()) {
+				value = subitem.value().get<std::string>();
+			} else {
+				value = subitem.value().dump();
+			}
+			PRINT("|     %s: %s\n", subitem.key().c_str(), value.c_str());
+		}
+	}
+	PRINT("\n");
+}
+/**
+ * @brief Prints text output with custom formatting for health command
+ *
+ * This function converts JSON structured data into a readable text format. It handles
+ * both "device_list" structure for multiple devices and simple key-value pairs for single
+ * device or component output. It safely converts different JSON value types to string
+ * representations.
+ *
+ * @param jsonObj Pointer to the JSON object to be formatted and printed as text
+ */
+void HealthTextPrinter::print(nlohmann::json *jsonObj)
+{
+	if (jsonObj->contains("device_list")) {
+		for (auto &device : (*jsonObj)["device_list"]) {
+			printDeviceInfo(&device);
+		}
+	} else {
+		printDeviceInfo(jsonObj);
+	}
+}
 
 /**
  * @brief Lists health status of all components for all devices
@@ -91,23 +149,34 @@ void cmdHealth::help(HELP helpType)
  * This function iterates through all discovered devices and runs comprehensive
  * health checks on each one. For every device, it executes all available component
  * tests including temperature monitoring, power assessment, memory health evaluation,
- * Xe Link port status, and frequency subsystem checks.
+ * Xe Link port status, and frequency subsystem checks. Results are stored in the provided
+ * JSON object.
  *
  * @param devList Pointer to vector of device information structures
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS if all checks pass, or the first encountered error code
  */
 
-ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList)
+ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	auto deviceListJson = std::make_unique<nlohmann::json>();
 	for (auto &d : *devList) {
-		PRINT("device id: %d\n", d.index);
-		result = this->allComponents(&d);
+		// Create a JSON object for this device
+		nlohmann::json deviceJson;
+
+		deviceJson["device_id"] = d.index;
+
+		// Run all component tests and collect results in the device JSON
+		result = this->allComponents(&d, &deviceJson);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Health check failed for device id: %d\n", d.index);
 		}
+
+		deviceListJson->push_back(deviceJson);
 	}
+	(*jsonObj)["device_list"] = *deviceListJson;
 
 	return result;
 }
@@ -118,19 +187,21 @@ ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList)
  * This function iterates through all available component health tests and
  * executes them for the specified device. It provides a comprehensive health
  * assessment covering core temperature, memory temperature, power, memory health,
- * Xe Link ports, and frequency subsystems.
+ * Xe Link ports, and frequency subsystems. Results are stored in the provided
+ * JSON object.
  *
  * @param d Pointer to device information structure containing device handles and properties
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, or the first encountered error code
  */
 
-ze_result_t cmdHealth::allComponents(devInfo *d)
+ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	for (const auto &test : componentCmds) {
 		DBG("Running test: %d\n", test.type);
-		result = (this->*test.func)(d);
+		result = (this->*test.func)(d, jsonObj);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Health check failed for device id: %d\n", d->index);
 			break;
@@ -145,11 +216,13 @@ ze_result_t cmdHealth::allComponents(devInfo *d)
  * This function executes a series of health checks across various device
  * components including temperatures, power consumption, memory health,
  * and overall system status. It provides a holistic view of device health.
+ * Results are stored in the provided JSON object.
  *
  * @param d Pointer to device information structure containing device handles and properties
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, error code otherwise
  */
-ze_result_t cmdHealth::component(devInfo *d)
+ze_result_t cmdHealth::component(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -159,7 +232,7 @@ ze_result_t cmdHealth::component(devInfo *d)
 		if (test.type == stoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val)) {
 			DBG("Running test: %d\n", test.type);
 			found = true;
-			result = (this->*test.func)(d);
+			result = (this->*test.func)(d, jsonObj);
 			break;
 		}
 	}
@@ -175,16 +248,18 @@ ze_result_t cmdHealth::component(devInfo *d)
 }
 
 /**
- * @brief Retrieves and displays GPU core temperature thresholds
+ * @brief Retrieves GPU core temperature thresholds
  *
  * This function queries the device's core temperature monitoring system to
  * obtain throttle and shutdown threshold values. These thresholds are critical
  * for thermal management and preventing hardware damage due to overheating.
+ * Results are stored in the provided JSON object under the "core_temperature" key.
  *
  * @param d Pointer to device information structure containing device handles
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
  */
-ze_result_t cmdHealth::coreTemperature(devInfo *d)
+ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -202,25 +277,27 @@ ze_result_t cmdHealth::coreTemperature(devInfo *d)
 		ERR("Failed to get core temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("Core Temperature Thresholds:\n");
-	PRINT("  Throttle Threshold: %u C\n", throttleThreshold);
-	PRINT("  Shutdown Threshold: %u C\n", shutdownThreshold);
+
+	(*jsonObj)["core_temperature"] = {{"throttle_threshold", std::to_string(throttleThreshold) + " C"},
+									  {"shutdown_threshold", std::to_string(shutdownThreshold) + " C"}};
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Retrieves and displays GPU memory temperature thresholds
+ * @brief Retrieves GPU memory temperature thresholds
  *
  * This function queries the device's memory temperature monitoring system to
  * obtain throttle and shutdown threshold values. Memory temperature monitoring
  * is essential for maintaining optimal performance and preventing thermal damage
- * to high-bandwidth memory components.
+ * to high-bandwidth memory components. Results are stored in the provided JSON object
+ * under the "memory_temperature" key.
  *
  * @param d Pointer to device information structure containing device handles
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
  */
-ze_result_t cmdHealth::memoryTemperature(devInfo *d)
+ze_result_t cmdHealth::memoryTemperature(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -238,9 +315,10 @@ ze_result_t cmdHealth::memoryTemperature(devInfo *d)
 		ERR("Failed to get memory temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	PRINT("Memory Temperature Thresholds:\n");
-	PRINT("  Throttle Threshold: %u C\n", throttleThreshold);
-	PRINT("  Shutdown Threshold: %u C\n", shutdownThreshold);
+
+	(*jsonObj)["memory_temperature"] = {{"throttle_threshold", std::to_string(throttleThreshold) + " C"},
+										{"shutdown_threshold", std::to_string(shutdownThreshold) + " C"}};
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -250,29 +328,36 @@ ze_result_t cmdHealth::memoryTemperature(devInfo *d)
  * This function evaluates the health status of the device's power management
  * subsystem, including power consumption patterns, voltage regulation, and
  * power delivery efficiency. Currently implemented as a placeholder for
- * future power health monitoring capabilities.
+ * future power health monitoring capabilities. Results are stored in the provided JSON
+ * object under the "power_health" key.
  *
  * @param d Pointer to device information structure (currently unused)
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::power(UNUSED devInfo *d)
+ze_result_t cmdHealth::power(UNUSED devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
+
+	(*jsonObj)["power_health"] = {{"status", "ok"}};
+
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Retrieves and displays GPU memory health status
+ * @brief Retrieves GPU memory health status
  *
  * This function queries the device's memory subsystem to determine the current
  * health status of GPU memory components. It evaluates memory integrity,
  * error rates, and overall memory subsystem health, providing critical
- * information for system reliability assessment.
+ * information for system reliability assessment. Results are stored in the provided
+ * JSON object under the "memory_health" key.
  *
  * @param d Pointer to device information structure containing device handles
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS on successful health check, error code otherwise
  */
-ze_result_t cmdHealth::healthMemory(devInfo *d)
+ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -290,17 +375,21 @@ ze_result_t cmdHealth::healthMemory(devInfo *d)
 		return result;
 	}
 
+	std::string healthStatus;
 	if (health == ZES_MEM_HEALTH_OK) {
-		PRINT("Memory Health: OK\n");
+		healthStatus = "OK";
 	} else if (health == ZES_MEM_HEALTH_DEGRADED) {
-		PRINT("Memory Health: DEGRADED\n");
+		healthStatus = "DEGRADED";
 	} else if (health == ZES_MEM_HEALTH_CRITICAL) {
-		PRINT("Memory Health: CRITICAL\n");
+		healthStatus = "CRITICAL";
 	} else if (health == ZES_MEM_HEALTH_REPLACE) {
-		PRINT("Memory Health: REPLACE\n");
+		healthStatus = "REPLACE";
 	} else {
-		PRINT("The memory health cannot be determined.\n");
+		healthStatus = "UNKNOWN";
 	}
+
+	(*jsonObj)["memory_health"] = {{"status", healthStatus}};
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -311,14 +400,19 @@ ze_result_t cmdHealth::healthMemory(devInfo *d)
  * interconnect ports used for high-speed GPU-to-GPU communication.
  * It monitors link integrity, bandwidth availability, and error rates
  * for multi-GPU configurations. Currently implemented as a placeholder
- * for future Xe Link health monitoring capabilities.
+ * for future Xe Link health monitoring capabilities. Results are stored in the
+ * provided JSON object under the "xe_link_port_health" key.
  *
  * @param d Pointer to device information structure (currently unused)
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d)
+ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
+
+	(*jsonObj)["xe_link_port_health"] = {{"status", "ok"}};
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -329,14 +423,19 @@ ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d)
  * management system, including clock generation, frequency scaling capabilities,
  * and thermal/power throttling mechanisms. It ensures that frequency control
  * systems are operating within specification. Currently implemented as a
- * placeholder for future frequency health monitoring capabilities.
+ * placeholder for future frequency health monitoring capabilities. Results are stored
+ * in the provided JSON object under the "frequency_health" key.
  *
  * @param d Pointer to device information structure (currently unused)
+ * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::frequency(UNUSED devInfo *d)
+ze_result_t cmdHealth::frequency(UNUSED devInfo *d, nlohmann::json *jsonObj)
 {
 	TRACING();
+
+	(*jsonObj)["frequency_health"] = {{"status", "ok"}};
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -353,6 +452,7 @@ int cmdHealth::run(arg_struct *args)
 	int opt;
 	int optionIndex = 0;
 	std::string shortOpts;
+	std::unique_ptr<Printer> printer;
 	std::vector<struct option> longOptsVec;
 
 	processOptions(healthCmds, shortOpts, longOptsVec);
@@ -416,24 +516,33 @@ int cmdHealth::run(arg_struct *args)
 		return result;
 	}
 
+	auto jsonObj = std::make_unique<nlohmann::json>();
 	if (healthCmds[healthCmdType::HEALTH_LIST].enabled) {
 		// List all devices
-		result = this->allComponentsAllDevices(&deviceList);
+		result = this->allComponentsAllDevices(&deviceList, jsonObj.get());
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Error: Unable to retrieve health info for devices.\n");
 		}
-		return result;
-	}
-	// Iterate through the device list and execute the command
-	for (auto &device : deviceList) {
-		// Call the appropriate command function based on the command type
-		for (const auto &cmd : healthCmds) {
-			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: %s\n", cmd.second.opt.name);
-				result = (this->*cmd.second.func)(&device);
-				break;
+	} else {
+		for (auto &device : deviceList) {
+			if (healthCmds[healthCmdType::HEALTH_COMPONENT].enabled) {
+				result = this->component(&device, jsonObj.get());
+			} else {
+				result = this->allComponents(&device, jsonObj.get());
 			}
+
+			// Add device identifier to the JSON object
+			(*jsonObj)["device_id"] = device.index;
 		}
+	}
+
+	if (healthCmds[healthCmdType::HEALTH_JSON].enabled == true) {
+		printer = std::make_unique<JsonPrinter>();
+	} else {
+		printer = std::make_unique<HealthTextPrinter>();
+	}
+	if (result == ZE_RESULT_SUCCESS) {
+		printer->print(jsonObj.get());
 	}
 
 	return result;

@@ -86,22 +86,6 @@ static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
 };
 
 /**
- * @brief Constructor for DiscoveryJsonPrinter class
- */
-DiscoveryJsonPrinter::DiscoveryJsonPrinter() : JsonPrinter() {}
-
-/**
- * @brief Prints JSON output with pretty formatting for discovery command
- *
- * @param jsonObj Pointer to the JSON object to be printed
- */
-void DiscoveryJsonPrinter::print(nlohmann::json *jsonObj)
-{
-	// Pretty print JSON with 4 spaces indentation for discovery command output
-	PRINT("%s\n", jsonObj->dump(4).c_str());
-}
-
-/**
  * @brief Constructor for DiscoveryTextPrinter class
  */
 DiscoveryTextPrinter::DiscoveryTextPrinter() : TextPrinter() {}
@@ -1183,7 +1167,7 @@ int cmdDiscovery::run(arg_struct *args)
 		startind++;
 	}
 	if (discCmds[discCmdType::DISC_JSON].enabled == true) {
-		printer = std::make_unique<DiscoveryJsonPrinter>();
+		printer = std::make_unique<JsonPrinter>();
 	} else {
 		printer = std::make_unique<DiscoveryTextPrinter>();
 	}
