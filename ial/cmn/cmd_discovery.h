@@ -30,16 +30,6 @@
 #include <os.h>
 
 /**
- * @brief Discovery-specific JSON printer that formats discovery output as JSON
- */
-class DiscoveryJsonPrinter : public JsonPrinter
-{
-public:
-	DiscoveryJsonPrinter();
-	void print(nlohmann::json *jsonObj) override;
-};
-
-/**
  * @brief Discovery-specific text printer that formats discovery output as human-readable text
  */
 class DiscoveryTextPrinter : public TextPrinter

@@ -26,8 +26,19 @@
 #define _CMD_HEALTH_H
 
 #include "cmds.h"
+#include "printer.h"
 #include <os.h>
 
+/**
+ * @brief Health-specific text printer that formats discovery output as human-readable text
+ */
+class HealthTextPrinter : public TextPrinter
+{
+public:
+	HealthTextPrinter();
+	void print(nlohmann::json *jsonObj) override;
+	void printDeviceInfo(nlohmann::json *jsonObj);
+};
 enum healthCmdType
 {
 	HEALTH_HELP,
@@ -58,20 +69,20 @@ public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t coreTemperature(devInfo *d);
-	ze_result_t memoryTemperature(devInfo *d);
-	ze_result_t power(devInfo *d);
-	ze_result_t healthMemory(devInfo *d);
-	ze_result_t xeLinkPort(devInfo *d);
-	ze_result_t frequency(devInfo *d);
+	ze_result_t coreTemperature(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t memoryTemperature(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t power(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t healthMemory(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t xeLinkPort(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t frequency(devInfo *d, nlohmann::json *jsonObj = nullptr);
 
-	ze_result_t component(devInfo *d);
-	ze_result_t allComponents(devInfo *d);
-	ze_result_t allComponentsAllDevices(std::vector<devInfo> *devList);
+	ze_result_t component(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t allComponents(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::json *jsonObj = nullptr);
 	int run(arg_struct *args);
 };
 
-using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d);
+using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d, nlohmann::json *jsonObj);
 
 struct healthCmdStruct
 {
