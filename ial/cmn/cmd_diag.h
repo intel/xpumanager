@@ -105,6 +105,7 @@ public:
 	ze_result_t runSingleTest(devInfo *d);
 	ze_result_t listTypes(devInfo *d);
 	ze_result_t gpu(devInfo *d);
+	ze_result_t printPrecheckInfo(devInfo *d, bool gpuOnly);
 	ze_result_t runSince(devInfo *d);
 
 	ze_result_t computation(devInfo *d);

@@ -160,16 +160,16 @@ void cmdDiag::help(HELP helpType)
 }
 
 /**
- * @brief Performs pre-diagnostic checks before running full diagnostics
+ * @brief Print pre-diagnostic check info
  *
- * This function executes preliminary validation and system checks to ensure
- * the device and system are ready for comprehensive diagnostic testing.
+ * This function prints preliminary validation and system check info
  * It validates prerequisites and system state before running intensive tests.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param d Pointer to device information structure
+ * @param gpuOnly bool to indicate if GPU only or not
  * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
  */
-ze_result_t cmdDiag::precheck(devInfo *d)
+ze_result_t cmdDiag::printPrecheckInfo(devInfo *d, bool gpuOnly)
 {
 	TRACING();
 
@@ -197,9 +197,11 @@ ze_result_t cmdDiag::precheck(devInfo *d)
 			PRINT("| Driver           |  Status: Fail                                                       |\n");
 		}
 		printPretty();
-		PRINT("| CPU              |  CPU ID: 0                                                          |\n");
-		PRINT("|                  |  Status:                                                            |\n");
-		printPretty();
+		if (!gpuOnly) {
+			PRINT("| CPU              |  CPU ID: 0                                                          |\n");
+			PRINT("|                  |  Status:                                                            |\n");
+			printPretty();
+		}
 		sysInfoShown = true;
 	}
 
@@ -221,6 +223,35 @@ ze_result_t cmdDiag::precheck(devInfo *d)
 		}
 	}
 	printPretty();
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Performs pre-diagnostic checks before running full diagnostics
+ *
+ * This function executes preliminary validation and system checks to ensure
+ * the device and system are ready for comprehensive diagnostic testing.
+ * It validates prerequisites and system state before running intensive tests.
+ *
+ * @param d Pointer to device information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
+ */
+ze_result_t cmdDiag::precheck(devInfo *d)
+{
+	TRACING();
+
+	/*
+	 * Only run the precheck with CPU information if neither the GPU nor LISTTYPES flags are enabled.
+	 * - If the user has not requested GPU diagnostics (GPU flag) and has not requested a list of test types (LISTTYPES
+	 * flag), we perform a precheck using CPU/system information.
+	 * - If either GPU or LISTTYPES is enabled, we skip the CPU/system precheck, as those commands handle their own
+	 * checks. This logic ensures that precheck is only run in the context of a general system check, not when specific
+	 * GPU or test type diagnostics are requested.
+	 */
+	if (!diagCmds[diagCmdType::GPU].enabled && !diagCmds[diagCmdType::LISTTYPES].enabled) {
+		return printPrecheckInfo(d, false);
+	}
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1150,13 +1181,18 @@ ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
  * of the diagnostic precheck process. It provides system state validation
  * and GPU operational status reporting.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if GPU status retrieval completes, error code otherwise
  */
-ze_result_t cmdDiag::gpu(UNUSED devInfo *d)
+ze_result_t cmdDiag::gpu(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	if (!diagCmds[diagCmdType::PRECHECK].enabled) {
+		ERR("--gpu requires --precheck.\n");
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	return printPrecheckInfo(d, true);
 }
 
 /**
