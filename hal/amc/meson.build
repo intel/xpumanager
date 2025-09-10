@@ -17,7 +17,6 @@ amc_sources = files(
   'oem_vrsync.cpp',
   'amclib.cpp',
   'redfish.cpp',
-  'threading.cpp',
 )
 
 amc_inc = include_directories('.')

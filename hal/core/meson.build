@@ -22,6 +22,7 @@ hal_core_sources = files(
   'standby.cpp',
   'sysman.cpp',
   'temperature.cpp',
+  'threading.cpp',
   'vf.cpp'
 )
 
