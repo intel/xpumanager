@@ -28,6 +28,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include "os.h"
 
 // Cross-platform thread and mutex handles using modern C++
 struct ThreadHandle
@@ -60,7 +61,7 @@ typedef void *(*ThreadFunction)(void *arg);
  * @note Uses std::thread and std::mutex for cross-platform compatibility
  * @note Maintains API compatibility with legacy OAL threading interface
  */
-class Threading
+class LIBXPUM_API Threading
 {
 public:
 	Threading();

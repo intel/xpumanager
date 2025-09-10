@@ -170,7 +170,6 @@
     <ClInclude Include="..\amc\pldm_fwpackage.h" />
     <ClInclude Include="..\amc\pldm_fwupdate.h" />
     <ClInclude Include="..\amc\redfish.h" />
-    <ClInclude Include="..\amc\threading.h" />
     <ClInclude Include="..\fwupd\amcupd.h" />
     <ClInclude Include="..\fwupd\fwupd.h" />
     <ClInclude Include="..\fwupd\gscupd.h" />
@@ -197,6 +196,7 @@
     <ClInclude Include="sysman.h" />
     <ClInclude Include="sysprocess.h" />
     <ClInclude Include="temperature.h" />
+    <ClInclude Include="threading.h" />
     <ClInclude Include="vf.h" />
   </ItemGroup>
   <ItemGroup>
@@ -221,7 +221,6 @@
     <ClCompile Include="..\amc\pldm_init.cpp" />
     <ClCompile Include="..\amc\pldm_protocol.cpp" />
     <ClCompile Include="..\amc\redfish.cpp" />
-    <ClCompile Include="..\amc\threading.cpp" />
     <ClCompile Include="..\fwupd\amcupd.cpp" />
     <ClCompile Include="..\fwupd\fwupd.cpp" />
     <ClCompile Include="..\fwupd\gscupd.cpp" />
@@ -246,6 +245,7 @@
     <ClCompile Include="standby.cpp" />
     <ClCompile Include="sysman.cpp" />
     <ClCompile Include="temperature.cpp" />
+    <ClCompile Include="threading.cpp" />
     <ClCompile Include="vf.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -136,10 +136,10 @@
     <ClCompile Include="..\amc\redfish.cpp">
       <Filter>amc</Filter>
     </ClCompile>
-    <ClCompile Include="..\amc\threading.cpp">
-      <Filter>amc</Filter>
-    </ClCompile>
     <ClCompile Include="debug.cpp" />
+    <ClCompile Include="threading.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h">
@@ -223,9 +223,6 @@
     <ClInclude Include="sysprocess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\oal\os.h">
-      <Filter>oal</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\oal\i2c_interface.h">
       <Filter>oal</Filter>
     </ClInclude>
@@ -262,8 +259,9 @@
     <ClInclude Include="..\amc\redfish.h">
       <Filter>amc</Filter>
     </ClInclude>
-    <ClInclude Include="..\amc\threading.h">
-      <Filter>amc</Filter>
+    <ClInclude Include="..\..\oal\win\os.h" />
+    <ClInclude Include="threading.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
