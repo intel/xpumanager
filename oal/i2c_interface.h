@@ -27,6 +27,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -52,10 +53,10 @@ private:
 	bool open_amc_peripheral();
 
 public:
-	I2CInterface(const wchar_t *devpath);
+	I2CInterface(const std::string &devpath);
 	~I2CInterface();
 
-	bool openAmc(const wchar_t *devpath);
+	bool openAmc(const std::string &devpath);
 	bool writeAmc(void *writeBuffer, size_t writeSize);
 	bool readAmc(void *readBuffer, size_t readSize);
 	bool closeAmc();

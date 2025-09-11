@@ -71,23 +71,18 @@ public:
  * @note Sets init flag to true on successful initialization, false otherwise
  * @note Uses Windows-specific file handles and overlapped I/O for device communication
  */
-I2CInterface::I2CInterface(const wchar_t *devpath)
+I2CInterface::I2CInterface(const std::string &devpath)
 {
 	TRACING();
 
 	amchandle = NULL;
 	init = false;
 
-	if (devpath == nullptr) {
-		ERR("Device path is NULL\n");
-		init = false;
+	if (openAmc(devpath) && open_amc_peripheral()) {
+		init = true;
 	} else {
-		if (openAmc(devpath) && open_amc_peripheral()) {
-			init = true;
-		} else {
-			ERR("Failed to open AMC device handle\n");
-			init = false;
-		}
+		ERR("Failed to open AMC device handle\n");
+		init = false;
 	}
 }
 
@@ -119,17 +114,19 @@ I2CInterface::~I2CInterface()
  * @note Uses FILE_FLAG_OVERLAPPED for asynchronous I/O operations
  * @note Sets amchandle to the created file handle on success
  */
-bool I2CInterface::openAmc(const wchar_t *devpath)
+bool I2CInterface::openAmc(const std::string &devpath)
 {
 	TRACING();
-	if (devpath == nullptr) {
-		ERR("Device path is NULL\n");
+	if (devpath.empty()) {
+		ERR("Device path is empty\n");
 		return false;
 	}
 
-	DBG("openAmc called with devpath: %ls\n", devpath);
-	amchandle =
-		CreateFileW(devpath, (GENERIC_READ | GENERIC_WRITE), 0, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
+	// Convert UTF-8/narrow std::string to wide string (naive widening)
+	std::wstring wdevpath(devpath.begin(), devpath.end());
+	DBG("openAmc called with devpath: %ls\n", wdevpath.c_str());
+	amchandle = CreateFileW(wdevpath.c_str(), (GENERIC_READ | GENERIC_WRITE), 0, nullptr, OPEN_EXISTING,
+							FILE_FLAG_OVERLAPPED, nullptr);
 
 	if (amchandle == INVALID_HANDLE_VALUE) {
 		ERR("Error openAmc - %d\n", GetLastError());
@@ -334,9 +331,10 @@ bool I2CInterface::closeAmc()
  * @note Constructs full device paths with "\\\\.\" prefix
  * @note Normalizes hexadecimal notation for consistency
  */
-int amcCardDiscovery(std::vector<std::basic_string<TCHAR>> *amcDeviceList)
+int amcCardDiscovery(void *amcDeviceList)
 {
 	TRACING();
+	std::vector<std::string> *deviceList = static_cast<std::vector<std::string> *>(amcDeviceList);
 
 	TCHAR *devices = new (std::nothrow) TCHAR[MAX_BUFFER_SIZE];
 	if (!devices) {
@@ -367,18 +365,27 @@ int amcCardDiscovery(std::vector<std::basic_string<TCHAR>> *amcDeviceList)
 			// Construct full device path
 			std::basic_string<TCHAR> fullPath = L"\\\\.\\" + deviceName;
 
-			DBG("%ls\n", fullPath.c_str());
-			amcDeviceList->push_back(fullPath); // Store full path directly
+			// Convert wide path to narrow ASCII/UTF-8 (device names expected ASCII)
+			std::string narrowPath;
+			narrowPath.reserve(fullPath.size());
+			for (wchar_t wc : fullPath) {
+				if (wc < 128)
+					narrowPath.push_back(static_cast<char>(wc));
+				else
+					narrowPath.push_back('?');
+			}
+			DBG("%s\n", narrowPath.c_str());
+			deviceList->push_back(narrowPath);
 		}
 	}
 	delete[] devices;
 
-	if (amcDeviceList->empty()) {
+	if (deviceList->empty()) {
 		ERR("No matching AMC devices found.\n");
 		return -1;
 	} else {
-		INFO("Total AMC devices found: %d\n", static_cast<int>(amcDeviceList->size()));
+		INFO("Total AMC devices found: %d\n", static_cast<int>(deviceList->size()));
 	}
 
-	return static_cast<int>(amcDeviceList->size());
+	return static_cast<int>(deviceList->size());
 }

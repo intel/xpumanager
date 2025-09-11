@@ -29,64 +29,117 @@
 #include <chrono>
 #include <atomic>
 #include <mutex>
+#include <memory>
 
-// Global amclib instance - shared resource across all amcupd instances
-static amclib *amcobj = nullptr;
+// Static member definitions for singleton pattern using smart pointer
+std::unique_ptr<amclib> amcupd::amcobj = nullptr;
+int amcupd::globalNumOfCards = 0;
+std::once_flag amcupd::initFlag;
+std::mutex amcupd::amcobjMutex;
 
-// Static member definitions for thread synchronization
-std::mutex amcupd::amcobj_mutex;
-std::once_flag amcupd::amcobj_init_flag;
+/**
+ * @brief Static method to get the singleton amclib instance
+ *
+ * This method implements the singleton pattern for the amclib instance,
+ * ensuring that only one instance exists throughout the program's lifetime
+ * and that it's initialized exactly once in a thread-safe manner.
+ * Uses smart pointer for automatic memory management.
+ *
+ * @return amclib* Pointer to the singleton amclib instance
+ */
+amclib *amcupd::getAmcObj()
+{
+	std::call_once(initFlag, []() {
+		amcobj = std::make_unique<amclib>();
+		globalNumOfCards = amcobj->amcEnumFirmwares();
+		if (globalNumOfCards <= 0) {
+			ERR("Failed to enumerate AMC cards\n");
+		}
+	});
+	return amcobj.get();
+}
+
+/**
+ * @brief Static method to get the global number of AMC cards
+ *
+ * This method provides thread-safe access to the global number of AMC cards
+ * that were enumerated during singleton initialization.
+ *
+ * @return int The number of AMC cards found during enumeration
+ */
+int amcupd::getNumOfCards()
+{
+	// Ensure the singleton is initialized before returning the count
+	getAmcObj();
+	return globalNumOfCards;
+}
+
+/**
+ * @brief Static cleanup method for explicit resource cleanup
+ *
+ * This method can be called during program shutdown to explicitly clean up
+ * the singleton resources. While the smart pointer will automatically handle
+ * cleanup, this provides an option for explicit cleanup if needed.
+ */
+void amcupd::cleanup()
+{
+	std::lock_guard<std::mutex> lock(amcobjMutex);
+	amcobj.reset();
+	globalNumOfCards = 0;
+}
 
 /**
  * @brief Constructor for the amcupd class
  *
- * Initializes the AMC update handler by enumerating available AMC cards
- * and their firmware versions. Sets up the internal state for subsequent
- * firmware update operations.
+ * Initializes the AMC update handler. The actual AMC enumeration and
+ * initialization is handled by the singleton pattern to ensure consistent
+ * state across all instances.
  */
-amcupd::amcupd() : numOfCards(0) {}
+amcupd::amcupd()
+{
+	TRACING();
+	// Initialize the singleton - this ensures amcobj and globalNumOfCards are set
+	getAmcObj();
+}
 
 /**
  * @brief Destructor for the amcupd class
  *
- * Cleans up resources used by the amcupd class, including the
- * amclib object.
+ * Since we're using a singleton pattern with smart pointer, we don't clean up
+ * the shared amclib instance here as it should persist for the program's lifetime.
+ * Individual instances can be destroyed without affecting other instances.
+ * The smart pointer will automatically handle memory cleanup.
  */
 amcupd::~amcupd()
 {
-	// Use lock guard to ensure thread-safe cleanup
-	std::lock_guard<std::mutex> lock(amcobj_mutex);
-
-	if (amcobj) {
-		delete amcobj;
-		amcobj = nullptr;
-	}
+	// No cleanup needed for singleton resources - smart pointer handles it
 }
 
 /**
  * @brief Prepares the AMC (Add-in Management Controller) for firmware update
  *
- * This function performs pre-update operations including opening the I2C
+ * This function performs pre-update operations including initializing the AMC
  * device connection required for AMC firmware communication. It establishes
  * the necessary hardware interface before the actual firmware update process.
  *
  * @param fwInfo Pointer to firmware information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful preparation,
- *                     ZE_RESULT_ERROR_UNKNOWN if I2C device open fails
+ *                     ZE_RESULT_ERROR_UNKNOWN if AMC initialization fails
  */
 ze_result_t amcupd::preUpdateAMC(UNUSED firmwareInfo *fwInfo)
 {
 	TRACING();
 
-	// Use std::call_once to ensure initialization happens exactly once across all threads
-	std::call_once(amcobj_init_flag, [this]() {
-		amcobj = new amclib();
-		// Enumerate available AMC cards along with their firmware versions
-		numOfCards = amcobj->amcEnumFirmwares();
-		if (numOfCards <= 0) {
-			ERR("Failed to initialize amclib\n");
-		}
-	});
+	amclib *amc = getAmcObj();
+	if (!amc) {
+		ERR("Failed to get AMC library instance\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (amc->amcInitialize() != 0) {
+		ERR("Failed to initialize AMC devices\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -135,9 +188,15 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	std::string filePath = fwInfo->filePath;
 	uint32_t deviceIndex = fwInfo->deviceIndex;
 
-	if (deviceIndex >= (uint32_t)numOfCards) {
-		ERR("Invalid device index: %d\n", deviceIndex);
+	if (deviceIndex >= (uint32_t)getNumOfCards()) {
+		ERR("Invalid AMC device index: %d\n", deviceIndex);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	amclib *amc = getAmcObj();
+	if (!amc) {
+		ERR("Failed to get AMC library instance\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
 	// Shared state for thread coordination
@@ -146,8 +205,8 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	std::atomic<bool> stopProgress{false};
 
 	// Create a thread to flash firmware
-	std::thread flashThread([this, deviceIndex, filePath, &flashCompleted, &flashSuccess]() {
-		int result = amcobj->amcFirmwareFlash(deviceIndex, filePath.c_str());
+	std::thread flashThread([amc, deviceIndex, filePath, &flashCompleted, &flashSuccess]() {
+		int result = amc->amcFirmwareFlash(deviceIndex, filePath.c_str());
 		flashSuccess.store(result == 0);
 		flashCompleted.store(true);
 
@@ -159,14 +218,13 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	});
 
 	// Create a thread to monitor firmware flash progress
-	std::thread progressThread([this, deviceIndex, fwInfo, &flashCompleted, &stopProgress]() {
+	std::thread progressThread([amc, deviceIndex, fwInfo, &flashCompleted, &stopProgress]() {
 		uint32_t progress = 0;
 		while (!stopProgress.load() && progress < 100) {
-			progress = amcobj->amcFirmwareProgress(deviceIndex);
+			progress = amc->amcFirmwareProgress(deviceIndex);
 			if (progress > 100)
 				progress = 100; // Cap at 100%
 
-			PRINT("Firmware progress for device %d: %d%%\r", deviceIndex, progress);
 			fwInfo->dev->setProgress(progress);
 
 			// Exit early if flash completed
@@ -177,7 +235,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 
 			// Add small delay to prevent excessive polling
 			if (progress < 100) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				MSLEEP(100);
 			}
 		}
 		DBG("Firmware progress monitoring completed for device %d\n", deviceIndex);
