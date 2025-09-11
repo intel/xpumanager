@@ -102,7 +102,7 @@ private:
 	bool init;
 
 	// mctp Base API's
-	int mctpinit(const wchar_t *devpath);
+	int mctpinit(const std::string &devpath);
 	void cleanup();
 	uint8_t headerConstruction(mctpControlHdr *mctpCtrl, uint8_t instanceID, uint8_t cmd);
 	uint8_t command(uint8_t cmd, uint8_t size);
@@ -118,7 +118,7 @@ protected:
 	uint8_t mDestNewEid;
 	I2CInterface *i2cobj;
 
-	mctp(const wchar_t *devpath);
+	mctp(const std::string &devpath);
 	~mctp();
 	int initialize();
 

@@ -200,7 +200,7 @@ private:
 	uint8_t oemVrsyncRespPayload(uint8_t cmd, uint8_t id);
 
 public:
-	pldm(const wchar_t *devpath, int cardnum) : mctp(devpath), mCardNum(cardnum) { pldminit(); }
+	pldm(const std::string &devpath, int cardnum) : mctp(devpath), mCardNum(cardnum) { pldminit(); }
 	~pldm() { cleanup(); }
 
 	// pldm Base APIs

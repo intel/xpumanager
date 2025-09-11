@@ -40,7 +40,7 @@
  * Initializes the I2C interface by opening the AMC device and setting up peripheral access.
  * Sets the init flag to true if successful, false otherwise.
  */
-I2CInterface::I2CInterface(const wchar_t *devpath)
+I2CInterface::I2CInterface(const std::string &devpath)
 {
 	TRACING();
 	amchandle = -1;
@@ -120,33 +120,24 @@ std::string getI2CDeviceName(const std::string &devicePath)
 
 /**
  * @brief Opens the AMC I2C device
- * @param devpath Wide character std::string containing the device path
+ * @param devpath Narrow std::string device path (e.g. /dev/i2c-21)
  * @return bool True if device opened successfully, false otherwise
  *
  * Converts the wide character device path to a regular std::string and opens
  * the I2C device with read/write and non-blocking flags.
  */
-bool I2CInterface::openAmc(const wchar_t *devpath)
+bool I2CInterface::openAmc(const std::string &devpath)
 {
 	TRACING();
-
-	// Convert wide character std::string to regular std::string
-	std::string devicePath;
-	if (devpath != nullptr) {
-		std::wstring wdevpath(devpath);
-		devicePath.assign(wdevpath.begin(), wdevpath.end());
-	} else {
-		ERR("Device path is null\n");
+	if (devpath.empty()) {
+		ERR("Device path is empty\n");
 		return false;
 	}
-
-	// Open the I2C device
-	amchandle = open(devicePath.c_str(), O_RDWR | O_NONBLOCK);
+	amchandle = open(devpath.c_str(), O_RDWR | O_NONBLOCK);
 	if (amchandle < 0) {
-		ERR("Failed to open I2C device %s: %s\n", devicePath.c_str(), strerror(errno));
+		ERR("Failed to open I2C device %s: %s\n", devpath.c_str(), strerror(errno));
 		return false;
 	}
-
 	return true;
 }
 
@@ -237,10 +228,11 @@ bool I2CInterface::closeAmc()
  * Extracts the I2C bus number from the device path and constructs the
  * corresponding /dev/i2c-X device path for each AMC device found.
  */
-int amcCardDiscovery(std::vector<std::basic_string<TCHAR>> *amcDeviceList)
+int amcCardDiscovery(void *amcDeviceList)
 {
 	TRACING();
 	int cardsCount = 0;
+	std::vector<std::string> *deviceList = static_cast<std::vector<std::string> *>(amcDeviceList);
 	std::vector<std::string> devices = findI2CDevices();
 	for (const auto &device : devices) {
 		std::string name = getI2CDeviceName(device);
@@ -258,7 +250,7 @@ int amcCardDiscovery(std::vector<std::basic_string<TCHAR>> *amcDeviceList)
 			size_t hyphen_pos = filename.find('-');
 			std::string bus_number = (hyphen_pos != std::string::npos) ? filename.substr(0, hyphen_pos) : "";
 			std::string i2cDevice = "/dev/i2c-" + bus_number;
-			amcDeviceList->emplace_back(i2cDevice.begin(), i2cDevice.end());
+			deviceList->push_back(i2cDevice);
 			DBG("Found AMC device: %s\n", i2cDevice.c_str());
 			cardsCount++;
 		}

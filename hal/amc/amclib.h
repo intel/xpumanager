@@ -40,14 +40,14 @@ class LIBXPUM_API amclib
 {
 private:
 	pldm **pldmobj;
-	std::vector<std::basic_string<TCHAR>> *amcDeviceList;
+	std::vector<std::string> *amcDeviceList;
 	int numCards;
 	redfish redfishObj;
-	int initialize();
 
 public:
 	amclib();
 	~amclib();
+	int amcInitialize();
 	int amcEnumFirmwares();
 	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath);
 	int amcFirmwareProgress(uint32_t cardNum);

@@ -41,7 +41,7 @@ amclib::amclib()
 	// Initialize the number of cards to 0
 	numCards = 0;
 
-	amcDeviceList = new std::vector<std::basic_string<TCHAR>>();
+	amcDeviceList = new std::vector<std::string>();
 	if (amcDeviceList == nullptr) {
 		ERR("Failed to allocate memory for amcDeviceList vector\n");
 	}
@@ -72,9 +72,9 @@ amclib::~amclib()
 		pldmobj = nullptr;
 	}
 
-	if (amcDeviceList != NULL) {
+	if (amcDeviceList != nullptr) {
 		delete amcDeviceList;
-		amcDeviceList = NULL;
+		amcDeviceList = nullptr;
 	}
 }
 
@@ -101,34 +101,6 @@ int amclib::amcEnumFirmwares()
 		return -1;
 	}
 
-	pldmobj = new pldm *[numCards];
-	if (pldmobj == nullptr) {
-		ERR("Failed to allocate memory for pldm object array\n");
-		delete amcDeviceList;
-		amcDeviceList = nullptr;
-		return -1;
-	}
-
-	for (int i = 0; i < numCards; ++i) {
-		DBG("############ CARD : %02d ############\n", i);
-		pldmobj[i] = new pldm(amcDeviceList->at(i).c_str(), i);
-		if (pldmobj[i] == nullptr) {
-			ERR("Failed to allocate memory for pldm object for card : %d\n", i);
-			for (int j = 0; j < i; ++j) {
-				delete pldmobj[j];
-			}
-			delete[] pldmobj;
-			pldmobj = nullptr;
-			return -1;
-		}
-		DBG("#####################################\n\n");
-	}
-
-	if (initialize() != 0) {
-		ERR("Failed to initialize amclib\n");
-		return -1;
-	}
-
 	return numCards;
 }
 
@@ -144,9 +116,33 @@ int amclib::amcEnumFirmwares()
  *
  * @note This is a private member function
  */
-int amclib::initialize()
+int amclib::amcInitialize()
 {
 	TRACING();
+
+	pldmobj = new pldm *[numCards];
+	if (pldmobj == nullptr) {
+		ERR("Failed to allocate memory for pldm object array\n");
+		delete amcDeviceList;
+		amcDeviceList = nullptr;
+		return -1;
+	}
+
+	for (int i = 0; i < numCards; ++i) {
+		DBG("############ CARD : %02d ############\n", i);
+		pldmobj[i] = new pldm(amcDeviceList->at(i), i);
+		if (pldmobj[i] == nullptr) {
+			ERR("Failed to allocate memory for pldm object for card : %d\n", i);
+			for (int j = 0; j < i; ++j) {
+				delete pldmobj[j];
+			}
+			delete[] pldmobj;
+			pldmobj = nullptr;
+			return -1;
+		}
+		DBG("#####################################\n\n");
+	}
+
 	for (int i = 0; i < numCards; i++) {
 		DBG("############ CARD : %02d ############\n", i);
 		if (pldmobj[i]->initialize() == -1) {

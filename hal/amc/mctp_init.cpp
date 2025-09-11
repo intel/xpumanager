@@ -31,7 +31,7 @@
  * Initializes an mctp (Management Component Transport Protocol) instance by calling mctpinit().
  * Sets the init flag based on the success of the initialization process.
  */
-mctp::mctp(const wchar_t *devpath)
+mctp::mctp(const std::string &devpath)
 {
 	TRACING();
 	mI2cMctpRead = NULL;
@@ -41,8 +41,8 @@ mctp::mctp(const wchar_t *devpath)
 	mDestEid = 0;
 	mDestNewEid = 0;
 
-	if (devpath == NULL) {
-		ERR("Device path is NULL\n");
+	if (devpath.empty()) {
+		ERR("Device path is empty\n");
 		init = false;
 	} else {
 		if (!mctpinit(devpath)) {
@@ -100,12 +100,12 @@ void mctp::cleanup()
  * Sets up mctp instance ID and destination EID, allocates memory buffers for read/write operations,
  * creates and initializes the I2C interface object. Performs cleanup on any initialization failures.
  */
-int mctp::mctpinit(const wchar_t *devpath)
+int mctp::mctpinit(const std::string &devpath)
 {
 	TRACING();
 
-	if (devpath == NULL) {
-		ERR("Device path is NULL\n");
+	if (devpath.empty()) {
+		ERR("Device path is empty\n");
 		return -1;
 	}
 
