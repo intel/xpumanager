@@ -25,6 +25,8 @@
 #include "cmd_updatefw.h"
 #include "debug.h"
 #include <assert.h>
+#include <thread>
+#include <atomic>
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -173,22 +175,44 @@ int cmdUpdateFW::run(arg_struct *args)
 		return result;
 	}
 
-	// Iterate through the device list and execute the command
-	for (auto &device : deviceList) {
-		fwInfo.dev = device.dev;
-		fwInfo.deviceHdl = device.deviceHdl;
-		fwInfo.deviceIndex = device.index;
-		firmware *fw = (firmware *)device.dev->getFirmware();
-		if (fw == nullptr) {
-			ERR("Error: Firmware pointer not found.\n");
-			return ZE_RESULT_ERROR_UNKNOWN;
-		}
+	// Parallelize per-device firmware updates
+	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};
+	std::vector<std::thread> workers;
+	workers.reserve(deviceList.size());
 
-		// Call the hal to update the firmware
-		if (fw->updateFW(&fwInfo) != ZE_RESULT_SUCCESS) {
-			ERR("Error: Failed to update firmware.\n");
-			return ZE_RESULT_ERROR_UNKNOWN;
+	for (auto &device : deviceList) {
+		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->getAmcIndex() != -1) ||
+			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
+			workers.emplace_back([&, devPtr = &device]() {
+				// Make a thread‑local copy of firmwareInfo to avoid data races
+				firmwareInfo localInfo = fwInfo;
+				localInfo.dev = devPtr->dev;
+				localInfo.deviceHdl = devPtr->deviceHdl;
+				localInfo.deviceIndex = devPtr->index;
+				firmware *fw = devPtr->dev->getFirmware();
+				if (fw == nullptr) {
+					ERR("Error: Firmware pointer not found (device %d).\n", devPtr->index);
+					ze_result_t expected = ZE_RESULT_SUCCESS;
+					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+					return;
+				}
+				if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
+					ERR("Error: Failed to update firmware for device %d.\n", devPtr->index);
+					ze_result_t expected = ZE_RESULT_SUCCESS;
+					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+					return;
+				}
+			});
 		}
+	}
+
+	for (auto &t : workers) {
+		if (t.joinable())
+			t.join();
+	}
+
+	if (firstError != ZE_RESULT_SUCCESS) {
+		return firstError.load();
 	}
 
 	if (fwInfo.jsonOutput) {
