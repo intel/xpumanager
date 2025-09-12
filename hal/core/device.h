@@ -87,6 +87,7 @@ private:
 	devProps deviceProperties;
 	uint32_t fwupdateProgress;
 	bool igpu;
+	int amc;
 
 	std::vector<sysman *> zesFunctionTable();
 	std::vector<sysman *> zetFunctionTable();
@@ -98,7 +99,6 @@ private:
 	enginegroup enginegroupInstance;
 	fabric fabricInstance;
 	fan fanInstance;
-	// firmwareInstance is a pointer due to circular dependency.
 	firmware *firmwareInstance;
 	frequency frequencyInstance;
 	memory memoryInstance;
@@ -135,6 +135,7 @@ public:
 
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
 	bool isIGPU() const { return igpu; }
+	int getAmcIndex() const { return amc; }
 	bool isBDF(const char *bdf);
 	void addInfo(std::vector<devInfo> *devList, uint32_t devIndex);
 

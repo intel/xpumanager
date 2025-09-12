@@ -51,6 +51,7 @@ public:
 	int amcEnumFirmwares();
 	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath);
 	int amcFirmwareProgress(uint32_t cardNum);
+	int findBDF(const std::string &gpuBDF);
 	int oemVrsync(uint8_t cmd);
 	int redfishInitialize(const std::string &ip, const std::string &username, const std::string &password,
 						  uint16_t port = 443);

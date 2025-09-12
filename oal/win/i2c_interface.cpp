@@ -258,12 +258,12 @@ bool I2CInterface::writeAmc(void *writebuffer, size_t writesize)
 bool I2CInterface::readAmc(void *readbuffer, size_t readsize)
 {
 	TRACING();
-	if (readsize == 0 || readsize > MAX_I2C_BUFFER_SIZE) {
+	if (readsize == 0 || readsize > MAX_BUFFER_SIZE) {
 		ERR("Invalid read size\n");
 		return false;
 	}
 
-	ZERO_MEM(readbuffer, readsize);
+	memset(readbuffer, 0, readsize);
 
 	DWORD bytesread = 0;
 	OVERLAPPED overlapped = {};
