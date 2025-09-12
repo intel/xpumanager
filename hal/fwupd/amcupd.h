@@ -51,6 +51,7 @@ public:
 	ze_result_t preUpdateAMC(firmwareInfo *fwInfo) override;
 	ze_result_t updateAMC(firmwareInfo *fwInfo) override;
 	ze_result_t postUpdateAMC(firmwareInfo *fwInfo) override;
+	int findBDF(const std::string &gpuBDF);
 
 	// Static method to get the global number of cards
 	static int getNumOfCards();

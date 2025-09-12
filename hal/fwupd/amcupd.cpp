@@ -115,6 +115,26 @@ amcupd::~amcupd()
 	// No cleanup needed for singleton resources - smart pointer handles it
 }
 
+/*
+ * @brief Find the index of an AMC card associated with the specified GPU BDF
+ *
+ * Searches the discovered AMC device list to find the index of the card
+ * associated with the given GPU Bus-Device-Function (BDF) identifier.
+ *
+ * @param gpuBDF The BDF string of the GPU to check (e.g., "0000:00:02.0")
+ * @return Index of the AMC card in the device list if found, -1 if not found
+ */
+int amcupd::findBDF(const std::string &gpuBDF)
+{
+	int ret = -1;
+	amclib *amc = getAmcObj();
+	if (amc) {
+		ret = amc->findBDF(gpuBDF);
+	}
+
+	return ret;
+}
+
 /**
  * @brief Prepares the AMC (Add-in Management Controller) for firmware update
  *

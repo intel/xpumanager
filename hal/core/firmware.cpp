@@ -239,6 +239,26 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	return result;
 }
 
+/*
+ * @brief Checks if the device has an AMC card associated with a specific GPU BDF
+ *
+ * This function determines if there is an AMC card linked to the GPU identified
+ * by the provided Bus-Device-Function (BDF) string.
+ *
+ * @param gpuBdfStr The BDF string of the GPU to check (e.g., "0000:00:02.0")
+ * @return Index of the AMC card in amcDeviceList if found, -1 if not found
+ */
+int firmware::getAmcIndex(std::string gpuBdfStr)
+{
+	int amc = -1;
+	if (fwupdArray && fwupdArray[FWUPD_PREFERENCE_AMC]) {
+		amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
+		amc = a->findBDF(gpuBdfStr);
+	}
+
+	return amc;
+}
+
 /**
  * @brief Initializes the firmware management subsystem for a device
  *

@@ -123,8 +123,6 @@ int amclib::amcInitialize()
 	pldmobj = new pldm *[numCards];
 	if (pldmobj == nullptr) {
 		ERR("Failed to allocate memory for pldm object array\n");
-		delete amcDeviceList;
-		amcDeviceList = nullptr;
 		return -1;
 	}
 
@@ -204,6 +202,25 @@ int amclib::amcFirmwareProgress(uint32_t cardNum)
 		return -1;
 	}
 	return pldmobj[cardNum]->fwupdProgress();
+}
+
+/**
+ * @brief Find the index of an AMC card associated with the specified GPU BDF
+ *
+ * Searches the discovered AMC device list to find the index of the card
+ * associated with the given GPU Bus-Device-Function (BDF) identifier.
+ *
+ * @param gpuBDF The BDF string of the GPU to check (e.g., "0000:00:02.0")
+ * @return Index of the AMC card in amcDeviceList if found, -1 if not found
+ */
+int amclib::findBDF(const std::string &gpuBDF)
+{
+	for (size_t i = 0; i < amcDeviceList->size(); ++i) {
+		if ((*amcDeviceList)[i].gpuParentPath == gpuBDF) {
+			return static_cast<int>(i);
+		}
+	}
+	return -1;
 }
 
 /**

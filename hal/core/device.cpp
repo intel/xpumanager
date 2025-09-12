@@ -37,7 +37,7 @@
  */
 device::device()
 	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), fwupdateProgress(0), igpu(false),
-	  firmwareInstance(new firmware())
+	  amc(false), firmwareInstance(new firmware())
 {}
 
 /**
@@ -752,6 +752,10 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	}
 
 	DBG("\n==============================================\n");
+
+	// Once initialization has been done, and we have the bdf string for the device, let's find out if it has an AMC or
+	// not
+	amc = firmwareInstance->getAmcIndex(pciInstance.getBDFStr());
 	return ZE_RESULT_SUCCESS;
 }
 
