@@ -117,6 +117,6 @@ std::string getProcessName(uint32_t processId);
 std::string getLocalCpus(std::string bdf);
 std::string getCpuList(std::string bdf);
 std::string timestamp();
-int amcCardDiscovery(void *amcDeviceList);
+int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 
 #endif

@@ -27,6 +27,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -41,6 +42,12 @@ struct bdfID
 	uint32_t bus;
 	uint32_t device;
 	uint32_t function;
+};
+
+struct amcCardInfo
+{
+	std::string amcDevicePath;
+	std::string gpuParentPath;
 };
 
 #ifdef _WIN32

@@ -25,6 +25,11 @@
 #include "i2c_interface.h"
 #include "os.h"
 #include <debug.h>
+#include <cfgmgr32.h>
+#include <initguid.h>
+#include <devguid.h>
+#include <setupapi.h>
+#include <format>
 
 #define MAX_BUFFER_SIZE (64 * 1024)
 
@@ -317,6 +322,112 @@ bool I2CInterface::closeAmc()
 }
 
 /**
+ * @brief Resolve the GPU PCI BDF for an AMC I2C DOS device link.
+ *
+ * Given a DOS device path for an AMC I2C bus device (e.g. L"\\\\.\\NF_I2C_BUS_0x12"), this function:
+ *   1. Uses QueryDosDeviceW to translate the DOS device name to its NT device path.
+ *   2. Walks the system device information set (SetupDi*) to find the matching device instance whose
+ *      SPDRP_PHYSICAL_DEVICE_OBJECT_NAME equals that NT path and retrieves its instance ID.
+ *   3. Locates the CONFIGMGR (CfgMgr32) devnode for that instance ID and ascends the parent chain until it reaches
+ *      a PCI device (Device ID starts with L"PCI\\").
+ *   4. Reads CM_DRP_BUSNUMBER and CM_DRP_ADDRESS from the devnode to obtain bus, device, and function numbers.
+ *   5. Formats and returns a standardized BDF string: "0000:bb:dd.f" where bb and dd are two lowercase hex digits
+ *      (domain is fixed to 0000 here).
+ *
+ * If any step fails (device not found, registry property missing, APIs returning errors), an empty string is returned.
+ *
+ * Thread-safety: This function performs read-only queries against system device information and is thread-safe as
+ * long as the Windows configuration APIs are.
+ *
+ * @param dosLink Wide-character DOS link string for the AMC I2C device (must begin with \\'.\\' or raw name).
+ * @return std::string PCI BDF string formatted as "0000:bb:dd.f" or empty string on failure.
+ */
+std::string getGpuDeviceFromI2C(const std::basic_string<TCHAR> &dosLink)
+{
+	CONFIGRET cr;
+	DEVINST devInst;
+	SP_DEVINFO_DATA devData = {0};
+	HDEVINFO devInfo;
+	wchar_t instanceId[MAX_DEVICE_ID_LEN];
+	wchar_t ntPath[MAX_PATH];
+	const TCHAR *devName = dosLink.c_str();
+	bool found = false;
+	std::string bdfResult; // Will hold formatted BDF if discovered
+
+	if (wcsncmp(devName, L"\\\\.\\", 4) == 0) {
+		devName += 4;
+	}
+
+	if (!QueryDosDeviceW(devName, ntPath, MAX_PATH)) {
+		ERR("QueryDosDevice failed for %ls (%lu)\n", dosLink.c_str(), GetLastError());
+		return std::string();
+	}
+	DBG("[+] %ls -> NT Path: %ls\n", dosLink.c_str(), ntPath);
+
+	devInfo = SetupDiGetClassDevsW(NULL, NULL, NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+	if (devInfo == INVALID_HANDLE_VALUE) {
+		ERR("SetupDiGetClassDevs failed\n");
+		return std::string();
+	}
+
+	devData.cbSize = sizeof(SP_DEVINFO_DATA);
+	for (DWORD i = 0; SetupDiEnumDeviceInfo(devInfo, i, &devData); i++) {
+		wchar_t buf[MAX_PATH];
+		if (SetupDiGetDeviceRegistryPropertyW(devInfo, &devData, SPDRP_PHYSICAL_DEVICE_OBJECT_NAME, NULL, (PBYTE)buf,
+											  sizeof(buf), NULL)) {
+			if (_wcsicmp(buf, ntPath) == 0) {
+				if (CM_Get_Device_IDW(devData.DevInst, instanceId, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS) {
+					found = true;
+				}
+				break;
+			}
+		}
+	}
+
+	SetupDiDestroyDeviceInfoList(devInfo);
+	if (!found) {
+		ERR("[-] Could not find device instance for %ls\n", dosLink.c_str());
+		return std::string();
+	}
+
+	if (CM_Locate_DevNodeW(&devInst, instanceId, CM_LOCATE_DEVNODE_NORMAL) != CR_SUCCESS) {
+		return std::string();
+	}
+
+	while (true) {
+		wchar_t deviceId[MAX_DEVICE_ID_LEN];
+		cr = CM_Get_Device_ID(devInst, deviceId, MAX_DEVICE_ID_LEN, 0);
+		if (cr != CR_SUCCESS) {
+			break;
+		}
+
+		ULONG busNumber = 0, slotInfo = 0;
+		ULONG len = sizeof(ULONG);
+		if (CM_Get_DevNode_Registry_Property(devInst, CM_DRP_BUSNUMBER, NULL, &busNumber, &len, 0) == CR_SUCCESS &&
+			CM_Get_DevNode_Registry_Property(devInst, CM_DRP_ADDRESS, NULL, &slotInfo, &len, 0) == CR_SUCCESS) {
+			if (wcsncmp(deviceId, L"PCI\\", 4) == 0) {
+				// Extract device (bits 16-31 per Windows encoding) and function (bits 0-2)
+				ULONG device = (slotInfo >> 16) & 0xFFFF; // Will clamp to 8 bits below when formatting
+				ULONG function = slotInfo & 0x7;
+				// Format as domain:bus:device.function with bus & device two hex digits, domain fixed 0000
+				bdfResult = std::format("0000:{:02x}:{:02x}.{}", (busNumber & 0xFF), (device & 0xFF), function);
+				DBG("   PCI BDF: %s\n", bdfResult.c_str());
+				break;
+			}
+		}
+
+		DEVINST parent;
+		cr = CM_Get_Parent(&parent, devInst, 0);
+		if (cr != CR_SUCCESS) {
+			break;
+		}
+		devInst = parent;
+	}
+
+	return bdfResult; // Empty string if not resolved
+}
+
+/**
  * @brief Discovers AMC devices on Windows platform
  *
  * Scans the system for AMC I2C bus devices by querying DOS device names.
@@ -331,10 +442,9 @@ bool I2CInterface::closeAmc()
  * @note Constructs full device paths with "\\\\.\" prefix
  * @note Normalizes hexadecimal notation for consistency
  */
-int amcCardDiscovery(void *amcDeviceList)
+int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 {
 	TRACING();
-	std::vector<std::string> *deviceList = static_cast<std::vector<std::string> *>(amcDeviceList);
 
 	TCHAR *devices = new (std::nothrow) TCHAR[MAX_BUFFER_SIZE];
 	if (!devices) {
@@ -375,17 +485,20 @@ int amcCardDiscovery(void *amcDeviceList)
 					narrowPath.push_back('?');
 			}
 			DBG("%s\n", narrowPath.c_str());
-			deviceList->push_back(narrowPath);
+			amcCardInfo info;
+			info.amcDevicePath = narrowPath;
+			info.gpuParentPath = getGpuDeviceFromI2C(fullPath);
+			amcDeviceList->push_back(info);
 		}
 	}
 	delete[] devices;
 
-	if (deviceList->empty()) {
+	if (amcDeviceList->empty()) {
 		ERR("No matching AMC devices found.\n");
 		return -1;
 	} else {
-		INFO("Total AMC devices found: %d\n", static_cast<int>(deviceList->size()));
+		INFO("Total AMC devices found: %d\n", static_cast<int>(amcDeviceList->size()));
 	}
 
-	return static_cast<int>(deviceList->size());
+	return static_cast<int>(amcDeviceList->size());
 }
