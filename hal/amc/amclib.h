@@ -40,7 +40,7 @@ class LIBXPUM_API amclib
 {
 private:
 	pldm **pldmobj;
-	std::vector<std::string> *amcDeviceList;
+	std::vector<amcCardInfo> *amcDeviceList;
 	int numCards;
 	redfish redfishObj;
 

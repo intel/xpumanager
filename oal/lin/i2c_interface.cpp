@@ -220,6 +220,31 @@ bool I2CInterface::closeAmc()
 }
 
 /**
+ * @brief Gets the GPU device name that owns the specified I2C device
+ * @param i2cDevicePath Path to the I2C device (e.g., "/sys/bus/i2c/devices/i2c-19")
+ * @return std::string GPU device name (e.g., "0000:01:00.0") or empty string on error
+ *
+ * Equivalent to the shell command: basename $(realpath ../..)
+ * Resolves the parent directory path and extracts the GPU device identifier.
+ */
+std::string getGpuDeviceFromI2C(const std::string &i2cDevicePath)
+{
+	TRACING();
+	try {
+		// Resolve the real path of "../.." relative to the I2C device path
+		std::filesystem::path devicePath(i2cDevicePath);
+		std::filesystem::path parentParentPath = devicePath / ".." / "..";
+		std::filesystem::path realPath = std::filesystem::canonical(parentParentPath);
+
+		// Return the basename (filename) of the resolved path
+		return realPath.filename().string();
+	} catch (const std::filesystem::filesystem_error &ex) {
+		ERR("Failed to resolve GPU device path for %s: %s\n", i2cDevicePath.c_str(), ex.what());
+		return "";
+	}
+}
+
+/**
  * @brief Discovers AMC cards in the system
  * @param amcDeviceList Pointer to std::vector that will be populated with found AMC device paths
  * @return int Status code (0 for success)
@@ -228,11 +253,10 @@ bool I2CInterface::closeAmc()
  * Extracts the I2C bus number from the device path and constructs the
  * corresponding /dev/i2c-X device path for each AMC device found.
  */
-int amcCardDiscovery(void *amcDeviceList)
+int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 {
 	TRACING();
 	int cardsCount = 0;
-	std::vector<std::string> *deviceList = static_cast<std::vector<std::string> *>(amcDeviceList);
 	std::vector<std::string> devices = findI2CDevices();
 	for (const auto &device : devices) {
 		std::string name = getI2CDeviceName(device);
@@ -250,7 +274,10 @@ int amcCardDiscovery(void *amcDeviceList)
 			size_t hyphen_pos = filename.find('-');
 			std::string bus_number = (hyphen_pos != std::string::npos) ? filename.substr(0, hyphen_pos) : "";
 			std::string i2cDevice = "/dev/i2c-" + bus_number;
-			deviceList->push_back(i2cDevice);
+			amcCardInfo info;
+			info.amcDevicePath = i2cDevice;
+			info.gpuParentPath = getGpuDeviceFromI2C("/sys/bus/i2c/devices/i2c-" + bus_number);
+			amcDeviceList->push_back(info);
 			DBG("Found AMC device: %s\n", i2cDevice.c_str());
 			cardsCount++;
 		}

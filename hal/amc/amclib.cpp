@@ -41,7 +41,7 @@ amclib::amclib()
 	// Initialize the number of cards to 0
 	numCards = 0;
 
-	amcDeviceList = new std::vector<std::string>();
+	amcDeviceList = new std::vector<amcCardInfo>();
 	if (amcDeviceList == nullptr) {
 		ERR("Failed to allocate memory for amcDeviceList vector\n");
 	}
@@ -130,7 +130,7 @@ int amclib::amcInitialize()
 
 	for (int i = 0; i < numCards; ++i) {
 		DBG("############ CARD : %02d ############\n", i);
-		pldmobj[i] = new pldm(amcDeviceList->at(i), i);
+		pldmobj[i] = new pldm(amcDeviceList->at(i).amcDevicePath, i);
 		if (pldmobj[i] == nullptr) {
 			ERR("Failed to allocate memory for pldm object for card : %d\n", i);
 			for (int j = 0; j < i; ++j) {

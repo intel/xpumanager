@@ -89,7 +89,7 @@ std::string timestamp();
 std::string getLocalCpus(std::string bdf);
 std::string getCpuList(std::string bdf);
 int getTopology(bdfID bdf, std::string *switchDevicePath);
-int amcCardDiscovery(void *amcDeviceList);
+int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 int getLinLogs(std::string fileName);
 
 #endif
