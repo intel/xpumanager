@@ -154,9 +154,10 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
  * @brief Prints detailed device information in JSON format
  *
  * @param device Pointer to the device info structure
+ * @param funcType Function type (physical or virtual)
  * @return std::unique_ptr<nlohmann::ordered_json> JSON object containing device details
  */
-std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo *device)
+std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo *device, devFuncType funcType)
 {
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	std::string outputLine;
@@ -174,6 +175,8 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 
 	pciBDFAddress(device, &outputLine);
 	(*jsonObj)["pci_bdf_address"] = outputLine;
+
+	(*jsonObj)["function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
 
 	return jsonObj;
 }
@@ -1074,7 +1077,7 @@ ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::
 		}
 
 		found = true;
-		auto deviceJson = printDeviceDetail(&device);
+		auto deviceJson = printDeviceDetail(&device, foundType);
 		deviceListJson->push_back(*deviceJson);
 	}
 
