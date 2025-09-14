@@ -206,10 +206,10 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	DBG("Updating AMC firmware...\n");
 
 	std::string filePath = fwInfo->filePath;
-	uint32_t deviceIndex = fwInfo->deviceIndex;
+	uint32_t amcIndex = fwInfo->amcIndex;
 
-	if (deviceIndex >= (uint32_t)getNumOfCards()) {
-		ERR("Invalid AMC device index: %d\n", deviceIndex);
+	if (amcIndex >= (uint32_t)getNumOfCards()) {
+		ERR("Invalid AMC AMC device index: %d\n", amcIndex);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -225,26 +225,27 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	std::atomic<bool> stopProgress{false};
 
 	// Create a thread to flash firmware
-	std::thread flashThread([amc, deviceIndex, filePath, &flashCompleted, &flashSuccess]() {
-		int result = amc->amcFirmwareFlash(deviceIndex, filePath.c_str());
+	std::thread flashThread([amc, amcIndex, filePath, &flashCompleted, &flashSuccess]() {
+		int result = amc->amcFirmwareFlash(amcIndex, filePath.c_str());
 		flashSuccess.store(result == 0);
 		flashCompleted.store(true);
 
 		if (result != 0) {
-			ERR("Failed to flash firmware for card %d\n", deviceIndex);
+			ERR("Failed to flash firmware for card %d\n", amcIndex);
 		} else {
-			DBG("Firmware flash for card %d completed successfully\n", deviceIndex);
+			DBG("Firmware flash for card %d completed successfully\n", amcIndex);
 		}
 	});
 
 	// Create a thread to monitor firmware flash progress
-	std::thread progressThread([amc, deviceIndex, fwInfo, &flashCompleted, &stopProgress]() {
+	std::thread progressThread([amc, amcIndex, fwInfo, &flashCompleted, &stopProgress]() {
 		uint32_t progress = 0;
 		while (!stopProgress.load() && progress < 100) {
-			progress = amc->amcFirmwareProgress(deviceIndex);
+			progress = amc->amcFirmwareProgress(amcIndex);
 			if (progress > 100)
 				progress = 100; // Cap at 100%
 
+			PRINT("Firmware progress for device %d: %d%%\r", amcIndex, progress);
 			fwInfo->dev->setProgress(progress);
 
 			// Exit early if flash completed
@@ -258,7 +259,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 				MSLEEP(100);
 			}
 		}
-		DBG("Firmware progress monitoring completed for device %d\n", deviceIndex);
+		DBG("Firmware progress monitoring completed for device %d\n", amcIndex);
 	});
 
 	// Wait for flash thread to complete

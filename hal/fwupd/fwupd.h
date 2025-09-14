@@ -77,6 +77,7 @@ struct firmwareInfo
 	bool forceUpdate;
 	bool recoveryMode;
 	std::string deviceId;
+	uint32_t amcIndex;
 	uint32_t deviceIndex;
 	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
 	std::string firmwareType; // This is the string representation of fwType
