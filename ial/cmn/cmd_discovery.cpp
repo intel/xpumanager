@@ -176,6 +176,8 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 	pciBDFAddress(device, &outputLine);
 	(*jsonObj)["pci_bdf_address"] = outputLine;
 
+	(*jsonObj)["drm_device_path"] = device->dev->getDrmDevPath();
+
 	(*jsonObj)["function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
 
 	return jsonObj;

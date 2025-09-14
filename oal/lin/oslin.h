@@ -59,6 +59,7 @@
 typedef wchar_t TCHAR;
 #define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
 #define GETLOGS(f) getLinLogs(f)
+#define GETDRMPATH(bdf) getDrmPath(bdf)
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
@@ -92,5 +93,6 @@ std::string getCpuList(const std::string &bdf);
 int getTopology(bdfID bdf, std::string *switchDevicePath);
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 int getLinLogs(const std::string &fileName);
+std::string getDrmPath(const std::string &bdf);
 
 #endif

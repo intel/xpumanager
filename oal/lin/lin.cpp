@@ -483,3 +483,52 @@ int getTopology(bdfID bdf, std::string *switchDevicePath)
 	hwloc_topology_destroy(topology);
 	return switchCount;
 }
+
+/**
+ * @brief Gets the DRM device path for a specific BDF
+ *
+ * This function searches the /sys/class/drm directory to find the DRM device
+ * path that corresponds to the given PCI Bus:Device:Function (BDF) address.
+ * It looks for DRM card entries and matches their associated PCI device to the
+ * specified BDF.
+ *
+ * @param bdf BDF string (e.g., "0000:02:00.0")
+ * @return std::string DRM device path (e.g., "/dev/dri/card0")
+ */
+std::string getDrmPath(const std::string &bdf)
+{
+	// Go through /sys/class/drm to find all card that do not have a '-'
+	// in their names (e.g. card0, card1, etc.)
+	std::string drmPath = "";
+	try {
+		for (const auto &entry : std::filesystem::directory_iterator("/sys/class/drm")) {
+			std::string cardName = entry.path().filename().string();
+			// cardName must start with "card"
+			if (cardName.find("card") != 0) {
+				continue;
+			}
+			// and cardName must not contain a '-'
+			if (cardName.find('-') == std::string::npos) {
+				// Found a card without a '-' in its name
+				drmPath = entry.path().string();
+
+				// Once found, go in this directory and get the basename of the "device" symlink
+				std::string deviceLink = drmPath + "/device";
+				if (std::filesystem::exists(deviceLink) && std::filesystem::is_symlink(deviceLink)) {
+					std::string devicePath = std::filesystem::read_symlink(deviceLink).string();
+					std::string deviceBdf = std::filesystem::path(devicePath).filename().string();
+					if (deviceBdf == bdf) {
+						// Return /dev/dri/cardX
+						drmPath = "/dev/dri/" + cardName;
+						return drmPath;
+					}
+				}
+			}
+		}
+	} catch (const std::filesystem::filesystem_error &e) {
+		// Handle filesystem errors (e.g. permission denied)
+		ERR("Error accessing /sys/class/drm: %s\n", e.what());
+	}
+
+	return drmPath;
+}

@@ -104,6 +104,7 @@ struct option
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY(bdf, e) 0
 #define GETLOGS(f) 0
+#define GETDRMPATH(bdf) ""
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;
