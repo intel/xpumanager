@@ -28,6 +28,9 @@
 #include <cstring>
 #include <vector>
 #include <memory>
+#include <mutex>
+
+std::mutex progressMtx;
 
 /**
  * @brief Constructor for the device class.
@@ -36,8 +39,8 @@
  * and creates an instance of the firmware class.
  */
 device::device()
-	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), fwupdateProgress(0), igpu(false),
-	  amc(false), firmwareInstance(new firmware())
+	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), igpu(false), amc(0),
+	  firmwareInstance(new firmware())
 {}
 
 /**
@@ -668,6 +671,39 @@ std::vector<sysman *> device::zetFunctionTable()
 	return std::vector<sysman *>{
 		&metricInstance,
 	};
+}
+
+/**
+ * @brief Sets the progress of a firmware update operation.
+ *
+ * This function updates the progress of a firmware update operation by printing
+ * the progress to the console. It uses ANSI escape codes to control the cursor
+ * position in the terminal.
+ *
+ * @param line_number The line number to update (1-based).
+ * @param total_threads The total number of threads (or steps) in the update process.
+ * @param progress The current progress percentage (0-100).
+ */
+void device::setProgress(int line_number, int total_threads, uint32_t progress)
+{
+	TRACING();
+	std::lock_guard<std::mutex> lock(progressMtx);
+	// Save cursor position
+	PRINT("\033[s");
+	// Move cursor up to the correct line
+	// We need to move up (total_threads - line_number) lines
+	int lines_up = total_threads - line_number;
+	if (lines_up > 0) {
+		PRINT("\033[%dA\r", lines_up);
+	}
+	PRINT("Firmware progress for device %d: ", line_number);
+	for (int j = 0; j < (int)progress; ++j) {
+		PRINT("#");
+	}
+	PRINT(" %d%%", progress);
+	// Restore cursor position
+	PRINT("\033[u");
+	fflush(stdout);
 }
 
 /**

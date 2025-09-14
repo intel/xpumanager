@@ -245,12 +245,11 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 			if (progress > 100)
 				progress = 100; // Cap at 100%
 
-			PRINT("Firmware progress for device %d: %d%%\r", amcIndex, progress);
-			fwInfo->dev->setProgress(progress);
+			fwInfo->dev->setProgress(fwInfo->curThread, fwInfo->totalThreads, progress);
 
 			// Exit early if flash completed
 			if (flashCompleted.load()) {
-				fwInfo->dev->setProgress(100);
+				fwInfo->dev->setProgress(fwInfo->curThread, fwInfo->totalThreads, 100);
 				break;
 			}
 

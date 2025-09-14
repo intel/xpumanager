@@ -52,7 +52,7 @@ void commonProgressCallback(uint32_t done, uint32_t total, void *ctx)
 	if (ctx != nullptr) {
 		firmwareInfo *fwInfo = (firmwareInfo *)ctx;
 		if (fwInfo->dev != nullptr) {
-			fwInfo->dev->setProgress(percent);
+			fwInfo->dev->setProgress(fwInfo->curThread, fwInfo->totalThreads, percent);
 		}
 	}
 }

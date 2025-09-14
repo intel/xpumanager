@@ -85,7 +85,10 @@ int cmdUpdateFW::run(arg_struct *args)
 	firmwareInfo fwInfo = {};
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-
+	uint32_t totalThreads = 0;
+	std::atomic<uint32_t> curThread{0};
+	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};
+	std::vector<std::thread> workers;
 	int opt;
 	int optionIndex = 0;
 	const char *optString = "hjd:t:f:u:p:y";
@@ -175,21 +178,32 @@ int cmdUpdateFW::run(arg_struct *args)
 		return result;
 	}
 
+	// Print a newline for every thread that we will be creating. Also count the total number of threads
+	// as this will come in handy later.
+	for (auto &device : deviceList) {
+		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->getAmcIndex() != -1) ||
+			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
+			PRINT("\n");
+			totalThreads++;
+		}
+	}
+
 	// Parallelize per-device firmware updates
-	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};
-	std::vector<std::thread> workers;
-	workers.reserve(deviceList.size());
+	workers.reserve(totalThreads);
 
 	for (auto &device : deviceList) {
 		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->getAmcIndex() != -1) ||
 			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
-			workers.emplace_back([&, devPtr = &device]() {
+			workers.emplace_back([&, fwInfo, totalThreads, devPtr = &device]() {
 				// Make a thread‑local copy of firmwareInfo to avoid data races
 				firmwareInfo localInfo = fwInfo;
 				localInfo.dev = devPtr->dev;
 				localInfo.deviceHdl = devPtr->deviceHdl;
 				localInfo.deviceIndex = devPtr->index;
 				localInfo.amcIndex = devPtr->dev->getAmcIndex();
+				localInfo.totalThreads = totalThreads;
+				localInfo.curThread = curThread.fetch_add(1, std::memory_order_relaxed);
+
 				firmware *fw = devPtr->dev->getFirmware();
 				if (fw == nullptr) {
 					ERR("Error: Firmware pointer not found (device %d).\n", devPtr->index);
@@ -208,21 +222,19 @@ int cmdUpdateFW::run(arg_struct *args)
 	}
 
 	for (auto &t : workers) {
-		if (t.joinable())
+		if (t.joinable()) {
 			t.join();
+		}
 	}
 
 	if (firstError != ZE_RESULT_SUCCESS) {
 		return firstError.load();
+	} else {
+		if (totalThreads > 0) {
+			PRINT("\n"); // Move the cursor to the next line after the last progress bar
+		}
+		PRINT("Firmware update operation completed successfully.\n");
 	}
 
-	if (fwInfo.jsonOutput) {
-		// Print JSON output
-		INFO("{\"status\": \"success\", \"device\": \"%s\", \"firmware_type\": \"%s\"}\n", fwInfo.deviceId.c_str(),
-			 fwInfo.firmwareType.c_str());
-	} else {
-		// Print human-readable output
-		INFO("Firmware update completed successfully for device '%s'.\n", fwInfo.deviceId.c_str());
-	}
 	return 0;
 }

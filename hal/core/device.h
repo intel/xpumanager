@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
 #include "sysman.h"
 #include "pci.h"
 #include "diagnostic.h"
@@ -85,7 +86,6 @@ private:
 	zes_device_handle_t zesDevice;
 	uint32_t deviceCount;
 	devProps deviceProperties;
-	uint32_t fwupdateProgress;
 	bool igpu;
 	int amc;
 
@@ -167,7 +167,7 @@ public:
 	std::string getCPUList();
 	std::string getLocalCPUs();
 	int getSwitchCount(std::string *switchDevicePath);
-	void setProgress(uint32_t progress) { fwupdateProgress = progress; }
+	void setProgress(int line_number, int total_threads, uint32_t progress);
 };
 
 #endif
