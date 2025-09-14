@@ -137,7 +137,7 @@ public:
 	ze_result_t printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, devFuncType type);
 	devFuncType getFuncType(devInfo *d);
 
-	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device);
+	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device, devFuncType funcType);
 
 	int run(arg_struct *args);
 };
