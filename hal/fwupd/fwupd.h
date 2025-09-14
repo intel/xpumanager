@@ -87,6 +87,8 @@ struct firmwareInfo
 	device *dev;
 	ze_device_handle_t deviceHdl;
 	fwupdPreference preference;
+	uint32_t totalThreads;
+	uint32_t curThread;
 
 	igsc_device_handle handle;
 	std::vector<char> buffer;
