@@ -88,6 +88,7 @@ private:
 	devProps deviceProperties;
 	bool igpu;
 	int amc;
+	char drmDevPath[MAX_PATH];
 
 	std::vector<sysman *> zesFunctionTable();
 	std::vector<sysman *> zetFunctionTable();
@@ -136,6 +137,7 @@ public:
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
 	bool isIGPU() const { return igpu; }
 	int getAmcIndex() const { return amc; }
+	std::string getDrmDevPath() const { return std::string(drmDevPath); }
 	bool isBDF(const char *bdf);
 	void addInfo(std::vector<devInfo> *devList, uint32_t devIndex);
 
