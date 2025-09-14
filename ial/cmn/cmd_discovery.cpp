@@ -86,6 +86,34 @@ static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
 };
 
 /**
+ * @brief Helper function to convert internal JSON keys to user-friendly display names
+ *
+ * @param key The internal JSON key
+ * @return std::string The user-friendly display name
+ */
+std::string getDisplayName(const std::string &key)
+{
+	static const std::unordered_map<std::string, std::string> keyDisplayMap = {
+		// clang-format off
+		{"device_id", "Device ID"},
+		{"device_name", "Device Name"},
+		{"vendor_name", "Vendor Name"},
+		{"soc_uuid", "SOC UUID"},
+		{"pci_bdf_address", "PCI BDF Address"},
+		{"drm_device_path", "DRM Device"},
+		{"function_type", "Function Type"},
+		// clang-format on
+	};
+
+	auto it = keyDisplayMap.find(key);
+	if (it != keyDisplayMap.end()) {
+		return it->second;
+	}
+	// If key not found in map, return the original key (fallback)
+	return key;
+}
+
+/**
  * @brief Constructor for DiscoveryTextPrinter class
  */
 DiscoveryTextPrinter::DiscoveryTextPrinter() : TextPrinter() {}
@@ -134,8 +162,9 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 
 					firstItem = false;
 				} else {
-					// For subsequent items, print them indented
-					std::string detailLine = "      | " + item.key() + ": " + item.value().get<std::string>();
+					// For subsequent items, print them indented with display names
+					std::string displayKey = getDisplayName(item.key());
+					std::string detailLine = "      | " + displayKey + ": " + item.value().get<std::string>();
 					PRINT("%-70s|\n", detailLine.c_str());
 				}
 			}
@@ -144,7 +173,8 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	} else {
 		// Handle single device or key-value pairs
 		for (auto &item : jsonObj->items()) {
-			std::string detailLine = "| " + item.key() + ": " + item.value().get<std::string>();
+			std::string displayKey = getDisplayName(item.key());
+			std::string detailLine = "| " + displayKey + ": " + item.value().get<std::string>();
 			PRINT("%-70s |\n", detailLine.c_str());
 		}
 	}
@@ -162,7 +192,7 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	std::string outputLine;
 
-	// Get string values first, then assign to JSON
+	// Get string values first, then assign to JSON (simple format for JSON output)
 	(*jsonObj)["device_id"] = std::to_string(device->index);
 	deviceName(device, &outputLine);
 	(*jsonObj)["device_name"] = outputLine;
