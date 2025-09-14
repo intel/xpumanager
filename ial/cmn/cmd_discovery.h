@@ -36,7 +36,7 @@ class DiscoveryTextPrinter : public TextPrinter
 {
 public:
 	DiscoveryTextPrinter();
-	void print(nlohmann::json *jsonObj) override;
+	void print(nlohmann::ordered_json *jsonObj) override;
 };
 
 enum devFuncType
@@ -103,12 +103,12 @@ public:
 	~cmdDiscovery() {};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t preCheck(std::vector<std::string> *dumpArgs);
-	ze_result_t dumpHeading(nlohmann::json *jsonObj);
-	ze_result_t dump(devInfo *d, nlohmann::json *jsonObj);
-	ze_result_t dumpAll(devInfo *d, nlohmann::json *jsonObj);
-	ze_result_t physicalFunction(devInfo *d, nlohmann::json *jsonObj);
-	ze_result_t virtualFunction(devInfo *d, nlohmann::json *jsonObj);
-	ze_result_t listamcversions(devInfo *d, nlohmann::json *jsonObj);
+	ze_result_t dumpHeading(nlohmann::ordered_json *jsonObj);
+	ze_result_t dump(devInfo *d, nlohmann::ordered_json *jsonObj);
+	ze_result_t dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj);
+	ze_result_t physicalFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
+	ze_result_t virtualFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
+	ze_result_t listamcversions(devInfo *d, nlohmann::ordered_json *jsonObj);
 
 	ze_result_t deviceID(devInfo *d, std::string *outputLine);
 	ze_result_t deviceName(devInfo *d, std::string *outputLine);
@@ -137,14 +137,14 @@ public:
 	ze_result_t printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, devFuncType type);
 	devFuncType getFuncType(devInfo *d);
 
-	std::unique_ptr<nlohmann::json> printDeviceDetail(devInfo *device);
+	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device);
 
 	int run(arg_struct *args);
 };
 
-using discoveryHeadingFunc = ze_result_t (cmdDiscovery::*)(nlohmann::json *headingJson);
+using discoveryHeadingFunc = ze_result_t (cmdDiscovery::*)(nlohmann::ordered_json *headingJson);
 using discoverySubCmdFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, std::string *outputLine);
-using discoveryFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, nlohmann::json *cmdJson);
+using discoveryFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, nlohmann::ordered_json *cmdJson);
 
 struct discoveryCmdStruct
 {

@@ -101,7 +101,7 @@ HealthTextPrinter::HealthTextPrinter() : TextPrinter() {}
  *
  * @param jsonObj Pointer to the JSON object containing a single device's health information
  */
-void HealthTextPrinter::printDeviceInfo(nlohmann::json *jsonObj)
+void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 {
 	PRINT("| Device ID: %d\n", (*jsonObj)["device_id"].get<int>());
 	for (auto &item : jsonObj->items()) {
@@ -132,7 +132,7 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::json *jsonObj)
  *
  * @param jsonObj Pointer to the JSON object to be formatted and printed as text
  */
-void HealthTextPrinter::print(nlohmann::json *jsonObj)
+void HealthTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	if (jsonObj->contains("device_list")) {
 		for (auto &device : (*jsonObj)["device_list"]) {
@@ -157,14 +157,14 @@ void HealthTextPrinter::print(nlohmann::json *jsonObj)
  * @return ze_result_t ZE_RESULT_SUCCESS if all checks pass, or the first encountered error code
  */
 
-ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	auto deviceListJson = std::make_unique<nlohmann::json>();
+	auto deviceListJson = std::make_unique<nlohmann::ordered_json>();
 	for (auto &d : *devList) {
 		// Create a JSON object for this device
-		nlohmann::json deviceJson;
+		nlohmann::ordered_json deviceJson;
 
 		deviceJson["device_id"] = d.index;
 
@@ -195,7 +195,7 @@ ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nl
  * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, or the first encountered error code
  */
 
-ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -222,7 +222,7 @@ ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, error code otherwise
  */
-ze_result_t cmdHealth::component(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -259,7 +259,7 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
  */
-ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -297,7 +297,7 @@ ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
  */
-ze_result_t cmdHealth::memoryTemperature(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::memoryTemperature(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -335,7 +335,7 @@ ze_result_t cmdHealth::memoryTemperature(devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::power(UNUSED devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::power(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -357,7 +357,7 @@ ze_result_t cmdHealth::power(UNUSED devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS on successful health check, error code otherwise
  */
-ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -407,7 +407,7 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -430,7 +430,7 @@ ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d, nlohmann::json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::frequency(UNUSED devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdHealth::frequency(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -516,7 +516,7 @@ int cmdHealth::run(arg_struct *args)
 		return result;
 	}
 
-	auto jsonObj = std::make_unique<nlohmann::json>();
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	if (healthCmds[healthCmdType::HEALTH_LIST].enabled) {
 		// List all devices
 		result = this->allComponentsAllDevices(&deviceList, jsonObj.get());

@@ -36,8 +36,8 @@ class HealthTextPrinter : public TextPrinter
 {
 public:
 	HealthTextPrinter();
-	void print(nlohmann::json *jsonObj) override;
-	void printDeviceInfo(nlohmann::json *jsonObj);
+	void print(nlohmann::ordered_json *jsonObj) override;
+	void printDeviceInfo(nlohmann::ordered_json *jsonObj);
 };
 enum healthCmdType
 {
@@ -69,20 +69,20 @@ public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
 	~cmdHealth() {};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t coreTemperature(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t memoryTemperature(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t power(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t healthMemory(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t xeLinkPort(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t frequency(devInfo *d, nlohmann::json *jsonObj = nullptr);
+	ze_result_t coreTemperature(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t memoryTemperature(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t power(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t xeLinkPort(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t frequency(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 
-	ze_result_t component(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t allComponents(devInfo *d, nlohmann::json *jsonObj = nullptr);
-	ze_result_t allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::json *jsonObj = nullptr);
+	ze_result_t component(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t allComponents(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
+	ze_result_t allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::ordered_json *jsonObj = nullptr);
 	int run(arg_struct *args);
 };
 
-using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d, nlohmann::json *jsonObj);
+using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d, nlohmann::ordered_json *jsonObj);
 
 struct healthCmdStruct
 {

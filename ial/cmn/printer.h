@@ -35,21 +35,21 @@ class Printer
 public:
 	Printer();
 	virtual ~Printer() = default;
-	virtual void print(nlohmann::json *jsonObj) = 0; // Pure virtual function for printing
+	virtual void print(nlohmann::ordered_json *jsonObj) = 0; // Pure virtual function for printing
 };
 
 class JsonPrinter : public Printer
 {
 public:
 	JsonPrinter();
-	void print(nlohmann::json *jsonObj) override;
+	void print(nlohmann::ordered_json *jsonObj) override;
 };
 
 class TextPrinter : public Printer
 {
 public:
 	TextPrinter();
-	void print(nlohmann::json *jsonObj) override;
+	void print(nlohmann::ordered_json *jsonObj) override;
 };
 
 #endif // _PRINT_H

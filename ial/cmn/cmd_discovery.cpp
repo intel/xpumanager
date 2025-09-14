@@ -95,7 +95,7 @@ DiscoveryTextPrinter::DiscoveryTextPrinter() : TextPrinter() {}
  *
  * @param jsonObj Pointer to the JSON object to be formatted and printed as text
  */
-void DiscoveryTextPrinter::print(nlohmann::json *jsonObj)
+void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	// Custom formatting for discovery text output
 	if (jsonObj->contains("heading")) {
@@ -154,11 +154,11 @@ void DiscoveryTextPrinter::print(nlohmann::json *jsonObj)
  * @brief Prints detailed device information in JSON format
  *
  * @param device Pointer to the device info structure
- * @return std::unique_ptr<nlohmann::json> JSON object containing device details
+ * @return std::unique_ptr<nlohmann::ordered_json> JSON object containing device details
  */
-std::unique_ptr<nlohmann::json> cmdDiscovery::printDeviceDetail(devInfo *device)
+std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo *device)
 {
-	auto jsonObj = std::make_unique<nlohmann::json>();
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	std::string outputLine;
 
 	// Get string values first, then assign to JSON
@@ -295,14 +295,14 @@ ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dumpHeading(nlohmann::json *jsonObj)
+ze_result_t cmdDiscovery::dumpHeading(nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	std::vector<std::string> dumpArgs;
 	ze_result_t result;
 	bool found = false;
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
-	auto headingJson = std::make_unique<nlohmann::json>();
+	auto headingJson = std::make_unique<nlohmann::ordered_json>();
 
 	result = preCheck(&dumpArgs);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -335,13 +335,13 @@ ze_result_t cmdDiscovery::dumpHeading(nlohmann::json *jsonObj)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	std::vector<std::string> dumpArgs;
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
-	auto valuesJson = std::make_unique<nlohmann::json>();
+	auto valuesJson = std::make_unique<nlohmann::ordered_json>();
 	bool found = false;
 
 	result = preCheck(&dumpArgs);
@@ -383,7 +383,7 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::json *jsonObj)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::json *jsonObj)
+ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	std::string outputLine;
@@ -1015,7 +1015,7 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED nlohmann::json *Output)
+ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *Output)
 {
 	TRACING();
 
@@ -1065,7 +1065,7 @@ ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::
 	bool found = false;
 	devFuncType foundType;
 
-	auto deviceListJson = std::make_unique<nlohmann::json>();
+	auto deviceListJson = std::make_unique<nlohmann::ordered_json>();
 
 	for (auto &device : deviceList) {
 		foundType = getFuncType(&device);
@@ -1078,7 +1078,7 @@ ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::
 		deviceListJson->push_back(*deviceJson);
 	}
 
-	auto devicesJson = std::make_unique<nlohmann::json>();
+	auto devicesJson = std::make_unique<nlohmann::ordered_json>();
 	if (!found) {
 		// Check if JSON output is enabled
 		if (discCmds[discCmdType::DISC_JSON].enabled) {
@@ -1201,7 +1201,7 @@ int cmdDiscovery::run(arg_struct *args)
 		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_VIRTUAL);
 	} else {
 		// Iterate through the device list and execute the command
-		auto jsonObj = std::make_unique<nlohmann::json>();
+		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 		for (auto &device : deviceList) {
 
 			// Call the appropriate command function based on the command type
