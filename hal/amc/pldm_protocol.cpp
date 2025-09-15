@@ -50,7 +50,7 @@ uint8_t pldm::pldmHdrConstruction(struct pldmHdr *pldmHdr, uint8_t instanceId, u
 		return PLDM_ERROR_INVALID_DATA;
 	}
 
-	if (instanceId > mPldmInstanceIDMax) {
+	if (instanceId > PLDM_INSTANCE_ID_MAX) {
 		return PLDM_ERROR_INVALID_DATA;
 	}
 

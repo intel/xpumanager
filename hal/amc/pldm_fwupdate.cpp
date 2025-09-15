@@ -48,7 +48,7 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd, uint8_t size)
 	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
 	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
 
-	if (instanceID == mPldmInstanceIDMax) {
+	if (instanceID == PLDM_INSTANCE_ID_MAX) {
 		instanceID = 1;
 	}
 

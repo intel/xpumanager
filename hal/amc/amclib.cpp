@@ -250,6 +250,104 @@ int amclib::oemVrsync(uint8_t cmd)
 }
 
 /**
+ * @brief Get the serial number for a specified AMC card
+ *
+ * This function supports two usage patterns:
+ * 1. Length query: Pass nullptr for serialNum to get required buffer length
+ * 2. Data copy: Pass valid buffer and bufferSize to copy the serial number string
+ *
+ * @param cardNum Card number to query (0-based index, must be less than numOfCards)
+ * @param serialNum Pointer to char buffer to receive serial number, or nullptr to query length
+ * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
+ *
+ * @return Status of the serial number retrieval operation
+ * @retval 0 Serial number retrieved successfully or length returned successfully
+ * @retval -1 Operation failed due to invalid card number, uninitialized PLDM object, or buffer too small
+ *
+ * @note The card must be properly initialized via amcEnumFirmwares() before calling this function
+ * @note When querying length, pass nullptr for serialNum and check returned bufferSize
+ * @note When copying data, ensure bufferSize >= returned length from previous query
+ */
+int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferSize)
+{
+	TRACING();
+
+	// Validate card number is within valid range
+	if (cardNum >= numCards) {
+		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
+		return -1;
+	}
+
+	// Ensure PLDM object exists for the specified card
+	if (pldmobj[cardNum] == nullptr) {
+		ERR("PLDM object not initialized for card %d\n", cardNum);
+		return -1;
+	}
+
+	// Call the underlying PLDM function directly
+	if (pldmobj[cardNum]->getFruSerialNum(serialNum, bufferSize) != PLDM_SUCCESS) {
+		ERR("Failed to get serial number for card %d\n", cardNum);
+		return -1;
+	}
+
+	// Log the serial number if fetched successfully
+	if (serialNum != nullptr && bufferSize != nullptr) {
+		DBG("Serial Number of card %d: %s\n", cardNum, serialNum);
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Get the AMC version for a specified AMC card
+ *
+ * This function supports two usage patterns:
+ * 1. Length query: Pass nullptr for version to get required buffer length
+ * 2. Data copy: Pass valid buffer and bufferSize to copy the version string
+ *
+ * @param cardNum Card number to query (0-based index, must be less than numOfCards)
+ * @param version Pointer to char buffer to receive AMC version, or nullptr to query length
+ * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
+ *
+ * @return Status of the AMC version retrieval operation
+ * @retval 0 AMC version retrieved successfully or length returned successfully
+ * @retval -1 Operation failed due to invalid card number, uninitialized PLDM object, or buffer too small
+ *
+ * @note The card must be properly initialized via amcEnumFirmwares() before calling this function
+ * @note When querying length, pass nullptr for amcVersion and check returned bufferSize
+ * @note When copying data, ensure bufferSize >= returned length from previous query
+ */
+int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
+{
+	TRACING();
+
+	// Validate card number is within valid range
+	if (cardNum >= numCards) {
+		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
+		return -1;
+	}
+
+	// Ensure PLDM object exists for the specified card
+	if (pldmobj[cardNum] == nullptr) {
+		ERR("PLDM object not initialized for card %d\n", cardNum);
+		return -1;
+	}
+
+	// Call the underlying PLDM function directly
+	if (pldmobj[cardNum]->getAmcVersion(amcVersion, bufferSize) != PLDM_SUCCESS) {
+		ERR("Failed to get version for card %d\n", cardNum);
+		return -1;
+	}
+
+	// Log the amc version if fetched successfully
+	if (amcVersion != nullptr && bufferSize != nullptr) {
+		DBG("AMC Version of card %d: %s\n", cardNum, amcVersion);
+	}
+
+	return 0;
+}
+
+/**
  * @brief Initialize Redfish connection with manual configuration
  *
  * Initializes a Redfish connection using provided credentials and IP address.
