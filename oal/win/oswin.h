@@ -86,7 +86,7 @@ struct option
 	CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x716, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_SPBTESTTOOL_PDI CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x717, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
-#define STRNCPY_S(dest, src, sz) strncpy_s(dest, src, sz)
+#define STRNCPY_S(dest, src, sz) strncpy_s(dest, sz, src, _TRUNCATE)
 #define STRCASECMP _stricmp
 #define THREAD_RET DWORD WINAPI
 #define GETOPT_LONG getopt_long

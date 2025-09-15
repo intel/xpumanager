@@ -42,16 +42,16 @@ int pldm::pldminit()
 {
 	TRACING();
 
-	mI2cPldmRead = (i2cdata_pldminfo *)malloc(sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
-											  MCTL_PLDM_RESPONSE_PAYLOAD_SIZE);
+	mI2cPldmRead = (i2cdataPldmInfo *)malloc(sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
+											 MCTL_PLDM_RESPONSE_PAYLOAD_SIZE);
 	if (mI2cPldmRead == NULL) {
 		cleanup();
 		ERR("Memory allocation failed for i2crespinfo\n");
 		return -1;
 	}
 
-	mI2cPldmWrite = (i2cdata_pldminfo *)malloc(sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
-											   MCTL_PLDM_RESPONSE_PAYLOAD_SIZE);
+	mI2cPldmWrite = (i2cdataPldmInfo *)malloc(sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
+											  MCTL_PLDM_RESPONSE_PAYLOAD_SIZE);
 	if (mI2cPldmWrite == NULL) {
 		cleanup();
 		ERR("Memory allocation failed for i2cwriteinfo\n");

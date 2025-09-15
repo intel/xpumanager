@@ -78,7 +78,7 @@ uint8_t pldm::fwReqUpdate()
 	memcpy(mReqUpdate.compImgSetVerStr, pkg->compImagesInfo.compImages[mCurComp].verStr,
 		   mReqUpdate.compImgSetVerStrLen);
 
-	mFwuCmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct _fwu_requestupdate) - sizeof(mReqUpdate.compImgSetVerStr) +
+	mFwuCmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwuRequestUpdate) - sizeof(mReqUpdate.compImgSetVerStr) +
 				 mReqUpdate.compImgSetVerStrLen;
 	memcpy(&mI2cPldmWrite->respPayload[BYTE_0], &mReqUpdate, mFwuCmdLen);
 	mI2cPldmWrite->respPayload[mFwuCmdLen] = crc8Smbus(mI2cPldmWrite->respPayload, mFwuCmdLen);

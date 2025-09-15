@@ -27,6 +27,7 @@
 
 #include "mctp.h"
 #include "pldm_constants.h"
+#include "pldm_fru.h"
 #include "pldm_fwpackage.h"
 #include "pldm_fwupdate.h"
 #include <i2c_interface.h>
@@ -51,7 +52,7 @@ struct pldmHdr
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct _pldm_version_info
+struct pldmVersionInfo
 {
 	uint8_t type;
 	uint8_t major;
@@ -62,7 +63,7 @@ struct _pldm_version_info
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct _pldm_response_data
+struct pldmResponseData
 {
 	uint8_t supportedTypes;
 	uint8_t totalSupportedTypes;
@@ -71,7 +72,7 @@ struct _pldm_response_data
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct _fwu_requestupdate
+struct fwuRequestUpdate
 {
 	uint32_t maxTransferSize;
 	uint16_t numComp;
@@ -126,15 +127,15 @@ typedef struct i2cdata
 	struct mctpSmbusI2cHdr mctpSmbusHdr;
 	struct pldmHdr pldmHdr;
 	uint8_t respPayload[128];
-} i2cdata_pldminfo;
+} i2cdataPldmInfo;
 #pragma pack(pop)
 
 class pldm : public mctp
 {
 private:
-	struct _pldm_response_data mPldmRespInfo;
-	struct _pldm_version_info versionInfo[8];
-	i2cdata_pldminfo *mI2cPldmRead, *mI2cPldmWrite;
+	struct pldmResponseData mPldmRespInfo;
+	struct pldmVersionInfo versionInfo[8];
+	i2cdataPldmInfo *mI2cPldmRead, *mI2cPldmWrite;
 	std::mutex *progMutex;
 
 	uint8_t mFwuCmdLen;
@@ -143,10 +144,18 @@ private:
 	int mCardNum;
 
 	// pldm Firmware Update datastructures
-	struct _fwu_requestupdate mReqUpdate;
+	struct fwuRequestUpdate mReqUpdate;
 	struct fwuPassCompTable mPassCompTable;
 	struct fwUpdComp mUpdComp;
-	uint8_t m_fwu_current_state;
+	uint8_t mFwuCurrentState;
+
+	// PLDM FRU datastructures
+	struct fruGetTableRequest mFruTableRequest;
+	struct fruTableResponse mFruTableResponse;
+	struct fruTableMetadata mFruMetadata;
+	struct fruTable mFruTable;
+	uint16_t mFruCurrentDataLength;
+	bool mFruTableInitialized;
 
 	// pldm Base APIs
 	int pldminit();
@@ -171,7 +180,7 @@ private:
 	// pldm FwPackage Parse
 	FILE *mCompFp;
 	struct fwPkg *pkg;
-	struct compParseData *m_comp_parse_data;
+	struct compParseData *mCompParseData;
 	uint8_t mCurComp;
 
 	uint8_t fwpkgParseInfo(const char *pkgFilePath);
@@ -199,8 +208,29 @@ private:
 	uint8_t oemVrsyncResp(uint8_t cmd, uint8_t id);
 	uint8_t oemVrsyncRespPayload(uint8_t cmd, uint8_t id);
 
+	//============== PLDM FRU ====================
+	// PLDM FRU Command
+	uint8_t pldmFruInitialize();
+	uint8_t pldmFruCommand(uint8_t cmd, uint8_t size);
+	uint8_t pldmFruFillPayload(uint8_t cmd, uint8_t size);
+	uint8_t getFruRecordTableMetadata();
+	uint8_t getFruRecordTable(uint32_t dataTransferHandle, uint8_t transferOperationFlag);
+
+	// PLDM FRU Response
+	uint8_t pldmFruResponse(uint8_t cmd, uint8_t id);
+	uint8_t pldmFruResponsePayload(uint8_t cmd, uint8_t id);
+
+	// PLDM FRU Helper
+	bool parseTimestamp104(const uint8_t *timestampData, uint8_t fieldLength, timestamp104_t *timestamp);
+	uint8_t parseFruTable(const uint8_t *fruData, size_t dataLength);
+	uint8_t parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t recordType, uint8_t encodingType,
+						  uint8_t fieldLength);
+	void clearFruTableData();
+
 public:
 	pldm(const std::string &devpath, int cardnum) : mctp(devpath), mCardNum(cardnum) { pldminit(); }
+	uint8_t getFruSerialNum(char *serialNumber, size_t *bufferSize);
+	uint8_t getAmcVersion(char *version, size_t *bufferSize);
 	~pldm() { cleanup(); }
 
 	// pldm Base APIs

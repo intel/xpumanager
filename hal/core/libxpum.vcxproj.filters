@@ -140,6 +140,18 @@
     <ClCompile Include="threading.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\oal\win\fs_lock.cpp">
+      <Filter>oal</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fru.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fru_helper.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\amc\pldm_fru_resp.cpp">
+      <Filter>amc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h">
@@ -259,9 +271,20 @@
     <ClInclude Include="..\amc\redfish.h">
       <Filter>amc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\oal\win\os.h" />
     <ClInclude Include="threading.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\fs_lock.h">
+      <Filter>oal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\amc\pldm_fru.h">
+      <Filter>amc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\os.h">
+      <Filter>oal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\win\oswin.h">
+      <Filter>oal</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -280,5 +303,13 @@
     <Filter Include="amc">
       <UniqueIdentifier>{b24cbc08-ddad-426e-9bbf-cbf67f430520}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\amc\Makefile">
+      <Filter>amc</Filter>
+    </None>
+    <None Include="..\amc\meson.build">
+      <Filter>amc</Filter>
+    </None>
   </ItemGroup>
 </Project>

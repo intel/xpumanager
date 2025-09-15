@@ -159,7 +159,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\oal\http_client.h" />
     <ClInclude Include="..\..\oal\i2c_interface.h" />
-    <ClInclude Include="..\..\oal\win\os.h" />
+    <ClInclude Include="..\..\oal\os.h" />
+    <ClInclude Include="..\..\oal\win\oswin.h" />
     <ClInclude Include="..\amc\amclib.h" />
     <ClInclude Include="..\amc\common.h" />
     <ClInclude Include="..\amc\mctp.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="..\amc\oem_vrsync.h" />
     <ClInclude Include="..\amc\pldm.h" />
     <ClInclude Include="..\amc\pldm_constants.h" />
+    <ClInclude Include="..\amc\pldm_fru.h" />
     <ClInclude Include="..\amc\pldm_fwpackage.h" />
     <ClInclude Include="..\amc\pldm_fwupdate.h" />
     <ClInclude Include="..\amc\redfish.h" />
@@ -214,6 +216,9 @@
     <ClCompile Include="..\amc\oem_vrsync.cpp" />
     <ClCompile Include="..\amc\pldm_discovery.cpp" />
     <ClCompile Include="..\amc\pldm_discovery_resp.cpp" />
+    <ClCompile Include="..\amc\pldm_fru.cpp" />
+    <ClCompile Include="..\amc\pldm_fru_helper.cpp" />
+    <ClCompile Include="..\amc\pldm_fru_resp.cpp" />
     <ClCompile Include="..\amc\pldm_fwpackage.cpp" />
     <ClCompile Include="..\amc\pldm_fwupdate.cpp" />
     <ClCompile Include="..\amc\pldm_fwupdate_helper.cpp" />
@@ -247,6 +252,10 @@
     <ClCompile Include="temperature.cpp" />
     <ClCompile Include="threading.cpp" />
     <ClCompile Include="vf.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\amc\Makefile" />
+    <None Include="..\amc\meson.build" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
