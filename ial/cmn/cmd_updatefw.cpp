@@ -23,7 +23,8 @@
  */
 
 #include "cmd_updatefw.h"
-#include "debug.h"
+#include <fs_lock.h>
+#include <debug.h>
 #include <assert.h>
 #include <thread>
 #include <atomic>
@@ -85,6 +86,14 @@ int cmdUpdateFW::run(arg_struct *args)
 	firmwareInfo fwInfo = {};
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
+
+	// Acquire global firmware update lock (cross-process)
+	FSLock fsLock;
+	if (!fsLock.locked()) {
+		ERR("Another firmware update operation is already in progress or lock could not be acquired.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
 	uint32_t totalThreads = 0;
 	std::atomic<uint32_t> curThread{0};
 	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};

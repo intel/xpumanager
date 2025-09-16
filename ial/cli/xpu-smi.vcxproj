@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\hal\core\debug.cpp" />
+    <ClCompile Include="..\..\oal\win\fs_lock.cpp" />
     <ClCompile Include="..\..\oal\win\thread.cpp" />
     <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\cmn\cmds.cpp" />
@@ -44,6 +45,7 @@
     <ClCompile Include="cli.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\oal\fs_lock.h" />
     <ClInclude Include="..\cmn\cmds.h" />
     <ClInclude Include="..\cmn\cmd_agentset.h" />
     <ClInclude Include="..\cmn\cmd_amcsensor.h" />
