@@ -78,6 +78,9 @@
     <ClCompile Include="..\..\hal\core\debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\oal\win\fs_lock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="version.h">
@@ -138,6 +141,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\cmn\cmd_oob.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\oal\fs_lock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

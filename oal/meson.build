@@ -11,7 +11,8 @@ if is_windows
     'win/dllmain.cpp',
     'win/thread.cpp', 
     'win/win.cpp',
-    'win/http_client.cpp'
+    'win/http_client.cpp',
+    'win/fs_lock.cpp',
   )
   oal_inc_dirs = [include_directories('win'), include_directories('.')]
   oal_deps += windows_deps
@@ -22,6 +23,7 @@ elif is_linux
     'lin/lin.cpp',
     'lin/http_client.cpp',
     'lin/dbg_log.cpp',
+    'lin/fs_lock.cpp',
   )
   oal_inc_dirs = [include_directories('lin'), include_directories('.')]
   # Add hwloc dependency for Linux topology functionality
