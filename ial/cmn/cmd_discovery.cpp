@@ -53,9 +53,6 @@ static std::unordered_map<discCmdType, discoveryCmdStruct> discCmds = {
 	 {{"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading, false, ""}},
 	{discCmdType::DISC_LISTAMCVERSIONS,
 	 {{"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions, nullptr, false, ""}},
-	{discCmdType::DISC_USERNAME, {{"username", required_argument, 0, 'u'}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_PASSWORD, {{"password", required_argument, 0, 'p'}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_ASSUMEYES, {{"assumeyes", no_argument, 0, 'y'}, nullptr, nullptr, false, ""}},
 };
 
 static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
@@ -268,12 +265,6 @@ void cmdDiscovery::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "23. PCI Vendor ID"));
 	helpList.push_back(helpCmd(SUB_HEADING, "24. PCI Device ID"));
 	helpList.push_back(helpCmd(HEADING, "--listamcversions           Show all AMC firmware versions"));
-	helpList.push_back(
-		helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
-	helpList.push_back(
-		helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
-	helpList.push_back(helpCmd(
-		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -1163,17 +1154,6 @@ int cmdDiscovery::run(arg_struct *args)
 		case 'd':
 			discCmds[discCmdType::DISC_DEVICE].enabled = true;
 			discCmds[discCmdType::DISC_DEVICE].val = optarg;
-			break;
-		case 'u':
-			discCmds[discCmdType::DISC_USERNAME].enabled = true;
-			discCmds[discCmdType::DISC_USERNAME].val = optarg;
-			break;
-		case 'p':
-			discCmds[discCmdType::DISC_PASSWORD].enabled = true;
-			discCmds[discCmdType::DISC_PASSWORD].val = optarg;
-			break;
-		case 'y':
-			discCmds[discCmdType::DISC_ASSUMEYES].enabled = true;
 			break;
 		case 0:
 			for (auto &cmd : discCmds) {
