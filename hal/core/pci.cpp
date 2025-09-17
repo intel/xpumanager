@@ -195,7 +195,7 @@ bool pci::isBDF(const char *bdf)
 {
 	bool isValid = false;
 	std::string bdfS(bdf);
-	std::regex regexPattern(R"((\d+):(\d+):(\d+)\.(\d+))");
+	std::regex regexPattern(R"(([0-9a-fA-F]+):([0-9a-fA-F]+):([0-9a-fA-F]+)\.([0-9a-fA-F]+))");
 	std::smatch match;
 
 	if (std::regex_match(bdfS, match, regexPattern)) {
