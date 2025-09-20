@@ -131,7 +131,7 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
  * @note Validates message integrity and completion codes
  * @note Extracts command-specific response data
  */
-uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, uint8_t id)
+uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, UNUSED uint8_t id)
 {
 	TRACING();
 	unsigned int totalSize = 0;
@@ -143,13 +143,6 @@ uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, uint8_t id)
 
 	DBG("pldm RX  :: ");
 	hexdump((uint8_t *)mI2cPldmRead, totalSize);
-
-	if ((mI2cPldmRead->pldmHdr.cmdCode != cmd) || (mI2cPldmRead->pldmHdr.instanceID != id) ||
-		(mI2cPldmRead->pldmHdr.request != PLDM_RESPONSE)) {
-		ERR("FWU Cmd Response Err - cmd code : 0x%02x, id : 0x%02x,request / response : 0x%02x\n",
-			mI2cPldmRead->pldmHdr.cmdCode, mI2cPldmRead->pldmHdr.instanceID, mI2cPldmRead->pldmHdr.request);
-		return PLDM_ERROR;
-	}
 
 	if (cmd == GET_STATUS) {
 		// Current State
