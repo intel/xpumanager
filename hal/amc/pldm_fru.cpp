@@ -26,6 +26,7 @@
 #include "pldm.h"
 #include <vector>
 #include <string>
+#include <cstring>
 
 /**
  * @brief Execute PLDM FRU command
@@ -113,8 +114,10 @@ uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldm_cmd_len)
 
 	switch (cmd) {
 	case PLDM_GET_FRU_RECORD_TABLE_METADATA:
-		// No payload data for metadata request
-		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldm_cmd_len);
+		// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
+		memset(mI2cPldmWrite->respPayload, 0, pldm_cmd_len);
+		// No payload data for metadata request, CRC is calculated over the payload excluding the CRC byte itself
+		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldm_cmd_len - 1);
 		break;
 
 	case PLDM_GET_FRU_RECORD_TABLE:
@@ -124,7 +127,8 @@ uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldm_cmd_len)
 		mI2cPldmWrite->respPayload[BYTE_2] = (uint8_t)((mFruTableRequest.dataXferHandle >> 16) & 0xFF);
 		mI2cPldmWrite->respPayload[BYTE_3] = (uint8_t)((mFruTableRequest.dataXferHandle >> 24) & 0xFF);
 		mI2cPldmWrite->respPayload[BYTE_4] = mFruTableRequest.xferOpFlag;
-		mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldm_cmd_len);
+		// CRC is calculated over the payload excluding the CRC byte itself
+		mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldm_cmd_len - 1);
 		break;
 
 	default:
@@ -324,19 +328,28 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 	if (!mFruTableInitialized) {
 		DBG("FRU table not initialized\n");
 
+		// Completely initialize the FRU table structure to prevent any Valgrind issues
+		// This ensures that even if the structure was allocated but not initialized, we have clean data
+		memset(&mFruTable, 0, sizeof(mFruTable));
+
 		if (pldmFruInitialize() != PLDM_SUCCESS) {
 			ERR("Failed to initialize FRU table\n");
 			return PLDM_ERROR;
 		}
 	}
 
-	// Check if serial number is available
-	if (strlen(mFruTable.genSerialNum) == 0) {
+	// Always ensure the serial number buffer is properly terminated to prevent Valgrind errors
+	// This is a defensive measure to handle any potential uninitialized memory access
+	mFruTable.genSerialNum[sizeof(mFruTable.genSerialNum) - 1] = '\0';
+
+	// Check if serial number is available by using strnlen for safety
+	size_t serial_len = strnlen(mFruTable.genSerialNum, sizeof(mFruTable.genSerialNum) - 1);
+	if (serial_len == 0) {
 		DBG("FRU serial number not available\n");
 		return PLDM_ERROR;
 	}
 
-	size_t required_length = strlen(mFruTable.genSerialNum) + 1; // +1 for null terminator
+	size_t required_length = serial_len + 1; // +1 for null terminator
 
 	// If serialNumber is nullptr, this is a length query only
 	if (serialNumber == nullptr) {
@@ -396,19 +409,28 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 	if (!mFruTableInitialized) {
 		DBG("FRU table not initialized\n");
 
+		// Completely initialize the FRU table structure to prevent any Valgrind issues
+		// This ensures that even if the structure was allocated but not initialized, we have clean data
+		memset(&mFruTable, 0, sizeof(mFruTable));
+
 		if (pldmFruInitialize() != PLDM_SUCCESS) {
 			ERR("Failed to initialize FRU table\n");
 			return PLDM_ERROR;
 		}
 	}
 
-	// Check if version is available
-	if (strlen(mFruTable.genVersion) == 0) {
+	// Always ensure the version buffer is properly terminated to prevent Valgrind errors
+	// This is a defensive measure to handle any potential uninitialized memory access
+	mFruTable.genVersion[sizeof(mFruTable.genVersion) - 1] = '\0';
+
+	// Check if version is available by using strnlen for safety
+	size_t version_len = strnlen(mFruTable.genVersion, sizeof(mFruTable.genVersion) - 1);
+	if (version_len == 0) {
 		DBG("FRU AMC version not available\n");
 		return PLDM_ERROR;
 	}
 
-	size_t required_length = strlen(mFruTable.genVersion) + 1; // +1 for null terminator
+	size_t required_length = version_len + 1; // +1 for null terminator
 
 	// If version is nullptr, this is a length query only
 	if (version == nullptr) {

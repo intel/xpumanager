@@ -25,6 +25,7 @@
 #include "common.h"
 #include "mctp.h"
 #include "os.h"
+#include <cstring>
 
 /**
  * @brief Execute mctp control command
@@ -105,6 +106,9 @@ uint8_t mctp::fillPayload(uint8_t cmd, uint8_t mctpCmdLen)
 	TRACING();
 	uint8_t ret = MCTP_SUCCESS;
 
+	// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
+	memset(mI2cMctpWrite->respPayload, 0, mctpCmdLen);
+
 	switch (cmd) {
 	case MCTP_SET_ENDPOINT_ID:
 		mI2cMctpWrite->respPayload[BYTE_0] = 0x00; // SET EID Operation
@@ -114,18 +118,18 @@ uint8_t mctp::fillPayload(uint8_t cmd, uint8_t mctpCmdLen)
 		} else {
 			mI2cMctpWrite->respPayload[BYTE_1] = mDestEid; // Use existing EID
 		}
-		mI2cMctpWrite->respPayload[BYTE_2] = crc8Smbus(mI2cMctpWrite->respPayload, mctpCmdLen);
+		mI2cMctpWrite->respPayload[BYTE_2] = crc8Smbus(mI2cMctpWrite->respPayload, mctpCmdLen - 1);
 		break;
 
 	case MCTP_GET_ENDPOINT_ID:
 	case MCTP_GET_ENDPOINT_UUID:
 	case MCTP_GET_MESSAGE_TYPE:
 		// No Payload data
-		mI2cMctpWrite->respPayload[BYTE_0] = crc8Smbus(mI2cMctpWrite->respPayload, mctpCmdLen);
+		mI2cMctpWrite->respPayload[BYTE_0] = crc8Smbus(mI2cMctpWrite->respPayload, mctpCmdLen - 1);
 		break;
 	case MCTP_GET_VERSION:
 		mI2cMctpWrite->respPayload[BYTE_0] = 0x00; // Return mctp control protocol message version info
-		mI2cMctpWrite->respPayload[BYTE_1] = crc8Smbus(mI2cMctpWrite->respPayload, mctpCmdLen);
+		mI2cMctpWrite->respPayload[BYTE_1] = crc8Smbus(mI2cMctpWrite->respPayload, mctpCmdLen - 1);
 		break;
 	default:
 		ERR("mctp Invalid Control Command\n");

@@ -24,6 +24,7 @@
 
 #include "common.h"
 #include "pldm.h"
+#include <cstring>
 
 /**
  * @brief Execute pldm discovery command
@@ -120,17 +121,19 @@ uint8_t pldm::pldmDiscoveryFillPayload(uint8_t cmd, uint8_t pldmCmdLen)
 	case PLDM_SETTID:
 		if (mPldmRespInfo.tid == 0x00) {
 			mI2cPldmWrite->respPayload[BYTE_0] = PLDM_DISCOVERY_TID;
-			mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen);
+			mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 		} else {
 			mI2cPldmWrite->respPayload[BYTE_0] = mPldmRespInfo.tid; // Set TID
-			mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen);
+			mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 		}
 		break;
 
 	case PLDM_GETTID:
 	case PLDM_GETTYPES:
-		// No Payload data
-		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen);
+		// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
+		memset(mI2cPldmWrite->respPayload, 0, pldmCmdLen);
+		// No Payload data, CRC is calculated over the payload excluding the CRC byte itself
+		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 		break;
 
 	default:
@@ -159,6 +162,9 @@ void pldm::pldmDiscoveryGetVersionPayload(uint8_t msg_type, uint8_t pldmCmdLen)
 {
 	TRACING();
 
+	// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
+	memset(mI2cPldmWrite->respPayload, 0, pldmCmdLen);
+
 	// Payload 0-3 bytes is set to 0 if GetFirstPart = 1, as per specv240
 	mI2cPldmWrite->respPayload[BYTE_0] = 0;
 	mI2cPldmWrite->respPayload[BYTE_1] = 0;
@@ -166,7 +172,8 @@ void pldm::pldmDiscoveryGetVersionPayload(uint8_t msg_type, uint8_t pldmCmdLen)
 	mI2cPldmWrite->respPayload[BYTE_3] = 0;
 	mI2cPldmWrite->respPayload[BYTE_4] = 1; // GetFirstPart = 1
 	mI2cPldmWrite->respPayload[BYTE_5] = msg_type;
-	mI2cPldmWrite->respPayload[BYTE_6] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen);
+	// CRC is calculated over the payload excluding the CRC byte itself
+	mI2cPldmWrite->respPayload[BYTE_6] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 }
 
 /**
@@ -186,6 +193,10 @@ void pldm::pldmDiscoveryGetVersionPayload(uint8_t msg_type, uint8_t pldmCmdLen)
 void pldm::pldmDiscoveryGetCmdPayload(uint8_t type, uint8_t pldmCmdLen)
 {
 	TRACING();
+
+	// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
+	memset(mI2cPldmWrite->respPayload, 0, pldmCmdLen);
+
 	mI2cPldmWrite->respPayload[BYTE_0] = type;
 
 	for (int i = 0; i < mPldmRespInfo.totalSupportedTypes; i++) {
@@ -197,7 +208,8 @@ void pldm::pldmDiscoveryGetCmdPayload(uint8_t type, uint8_t pldmCmdLen)
 			break;
 		}
 	}
-	mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen);
+	// CRC is calculated over the payload excluding the CRC byte itself
+	mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 }
 
 /**

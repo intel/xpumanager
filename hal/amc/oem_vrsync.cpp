@@ -62,8 +62,10 @@ uint8_t pldm::oemVrsyncCmd(uint8_t cmd)
 	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_OEM_SPECIFIC, cmd, PLDM_ASYNC_REQUEST_NOTIFY,
 						PLDM_REQUEST);
 
-	// Fill CRC Byte
-	mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, oemCmdLen);
+	// Initialize payload buffer and fill CRC Byte
+	memset(mI2cPldmWrite->respPayload, 0, oemCmdLen);
+	// CRC is calculated over the payload excluding the CRC byte itself
+	mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, oemCmdLen - 1);
 
 	DBG("pldm TX  :: ");
 	hexdump((uint8_t *)mI2cPldmWrite, oemCmdLen);

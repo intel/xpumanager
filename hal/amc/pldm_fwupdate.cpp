@@ -127,13 +127,15 @@ uint8_t pldm::pldmFwUpdFillPayload(uint8_t cmd, uint8_t size)
 	case CANCEL_UPDATE_COMPONENT:
 	case CANCEL_UPDATE:
 	case GET_STATUS:
-		// No Payload data, just add CRC
-		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, size);
+		// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
+		memset(mI2cPldmWrite->respPayload, 0, size);
+		// No Payload data, CRC is calculated over the payload excluding the CRC byte itself
+		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, size - 1);
 		break;
 
 	case ACTIVATE_FIRMWARE:
 		mI2cPldmWrite->respPayload[BYTE_0] = 0x01; // TRUE - this will activate AMC to update firmware
-		mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, size);
+		mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, size - 1);
 		break;
 
 	case REQUEST_UPDATE:

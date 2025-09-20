@@ -68,6 +68,7 @@ int pldm::pldminit()
 	// Initialize pldm Instance ID to "1"
 	instanceID = 1;
 	mProgPercent = 0;
+	mFruTableInitialized = false;
 
 	DBG("pldm Init Success!!\n");
 
