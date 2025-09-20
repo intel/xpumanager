@@ -153,7 +153,7 @@ uint8_t pldm::discoveryResponse(uint8_t cmd, uint8_t id, uint8_t pldmVersionType
  * @note Sets up proper addressing for response message handling
  * @note Provides detailed error logging for debugging
  */
-uint8_t pldm::discoveryResponsePayload(uint8_t cmd, uint8_t id)
+uint8_t pldm::discoveryResponsePayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 {
 	TRACING();
 
@@ -165,14 +165,6 @@ uint8_t pldm::discoveryResponsePayload(uint8_t cmd, uint8_t id)
 
 	DBG("pldm RX  :: ");
 	hexdump((uint8_t *)mI2cPldmRead, totalSize);
-
-	if ((mI2cPldmRead->pldmHdr.cmdCode != cmd) || (mI2cPldmRead->pldmHdr.instanceID != id) ||
-		(mI2cPldmRead->pldmHdr.request != PLDM_RESPONSE)) {
-		ERR("pldm : Command Response Error !!!\n");
-		ERR("cmd code : 0x%02x, id : 0x%02x, request / response : 0x%02x\n", mI2cPldmRead->pldmHdr.cmdCode,
-			mI2cPldmRead->pldmHdr.instanceID, mI2cPldmRead->pldmHdr.request);
-		return PLDM_ERROR;
-	}
 
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
 		ERR("pldm : Command Completion Error!!!\n");

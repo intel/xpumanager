@@ -97,7 +97,7 @@ uint8_t mctp::controlResponse(uint8_t cmd, uint8_t id)
  *       - Completion code indicates success (MCTP_COMPLETION_SUCCESS)
  * @note Provides debug hex dump of received packet for troubleshooting
  */
-uint8_t mctp::getRespPayload(uint8_t cmd, uint8_t id)
+uint8_t mctp::getRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 {
 	TRACING();
 	unsigned int totalSize = 0;
@@ -108,14 +108,6 @@ uint8_t mctp::getRespPayload(uint8_t cmd, uint8_t id)
 
 	DBG("mctp RX  :: ");
 	hexdump((uint8_t *)mI2cMctpRead, totalSize);
-
-	if ((mI2cMctpRead->mctpCtrlHdr.cmdCode != cmd) || (mI2cMctpRead->mctpCtrlHdr.instanceID != id) ||
-		(mI2cMctpRead->mctpCtrlHdr.request != MCTP_RESPONSE)) {
-		ERR("mctp : Command Response Error !!!\n");
-		ERR("cmd code : 0x%02x, id : 0x%02x, request / response : 0x%02x\n", mI2cMctpRead->mctpCtrlHdr.cmdCode,
-			mI2cMctpRead->mctpCtrlHdr.instanceID, mI2cMctpRead->mctpCtrlHdr.request);
-		return MCTP_FAILURE;
-	}
 
 	if (mI2cMctpRead->respPayload[BYTE_0] != MCTP_COMPLETION_SUCCESS) {
 		ERR("mctp : Command Completion Error!!!\n");
