@@ -51,7 +51,8 @@ public:
 	int amcEnumFirmwares();
 	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath);
 	int amcFirmwareProgress(uint32_t cardNum);
-	int findBDF(const std::string &gpuBDF);
+	int amcGetIndex(const std::string &gpuBDF);
+	int amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::string &versionStr);
 	int oemVrsync(uint8_t cmd);
 	int amcGetSerialNumber(uint8_t card_num, char *serialNumber, size_t *bufferSize);
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
