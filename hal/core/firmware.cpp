@@ -160,11 +160,12 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
  * firmware type and copies it to the provided buffer.
  *
  * @param type The firmware type to query
+ * @param bdfStr The BDF string of the device (e.g., "0000:00:02.0")
  * @param version Pointer to buffer to store the version string
  * @param size Size of the version buffer (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if version retrieved, error code otherwise
  */
-ze_result_t firmware::getFWversion(fwType type, char *version, UNUSED uint32_t size)
+ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *version, UNUSED uint32_t size)
 {
 	TRACING();
 
@@ -172,6 +173,24 @@ ze_result_t firmware::getFWversion(fwType type, char *version, UNUSED uint32_t s
 	if (type < GFX || type >= MAX_FW_TYPE) {
 		ERR("Invalid firmware type: %d\n", type);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// AMC fw version is retrieved differently because we have to ask the AMC card itself
+	if (type == fwType::AMC) {
+		int amc = -1;
+		std::string amcSerialNum, amcVersion;
+
+		if (fwupdArray && fwupdArray[FWUPD_PREFERENCE_AMC]) {
+			amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
+			// Along with the index, let's also find out the serial number and version of the AMC card
+			amc = a->amcGetCardInfo(bdfStr, amcSerialNum, amcVersion);
+
+			// If we received a valid AMC index back, then store the serial number and version in updateFWCmds array
+			if (amc != -1) {
+				updateFWCmds[AMC].version = amcVersion;
+				updateFWCmds[AMC].name = amcSerialNum;
+			}
+		}
 	}
 
 	STRCPY_S(version, size, updateFWCmds[type].version.c_str());
@@ -253,7 +272,8 @@ int firmware::getAmcIndex(std::string gpuBdfStr)
 	int amc = -1;
 	if (fwupdArray && fwupdArray[FWUPD_PREFERENCE_AMC]) {
 		amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
-		amc = a->findBDF(gpuBdfStr);
+		// Along with the index, let's also find out the serial number and version of the AMC card
+		amc = a->amcGetIndex(gpuBdfStr);
 	}
 
 	return amc;

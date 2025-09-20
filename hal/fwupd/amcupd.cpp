@@ -116,37 +116,16 @@ amcupd::~amcupd()
 }
 
 /*
- * @brief Find the index of an AMC card associated with the specified GPU BDF
+ * @brief Initialize AMC devices
  *
- * Searches the discovered AMC device list to find the index of the card
- * associated with the given GPU Bus-Device-Function (BDF) identifier.
+ * This function initializes the AMC devices by calling the amcInitialize()
+ * method of the amclib instance. It ensures that initialization is performed
+ * only once across all threads using std::call_once.
  *
- * @param gpuBDF The BDF string of the GPU to check (e.g., "0000:00:02.0")
- * @return Index of the AMC card in the device list if found, -1 if not found
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization,
+ *                     ZE_RESULT_ERROR_UNKNOWN if initialization fails
  */
-int amcupd::findBDF(const std::string &gpuBDF)
-{
-	int ret = -1;
-	amclib *amc = getAmcObj();
-	if (amc) {
-		ret = amc->findBDF(gpuBDF);
-	}
-
-	return ret;
-}
-
-/**
- * @brief Prepares the AMC (Add-in Management Controller) for firmware update
- *
- * This function performs pre-update operations including initializing the AMC
- * device connection required for AMC firmware communication. It establishes
- * the necessary hardware interface before the actual firmware update process.
- *
- * @param fwInfo Pointer to firmware information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful preparation,
- *                     ZE_RESULT_ERROR_UNKNOWN if AMC initialization fails
- */
-ze_result_t amcupd::preUpdateAMC(UNUSED firmwareInfo *fwInfo)
+ze_result_t amcupd::init()
 {
 	TRACING();
 
@@ -162,6 +141,69 @@ ze_result_t amcupd::preUpdateAMC(UNUSED firmwareInfo *fwInfo)
 	}
 
 	return ZE_RESULT_SUCCESS;
+}
+
+/*
+ * @brief Find the index of an AMC card associated with the specified GPU BDF
+ *
+ * Searches the discovered AMC device list to find the index of the card
+ * associated with the given GPU Bus-Device-Function (BDF) identifier.
+ *
+ * @param gpuBDF The BDF string of the GPU to check (e.g., "0000:00:02.0")
+ * @return Index of the AMC card in the device list if found, -1 if not found
+ */
+int amcupd::amcGetIndex(const std::string &gpuBDF)
+{
+	int ret = -1;
+	amclib *amc = getAmcObj();
+	ret = amc->amcGetIndex(gpuBDF);
+	return ret;
+}
+
+/*
+ * @brief Retrieve AMC card information (serial number and version) by GPU BDF
+ *
+ * This function retrieves the serial number and version of the AMC card
+ * associated with the specified GPU Bus-Device-Function (BDF) identifier.
+ * It ensures that the AMC devices are initialized before querying for information.
+ *
+ * @param gpuBDF The BDF string of the GPU to check (e.g., "0000:00:02.0")
+ * @param serialNum Reference to string to receive the serial number
+ * @param version Reference to string to receive the version
+ * @return int 0 on success, -1 on failure
+ */
+int amcupd::amcGetCardInfo(std::string gpuBDF, std::string &serialNum, std::string &version)
+{
+	int ret = -1;
+
+	// Call init here and make sure that it returns success. The reason is that we will need to send some i2c commands
+	// to collect FRU data like version and name of the AMC
+	ze_result_t initResult = init();
+	if (initResult != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize AMC devices before finding BDF\n");
+		return -1;
+	}
+
+	amclib *amc = getAmcObj();
+	ret = amc->amcGetCardInfo(gpuBDF, serialNum, version);
+	return ret;
+}
+
+/**
+ * @brief Prepares the AMC (Add-in Management Controller) for firmware update
+ *
+ * This function performs pre-update operations including opening the I2C
+ * device connection required for AMC firmware communication. It establishes
+ * the necessary hardware interface before the actual firmware update process.
+ *
+ * @param fwInfo Pointer to firmware information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful preparation,
+ *                     ZE_RESULT_ERROR_UNKNOWN if I2C device open fails
+ */
+ze_result_t amcupd::preUpdateAMC(UNUSED firmwareInfo *fwInfo)
+{
+	TRACING();
+	return init();
 }
 
 /**

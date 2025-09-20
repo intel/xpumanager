@@ -640,9 +640,10 @@ ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, std::string *outputLine
 	TRACING();
 	char version[MAX_PATH] = {0};
 
+	pci *p = d->dev->getPCI();
 	firmware *fw = d->dev->getFirmware();
 
-	fw->getFWversion(fwType::GFX, version, sizeof(version));
+	fw->getFWversion(fwType::GFX, p->getBDFStr().c_str(), version, sizeof(version));
 	*outputLine = version;
 	return ZE_RESULT_SUCCESS;
 }
@@ -660,9 +661,10 @@ ze_result_t cmdDiscovery::gfxDataFirmwareVersion(devInfo *d, std::string *output
 	TRACING();
 	char version[MAX_PATH] = {0};
 
+	pci *p = d->dev->getPCI();
 	firmware *fw = d->dev->getFirmware();
 
-	fw->getFWversion(fwType::GFX_DATA, version, sizeof(version));
+	fw->getFWversion(fwType::GFX_DATA, p->getBDFStr().c_str(), version, sizeof(version));
 	*outputLine = version;
 	return ZE_RESULT_SUCCESS;
 }
@@ -1033,17 +1035,24 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
 	return ZE_RESULT_SUCCESS;
 }
 
-/**
- * @brief  Lists the AMC versions for a device
+/*
+ * @brief Lists all AMC firmware versions for a device when user runs discovery --listamcversions
  *
  * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param jsonObj A pointer to the JSON object to store the result.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::listamcversions(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *Output)
+ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
+	char version[MAX_PATH] = {0};
+
+	pci *p = d->dev->getPCI();
+	firmware *fw = d->dev->getFirmware();
+
+	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version, sizeof(version));
+	jsonObj->push_back(version);
 
 	return ZE_RESULT_SUCCESS;
 }

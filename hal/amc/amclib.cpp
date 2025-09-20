@@ -205,18 +205,71 @@ int amclib::amcFirmwareProgress(uint32_t cardNum)
 }
 
 /**
- * @brief Find the index of an AMC card associated with the specified GPU BDF
+ * @brief Get the index of an AMC card associated with the specified GPU BDF
  *
- * Searches the discovered AMC device list to find the index of the card
- * associated with the given GPU Bus-Device-Function (BDF) identifier.
+ * Searches the discovered AMC devices for a card associated with the given
+ * GPU BDF (Bus:Device.Function) string and returns its index.
  *
- * @param gpuBDF The BDF string of the GPU to check (e.g., "0000:00:02.0")
- * @return Index of the AMC card in amcDeviceList if found, -1 if not found
+ * @param gpuBDF GPU BDF string to identify the AMC card
+ *
+ * @return Card index if found, or -1 if not found
+ * @retval >=0 Index of the found AMC card
+ * @retval -1 No matching card found
+ *
+ * @note The function searches through the discovered AMC devices
+ *       and retrieves information for the first matching GPU BDF.
+ * @note The function returns -1 if no devices have been enumerated.
  */
-int amclib::findBDF(const std::string &gpuBDF)
+int amclib::amcGetIndex(const std::string &gpuBDF)
 {
+	TRACING();
 	for (size_t i = 0; i < amcDeviceList->size(); ++i) {
 		if ((*amcDeviceList)[i].gpuParentPath == gpuBDF) {
+			return static_cast<int>(i);
+		}
+	}
+	return -1;
+}
+
+/*
+ * @brief Get AMC card information by GPU BDF
+ *
+ * Retrieves the serial number and AMC version for the AMC card associated
+ * with the specified GPU BDF (Bus:Device.Function) string.
+ *
+ * @param gpuBDF GPU BDF string to identify the AMC card
+ * @param serialNumStr Reference to string to receive the serial number
+ * @param amcVersionStr Reference to string to receive the AMC version
+ *
+ * @return Card index if found, or -1 if not found or on error
+ * @retval >=0 Index of the found AMC card
+ * @retval -1 No matching card found or error occurred
+ *
+ * @note The function searches through the discovered AMC devices
+ *       and retrieves information for the first matching GPU BDF.
+ * @note The function returns -1 if no devices have been enumerated.
+ */
+int amclib::amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::string &versionStr)
+{
+	char serialNum[MAX_PATH] = {}, amcVersion[MAX_PATH] = {};
+
+	for (size_t i = 0; i < amcDeviceList->size(); ++i) {
+		if ((*amcDeviceList)[i].gpuParentPath == gpuBDF) {
+			// Get amcGetSerialNumber and amcGetVersion
+			uint8_t cardNum = static_cast<uint8_t>(i);
+			size_t bufferSize = sizeof(serialNum);
+			if (amcGetSerialNumber(cardNum, serialNum, &bufferSize) != PLDM_SUCCESS) {
+				ERR("Failed to get serial number for card %zu\n", i);
+				return -1;
+			}
+			serialNumStr = std::string(serialNum);
+
+			if (amcGetVersion(cardNum, amcVersion, &bufferSize) != PLDM_SUCCESS) {
+				ERR("Failed to get version for card %zu\n", i);
+				return -1;
+			}
+			versionStr = std::string(amcVersion);
+
 			return static_cast<int>(i);
 		}
 	}
