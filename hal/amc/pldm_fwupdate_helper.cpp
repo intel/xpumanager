@@ -413,7 +413,7 @@ uint8_t pldm::respondtoamc(uint8_t completioncode)
 
 	// Update Completion Code
 	mI2cPldmWrite->respPayload[BYTE_0] = completioncode;
-	mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, totalLen);
+	mI2cPldmWrite->respPayload[BYTE_1] = crc8Smbus(mI2cPldmWrite->respPayload, totalLen - 1);
 
 	DBG("pldm TX  :: ");
 	hexdump((uint8_t *)mI2cPldmWrite, (unsigned int)totalLen);
