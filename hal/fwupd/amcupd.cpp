@@ -34,6 +34,7 @@
 // Static member definitions for singleton pattern using smart pointer
 std::unique_ptr<amclib> amcupd::amcobj = nullptr;
 int amcupd::globalNumOfCards = 0;
+std::once_flag amcupd::enumFlag;
 std::once_flag amcupd::initFlag;
 std::mutex amcupd::amcobjMutex;
 
@@ -49,7 +50,7 @@ std::mutex amcupd::amcobjMutex;
  */
 amclib *amcupd::getAmcObj()
 {
-	std::call_once(initFlag, []() {
+	std::call_once(enumFlag, []() {
 		amcobj = std::make_unique<amclib>();
 		globalNumOfCards = amcobj->amcEnumFirmwares();
 		if (globalNumOfCards <= 0) {
@@ -135,8 +136,18 @@ ze_result_t amcupd::init()
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	if (amc->amcInitialize() != 0) {
-		ERR("Failed to initialize AMC devices\n");
+	// Flag to track initialization success
+	static std::atomic<bool> initFailed{false};
+
+	std::call_once(initFlag, [amc]() {
+		if (amc->amcInitialize() != 0) {
+			ERR("Failed to initialize AMC devices\n");
+			initFailed.store(true);
+		}
+	});
+
+	// Check if initialization failed
+	if (initFailed.load()) {
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
@@ -251,7 +262,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	uint32_t amcIndex = fwInfo->amcIndex;
 
 	if (amcIndex >= (uint32_t)getNumOfCards()) {
-		ERR("Invalid AMC AMC device index: %d\n", amcIndex);
+		ERR("Invalid AMC device index: %d\n", amcIndex);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
