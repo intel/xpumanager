@@ -38,6 +38,7 @@
 #define GETPROCESSNAME(processId) getProcessName(processId)
 #define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
 #define TIMESTAMP timestamp
+#define SETPROGRESS(devIndex, lineNum, totalThreads, progress) setProgress(devIndex, lineNum, totalThreads, progress)
 
 struct bdfID
 {
@@ -56,6 +57,7 @@ struct amcCardInfo
 std::string getProcessName(uint32_t processId);
 std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
+void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
 
 #ifdef _WIN32
 #include "win/oswin.h"

@@ -169,7 +169,6 @@ public:
 	std::string getCPUList();
 	std::string getLocalCPUs();
 	int getSwitchCount(std::string *switchDevicePath);
-	void setProgress(int line_number, int total_threads, uint32_t progress);
 };
 
 #endif
