@@ -35,6 +35,9 @@
 
 #define UNUSED_VAR(x) (void)(x)
 #define UNUSED [[maybe_unused]]
+#define GETPROCESSNAME(processId) getProcessName(processId)
+#define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
+#define TIMESTAMP timestamp
 
 struct bdfID
 {
@@ -49,6 +52,10 @@ struct amcCardInfo
 	std::string amcDevicePath;
 	std::string gpuParentPath;
 };
+
+std::string getProcessName(uint32_t processId);
+std::string timestamp();
+int amcCardDiscovery(void *amcDeviceList);
 
 #ifdef _WIN32
 #include "win/oswin.h"

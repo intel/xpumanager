@@ -60,7 +60,6 @@ struct option
 #define ZERO_MEM(ptr, size) SecureZeroMemory(ptr, size)
 #define AMC_PATH L"\\\\.\\NF_I2C_BUS_00_0x0040"
 #define FOPEN_S(pFile, filename, mode) fopen_s((pFile), (filename), (mode))
-#define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
 #define MAX_I2C_BUFFER_SIZE 128
 #define FILE_DEVICE_SPB_PERIPHERAL 0x400
 #define IOCTL_SPBTESTTOOL_OPEN CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x700, METHOD_BUFFERED, FILE_ANY_ACCESS)
@@ -95,11 +94,9 @@ struct option
 #define optional_argument 2
 #define GETGFXFWSTATUS(meiPath) GfxFwStatus::NORMAL
 #define PRIVILEGECHECK() true
-#define GETPROCESSNAME(processId) getProcessName(processId)
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH (char)_getch
-#define TIMESTAMP timestamp
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY(bdf, e) 0

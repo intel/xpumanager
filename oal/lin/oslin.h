@@ -47,17 +47,14 @@
 #define GETOPT_LONG getopt_long
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
 #define PRIVILEGECHECK() privilegeCheck()
-#define GETPROCESSNAME(processId) getProcessName(processId)
 #define ZERO_MEM(mem, size) memset(mem, 0, size)
 #define SETENV(name, value) setenv(name, value, 1)
 #define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
 #define GETCH getch
-#define TIMESTAMP timestamp
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY getTopology
 typedef wchar_t TCHAR;
-#define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
 #define GETLOGS(f) getLinLogs(f)
 #define GETDRMPATH(bdf) getDrmPath(bdf)
 
@@ -85,7 +82,6 @@ public:
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 bool privilegeCheck();
-std::string getProcessName(uint32_t processId);
 char getch();
 std::string timestamp();
 std::string getLocalCpus(const std::string &bdf);
