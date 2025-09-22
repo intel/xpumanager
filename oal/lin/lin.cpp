@@ -37,6 +37,8 @@
 #include <unistd.h>
 #include <format>
 #include <filesystem>
+#include <iostream>
+#include <syncstream>
 #include "pci_database.h"
 
 #if defined(__GNUC__)
@@ -531,4 +533,40 @@ std::string getDrmPath(const std::string &bdf)
 	}
 
 	return drmPath;
+}
+
+/**
+ * @brief Sets the progress of a firmware update operation.
+ *
+ * This function updates the progress of a firmware update operation by printing
+ * the progress to the console. It uses ANSI escape codes to control the cursor
+ * position in the terminal.
+ *
+ * @param devIndex The device index.
+ * @param lineNum The line number to update (1-based).
+ * @param totalThreads The total number of threads (or steps) in the update process.
+ * @param progress The current progress percentage (0-100).
+ */
+void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
+{
+	TRACING();
+
+	// Use std::osyncstream for thread-safe output (C++20)
+	std::osyncstream sync_out(std::cout);
+
+	// POSIX/Linux ANSI escape sequences
+	// Save cursor position
+	sync_out << "\033[s";
+	// Move cursor up to the correct line
+	// We need to move up (totalThreads - lineNum) lines
+	int lines_up = totalThreads - lineNum;
+	sync_out << "\033[" << lines_up << "A\r";
+	sync_out << "Firmware progress for device " << devIndex << ": ";
+	for (int j = 0; j < (int)progress; ++j) {
+		sync_out << "#";
+	}
+	sync_out << " " << progress << "%";
+	// Restore cursor position
+	sync_out << "\033[u";
+	sync_out.flush();
 }

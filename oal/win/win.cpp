@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <sstream>
 #include <vector>
+#include <iostream>
+#include <syncstream>
 
 // Define the variables without LIBXPUM_API to avoid DLL linkage issues
 char *optarg = nullptr; // global argument pointer
@@ -369,4 +371,53 @@ std::string getCpuList(const std::string &bdf)
 
 	// Convert NUMA node to CPU list
 	return numaToCpuList(numaNode);
+}
+
+/**
+ * @brief Sets the progress of a firmware update operation.
+ *
+ * This function updates the progress of a firmware update operation by printing
+ * the progress to the console. It uses ANSI escape codes to control the cursor
+ * position in the terminal.
+ *
+ * @param devIndex The device index.
+ * @param lineNum The line number to update (1-based).
+ * @param totalThreads The total number of threads (or steps) in the update process.
+ * @param progress The current progress percentage (0-100).
+ */
+void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
+{
+	TRACING();
+
+	// Use std::osyncstream for thread-safe output (C++20)
+	std::osyncstream sync_out(std::cout);
+
+	// Windows console handling
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hConsole != INVALID_HANDLE_VALUE) {
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+			// Calculate target row (current row - lines_up)
+			int lines_up = totalThreads - lineNum;
+			SHORT targetRow = csbi.dwCursorPosition.Y - (SHORT)lines_up;
+			if (targetRow < 0)
+				targetRow = 0;
+
+			// Move cursor to target position
+			COORD pos = {0, targetRow};
+			SetConsoleCursorPosition(hConsole, pos);
+
+			// Clear the line and print progress
+			sync_out << "\rFirmware progress for device " << devIndex << ": ";
+			for (int j = 0; j < (int)progress; ++j) {
+				sync_out << "#";
+			}
+			sync_out << " " << progress << "%";
+
+			// Restore cursor to original position
+			pos = {csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y};
+			SetConsoleCursorPosition(hConsole, pos);
+		}
+	}
+	sync_out.flush();
 }
