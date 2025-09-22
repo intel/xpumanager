@@ -309,7 +309,7 @@ int amclib::oemVrsync(uint8_t cmd)
  * 1. Length query: Pass nullptr for serialNum to get required buffer length
  * 2. Data copy: Pass valid buffer and bufferSize to copy the serial number string
  *
- * @param cardNum Card number to query (0-based index, must be less than numOfCards)
+ * @param cardNum Card number to query (0-based index, must be less than numCards)
  * @param serialNum Pointer to char buffer to receive serial number, or nullptr to query length
  * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
  *
@@ -358,7 +358,7 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
  * 1. Length query: Pass nullptr for version to get required buffer length
  * 2. Data copy: Pass valid buffer and bufferSize to copy the version string
  *
- * @param cardNum Card number to query (0-based index, must be less than numOfCards)
+ * @param cardNum Card number to query (0-based index, must be less than numCards)
  * @param version Pointer to char buffer to receive AMC version, or nullptr to query length
  * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
  *

@@ -36,6 +36,7 @@ private:
 	// Static singleton members for shared amclib instance using smart pointer
 	static std::unique_ptr<amclib> amcobj;
 	static int globalNumOfCards;
+	static std::once_flag enumFlag;
 	static std::once_flag initFlag;
 	static std::mutex amcobjMutex;
 
