@@ -1058,34 +1058,6 @@ ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *js
 }
 
 /**
- * @brief  Gets the function type of a device
- *
- * @param d A pointer to the device info structure.
- *
- * @return devFuncType Returns the function type of the device.
- */
-devFuncType cmdDiscovery::getFuncType(devInfo *d)
-{
-	TRACING();
-	zes_pci_properties_t pciProps;
-	ze_result_t result;
-
-	if (d == nullptr) {
-		ERR("Invalid device info structure.\n");
-		return DEVICE_FUNCTION_TYPE_UNKNOWN;
-	}
-
-	pci *p = d->dev->getPCI();
-	result = p->getProperties(d->zesDeviceHdl, &pciProps);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return DEVICE_FUNCTION_TYPE_UNKNOWN;
-	}
-
-	return (pciProps.address.function == 0) ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL;
-}
-
-/**
  * @brief Prints device information.
  *
  * @param deviceList A list of device information structures.
@@ -1103,7 +1075,8 @@ ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::
 	auto deviceListJson = std::make_unique<nlohmann::ordered_json>();
 
 	for (auto &device : deviceList) {
-		foundType = getFuncType(&device);
+		pci *p = device.dev->getPCI();
+		foundType = p->getFuncType();
 		if (type != DEVICE_FUNCTION_TYPE_ALL && foundType != type) {
 			continue; // Skip devices that do not match the specified function type
 		}

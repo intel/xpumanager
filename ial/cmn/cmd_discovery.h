@@ -39,14 +39,6 @@ public:
 	void print(nlohmann::ordered_json *jsonObj) override;
 };
 
-enum devFuncType
-{
-	DEVICE_FUNCTION_TYPE_UNKNOWN,
-	DEVICE_FUNCTION_TYPE_VIRTUAL,
-	DEVICE_FUNCTION_TYPE_PHYSICAL,
-	DEVICE_FUNCTION_TYPE_ALL,
-};
-
 enum discCmdType
 {
 	DISC_HELP,
@@ -132,7 +124,6 @@ public:
 	ze_result_t pciVendorID(devInfo *d, std::string *outputLine);
 	ze_result_t pciDeviceID(devInfo *d, std::string *outputLine);
 	ze_result_t printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, devFuncType type);
-	devFuncType getFuncType(devInfo *d);
 
 	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device, devFuncType funcType);
 

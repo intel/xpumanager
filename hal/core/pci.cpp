@@ -230,6 +230,18 @@ bool pci::isBDF(const char *bdf)
 }
 
 /**
+ * @brief  Gets the function type of a device. If function number is 0, it is physical function, otherwise virtual
+ * function.
+ *
+ * @return devFuncType Returns the function type of the device.
+ */
+devFuncType pci::getFuncType()
+{
+	TRACING();
+	return (func == 0) ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL;
+}
+
+/**
  * @brief Initializes the PCI management module for a device
  *
  * This function performs initial setup of PCI monitoring capabilities by
