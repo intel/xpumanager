@@ -136,28 +136,28 @@ bool ecc::configurable(zes_device_handle_t device)
  * ECC configuration modifications.
  *
  * @param device Handle to the Level Zero Sysman device
+ * @param eccState[out] Pointer to structure to store ECC state information
  * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
  */
-ze_result_t ecc::getState(zes_device_handle_t device)
+ze_result_t ecc::getState(zes_device_handle_t device, zes_device_ecc_properties_t *eccState)
 {
 	TRACING();
 	if (!available(device)) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	zes_device_ecc_properties_t eccState = {};
-	ze_result_t result = zesDeviceGetEccState(device, &eccState);
+	ze_result_t result = zesDeviceGetEccState(device, eccState);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	} else {
 		DBG("  - ECC State:\n");
 		DBG("    - Current State:\n");
-		printEccState(eccState.currentState);
+		printEccState(eccState->currentState);
 		DBG("    - Pending State:\n");
-		printEccState(eccState.pendingState);
+		printEccState(eccState->pendingState);
 		DBG("     - Pending Action:\n");
-		printEccPendingAction(eccState.pendingAction);
+		printEccPendingAction(eccState->pendingAction);
 	}
 	return result;
 }
@@ -227,11 +227,14 @@ ze_result_t ecc::setState(zes_device_handle_t device, bool enable, ecc_state_t *
  */
 ze_result_t ecc::zesRun(zes_device_handle_t device)
 {
+	TRACING();
+	zes_device_ecc_properties_t eccState = {};
+
 	if (!available(device)) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 	if (!configurable(device)) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	return getState(device);
+	return getState(device, &eccState);
 }
