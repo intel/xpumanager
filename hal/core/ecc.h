@@ -45,7 +45,7 @@ public:
 	std::string printEccState(const zes_device_ecc_state_t state);
 	std::string printEccPendingAction(const zes_device_action_t action);
 
-	ze_result_t getState(zes_device_handle_t device);
+	ze_result_t getState(zes_device_handle_t device, zes_device_ecc_properties_t *eccState);
 
 	ze_result_t setState(zes_device_handle_t device, bool enable, ecc_state_t *state = nullptr);
 	ze_result_t zesRun(zes_device_handle_t device);
