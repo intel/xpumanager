@@ -197,8 +197,6 @@ uint8_t pldm::readFromFD()
 	uint32_t totalSize = 0;
 	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
 
-	MSLEEP(FWU_INITIAL_WAIT_MS);
-
 	// for a specific component, do read and write until it reaches end of component
 	while (true) {
 
