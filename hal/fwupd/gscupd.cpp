@@ -378,6 +378,107 @@ ze_result_t gscupd::updateGfxCodeData(UNUSED firmwareInfo *fwInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/*
+ * @brief Helper function to update Graphics Firmware Option ROM (OpROM)
+ *
+ * This function handles the update process for Graphics Firmware Option ROM,
+ * ensuring compatibility and successful firmware updates for the specified type.
+ *
+ * @param fwInfo Pointer to firmware information structure
+ * @param type The type of OpROM to update (IGSC_OPROM_CODE or IGSC_OPROM_DATA)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful OpROM update, error code otherwise
+ */
+ze_result_t gscupd::updateOprom(firmwareInfo *fwInfo, igsc_oprom_type type)
+{
+	TRACING();
+	struct igsc_device_info dev_info;
+	int ret;
+
+	ret = igsc_device_get_device_info(&fwInfo->handle, &dev_info);
+	if (ret != IGSC_SUCCESS) {
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ret =
+		igsc_image_oprom_init(&fwInfo->opimg, (const uint8_t *)fwInfo->buffer.data(), (uint32_t)fwInfo->buffer.size());
+	if (ret != IGSC_SUCCESS) {
+		ERR("Failed to initialize OpROM image %d\n", ret);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ret = igsc_image_oprom_match_device(fwInfo->opimg, type, &dev_info);
+	if (ret != IGSC_SUCCESS) {
+		ERR("Failed to match image with device %d\n", ret);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ret = igsc_device_oprom_update(&fwInfo->handle, type, fwInfo->opimg, commonProgressCallback, fwInfo);
+	if (ret != IGSC_SUCCESS) {
+		ERR("Failed to update firmware %d\n", ret);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/*
+ * @brief Updates Graphics Firmware Option ROM (OpROM) code
+ *
+ * @param fwInfo Pointer to firmware information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful OpROM update, error code otherwise
+ */
+ze_result_t gscupd::updateOpCode(firmwareInfo *fwInfo)
+{
+	TRACING();
+	return updateOprom(fwInfo, IGSC_OPROM_CODE);
+}
+
+/*
+ * @brief Updates Graphics Firmware Option ROM (OpROM) data
+ *
+ * This function manages the update process for Graphics Firmware Option ROM (OpROM) data components,
+ * ensuring proper handling of firmware data updates and device compatibility checks.
+ *
+ * @param fwInfo Pointer to firmware information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful firmware data update, error code otherwise
+ */
+ze_result_t gscupd::updateOpData(firmwareInfo *fwInfo)
+{
+	TRACING();
+	return updateOprom(fwInfo, IGSC_OPROM_DATA);
+}
+
+/*
+ * @brief Performs post-update operations for Graphics Firmware Option ROM (OpROM) code
+ *
+ * This function handles cleanup and validation steps after updating Graphics Firmware Option ROM (OpROM) code
+ * components, ensuring proper resource management and state verification following firmware updates.
+ *
+ * @param fwInfo Pointer to firmware information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful post-update, error code otherwise
+ */
+ze_result_t gscupd::postUpdateOpCode(firmwareInfo *fwInfo)
+{
+	TRACING();
+	igsc_image_oprom_release(fwInfo->opimg);
+	return ZE_RESULT_SUCCESS;
+}
+
+/*
+ * @brief Performs post-update operations for Graphics Firmware Option ROM (OpROM) data
+ *
+ * This function executes cleanup and verification tasks after updating Graphics Firmware Option ROM (OpROM) data
+ * components, ensuring proper resource management and state verification following firmware data updates.
+ *
+ * @param fwInfo Pointer to firmware information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful post-update, error code otherwise
+ */
+ze_result_t gscupd::postUpdateOpData(firmwareInfo *fwInfo)
+{
+	TRACING();
+	igsc_image_oprom_release(fwInfo->opimg);
+	return ZE_RESULT_SUCCESS;
+}
+
 /**
  * @brief Updates Graphics Firmware PSC binary components
  *

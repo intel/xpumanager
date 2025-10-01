@@ -68,6 +68,10 @@ public:
 	ze_result_t postUpdateGfxData(firmwareInfo *fwInfo) override;
 
 	ze_result_t updateGfxCodeData(firmwareInfo *fwInfo) override;
+	ze_result_t updateOpCode(firmwareInfo *fwInfo) override;
+	ze_result_t updateOpData(firmwareInfo *fwInfo) override;
+	ze_result_t postUpdateOpCode(UNUSED firmwareInfo *fwInfo) override;
+	ze_result_t postUpdateOpData(UNUSED firmwareInfo *fwInfo) override;
 	ze_result_t updateGfxPscBin(firmwareInfo *fwInfo) override;
 
 	ze_result_t preUpdateFanTable(firmwareInfo *fwInfo) override;
@@ -77,6 +81,8 @@ public:
 	ze_result_t updateLateBinding(firmwareInfo *fwInfo);
 
 	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
+
+	ze_result_t updateOprom(firmwareInfo *fwInfo, igsc_oprom_type type);
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
 	std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
 	GfxFwStatus getGfxFwStatus(std::string meiPath);
