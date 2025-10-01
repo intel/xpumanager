@@ -53,7 +53,7 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address. If it is not "
 										"specified, all devices will be updated"));
 	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, "
-										"GFX_CODE_DATA, GFX_PSCBIN, AMC."));
+										"GFX_CODE_DATA, GFX_PSCBIN, AMC, OPCODE, OPDATA."));
 	helpList.push_back(helpCmd(
 		SUB_HEADING, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
 	helpList.push_back(

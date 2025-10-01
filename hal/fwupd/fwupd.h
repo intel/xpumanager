@@ -55,6 +55,8 @@ enum fwType
 	GFX,
 	GFX_DATA,
 	GFX_CODE_DATA,
+	OP_CODE,
+	OP_DATA,
 	GFX_PSCBIN,
 	FAN_TABLE,
 	VR_CONFIG,
@@ -93,6 +95,7 @@ struct firmwareInfo
 	igsc_device_handle handle;
 	std::vector<char> buffer;
 	igsc_fwdata_image *oimg;
+	igsc_oprom_image *opimg;
 
 	zes_firmware_handle_t firmwareHandle;
 };
@@ -117,6 +120,20 @@ public:
 	virtual ze_result_t postUpdateGfx(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t postUpdateOpCode(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t preUpdateOpCode(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t updateOpCode(firmwareInfo *fwInfo)
+	{
+		updateFW(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
+	virtual ze_result_t postUpdateOpData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t preUpdateOpData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t updateOpData(firmwareInfo *fwInfo)
+	{
+		updateFW(fwInfo);
+		return ZE_RESULT_SUCCESS;
+	};
 	virtual ze_result_t postUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxCodeData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateGfxCodeData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
