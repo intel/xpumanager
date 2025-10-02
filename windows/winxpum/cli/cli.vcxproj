@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\core\include;$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(SolutionDir)core\include\;$(SolutionDir)core\lib-headers\igsc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\core\include;$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(ProjectDir)..\core\lib-headers\;$(SolutionDir)core\include\;$(SolutionDir)core\lib-headers\igsc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
@@ -128,7 +128,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration);$(SolutionDir)core\libs\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>xpum.lib;igsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>xpum.lib;igsc.lib;ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>igsc.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\core\include;$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(SolutionDir)core\include\;$(SolutionDir)core\lib-headers\igsc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\core\include;$(ProjectDir)src\;$(ProjectDir)lib-headers\;$(ProjectDir)..\core\lib-headers\;$(SolutionDir)core\include\;$(SolutionDir)core\lib-headers\igsc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
@@ -150,7 +150,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration);$(SolutionDir)core\libs\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>xpum.lib;igsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>xpum.lib;igsc.lib;ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>igsc.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>

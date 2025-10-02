@@ -32,6 +32,7 @@
 #include "api/device_model.h"
 #include "device/frequency.h"
 #include "device/memoryEcc.h"
+#include "device/pciedown.h"
 #include "device/performancefactor.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
@@ -1200,72 +1201,64 @@ void GPUDeviceStub::logSupportedMetrics(zes_device_handle_t device, const ze_dev
 
 void static addMemUtilizationCapAndMemProperty(zes_device_handle_t& device, std::shared_ptr<Device> gpu){
 
-    char* env = std::getenv("XPUM_INIT_GET_PHY_MEMORY");
-    std::string getPhyMemory{env != NULL ? env : ""};
-
-    if (Configuration::XPUM_MODE == "xpu-smi" && getPhyMemory != "TRUE") {
-        DeviceCapability cap = DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
-        gpu->addCapability(cap);
-    } else { //deamon or xpu-smi with XPUM_INIT_GET_PHY_MEMORY=TRUE
-        ze_result_t res;
-        uint64_t physical_size = 0;
-        uint64_t free_size = 0;
-        uint32_t mem_module_count = 0;
-        //zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
+    ze_result_t res;
+    uint64_t physical_size = 0;
+    uint64_t free_size = 0;
+    uint32_t mem_module_count = 0;
+    //zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_mem_handle_t> mems(mem_module_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
-            std::vector<zes_mem_handle_t> mems(mem_module_count);
-            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-            if (res == ZE_RESULT_SUCCESS) {
-                bool mem_utilization_cap = true;
-                for (auto& mem : mems) {
-                    uint64_t mem_module_physical_size = 0;
-                    zes_mem_properties_t props = {};
-                    props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        mem_module_physical_size = props.physicalSize;
-                        int32_t mem_bus_width = props.busWidth;
-                        int32_t mem_channel_num = props.numChannels;
-                        if (mem_bus_width > 0)
-                            gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH, std::to_string(mem_bus_width)));
-                        if (mem_channel_num > 0)
-                            gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
-                    } else {
+            bool mem_utilization_cap = true;
+            for (auto& mem : mems) {
+                uint64_t mem_module_physical_size = 0;
+                zes_mem_properties_t props = {};
+                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
+                if (res == ZE_RESULT_SUCCESS) {
+                    mem_module_physical_size = props.physicalSize;
+                    int32_t mem_bus_width = props.busWidth;
+                    int32_t mem_channel_num = props.numChannels;
+                    if (mem_bus_width > 0)
+                        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH, std::to_string(mem_bus_width)));
+                    if (mem_channel_num > 0)
+                        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
+                } else {
+                    mem_utilization_cap = false;
+                    break;
+                }
+
+                zes_mem_state_t sysman_memory_state = {};
+                sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (props.physicalSize == 0) {
+                        mem_module_physical_size = sysman_memory_state.size;
+                    }
+                    physical_size += mem_module_physical_size;
+                    free_size += sysman_memory_state.free;
+                    if (sysman_memory_state.health != zes_mem_health_t::ZES_MEM_HEALTH_OK) {
+                        //memory_health = sysman_memory_state.health;
+                    }
+                    if (sysman_memory_state.size == 0) {
                         mem_utilization_cap = false;
                         break;
                     }
-
-                    zes_mem_state_t sysman_memory_state = {};
-                    sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        if (props.physicalSize == 0) {
-                            mem_module_physical_size = sysman_memory_state.size;
-                        }
-                        physical_size += mem_module_physical_size;
-                        free_size += sysman_memory_state.free;
-                        if (sysman_memory_state.health != zes_mem_health_t::ZES_MEM_HEALTH_OK) {
-                            //memory_health = sysman_memory_state.health;
-                        }
-                        if (sysman_memory_state.size == 0) {
-                            mem_utilization_cap = false;
-                            break;
-                        }
-                    } else {
-                        mem_utilization_cap = false;
-                        break;
-                    }
+                } else {
+                    mem_utilization_cap = false;
+                    break;
                 }
-
-                if (mem_utilization_cap) {
-                    DeviceCapability cap = DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
-                    gpu->addCapability(cap);
-                    gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE, std::to_string(physical_size)));
-                    gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_FREE_SIZE_BYTE, std::to_string(free_size)));
-                }
-                // p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
             }
+
+            if (mem_utilization_cap) {
+                DeviceCapability cap = DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
+                gpu->addCapability(cap);
+                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE, std::to_string(physical_size)));
+                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_FREE_SIZE_BYTE, std::to_string(free_size)));
+            }
+            // p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
         }
     }
     return;
@@ -4590,6 +4583,108 @@ bool GPUDeviceStub::setEccState(const zes_device_handle_t& device, ecc_state_t& 
     ecc.setCurrent(static_cast<ecc_state_t>(props.currentState));
     ecc.setPending(static_cast<ecc_state_t>(props.pendingState));
     ecc.setAction(static_cast<ecc_action_t>(props.pendingAction));
+    return true;
+}
+
+bool GPUDeviceStub::getPCIeDowngradeState(const zes_device_handle_t &device,
+        PCIeDowngrade &pciedown) {
+    pciedown.setAvailable(false);
+    pciedown.setCurrent(PCIE_DOWNGRADE_STATE_UNAVAILABLE);
+    pciedown.setAction(PCIE_DOWNGRADE_ACTION_NONE);
+
+    if (device == nullptr) {
+        return false;
+    }
+
+    ze_result_t res;
+    zes_pci_properties_t pci_props = {};
+    zes_intel_pci_link_speed_downgrade_exp_properties_t down_props = {};
+
+    down_props.stype = ZES_INTEL_PCI_LINK_SPEED_DOWNGRADE_EXP_PROPERTIES;
+    pci_props.pNext = &down_props;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+
+    if (down_props.pciLinkSpeedUpdateCapable == false) {
+        return false;
+    }
+    pciedown.setAvailable(true);
+
+    zes_pci_state_t pci_state = {};
+    zes_intel_pci_link_speed_downgrade_exp_state_t down_state = {};
+
+    down_state.stype = ZES_INTEL_PCI_LINK_SPEED_DOWNGRADE_EXP_STATE;
+    pci_state.pNext = &down_state;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetState(device, &pci_state));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+
+    if (down_state.pciLinkSpeedDowngradeStatus == true) {
+        pciedown.setCurrent(PCIE_DOWNGRADE_STATE_ENABLED);
+    } else {
+        pciedown.setCurrent(PCIE_DOWNGRADE_STATE_DISABLED);
+    }
+    return true;
+}
+
+typedef ze_result_t (*pfnZesIntelDevicePciLinkSpeedUpdateExp_t)(
+    zes_device_handle_t hDevice, ze_bool_t bDowngrade,
+    zes_device_action_t *pPendingAction);
+
+bool GPUDeviceStub::setPCIeDowngradeState(const zes_device_handle_t &device,
+        pciedown_state_t &newState, PCIeDowngrade &pciedown) {
+    if (device == nullptr) {
+        return false;
+    }
+
+    if (!this->getPCIeDowngradeState(device, pciedown) ||
+        !pciedown.getAvailable()) {
+        return false;
+    }
+
+    ze_result_t res;
+    void *func = nullptr;
+    uint32_t driver_count = 0;
+    zesDriverGet(&driver_count, nullptr);
+    std::vector<ze_driver_handle_t> drivers(driver_count);
+    zesDriverGet(&driver_count, drivers.data());
+    for (auto& p_driver : drivers) {
+        res = zesDriverGetExtensionFunctionAddress(p_driver, "zesIntelDevicePciLinkSpeedUpdateExp", &func);
+        if (res == ZE_RESULT_SUCCESS) {
+            break;
+        }
+    }
+    if (func == nullptr) {
+        XPUM_LOG_ERROR("zesIntelDevicePciLinkSpeedUpdateExp function not found");
+        return false;
+    }
+
+    pfnZesIntelDevicePciLinkSpeedUpdateExp_t pfnZesIntelDevicePciLinkSpeedUpdateExp =
+        reinterpret_cast<pfnZesIntelDevicePciLinkSpeedUpdateExp_t>(func);
+    ze_bool_t down_state = newState == pciedown_state_t::PCIE_DOWNGRADE_STATE_ENABLED ? true : false;
+    zes_device_action_t pending_action = {};
+
+    XPUM_ZE_HANDLE_LOCK(device, res = pfnZesIntelDevicePciLinkSpeedUpdateExp(device, down_state, &pending_action));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+
+    pciedown.setAction(static_cast<pciedown_action_t>(pending_action));
+    zes_reset_properties_t reset_props = {.stype = ZES_STRUCTURE_TYPE_RESET_PROPERTIES, .pNext = nullptr, .force = true};
+    if (pciedown.getAction() == PCIE_DOWNGRADE_ACTION_WARM_CARD_RESET) {
+        reset_props.resetType = ZES_RESET_TYPE_WARM;
+    } else if (pciedown.getAction() == PCIE_DOWNGRADE_ACTION_COLD_CARD_RESET) {
+        reset_props.resetType = ZES_RESET_TYPE_COLD;
+    } else {
+        return true;
+    }
+    res = zesDeviceResetExt(device, &reset_props);
+    if (res == ZE_RESULT_SUCCESS) {
+        pciedown.setAction(PCIE_DOWNGRADE_ACTION_NONE);
+    }
     return true;
 }
 

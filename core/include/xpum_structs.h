@@ -174,6 +174,7 @@ typedef enum xpum_result_enum {
     XPUM_UNSUPPORTED_FEATURE_PL_PEAK = 69,
     XPUM_UNSUPPORTED_FEATURE_PL_BURST = 70,
     XPUM_UNSUPPORTED_FEATURE_PL_UNKNOWN = 71,
+    XPUM_RESULT_PCIE_DOWNGRADE_LIB_NOT_SUPPORT = 72,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -272,6 +273,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_XELINK_CALIBRATION_DATE = 47,        ///< Xe Link Calibration Date
     XPUM_DEVICE_PROPERTY_DRIVER_PACK_VERSION = 48,            ///< The driver package version
     XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH = 49,             ///< PCIe max link speed
+    XPUM_DEVICE_PROPERTY_PCIE_DOWNGRADE_STATE = 50,           ///< The PCIe Gen4 Downgrade state of device
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -822,6 +824,11 @@ typedef enum xpum_standby_mode_t {
     XPUM_STANDBY_MODE_FORCE_UINT32 = 0x7fffffff
 } xpum_standby_mode_t;
 
+struct Power_limit_ext_t {
+    int32_t limit; //in milliwatts
+    int32_t level;
+};
+
 typedef struct xpum_power_limit_ext_t {
     int32_t limit;
     int32_t level;
@@ -892,6 +899,23 @@ typedef enum xpum_ecc_action_t {
     XPUM_ECC_ACTION_FORCE_UINT32 = 0x7fffffff
 
 } xpum_ecc_action_t;
+
+typedef enum xpum_pciedown_state_t {
+    XPUM_PCIE_DOWNGRADE_STATE_UNAVAILABLE = 0, ///< None
+    XPUM_PCIE_DOWNGRADE_STATE_ENABLED = 1,     ///< PCIe Downgrade enabled.
+    XPUM_PCIE_DOWNGRADE_STATE_DISABLED = 2,    ///< PCIe Downgrade disabled.
+    XPUM_PCIE_DOWNGRADE_STATE_FORCE_UINT32 = 0x7fffffff
+
+} xpum_pciedown_state_t;
+
+typedef enum xpum_pciedown_action_t {
+    XPUM_PCIE_DOWNGRADE_ACTION_NONE = 0,               ///< No action.
+    XPUM_PCIE_DOWNGRADE_ACTION_WARM_CARD_RESET = 1,    ///< Warm reset of the card.
+    XPUM_PCIE_DOWNGRADE_ACTION_COLD_CARD_RESET = 2,    ///< Cold reset of the card.
+    XPUM_PCIE_DOWNGRADE_ACTION_COLD_SYSTEM_REBOOT = 3, ///< Cold reboot of the system.
+    XPUM_PCIE_DOWNGRADE_ACTION_FORCE_UINT32 = 0x7fffffff
+
+} xpum_pciedown_action_t;
 
 typedef struct xpum_device_process_t {
     uint32_t processId;

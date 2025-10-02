@@ -43,7 +43,10 @@ static CharTableConfig ComletDeviceConfiguration(R"({
                 {"rowTitle": " " },
                 { "rowTitle": "Memory ECC:" },
                 { "label": "  Current", "value": "memory_ecc_current_state" },
-                { "label": "  Pending", "value": "memory_ecc_pending_state" }
+                { "label": "  Pending", "value": "memory_ecc_pending_state" },
+                {"rowTitle": " " },
+                { "rowTitle": "PCIe Gen4 Downgrade:" },
+                { "label": "  Current", "value": "pcie_downgrade_current_state" }
             ]
         ]
     }]
@@ -143,6 +146,7 @@ between 0 to 100. 100 means that the workload is completely compute bounded and 
     addOption("--xelinkport", this->opts->xelinkportEnable, "Change the Xe Link port status. The value 0 means down and 1 means up.");
     addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing, "Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
     addOption("--memoryecc", this->opts->setecc,"Enable/disable memory ECC setting. 0:disable; 1:enable");
+    addOption("--pciedowngrade", this->opts->setpciedown,"Enable/disable PCIe Gen4 Downgrade setting. 0:disable; 1:enable");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter) {
     size_t pos = 0;
@@ -430,6 +434,39 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;  
         }
+#ifdef DAEMONLESS
+        else if (!this->opts->setpciedown.empty()) {
+            bool enabled = false;
+            int pciedownVal;
+            if (this->opts->setpciedown.length() == 1 &&
+                (this->opts->setpciedown[0] == '0' || this->opts->setpciedown[0] == '1')) {
+                pciedownVal = std::stoi(this->opts->setpciedown);
+            } else {
+                (*json)["return"]="invalid parameter value";
+                return json;
+            }
+            if (pciedownVal == 1) {
+                enabled = true;
+            } else if (pciedownVal == 0) {
+                enabled = false;
+            } else {
+                (*json)["return"]="invalid parameter value";
+                return json;
+            }
+            json = this->coreStub->setPCIeDowngradeState(this->opts->deviceId, enabled);
+            if((*json)["status"] == "OK") {
+                std::string pendingAction = (*json)["pcie_downgrade_pending_action"];
+                std::string ret = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " PCIe Gen4 Downgrade on GPU " + std::to_string(this->opts->deviceId);
+                if (pendingAction.compare("none") == 0) {
+                    ret += ".";
+                } else {
+                    ret += ". Please reset the GPU or reboot the OS for the change to take effect.";
+                }
+		(*json)["return"] = ret;
+            }
+            return json;
+        }
+#endif
         else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             
             if (this->opts->deviceId >= 0) {

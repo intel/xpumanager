@@ -6,6 +6,10 @@
 
 #pragma once
 
+#include <string>
+
+#include "xpum_structs.h"
+
 #define XPUM_CLI_SUCCESS                                                    0   // Success
 #define XPUM_CLI_ERROR_GENERIC_ERROR                                        1   // Generic error
 #define XPUM_CLI_ERROR_BAD_ARGUMENT                                         2   // Bad argument
@@ -60,3 +64,4 @@
 #define XPUM_CLI_ERROR_DIAGNOSTIC_PRECHECK_SINCE_TIME                       51
 
 int errorNumTranslate(int coreErrNo);
+std::string getErrorString(const xpum::xpum_result_t res);

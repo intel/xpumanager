@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_manager.h
  */
@@ -33,7 +33,13 @@ namespace xpum {
 
         std::shared_ptr<Device> getDevice(const std::string& id) override;
 
+        xpum_result_t getDevicePowerLimitsExt(const std::string& id,
+                                              std::vector<xpum_power_domain_ext_t>& power_domain_ext);
+
         void getDeviceSusPower(const std::string& id, int32_t& Sus_power, bool& Sus_supported) override;
+
+        xpum_result_t setDevicePowerLimitsExt(const std::string& id, int32_t tileId,
+                                              const Power_limit_ext_t& power_limit_ext);
 
         bool setDevicePowerSustainedLimits(const std::string& id, int powerLimit) override;
 

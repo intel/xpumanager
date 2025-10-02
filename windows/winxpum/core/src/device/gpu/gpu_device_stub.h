@@ -23,9 +23,14 @@ namespace xpum {
 
         static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
 
+        static xpum_result_t getPowerLimitsExt(const zes_device_handle_t& device,
+                                               std::vector<xpum_power_domain_ext_t>& power_domain_ext);
         void toGetDeviceSusPower(const zes_device_handle_t& device, int32_t& Sus_power, bool& Sus_supported) noexcept;
 
         bool toSetPowerSustainedLimits(const zes_device_handle_t& device, int32_t powerLimit) noexcept;
+
+        static xpum_result_t setPowerLimitsExt(const zes_device_handle_t& device, int32_t tileId,
+                                               const Power_limit_ext_t &power_limit_ext);
 
         void toGetDeviceFrequencyRange(const zes_device_handle_t& device, int32_t tileId, double& min, double& max, std::string& clocks, bool& supported) noexcept;
 

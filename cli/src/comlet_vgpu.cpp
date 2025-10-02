@@ -89,12 +89,12 @@ static nlohmann::json statsTable = R"({
         "cells": [
             [
                 { "label": "PCI BDF Address", "value": "bdf_address" },
-                { "label": "GPU Utilization (%) ", "value": "gpu_util", "fixer": "round" },
-                { "label": "Compute Engine Util(%) ", "value": "ce_util", "fixer": "round" },
-                { "label": "Render Engine Util (%) ", "value": "re_util", "fixer": "round" },
-                { "label": "Media Engine Util (%) ", "value": "me_util", "fixer": "round" },
-                { "label": "Copy Engine Util (%) ", "value": "coe_util", "fixer": "round" },
-                { "label": "GPU Memory Util (%) ", "value": "mem_util", "fixer": "round" }
+                { "label": "GPU Utilization (%) ", "value": "gpu_util", "fixer": "roundtwodecimals" },
+                { "label": "Compute Engine Util(%) ", "value": "ce_util", "fixer": "roundtwodecimals" },
+                { "label": "Render Engine Util (%) ", "value": "re_util", "fixer": "roundtwodecimals" },
+                { "label": "Media Engine Util (%) ", "value": "me_util", "fixer": "roundtwodecimals" },
+                { "label": "Copy Engine Util (%) ", "value": "coe_util", "fixer": "roundtwodecimals" },
+                { "label": "GPU Memory Util (%) ", "value": "mem_util", "fixer": "roundtwodecimals" }
             ]
         ]
     }]

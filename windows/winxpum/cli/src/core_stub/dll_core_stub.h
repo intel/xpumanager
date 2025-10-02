@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file lib_core_stub.h
  */
@@ -54,7 +54,10 @@ namespace xpum::cli {
 
         std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int tileId, int powerLimit) override;
 
-        std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) override;
+        std::unique_ptr<nlohmann::json> setDevicePowerlimitExt(int deviceId, int tileId,
+                                                               const xpum_power_limit_ext_t& power_limit_ext);
+
+	std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) override;
 
         std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled) override;
 

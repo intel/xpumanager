@@ -15,11 +15,6 @@
 
 namespace xpum {
 
-struct Power_limit_ext_t {
-    int32_t limit; //in milliwatts
-    int32_t level;
-};
-
 struct Power_sustained_limit_t {
     bool enabled;
 

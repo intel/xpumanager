@@ -12,6 +12,7 @@
 #include "device/device.h"
 #include "device/frequency.h"
 #include "device/memoryEcc.h"
+#include "device/pciedown.h"
 #include "device/performancefactor.h"
 #include "device/power.h"
 #include "device/scheduler.h"
@@ -120,6 +121,10 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool getEccState(const std::string& id, MemoryEcc& ecc) = 0;
 
     virtual bool setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc) = 0;
+
+    virtual bool getPCIeDowngradeState(const std::string& id, PCIeDowngrade& pciedown) = 0;
+
+    virtual bool setPCIeDowngradeState(const std::string& id, pciedown_state_t& newState, PCIeDowngrade& pciedown) = 0;
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 

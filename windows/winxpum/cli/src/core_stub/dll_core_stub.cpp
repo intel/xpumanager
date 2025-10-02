@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file dll_core_stub.cpp
  */
@@ -8,6 +8,7 @@
 #include "dll_core_stub.h"
 
 #include <cstdlib>
+#include "level_zero/zes_api.h"
 #include "xpum_api.h"
 #include "xpum_structs.h"
 #include "internal_api.h"
@@ -281,7 +282,7 @@ namespace xpum::cli {
             }
             (*json)["errno"] = errorNumTranslate(res);
         }
-        
+
         if (job.type != XPUM_DEVICE_FIRMWARE_AMC) {
             errorMsg = getFlashFwErrMsg();
             if (errorMsg.size()) {
@@ -425,8 +426,8 @@ namespace xpum::cli {
         uint32_t subDeviceCount{8};
         char bdfAddress[255];
         xpum_frequency_range_t freqRange[16];
-        xpum_power_limits_t powerLimit;
-        
+        xpum_power_limits_t powerLimit = {};
+
         res = xpumGetDeviceList(devices, &count);
         if (res != XPUM_OK) {
             (*json)["error"] = "fail to get device list";
@@ -437,7 +438,7 @@ namespace xpum::cli {
             return json;
         }
         (*json)["device_id"] = deviceId;
-       
+
         xpum_device_properties_t properties;
         res = xpumGetDeviceProperties(deviceId, &properties);
         if (res != XPUM_OK) {
@@ -464,7 +465,7 @@ namespace xpum::cli {
 
         for (uint32_t i = 0; i < subDeviceCount; i++) {
             tileIdList[i] = i;
-        } 
+        }
 
         if (subDeviceCount > 0 && tileId >= (int)subDeviceCount) {
             (*json)["error"] = "invalid tile id";
@@ -485,34 +486,52 @@ namespace xpum::cli {
             }
         }
 
-        res = xpumGetDevicePowerLimits(deviceId, 0, &powerLimit);
+        std::vector<xpum_power_domain_ext_t> power_domains_ext;
+        res = xpumGetDevicePowerLimitsExt(deviceId, 0, power_domains_ext);
         if (res != XPUM_OK) {
             (*json)["error"] = "fail to get device power limit";
             return json;
         }
-        if (!powerLimit.sustained_limit.enabled) {
-            (*json)["error"] = "unsupported feature or insufficient privilege";
-            return json;
+        // if (!powerLimit.sustained_limit.enabled) {
+        //     (*json)["error"] = "unsupported feature or insufficient privilege";
+        //     return json;
+        // }
+        for (auto& pd: power_domains_ext) {
+            std::string domain = "card";
+            if (pd.power_domain == static_cast<int32_t>(ZES_POWER_DOMAIN_PACKAGE)) {
+                domain = "package";
+            }
+            for (auto pl: pd.pl_ext) {
+                switch (pl.level){
+                case ZES_POWER_LEVEL_SUSTAINED:
+                    (*json)["pl_"+domain+"_sustain"] = MILLIWATTS_TO_WATTS(pl.limit);
+                    break;
+                case ZES_POWER_LEVEL_PEAK:
+                    (*json)["pl_"+domain+"_peak"] = MILLIWATTS_TO_WATTS(pl.limit);
+                    break;
+                case ZES_POWER_LEVEL_BURST:
+                    (*json)["pl_"+domain+"_burst"] = MILLIWATTS_TO_WATTS(pl.limit);
+                    break;
+                }
+            }
         }
-        (*json)["power_limit"] = std::to_string(powerLimit.sustained_limit.power);
-
         xpum_power_prop_data_t powerRangeArray[32];
         uint32_t powerRangeCount = 32;
         res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
         (*json)["power_vaild_range"] = "1 to " + std::to_string(powerRangeArray[0].max_limit);
-        
+
         bool available, configurable;
         xpum_ecc_state_t current, pending;
         xpum_ecc_action_t action;
 
-        res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action); 
+        res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
         if (res != XPUM_OK) {
             (*json)["error"] = "fail to get device Ecc state";
             return json;
         }
         (*json)["memory_ecc_current_state"] = eccStateToString(current);
         (*json)["memory_ecc_pending_state"] = eccStateToString(pending);
-        
+
         freqCount = subDeviceCount;
         for (int i = 0; i < freqCount; i++) {
             freqRange[i].subdevice_Id = tileIdList[i];
@@ -564,6 +583,45 @@ namespace xpum::cli {
         }
     }
 
+    std::unique_ptr<nlohmann::json> DllCoreStub::setDevicePowerlimitExt(int device_id, int tile_id,
+                                                                        const xpum_power_limit_ext_t& pwr_limit_ext) {
+        auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+        xpum_result_t res;
+        xpum_power_prop_data_t pwr_range_array[32];
+        uint32_t pwr_range_count = 32;
+
+        res = xpumGetDevicePowerProps(device_id, pwr_range_array, &pwr_range_count);
+        if (res != XPUM_OK) {
+            (*json)["errno"] = res;
+            (*json)["error"] = getErrorString(res);
+            return json;
+        }
+        for (uint32_t i = 0; i < pwr_range_count; i++) {
+            if (pwr_range_array[i].subdevice_Id == (uint32_t)tile_id || tile_id == -1) {
+                int32_t max_limit = pwr_range_array[i].max_limit;
+                int32_t min_limit = pwr_range_array[i].min_limit;
+                int32_t default_limit = pwr_range_array[i].default_limit;
+		int32_t pwr = pwr_limit_ext.limit;
+                if (pwr < 1 ||
+                    (max_limit > 0  && pwr > max_limit) ||
+                    (min_limit > 0  && pwr < min_limit) ||
+                    (max_limit == -1  && default_limit > 0  && pwr > default_limit)) {
+                    (*json)["errno"] = XPUM_INVALID_POWER_LIMIT;
+                    (*json)["error"] = "Invalid power limit value";
+                    return json;
+                }
+            }
+        }
+        res = xpumSetDevicePowerLimitsExt(static_cast<xpum_device_id_t>(device_id), static_cast<int32_t>(tile_id),
+					  pwr_limit_ext);
+        if (res != XPUM_OK) {
+            (*json)["error"] = getErrorString(res);
+            return json;
+        }
+        (*json)["status"] = "OK";
+        return json;
+    }
+
     std::unique_ptr<nlohmann::json> DllCoreStub::setDevicePowerlimit(int deviceId, int tileId, int powerLimit) {
         auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         xpum_result_t res;
@@ -587,7 +645,7 @@ namespace xpum::cli {
         } else {
             (*json)["status"] = "OK";
         }
-               
+
         return json;
     }
 

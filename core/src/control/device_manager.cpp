@@ -394,6 +394,16 @@ bool DeviceManager::setEccState(const std::string& id, ecc_state_t& newState, Me
     return GPUDeviceStub::instance().setEccState(getDeviceHandle(id), newState, ecc);
 }
 
+bool DeviceManager::getPCIeDowngradeState(const std::string& id, PCIeDowngrade& pciedown) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().getPCIeDowngradeState(getDeviceHandle(id), pciedown);
+}
+
+bool DeviceManager::setPCIeDowngradeState(const std::string& id, pciedown_state_t& newState, PCIeDowngrade& pciedown) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setPCIeDowngradeState(getDeviceHandle(id), newState, pciedown);
+}
+
 std::string DeviceManager::getDeviceIDByFabricID(uint64_t fabric_id) {
     std::lock_guard<std::mutex> lock(this->fabric_mutex);
     std::string ret;

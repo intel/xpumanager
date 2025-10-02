@@ -369,6 +369,61 @@ namespace xpum {
         return ze_device_properties.deviceId;
     }
 
+    xpum_result_t GPUDeviceStub::getPowerLimitsExt(const zes_device_handle_t& device,
+                                                   std::vector<xpum_power_domain_ext_t>& power_domains_ext) {
+        if (device == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        uint32_t power_domain_count = 0;
+        uint32_t limit_count = 0;
+        ze_result_t res;
+
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
+        if (res != ZE_RESULT_SUCCESS || power_domain_count == 0) {
+            return XPUM_GENERIC_ERROR;
+        }
+        std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count,
+								    power_handles.data()));
+        if (res != ZE_RESULT_SUCCESS) {
+            return XPUM_GENERIC_ERROR;
+        }
+        for (auto& phandle : power_handles) {
+            zes_power_ext_properties_t ext_props = {};
+            zes_power_properties_t props = {};
+            zes_power_limit_ext_desc_t default_limit = {};
+            ext_props.defaultLimit = &default_limit;
+            ext_props.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+            props.pNext = &ext_props;
+            XPUM_ZE_HANDLE_LOCK(phandle, res = zesPowerGetProperties(phandle, &props));
+            if (res != ZE_RESULT_SUCCESS) {
+                return XPUM_GENERIC_ERROR;
+            }
+            if (props.onSubdevice == false) {
+                res = zesPowerGetLimitsExt(phandle, &limit_count, nullptr);
+		if (res == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE || limit_count == 0) continue;
+                if (res != ZE_RESULT_SUCCESS) {
+                    return XPUM_GENERIC_ERROR;
+                }
+                std::vector<zes_power_limit_ext_desc_t> power_ext_descs(limit_count);
+                res = zesPowerGetLimitsExt(phandle, &limit_count, power_ext_descs.data());
+		if (res == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) continue;		
+                if (res != ZE_RESULT_SUCCESS){
+                    return XPUM_GENERIC_ERROR;
+                }
+                xpum_power_domain_ext_t pd_ext;
+                pd_ext.power_domain = static_cast<zes_power_domain_t>(ext_props.domain);
+                std::vector<xpum_power_limit_ext_t>& power_limit_ext = pd_ext.pl_ext;
+                for (uint32_t index=0; index<limit_count; index++) {
+                    xpum_power_limit_ext_t pl = {power_ext_descs[index].limit, power_ext_descs[index].level};
+                    power_limit_ext.push_back(pl);
+                }
+                power_domains_ext.push_back(pd_ext);
+            }
+        }
+        return XPUM_OK;
+    }
+
     uint32_t GPUDeviceStub::toGetDevicePowerLimit(const zes_device_handle_t& device) noexcept {
         int32_t max_limit = 300;
         uint32_t deviceId = toGetDeviceId(device);
@@ -389,6 +444,74 @@ namespace xpum {
                 max_limit = 300;
         }
         return max_limit*1000;
+    }
+
+    xpum_result_t GPUDeviceStub::setPowerLimitsExt(const zes_device_handle_t& device, int32_t tileId,
+                                                   const Power_limit_ext_t &power_limit_ext) {
+        if (device == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        uint32_t power_domain_count = 0;
+        uint32_t limit_count = 0;
+        bool is_level_present = false;
+        ze_result_t res;
+	int32_t limit = power_limit_ext.limit;
+	zes_power_level_t level = static_cast<zes_power_level_t>(power_limit_ext.level);
+
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
+        if (res != ZE_RESULT_SUCCESS || power_domain_count == 0) {
+            return XPUM_GENERIC_ERROR;
+        }
+        std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count,
+								    power_handles.data()));
+        if (res != ZE_RESULT_SUCCESS) {
+            return XPUM_GENERIC_ERROR;
+        }
+        for (auto& phandle : power_handles) {
+            zes_power_properties_t props = {};
+	    zes_power_ext_properties_t ext_props = {};
+	    props.pNext = &ext_props;
+	    props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+	    ext_props.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+            XPUM_ZE_HANDLE_LOCK(phandle, res = zesPowerGetProperties(phandle, &props));
+            if (res != ZE_RESULT_SUCCESS) {
+                return XPUM_GENERIC_ERROR;
+            }
+            if (props.subdeviceId == (uint32_t)tileId || (tileId == -1 && props.onSubdevice == false)) {
+                res = zesPowerGetLimitsExt(phandle, &limit_count, nullptr);
+		if (res == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE || limit_count == 0) continue;		
+                if (res != ZE_RESULT_SUCCESS) {
+                    return XPUM_GENERIC_ERROR;
+                }
+                std::vector<zes_power_limit_ext_desc_t> power_ext_descs(limit_count);
+                res = zesPowerGetLimitsExt(phandle, &limit_count, power_ext_descs.data());
+                if (res == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) continue;
+                if (res != ZE_RESULT_SUCCESS){
+                    return XPUM_GENERIC_ERROR;
+                }
+                for (uint32_t i = 0; i < limit_count; i++) {
+                    if (power_ext_descs[i].level == level) {
+                        if (power_ext_descs[i].limitValueLocked == false) {
+                            power_ext_descs[i].limit = limit;
+                        }
+                        is_level_present = true;
+                        break;
+                    }
+                }
+                res = zesPowerSetLimitsExt(phandle, &limit_count, power_ext_descs.data());
+                if (res != ZE_RESULT_SUCCESS) {
+                    return XPUM_GENERIC_ERROR;
+                }
+            }
+        }
+	if (!is_level_present) {
+	    if (level == ZES_POWER_LEVEL_BURST) return XPUM_UNSUPPORTED_FEATURE_PL_BURST;
+	    else if (level == ZES_POWER_LEVEL_PEAK) return XPUM_UNSUPPORTED_FEATURE_PL_PEAK;
+	    else if (level == ZES_POWER_LEVEL_SUSTAINED) return XPUM_UNSUPPORTED_FEATURE_PL_SUSTAIN;
+	    else return XPUM_UNSUPPORTED_FEATURE_PL_UNKNOWN;
+	}	
+        return XPUM_OK;
     }
 
     bool GPUDeviceStub::toSetPowerSustainedLimits(const zes_device_handle_t& device, int32_t powerLimit) noexcept {

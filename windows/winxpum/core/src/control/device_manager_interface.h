@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_manager_interface.h
  */
@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include "xpum_structs.h"
 #include "device/device.h"
 #include "device/memoryEcc.h"
 #include "infrastructure/init_close_interface.h"
@@ -29,7 +30,13 @@ namespace xpum {
 
         virtual void getDeviceSusPower(const std::string& id, int32_t& Sus_power, bool& Sus_supported) = 0;
 
+        virtual xpum_result_t getDevicePowerLimitsExt(const std::string& id,
+                                                      std::vector<xpum_power_domain_ext_t>& power_domain_ext) = 0;
+
         virtual void getDevicePowerMaxLimit(const std::string& id, int32_t& max_limit, bool& supported) = 0;
+
+        virtual xpum_result_t setDevicePowerLimitsExt(const std::string& id, int32_t tileId,
+                                                      const Power_limit_ext_t& power_limit_ext) = 0;
 
         virtual bool setDevicePowerSustainedLimits(const std::string& id, int powerLimit) = 0;
 

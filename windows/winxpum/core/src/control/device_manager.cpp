@@ -1,11 +1,12 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_manager.cpp
  */
 
 #include "pch.h"
 #include "device_manager.h"
+#include "xpum_structs.h"
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/logger.h"
@@ -40,6 +41,17 @@ namespace xpum {
         }
     }
 
+    xpum_result_t DeviceManager::getDevicePowerLimitsExt(const std::string& id,
+                                                         std::vector<xpum_power_domain_ext_t>& power_domains_ext) {
+        std::unique_lock<std::mutex> lock(this->mutex);
+        for (auto& p_device : this->devices) {
+            if (p_device->getId() == id) {
+                return p_device->getDevicePowerLimitsExt(power_domains_ext);
+            }
+        }
+	return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
     void DeviceManager::getDeviceSusPower(const std::string& id, int32_t& Sus_power, bool& Sus_supported) {
         std::unique_lock<std::mutex> lock(this->mutex);
         for (auto& p_device : this->devices) {
@@ -48,6 +60,17 @@ namespace xpum {
             }
         }
         return;
+    }
+
+    xpum_result_t DeviceManager::setDevicePowerLimitsExt(const std::string& id, int32_t tileId,
+                                                         const Power_limit_ext_t& power_limit_ext) {
+        std::unique_lock<std::mutex> lock(this->mutex);
+        for (auto& p_device : this->devices) {
+            if (p_device->getId() == id) {
+                return p_device->setDevicePowerLimitsExt(tileId, power_limit_ext);
+            }
+        }
+	return XPUM_RESULT_DEVICE_NOT_FOUND;	
     }
 
     bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id, int powerLimit) {

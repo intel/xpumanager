@@ -3607,6 +3607,69 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
     return XPUM_GENERIC_ERROR;
 }
 
+xpum_result_t xpumGetPCIeDowngradeState(xpum_device_id_t deviceId, bool *available,
+        xpum_pciedown_state_t *current, xpum_pciedown_action_t *action) {
+    *available = false;
+    *current = XPUM_PCIE_DOWNGRADE_STATE_UNAVAILABLE;
+    *action = XPUM_PCIE_DOWNGRADE_ACTION_NONE;
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (device->getDeviceModel() != XPUM_DEVICE_MODEL_BMG) {
+        return XPUM_RESULT_UNSUPPORTED_DEVICE;
+    }
+
+    PCIeDowngrade *pciedown = new PCIeDowngrade();
+    if (Core::instance().getDeviceManager()->getPCIeDowngradeState(std::to_string(deviceId), *pciedown)) {
+        *available = pciedown->getAvailable();
+        *current = (xpum_pciedown_state_t)(pciedown->getCurrent());
+        *action = (xpum_pciedown_action_t)(pciedown->getAction()); 
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumSetPCIeDowngradeState(xpum_device_id_t deviceId,
+        xpum_pciedown_state_t newState, bool *available,
+	xpum_pciedown_state_t *current, xpum_pciedown_action_t *action) {
+    *available = false;
+    *current = XPUM_PCIE_DOWNGRADE_STATE_UNAVAILABLE;
+    *action = XPUM_PCIE_DOWNGRADE_ACTION_NONE;
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (device->getDeviceModel() != XPUM_DEVICE_MODEL_BMG) {
+        return XPUM_RESULT_UNSUPPORTED_DEVICE;
+    }
+
+    pciedown_state_t newSt = (pciedown_state_t)(newState);
+
+    PCIeDowngrade *pciedown = new PCIeDowngrade();
+    if (Core::instance().getDeviceManager()->setPCIeDowngradeState(std::to_string(deviceId), newSt, *pciedown)) {
+        *available = pciedown->getAvailable();
+        *current = (xpum_pciedown_state_t)(pciedown->getCurrent());
+        *action = (xpum_pciedown_action_t)(pciedown->getAction()); 
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
+
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();

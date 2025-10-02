@@ -8,8 +8,11 @@
 #include "gpu_device.h"
 #include "device/gpu/gpu_device_stub.h"
 #include "device/win_native.h"
+#include "xpum_structs.h"
 
 #include "infrastructure/configuration.h"
+#include "infrastructure/exception/level_zero_initialization_exception.h"
+#include "infrastructure/logger.h"
 
 namespace xpum {
     GPUDevice::GPUDevice() {
@@ -37,8 +40,22 @@ namespace xpum {
         }
     }
 
+    xpum_result_t GPUDevice::getDevicePowerLimitsExt(std::vector<xpum_power_domain_ext_t>& power_domains_ext) {
+	return GPUDeviceStub::getPowerLimitsExt(zes_device_handle, power_domains_ext);
+    }
+
     void GPUDevice::getDeviceSusPower(int32_t& susPower, bool& supported) noexcept {
         GPUDeviceStub::instance().toGetDeviceSusPower(zes_device_handle, susPower,supported);
+    }
+
+    xpum_result_t GPUDevice::setDevicePowerLimitsExt(const int32_t tileId,
+						     const Power_limit_ext_t& power_limit_ext) {
+	try {
+	    return GPUDeviceStub::instance().setPowerLimitsExt(zes_device_handle, tileId, power_limit_ext);
+	} catch (const LevelZeroInitializationException& ex) {
+	    XPUM_LOG_ERROR("Caught LevelZeroInitializationException: ", ex.what());
+	    return XPUM_GENERIC_ERROR;
+	}
     }
 
     bool GPUDevice::setDevicePowerSustainedLimits(int32_t powerLimit) noexcept {

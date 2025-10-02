@@ -14,6 +14,7 @@
 #include "device/device.h"
 #include "device/frequency.h"
 #include "device/memoryEcc.h"
+#include "device/pciedown.h"
 #include "device/pcie_manager.h"
 #include "device/performancefactor.h"
 #include "device/power.h"
@@ -30,6 +31,7 @@
 #include "infrastructure/perf_measurement_data.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
+#include "level_zero/zes_intel_gpu_sysman.h"
 #include "level_zero/zet_api.h"
 #include "topology/xe_link.h"
 
@@ -109,6 +111,8 @@ class GPUDeviceStub {
     static bool setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor& pf);
     bool getEccState(const zes_device_handle_t& device, MemoryEcc& ecc);
     bool setEccState(const zes_device_handle_t& device, ecc_state_t& newState, MemoryEcc& ecc);
+    bool getPCIeDowngradeState(const zes_device_handle_t& device, PCIeDowngrade& pciedown);
+    bool setPCIeDowngradeState(const zes_device_handle_t& device, pciedown_state_t& newState, PCIeDowngrade& pciedown);
 
     void getFabricThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 

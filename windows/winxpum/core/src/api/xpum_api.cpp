@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_api.cpp
  */
@@ -590,6 +590,23 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+xpum_result_t xpumGetDevicePowerLimitsExt(xpum_device_id_t deviceId,
+                                          int32_t tileId,
+					  std::vector<xpum_power_domain_ext_t>& power_domains_ext) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }    
+    return Core::instance().getDeviceManager()->getDevicePowerLimitsExt(std::to_string(deviceId), power_domains_ext);
+}
+
 xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId, int32_t tileId, xpum_power_limits_t* pPowerLimits) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -608,6 +625,34 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId, int32_t tileId
     pPowerLimits->sustained_limit.power = Sus_power;
     pPowerLimits->sustained_limit.enabled = Sus_supported;
     return XPUM_OK;
+}
+
+xpum_result_t xpumSetDevicePowerLimitsExt(xpum_device_id_t device_id, int32_t tile_id,
+					  const xpum_power_limit_ext_t& power_limit_ext) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(device_id));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    if (tile_id != -1) {
+        xpum_result_t res = validateDeviceIdAndTileId(device_id, tile_id);
+        if (res != XPUM_OK) {
+            return res;
+        }
+    } else {
+        xpum_result_t res = validateDeviceId(device_id);
+        if (res != XPUM_OK) {
+            return res;
+        }
+    }
+
+    Power_limit_ext_t pwr_limit_ext = {WATTS_TO_MILLIWATS(power_limit_ext.limit), power_limit_ext.level};
+    return Core::instance().getDeviceManager()->setDevicePowerLimitsExt(std::to_string(device_id), tile_id,
+								       pwr_limit_ext);
 }
 
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId, int32_t tileId, const xpum_power_sustained_limit_t sustained_limit) {

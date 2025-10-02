@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vector>
 
+#include <xpum_structs.h>
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
@@ -76,9 +77,11 @@ namespace xpum {
         virtual void getFabricThroughput(std::shared_ptr<MeasurementData>& data) noexcept = 0;
 
         virtual void getPerfMetrics(std::shared_ptr<MeasurementData>& data) noexcept = 0;
-
+	virtual xpum_result_t getDevicePowerLimitsExt(std::vector<xpum_power_domain_ext_t>& power_domains_ext) = 0;
         virtual void getDeviceSusPower(int32_t& Sus_power_t, bool& Sus_supported_t) noexcept = 0;
 
+	virtual xpum_result_t setDevicePowerLimitsExt(const int32_t tileId,
+						      const Power_limit_ext_t& power_limit_ext) = 0;
         virtual bool setDevicePowerSustainedLimits(int powerLimit) = 0;
 
         virtual void getDevicePowerMaxLimit(int32_t& max_limit, bool& supported) = 0;

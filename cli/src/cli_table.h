@@ -276,6 +276,12 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
                                                 return (long)round(x);
                                             });
             }
+            if (fixer == "roundtwodecimals") {
+                procValue = fix_value<double>(procValue,
+                                            [](double x) -> double {
+                                                return round(x * 100.0) / 100.0;
+                                            });
+            }
             if (notFirst) {
                 res += ", ";
             }

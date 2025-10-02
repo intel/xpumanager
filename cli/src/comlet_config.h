@@ -22,6 +22,7 @@ struct ComletConfigOptions {
     std::string xelinkportEnable;
     std::string xelinkportBeaconing;
     std::string setecc = "";
+    std::string setpciedown = "";
     bool resetDevice = false;
     bool applyPPR = false;
     bool forcePPR = false;
@@ -49,7 +50,7 @@ class ComletConfig : public ComletBase {
 
     inline const bool isQuery() const {
         return this->opts->deviceId >= 0 && this->opts->scheduler.empty() && this->opts->performancefactor.empty() && this->opts->powerlimit.empty() && this->opts->standby.empty() && this->opts->frequencyrange.empty() && this->opts->xelinkportBeaconing.empty() && this->opts->xelinkportEnable.empty() && this->opts->performancefactor.empty() && this->opts->setecc.empty()
-        && !this->opts->resetDevice && !this->opts->applyPPR;
+        && this->opts->setpciedown.empty() && !this->opts->resetDevice && !this->opts->applyPPR;
     }
 
    private:

@@ -95,6 +95,7 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled);
     std::unique_ptr<nlohmann::json> setFabricPortBeaconing(int deviceId, int tileId, uint32_t port, uint32_t beaconing);
     std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled);
+    std::unique_ptr<nlohmann::json> setPCIeDowngradeState(int deviceId, bool enabled);
     std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force);
     std::unique_ptr<nlohmann::json> applyPPR(int deviceId, bool force);
 

@@ -856,6 +856,35 @@ std::string eccActionToString(xpum_ecc_action_t action) {
     return "none";
 }
 
+std::string pciedownStateToString(xpum_pciedown_state_t state) {
+    if (state == XPUM_PCIE_DOWNGRADE_STATE_UNAVAILABLE) {
+        return "";
+    }
+    if (state == XPUM_PCIE_DOWNGRADE_STATE_ENABLED) {
+        return "enabled";
+    }
+    if (state == XPUM_PCIE_DOWNGRADE_STATE_DISABLED) {
+        return "disabled";
+    }
+    return "";
+}
+
+std::string pciedownActionToString(xpum_pciedown_action_t action) {
+    if (action == XPUM_PCIE_DOWNGRADE_ACTION_NONE) {
+        return "none";
+    }
+    if (action == XPUM_PCIE_DOWNGRADE_ACTION_WARM_CARD_RESET) {
+        return "warm card reset";
+    }
+    if (action == XPUM_PCIE_DOWNGRADE_ACTION_COLD_CARD_RESET) {
+        return "cold card reset";
+    }
+    if (action == XPUM_PCIE_DOWNGRADE_ACTION_COLD_SYSTEM_REBOOT) {
+        return "cold system reboot";
+    }
+    return "none";
+}
+
 std::string get_diag_test_result(xpum::xpum_diag_result_type_enum val) {
     switch (val) {
         case xpum::xpum_diag_result_type_enum::XPUM_DIAG_RESULT_NO_ERRORS:
@@ -1005,6 +1034,11 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
     xpum_ecc_action_t action;
 
     res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+
+    xpum_pciedown_state_t pciedown_current;
+    xpum_pciedown_action_t pciedown_action;
+
+    res = xpumGetPCIeDowngradeState(deviceId, &available, &pciedown_current, &pciedown_action);
 
     xpum_frequency_range_t freqArray[32];
     xpum_standby_data_t standbyArray[32];
@@ -1229,6 +1263,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
         tileJson["beaconing_off"] = beaconing_off_str;
         (*json)["memory_ecc_current_state"] = eccStateToString(current);
         (*json)["memory_ecc_pending_state"] = eccStateToString(pending);
+        (*json)["pcie_downgrade_current_state"] = pciedownStateToString(pciedown_current);
         tileJsonList.push_back(tileJson);
     }
     (*json)["tile_config_data"] = tileJsonList;
@@ -1836,6 +1871,58 @@ LOG_ERR:
                     (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
                     (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
                     (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::setPCIeDowngradeState(int deviceId, bool enabled) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res;
+    bool available;
+    xpum_pciedown_state_t current;
+    xpum_pciedown_action_t action;
+    xpum_pciedown_state_t newState;
+
+    if (enabled == true) {
+        newState = XPUM_PCIE_DOWNGRADE_STATE_ENABLED;
+    } else {
+        newState = XPUM_PCIE_DOWNGRADE_STATE_DISABLED;
+    }
+
+    res = xpumSetPCIeDowngradeState(deviceId, newState, &available, &current, &action);
+    if (available == true) {
+        (*json)["pcie_downgrade_available"] = "true";
+    } else {
+        (*json)["pcie_downgrade_available"] = "false";
+    }
+    (*json)["pcie_downgrade_current_state"] = pciedownStateToString(current);
+    (*json)["pcie_downgrade_pending_action"] = pciedownActionToString(action);
+
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+            (*json)["error"] = "device Id or tile Id is invalid";
+        } else if (res == XPUM_RESULT_PCIE_DOWNGRADE_LIB_NOT_SUPPORT){
+            (*json)["error"] = "Failed to " + (enabled ? std::string("enable") : std::string("disable")) +" PCIe Gen4 downgrade on GPU " + std::to_string(deviceId)+ ". This feature requires the igsc-0.8.3 library or newer. Please check the installation instructions on how to install or update to the latest igsc version.";
+        } else {
+            (*json)["error"] = "Error Failed to set PCIe Gen4 Downgrade state: available: " + std::string((*json)["pcie_downgrade_available"]) +
+                ", current: " + std::string((*json)["pcie_downgrade_current_state"]) +
+                ", action: " + std::string((*json)["pcie_downgrade_pending_action"]);
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        goto LOG_ERR;
+    } else {
+       (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set PCIe Gen4 downgrade state: available: %s, current: %s, action: %s",
+                        (*json)["pcie_downgrade_available"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                        (*json)["pcie_downgrade_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                        (*json)["pcie_downgrade_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        return json;
+    }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Failed to set PCIe Gen4 Downgrade state: available: %s, current: %s, action: %s",
+                    (*json)["pcie_downgrade_available"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                    (*json)["pcie_downgrade_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                    (*json)["pcie_downgrade_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 

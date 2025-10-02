@@ -19,6 +19,28 @@
 
 namespace xpum::cli {
 
+// Helper function to filter driver package version for JSON output
+static void filterDriverPackageVersionJson(nlohmann::json& deviceJson) {
+    if (deviceJson.contains("pci_device_id") && deviceJson.contains("driver_pack_version")) {
+        // Safely get string values, handling null/missing cases
+        std::string ver;
+        std::string driverPackVer;
+
+        if (!deviceJson["pci_device_id"].is_null() && deviceJson["pci_device_id"].is_string()) {
+            ver = deviceJson["pci_device_id"];
+        }
+
+        if (!deviceJson["driver_pack_version"].is_null() && deviceJson["driver_pack_version"].is_string()) {
+            driverPackVer = deviceJson["driver_pack_version"];
+        }
+
+        if (driverPackVer.empty() && !ver.empty() &&
+            !(isATSMPlatform(ver) || isSG1(ver) || isOamPlatform(ver))) {
+            deviceJson.erase("driver_pack_version");
+        }
+    }
+}
+
 #define ALL_PROP_ID -1
 
 typedef struct dump_prop_config {
@@ -314,6 +336,9 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         } else {
             json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
         }
+        if (!json->contains("error")) {
+            filterDriverPackageVersionJson(*json);
+        }
         return json;
     }
 
@@ -326,6 +351,7 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
             auto deviceDetailedJson = this->coreStub->getDeviceProperties(device["device_id"],
 									  this->opts->username, this->opts->password);
             auto deviceJson = nlohmann::json::parse(deviceDetailedJson->dump());
+            filterDriverPackageVersionJson(deviceJson);
             deviceJsonList.push_back(deviceJson);
         }
         checkBadDevices(deviceJsonList);
@@ -396,6 +422,17 @@ static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> 
         js["max_fabric_port_speed"] = XPUM_TABLE_HIDE_TAG;
         js["number_of_lanes_per_fabric_port"] = XPUM_TABLE_HIDE_TAG;
     }
+
+    // Hide Driver Package Version for non-legacy platforms when no version is available
+    std::string driverPackVer;
+    if (!js["driver_pack_version"].is_null() && js["driver_pack_version"].is_string()) {
+        driverPackVer = js["driver_pack_version"];
+    }
+    if (driverPackVer.empty() && !ver.empty() &&
+        !(isATSMPlatform(ver) || isSG1(ver) || isOamPlatform(ver))) {
+        js["driver_pack_version"] = XPUM_TABLE_HIDE_TAG;
+    }
+
     CharTable table(ComletConfigDiscoveryDetailed, js);
     table.show(out);
 }

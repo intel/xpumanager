@@ -11,6 +11,7 @@
 
 #include "data_logic/data_logic_interface.h"
 #include "device/memoryEcc.h"
+#include "device/pciedown.h"
 #include "device/scheduler.h"
 #include "device_manager_interface.h"
 
@@ -108,6 +109,9 @@ class DeviceManager : public DeviceManagerInterface,
 
     bool getEccState(const std::string& id, MemoryEcc& ecc);
     bool setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc);
+
+    bool getPCIeDowngradeState(const std::string& id, PCIeDowngrade& pciedown);
+    bool setPCIeDowngradeState(const std::string& id, pciedown_state_t& newState, PCIeDowngrade& pciedown);
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 

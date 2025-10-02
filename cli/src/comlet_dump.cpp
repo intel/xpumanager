@@ -472,7 +472,7 @@ std::unique_ptr<nlohmann::json> ComletDump::combineTileAndDeviceLevel(nlohmann::
 
 void ComletDump::getJsonResult(std::ostream &out, bool raw) {
     if (!this->opts->rawData) {
-        out << "Not supported" << std::endl;
+        out << "Not supported without the --rawdata option, which is only available in the daemon version" << std::endl;
         return;
     } else {
         ComletBase::getJsonResult(out, raw);

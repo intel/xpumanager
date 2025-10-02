@@ -44,10 +44,15 @@ static uint32_t getVFMaxNumberByPciDeviceId(int deviceId) {
         case 0x0bdb:
         case 0x0b6e:
             return 63;
+        case 0xe211:
+        case 0xe212:
+            return 24;
         default:
             return 0;
     }
 }
+
+static void readFile(const std::string& path, std::string& content);
 
 xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_t* param) {
     XPUM_LOG_DEBUG("vgpuCreateVf, {}, {}, {}", deviceId, param->numVfs, param->lmemPerVf);
@@ -139,6 +144,7 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
 
     int numVfs = std::stoi(numVfsString);
     XPUM_LOG_DEBUG("{} VF detected.", numVfs);
+    std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + deviceInfo.bdfAddress;
     /*
      *  Put PF info into index 0, and VF1..n into index 1..n respectively
      */
@@ -173,14 +179,38 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
                 }
                 info.lmemSize += std::stoul(lmemString);
             }
+        } else if (deviceInfo.deviceModel >= XPUM_DEVICE_MODEL_BMG) {
+            for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
+                std::string gtNum = std::to_string(tile);
+                if (functionIndex == 0) {
+                    lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" + "lmem_spare";
+                } else {
+                    lmemPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(functionIndex) + "/lmem_quota";
+                }
+                try {
+                    readFile(lmemPath, lmemString);
+                } catch (std::ios::failure &e) {
+                    return XPUM_VGPU_SYSFS_ERROR;
+                }
+                info.lmemSize += std::stoul(lmemString);
+            }
         } else {
             return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
         }
 
-        if (functionIndex == 0) {
-            ueventPath = devicePath + "/iov/pf/device/uevent";
+        if (deviceInfo.deviceModel >= XPUM_DEVICE_MODEL_BMG) {
+            if (functionIndex == 0) {
+                ueventPath = devicePath + "/device/uevent";
+            } else {
+                ueventPath = devicePath + "/device/virtfn" + std::to_string(functionIndex - 1) + "/uevent";
+            }
+
         } else {
-            ueventPath = devicePath + "/iov/vf" + std::to_string(functionIndex) + "/device/uevent";
+            if (functionIndex == 0) {
+                ueventPath = devicePath + "/iov/pf/device/uevent";
+            } else {
+                ueventPath = devicePath + "/iov/vf" + std::to_string(functionIndex) + "/device/uevent";
+            }
         }
         info.bdfAddress[0] = 0;
         std::ifstream ifs(ueventPath);
@@ -220,12 +250,14 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
         return XPUM_VGPU_SYSFS_ERROR;
     }
     std::stringstream iovPath, numvfsPath;
+    std::string numVfsString;
 
     /*
      *  Disable all VFs by setting sriov_numvfs to 0
      */
     numvfsPath << "/sys/bus/pci/devices/" << deviceInfo.bdfAddress << "/sriov_numvfs";
     try {
+        readFile(numvfsPath.str(), numVfsString);
         writeFile(numvfsPath.str(), "0");
     } catch (std::ios::failure &e) {
         return XPUM_VGPU_REMOVE_VF_FAILED;
@@ -256,11 +288,24 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
                 return XPUM_VGPU_REMOVE_VF_FAILED;
             }
         }
+        closedir(dir);
+    } else if (deviceInfo.deviceModel >= XPUM_DEVICE_MODEL_BMG) {
+        std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + deviceInfo.bdfAddress;
+        int numVfs = std::stoi(numVfsString);
+
+        for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
+            try {
+                for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
+		    writeVfAttrToSysfs(debugfsPath + "/gt" + std::to_string(tile) + "/vf" + std::to_string(functionIndex), zeroAttr, 0);
+                }
+            } catch(std::ios::failure &e) {
+                return XPUM_VGPU_REMOVE_VF_FAILED;
+            }
+        }
     } else {
         XPUM_LOG_ERROR("Failed to open directory {}", iovPath.str());
         return XPUM_VGPU_REMOVE_VF_FAILED;
     }
-    closedir(dir);
     return XPUM_OK;
 }
 
@@ -402,6 +447,7 @@ static bool getVfEngineUtilWithSnaps(std::vector<xpum_vf_metric_t> &metrics,
     std::vector<vf_util_snap_t> &snaps, VfMgmtApi_t &vfMgmtApi, 
     xpum_device_id_t deviceId, zes_device_handle_t &dh) {
     ze_result_t res = ZE_RESULT_SUCCESS;
+
     for (std::size_t i = 0; i < snaps.size(); i++) {
         uint32_t veuc = 0;
         XPUM_ZE_HANDLE_LOCK(dh, res =
@@ -601,6 +647,128 @@ static bool getVfEngineUtilWithSnaps(std::vector<xpum_vf_metric_t> &metrics,
     return true;
 }
 
+static bool getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf,
+    xpum_device_id_t deviceId);
+static bool getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex,
+    xpum_device_id_t deviceId);
+#define BDF_SIZE 12
+
+static xpum_result_t getVfBdfAndLmem(vf_util_snap_t& snap, uint32_t vfIndex,
+    xpum_device_id_t deviceId) {
+    zes_vf_exp2_capabilities_t cap = {};
+    char bdf[BDF_SIZE + 1] = {};
+
+    if (getVfBdf(bdf, BDF_SIZE + 1, vfIndex - 1, deviceId) == false) {
+        XPUM_LOG_DEBUG("VF bdf cannot be found for vf index {}", vfIndex);
+        return XPUM_GENERIC_ERROR;
+    }
+    sscanf(bdf, "%04x:%02x:%02x.%x", &cap.address.domain, &cap.address.bus,
+        &cap.address.device, &cap.address.function);
+
+    bdf[BDF_SIZE - 1] = '0';
+    std::string bdfStr(bdf);
+    std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + bdfStr;
+    std::string vfLmemPath = debugfsPath + "/gt0" + "/vf" + std::to_string(vfIndex) +
+        "/lmem_quota";
+    std::string lmemString;
+    try {
+        readFile(vfLmemPath, lmemString);
+    } catch (std::ios::failure &e) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
+
+    cap.vfDeviceMemSize = std::stoul(lmemString);
+    cap.vfID = vfIndex;
+    snap.vfid = vfIndex;
+    snap.cap = cap;
+    return XPUM_OK;
+}
+
+static xpum_result_t getVfEngineUtilization(VfMgmtApi_t& vfMgmtApi,
+    zes_device_handle_t dh, zes_vf_handle_t vfh, vf_util_snap_t& snap) {
+    ze_result_t res;
+    uint32_t veuc = 0;
+
+    XPUM_ZE_HANDLE_LOCK(dh, res =
+        vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+        vfh, &veuc, nullptr));
+    if (res != ZE_RESULT_SUCCESS || veuc == 0) {
+        XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}",
+            res, veuc);
+        return XPUM_GENERIC_ERROR;
+    }
+
+    snap.vues = std::vector<zes_vf_util_engine_exp2_t>(veuc);
+    XPUM_ZE_HANDLE_LOCK(dh, res =
+        vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
+        vfh, &veuc, snap.vues.data()));
+    if (res != ZE_RESULT_SUCCESS || veuc == 0) {
+        XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}",
+            res, veuc);
+        return XPUM_GENERIC_ERROR;
+    }
+    return XPUM_OK;
+}
+
+static xpum_result_t getVfMemoryUtilization(VfMgmtApi_t& vfMgmtApi,
+    xpum_device_id_t deviceId, zes_device_handle_t dh, zes_vf_handle_t vfh,
+    std::vector<xpum_vf_metric_t>& metrics, vf_util_snap_t& snap) {
+    ze_result_t res;
+
+    zes_vf_exp2_capabilities_t cap = {};
+    XPUM_ZE_HANDLE_LOCK(dh, res =
+        vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2(vfh, &cap));
+    if (res != ZE_RESULT_SUCCESS || cap.vfDeviceMemSize == 0) {
+        XPUM_LOG_DEBUG("pfnZesVFManagementGetVFCapabilitiesExp2 returns {}", res);
+        return XPUM_GENERIC_ERROR;
+    }
+
+    uint32_t mc = 0;
+    XPUM_ZE_HANDLE_LOCK(dh, res =
+        vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2(vfh, &mc,
+        nullptr));
+    if (res != ZE_RESULT_SUCCESS) {
+        XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns {}", res);
+        return XPUM_GENERIC_ERROR;
+    }
+    std::vector<zes_vf_util_mem_exp2_t> vums(mc);
+    XPUM_ZE_HANDLE_LOCK(dh, res =
+        vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2(vfh, &mc, vums.data()));
+    if (res != ZE_RESULT_SUCCESS) {
+        XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns {}", res);
+        return XPUM_GENERIC_ERROR;
+    }
+    // vmu: VF Memory Utilized
+    uint64_t vmu = UINT64_MAX;
+    for (auto mu : vums) {
+         if (mu.vfMemLocation == ZES_MEM_LOC_DEVICE) {
+             vmu = mu.vfMemUtilized;
+         }
+    }
+    if (vmu == UINT64_MAX) {
+        XPUM_LOG_DEBUG("zesVFManagementGetVFMemoryUtilizationExp2 returns no ZES_MEM_LOC_DEVICE");
+        return XPUM_GENERIC_ERROR;
+    }
+    xpum_vf_metric_t vfm = {};
+    vfm.deviceId = deviceId;
+    snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x",
+             cap.address.domain, cap.address.bus,
+             cap.address.device, cap.address.function);
+    if (getVfId(vfm.vfIndex, vfm.bdfAddress, XPUM_MAX_STR_LENGTH,
+        deviceId) == false) {
+        XPUM_LOG_DEBUG("VF index cannot be found for bdf {}", vfm.bdfAddress);
+    }
+
+    snap.vfid = vfm.vfIndex;
+    snap.cap = cap;
+    vfm.metric.metricsType = XPUM_STATS_MEMORY_UTILIZATION;
+    vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    vfm.metric.value = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 *
+        vmu / cap.vfDeviceMemSize;
+    metrics.push_back(vfm);
+    return XPUM_OK;
+}
+
 xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
     std::vector<xpum_vf_metric_t> &metrics, uint32_t *count) {
     xpum_result_t ret = XPUM_GENERIC_ERROR;
@@ -611,6 +779,7 @@ xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    auto deviceModel = device->getDeviceModel();
     void *handle = dlopen("libze_loader.so.1", RTLD_NOW);
     if (handle == nullptr) {
         return XPUM_LEVEL_ZERO_INITIALIZATION_ERROR;
@@ -744,85 +913,33 @@ xpum_result_t VgpuManager::getVfMetrics(xpum_device_id_t deviceId,
         goto RTN;
     }
 
+    uint32_t vfIndex;
+    vfIndex = 1;
     for (auto vfh : vfs) {
-        zes_vf_exp2_capabilities_t cap = {};
-        XPUM_ZE_HANDLE_LOCK(dh, res = 
-            vfMgmtApi.pfnZesVFManagementGetVFCapabilitiesExp2(vfh, &cap));
-        if (res != ZE_RESULT_SUCCESS || cap.vfDeviceMemSize == 0) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFCapabilitiesExp2 returns {}",
-                res);
-            goto RTN;
-        }
+        vf_util_snap_t snap;
+        snap.vfh = vfh;
 
-        uint32_t mc = 0;
-        XPUM_ZE_HANDLE_LOCK(dh, res = 
-            vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2(vfh, &mc, 
-            nullptr));
-        if (res != ZE_RESULT_SUCCESS) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns {}",
-                res);
-            goto RTN;
-        } 
-        std::vector<zes_vf_util_mem_exp2_t> vums(mc);
-        XPUM_ZE_HANDLE_LOCK(dh, res = 
-            vfMgmtApi.pfnZesVFManagementGetVFMemoryUtilizationExp2(vfh, &mc, 
-            vums.data()));
-        if (res != ZE_RESULT_SUCCESS) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns {}",
-                res);
-            goto RTN;
-        }
-        // vmu: VF Memory Utilized
-        uint64_t vmu = UINT64_MAX;
-        for (auto mu : vums) {
-            if (mu.vfMemLocation == ZES_MEM_LOC_DEVICE) {
-                vmu = mu.vfMemUtilized;
+        if (deviceModel < XPUM_DEVICE_MODEL_BMG) {
+            ret = getVfMemoryUtilization(vfMgmtApi, deviceId, dh, vfh, metrics, snap);
+            if (ret != XPUM_OK) {
+                XPUM_LOG_DEBUG("getVfMemoryUtilization returns {}", ret);
+                goto RTN;
+            }
+        } else {
+            ret = getVfBdfAndLmem(snap, vfIndex, deviceId);
+            if (ret != XPUM_OK) {
+                XPUM_LOG_DEBUG("getVfBdfAndLmem returns {}", ret);
+                goto RTN;
             }
         }
-        if (vmu == UINT64_MAX) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFMemoryUtilizationExp2 returns no ZES_MEM_LOC_DEVICE");
-            goto RTN;
-        }
-        xpum_vf_metric_t vfm = {};
-        vfm.deviceId = deviceId;
-        snprintf(vfm.bdfAddress, XPUM_MAX_STR_LENGTH, "%04x:%02x:%02x.%x", 
-                cap.address.domain, cap.address.bus, 
-                cap.address.device, cap.address.function);
-        if (getVfId(vfm.vfIndex, vfm.bdfAddress, XPUM_MAX_STR_LENGTH, 
-            deviceId) == false) {
-            XPUM_LOG_DEBUG("VF index cannot be found for bdf {}", 
-                vfm.bdfAddress);
-        }
-        vfm.metric.metricsType = XPUM_STATS_MEMORY_UTILIZATION;
-        vfm.metric.scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
-        vfm.metric.value = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 *
-            vmu / cap.vfDeviceMemSize;
-        metrics.push_back(vfm);
 
-        uint32_t veuc = 0;
-        XPUM_ZE_HANDLE_LOCK(dh, res =
-            vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
-            vfh, &veuc, nullptr));
-        if (res != ZE_RESULT_SUCCESS || veuc == 0) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
-                res, veuc);
-            goto RTN;
-        }
-
-        vf_util_snap_t snap;
-        snap.vfid = vfm.vfIndex;
-        snap.vfh = vfh;
-        snap.cap = cap;
-        snap.vues = std::vector<zes_vf_util_engine_exp2_t>(veuc);
-        XPUM_ZE_HANDLE_LOCK(dh, res =
-            vfMgmtApi.pfnZesVFManagementGetVFEngineUtilizationExp2(
-            vfh, &veuc, snap.vues.data()));
-        if (res != ZE_RESULT_SUCCESS || veuc == 0) {
-            XPUM_LOG_DEBUG("pfnZesVFManagementGetVFEngineUtilizationExp2 returns {} veuc = {}", 
-                res, veuc);
+        ret = getVfEngineUtilization(vfMgmtApi, dh, vfh, snap);
+        if (ret != XPUM_OK) {
+            XPUM_LOG_DEBUG("getVfMemoryUtilization returns {}", ret);
             goto RTN;
         }
         snaps.push_back(snap);
+        vfIndex++;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(
         Configuration::VF_METRICS_INTERVAL));
@@ -836,10 +953,9 @@ RTN:
     return ret;
 }
 
-bool VgpuManager::getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex, 
+static bool getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex,
         xpum_device_id_t deviceId) {
 //BDF Format in uevent is cccc:cc:cc.c
-#define BDF_SIZE 12
     if (bdf == nullptr || szBdf < BDF_SIZE + 1) {
         return false;
     }
@@ -848,6 +964,7 @@ bool VgpuManager::getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex,
     if (device == nullptr) {
         return false;
     }
+    auto deviceModel = device->getDeviceModel();
     Property prop = {};
     if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, prop)
             == false) {
@@ -859,8 +976,14 @@ bool VgpuManager::getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex,
         return false;
     }
     str = str.substr(n);
-    str = "/sys/class/drm/" + str + "/iov/vf" + std::to_string(vfIndex) + 
-        "/device/uevent";
+    if (deviceModel >= XPUM_DEVICE_MODEL_BMG) {
+        str = "/sys/class/drm/" + str + "/device/virtfn" + std::to_string(vfIndex) +
+            "/uevent";
+    } else {
+        str = "/sys/class/drm/" + str + "/iov/vf" + std::to_string(vfIndex) +
+            "/device/uevent";
+    }
+
     std::ifstream ifs(str);
     if (ifs.is_open() == false) {
         XPUM_LOG_DEBUG("cannot open uevent file = {}", str);
@@ -881,7 +1004,7 @@ bool VgpuManager::getVfBdf(char *bdf, uint32_t szBdf, uint32_t vfIndex,
     return true;
 }
 
-bool VgpuManager::getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf, 
+static bool getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf,
     xpum_device_id_t deviceId) {
 //BDF Format in uevent is cccc:cc:cc.c
     if (bdf == nullptr || szBdf < BDF_SIZE + 1) {
@@ -933,6 +1056,24 @@ bool VgpuManager::getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf,
         closedir(pdir);
     }
     return ret;
+}
+
+static uint64_t getFreeLmemSize(const std::string& path) {
+    std::ifstream ifs(path + "/vram0_mm");
+    std::string line;
+    uint64_t freeSize;
+
+    while (std::getline(ifs, line)) {
+        if (line.length() >= XPUM_MAX_STR_LENGTH) {
+            return 0;
+        }
+        if (strstr(line.c_str(), "visible_avail") == NULL) {
+            continue;
+        }
+        sscanf(line.c_str(), "%*[^0-9]%lu", &freeSize);
+        return freeSize * 1024 * 1024; //MiB to bytes
+    }
+    return 0;
 }
 
 bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data) {
@@ -993,13 +1134,32 @@ bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data
             data.contextFree += std::stoi(context);
             data.doorbellFree += std::stoi(doorbell);
         }
+    } else if (data.deviceModel >= XPUM_DEVICE_MODEL_BMG) {
+        std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + data.bdfAddress;
+        data.lmemSizeFree = getFreeLmemSize(debugfsPath);
+
+        for (uint32_t tile = 0; tile < data.numTiles; tile++) {
+            std::string pfIovPath = debugfsPath + "/gt" + std::to_string(tile) + "/pf/";
+            try {
+                readFile(pfIovPath + "lmem_spare", lmem);
+                readFile(pfIovPath + "ggtt_spare", ggtt);
+                readFile(pfIovPath + "doorbells_spare", doorbell);
+                readFile(pfIovPath + "contexts_spare", context);
+            } catch (std::ios::failure &e) {
+                return false;
+            }
+            data.lmemSizeFree -= std::stoul(lmem);
+            data.ggttSizeFree += std::stoul(ggtt);
+            data.contextFree += std::stoi(context);
+            data.doorbellFree += std::stoi(doorbell);
+        }
     } else {
         return false;
     }
     return true;
 }
 
-void VgpuManager::readFile(const std::string& path, std::string& content) {
+static void readFile(const std::string& path, std::string& content) {
     std::ifstream ifs;
     std::stringstream ss;
     ifs.exceptions(std::ios::failbit | std::ios::badbit);
@@ -1087,6 +1247,12 @@ static void updateVgpuSchedulerConfigParamerters(std::string devicePciId, int nu
             data[numVfs].vfExec = std::max(32 / numVfs, 1);
             data[numVfs].vfPreempt = (numVfs == 1 ? 128000 : std::max(64000 / numVfs, 16000));
         }
+    } else if (devicePciId == "e211" || devicePciId == "e212") {
+        data[numVfs].pfExec = 25; //ms
+        data[numVfs].pfPreempt = 500000; //us
+        data[numVfs].schedIfIdle = false;
+        data[numVfs].vfExec = 50;
+        data[numVfs].vfPreempt = 1000000;
     } else {
         data[numVfs].pfExec = 64;
         data[numVfs].pfPreempt = 128000;
@@ -1219,11 +1385,9 @@ xpum_result_t VgpuManager::vgpuValidateDevice(xpum_device_id_t deviceId) {
         return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
     }
     
-    // Now we only need to support ATSM and some of PVC
-    std::vector<int> supportedDevices{0x56c0, 0x56c1, 0x56c2, 0x0bd4, 0x0bd5, 0x0bd6, 0x0bda, 0x0bdb, 0x0b6e};
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
     int pciDeviceId = std::stoi(prop.getValue().substr(2), nullptr, 16);
-    if (std::find(supportedDevices.begin(), supportedDevices.end(), pciDeviceId) == supportedDevices.end()) {
+    if (getVFMaxNumberByPciDeviceId(pciDeviceId) == 0) {
         return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
 
@@ -1261,6 +1425,23 @@ bool VgpuManager::createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromCo
                         writeVfAttrToSysfs(devicePathString + "/iov/vf" + std::to_string(vfNum) + "/gt" + gtNum, attrs, lmem);
                     }
                 }   
+            }
+        } else if (deviceInfo.deviceModel >= XPUM_DEVICE_MODEL_BMG) {
+            std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + deviceInfo.bdfAddress;
+
+            for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
+                std::string gtNum = std::to_string(tile);
+                writeFile(debugfsPath + "/gt" + gtNum + "/pf/exec_quantum_ms", std::to_string(attrs.pfExec));
+                writeFile(debugfsPath + "/gt" + gtNum + "/pf/preempt_timeout_us", std::to_string(attrs.pfPreempt));
+                writeFile(debugfsPath + "/gt" + gtNum + "/pf/sched_if_idle", attrs.schedIfIdle ? "1": "0");
+
+                for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+                    std::string vfResPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(vfNum);
+                    attrs.vfGgtt /= deviceInfo.numTiles;
+                    attrs.vfDoorbells /= deviceInfo.numTiles;
+                    attrs.vfContexts /= deviceInfo.numTiles;
+                    writeVfAttrToSysfs(vfResPath, attrs, lmem);
+                }
             }
         }
         writeFile(devicePathString + "/device/sriov_drivers_autoprobe", attrs.driversAutoprobe ? "1" : "0");

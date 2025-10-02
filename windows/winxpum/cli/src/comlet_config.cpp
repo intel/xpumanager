@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
+ *  Copyright (C) 2021-2025 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_config.cpp
  */
@@ -7,9 +7,12 @@
 #include "comlet_config.h"
 
 #include <nlohmann/json.hpp>
+#include <unordered_map>
+#include "level_zero/zes_api.h"
 
 #include "core_stub.h"
 #include "cli_table.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -27,7 +30,14 @@ namespace xpum::cli {
             "cells": [
                 { "rowTitle": "GPU" },
                 "device_id", [
-                    { "label": "Power Limit (w) ", "value": "power_limit" },
+                    { "rowTitle": "Power domain card:" },
+                    { "label": "  sustain(w) ", "value": "pl_card_sustain" },
+                    { "label": "  burst(w) ", "value": "pl_card_burst" },
+                    { "label": "  peak(w) ", "value": "pl_card_peak" },
+                    { "rowTitle": "Power domain package:" },
+                    { "label": "  sustain(w) ", "value": "pl_package_sustain" },
+                    { "label": "  burst(w) ", "value": "pl_package_burst" },
+                    { "label": "  peak(w) ", "value": "pl_package_peak" },
                     { "label": "  Valid Range", "value": "power_vaild_range" },
                     {"rowTitle": " " },
                     { "rowTitle": "Memory ECC:" },
@@ -85,6 +95,7 @@ namespace xpum::cli {
         addOption("-t,--tile", this->opts->tileId, "tile id");
         addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
         addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
+	addOption("--powertype", this->opts->powertype, "Device-level power limit type. Valid options: \"sustain\"; \"peak\"; \"burst\"");	
         addOption("--memoryecc", this->opts->setecc, "Enable/disable memory ECC setting. 0:disable; 1:enable");
         addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
         addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".The valid range of all time values (us) is from 5000 to 100,000,000.");
@@ -125,33 +136,38 @@ namespace xpum::cli {
                 (*json)["return"] = "unsupported feature";
                 return json;
             } else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
-                std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
-                if (paralist.size() >= 1 && !paralist.at(0).empty()) {
-                    int val1;
-                    try {
-                        val1 = std::stoi(paralist.at(0));
-                    } catch (std::invalid_argument const& e) {
-                        (*json)["return"] = "invalid parameter: powerlimit";
-                        return json;
-                    } catch (std::out_of_range const& e) {
-                        (*json)["return"] = "invalid parameter: powerlimit";
-                        return json;
-                    }
-                    if (paralist.size() == 2 && paralist.at(1).empty()) {
-                        (*json)["return"] = "invalid parameter: please check help information";
-                        return json;
-                    }
-                    //int val2 = 0; //std::stoi(paralist.at(1));
-                    this->opts->tileId = -1;
-                    json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1);
-                    if ((*json)["status"] == "OK") {
-                        (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) /*+
-                        " tile " + std::to_string(this->opts->tileId) */
-                                            + ".";
-                    }
+                int power_limit = 0;
+                int32_t power_level;
+                std::unordered_map<std::string, int32_t> power_type = {
+                    {"sustain", static_cast<int32_t>(ZES_POWER_LEVEL_SUSTAINED)},
+                    {"peak", static_cast<int32_t>(ZES_POWER_LEVEL_PEAK)},
+                    {"burst", static_cast<int32_t>(ZES_POWER_LEVEL_BURST)}
+                };
+                if (this->opts->powertype.empty()) {
+                    power_level = static_cast<int32_t>(ZES_POWER_LEVEL_SUSTAINED);
+                }else if (power_type.find(this->opts->powertype) != power_type.end()) {
+                    power_level = power_type[this->opts->powertype];
                 } else {
-                    (*json)["return"] = "invalid parameter: please check help information";
+                    (*json)["return"] = "Invalid powertype value: " + this->opts->powertype;
                     return json;
+                }
+                try {
+                    power_limit = std::stoi(this->opts->powerlimit);
+                } catch (std::exception &e) {
+                    (*json)["return"] = "invalid parameter: powerlimit";
+                    return json;
+                }
+                if (power_limit <= 0) {
+                    (*json)["return"] = "invalid parameter: power limit should greater than 0.";
+                    return json;
+                }
+                this->opts->tileId = -1;
+                xpum_power_limit_ext_t power_limit_ext = {power_limit, power_level};
+                json = this->coreStub->setDevicePowerlimitExt(this->opts->deviceId, this->opts->tileId, power_limit_ext);
+                if ((*json).contains("errno")) {
+                    (*json)["error"] = getErrorString((*json)["errno"]);
+                }else if ((*json)["status"] == "OK") {
+                    (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId);
                 }
                 return json;
             } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {

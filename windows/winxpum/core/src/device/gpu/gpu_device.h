@@ -62,8 +62,12 @@ namespace xpum {
 
 		void getPerfMetrics(std::shared_ptr<MeasurementData>& data) noexcept override;
 
+	        xpum_result_t GPUDevice::getDevicePowerLimitsExt(std::vector<xpum_power_domain_ext_t>& power_domains_ext)  override;
+
 		void getDeviceSusPower(int32_t& susPower, bool& supported) noexcept override;
 
+	        xpum_result_t setDevicePowerLimitsExt(const int32_t tileId,
+						      const Power_limit_ext_t& power_limit_ext) override;
 		bool setDevicePowerSustainedLimits(int32_t powerLimit) noexcept override;
 
 		void getDevicePowerMaxLimit(int32_t& max_limit, bool& supported) noexcept override;

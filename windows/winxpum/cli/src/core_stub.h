@@ -44,7 +44,9 @@ namespace xpum::cli {
 
         virtual std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int tileId, int powerLimit) = 0;
 
-        virtual std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) = 0;
+	virtual std::unique_ptr<nlohmann::json> setDevicePowerlimitExt(int deviceId, int tileId, const xpum_power_limit_ext_t& plimit_ext) = 0;
+
+	virtual std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) = 0;
 
         virtual std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled) = 0;
 

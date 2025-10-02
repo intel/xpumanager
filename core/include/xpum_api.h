@@ -474,7 +474,7 @@ XPUM_API xpum_result_t xpumGetDevicePowerLimitsExt(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  * @note Support Platform: Linux, Windows
  */
-xpum_result_t xpumSetDevicePowerLimitsExt(xpum_device_id_t device_id, int32_t tile_id,
+XPUM_API xpum_result_t xpumSetDevicePowerLimitsExt(xpum_device_id_t device_id, int32_t tile_id,
 					  const xpum_power_limit_ext_t& power_limit_ext);
 /**
  * @brief Set device sustained power limit
@@ -800,7 +800,37 @@ XPUM_API xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* availabl
  */
 XPUM_API xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
         xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
-
+/**
+ * @brief Get the PCIe Gen4 Downgrade state of the device
+ * @details This function is used to get the PCIe Gen4 Downgrade state of the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param available    OUT: PCIe Downgrade is available, or not
+ * @param current    OUT: the current state of PCIe Downgrade
+ * @param action     OUT: the action need to do to switch to the pending state
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ * @note Support Platform: Linux, Windows
+ */
+XPUM_API xpum_result_t xpumGetPCIeDowngradeState(xpum_device_id_t deviceId, bool* available,
+        xpum_pciedown_state_t* current, xpum_pciedown_action_t* action);
+/**
+ * @brief Set the PCIe Gen4 Downgrade state of the device
+ * @details This function is used to set the PCIe Gen4 Downgrade state of the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param newState          IN: new state to set
+ * @param available    OUT: PCIe Downgrade is available, or not
+ * @param current    OUT: the current state of PCIe Downgrade
+ * @param action     OUT: the action need to do to switch to the pending state
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ * @note Support Platform: Linux, Windows
+ */
+XPUM_API xpum_result_t xpumSetPCIeDowngradeState(xpum_device_id_t deviceId, xpum_pciedown_state_t newState, bool* available,
+        xpum_pciedown_state_t* current, xpum_pciedown_action_t* action);
 /** @} */ // Closing for CONFIGURATION_API
 
 /**************************************************************************/

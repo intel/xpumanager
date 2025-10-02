@@ -2268,12 +2268,15 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
                 if (res == ZE_RESULT_SUCCESS) {
                     for (auto &power : power_handles) {
                         zes_power_properties_t props = {};
+                        zes_power_ext_properties_t ext_props = {};
+                        props.pNext = &ext_props;
                         props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
-                        props.pNext = nullptr;
+                        ext_props.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
                         XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                         if (res != ZE_RESULT_SUCCESS) {
                             continue;
                         }
+                        if (ext_props.domain != ZES_POWER_DOMAIN_PACKAGE) continue;
                         zes_power_energy_counter_t snap1, snap2;
                         XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {

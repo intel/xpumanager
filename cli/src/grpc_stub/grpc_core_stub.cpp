@@ -1619,7 +1619,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
                     }
                 }
             }
-            (*json)["power_vaild_range"] = response.powerscope();
+            (*json)["power_valid_range"] = response.powerscope();
             //(*json)["power_average_window"] = response.interval();
             //(*json)["power_average_window_vaild_range"] = response.intervalscope();
 
@@ -1670,6 +1670,9 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
 */
                 (*json)["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
                 (*json)["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
+#ifdef DAEMONLESS
+                (*json)["pcie_downgrade_current_state"] = response.tileconfigdata(i).pciedowngradestate();
+#endif
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
@@ -2127,6 +2130,56 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setMemoryEccState(int deviceId, bo
     }
     return json;
 }
+
+#ifdef DAEMONLESS
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setPCIeDowngradeState(int deviceId, bool enabled) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    ConfigDevicePCIeDowngradeStateRequest request;
+    request.set_deviceid(deviceId);
+    request.set_enabled(enabled);
+    ConfigDevicePCIeDowngradeStateResultData response;
+    grpc::Status status = stub->setDevicePCIeDowngradeState(&context, request, &response);
+    if (response.available() == true) {
+        (*json)["pcie_downgrade_available"] = "true";
+    } else {
+        (*json)["pcie_downgrade_available"] = "false";
+    }
+    (*json)["pcie_downgrade_current_state"] = response.currentstate();
+    (*json)["pcie_downgrade_pending_action"] = response.pendingaction();
+
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set PCIe Downgrade state: available: %s, current: %s, action: %s",
+                           (*json)["pcie_downgrade_available"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["pcie_downgrade_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["pcie_downgrade_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        } else {
+            if (response.errormsg().compare("Error")== 0) {
+                (*json)["error"] = response.errormsg() +
+                " Failed to set PCIe Downgrade state: available: " + std::string((*json)["pcie_downgrade_available"]) +
+                ", current: " + std::string((*json)["pcie_downgrade_current_state"]) +
+                ", action: " + std::string((*json)["pcie_downgrade_pending_action"]);
+                (*json)["errno"] = errorNumTranslate(response.errorno());
+            } else {
+                (*json)["error"] = response.errormsg();
+                (*json)["errno"] = errorNumTranslate(response.errorno());
+            }
+            XPUM_LOG_AUDIT("Failed to set PCIe Downgrade state: available: %s, current: %s, action: %s",
+                           (*json)["pcie_downgrade_available"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["pcie_downgrade_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["pcie_downgrade_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+        XPUM_LOG_AUDIT("Fail to set PCIe Downgrade state: %s", status.error_message().c_str());
+    }
+    return json;
+}
+#endif
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProcessState(int deviceId) {
     assert(this->stub != nullptr);
