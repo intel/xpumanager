@@ -235,11 +235,6 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	if (arg.sm.run() != ZE_RESULT_SUCCESS) {
-		PRINT("Sysman driver run failed.\n");
-		return -1;
-	}
-
 	// Set the debug level back to the original value
 	setPrintLvl(&arg, dbglvl);
 
