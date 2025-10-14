@@ -1,4 +1,4 @@
-name: Build XPUM
+name: Linux
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, xpum-runner]
+    runs-on: [self-hosted, xpum-linux-runner]
     timeout-minutes: 60
     continue-on-error: true
     strategy:
@@ -76,7 +76,6 @@ jobs:
           
       - name: Install Conan dependencies
         run: |
-            echo "Installing Conan dependencies (using cached packages from Docker image)..."
             conan profile detect --force
             
             # Ensure we have profiles (create them if copy failed)
@@ -111,70 +110,16 @@ jobs:
             
             # Install dependencies (should use cached packages or build if needed)
             conan install . --build=missing -s build_type=${{ matrix.build_type.buildtype == 'debug' && 'Debug' || 'Release' }}
-          
-      - name: Cache submodules
-        uses: actions/cache@v4
-        with:
-          path: |
-            .git/modules
-            subprojects/*/
-          key: ${{ runner.os }}-submodules-${{ hashFiles('.gitmodules', 'subprojects/*.wrap') }}
-          
-      - name: Cache Meson build directory
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/meson
-            ${{ matrix.build_type.builddir }}
-          key: ${{ runner.os }}-meson-${{ matrix.build_type.name }}-${{ hashFiles('meson.build', 'meson_options.txt', '**/meson.build') }}
-          restore-keys: |
-            ${{ runner.os }}-meson-${{ matrix.build_type.name }}-
-            ${{ runner.os }}-meson-
-            
-      - name: Cache compiler cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ccache
-            ~/.cache/clang
-          key: ${{ runner.os }}-compiler-cache-${{ matrix.build_type.name }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-compiler-cache-${{ matrix.build_type.name }}-
-            ${{ runner.os }}-compiler-cache-
-            
-      - name: Setup compiler cache
-        run: |
-            # Setup ccache if available
-            if command -v ccache >/dev/null 2>&1; then
-              echo "Setting up ccache..."
-              ccache --zero-stats
-              ccache --max-size=2G
-              export CC="ccache gcc"
-              export CXX="ccache g++"
-              echo "CC=ccache gcc" >> $GITHUB_ENV
-              echo "CXX=ccache g++" >> $GITHUB_ENV
-              echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-            fi
             
       - name: Setup Meson build directory (${{ matrix.build_type.name }})
         run: |
-            # Check if build directory exists and is valid
-            if [ -d "${{ matrix.build_type.builddir }}" ] && [ -f "${{ matrix.build_type.builddir }}/meson-info/intro-buildoptions.json" ]; then
-              echo "Existing build directory found, reconfiguring..."
-              meson configure ${{ matrix.build_type.builddir }} \
-                --buildtype=${{ matrix.build_type.buildtype }} \
-                ${{ matrix.build_type.coverage == true && '-D b_coverage=true' || '' }} \
-                ${{ matrix.build_type.sanitizer != '' && format('-D b_sanitize={0}', matrix.build_type.sanitizer) || '' }} \
-                -D dev=true
-            else
-              echo "Setting up new build directory..."
-              meson setup ${{ matrix.build_type.builddir }} \
-                --buildtype=${{ matrix.build_type.buildtype }} \
-                ${{ matrix.build_type.coverage == true && '-D b_coverage=true' || '' }} \
-                ${{ matrix.build_type.sanitizer != '' && format('-D b_sanitize={0}', matrix.build_type.sanitizer) || '' }} \
-                -D dev=true \
-                --native-file conan_meson_native.ini
-            fi
+            echo "Setting up build directory..."
+            meson setup ${{ matrix.build_type.builddir }} \
+              --buildtype=${{ matrix.build_type.buildtype }} \
+              ${{ matrix.build_type.coverage == true && '-D b_coverage=true' || '' }} \
+              ${{ matrix.build_type.sanitizer != '' && format('-D b_sanitize={0}', matrix.build_type.sanitizer) || '' }} \
+              -D dev=true \
+              --native-file conan_meson_native.ini
               
       - name: Build project (${{ matrix.build_type.name }})
         run: |
@@ -316,7 +261,7 @@ jobs:
             retention-days: 30
 
   code-quality:
-    runs-on: [self-hosted, xpum-runner]
+    runs-on: [self-hosted, xpum-linux-runner]
     needs: build
     steps:
       - name: Checkout repository
