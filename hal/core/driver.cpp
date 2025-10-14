@@ -484,7 +484,7 @@ void driver::getLoaderVersion(std::string *lzVersion)
  * @param fileName The name of the file to save the logs to.
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::getLogs(std::string fileName)
+ze_result_t driver::getLogs([[maybe_unused]] std::string fileName)
 {
 	TRACING();
 	return (GETLOGS(fileName) == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
