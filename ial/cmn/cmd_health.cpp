@@ -272,7 +272,7 @@ ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::ordered_json *jsonO
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	result = t->getCoreThreshold(d->deviceHdl, &throttleThreshold, &shutdownThreshold);
+	result = t->getCoreThreshold(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get core temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -310,7 +310,7 @@ ze_result_t cmdHealth::memoryTemperature(devInfo *d, nlohmann::ordered_json *jso
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	result = t->getMemoryThreshold(d->deviceHdl, &throttleThreshold, &shutdownThreshold);
+	result = t->getMemoryThreshold(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

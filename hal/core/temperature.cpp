@@ -157,17 +157,16 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
  * and retrieves the current temperature reading, providing targeted thermal
  * monitoring for specific device components.
  *
- * @param device Handle to the device (unused in current implementation)
  * @param type The specific temperature sensor type to query
  * @param coreTemp Pointer to store the temperature value in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if temperature retrieved successfully, error code otherwise
  */
-ze_result_t temperature::getTemp(UNUSED zes_device_handle_t device, zes_temp_sensors_t type, double *coreTemp)
+ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_temp_properties_t properties;
-	*coreTemp = 0.0; // Default value if no temperature found
+	*temp = 0.0; // Default value if no temperature found
 
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		result = getProperties(temperatureHandles[i], &properties);
@@ -176,7 +175,7 @@ ze_result_t temperature::getTemp(UNUSED zes_device_handle_t device, zes_temp_sen
 		}
 
 		if (properties.type == type) {
-			result = getState(temperatureHandles[i], coreTemp);
+			result = getState(temperatureHandles[i], temp);
 			return result;
 		}
 	}
@@ -190,14 +189,13 @@ ze_result_t temperature::getTemp(UNUSED zes_device_handle_t device, zes_temp_sen
  * temperature sensor, providing essential thermal monitoring for GPU performance
  * and safety management.
  *
- * @param device Handle to the device
  * @param coreTemp Pointer to store the GPU core temperature in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if core temperature retrieved successfully, error code otherwise
  */
-ze_result_t temperature::getCoreTemp(zes_device_handle_t device, double *coreTemp)
+ze_result_t temperature::getCoreTemp(double *coreTemp)
 {
 	TRACING();
-	return getTemp(device, ZES_TEMP_SENSORS_GPU, coreTemp);
+	return getTemp(ZES_TEMP_SENSORS_GPU, coreTemp);
 }
 
 /**
@@ -207,14 +205,13 @@ ze_result_t temperature::getCoreTemp(zes_device_handle_t device, double *coreTem
  * temperature sensor, providing thermal monitoring capabilities for memory
  * subsystem safety and performance optimization.
  *
- * @param device Handle to the device
- * @param coreTemp Pointer to store the memory temperature in Celsius
+ * @param memTemp Pointer to store the memory temperature in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if memory temperature retrieved successfully, error code otherwise
  */
-ze_result_t temperature::getMemoryTemp(zes_device_handle_t device, double *coreTemp)
+ze_result_t temperature::getMemoryTemp(double *memTemp)
 {
 	TRACING();
-	return getTemp(device, ZES_TEMP_SENSORS_MEMORY, coreTemp);
+	return getTemp(ZES_TEMP_SENSORS_MEMORY, memTemp);
 }
 
 /**

@@ -423,7 +423,7 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	ze_result_t result = e->setState(d->deviceHdl, memoryEcc);
+	ze_result_t result = e->setState(d->zesDeviceHdl, memoryEcc);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to set memory ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

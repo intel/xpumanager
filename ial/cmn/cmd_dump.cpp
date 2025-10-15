@@ -536,7 +536,7 @@ ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, UNU
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = t->getCoreTemp(d->zesDeviceHdl, &coreTemp);
+	ze_result_t result = t->getCoreTemp(&coreTemp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get core temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -567,7 +567,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, U
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = t->getMemoryTemp(d->deviceHdl, &memoryTemp);
+	ze_result_t result = t->getMemoryTemp(&memoryTemp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

@@ -132,7 +132,7 @@ int cmdPs::run(arg_struct *args)
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 
-		ps->getState(dev.deviceHdl, &processList);
+		ps->getState(dev.zesDeviceHdl, &processList);
 
 		if (!json) {
 			for (const auto &proc : processList) {
