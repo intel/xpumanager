@@ -207,7 +207,6 @@ int cmdUpdateFW::run(arg_struct *args)
 				// Make a thread‑local copy of firmwareInfo to avoid data races
 				firmwareInfo localInfo = fwInfo;
 				localInfo.dev = devPtr->dev;
-				localInfo.deviceHdl = devPtr->deviceHdl;
 				localInfo.deviceIndex = devPtr->index;
 				localInfo.amcIndex = devPtr->dev->getAmcIndex();
 				localInfo.totalThreads = totalThreads;

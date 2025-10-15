@@ -87,7 +87,6 @@ struct firmwareInfo
 	std::string username;
 	std::string password;
 	device *dev;
-	ze_device_handle_t deviceHdl;
 	fwupdPreference preference;
 	uint32_t totalThreads;
 	uint32_t curThread;
