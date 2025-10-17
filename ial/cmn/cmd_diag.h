@@ -49,17 +49,30 @@ enum diagCmdType
 
 enum diagSubCmdType
 {
-	DIAG_COMPUTATION = 1,
-	DIAG_MEMORYERROR,
-	DIAG_MEMORYBANDWIDTH,
-	DIAG_MEDIA,
-	DIAG_PCIEBANDWIDTH,
-	DIAG_POWER,
+	DIAG_SW_ENV_VARS = 0,
+	DIAG_SW_LIBRARY,
+	DIAG_SW_PERMISSION,
+	DIAG_SW_EXCLUSIVE,
 	DIAG_COMPUTATIONFUNCTEST,
+	DIAG_SYSMAN,
+	DIAG_PCIEBANDWIDTH,
+	DIAG_MEDIA,
+	DIAG_COMPUTATION,
+	DIAG_POWER,
+	DIAG_MEMORYBANDWIDTH,
+	DIAG_MEMORYALLOCATION,
+	DIAG_MEMORYERROR,
 	DIAG_MEDIAFUNCTEST,
 	DIAG_XELINKTHROUGHPUT,
 	DIAG_XELINKALLTOALLTHROUGHPUT,
 	TOTAL_DIAG_SUBCMD
+};
+
+enum diagLevel
+{
+	LEVEL_1 = 1,
+	LEVEL_2,
+	LEVEL_3,
 };
 
 struct ZeWorkGroups
@@ -72,7 +85,21 @@ struct ZeWorkGroups
 	uint32_t group_size_z;
 };
 
-struct diagCmdStruct;
+class cmdDiag;
+
+using diagSubCmdFunc = ze_result_t (cmdDiag::*)(devInfo *d);
+struct diagCmdStruct
+{
+	option opt;
+	diagSubCmdFunc func;
+	bool enabled;
+	std::string val;
+};
+
+struct diagSubCmdStruct
+{
+	diagSubCmdFunc func;
+};
 
 class cmdDiag : public cmds
 {
@@ -94,6 +121,9 @@ private:
 	ze_result_t commandQueueCreate(const ze_context_handle_t context, ze_device_handle_t ze_device,
 								   const uint32_t command_queue_group_ordinal, const uint32_t command_queue_index,
 								   ze_command_queue_handle_t *phCommandQueue, uint32_t flags);
+
+	static const std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubCmdStruct>>>
+		levelToDiagTests;
 
 public:
 	cmdDiag() : driverLoaded(false), sysInfoShown(false) { STRCPY_S(name, MAX_PATH, "diag"); };
@@ -120,21 +150,6 @@ public:
 	ze_result_t xeLinkAllToAllThroughput(devInfo *d);
 
 	int run(arg_struct *args);
-};
-
-using diagSubCmdFunc = ze_result_t (cmdDiag::*)(devInfo *d);
-
-struct diagCmdStruct
-{
-	option opt;
-	diagSubCmdFunc func;
-	bool enabled;
-	std::string val;
-};
-
-struct diagSubCmdStruct
-{
-	diagSubCmdFunc func;
 };
 
 #endif
