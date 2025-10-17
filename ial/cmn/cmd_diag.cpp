@@ -62,6 +62,71 @@ static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
 	{diagCmdType::STRESSTIME, {{"stresstime", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
+const std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubCmdStruct>>>
+	cmdDiag::levelToDiagTests = {
+		{diagLevel::LEVEL_1,
+		 {
+			 {
+				 DIAG_SW_ENV_VARS,
+				 {},
+			 },
+			 {
+				 DIAG_SW_LIBRARY,
+				 {},
+			 },
+			 {
+				 DIAG_SW_PERMISSION,
+				 {},
+			 },
+			 {
+				 DIAG_SW_EXCLUSIVE,
+				 {},
+			 },
+			 {
+				 DIAG_COMPUTATIONFUNCTEST,
+				 {&cmdDiag::computationFuncTest},
+			 },
+			 {
+				 DIAG_SYSMAN,
+				 {},
+			 },
+		 }},
+		{diagLevel::LEVEL_2,
+		 {
+			 {
+				 DIAG_MEDIA,
+				 {&cmdDiag::mediaFuncTest},
+			 },
+			 {
+				 DIAG_PCIEBANDWIDTH,
+				 {&cmdDiag::pcieBandwidth},
+			 },
+		 }},
+		{diagLevel::LEVEL_3,
+		 {
+			 {
+				 DIAG_COMPUTATION,
+				 {&cmdDiag::computation},
+			 },
+			 {
+				 DIAG_POWER,
+				 {&cmdDiag::power},
+			 },
+			 {
+				 DIAG_MEMORYBANDWIDTH,
+				 {&cmdDiag::memoryBandwidth},
+			 },
+			 {
+				 DIAG_MEMORYALLOCATION,
+				 {},
+			 },
+			 {
+				 DIAG_MEMORYERROR,
+				 {&cmdDiag::memoryError},
+			 },
+		 }},
+};
+
 /**
  * @brief Prints a dashed line.
  *
@@ -298,6 +363,13 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
 		ERR("Invalid level. Valid options are 1, 2, or 3.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+
+	// Iterate over levelToDiagTests to run specific tests based on the level
+	/*for (const auto &test : levelToDiagTests.at(static_cast<diagLevel>(level))) {
+		DBG("Preparing to run test for level %d\n", level);
+		 Here you would call the corresponding test function
+		 For example: (this->*test.second.func)(d);
+	}*/
 
 	return ZE_RESULT_SUCCESS;
 }
