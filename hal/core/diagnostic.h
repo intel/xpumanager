@@ -26,6 +26,9 @@
 
 #include "sysman.h"
 
+// Forward declaration of devInfo struct
+struct devInfo;
+
 class LIBXPUM_API diagnostic : public sysman
 {
 private:
@@ -37,6 +40,7 @@ public:
 	~diagnostic();
 	ze_result_t enumDiag(zes_device_handle_t device);
 	ze_result_t getProperties(zes_diag_handle_t testSuite);
+	ze_result_t computationTest(devInfo *d, long double &out_gflops);
 	int getTests(zes_diag_handle_t testSuite);
 	ze_result_t runTests(zes_diag_handle_t testSuite, uint32_t testCount);
 	ze_result_t zesRun(zes_device_handle_t device);
