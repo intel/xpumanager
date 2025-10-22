@@ -1406,6 +1406,7 @@ int cmdDump::run(arg_struct *args)
 	bool first = true;
 	std::atomic<bool> running{true};
 	int total = 0, iter = -1;
+	std::chrono::milliseconds interval = DEFAULT_INTERVAL;
 	std::thread inputThread;
 
 	// If the user didn't provide any arguments, show help
@@ -1500,6 +1501,26 @@ int cmdDump::run(arg_struct *args)
 		iter++;
 	}
 
+	// If the user specified an interval with -i / --interval, we need to check if it is a valid positive integer.
+	if (dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled) {
+		try {
+			int intervalSecValue = stoi(dumpCmds[dumpCmdType::DUMP_INTERVAL].val);
+			std::chrono::seconds intervalSec{intervalSecValue};
+
+			// intervalSec.count() now contains the parsed integer. Check for valid range
+			if (intervalSec.count() <= 0 || intervalSec > MAX_INTERVAL) {
+				ERR("Invalid value for -i/--interval: '%s'. Must be a positive integer and less than %lld.\n",
+					dumpCmds[dumpCmdType::DUMP_INTERVAL].val.c_str(), static_cast<long long>(MAX_INTERVAL.count()));
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			interval = std::chrono::duration_cast<std::chrono::milliseconds>(intervalSec);
+		} catch (const std::exception &) {
+			ERR("Invalid value for -i/--interval: '%s'. Must be a positive integer.\n",
+				dumpCmds[dumpCmdType::DUMP_INTERVAL].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
 	result = args->sm.findDevice(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
@@ -1529,8 +1550,8 @@ int cmdDump::run(arg_struct *args)
 	}
 	PRINT("%s\n", header.c_str());
 
-	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()] {};
-	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()] {};
+	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()]{};
+	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()]{};
 	if (tidList == nullptr) {
 		ERR("Failed to allocate memory for thread ID list.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -1596,7 +1617,7 @@ int cmdDump::run(arg_struct *args)
 			}
 		}
 		first = false;
-		MSLEEP(1000);
+		std::this_thread::sleep_for(interval);
 
 		// If the user specified an iteration count, decrement it
 		if (iter > 0) {
