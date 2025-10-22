@@ -27,6 +27,10 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <chrono>
+
+constexpr auto DEFAULT_INTERVAL = std::chrono::seconds{1};
+constexpr auto MAX_INTERVAL = std::chrono::seconds{20};
 
 enum dumpCmdType
 {
