@@ -47,12 +47,10 @@ enum diagCmdType
 
 enum diagSubCmdType
 {
-	DIAG_SW_ENV_VARS = 0,
-	DIAG_SW_LIBRARY,
+	DIAG_SW_LIBRARY = 0,
 	DIAG_SW_PERMISSION,
 	DIAG_SW_EXCLUSIVE,
 	DIAG_COMPUTATIONFUNCTEST,
-	DIAG_SYSMAN,
 	DIAG_PCIEBANDWIDTH,
 	DIAG_MEDIA,
 	DIAG_COMPUTATION,
@@ -84,6 +82,13 @@ struct diagCmdStruct
 	std::string val;
 };
 
+struct diagSubLevelCmdStruct
+{
+	diagSubCmdFunc func;
+	std::string showString;
+	bool result;
+};
+
 struct diagSubCmdStruct
 {
 	diagSubCmdFunc func;
@@ -95,7 +100,7 @@ private:
 	bool driverLoaded;
 	bool sysInfoShown;
 
-	static const std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubCmdStruct>>>
+	static std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevelCmdStruct>>>
 		levelToDiagTests;
 
 public:
@@ -110,9 +115,12 @@ public:
 	ze_result_t gpu(devInfo *d);
 	ze_result_t printPrecheckInfo(devInfo *d, bool gpuOnly);
 	ze_result_t runSince(devInfo *d);
-
+	ze_result_t checkLibrary(devInfo *d);
+	ze_result_t checkExclusive(devInfo *d);
+	ze_result_t checkAccessPermission(devInfo *d);
 	ze_result_t computation(devInfo *d);
 	ze_result_t memoryError(devInfo *d);
+	ze_result_t memoryAllocation(devInfo *d);
 	ze_result_t memoryBandwidth(devInfo *d);
 	ze_result_t mediaCodec(devInfo *d);
 	ze_result_t pcieBandwidth(devInfo *d);
