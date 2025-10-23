@@ -32,6 +32,7 @@
 #include <fstream>
 #include <chrono>
 #include <algorithm>
+#include <filesystem>
 
 /**
  * @brief Constructor for the device class.
@@ -886,8 +887,8 @@ void device::addInfo(std::vector<devInfo> *devList, uint32_t devIndex)
 [[nodiscard("Return value should be used")]]
 bool device::isPathExist(const std::string &s)
 {
-	struct stat buffer;
-	return (stat(s.c_str(), &buffer) == 0);
+	std::error_code ec;
+	return std::filesystem::exists(s);
 }
 
 /**
