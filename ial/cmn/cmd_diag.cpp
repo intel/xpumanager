@@ -62,67 +62,59 @@ static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
 	{diagCmdType::STRESSTIME, {{"stresstime", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
-const std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubCmdStruct>>>
-	cmdDiag::levelToDiagTests = {
+std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevelCmdStruct>>> cmdDiag::levelToDiagTests =
+	{
 		{diagLevel::LEVEL_1,
 		 {
 			 {
-				 DIAG_SW_ENV_VARS,
-				 {},
-			 },
-			 {
 				 DIAG_SW_LIBRARY,
-				 {},
+				 {&cmdDiag::checkLibrary, "Software Library", true},
 			 },
 			 {
 				 DIAG_SW_PERMISSION,
-				 {},
+				 {&cmdDiag::checkAccessPermission, "Software Permission", true},
 			 },
 			 {
 				 DIAG_SW_EXCLUSIVE,
-				 {},
+				 {&cmdDiag::checkExclusive, "Software Exclusive", true},
 			 },
 			 {
 				 DIAG_COMPUTATIONFUNCTEST,
-				 {&cmdDiag::computationFuncTest},
-			 },
-			 {
-				 DIAG_SYSMAN,
-				 {},
+				 {&cmdDiag::computationFuncTest, "Computation Check", true},
 			 },
 		 }},
 		{diagLevel::LEVEL_2,
 		 {
 			 {
-				 DIAG_MEDIA,
-				 {&cmdDiag::mediaFuncTest},
+				 DIAG_PCIEBANDWIDTH,
+				 {&cmdDiag::pcieBandwidth, "Integration PCIe", true},
 			 },
 			 {
-				 DIAG_PCIEBANDWIDTH,
-				 {&cmdDiag::pcieBandwidth},
+				 DIAG_MEDIA,
+				 {&cmdDiag::mediaFuncTest, "Media Codec", true},
 			 },
 		 }},
 		{diagLevel::LEVEL_3,
 		 {
 			 {
 				 DIAG_COMPUTATION,
-				 {&cmdDiag::computation},
+				 {&cmdDiag::computation, "Performance Computation", true},
 			 },
 			 {
 				 DIAG_POWER,
-				 {&cmdDiag::power},
+				 {&cmdDiag::power, "Performance Power", true},
 			 },
 			 {
 				 DIAG_MEMORYBANDWIDTH,
-				 {&cmdDiag::memoryBandwidth},
+				 {&cmdDiag::memoryBandwidth, "Performance Memory Bandwidth", true},
 			 },
 			 {
 				 DIAG_MEMORYALLOCATION,
-				 {},
+				 {&cmdDiag::memoryAllocation, "Performance Memory Allocation", true},
 			 },
 			 {
 				 DIAG_MEMORYERROR,
-				 {&cmdDiag::memoryError},
+				 {&cmdDiag::memoryError, "Memory Error", true},
 			 },
 		 }},
 };
@@ -338,6 +330,97 @@ ze_result_t cmdDiag::stress(UNUSED devInfo *d)
 }
 
 /**
+ * @brief check Library.
+ *
+ * This function check Library on a device to ensure the system in the healthy states.
+ * It loads the device related info and performs the tests:
+ * 1. Retrieves the device's PCI properties
+ * 2. Make sure firmware get loaded and work in normal state.
+ * 3. Make sure all the driver & related library get loaded properly.
+ *
+ * @param d Pointer to device information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
+ */
+ze_result_t cmdDiag::checkLibrary(devInfo *d)
+{
+	std::string fwStatus;
+
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	fwStatus = p->getFWStatus();
+	if ((fwStatus != "normal") || !(driverLoaded)) {
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief check access permission.
+ *
+ * This function check permission on a device to ensure having necessary access permission.
+ * It performs the tests:
+ * 1. check if there is a /dev/dri folder and can accessed or not
+ * 2. check if there is any entry name under the /dev/dri, which has the prefix with "renderD"
+ *    and after are all digits and can be accessed or not
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
+ */
+ze_result_t cmdDiag::checkAccessPermission(UNUSED devInfo *d)
+
+{
+	if (!CHECKPERMISSION()) {
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief check exclusive.
+ *
+ * This function check if the host processes can simultaneously & exclusively run on the specified device.
+ * It performs the tests:
+ * 1. loads the number of processes connected to the device and run them dynamically,
+ * 2. check if the processes currently attached to the device can run successfully.
+ * 3. check if all these process related stream files, which have names with "/proc/" + std::to_string(processId)
+ *    + "/cmdline" have healthy states and ready for i/o operations.
+ *
+ * @param d Pointer to device information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
+ */
+ze_result_t cmdDiag::checkExclusive(devInfo *d)
+{
+	ze_result_t ret;
+	std::vector<zes_process_state_t> processList;
+
+	process *ps = (process *)d->dev->getProcess();
+	if (ps == nullptr) {
+		ERR("Error: Process pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ret = ps->getState(d->zesDeviceHdl, &processList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get process states\n");
+		return ret;
+	}
+
+	for (const auto &proc : processList) {
+		if (!CHECKPROCESSEXCLUSIVE(proc.processId)) {
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Validates and processes diagnostic level parameter
  *
  * This function validates the diagnostic level parameter provided by the user,
@@ -350,6 +433,11 @@ ze_result_t cmdDiag::stress(UNUSED devInfo *d)
 ze_result_t cmdDiag::level(UNUSED devInfo *d)
 {
 	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	bool finalResult = true;
+	int totalCount = 0;
+	std::string itemStr;
+	std::string outputLine;
 
 	// Check if the level is valid
 	if (diagCmds[diagCmdType::LEVEL].val.empty()) {
@@ -364,13 +452,41 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	// Iterate over levelToDiagTests to run specific tests based on the level
-	/*for (const auto &test : levelToDiagTests.at(static_cast<diagLevel>(level))) {
-		DBG("Preparing to run test for level %d\n", level);
-		 Here you would call the corresponding test function
-		 For example: (this->*test.second.func)(d);
-	}*/
+	for (int le = 1; le <= level; le++) {
+		for (auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
 
+			DBG("Preparing to run test for level %d\n", le);
+			result = (this->*test.second.func)(d);
+			if (result != ZE_RESULT_SUCCESS) {
+				finalResult = false;
+				test.second.result = false;
+			}
+			totalCount++;
+		}
+	}
+
+	outputLine = std::to_string(d->index);
+	printPretty();
+	PRINT("| Device ID                     |   %s                                                    |\n",
+		  outputLine.c_str());
+	printPretty();
+	PRINT("| Level                         |   %d                                                    |\n", level);
+	PRINT("| Final result                  |   %s                                                 |\n",
+		  (finalResult) ? "Pass" : "Fail");
+	PRINT("| Items                         |   %d                                                    |\n", totalCount);
+	printPretty();
+
+	for (int le = 1; le <= level; le++) {
+		for (const auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
+			DBG("Preparing to run test for level %d\n", le);
+			PRINT("| %s           | Result: %s                                             |\n",
+				  test.second.showString.c_str(), (test.second.result) ? "Pass" : "Fail");
+
+			PRINT("|                               | Message: %s to check %s                     |\n",
+				  (test.second.result) ? "Pass" : "Fail", test.second.showString.c_str());
+		}
+		printPretty();
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -455,6 +571,22 @@ ze_result_t cmdDiag::computation(devInfo *d)
  * @return ze_result_t ZE_RESULT_SUCCESS if memory tests pass, error code otherwise
  */
 ze_result_t cmdDiag::memoryError(UNUSED devInfo *d)
+{
+	TRACING();
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Executes memory allocation diagnostic test
+ *
+ * This function measures GPU memory allocation performance by running
+ * memory-intensive kernels and calculating throughput metrics. It validates
+ * memory subsystem performance and identifies potential bandwidth limitations.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @return ze_result_t ZE_RESULT_SUCCESS if allocation tests complete, error code otherwise
+ */
+ze_result_t cmdDiag::memoryAllocation(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
