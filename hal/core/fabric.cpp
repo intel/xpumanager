@@ -78,31 +78,29 @@ ze_result_t fabric::enumFabricPorts(zes_device_handle_t device)
  * and physical connection information.
  *
  * @param hFabricPort Handle to the specific fabric port
+ * @param properties Caller-allocated buffer to receive properties
  * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
  */
-ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort)
+ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort, zes_fabric_port_properties_t *properties)
 {
-	ze_result_t result = ZE_RESULT_SUCCESS;
-	DBG("Fabric Ports Properties:\n");
-
-	zes_fabric_port_properties_t portProperties = {};
-	result = zesFabricPortGetProperties(hFabricPort, &portProperties);
+	ze_result_t result = zesFabricPortGetProperties(hFabricPort, properties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get fabric port properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("  - Fabric Id: %d\n", portProperties.portId.fabricId);
-	DBG("  - Attach Id: %d\n", portProperties.portId.attachId);
-	DBG("  - Port Number: %d\n", portProperties.portId.portNumber);
-	DBG("  - Port SType: %d\n", portProperties.stype);
-	DBG("  - Port model: %s\n", portProperties.model);
-	DBG("  - Port OnSubdevice ID: %d\n", portProperties.onSubdevice);
-	DBG("  - Port Subdevice ID: %d\n", portProperties.subdeviceId);
-	DBG("  - Port maxRxSpeed bitRate: %" PRIu64 "\n", portProperties.maxRxSpeed.bitRate);
-	DBG("  - Port maxRxSpeed width: %d\n", portProperties.maxRxSpeed.width);
-	DBG("  - Port maxTxSpeed bitRate: %" PRIu64 "\n", portProperties.maxTxSpeed.bitRate);
-	DBG("  - Port maxTxSpeed width: %d\n", portProperties.maxTxSpeed.width);
+	DBG("Fabric Ports Properties:\n");
+	DBG("  - Fabric Id: %d\n", properties->portId.fabricId);
+	DBG("  - Attach Id: %d\n", properties->portId.attachId);
+	DBG("  - Port Number: %d\n", properties->portId.portNumber);
+	DBG("  - Port SType: %d\n", properties->stype);
+	DBG("  - Port model: %s\n", properties->model);
+	DBG("  - Port OnSubdevice ID: %d\n", properties->onSubdevice);
+	DBG("  - Port Subdevice ID: %d\n", properties->subdeviceId);
+	DBG("  - Port maxRxSpeed bitRate: %" PRIu64 "\n", properties->maxRxSpeed.bitRate);
+	DBG("  - Port maxRxSpeed width: %d\n", properties->maxRxSpeed.width);
+	DBG("  - Port maxTxSpeed bitRate: %" PRIu64 "\n", properties->maxTxSpeed.bitRate);
+	DBG("  - Port maxTxSpeed width: %d\n", properties->maxTxSpeed.width);
 
 	return result;
 }
@@ -163,28 +161,28 @@ ze_result_t fabric::portGetConfig(zes_fabric_port_handle_t hFabricPort)
  * transmission speeds for both receive and transmit directions.
  *
  * @param hFabricPort Handle to the specific fabric port
+ * @param state Caller-allocated buffer to receive state
  * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
  */
-ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort)
+ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort, zes_fabric_port_state_t *state)
 {
-	zes_fabric_port_state_t portState = {};
-	ze_result_t result = zesFabricPortGetState(hFabricPort, &portState);
+	ze_result_t result = zesFabricPortGetState(hFabricPort, state);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get fabric port state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Port State:");
-	DBG("  - Status: %d\n", portState.status);
-	DBG("  - Quality Issues: %d\n", portState.qualityIssues);
-	DBG("  - Failure Reasons: %d\n", portState.failureReasons);
-	DBG("  - Remote Port Id - Fabric Id: %d\n", portState.remotePortId.fabricId);
-	DBG("  - Remote Port Id - Attach Id: %d\n", portState.remotePortId.attachId);
-	DBG("  - Remote Port Id - Port Number: %d\n", portState.remotePortId.portNumber);
-	DBG("  - Rx Speed - Bit Rate: %" PRIu64 "\n", portState.rxSpeed.bitRate);
-	DBG("  - Rx Speed - Width: %d\n", portState.rxSpeed.width);
-	DBG("  - Tx Speed - Bit Rate: %" PRIu64 "\n", portState.txSpeed.bitRate);
-	DBG("  - Tx Speed - Width: %d\n", portState.txSpeed.width);
+	DBG("  - Status: %d\n", state->status);
+	DBG("  - Quality Issues: %d\n", state->qualityIssues);
+	DBG("  - Failure Reasons: %d\n", state->failureReasons);
+	DBG("  - Remote Port Id - Fabric Id: %d\n", state->remotePortId.fabricId);
+	DBG("  - Remote Port Id - Attach Id: %d\n", state->remotePortId.attachId);
+	DBG("  - Remote Port Id - Port Number: %d\n", state->remotePortId.portNumber);
+	DBG("  - Rx Speed - Bit Rate: %" PRIu64 "\n", state->rxSpeed.bitRate);
+	DBG("  - Rx Speed - Width: %d\n", state->rxSpeed.width);
+	DBG("  - Tx Speed - Bit Rate: %" PRIu64 "\n", state->txSpeed.bitRate);
+	DBG("  - Tx Speed - Width: %d\n", state->txSpeed.width);
 
 	return result;
 }
@@ -197,21 +195,21 @@ ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort)
  * information for bandwidth calculations.
  *
  * @param hFabricPort Handle to the specific fabric port
+ * @param throughput Caller-allocated buffer to receive throughput
  * @return ze_result_t ZE_RESULT_SUCCESS on successful throughput retrieval, error code otherwise
  */
-ze_result_t fabric::portGetThroughput(zes_fabric_port_handle_t hFabricPort)
+ze_result_t fabric::portGetThroughput(zes_fabric_port_handle_t hFabricPort, zes_fabric_port_throughput_t *throughput)
 {
-	zes_fabric_port_throughput_t throughput = {};
-	ze_result_t result = zesFabricPortGetThroughput(hFabricPort, &throughput);
+	ze_result_t result = zesFabricPortGetThroughput(hFabricPort, throughput);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get fabric port throughput: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Port Throughput:");
-	DBG("  - Rx Counter: %" PRIu64 "\n", throughput.rxCounter);
-	DBG("  - Tx Counter: %" PRIu64 "\n", throughput.txCounter);
-	DBG("  - Timestamp: %" PRIu64 "\n", throughput.timestamp);
+	DBG("  - Rx Counter: %" PRIu64 "\n", throughput->rxCounter);
+	DBG("  - Tx Counter: %" PRIu64 "\n", throughput->txCounter);
+	DBG("  - Timestamp: %" PRIu64 "\n", throughput->timestamp);
 
 	return result;
 }
@@ -253,20 +251,20 @@ ze_result_t fabric::portGetFabricErrorCounters(zes_fabric_port_handle_t hFabricP
  *
  * @param device Handle to the Level Zero Sysman device
  * @param count Number of fabric ports to query
+ * @param throughputs Caller-allocated buffer array to receive throughputs
  * @return ze_result_t ZE_RESULT_SUCCESS on successful multi-port throughput retrieval, error code otherwise
  */
-ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint32_t count)
+ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint32_t count,
+											   zes_fabric_port_throughput_t *throughputs)
 {
 	if (count == 0 || device == nullptr) {
 		ERR("Invalid fabric port handles or count.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	zes_fabric_port_throughput_t *throughputs = new zes_fabric_port_throughput_t[count];
 	ze_result_t result = zesFabricPortGetMultiPortThroughput(device, count, ports, &throughputs);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get multi-port throughput: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] throughputs;
 		return result;
 	}
 
@@ -278,8 +276,24 @@ ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint3
 		DBG("  - Timestamp: %" PRIu64 "\n", throughputs[i].timestamp);
 	}
 
-	delete[] throughputs;
 	return result;
+}
+
+/**
+ * @brief Gets the handle for a specific fabric port by index
+ *
+ * This function retrieves the fabric port handle at the specified index
+ * from the enumerated list of fabric ports.
+ *
+ * @param index Zero-based index of the fabric port
+ * @return zes_fabric_port_handle_t Handle to the fabric port, or nullptr if index is invalid
+ */
+zes_fabric_port_handle_t fabric::getPortHandle(uint32_t index) const
+{
+	if (ports == nullptr || index >= portCount) {
+		return nullptr;
+	}
+	return ports[index];
 }
 
 /**
@@ -377,7 +391,8 @@ ze_result_t fabric::zesRun(zes_device_handle_t device)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < portCount; i++) {
-		result = portGetProperties(ports[i]);
+		zes_fabric_port_properties_t properties = {};
+		result = portGetProperties(ports[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
@@ -392,12 +407,14 @@ ze_result_t fabric::zesRun(zes_device_handle_t device)
 			return result;
 		}
 
-		result = portGetState(ports[i]);
+		zes_fabric_port_state_t state = {};
+		result = portGetState(ports[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = portGetThroughput(ports[i]);
+		zes_fabric_port_throughput_t throughput = {};
+		result = portGetThroughput(ports[i], &throughput);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
@@ -408,9 +425,12 @@ ze_result_t fabric::zesRun(zes_device_handle_t device)
 		}
 	}
 
-	result = portGetMultiPortThroughput(device, portCount);
-	if (portCount && result != ZE_RESULT_SUCCESS) {
-		return result;
+	if (portCount > 0) {
+		std::vector<zes_fabric_port_throughput_t> throughputs(portCount);
+		result = portGetMultiPortThroughput(device, portCount, throughputs.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
 	}
 
 	return result;
