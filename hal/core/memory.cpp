@@ -405,19 +405,18 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
  * @brief Calculates memory usage statistics and utilization percentage
  *
  * This function determines current memory usage by calculating the difference
- * between total and free memory across all modules. It provides both absolute
- * usage in bytes and utilization as a percentage for monitoring purposes.
+ * between total and free memory across all modules. It aggregates used memory
+ * across all modules and computes device-wide utilization percentage.
  *
- * @param used Pointer to variable that will receive used memory in bytes (can be null)
- * @param utilization Pointer to variable that will receive utilization percentage (can be null)
+ * @param used Pointer to variable that will receive aggregated used memory in bytes (can be null)
+ * @param utilization Pointer to variable that will receive device-wide utilization percentage (can be null)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful usage calculation, error code otherwise
  */
 ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_mem_properties_t properties = {};
-	zes_mem_state_t state;
-	uint64_t tempUsed = 0;
+	uint64_t totalUsedBytes = 0;
+	uint64_t totalSizeBytes = 0;
 
 	if (used != nullptr) {
 		*used = 0;
@@ -428,9 +427,12 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 	}
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		zes_mem_properties_t properties = {};
+		zes_mem_state_t state = {};
+
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		result = getState(memoryModules[i], &state);
@@ -438,17 +440,22 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
-		tempUsed = properties.physicalSize == 0 ? state.size - state.free : properties.physicalSize - state.free;
-		if (used != nullptr) {
-			*used = tempUsed;
-		}
 
-		if (utilization != nullptr) {
-			// Calculate utilization as a percentage of the total size
-			uint64_t totalSize = properties.physicalSize == 0 ? state.size : properties.physicalSize;
-			*utilization = (double)(totalSize == 0 ? 0 : tempUsed) * 100.0 / (double)totalSize;
-		}
+		uint64_t moduleTotal = (properties.physicalSize == 0) ? state.size : properties.physicalSize;
+		uint64_t moduleUsed = (moduleTotal >= state.free) ? (moduleTotal - state.free) : 0;
+
+		totalUsedBytes += moduleUsed;
+		totalSizeBytes += moduleTotal;
 	}
+
+	if (used != nullptr) {
+		*used = totalUsedBytes;
+	}
+
+	if (utilization != nullptr && totalSizeBytes > 0) {
+		*utilization = (double)totalUsedBytes * 100.0 / (double)totalSizeBytes;
+	}
+
 	return result;
 }
 
