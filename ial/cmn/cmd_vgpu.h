@@ -60,7 +60,6 @@ public:
 	ze_result_t remove(devInfo *d);
 	ze_result_t listGpus(devInfo *d);
 	ze_result_t stats(devInfo *d);
-	ze_result_t lmem(devInfo *d);
 	int run(arg_struct *args);
 };
 

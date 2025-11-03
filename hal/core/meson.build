@@ -23,7 +23,8 @@ hal_core_sources = files(
   'sysman.cpp',
   'temperature.cpp',
   'threading.cpp',
-  'vf.cpp'
+  'vf.cpp',
+  'file_io.cpp'
 )
 
 hal_core_inc = include_directories('.')

@@ -25,6 +25,7 @@ elif is_linux
     'lin/dbg_log.cpp',
     'lin/diag_lin.cpp',
     'lin/fs_lock.cpp',
+    'lin/linvf.cpp',
   )
   oal_inc_dirs = [include_directories('lin'), include_directories('.')]
   # Add hwloc dependency for Linux topology functionality
@@ -33,6 +34,9 @@ elif is_linux
   # Add curl dependency for Linux redfish functionality
   curl_dep = dependency('libcurl', required: true)
   oal_deps += [curl_dep]
+  # Add pciaccess dependency for PCI/SRIOV functionality
+  pciaccess_dep = dependency('pciaccess', required: true)
+  oal_deps += [pciaccess_dep]
 endif
 
 # Set correct CRT flags for Windows with override capability

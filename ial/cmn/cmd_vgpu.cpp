@@ -24,7 +24,9 @@
 
 #include "cmd_vgpu.h"
 #include "debug.h"
+#include <osvf.h>
 #include <assert.h>
+#include <cinttypes>
 
 static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
 	{VGPU_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
@@ -38,7 +40,7 @@ static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
 	{VGPU_LIST, {{"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus, false, ""}},
 	{VGPU_ASSUMEYES, {{"assumeyes", no_argument, 0, 'y'}, nullptr, false, ""}},
 	{VGPU_STATS, {{"stats", no_argument, 0, 's'}, &cmdVgpu::stats, false, ""}},
-	{VGPU_LMEM, {{"lmem", required_argument, 0, 0}, &cmdVgpu::lmem, false, ""}},
+	{VGPU_LMEM, {{"lmem", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
 /**
@@ -131,10 +133,65 @@ ze_result_t cmdVgpu::addKernelParam(UNUSED devInfo *d)
  * @param d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful vGPU creation
  */
-ze_result_t cmdVgpu::create(UNUSED devInfo *d)
+ze_result_t cmdVgpu::create(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	ze_result_t result;
+	DeviceSriovInfo deviceInfo = {};
+	zes_device_ecc_properties_t eccState = {};
+	pci *p = d->dev->getPCI();
+	vf *v = d->dev->getVF();
+	ecc *e = d->dev->getECC();
+
+	try {
+		if (vgpuCmds[vgpuCmdType::VGPU_NUMBER].enabled) {
+			deviceInfo.vGpuNumber = stoi(vgpuCmds[vgpuCmdType::VGPU_NUMBER].val);
+		}
+
+		if (vgpuCmds[vgpuCmdType::VGPU_LMEM].enabled) {
+			deviceInfo.vGpuMemorySize = stoi(vgpuCmds[vgpuCmdType::VGPU_LMEM].val);
+		}
+	} catch (std::invalid_argument &) {
+		ERR("Error: Invalid argument provided for virtual GPU number.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// User must provide both vGpuNumber and vGpuMemorySize
+	if (deviceInfo.vGpuNumber == 0) {
+		ERR("Error: The number of virtual GPUs must be greater than zero.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (deviceInfo.vGpuMemorySize == 0) {
+		ERR("Error: The memory size of each virtual GPU must be greater than zero.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Ensure that we aren't executing from a VF
+	if (p->getFuncType() == devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
+		ERR("Error: Cannot create virtual GPUs from a virtual function (VF).\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	// Fill in some info in deviceInfo that is needed by lower level functions
+	deviceInfo.bdfAddress = p->getBDFStr();
+	deviceInfo.drmPath = d->dev->getDrmDevPath();
+	if (e->getState(d->zesDeviceHdl, &eccState) == ZE_RESULT_SUCCESS) {
+		deviceInfo.eccState = eccState.currentState;
+	}
+
+	// Create the VFs
+	result = v->createVFs(&deviceInfo);
+
+	if (result == 0) {
+		PRINT("Successfully created %d virtual GPUs with %" PRIu64 " MiB memory each on device %s.\n",
+			  deviceInfo.vGpuNumber, deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
+	} else {
+		ERR("Failed to create virtual GPUs on device %s.\n", p->getBDFStr().c_str());
+	}
+
+	return result == 0 ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
 }
 
 /**
@@ -177,21 +234,6 @@ ze_result_t cmdVgpu::listGpus(UNUSED devInfo *d)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful statistics retrieval
  */
 ze_result_t cmdVgpu::stats(UNUSED devInfo *d)
-{
-	TRACING();
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Manages local memory configuration for virtual GPU instances
- *
- * This function handles local memory allocation and configuration for vGPU instances.
- * Currently implemented as a placeholder for future vGPU memory management functionality.
- *
- * @param d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful memory configuration
- */
-ze_result_t cmdVgpu::lmem(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -285,6 +327,14 @@ int cmdVgpu::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// If create, delete or list commands are provided, then the user must also provide a device as well
+	if ((vgpuCmds[vgpuCmdType::VGPU_CREATE].enabled || vgpuCmds[vgpuCmdType::VGPU_REMOVE].enabled ||
+		 vgpuCmds[vgpuCmdType::VGPU_LIST].enabled) &&
+		!vgpuCmds[vgpuCmdType::VGPU_DEVICE].enabled) {
+		ERR("Error: Create/Remove/List require a device to be provided as a command line option.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	result = args->sm.findDevice(vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str());
@@ -297,9 +347,10 @@ int cmdVgpu::run(arg_struct *args)
 		for (const auto &cmd : vgpuCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
 				DBG("Running command: %s\n", cmd.second.opt.name);
-				(this->*cmd.second.func)(&device);
+				result = (this->*cmd.second.func)(&device);
+				break;
 			}
 		}
 	}
-	return 0;
+	return result;
 }

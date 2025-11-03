@@ -164,6 +164,7 @@ static SystemCommandResult execCommand(const std::string &command)
 	};
 	using safePipe = std::unique_ptr<FILE, PipeDeleter>;
 	int exitcode = -1;
+	bool readSuccess = true;
 	safePipe pipe(popen(command.c_str(), "r"), PipeDeleter(&exitcode));
 	if (pipe != nullptr) {
 		try {
@@ -178,12 +179,21 @@ static SystemCommandResult execCommand(const std::string &command)
 				return SystemCommandResult("Unexpected read termination", -1); // Not sure
 			}
 		} catch (...) {
-			return SystemCommandResult("Read error", -1);
+			readSuccess = false;
 		}
 	}
-	// RAII/custom deleter will close the pipe and reset the exitcode
+	// RAII/custom deleter will close the pipe and set the exitcode
 	pipe.reset();
-	return SystemCommandResult(result, WEXITSTATUS(exitcode));
+	// If there was a read error, override the exitcode
+	if (!readSuccess) {
+		exitcode = -1;
+	}
+	// Only call WEXITSTATUS if exitcode is valid (not -1)
+	if (exitcode == -1) {
+		return SystemCommandResult(result, exitcode);
+	} else {
+		return SystemCommandResult(result, WEXITSTATUS(exitcode));
+	}
 }
 
 /**
