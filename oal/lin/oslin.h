@@ -61,6 +61,7 @@ typedef wchar_t TCHAR;
 #define CHECKPERMISSION() checkPermission()
 #define CHECKPROCESSEXCLUSIVE(processId) checkProcessExclusive(processId)
 #define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
+#define REMOVEVFS(deviceInfoPtr) removeAllVFs(deviceInfoPtr)
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
@@ -97,5 +98,6 @@ bool checkPermission();
 bool checkProcessExclusive(uint32_t processId);
 std::string getDrmPath(const std::string &bdf);
 int linCreateVFs(DeviceSriovInfo *di);
+int removeAllVFs(DeviceSriovInfo *di);
 
 #endif

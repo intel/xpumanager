@@ -681,3 +681,42 @@ int linCreateVFs(DeviceSriovInfo *di)
 	}
 	return createVfInternal(cardName, di->bdfAddress, attrs, di->vGpuNumber, di->vGpuMemorySize) ? 0 : -1;
 }
+
+/**
+ * @brief Remove all Virtual Functions from a SRIOV device
+ *
+ * Disables all VFs by setting sriov_numvfs to 0, which automatically
+ * deallocates all VF resources and makes them available to the PF again.
+ *
+ * @param[in] devInfo Pointer to DeviceSriovInfo structure containing device information
+ * @return int 0 on success, -1 on failure
+ */
+int removeAllVFs(DeviceSriovInfo *devInfo)
+{
+	TRACING();
+	std::stringstream iovPath, numvfsPath;
+	std::string numVfsString;
+	AttrFromConfigFile zeroAttr = {};
+
+	// Disable all VFs by setting sriov_numvfs to 0
+	numvfsPath << "/sys/bus/pci/devices/" << devInfo->bdfAddress << "/sriov_numvfs";
+	if (readFile(numvfsPath.str(), numVfsString) != 0) {
+		return -1;
+	}
+	if (writeFile(numvfsPath.str(), "0") != 0) {
+		return -1;
+	}
+
+	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + devInfo->bdfAddress;
+	int numVfs = std::stoi(numVfsString);
+
+	try {
+		for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
+			writeVfAttrToSysfs(debugfsPath + "/gt0/vf" + std::to_string(functionIndex), zeroAttr, 0);
+		}
+	} catch (std::ios::failure &) {
+		return -1;
+	}
+
+	return 0;
+}
