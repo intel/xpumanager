@@ -200,13 +200,28 @@ ze_result_t cmdVgpu::create(devInfo *d)
  * This function implements the logic to remove an existing vGPU instance.
  * Currently implemented as a placeholder for future vGPU removal functionality.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful vGPU removal
  */
-ze_result_t cmdVgpu::remove(UNUSED devInfo *d)
+ze_result_t cmdVgpu::remove(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	int result;
+	DeviceSriovInfo deviceInfo = {};
+	vf *vfHandle = d->dev->getVF();
+	pci *pciHandle = d->dev->getPCI();
+
+	deviceInfo.bdfAddress = pciHandle->getBDFStr();
+	deviceInfo.drmPath = d->dev->getDrmDevPath();
+
+	// Remove the VFs
+	result = vfHandle->removeVFs(&deviceInfo);
+	if (result == 0) {
+		PRINT("Successfully removed virtual GPUs on device %s.\n", pciHandle->getBDFStr().c_str());
+	} else {
+		ERR("Failed to remove virtual GPUs on device %s.\n", pciHandle->getBDFStr().c_str());
+	}
+	return result == 0 ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
 }
 
 /**

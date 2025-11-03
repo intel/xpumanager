@@ -278,6 +278,27 @@ ze_result_t vf::createVFs(DeviceSriovInfo *deviceInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/*
+ * @brief Removes Virtual Functions (VFs) for a device
+ *
+ * This function deallocates and cleans up Virtual Functions for the specified
+ * device, disabling SR-IOV capabilities and resource management.
+ *
+ * @param[in] deviceInfo Pointer to the device information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful VF removal, error code otherwise
+ */
+ze_result_t vf::removeVFs(DeviceSriovInfo *deviceInfo)
+{
+	TRACING();
+
+	/* Call OAL Macro for removing VFs */
+	if (REMOVEVFS(deviceInfo)) {
+		ERR("Failed to remove VFs.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
 /**
  * @brief Initializes the Virtual Function management module for a device
  *
