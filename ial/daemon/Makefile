@@ -15,7 +15,7 @@ DAEMONNAME=xpumd
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
-export LIBS=-L$(HALCORE) -lxpum -L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc -lhwloc -lcurl
+export LIBS=-L$(HALCORE) -lxpum -L$(LEVELZERO)/build/lib -lze_loader -L$(IGSC)/build/lib -ligsc -lhwloc -lcurl -lpciaccess
 export INCLUDES=-I. -I$(CMNDIR) -I$(OALROOTDIR) -I$(OALDIR) -I$(HALCORE) -I$(FWDIR) -I$(LEVELZERO)/include -I$(IGSC)/include -I../third_party
 export CFLAGS=-c -Wall -Wextra -Werror -pedantic -std=c++20
 export SOURCES := $(wildcard $(SRCDIR)/*.cpp)

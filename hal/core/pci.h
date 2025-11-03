@@ -26,16 +26,9 @@
 
 #include "sysman.h"
 #include <string>
+#include <osvf.h>
 
 #define BDF_STR_LEN 64
-
-enum devFuncType
-{
-	DEVICE_FUNCTION_TYPE_UNKNOWN,
-	DEVICE_FUNCTION_TYPE_VIRTUAL,
-	DEVICE_FUNCTION_TYPE_PHYSICAL,
-	DEVICE_FUNCTION_TYPE_ALL,
-};
 
 typedef struct pci_addr_mei_device
 {

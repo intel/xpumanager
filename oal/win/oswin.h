@@ -104,6 +104,7 @@ struct option
 #define CHECKPERMISSION() 0
 #define CHECKPROCESSEXCLUSIVE(processId) (UNUSED_VAR(processId), false)
 #define GETDRMPATH(bdf) ""
+#define CREATEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;

@@ -25,6 +25,7 @@
 #define _VF_H
 
 #include "sysman.h"
+#include <osvf.h>
 
 class LIBXPUM_API vf : public sysman
 {
@@ -40,6 +41,7 @@ public:
 	ze_result_t getVFCapabilities(zes_vf_handle_t vfHandle);
 	ze_result_t getVFMemoryUtilization(zes_vf_handle_t vfHandle);
 	ze_result_t getVFEngineUtilization(zes_vf_handle_t vfHandle);
+	ze_result_t createVFs(DeviceSriovInfo *deviceInfo);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

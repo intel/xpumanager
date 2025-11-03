@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <vector>
+#include <osvf.h>
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
@@ -59,6 +60,7 @@ typedef wchar_t TCHAR;
 #define GETDRMPATH(bdf) getDrmPath(bdf)
 #define CHECKPERMISSION() checkPermission()
 #define CHECKPROCESSEXCLUSIVE(processId) checkProcessExclusive(processId)
+#define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
@@ -94,5 +96,6 @@ int getLinLogs(const std::string &fileName);
 bool checkPermission();
 bool checkProcessExclusive(uint32_t processId);
 std::string getDrmPath(const std::string &bdf);
+int linCreateVFs(DeviceSriovInfo *di);
 
 #endif

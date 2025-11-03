@@ -22,6 +22,7 @@
  *
  */
 #include "vf.h"
+#include <osvf.h>
 
 /**
  * @brief Destructor for the Virtual Function (VF) class
@@ -254,6 +255,27 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 	DBG("  - VF Sampling counter value: %" PRIu64 "\n", engineUtil.samplingCounterValue);
 
 	return result;
+}
+
+/*
+ * @brief Creates Virtual Functions (VFs) for a device
+ *
+ * This function allocates and initializes Virtual Functions for the specified
+ * device, enabling SR-IOV capabilities and resource management.
+ *
+ * @param[in] deviceInfo Pointer to the device information structure
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful VF creation, error code otherwise
+ */
+ze_result_t vf::createVFs(DeviceSriovInfo *deviceInfo)
+{
+	TRACING();
+
+	/* Call OAL Macro for creating VFs */
+	if (CREATEVFS(deviceInfo)) {
+		ERR("Failed to create VFs.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
