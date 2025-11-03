@@ -103,6 +103,8 @@ struct option
 #define GETLOGS(f) 0
 #define CHECKPERMISSION() 0
 #define CHECKPROCESSEXCLUSIVE(processId) (UNUSED_VAR(processId), false)
+#define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult)                                                          \
+	(UNUSED_VAR(bdfStr), UNUSED_VAR(functionalCheck), UNUSED_VAR(finalResult), false)
 #define GETDRMPATH(bdf) ""
 #define CREATEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define REMOVEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)

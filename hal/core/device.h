@@ -139,6 +139,7 @@ public:
 
 	ze_result_t getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_group_properties_t **zeCmdQueueProps,
 								 uint32_t *cmdQueuePropsCount);
+	int32_t getCmdQueuePropsCount() { return deviceProperties.cmdQueuePropsCount; }
 	ze_result_t getMemProps(ze_device_handle_t dev, ze_device_memory_properties_t **zeMemProps,
 							uint32_t *memPropsCount);
 	ze_result_t getCacheProps(ze_device_handle_t dev, ze_device_cache_properties_t **zeCacheProps,

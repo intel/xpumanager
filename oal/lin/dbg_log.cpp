@@ -1,24 +1,8 @@
 /*
- * Copyright © 2025 Intel Corporation
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Copyright (C) 2025 Intel Corporation
  *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  *
  */
 
@@ -33,6 +17,7 @@
 #include <debug.h>
 #include <cstring>
 #include <cerrno>
+#include "lin.h"
 
 #define ERR_UUID -1
 #define ERR_TMP_DIR -2
@@ -101,100 +86,6 @@ public:
 	explicit operator bool() const { return created_successfully; }
 };
 } // namespace
-
-/**
- * @brief A class to encapsulate the result of executing a system command
- *
- * This class stores both the output and exit status of a system command
- * execution, providing a clean interface to access command results.
- * It's used by the execCommand function to return structured results.
- */
-class SystemCommandResult
-{
-	std::string _output;
-	int _exitStatus;
-
-public:
-	SystemCommandResult(std::string &cmd_output, int cmd_exit_status)
-	{
-		_output = cmd_output;
-		_exitStatus = cmd_exit_status;
-	}
-
-	SystemCommandResult(const std::string &cmd_output, int cmd_exit_status)
-	{
-		_output = cmd_output;
-		_exitStatus = cmd_exit_status;
-	}
-
-	const std::string &output() { return _output; }
-
-	int exitStatus() { return _exitStatus; }
-};
-
-/**
- * @brief Execute a system command and capture its output
- *
- * This function executes a shell command using popen and captures both
- * the output and exit status. It provides a safer alternative to system()
- * by capturing output and providing proper error handling with RAII.
- *
- * @param command The shell command to execute
- * @return SystemCommandResult containing the command output and exit status
- *
- * @note Uses RAII with custom deleter for automatic pipe cleanup
- * @note Provides enhanced error handling for I/O operations
- * @note Uses std::fread for efficient buffer reading
- */
-static SystemCommandResult execCommand(const std::string &command)
-{
-	std::array<char, 1048576> buffer = {};
-	std::string result;
-	// Custom deleter for pipe(), ensures it is always closed automatically on error
-	struct PipeDeleter
-	{
-		int *exit_code;
-		explicit PipeDeleter(int *ec) : exit_code(ec) {}
-		void operator()(FILE *f) const noexcept
-		{
-			if (f && exit_code) {
-				*exit_code = pclose(f);
-			}
-		}
-	};
-	using safePipe = std::unique_ptr<FILE, PipeDeleter>;
-	int exitcode = -1;
-	bool readSuccess = true;
-	safePipe pipe(popen(command.c_str(), "r"), PipeDeleter(&exitcode));
-	if (pipe != nullptr) {
-		try {
-			std::size_t bytesread;
-			while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe.get())) != 0) {
-				result += std::string(buffer.data(), bytesread);
-			}
-			// std::fread returns 0 both when EOF is reached and when some I/O error occurred. Check for completeness
-			if (std::ferror(pipe.get())) {
-				return SystemCommandResult{"I/O error", -1}; // Not sure;
-			} else if (!std::feof(pipe.get())) {
-				return SystemCommandResult("Unexpected read termination", -1); // Not sure
-			}
-		} catch (...) {
-			readSuccess = false;
-		}
-	}
-	// RAII/custom deleter will close the pipe and set the exitcode
-	pipe.reset();
-	// If there was a read error, override the exitcode
-	if (!readSuccess) {
-		exitcode = -1;
-	}
-	// Only call WEXITSTATUS if exitcode is valid (not -1)
-	if (exitcode == -1) {
-		return SystemCommandResult(result, exitcode);
-	} else {
-		return SystemCommandResult(result, WEXITSTATUS(exitcode));
-	}
-}
 
 /**
  * @brief Safely copies a file while handling special kernel debug files

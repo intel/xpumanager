@@ -27,6 +27,9 @@
 #include <fstream>
 #include <algorithm>
 #include <filesystem>
+#include <thread>
+#include <cmath>
+#include <chrono>
 #include "diagnostic.h"
 #include "file_io.h"
 
@@ -52,7 +55,7 @@ diagnostic::~diagnostic()
  * the specified device. Diagnostic test suites provide comprehensive hardware
  * validation and health checking capabilities for GPU components.
  *
- * @param device Handle to the Level Zero Sysman device
+ * @param[in] device Handle to the Level Zero Sysman device
  * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
  */
 ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
@@ -83,7 +86,7 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
  * specific diagnostic test suite, including suite name, type, test availability,
  * and subdevice association information for comprehensive diagnostic analysis.
  *
- * @param testSuite Handle to the specific diagnostic test suite
+ * @param[in] testSuite Handle to the specific diagnostic test suite
  * @return ze_result_t ZE_RESULT_SUCCESS on successful property retrieval, error code otherwise
  */
 ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
@@ -110,8 +113,8 @@ ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
  * execution period and total throughput measurements. It provides performance
  * calculation capabilities for diagnostic bandwidth tests.
  *
- * @param period Execution time period in appropriate units
- * @param total_gbps Total throughput measurement
+ * @param[in] period Execution time period in appropriate units
+ * @param[in] total_gbps Total throughput measurement
  * @return long double Calculated bandwidth in GBPS, or maximum value if period is near zero
  */
 long double calculateGbps(long double period, long double total_gbps)
@@ -122,6 +125,31 @@ long double calculateGbps(long double period, long double total_gbps)
 	else {
 		return std::numeric_limits<long double>::max();
 	}
+}
+
+/**
+ * @brief Calculates bandwidth and latency from timing measurements.
+ *
+ * This utility function computes bandwidth (in gigabytes per second) and latency (in microseconds)
+ * based on execution time and total data transfer measurements. It is used for diagnostic
+ * bandwidth and latency tests.
+ *
+ * @param[in]  totalTimeNsec      Total execution time in nanoseconds.
+ * @param[in]  totalDataTransfer  Total data transferred in bytes.
+ * @param[out] totalBandwidth     Calculated bandwidth in gigabytes per second.
+ * @param[out] totalLatency       Calculated latency in microseconds.
+ * @param[in]  numberIterations   Number of iterations executed.
+ * @return Calculated bandwidth and latency
+ */
+void calculateBandwidthLatency(long double totalTimeNsec, long double totalDataTransfer, long double &totalBandwidth,
+							   long double &totalLatency, std::size_t numberIterations)
+{
+	long double totalTimeS;
+	totalTimeS = totalTimeNsec / 1e9; /* Units in Seconds */
+	totalDataTransfer /= 1e9L;		  /* Units in Gigabytes */
+
+	totalBandwidth = totalDataTransfer / totalTimeS;
+	totalLatency = totalTimeNsec / (1e3 * static_cast<double>(numberIterations));
 }
 
 /**
@@ -140,18 +168,25 @@ long double calculateGbps(long double period, long double total_gbps)
  * 6. Executes the kernel and measures performance
  * 7. Cleans up resources
  *
- * @param d Pointer to the device information structure containing the device handle and context
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @param[in] flops_per_work_item std::size_t value for flops per work item
+ * @param[in] srcPtr pointer to a specific data type
+ * @param[in] srcSize source size for a specific data type
+ * @param[in] fileName, reference  to a specific data type based SPV file
+ * @param[in] moduleName, reference to a related kernel module name
+ * @param[out] out_gflops, reference to a related output long double flops value
+ * @param[in] functionalCheck, Boolean flag: true for functional testing, false for performance measurement
  * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
  */
-ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
+ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flops_per_work_item, void *srcPtr, size_t srcSize,
+										const std::string &fileName, const std::string &moduleName,
+										long double &out_gflops, bool functionalCheck)
 {
 	TRACING();
 	ze_device_properties_t zeDevProp = {};
 	ze_device_compute_properties_t zeComputeProp = {};
 	ze_result_t result;
 	ze_context_handle_t context = d->dev->getContext();
-	float input_value = 1.3f;
-	bool checkOnly = false;
 	std::vector<long double> all_gflops;
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
@@ -167,9 +202,8 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 	}
 
 	long double timed;
-	std::size_t flops_per_work_item = 4096;
 	std::vector<uint8_t> binary_file;
-	ze_result_t ret = loadBinaryFile("ze_sp_compute.spv", &binary_file);
+	ze_result_t ret = loadBinaryFile(fileName, &binary_file);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
 		return ret;
@@ -182,20 +216,20 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 
 	uint64_t max_work_items = (uint64_t)zeDevProp.numSlices * zeDevProp.numSubslicesPerSlice *
 							  zeDevProp.numEUsPerSubslice * zeComputeProp.maxGroupCountX * 2048;
-	uint64_t max_number_of_allocated_items = zeDevProp.maxMemAllocSize / sizeof(float);
-	uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
+	uint64_t max_number_of_allocated_items = zeDevProp.maxMemAllocSize / srcSize;
+	uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * srcSize));
 	ZeWorkGroups workgroup_info;
 	number_of_work_items = setWorkgroups(&zeComputeProp, number_of_work_items, &workgroup_info);
 
 	void *device_input_value;
-	ret = memoryAlloc(context, d->deviceHdl, sizeof(float), 1, &device_input_value);
+	ret = memoryAlloc(context, d->deviceHdl, srcSize, 1, &device_input_value);
 	if (ret != ZE_RESULT_SUCCESS) {
 		moduleDestroy(module_handle);
 		return ret;
 	}
 
 	void *device_output_buffer;
-	ret = memoryAlloc(context, d->deviceHdl, static_cast<std::size_t>((number_of_work_items * sizeof(float))), 1,
+	ret = memoryAlloc(context, d->deviceHdl, static_cast<std::size_t>(number_of_work_items * srcSize), 1,
 					  &device_output_buffer);
 	if (ret != ZE_RESULT_SUCCESS) {
 		memoryFree(context, device_input_value);
@@ -221,8 +255,7 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 		return ret;
 	}
 
-	ret = zeCommandListAppendMemoryCopy(command_list, device_output_buffer, &input_value, sizeof(float), nullptr, 0,
-										nullptr);
+	ret = zeCommandListAppendMemoryCopy(command_list, device_output_buffer, srcPtr, srcSize, nullptr, 0, nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
 		memoryFree(context, device_input_value);
@@ -251,14 +284,17 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 
 	commandQueueExecuteCommandLists(command_queue, command_list);
 	commandQueueSynchronize(command_queue);
+
 	commandListReset(command_list);
 	ze_kernel_handle_t compute_sp_v1;
-	setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
+	setupFunction(module_handle, compute_sp_v1, moduleName, device_input_value, device_output_buffer);
 
 	timed = 0;
 	// Vector width 1
-	timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, checkOnly);
-	out_gflops = calculateGbps(timed, (long double)number_of_work_items * flops_per_work_item);
+	timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, functionalCheck);
+	if (!functionalCheck) {
+		out_gflops = calculateGbps(timed, (long double)number_of_work_items * flops_per_work_item);
+	}
 	//	all_gflops[i] = std::max(all_gflops[i], current);
 	ret = zeKernelDestroy(compute_sp_v1);
 	if (ret != ZE_RESULT_SUCCESS) {
@@ -356,6 +392,35 @@ ze_result_t diagnostic::memoryAlloc(const ze_context_handle_t context_handle, ze
 	device_desc.flags = 0;
 	ze_result_t ret;
 	ret = zeMemAllocDevice(context_handle, &device_desc, size, alignment, ze_device, ptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Allocates host memory for GPU operations
+ *
+ * This function allocates memory on the GPU device for diagnostic operations,
+ * configuring memory allocation parameters and handling host specific
+ * memory requirements for compute kernels and data buffers.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] size Size of memory to allocate in bytes
+ * @param[in] alignment Memory alignment requirement in bytes
+ * @param[out] ptr Pointer to receive the allocated memory address
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful allocation, error code otherwise
+ */
+ze_result_t diagnostic::memoryAllocHost(const ze_context_handle_t context_handle, size_t size, size_t alignment,
+										void **ptr)
+{
+	ze_host_mem_alloc_desc_t hostDesc = {};
+	hostDesc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
+	hostDesc.pNext = nullptr;
+	hostDesc.flags = 0;
+	ze_result_t ret;
+
+	ret = zeMemAllocHost(context_handle, &hostDesc, size, alignment, ptr);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
 	}
@@ -629,8 +694,8 @@ ze_result_t diagnostic::memoryFree(const ze_context_handle_t &context_handle, co
  * @param[in] input Pointer to input data buffer
  * @param[in] output Pointer to output data buffer
  */
-ze_result_t diagnostic::setupFunction(ze_module_handle_t module_handle, ze_kernel_handle_t &function, const char *name,
-									  void *input, void *output)
+ze_result_t diagnostic::setupFunction(ze_module_handle_t module_handle, ze_kernel_handle_t &function,
+									  const std::string &name, void *input, void *output)
 {
 	ze_result_t ret = kernelCreate(module_handle, name, &function);
 	if (ret != ZE_RESULT_SUCCESS) {
@@ -736,13 +801,192 @@ long double diagnostic::runKernel(ze_command_queue_handle_t command_queue, ze_co
 }
 
 /**
+ * @brief calculate Power Consumption on a device
+ *
+ * This function calculate Power Consumption test on the specified device using Level Zero APIs.
+ *
+ * The test:
+ * 1. Retrieves device power, power domain count ad related power handles
+ * 2. For each power domain, takes two power measurements.
+ * 3. calculate summary of all the device and sub device domain power values.
+ * 4. Return the maximum of them
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @param[out] totalPowerValue indicate the power value for the device
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
+ */
+ze_result_t diagnostic::calculatePowerConsumption(devInfo *d, int &totalPowerValue)
+{
+	ze_result_t ret;
+	zes_power_properties_t props = {};
+	zes_power_ext_properties_t extProps = {};
+	props.pNext = &extProps;
+	props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+	extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+	zes_power_energy_counter_t snap1, snap2;
+	int value;
+	uint32_t powerDomainCount;
+	zes_pwr_handle_t *powerHandles;
+	int currentDevicePowerValueSum = 0;
+	int currentSubDevicePowerValueSum = 0;
+
+	power *pwr = d->dev->getPower();
+	if (pwr == nullptr) {
+		ERR("Error: Power pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	powerDomainCount = pwr->getPowerCount();
+	powerHandles = pwr->getPowerHandles();
+	for (uint32_t i = 0; i < powerDomainCount; ++i) {
+		ret = pwr->getProperties(powerHandles[i], &props, &extProps);
+		if (ret != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		if (extProps.domain != ZES_POWER_DOMAIN_PACKAGE)
+			continue;
+
+		ret = pwr->getEnergyCounter(powerHandles[i], &snap1);
+		if (ret == ZE_RESULT_SUCCESS) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			ret = pwr->getEnergyCounter(powerHandles[i], &snap2);
+			if (ret == ZE_RESULT_SUCCESS) {
+				value = static_cast<int>(std::ceil(static_cast<double>(snap2.energy - snap1.energy) * 1.0 /
+												   static_cast<double>(snap2.timestamp - snap1.timestamp)));
+				if (!props.onSubdevice) {
+					currentDevicePowerValueSum += value;
+				} else {
+					currentSubDevicePowerValueSum += value;
+				}
+			}
+		}
+	}
+	totalPowerValue = std::max(currentDevicePowerValueSum, currentSubDevicePowerValueSum);
+	DBG("update peak power value: %d\n", totalPowerValue);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Performs a pcie Bandwidth test on a device.
+ *
+ * This function executes Command Queue Groups test on the specified device using Level Zero APIs.
+ * It loads and executes that performs the command queue lists in each copy Engine Group in iteration way,
+ * then measures the pcie bandwidth & Latency.
+ * The test:
+ * 1. Retrieves device command queue group properties
+ * 2. For each group item, creates necessary memory allocations
+ * 3. For each group item, sets up command lists and queues
+ * 4. For each group item, execute Command Lists in iteration way
+ * 5. For each group item, measures pcie Bandwidth & Latency
+ * 6. Cleans up resources
+ * 7. repeat the same setup and measure for all the group item and
+ *    get the total bandwidth & Latency
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @param[out] totalBandwidth  long double for the device pcie total bandwidth information
+ * @param[out] totalLatency long double for the device pcie total latency information
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
+ */
+ze_result_t diagnostic::pcieBandwidthTest(devInfo *d, long double &totalBandwidth, long double &totalLatency)
+{
+	TRACING();
+
+	uint32_t cmdQueuePropsCount;
+	ze_result_t ret;
+	ze_context_handle_t context = d->dev->getContext();
+	long double tBandwidth = 0.0;
+	long double tLatency = 0.0;
+	long double allBandwidth = 0.0;
+	long double allLatency = 0.0;
+
+	cmdQueuePropsCount = d->dev->getCmdQueuePropsCount();
+	if (cmdQueuePropsCount == 0) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	for (uint32_t copyEngineGroupId = 0; copyEngineGroupId < cmdQueuePropsCount; ++copyEngineGroupId) {
+		ze_command_list_handle_t commandList;
+		ret = commandListCreate(context, d->deviceHdl, copyEngineGroupId, &commandList,
+								ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY);
+		if (ret != ZE_RESULT_SUCCESS) {
+			return ret;
+		}
+
+		ze_command_queue_handle_t commandQueue;
+
+		ret = commandQueueCreate(context, d->deviceHdl, copyEngineGroupId, 0, &commandQueue,
+								 ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
+		if (ret != ZE_RESULT_SUCCESS) {
+			return ret;
+		}
+
+		std::size_t size = 1 << 28;
+		void *deviceBuffer;
+		void *hostBuffer;
+
+		ret = memoryAlloc(context, d->deviceHdl, size, 1, &deviceBuffer);
+		if (ret != ZE_RESULT_SUCCESS) {
+			return ret;
+		}
+		ret = memoryAllocHost(context, size, 1, &hostBuffer);
+		if (ret != ZE_RESULT_SUCCESS) {
+			return ret;
+		}
+
+		uint32_t nIterations = 500;
+		long double totalTimeNsec = 0.0;
+		std::size_t elementSize = sizeof(uint8_t);
+		std::size_t bufferSize = elementSize * size;
+		ret = zeCommandListAppendMemoryCopy(commandList, deviceBuffer, hostBuffer, bufferSize, nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
+			memoryFree(context, deviceBuffer);
+			memoryFree(context, hostBuffer);
+			return ret;
+		}
+
+		ret = zeCommandListClose(commandList);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+			memoryFree(context, deviceBuffer);
+			memoryFree(context, hostBuffer);
+			return ret;
+		}
+
+		std::chrono::high_resolution_clock::time_point timeStart, timeEnd;
+		timeStart = std::chrono::high_resolution_clock::now();
+		for (uint32_t i = 0; i < nIterations; i++) {
+			commandQueueExecuteCommandLists(commandQueue, commandList);
+			commandQueueSynchronize(commandQueue);
+		}
+		timeEnd = std::chrono::high_resolution_clock::now();
+		totalTimeNsec =
+			std::chrono::duration<long double, std::chrono::nanoseconds::period>(timeEnd - timeStart).count();
+
+		ret = zeCommandListDestroy(commandList);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying command list: %s\n", l0_error_to_string(ret));
+		}
+		ret = zeCommandQueueDestroy(commandQueue);
+		memoryFree(context, deviceBuffer);
+		memoryFree(context, hostBuffer);
+		calculateBandwidthLatency(totalTimeNsec, static_cast<long double>(size * nIterations), tBandwidth, tLatency,
+								  nIterations);
+		allBandwidth = allBandwidth + tBandwidth;
+		allLatency = allLatency + tLatency;
+	}
+	totalBandwidth = allBandwidth;
+	totalLatency = allLatency;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Gets available tests within a diagnostic test suite
  *
  * This function retrieves all individual diagnostic tests available within
  * a specific test suite, providing detailed information about test indices
  * and names for comprehensive hardware validation capabilities.
  *
- * @param testSuite Handle to the specific diagnostic test suite
+ * @param[in] testSuite Handle to the specific diagnostic test suite
  * @return int Number of test suites available, or 0 on error
  */
 int diagnostic::getTests(zes_diag_handle_t testSuite)
@@ -778,8 +1022,8 @@ int diagnostic::getTests(zes_diag_handle_t testSuite)
  * performing comprehensive hardware validation and health checking to ensure
  * device functionality and identify potential issues.
  *
- * @param testSuite Handle to the specific diagnostic test suite
- * @param testCount Number of tests to execute within the suite
+ * @param[in] testSuite Handle to the specific diagnostic test suite
+ * @param[in] testCount Number of tests to execute within the suite
  * @return ze_result_t ZE_RESULT_SUCCESS on successful test execution, error code otherwise
  */
 ze_result_t diagnostic::runTests(zes_diag_handle_t testSuite, uint32_t testCount)
@@ -802,7 +1046,7 @@ ze_result_t diagnostic::runTests(zes_diag_handle_t testSuite, uint32_t testCount
  * enumeration, property retrieval, test discovery, and test execution for
  * thorough hardware validation and device health assessment.
  *
- * @param device Handle to the device for diagnostic operations
+ * @param[in] device Handle to the device for diagnostic operations
  * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
  */
 ze_result_t diagnostic::zesRun(zes_device_handle_t device)

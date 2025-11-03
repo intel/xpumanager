@@ -25,11 +25,20 @@
 #include "cmd_diag.h"
 #include "debug.h"
 #include <pci.h>
-#include <assert.h>
+#include <power.h>
 #include <chrono>
+#include <thread>
+#include <cmath>
 #include <fstream>
 #include <sys/stat.h>
-
+#include <assert.h>
+#include <ecc.h>
+#include <fabric.h>
+#include <frequency.h>
+#include <scheduler.h>
+#include <performance.h>
+#include <standby.h>
+#include <stdexcept>
 /*
  * @brief Command structure for diagnostic commands.
  * The way that this structure is defined allows for easy addition of new commands
@@ -67,53 +76,53 @@ std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevel
 		{diagLevel::LEVEL_1,
 		 {
 			 {
-				 DIAG_SW_LIBRARY,
+				 DIAG_LEVEL_SW_LIBRARY,
 				 {&cmdDiag::checkLibrary, "Software Library", true},
 			 },
 			 {
-				 DIAG_SW_PERMISSION,
+				 DIAG_LEVEL_SW_PERMISSION,
 				 {&cmdDiag::checkAccessPermission, "Software Permission", true},
 			 },
 			 {
-				 DIAG_SW_EXCLUSIVE,
+				 DIAG_LEVEL_SW_EXCLUSIVE,
 				 {&cmdDiag::checkExclusive, "Software Exclusive", true},
 			 },
 			 {
-				 DIAG_COMPUTATIONFUNCTEST,
+				 DIAG_LEVEL_COMPUTATIONFUNCTEST,
 				 {&cmdDiag::computationFuncTest, "Computation Check", true},
 			 },
 		 }},
 		{diagLevel::LEVEL_2,
 		 {
 			 {
-				 DIAG_PCIEBANDWIDTH,
+				 DIAG_LEVEL_PCIEBANDWIDTH,
 				 {&cmdDiag::pcieBandwidth, "Integration PCIe", true},
 			 },
 			 {
-				 DIAG_MEDIA,
+				 DIAG_LEVEL_MEDIA,
 				 {&cmdDiag::mediaFuncTest, "Media Codec", true},
 			 },
 		 }},
 		{diagLevel::LEVEL_3,
 		 {
 			 {
-				 DIAG_COMPUTATION,
+				 DIAG_LEVEL_COMPUTATION,
 				 {&cmdDiag::computation, "Performance Computation", true},
 			 },
 			 {
-				 DIAG_POWER,
-				 {&cmdDiag::power, "Performance Power", true},
+				 DIAG_LEVEL_POWER,
+				 {&cmdDiag::powerTest, "Performance Power", true},
 			 },
 			 {
-				 DIAG_MEMORYBANDWIDTH,
+				 DIAG_LEVEL_MEMORYBANDWIDTH,
 				 {&cmdDiag::memoryBandwidth, "Performance Memory Bandwidth", true},
 			 },
 			 {
-				 DIAG_MEMORYALLOCATION,
+				 DIAG_LEVEL_MEMORYALLOCATION,
 				 {&cmdDiag::memoryAllocation, "Performance Memory Allocation", true},
 			 },
 			 {
-				 DIAG_MEMORYERROR,
+				 DIAG_LEVEL_MEMORYERROR,
 				 {&cmdDiag::memoryError, "Memory Error", true},
 			 },
 		 }},
@@ -222,8 +231,8 @@ void cmdDiag::help(HELP helpType)
  * This function prints preliminary validation and system check info
  * It validates prerequisites and system state before running intensive tests.
  *
- * @param d Pointer to device information structure
- * @param gpuOnly bool to indicate if GPU only or not
+ * @param[in] d Pointer to device information structure
+ * @param[in] gpuOnly bool to indicate if GPU only or not
  * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
  */
 ze_result_t cmdDiag::printPrecheckInfo(devInfo *d, bool gpuOnly)
@@ -291,7 +300,7 @@ ze_result_t cmdDiag::printPrecheckInfo(devInfo *d, bool gpuOnly)
  * the device and system are ready for comprehensive diagnostic testing.
  * It validates prerequisites and system state before running intensive tests.
  *
- * @param d Pointer to device information structure
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
  */
 ze_result_t cmdDiag::precheck(devInfo *d)
@@ -320,7 +329,7 @@ ze_result_t cmdDiag::precheck(devInfo *d)
  * stability and performance under heavy computational loads. It helps
  * identify potential hardware issues and thermal limitations.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if stress tests pass, error code otherwise
  */
 ze_result_t cmdDiag::stress(UNUSED devInfo *d)
@@ -338,7 +347,7 @@ ze_result_t cmdDiag::stress(UNUSED devInfo *d)
  * 2. Make sure firmware get loaded and work in normal state.
  * 3. Make sure all the driver & related library get loaded properly.
  *
- * @param d Pointer to device information structure
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
  */
 ze_result_t cmdDiag::checkLibrary(devInfo *d)
@@ -368,11 +377,10 @@ ze_result_t cmdDiag::checkLibrary(devInfo *d)
  * 2. check if there is any entry name under the /dev/dri, which has the prefix with "renderD"
  *    and after are all digits and can be accessed or not
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
  */
 ze_result_t cmdDiag::checkAccessPermission(UNUSED devInfo *d)
-
 {
 	if (!CHECKPERMISSION()) {
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -391,7 +399,7 @@ ze_result_t cmdDiag::checkAccessPermission(UNUSED devInfo *d)
  * 3. check if all these process related stream files, which have names with "/proc/" + std::to_string(processId)
  *    + "/cmdline" have healthy states and ready for i/o operations.
  *
- * @param d Pointer to device information structure
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
  */
 ze_result_t cmdDiag::checkExclusive(devInfo *d)
@@ -427,7 +435,7 @@ ze_result_t cmdDiag::checkExclusive(devInfo *d)
  * ensuring it falls within the valid range (1-3). Each level represents different
  * test intensity: 1 for quick tests, 2 for medium tests, 3 for comprehensive tests.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if level is valid, error code otherwise
  */
 ze_result_t cmdDiag::level(UNUSED devInfo *d)
@@ -497,40 +505,35 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
  * the --singletest parameter. It maps test IDs to corresponding test functions
  * and executes the requested diagnostic test on the specified device.
  *
- * @param d Pointer to device information structure containing device context
+ * @param[in] d Pointer to device information structure containing device context
  * @return ze_result_t ZE_RESULT_SUCCESS if test completes successfully, error code otherwise
  */
 ze_result_t cmdDiag::runSingleTest(devInfo *d)
 {
 	TRACING();
-
-	// Map user-facing test IDs (1-10) to enum values
-	static const std::vector<std::pair<diagSubCmdType, diagSubCmdStruct>> diagSingleTests = {
-		{DIAG_COMPUTATION, {&cmdDiag::computation}},
-		{DIAG_MEMORYERROR, {&cmdDiag::memoryError}},
-		{DIAG_MEMORYBANDWIDTH, {&cmdDiag::memoryBandwidth}},
-		{DIAG_MEDIA, {&cmdDiag::mediaCodec}},
-		{DIAG_PCIEBANDWIDTH, {&cmdDiag::pcieBandwidth}},
-		{DIAG_POWER, {&cmdDiag::power}},
-		{DIAG_COMPUTATIONFUNCTEST, {&cmdDiag::computationFuncTest}},
-		{DIAG_MEDIAFUNCTEST, {&cmdDiag::mediaFuncTest}},
-		{DIAG_XELINKTHROUGHPUT, {&cmdDiag::xeLinkThroughput}},
-		{DIAG_XELINKALLTOALLTHROUGHPUT, {&cmdDiag::xeLinkAllToAllThroughput}},
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	static std::unordered_map<diagSubSingleCmdType, diagSubSingleCmdStruct> diagSingleTests = {
+		{DIAG_SINGLE_COMPUTATION, {&cmdDiag::computation}},
+		{DIAG_SINGLE_MEMORYERROR, {&cmdDiag::memoryError}},
+		{DIAG_SINGLE_MEMORYBANDWIDTH, {&cmdDiag::memoryBandwidth}},
+		{DIAG_SINGLE_MEDIA, {&cmdDiag::mediaCodec}},
+		{DIAG_SINGLE_PCIEBANDWIDTH, {&cmdDiag::pcieBandwidth}},
+		{DIAG_SINGLE_POWER, {&cmdDiag::powerTest}},
+		{DIAG_SINGLE_COMPUTATIONFUNCTEST, {&cmdDiag::computationFuncTest}},
+		{DIAG_SINGLE_MEDIAFUNCTEST, {&cmdDiag::mediaFuncTest}},
+		{DIAG_SINGLE_XELINKTHROUGHPUT, {&cmdDiag::xeLinkThroughput}},
+		{DIAG_SINGLE_XELINKALLTOALLTHROUGHPUT, {&cmdDiag::xeLinkAllToAllThroughput}},
 	};
 
-	// Debug helper - makes it easier to inspect in GDB
-	diagCmdStruct &debug_cmd = diagCmds[diagCmdType::SINGLETEST];
-	int testId = stoi(debug_cmd.val);
-
-	// Validate test ID and use it as array index (1-based user input to 0-based index)
-	if (testId < 1 || testId > static_cast<int>(diagSingleTests.size())) {
-		ERR("Invalid singletest id: %d. Valid options are 1 to %zu.\n", testId, diagSingleTests.size());
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	for (const auto &test : diagSingleTests) {
+		if (test.first == stoi(diagCmds[diagCmdType::SINGLETEST].val)) {
+			DBG("Running test: %d\n", test.first);
+			result = (this->*test.second.func)(d);
+			break;
+		}
 	}
 
-	// Execute the test function using 0-based indexing
-	DBG("Running test: %d\n", testId);
-	return (this->*diagSingleTests[testId - 1].second.func)(d);
+	return result;
 }
 
 /**
@@ -540,12 +543,19 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d)
  * in terms of GFLOPS. It loads a SPIR-V kernel, allocates necessary device memory, sets up and launches
  * the kernel, and reports the measured performance.
  *
- * @param d Pointer to the device information structure.
+ * @param[in] d Pointer to the device information structure.
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success, or an appropriate error code on failure.
  */
 ze_result_t cmdDiag::computation(devInfo *d)
 {
 	TRACING();
+
+	const std::string fileName = "ze_sp_compute.spv";
+	const std::string moduleName = "compute_sp_v1";
+	float input_value = 1.3f;
+	bool featureOnly;
+	long double current;
+
 	// Call into HAL to perform computation test
 	diagnostic *diag = d->dev->getDiagnostic();
 	if (diag == nullptr) {
@@ -553,15 +563,23 @@ ze_result_t cmdDiag::computation(devInfo *d)
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	long double current;
-	ze_result_t res = diag->computationTest(d, current);
-	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Computation test failed: %s\n", l0_error_to_string(res));
-		return res;
+	featureOnly = false;
+	ze_result_t res =
+		diag->computationTest(d, 4096, &input_value, sizeof(float), fileName, moduleName, current, featureOnly);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (res != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check computation.\n");
+			ERR("Computation test failed: %s\n", l0_error_to_string(res));
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to check computation.\n");
+			if (!featureOnly) {
+				PRINT("Computation test completed with %Lf GFLOPS.\n", current);
+			}
+		}
 	}
-
-	PRINT("Computation test completed with %Lf GFLOPS.\n", current);
-	return ZE_RESULT_SUCCESS;
+	return res;
 }
 
 /**
@@ -571,7 +589,7 @@ ze_result_t cmdDiag::computation(devInfo *d)
  * checking for memory corruption, ECC errors, and memory integrity issues.
  * It validates GPU memory subsystem reliability and health.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if memory tests pass, error code otherwise
  */
 ze_result_t cmdDiag::memoryError(UNUSED devInfo *d)
@@ -587,7 +605,7 @@ ze_result_t cmdDiag::memoryError(UNUSED devInfo *d)
  * memory-intensive kernels and calculating throughput metrics. It validates
  * memory subsystem performance and identifies potential bandwidth limitations.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if allocation tests complete, error code otherwise
  */
 ze_result_t cmdDiag::memoryAllocation(UNUSED devInfo *d)
@@ -603,7 +621,7 @@ ze_result_t cmdDiag::memoryAllocation(UNUSED devInfo *d)
  * memory-intensive kernels and calculating throughput metrics. It validates
  * memory subsystem performance and identifies potential bandwidth limitations.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if bandwidth tests complete, error code otherwise
  */
 ze_result_t cmdDiag::memoryBandwidth(UNUSED devInfo *d)
@@ -619,12 +637,38 @@ ze_result_t cmdDiag::memoryBandwidth(UNUSED devInfo *d)
  * validating media engine functionality and performance. It checks
  * video codec acceleration and media processing capabilities.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if media tests pass, error code otherwise
  */
-ze_result_t cmdDiag::mediaCodec(UNUSED devInfo *d)
+ze_result_t cmdDiag::mediaCodec(devInfo *d)
 {
 	TRACING();
+
+	std::string pdfStr;
+	std::string outputLine;
+
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	pdfStr = p->getBDFStr();
+	if (!CHECKMEDIACODEC(pdfStr, true, outputLine)) {
+		if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check Media transcode.\n");
+			ERR("Media codec test failed: %s\n", outputLine.c_str());
+		}
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		PRINT("Result:  Pass\n");
+		PRINT("Message: Pass to check Media transcode.\n");
+		PRINT("%s.\n", outputLine.c_str());
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -635,29 +679,93 @@ ze_result_t cmdDiag::mediaCodec(UNUSED devInfo *d)
  * testing data transfer rates and identifying potential PCIe bottlenecks.
  * It validates system interconnect performance and PCIe link integrity.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if PCIe tests complete, error code otherwise
  */
-ze_result_t cmdDiag::pcieBandwidth(UNUSED devInfo *d)
+ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	long double totalBandwidth;
+	long double totalLatency;
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t res = diag->pcieBandwidthTest(d, totalBandwidth, totalLatency);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (res != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check PCIe bandwidth.\n");
+			ERR("PCIe bandwidth test failed: %s\n", l0_error_to_string(res));
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to check PCIe bandwidth.\n");
+			PRINT("Total pcie bandwidth is: %Lf GB/s.\n", totalBandwidth);
+			PRINT("Total pcie latency is: %Lf us.\n", totalLatency);
+		}
+	}
+	return res;
 }
 
 /**
  * @brief Executes power management diagnostic test
  *
- * This function tests GPU power management capabilities including power
- * limiting, thermal throttling, and power consumption monitoring. It validates
- * power subsystem functionality and thermal management effectiveness.
+ * This function tests GPU power management capabilities on the specified device
+ * It performs intensive computation calculations, then measures the power.
  *
- * @param d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS if power tests pass, error code otherwise
+ * The test:
+ * 1. Set up the intensive computation
+ * 2. perform this intensive computation
+ * 3. Measure and calculate the power
+ *
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
  */
-ze_result_t cmdDiag::power(UNUSED devInfo *d)
+ze_result_t cmdDiag::powerTest(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	ze_result_t ret;
+	const std::string filename = "ze_int_compute.spv";
+	const std::string moduleName = "compute_int_v1";
+	int input_value = 4;
+	bool featureOnly;
+	long double current;
+	int totalPowerValue;
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	featureOnly = false;
+	ret = diag->computationTest(d, 2048, &input_value, sizeof(int), filename, moduleName, current, featureOnly);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Computation test failed: %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+
+	ret = diag->calculatePowerConsumption(d, totalPowerValue);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (ret != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check power test.\n");
+			ERR("Power test failed: %s\n", l0_error_to_string(ret));
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to check power test.\n");
+			if (!featureOnly) {
+				PRINT("Computation test completed with %Lf GFLOPS.\n", current);
+			}
+			PRINT("update peak power value: %d w\n", totalPowerValue);
+		}
+	}
+	return ret;
 }
 
 /**
@@ -667,13 +775,42 @@ ze_result_t cmdDiag::power(UNUSED devInfo *d)
  * running basic compute operations to verify correct GPU functionality
  * without performance measurement emphasis.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if functional tests pass, error code otherwise
  */
-ze_result_t cmdDiag::computationFuncTest(UNUSED devInfo *d)
+ze_result_t cmdDiag::computationFuncTest(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	const std::string fileName = "ze_sp_compute.spv";
+	const std::string moduleName = "compute_sp_v1";
+	float input_value = 1.3f;
+	bool featureOnly;
+	long double current;
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	featureOnly = true;
+	ze_result_t res =
+		diag->computationTest(d, 4096, &input_value, sizeof(float), fileName, moduleName, current, featureOnly);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (res != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check computation.\n");
+			ERR("Computation test failed: %s\n", l0_error_to_string(res));
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to check computation.\n");
+			if (!featureOnly) {
+				PRINT("Computation test completed with %Lf GFLOPS.\n", current);
+			}
+		}
+	}
+	return res;
 }
 
 /**
@@ -683,12 +820,37 @@ ze_result_t cmdDiag::computationFuncTest(UNUSED devInfo *d)
  * testing basic media processing capabilities to verify correct media
  * subsystem operation without performance measurement emphasis.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if media functional tests pass, error code otherwise
  */
 ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d)
 {
 	TRACING();
+
+	std::string pdfStr;
+	std::string outputLine;
+
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	pdfStr = p->getBDFStr();
+	if (!CHECKMEDIACODEC(pdfStr, true, outputLine)) {
+		if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check Media transcode.\n");
+			ERR("Media codec test failed: %s\n", outputLine.c_str());
+		}
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		PRINT("Result:  Pass\n");
+		PRINT("Message: Pass to check Media transcode.\n");
+		PRINT("%s.\n", outputLine.c_str());
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -699,7 +861,7 @@ ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d)
  * GPU devices, measuring inter-GPU communication bandwidth and validating
  * fabric link performance and connectivity.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if Xe Link tests complete, error code otherwise
  */
 ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d)
@@ -715,7 +877,7 @@ ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d)
  * available GPU devices simultaneously, measuring full fabric bandwidth
  * and validating complete multi-GPU interconnect performance.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if all-to-all tests complete, error code otherwise
  */
 ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d)
@@ -789,7 +951,7 @@ ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
  * of the diagnostic precheck process. It provides system state validation
  * and GPU operational status reporting.
  *
- * @param d Pointer to device information structure
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if GPU status retrieval completes, error code otherwise
  */
 ze_result_t cmdDiag::gpu(devInfo *d)
@@ -810,7 +972,7 @@ ze_result_t cmdDiag::gpu(devInfo *d)
  * to identify GPU-related errors and issues. It provides historical
  * system analysis for diagnostic precheck operations.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if log scanning completes, error code otherwise
  */
 ze_result_t cmdDiag::runSince(UNUSED devInfo *d)
