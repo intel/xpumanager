@@ -27,6 +27,12 @@
 #include <assert.h>
 #include <sysprocess.h>
 
+static std::unordered_map<psCmdType, psCmdStruct> psCmds = {
+	{psCmdType::PS_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
+	{psCmdType::PS_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{psCmdType::PS_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+};
+
 /**
  * @brief Adds help commands to the provided help list.
  *
@@ -62,6 +68,90 @@ void cmdPs::help(HELP helpType)
 	helpList.clear();
 }
 
+PsTextPrinter::PsTextPrinter() : TextPrinter() {}
+
+/**
+ * @brief Prints device process information in a formatted text layout
+ *
+ * This function formats and prints a single device's process information from a JSON object.
+ * It displays PID   Command   DeviceId   SHR    MEM columns
+ *
+ * @param jsonObj Pointer to the JSON object containing a single device's process information
+ */
+void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
+{
+	PRINT("PID       Command             DeviceID       SHR            MEM\n");
+	for (auto &item : jsonObj->items()) {
+		PRINT("%-9d %-19s %-14d %-14" PRIu64 " %-14" PRIu64 "\n", item.value()["process_id"].get<uint32_t>(),
+			  item.value()["process_name"].get<std::string>().c_str(), item.value()["device_id"].get<uint32_t>(),
+			  item.value()["shared_mem_size"].get<uint64_t>(), item.value()["mem_size"].get<uint64_t>());
+	}
+}
+
+/**
+ * @brief Calls printDeviceInfo function to print process information
+ *
+ * This function calls printDeviceInfo function based on the presence of device_list in json objects.
+ *
+ * @param jsonObj Pointer to the JSON object containing device's process information
+ */
+void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
+{
+	if (jsonObj->contains("device_list")) {
+		for (auto &devJsonObj : (*jsonObj)["device_list"]) {
+			printDeviceInfo(&devJsonObj);
+		}
+	} else {
+		printDeviceInfo(jsonObj);
+	}
+}
+
+/**
+ * @brief Converts a psInfo structure into a JSON object
+ *
+ * This function serializes the psInfo structure into a JSON object.
+ * It is used by nlohmann::json for automatic conversion via `to_json()`.
+ *
+ * @param Reference to a json object that will be filled with psInfo structure
+ * @param Reference to a psInfo structure which has device process information
+ */
+void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
+{
+	jsonObj = nlohmann::ordered_json{{"process_id", procInfo.processId},
+									 {"process_name", procInfo.commandName},
+									 {"device_id", procInfo.devId},
+									 {"shared_mem_size", procInfo.sharedSize},
+									 {"mem_size", procInfo.memSize}};
+}
+
+/**
+ * @brief Gets the process information status for the given device
+ *
+ * This function retrieves the process information and populates the psInfoList vector.
+ *
+ * @param devInfo pointer
+ * @param Reference value for psInfo structure
+ * @return ze_result_t ZE_RESULT_SUCCESS if it retrieves process information
+ */
+ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInfoList)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	std::vector<zes_process_state_t> processList;
+	DBG("Running ps command on device %d\n", dev->index);
+	process *ps = dev->dev->getProcess();
+	if (ps == nullptr) {
+		ERR("Error: Process pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	result = ps->getState(dev->zesDeviceHdl, &processList);
+	for (auto &p : processList) {
+		psInfoList.push_back(
+			{p.processId, GETPROCESSNAME(p.processId), dev->index, p.sharedSize / 1024, p.memSize / 1024});
+	}
+	return result;
+}
+
 /**
  * @brief Executes the ps run.
  *
@@ -74,8 +164,8 @@ int cmdPs::run(arg_struct *args)
 	std::vector<devInfo> deviceList;
 	int opt;
 	int optionIndex = 0;
-	bool json = false;
 	std::string deviceId;
+	std::unique_ptr<Printer> printer;
 	std::vector<zes_process_state_t> processList;
 
 	static struct option long_options[] = {{"help", no_argument, 0, 'h'},
@@ -93,10 +183,11 @@ int cmdPs::run(arg_struct *args)
 			help();
 			return ZE_RESULT_SUCCESS;
 		case 'j':
-			json = true;
+			psCmds[psCmdType::PS_JSON].enabled = true;
 			break;
 		case 'd':
-			deviceId = optarg;
+			psCmds[psCmdType::PS_DEVICE].enabled = true;
+			psCmds[psCmdType::PS_DEVICE].val = optarg;
 			break;
 		default:
 			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
@@ -114,34 +205,29 @@ int cmdPs::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(deviceId.c_str(), &deviceList);
+	result = args->sm.findDevice(psCmds[psCmdType::PS_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", deviceId.c_str());
+		ERR("Error: Device handle not found for device ID '%s'.\n", psCmds[psCmdType::PS_DEVICE].val.c_str());
 		return result;
 	}
 
-	if (!json) {
-		PRINT("PID       Command             DeviceID       SHR            MEM\n");
-	}
-
+	std::vector<psInfo> psInfoList;
 	for (const auto &dev : deviceList) {
-		DBG("Running ps command on device %d\n", dev.index);
-		process *ps = (process *)dev.dev->getProcess();
-		if (ps == nullptr) {
-			ERR("Error: Process pointer not found.\n");
-			return ZE_RESULT_ERROR_UNKNOWN;
-		}
+		result = getProcessList(&dev, psInfoList);
+	}
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get process information. Returned with error: %d\n", result);
+		return result;
+	}
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>(psInfoList);
 
-		ps->getState(dev.zesDeviceHdl, &processList);
-
-		if (!json) {
-			for (const auto &proc : processList) {
-				PRINT("%-9d %-19s %-14d %-14" PRIu64 " %-14" PRIu64 "\n", proc.processId,
-					  GETPROCESSNAME(proc.processId).c_str(), dev.index, (proc.sharedSize / 1024),
-					  (proc.memSize / 1024));
-			}
-		}
+	if (psCmds[psCmdType::PS_JSON].enabled == true) {
+		printer = std::make_unique<JsonPrinter>();
+	} else {
+		printer = std::make_unique<PsTextPrinter>();
 	}
 
-	return ZE_RESULT_SUCCESS;
+	printer->print(jsonObj.get());
+
+	return result;
 }
