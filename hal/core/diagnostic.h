@@ -40,7 +40,11 @@ public:
 	~diagnostic();
 	ze_result_t enumDiag(zes_device_handle_t device);
 	ze_result_t getProperties(zes_diag_handle_t testSuite);
-	ze_result_t computationTest(devInfo *d, long double &out_gflops);
+	ze_result_t computationTest(devInfo *d, std::size_t flops_per_work_item, void *srcPtr, size_t srcSize,
+								const std::string &fileName, const std::string &moduleName, long double &out_gflops,
+								bool functionalCheck);
+	ze_result_t calculatePowerConsumption(devInfo *d, int &totalPowerValue);
+	ze_result_t pcieBandwidthTest(devInfo *d, long double &totalBandwidth, long double &totalLatency);
 	int getTests(zes_diag_handle_t testSuite);
 
 	ze_result_t kernelCreate(ze_module_handle_t hModule, std::string name, ze_kernel_handle_t *hKernel);
@@ -52,6 +56,7 @@ public:
 						   const uint64_t total_work_items_requested, struct ZeWorkGroups *workgroup_info);
 	ze_result_t memoryAlloc(const ze_context_handle_t context, ze_device_handle_t ze_device, size_t size,
 							size_t alignment, void **ptr);
+	ze_result_t memoryAllocHost(const ze_context_handle_t context, size_t size, size_t alignment, void **ptr);
 	ze_result_t memoryFree(const ze_context_handle_t &context, const void *ptr);
 	void commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_kernel_handle_t hKernel,
 									   const ze_group_count_t *pLaunchFuncArgs);
@@ -65,7 +70,7 @@ public:
 	ze_result_t commandQueueExecuteCommandLists(ze_command_queue_handle_t hCommandQueue,
 												ze_command_list_handle_t hCommandList);
 	ze_result_t commandQueueSynchronize(ze_command_queue_handle_t hCommandQueue);
-	ze_result_t setupFunction(ze_module_handle_t module_handle, ze_kernel_handle_t &function, const char *name,
+	ze_result_t setupFunction(ze_module_handle_t module_handle, ze_kernel_handle_t &function, const std::string &name,
 							  void *input, void *output);
 	long double runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
 						  ze_kernel_handle_t &function, struct ZeWorkGroups &workgroup_info, bool checkOnly);

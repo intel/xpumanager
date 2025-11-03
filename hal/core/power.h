@@ -67,6 +67,8 @@ public:
 	ze_result_t getLimitsExt(std::vector<PowerLimitExt> &limits);
 	ze_result_t setLimitsExt(int32_t tile_id, zes_power_level_t level, uint32_t limit_mw);
 
+	uint32_t getPowerCount() { return powerCount; }
+	zes_pwr_handle_t *getPowerHandles() { return powerHandles; }
 	ze_result_t setPowerLimit(double powerLimit);
 	ze_result_t init(zes_device_handle_t zeDevice) override;
 	ze_result_t init(zes_device_handle_t zeDevice, class device *device);
