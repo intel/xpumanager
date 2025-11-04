@@ -32,22 +32,26 @@
  *
  * @param state The ECC state enumeration value to decode and print
  */
-void ecc::printEccState(const zes_device_ecc_state_t state)
+std::string ecc::printEccState(const zes_device_ecc_state_t state)
 {
+	std::string eccStateString;
+
 	switch (state) {
 	case ZES_DEVICE_ECC_STATE_UNAVAILABLE:
-		DBG("Unavailable\n");
+		eccStateString = "Unavailable";
 		break;
 	case ZES_DEVICE_ECC_STATE_ENABLED:
-		DBG("Enabled\n");
+		eccStateString = "Enabled";
 		break;
 	case ZES_DEVICE_ECC_STATE_DISABLED:
-		DBG("Disabled\n");
+		eccStateString = "Disabled";
 		break;
 	default:
-		DBG("Other\n");
+		eccStateString = "Other";
 		break;
 	}
+	DBG("%s\n", eccStateString.c_str());
+	return eccStateString;
 }
 
 /**
@@ -58,25 +62,28 @@ void ecc::printEccState(const zes_device_ecc_state_t state)
  *
  * @param action The pending action enumeration value to decode and print
  */
-void ecc::printEccPendingAction(const zes_device_action_t action)
+std::string ecc::printEccPendingAction(const zes_device_action_t action)
 {
+	std::string eccPendingActionString;
 	switch (action) {
 	case ZES_DEVICE_ACTION_NONE:
-		DBG("None\n");
+		eccPendingActionString = "None";
 		break;
 	case ZES_DEVICE_ACTION_WARM_CARD_RESET:
-		DBG("Warm reset of the card\n");
+		eccPendingActionString = "Warm reset of the card";
 		break;
 	case ZES_DEVICE_ACTION_COLD_CARD_RESET:
-		DBG("Cold reset of the card\n");
+		eccPendingActionString = "Cold reset of the card";
 		break;
 	case ZES_DEVICE_ACTION_COLD_SYSTEM_REBOOT:
-		DBG("Cold reboot of the system\n");
+		eccPendingActionString = "Cold reboot of the system";
 		break;
 	default:
-		DBG("Other\n");
+		eccPendingActionString = "Other";
 		break;
 	}
+	DBG("%s\n", eccPendingActionString.c_str());
+	return eccPendingActionString;
 }
 
 /**
@@ -133,6 +140,11 @@ bool ecc::configurable(zes_device_handle_t device)
  */
 ze_result_t ecc::getState(zes_device_handle_t device)
 {
+	TRACING();
+	if (!available(device)) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
 	zes_device_ecc_properties_t eccState = {};
 	ze_result_t result = zesDeviceGetEccState(device, &eccState);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -161,17 +173,36 @@ ze_result_t ecc::getState(zes_device_handle_t device)
  * @param enable Boolean flag to enable (true) or disable (false) ECC
  * @return ze_result_t ZE_RESULT_SUCCESS if ECC state set successfully, error code otherwise
  */
-ze_result_t ecc::setState(zes_device_handle_t device, bool enable)
+ze_result_t ecc::setState(zes_device_handle_t device, bool enable, ecc_state_t *state)
 {
+	TRACING();
+	bool eccAvailable = available(device);
+	bool eccConfigurable = configurable(device);
+	if (!eccAvailable) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	if (!eccConfigurable) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
 	zes_device_ecc_desc_t newState = {};
 	zes_device_ecc_properties_t pState = {};
 	newState.state = enable ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
-
 	ze_result_t result = zesDeviceSetEccState(device, &newState, &pState);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to set ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
+
+	if (state != nullptr) {
+		state->configurable = eccConfigurable;
+		state->available = eccAvailable;
+		state->currentState = pState.currentState;
+		state->pendingState = pState.pendingState;
+		state->pendingAction = pState.pendingAction;
+	}
+
 	DBG("  - ECC State:\n");
 	DBG("    - Current State:\n");
 	printEccState(pState.currentState);

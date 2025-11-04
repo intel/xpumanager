@@ -423,11 +423,27 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	ze_result_t result = e->setState(d->zesDeviceHdl, memoryEcc);
+	ecc_state_t state = {};
+	ze_result_t result = e->setState(d->zesDeviceHdl, memoryEcc, &state);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to set memory ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
+
+	zes_device_ecc_state_t requestedState =
+		(memoryEcc == 1) ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
+
+	if (state.currentState == requestedState) {
+		PRINT("Memory ECC is already %s on GPU %d \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
+	} else if (state.pendingState == requestedState) {
+		PRINT("Successfully %s ECC memory setting on GPU %d \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
+		PRINT("Please perform %s for the change to take effect.\n",
+			  e->printEccPendingAction(state.pendingAction).c_str());
+	} else {
+		ERR("Failed to %s ECC memory setting on GPU %d\n", (memoryEcc == 1 ? "enable" : "disable"), d->index);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
