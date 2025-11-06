@@ -1,0 +1,19 @@
+#
+# Copyright (C) 2019-2025 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+ARG GO_VERSION=1.25
+ARG BASE_DEBIAN_DISTRO="trixie"
+
+FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
+
+WORKDIR /go/src
+
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=src=.,target=. \
+    make generate OUTDIR=/go/_out
+
+FROM scratch AS artifacts
+
+COPY --from=builder /go/_out .
