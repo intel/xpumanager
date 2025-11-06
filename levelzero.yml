@@ -1,0 +1,65 @@
+GENERATOR:
+  PackageName: levelzero
+  PackageDescription: "Level Zero API bindings for Go"
+  PackageLicense: |
+    Copyright (C) 2019-2025 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+  PkgConfigOpts: ["level-zero"]
+  Includes:
+    - ze_api.h
+    - zes_api.h
+
+PARSER:
+  SourcesPaths:
+    - levelzero/ze_api.h
+    - levelzero/zes_api.h
+
+TRANSLATOR:
+  ConstRules:
+  Rules:
+    const:
+      - {action: accept, from: "^ZE_RESULT_"}
+      - {action: accept, from: "^ZES_"}
+      - {action: ignore, from: "^ZES_STRUCTURE_TYPE_"}
+      - {transform: export}
+    function:
+      - {action: accept, from: "^zes[A-Z]"}
+      - {transform: export}
+      # Disable from zes_api.h
+      - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
+    type:
+      - {action: accept, from: "^ze_result_t$"}
+      - {action: accept, from: "^ze_device_properties_t$"}
+      - {action: accept, from: "^ze_device_uuid_t$"}
+      - {action: accept, from: "^zes_[a-z0-9_]*_t$"}
+      - {action: ignore, from: "^zes_base_[a-z_]*_t$"}
+      - {action: ignore, from: "^zes_[a-z_]*_handle_t$"}
+      - {action: ignore, from: "^zes_structure_type_t$"}
+      - {action: replace, from: "_t$"}
+      - {transform: export}
+      - {load: snakecase}
+  PtrTips:
+    function:
+      # Specific tips
+      - {target: "^zesDriverGet$", tips: [ref, arr]}
+      - {target: "^zesDriverGetExtensionProperties$", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceGet$", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceEnum", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceProcessesGetState$", tips: [ref, ref, arr]}
+      - {target: "^zesDevicePciGetBars$", tips: [ref, ref, arr]}
+      - {target: "^zesDiagnosticsGetTests$", tips: [ref, ref, arr]}
+      - {target: "^zesDiagnosticsRunTests$", tips: [ref, ref, ref, arr]}
+      - {target: "^zesDriverEventListen(Ex)?", tips: [ref, ref, ref, arr, ref, arr]}
+      - {target: "^zesFabricPortGetMultiPortThroughput$", tips: [ref, ref, arr, ref]}
+      - {target: "^zesFrequencyGetAvailableClocks$", tips: [ref, ref, arr]}
+      - {target: "^zesPower(Get|Set)LimitsExt$", tips: [ref, ref, arr]}
+      - {target: "^zesRasGetStateExp$", tips: [ref, ref, arr]}
+      - {target: "^zesEngineGetActivityExt$", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceGetSubDevicePropertiesExp$", tips: [ref, ref, arr]}
+      - {target: "^zesVFManagementGetVF(Engine|Memory)UtilizationExp2$", tips: [ref, ref, arr]}
+      # Default tip, everything is ref
+      - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
+  TypeTips:
+    type:
+      - {target: "^zes_[a-z_]*_handle", self: raw}
