@@ -27,6 +27,12 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <chrono>
+#include <string>
+#include <vector>
+#include <map>
+#include <cstdint>
+#include <limits>
 
 enum statsCmdType
 {
@@ -43,12 +49,144 @@ enum statsCmdType
 
 struct statsCmdStruct;
 
+constexpr size_t DEFAULT_SAMPLE_COUNT = 3;
+constexpr std::chrono::milliseconds DEFAULT_SAMPLE_INTERVAL{100};
+
+struct StatsOptions
+{
+	bool json = false;
+	bool eu = false;
+	bool ras = false;
+	bool fabricSummary = false;
+	bool fabricMatrix = false;
+	bool fabricUtil = false;
+	size_t sampleCount = DEFAULT_SAMPLE_COUNT;
+	std::chrono::milliseconds sampleInterval = DEFAULT_SAMPLE_INTERVAL;
+};
+
+struct SummaryStats
+{
+	bool valid = false;
+	double current = 0.0;
+	double min = 0.0;
+	double max = 0.0;
+	double avg = 0.0;
+};
+
+struct MemoryCounters
+{
+	uint64_t read = 0;
+	uint64_t write = 0;
+	uint64_t maxBandwidth = 0;
+	uint64_t timestamp = 0;
+	bool valid = false;
+};
+
+struct PciCounters
+{
+	uint64_t read = 0;
+	uint64_t write = 0;
+	uint64_t timestamp = 0;
+	bool valid = false;
+};
+
+struct EuArrayMetrics
+{
+	SummaryStats active;
+	SummaryStats stall;
+	SummaryStats idle;
+	bool valid = false;
+};
+
+struct RasCounter
+{
+	uint64_t value = 0;
+	uint64_t correctable = 0;
+	uint64_t uncorrectable = 0;
+	bool valid = false;
+};
+
+struct EngineSnapshot
+{
+	uint64_t activeTime = 0;
+	uint64_t timestamp = 0;
+	bool valid = false;
+};
+
+struct PowerSnapshot
+{
+	uint64_t energy = 0;
+	uint64_t timestamp = 0;
+	bool valid = false;
+};
+
+struct FabricPortSample
+{
+	uint32_t index = 0;
+	zes_fabric_port_id_t portId = {};
+	zes_fabric_port_id_t remoteId = {};
+	zes_fabric_port_properties_t properties = {};
+	zes_fabric_port_throughput_t throughput = {};
+	bool hasProperties = false;
+	bool hasThroughput = false;
+};
+
+struct DeviceMetrics
+{
+	uint32_t deviceIndex = 0;
+	std::string pciBdf;
+	std::string deviceType;
+	std::string startTimeIso;
+	std::string endTimeIso;
+	double elapsedSeconds = 0.0;
+
+	bool energyValid = false;
+	double energyConsumedJ = 0.0;
+
+	SummaryStats gpuUtil;
+	SummaryStats computeUtil;
+	SummaryStats renderUtil;
+	SummaryStats mediaUtil;
+	SummaryStats copyUtil;
+
+	SummaryStats gpuPower;
+	SummaryStats gpuFrequency;
+	SummaryStats mediaFrequency;
+
+	SummaryStats gpuCoreTemp;
+	SummaryStats memoryTemp;
+
+	SummaryStats memoryReadKBps;
+	SummaryStats memoryWriteKBps;
+	SummaryStats memoryBandwidthPercent;
+	SummaryStats memoryUsedMiB;
+	SummaryStats memoryUtilPercent;
+
+	SummaryStats pciReadKBps;
+	SummaryStats pciWriteKBps;
+
+	SummaryStats fabricRxKBps;
+	SummaryStats fabricTxKBps;
+
+	std::map<zes_ras_error_cat_t, RasCounter> rasCounters;
+	EuArrayMetrics euMetrics;
+
+	std::vector<std::string> computeEngineDetails;
+	std::vector<std::string> renderEngineDetails;
+	std::vector<std::string> decoderEngineDetails;
+	std::vector<std::string> encoderEngineDetails;
+	std::vector<std::string> copyEngineDetails;
+	std::vector<std::string> mediaEmEngineDetails;
+
+	bool hasFabricData = false;
+};
+
 class cmdStats : public cmds
 {
 
 public:
 	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); };
-	~cmdStats() {};
+	~cmdStats(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t eu(devInfo *d);
 	ze_result_t ras(devInfo *d);
