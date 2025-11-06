@@ -23,7 +23,7 @@
  */
 
 #ifndef _FS_LOCK_H
-#define _FSL_LOCK_H
+#define _FS_LOCK_H
 
 #include <string>
 #include <cstdint>
