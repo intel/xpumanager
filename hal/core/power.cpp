@@ -22,6 +22,7 @@
  *
  */
 #include "power.h"
+#include "device.h"
 
 /**
  * @brief Destructor for the power class
@@ -322,18 +323,357 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 }
 
 /**
- * @brief Initializes the power management module for a device
+ * @brief Sets the sustained power limit for a device or specific tile
+ *
+ * This function configures the sustained power limit, which controls the
+ * long-term average power consumption. The limit can be applied to either
+ * the entire device or a specific tile/subdevice.
+ *
+ * @param limitMw The sustained power limit in milliwatts
+ * @param tileId Tile identifier (-1 for device level, >= 0 for specific tile)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful limit configuration, error code otherwise
+ */
+ze_result_t power::setSustainedLimit(uint32_t limitMw, int32_t tileId)
+{
+	// Get subdevice mapping if tileId is specified
+	uint32_t targetSubdeviceId = 0;
+	bool isSubdeviceTarget = false;
+
+	if (tileId != -1) {
+		if (deviceHandle == nullptr) {
+			ERR("Parent device not set. Cannot map tile to subdevice.\n");
+			return ZE_RESULT_ERROR_UNINITIALIZED;
+		}
+
+		zes_subdevice_exp_properties_t subdeviceProps = {};
+		ze_result_t res = deviceHandle->getSubdeviceProperties(static_cast<uint32_t>(tileId), subdeviceProps);
+		if (res != ZE_RESULT_SUCCESS) {
+			return res;
+		}
+		targetSubdeviceId = subdeviceProps.subdeviceId;
+		isSubdeviceTarget = true;
+	}
+
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+		props.pNext = nullptr;
+		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		// Match based on tileId mapping or device level
+		bool isMatch = false;
+		if (isSubdeviceTarget) {
+			// Match specific subdevice
+			isMatch = (props.onSubdevice && props.subdeviceId == targetSubdeviceId);
+		} else {
+			// Match device-level (root device)
+			isMatch = !props.onSubdevice;
+		}
+
+		if (isMatch) {
+			zes_power_sustained_limit_t sustained = {};
+			sustained.enabled = true;
+			sustained.power = limitMw;
+			sustained.interval = 0; // Use default
+
+			res = zesPowerSetLimits(powerHandles[i], &sustained, nullptr, nullptr);
+			if (res == ZE_RESULT_SUCCESS) {
+				return res;
+			}
+			ERR("Failed to set sustained limit. 0x%X (%s)\n", res, l0_error_to_string(res));
+		}
+	}
+
+	ERR("No matching power domain found for tileId %d.\n", tileId);
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
+ * @brief Sets the burst power limit for a device
+ *
+ * This function configures the burst power limit, which controls the
+ * short-term peak power consumption that can be sustained during
+ * brief periods of high activity.
+ *
+ * @param limitMw The burst power limit in milliwatts
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful limit configuration, error code otherwise
+ */
+ze_result_t power::setBurstLimit(uint32_t limitMw)
+{
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+		props.pNext = nullptr;
+		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		// Only apply to device-level power domains
+		if (!props.onSubdevice) {
+			zes_power_burst_limit_t burst = {};
+			burst.enabled = true;
+			burst.power = limitMw;
+
+			res = zesPowerSetLimits(powerHandles[i], nullptr, &burst, nullptr);
+			if (res == ZE_RESULT_SUCCESS) {
+				return res;
+			}
+			ERR("Failed to set burst limit. 0x%X (%s)\n", res, l0_error_to_string(res));
+		}
+	}
+
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
+ * @brief Sets the peak power limits for AC and DC power sources
+ *
+ * This function configures the peak power limits for both AC and DC
+ * power sources, controlling the absolute maximum power consumption
+ * from each power source type.
+ *
+ * @param limitAcMw The AC peak power limit in milliwatts
+ * @param limitDcMw The DC peak power limit in milliwatts
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful limit configuration, error code otherwise
+ */
+ze_result_t power::setPeakLimit(uint32_t limitAcMw, uint32_t limitDcMw)
+{
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+		props.pNext = nullptr;
+		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		// Only apply to device-level power domains
+		if (!props.onSubdevice) {
+			zes_power_peak_limit_t peak = {};
+			peak.powerAC = limitAcMw;
+			peak.powerDC = limitDcMw;
+
+			res = zesPowerSetLimits(powerHandles[i], nullptr, nullptr, &peak);
+			if (res == ZE_RESULT_SUCCESS) {
+				return res;
+			}
+			ERR("Failed to set peak limit. 0x%X (%s)\n", res, l0_error_to_string(res));
+		}
+	}
+
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
+ * @brief Gets extended power limit information for all power domains
+ *
+ * This function retrieves detailed power limit information using the
+ * extended power management interface, including power levels, current
+ * limits, and lock status for device-level power domains.
+ *
+ * @param limits Vector to populate with extended power limit information
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t power::getLimitsExt(std::vector<PowerLimitExt> &limits)
+{
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		zes_power_ext_properties_t extProps = {};
+		zes_power_limit_ext_desc_t defaultLimit = {};
+
+		extProps.defaultLimit = &defaultLimit;
+		extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+		props.pNext = &extProps;
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+
+		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		if (props.onSubdevice == false) {
+			uint32_t limitCount = 0;
+			res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, nullptr);
+			if (res != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get extended power limits count. 0x%X (%s)\n", res, l0_error_to_string(res));
+				continue;
+			}
+
+			std::vector<zes_power_limit_ext_desc_t> powerExtDescs(limitCount);
+			res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, powerExtDescs.data());
+			if (res != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get extended power limits. 0x%X (%s)\n", res, l0_error_to_string(res));
+				continue;
+			}
+
+			for (uint32_t j = 0; j < limitCount; j++) {
+				PowerLimitExt limit;
+				limit.level = static_cast<zes_power_level_t>(powerExtDescs[j].level);
+				limit.limitMw = powerExtDescs[j].limit;
+				limit.locked = powerExtDescs[j].limitValueLocked;
+				limits.push_back(limit);
+			}
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Sets extended power limits for a specific power level
+ *
+ * This function configures power limits using the extended power management
+ * interface, allowing fine-grained control over specific power levels for
+ * either the entire device or individual tiles.
+ *
+ * @param tileId Tile identifier (-1 for device level, >= 0 for specific tile)
+ * @param level The power level to configure (e.g., sustained, burst, peak)
+ * @param limitMw The power limit in milliwatts
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful limit configuration,
+ *         ZE_RESULT_ERROR_NOT_AVAILABLE if limit is locked,
+ *         ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if level not found,
+ *         error code otherwise
+ */
+ze_result_t power::setLimitsExt(int32_t tileId, zes_power_level_t level, uint32_t limitMw)
+{
+	// Get subdevice mapping if tileId is specified
+	uint32_t targetSubdeviceId = 0;
+	bool isSubdeviceTarget = false;
+
+	if (tileId != -1) {
+		if (deviceHandle == nullptr) {
+			ERR("Parent device not set. Cannot map tile to subdevice.\n");
+			return ZE_RESULT_ERROR_UNINITIALIZED;
+		}
+
+		zes_subdevice_exp_properties_t subdeviceProps = {};
+		ze_result_t res = deviceHandle->getSubdeviceProperties(static_cast<uint32_t>(tileId), subdeviceProps);
+		if (res != ZE_RESULT_SUCCESS) {
+			return res;
+		}
+		targetSubdeviceId = subdeviceProps.subdeviceId;
+		isSubdeviceTarget = true;
+	}
+
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		// Match based on tileId mapping or device level
+		bool isMatch = false;
+		if (isSubdeviceTarget) {
+			// Match specific subdevice
+			isMatch = (props.onSubdevice && props.subdeviceId == targetSubdeviceId);
+		} else {
+			// Match device-level (root device)
+			isMatch = !props.onSubdevice;
+		}
+
+		if (isMatch) {
+			uint32_t limitCount = 0;
+			res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, nullptr);
+			if (res != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get extended power limits count. 0x%X (%s)\n", res, l0_error_to_string(res));
+				continue;
+			}
+
+			std::vector<zes_power_limit_ext_desc_t> powerExtDescs(limitCount);
+			res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, powerExtDescs.data());
+			if (res != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get extended power limits. 0x%X (%s)\n", res, l0_error_to_string(res));
+				continue;
+			}
+
+			bool found = false;
+			for (uint32_t j = 0; j < limitCount; j++) {
+				if (powerExtDescs[j].level == level) {
+					if (powerExtDescs[j].limitValueLocked) {
+						// Limit is locked, cannot set, return error
+						ERR("Power limit for level %d is locked.\n", level);
+						return ZE_RESULT_ERROR_NOT_AVAILABLE;
+					}
+					powerExtDescs[j].limit = limitMw;
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				ERR("Power level %d not found.\n", level);
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+
+			res = zesPowerSetLimitsExt(powerHandles[i], &limitCount, powerExtDescs.data());
+			if (res != ZE_RESULT_SUCCESS) {
+				ERR("Failed to set extended power limits. 0x%X (%s)\n", res, l0_error_to_string(res));
+			}
+			return res;
+		}
+	}
+
+	ERR("No matching power domain found for tileId %d.\n", tileId);
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
+ * @brief Initializes the power management module for a device (legacy version)
  *
  * This function performs initial setup of power monitoring capabilities by
- * enumerating all available power domains and retrieving their power limits
- * for subsequent power management and monitoring operations.
+ * enumerating all available power domains and retrieving their power limits.
+ * Note: This version does not support tile-specific operations.
  *
  * @param device Handle to the device for power initialization
  * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
  */
-ze_result_t power::init(zes_device_handle_t device)
+ze_result_t power::init(zes_device_handle_t zeDevice)
 {
-	ze_result_t result = enumPowerDomains(device);
+	zeDeviceHandle = zeDevice;
+	deviceHandle = nullptr;
+
+	ze_result_t result = enumPowerDomains(zeDeviceHandle);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		result = getPowerLimits(powerHandles[i]);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+	}
+	return result;
+}
+
+/**
+ * @brief Initializes the power management module for a device with parent device context
+ *
+ * This function performs initial setup of power monitoring capabilities by
+ * enumerating all available power domains and retrieving their power limits.
+ * This version supports tile-specific operations through the parent device pointer.
+ *
+ * @param device Handle to the device for power initialization
+ * @param parent Pointer to parent device object for subdevice mapping support
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
+ze_result_t power::init(zes_device_handle_t zeDevice, class device *device)
+{
+	zeDeviceHandle = zeDevice;
+	deviceHandle = device;
+
+	ze_result_t result = enumPowerDomains(zeDeviceHandle);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
