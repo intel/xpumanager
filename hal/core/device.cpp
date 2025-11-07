@@ -751,10 +751,21 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	 * call it so that their data can be used later.
 	 */
 	for (auto func : zesFunctionTable()) {
+		// Skip power - we'll initialize it separately with parent context
+		if (func == &powerInstance) {
+			continue;
+		}
 		// Don't check the return value of init, as they may not all return success
 		// and we don't want to fail the entire initialization process for the rest
 		// of the classes
 		func->init(zesDevice);
+	}
+
+	// Initialize power module with parent device context for tile support
+	result = powerInstance.init(zesDevice, this);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize power module with device context.\n");
+		// Don't fail initialization, continue with other modules
 	}
 
 	DBG("\n==============================================\n");
@@ -1341,6 +1352,54 @@ long double device::runKernel(ze_command_queue_handle_t command_queue, ze_comman
 	timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
 	commandListReset(command_list);
 	return (timed / static_cast<long double>(iters));
+}
+
+/**
+ * @brief Helper function to get subdevice properties for a specific tile
+ *
+ * This function retrieves the subdevice properties for a given tile ID using
+ * the experimental Sysman device mapping extension. This allows proper mapping
+ * between user-specified tile IDs and internal subdevice IDs.
+ *
+ * @param tileId User-specified tile identifier
+ * @param subdeviceProps Output structure to store subdevice properties
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code otherwise
+ */
+ze_result_t device::getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_properties_t &subdeviceProps)
+{
+	uint32_t subdeviceCount = 0;
+
+	// Get count of subdevices
+	ze_result_t res = zesDeviceGetSubDevicePropertiesExp(zesDevice, &subdeviceCount, nullptr);
+	if (res != ZE_RESULT_SUCCESS || subdeviceCount == 0) {
+		ERR("Failed to enumerate subdevices. 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	// Validate tileId is in range
+	if (tileId >= subdeviceCount) {
+		ERR("Invalid tileId %u. Device only has %u tiles.\n", tileId, subdeviceCount);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Get all subdevice properties
+	std::vector<zes_subdevice_exp_properties_t> subdevicePropsList(subdeviceCount);
+	for (auto &props : subdevicePropsList) {
+		props.stype = ZES_STRUCTURE_TYPE_SUBDEVICE_EXP_PROPERTIES;
+		props.pNext = nullptr;
+	}
+
+	res = zesDeviceGetSubDevicePropertiesExp(zesDevice, &subdeviceCount, subdevicePropsList.data());
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get subdevice properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	// Return the requested tile's properties
+	subdeviceProps = subdevicePropsList[tileId];
+
+	DBG("Tile %u mapped to subdeviceId %u\n", tileId, subdeviceProps.subdeviceId);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

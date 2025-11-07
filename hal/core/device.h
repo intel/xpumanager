@@ -181,6 +181,7 @@ public:
 					 uint32_t totalZesDeviceCount);
 	ze_result_t run();
 	ze_context_handle_t getContext() const { return context; }
+	ze_result_t getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_properties_t &subdeviceProps);
 
 	pci *getPCI() { return &pciInstance; }
 	process *getProcess() { return &processInstance; }
