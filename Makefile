@@ -10,6 +10,9 @@ all: build
 
 generate: clean
 	$(Q)go tool c-for-go -nostamp -out $(OUTDIR) levelzero.yml
+	$(Q)sed -i $(OUTDIR)/levelzero/levelzero.go \
+	        -e s'!*C.struct__\(ze_[a-z_]*_handle_t\)!*C.\1!' \
+	        -e s'!*C.struct__\(zes_[a-z_]*_handle_t\)!*C.\1!'
 	$(Q)sed -i $(OUTDIR)/levelzero/cgo_helpers.go \
 		    -e s'!ZesMemState) Free()!ZesMemState) FreeX()!'
 
