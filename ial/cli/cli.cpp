@@ -143,7 +143,7 @@ void help(std::list<cmds *> *cmdList)
 		helpsmi();
 	}
 
-	PRINT("Supported devcies:\n");
+	PRINT("Supported devices:\n");
 	PRINT(" - Intel Arc B series GPU\n\n");
 
 	PRINT("Usage: %s [Options]\n", progName.c_str());

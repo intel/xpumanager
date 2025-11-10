@@ -14,7 +14,7 @@
 #define PCI_IDS_CONFIG "pci.conf"
 
 /**
- * Class to parse "pci.ids" and "pci.conf" file, save pcie switch and build-in device info.
+ * Class to parse "pci.ids" and "pci.conf" file, save PCIe switch and built-in device info.
  *
  */
 

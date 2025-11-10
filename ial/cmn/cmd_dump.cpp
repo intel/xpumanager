@@ -1587,7 +1587,7 @@ int cmdDump::run(arg_struct *args)
 				}
 				argsList[total] = new threadArgs{this, &device, arg, "", {}};
 				// Copy any previous thread data into the new argsList entry just in case the underlying functions
-				// need to access it to do comparision between old and new values
+				// need to access it to do comparison between old and new values
 				memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));
 				tidList[total] = create_thread(metrics, argsList[total]);
 				total++;

@@ -59,7 +59,7 @@ uint8_t mctp::controlResponse(uint8_t cmd, uint8_t id)
 	case MCTP_GET_ENDPOINT_ID: {
 		if (getRespPayload(cmd, id) == MCTP_SUCCESS) {
 			if (mI2cMctpRead->respPayload[1] != 0x00) {
-				mDestEid = mI2cMctpRead->respPayload[1]; // EID alaready assigned, we can use the same EID for XPUM
+				mDestEid = mI2cMctpRead->respPayload[1]; // EID already assigned, we can use the same EID for XPUM
 			}
 			ret = MCTP_SUCCESS;
 		}

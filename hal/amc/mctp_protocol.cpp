@@ -108,7 +108,7 @@ uint8_t mctp::headerConstruction(mctpControlHdr *mctpCtrl, uint8_t instanceId, u
 	}
 
 	mctpCtrl->request = MCTP_REQUEST;
-	mctpCtrl->datagram = 0; // No Aysnc flow
+	mctpCtrl->datagram = 0; // No Async flow
 	mctpCtrl->reserved = MCTP_RESERVED;
 	mctpCtrl->instanceID = instanceId & 0x1F; // Mask to 5 bits
 

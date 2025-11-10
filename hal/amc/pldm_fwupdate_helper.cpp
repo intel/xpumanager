@@ -111,7 +111,7 @@ uint8_t pldm::fwupdPassCompTable()
 	mPassCompTable.compClass = pkg->compImagesInfo.compImages[mCurComp].compClassification;
 	mPassCompTable.id = pkg->compImagesInfo.compImages[mCurComp].id;
 
-	// Incase of multiple components, get this value from GetfirmwareParameters
+	// In case of multiple components, get this value from GetfirmwareParameters
 	// As per spec DSP0267_1.3.0 setting the value to "0x00" for single FD
 	mPassCompTable.compClassIdx = COMPONENTCLASSIFICATIONINDEX;
 	mPassCompTable.comparisonStamp = pkg->compImagesInfo.compImages[mCurComp].compComparisionStamp;
@@ -151,7 +151,7 @@ uint8_t pldm::fwUpdComp()
 	mUpdComp.compClass = pkg->compImagesInfo.compImages[mCurComp].compClassification;
 	mUpdComp.id = pkg->compImagesInfo.compImages[mCurComp].id;
 
-	// Incase of multiple components, get this value from GetfirmwareParameters
+	// In case of multiple components, get this value from GetfirmwareParameters
 	// As per spec DSP0267_1.3.0 setting the value to "0x00" for single FD
 	mUpdComp.compClassIdx = COMPONENTCLASSIFICATIONINDEX;
 	mUpdComp.comparisonStamp = pkg->compImagesInfo.compImages[mCurComp].compComparisionStamp;

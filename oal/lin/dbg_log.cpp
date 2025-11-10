@@ -171,7 +171,7 @@ static SystemCommandResult execCommand(const std::string &command)
 			while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe.get())) != 0) {
 				result += std::string(buffer.data(), bytesread);
 			}
-			// std::fread returns 0 both when EOF is reached and when some I/O error occured. Check for completeness
+			// std::fread returns 0 both when EOF is reached and when some I/O error occurred. Check for completeness
 			if (std::ferror(pipe.get())) {
 				return SystemCommandResult{"I/O error", -1}; // Not sure;
 			} else if (!std::feof(pipe.get())) {
