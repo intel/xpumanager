@@ -77,7 +77,7 @@ uint8_t crc8Smbus(const uint8_t *data, size_t len)
 		for (int i = 0; i < 256; i++) {
 			auto crc = static_cast<uint8_t>(i);
 			for (int j = 0; j < 8; j++) {
-				crc = (crc & 0x80) ? (crc << 1) ^ 0x07 : (crc << 1);
+				crc = (crc & 0x80) ? static_cast<uint8_t>((crc << 1) ^ 0x07) : static_cast<uint8_t>(crc << 1);
 			}
 			lut[i] = crc;
 		}

@@ -67,10 +67,10 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
 				((uint32_t)mI2cPldmRead->respPayload[9] << 16) | ((uint32_t)mI2cPldmRead->respPayload[10] << 24);
 
 			mFruMetadata.totalRecordSetIdentifiers =
-				(uint16_t)mI2cPldmRead->respPayload[11] | ((uint16_t)mI2cPldmRead->respPayload[12] << 8);
+				static_cast<uint16_t>(mI2cPldmRead->respPayload[11] | (mI2cPldmRead->respPayload[12] << 8));
 
 			mFruMetadata.totalNumRecords =
-				(uint16_t)mI2cPldmRead->respPayload[13] | ((uint16_t)mI2cPldmRead->respPayload[14] << 8);
+				static_cast<uint16_t>(mI2cPldmRead->respPayload[13] | (mI2cPldmRead->respPayload[14] << 8));
 
 			mFruMetadata.checksum =
 				(uint32_t)mI2cPldmRead->respPayload[15] | ((uint32_t)mI2cPldmRead->respPayload[16] << 8) |
@@ -107,7 +107,7 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
 			unsigned int headerSize = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
 									  sizeof(mFruTableResponse.completionCode) +
 									  sizeof(mFruTableResponse.nextDataXferHandle) + sizeof(mFruTableResponse.xferFlag);
-			mFruCurrentDataLength = (uint16_t)(totalSize - headerSize);
+			mFruCurrentDataLength = static_cast<uint16_t>(totalSize - headerSize);
 
 			memcpy(mFruTableResponse.fruTableData, &mI2cPldmRead->respPayload[6], mFruCurrentDataLength);
 
