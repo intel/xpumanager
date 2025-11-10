@@ -196,7 +196,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 							   {"PassComponentTable", PASS_COMPONENT_TABLE, FWU_COMMAND_BASE_SIZE},
 							   {"UpdateComponent", UPDATE_COMPONENT, FWU_COMMAND_BASE_SIZE}};
 
-	// Initializating pldm Firmware Update variables to Zero
+	// Initializing pldm Firmware Update variables to Zero
 	mReqUpdate = {};
 	mPassCompTable = {};
 	mUpdComp = {};

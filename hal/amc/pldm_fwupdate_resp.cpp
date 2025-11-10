@@ -147,7 +147,7 @@ uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, UNUSED uint8_t id)
 	if (cmd == GET_STATUS) {
 		// Current State
 		status = mI2cPldmRead->respPayload[1];
-		DBG("GET_STATUS CMD :  Currrent State --> %s\n", fwuStates[status].c_str());
+		DBG("GET_STATUS CMD :  Current State --> %s\n", fwuStates[status].c_str());
 		mFwuCurrentState = status;
 
 		// Previous State
