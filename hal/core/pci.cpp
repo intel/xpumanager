@@ -24,9 +24,18 @@
 #include "pci.h"
 #include <assert.h>
 #include <gscupd.h>
-#include <regex>
 #include <string>
 #include <vector>
+
+// Suppress false positive warnings from GCC's static analysis of std::regex implementation
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#include <regex>
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 /**
  * @brief Gets PCI properties for a device
