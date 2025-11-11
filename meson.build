@@ -1,3 +1,12 @@
+# Compilers' C++20 support is experimental / partial:
+# - https://en.cppreference.com/w/cpp/compiler_support/20.html
+# - https://gcc.gnu.org/projects/cxx-status.html
+# - https://clang.llvm.org/cxx_status.html
+# Buildtype vs. warnings:
+# - Buildtype (optimization level) can affect GCC generated warnings
+#   as its higher optimization levels do more extensive analysis:
+#   - https://mesonbuild.com/Builtin-options.html#details-for-buildtype
+#   - https://mesonbuild.com/Builtin-options.html#details-for-warning_level
 project('xpum', 'cpp',
   version : '1.0.0',
   license : 'MIT',
@@ -40,16 +49,16 @@ elif is_linux
   message('Detected Linux platform')
 else
   error('Unsupported platform: ' + host_system)
-endif 
+endif
 
 # Standard compile flags
-if is_windows 
+if is_windows
   compile_args += [
     '/DUNICODE',
     '/D_UNICODE',
     '/GS',
     '/permissive-',
-    '/Zc:__cplusplus', 
+    '/Zc:__cplusplus',
     '/Zc:preprocessor',
     '/Zc:rvalueCast',
     '-DWIN32',
@@ -92,8 +101,8 @@ if is_windows
 endif
 
 # Compiler warnings
-if is_windows 
-  compile_args += [    
+if is_windows
+  compile_args += [
     # W4 is pretty exhaustive, could add more as needed. Automatically set by the `warning_level` option
     ]
 elif is_linux
@@ -117,6 +126,7 @@ elif is_linux
       '-Wno-unknown-warning-option'
     ]
   elif cpp.get_id() == 'gcc'
+    # use "release" buildtype (-O3 = better analysis) to see all possible warnings
     compile_args += [
       '-Wimplicit-fallthrough',
       '-Wno-unused-parameter',
@@ -147,8 +157,8 @@ endif
 # Security/hardening flags
 if is_windows
   compile_args += [
-    '/guard:cf', 
-    '/sdl'        
+    '/guard:cf',
+    '/sdl'
   ]
 elif is_linux
   compile_args += [
@@ -186,7 +196,7 @@ thread_dep = dependency('threads')
 # Dependencies managed by Conan
 levelzero_dep = dependency('level-zero', required : true)
 igsc_dep = dependency('igsc', required : true)
-nlohmann_json_dep = dependency('nlohmann_json', required : true) 
+nlohmann_json_dep = dependency('nlohmann_json', required : true)
 
 # Additional Linux-specific dependencies
 if is_linux
@@ -230,4 +240,5 @@ summary_info = {
 
 if is_linux
   summary_info += {'PCIAccess' : pciaccess_dep.found() ? 'found' : 'not found'}
+  summary_info += {'hwloc' : hwloc_dep.found() ? 'found' : 'not found'}
 endif
