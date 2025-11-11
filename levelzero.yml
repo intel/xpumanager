@@ -23,11 +23,33 @@ TRANSLATOR:
       - {action: accept, from: "^ZES_"}
       - {action: ignore, from: "^ZES_STRUCTURE_TYPE_"}
       - {transform: export}
+      # Deprecated consts from zes_api.h
+      - {action: ignore, from: "^ZES_ENGINE_GROUP_MEDIA_(DE|EN)CODE_SINGLE$"}
+      - {action: ignore, from: "^ZES_ENGINE_GROUP_3D_(SINGLE|RENDER_COMPUTE_ALL|ALL)$"}
+      - {action: ignore, from: "^ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG$"}
+      - {action: ignore, from: "^ZES_VF_MANAGEMENT_EXP_VERSION_1_[01]$"}
     function:
       - {action: accept, from: "^zes[A-Z]"}
       - {transform: export}
       # Disable from zes_api.h
       - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
+      # Deprecated functions from zes_api.h
+      - {action: ignore, from: "^zesDeviceEnumActiveVFExp$"}
+      - {action: ignore, from: "^zesDeviceGetCardPowerDomain$"}
+      - {action: ignore, from: "^zesFrequencyOcGetCapabilities$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)FrequencyTarget$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)IccMax$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)Mode$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)VoltageTarget$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)TjMax$"}
+      - {action: ignore, from: "^zesPower(Get|Set)Limits$"}
+      - {action: ignore, from: "^zesSchedulerSetComputeUnitDebugMode$"}
+      - {action: ignore, from: "^zesVFManagementGetVFCapabilitiesExp$"}
+      - {action: ignore, from: "^zesVFManagementGetVFEngineUtilizationExp$"}
+      - {action: ignore, from: "^zesVFManagementGetVFMemoryUtilizationExp$"}
+      - {action: ignore, from: "^zesVFManagementGetVFPropertiesExp$"}
+      - {action: ignore, from: "^zesVFManagementSetVFTelemetryModeExp$"}
+      - {action: ignore, from: "^zesVFManagementSetVFTelemetrySamplingIntervalExp$"}
     type:
       - {action: accept, from: "^ze_result_t$"}
       - {action: accept, from: "^ze_device_properties_t$"}
@@ -39,6 +61,19 @@ TRANSLATOR:
       - {action: replace, from: "_t$"}
       - {transform: export}
       - {load: snakecase}
+      # Deprecated types from zes_api.h
+      - {action: ignore, from: "^zes_oc_mode_t$"}
+      - {action: ignore, from: "^zes_oc_capabilities_t$"}
+      - {action: ignore, from: "^zes_mem_ext_bandwidth_t$"}
+      - {action: ignore, from: "^zes_power_sustained_limit_t$"}
+      - {action: ignore, from: "^zes_power_burst_limit_t$"}
+      - {action: ignore, from: "^zes_power_peak_limit_t$"}
+      - {action: ignore, from: "^zes_vf_info_mem_type_exp_flag[s]?_t$"}
+      - {action: ignore, from: "^zes_vf_info_util_exp_flag[s]?_t$"}
+      - {action: ignore, from: "^zes_vf_exp_properties_t$"}
+      - {action: ignore, from: "^zes_vf_util_mem_exp_t$"}
+      - {action: ignore, from: "^zes_vf_util_engine_exp_t$"}
+      - {action: ignore, from: "^zes_vf_exp_capabilities_t$"}
   PtrTips:
     function:
       # Specific tips
