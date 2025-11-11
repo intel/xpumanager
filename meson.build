@@ -172,6 +172,14 @@ elif is_linux
   compile_args += ['-fPIC']
 endif
 
+# Target for running static checkers:
+# - https://mesonbuild.com/Run-targets.html
+# - https://github.com/mesonbuild/meson/issues/2383
+run_target('lint', command: 'scripts/lint.sh')
+
+# Target for API documentation
+run_target('docs', command: 'scripts/doxygen.sh')
+
 # System dependencies
 thread_dep = dependency('threads')
 
