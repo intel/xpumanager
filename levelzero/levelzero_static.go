@@ -11,6 +11,7 @@ import (
 	"errors"
 	"math"
 	"time"
+	"unsafe"
 
 	"github.com/google/uuid"
 )
@@ -485,6 +486,71 @@ func (z *ZesFan) GetState(units ZesFanSpeedUnits) (int32, error) {
 	var speed int32
 	ret := zesFanGetState(z.handle, units, &speed)
 	return speed, ret.ToError()
+}
+
+func (z *ZeDevice) EnumFirmwares() ([]*ZesFirmware, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumFirmwares(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesFirmwareHandle, count)
+	ret := zesDeviceEnumFirmwares(z.handle, &count, handles)
+	return handlesToWrappers[zesFirmwareHandle, ZesFirmware](handles), ret.ToError()
+}
+
+func (z *ZesFirmware) GetProperties() (ZesFirmwareProperties, error) {
+	var props ZesFirmwareProperties
+	ret := zesFirmwareGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+// TODO: what a good way to handle FW blobs, size??
+func (z *ZesFirmware) Flash(firmwareImage []byte) error {
+	ret := zesFirmwareFlash(z.handle, unsafe.Pointer(&firmwareImage[0]), uint32(len(firmwareImage)))
+	return ret.ToError()
+}
+
+func (z *ZesFirmware) GetFlashProgress() (uint32, error) {
+	var progress uint32
+	ret := zesFirmwareGetFlashProgress(z.handle, &progress)
+	return progress, ret.ToError()
+}
+
+func (z *ZesFirmware) GetConsoleLogs() (string, error) {
+	var (
+		size uint64
+		logs string
+	)
+	// Get size
+	ret := zesFirmwareGetConsoleLogs(z.handle, &size, nil)
+	if ret != ZE_RESULT_SUCCESS {
+		return "", ret.ToError()
+	}
+	if size == 0 {
+		return "", nil
+	}
+	// Get logs
+	buf := make([]byte, size)
+	ret = zesFirmwareGetConsoleLogs(z.handle, &size, &buf[0])
+	if ret != ZE_RESULT_SUCCESS {
+		return "", ret.ToError()
+	}
+	logs = string(buf)
+	return logs, nil
+}
+
+func (z *ZesFirmware) GetSecurityVersionExp() (string, error) {
+	version := make([]byte, ZES_STRING_PROPERTY_SIZE)
+	ret := zesFirmwareGetSecurityVersionExp(z.handle, &version[0])
+	if ret != ZE_RESULT_SUCCESS {
+		return "", ret.ToError()
+	}
+	return string(version), nil
+}
+
+func (z *ZesFirmware) SetSecurityVersionExp() error {
+	ret := zesFirmwareSetSecurityVersionExp(z.handle)
+	return ret.ToError()
 }
 
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).

@@ -59,6 +59,8 @@ func main() {
 			printFabricPorts(device)
 
 			printFans(device)
+
+			printFirmwares(device)
 		}
 	}
 }
@@ -362,6 +364,16 @@ func printFans(device *levelzero.ZeDevice) {
 			fmt.Printf("  Speed: %d\n", speed)
 		}
 	}
+}
+
+func printFirmwares(device *levelzero.ZeDevice) {
+	firmwares, err := device.EnumFirmwares()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate firmwares: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d firmwares\n", len(firmwares))
 }
 
 func dump(obj interface{}, indent int) {
