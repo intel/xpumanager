@@ -98,3 +98,5 @@ TRANSLATOR:
   TypeTips:
     type:
       - {target: "^zes_[a-z_]*_handle", self: raw}
+  MemTips:
+    - {target: ., self: raw}

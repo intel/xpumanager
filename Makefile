@@ -13,13 +13,18 @@ generate: clean
 	$(Q)sed -i $(OUTDIR)/levelzero/levelzero.go \
 	        -e s'!*C.struct__\(ze_[a-z_]*_handle_t\)!*C.\1!' \
 	        -e s'!*C.struct__\(zes_[a-z_]*_handle_t\)!*C.\1!'
-	$(Q)sed -i $(OUTDIR)/levelzero/cgo_helpers.go \
-		    -e s'!ZesMemState) Free()!ZesMemState) FreeX()!'
+	$(Q)rm -f $(OUTDIR)/levelzero/cgo_helpers.go
 
 generate-dockerized: clean
 	$(Q)docker build --target artifacts \
 	    --output type=local,dest=. \
 	    -f hack/Dockerfile.generate .
+	$(Q)# HACK: FIXME: needs tp be under generate target
+	$(Q)cd $(OUTDIR)/levelzero && go tool cgo -godefs ./types.go > types.go.tmp && \
+	    mv types.go.tmp ./types.go
+	$(Q)sed -i $(OUTDIR)/levelzero/types.go \
+	        -e s'!Pad_cgo_[0-9]*!_!'
+	$(Q)go fmt $(OUTDIR)/levelzero/types.go
 
 clean:
 	rm -f levelzero/cgo_helpers.go levelzero/cgo_helpers.h levelzero/cgo_helpers.c
