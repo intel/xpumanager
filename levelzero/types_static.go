@@ -285,6 +285,14 @@ type ZesDeviceProperties struct {
 	DriverVersion string
 }
 
+type ZesOverclockState struct {
+	Mode          ZesOverclockMode
+	WaiverSetting bool
+	State         bool
+	PendingAction ZesPendingAction
+	PendingReset  bool
+}
+
 func newZeDeviceProperties(z *zeDeviceProperties) ZeDeviceProperties {
 	return ZeDeviceProperties{
 		Type:                     z.Type,

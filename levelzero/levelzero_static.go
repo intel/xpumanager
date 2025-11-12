@@ -181,6 +181,46 @@ func (z *ZeDevice) PciGetStats() (*ZesPciStats, error) {
 	return &stats, ret.ToError()
 }
 
+func (z *ZeDevice) SetOverclockWaiver() error {
+	ret := zesDeviceSetOverclockWaiver(z.handle)
+	return ret.ToError()
+}
+
+func (z *ZeDevice) GetOverclockDomains() (ZesOverclockDomain, error) {
+	var domains uint32
+	ret := zesDeviceGetOverclockDomains(z.handle, &domains)
+	return ZesOverclockDomain(domains), ret.ToError()
+}
+
+func (z *ZeDevice) GetOverclockControls(domainType ZesOverclockDomain) (ZesOverclockControl, error) {
+	var controls uint32
+	ret := zesDeviceGetOverclockControls(z.handle, domainType, &controls)
+	return ZesOverclockControl(controls), ret.ToError()
+}
+
+func (z *ZeDevice) ResetOverclockSettings(onShippedState bool) error {
+	ret := zesDeviceResetOverclockSettings(z.handle, boolToByte(onShippedState))
+	return ret.ToError()
+}
+
+func (z *ZeDevice) ReadOverclockState() (ZesOverclockState, error) {
+	var (
+		mode          ZesOverclockMode
+		waiverSetting byte
+		state         byte
+		pendingAction ZesPendingAction
+		pendingReset  byte
+	)
+	ret := zesDeviceReadOverclockState(z.handle, &mode, &waiverSetting, &state, &pendingAction, &pendingReset)
+	return ZesOverclockState{
+		Mode:          mode,
+		WaiverSetting: waiverSetting != 0,
+		State:         state != 0,
+		PendingAction: pendingAction,
+		PendingReset:  pendingReset != 0,
+	}, ret.ToError()
+}
+
 func (z *ZeDevice) EccAvailable() (bool, error) {
 	var available byte
 	ret := zesDeviceEccAvailable(z.handle, &available)
@@ -203,6 +243,72 @@ func (z *ZeDevice) SetEccState(newState ZesDeviceEccDesc) (ZesDeviceEccPropertie
 	var state ZesDeviceEccProperties
 	ret := zesDeviceSetEccState(z.handle, &newState, &state)
 	return state, ret.ToError()
+}
+
+func (z *ZeDevice) EnumOverclockDomains() ([]*ZesOverclock, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumOverclockDomains(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesOverclockHandle, count)
+	ret := zesDeviceEnumOverclockDomains(z.handle, &count, handles)
+	return handlesToWrappers[zesOverclockHandle, ZesOverclock](handles), ret.ToError()
+}
+
+func (z *ZesOverclock) GetDomainProperties() (ZesOverclockProperties, error) {
+	var props ZesOverclockProperties
+	ret := zesOverclockGetDomainProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesOverclock) GetDomainVFProperties() (ZesVfProperty, error) {
+	var props ZesVfProperty
+	ret := zesOverclockGetDomainVFProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesOverclock) GetDomainControlProperties(domainControl ZesOverclockControl) (ZesControlProperty, error) {
+	var props ZesControlProperty
+	ret := zesOverclockGetDomainControlProperties(z.handle, domainControl, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesOverclock) GetControlCurrentValue(domainControl ZesOverclockControl) (float64, error) {
+	var value float64
+	ret := zesOverclockGetControlCurrentValue(z.handle, domainControl, &value)
+	return value, ret.ToError()
+}
+
+func (z *ZesOverclock) GetControlPendingValue(domainControl ZesOverclockControl) (float64, error) {
+	var value float64
+	ret := zesOverclockGetControlPendingValue(z.handle, domainControl, &value)
+	return value, ret.ToError()
+}
+
+func (z *ZesOverclock) SetControlUserValue(domainControl ZesOverclockControl, value float64) (ZesPendingAction, error) {
+	var pendingAction ZesPendingAction
+	ret := zesOverclockSetControlUserValue(z.handle, domainControl, value, &pendingAction)
+	return pendingAction, ret.ToError()
+}
+
+func (z *ZesOverclock) GetControlState(domainControl ZesOverclockControl) (ZesControlState, ZesPendingAction, error) {
+	var (
+		state         ZesControlState
+		pendingAction ZesPendingAction
+	)
+	ret := zesOverclockGetControlState(z.handle, domainControl, &state, &pendingAction)
+	return state, pendingAction, ret.ToError()
+}
+
+func (z *ZesOverclock) GetVFPointValues(vfType ZesVfType, arrayType ZesVfArrayType, pointIndex uint32) (uint32, error) {
+	var value uint32
+	ret := zesOverclockGetVFPointValues(z.handle, vfType, arrayType, pointIndex, &value)
+	return value, ret.ToError()
+}
+
+func (z *ZesOverclock) SetVFPointValues(vfType ZesVfType, pointIndex uint32, value uint32) error {
+	ret := zesOverclockSetVFPointValues(z.handle, vfType, pointIndex, value)
+	return ret.ToError()
 }
 
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).

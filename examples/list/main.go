@@ -49,6 +49,8 @@ func main() {
 			printECC(device)
 
 			printProcs(device)
+
+			printOverock(device)
 		}
 	}
 }
@@ -148,6 +150,50 @@ func printProcs(device *levelzero.ZeDevice) {
 	}
 	fmt.Printf("## Processes State:\n")
 	dump(procs, 2)
+}
+
+func printOverock(device *levelzero.ZeDevice) {
+	domainBitmask, err := device.GetOverclockDomains()
+	if err != nil {
+		log.Printf("ERROR: Failed to get overclocking domains bitmask: %v", err)
+		return
+	}
+	fmt.Printf("## Overclocking Domains Bitmask: %0x\n", domainBitmask)
+
+	state, err := device.ReadOverclockState()
+	if err != nil {
+		log.Printf("ERROR: Failed to get overclocking state: %v", err)
+	} else {
+		fmt.Printf("## Overclocking State:\n")
+		dump(state, 2)
+	}
+
+	domains, err := device.EnumOverclockDomains()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate overclocking domains: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d overclocking domains\n", len(domains))
+	for i, domain := range domains {
+		fmt.Printf("### Overclocking Domain %d\n", i)
+
+		props, err := domain.GetDomainProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for overclocking domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		vfProps, err := domain.GetDomainVFProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get VF properties for overclocking domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  VF Properties:\n")
+			dump(vfProps, 4)
+		}
+	}
 }
 
 func dump(obj interface{}, indent int) {
