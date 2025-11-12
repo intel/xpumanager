@@ -65,6 +65,8 @@ func main() {
 			printFrequencyDomains(device)
 
 			printLeds(device)
+
+			printMemory(device)
 		}
 	}
 }
@@ -458,6 +460,43 @@ func printLeds(device *levelzero.ZeDevice) {
 	}
 
 	fmt.Printf("## Found %d LEDs\n", len(leds))
+}
+
+func printMemory(device *levelzero.ZeDevice) {
+	memModules, err := device.EnumMemoryModules()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate memory modules: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d memory modules\n", len(memModules))
+	for i, module := range memModules {
+		fmt.Printf("### Memory Module %d\n", i)
+
+		props, err := module.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for memory module %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		stats, err := module.GetState()
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for memory module %d: %v", i, err)
+		} else {
+			fmt.Printf("  State:\n")
+			dump(stats, 4)
+		}
+
+		bandwidth, err := module.GetBandwidth()
+		if err != nil {
+			log.Printf("ERROR: Failed to get bandwidth for memory module %d: %v", i, err)
+		} else {
+			fmt.Printf("  Bandwidth:\n")
+			dump(bandwidth, 4)
+		}
+	}
 }
 
 func dump(obj interface{}, indent int) {

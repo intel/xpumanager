@@ -634,6 +634,34 @@ func (z *ZesLed) SetColor(color ZesLedColor) error {
 	return ret.ToError()
 }
 
+func (z *ZeDevice) EnumMemoryModules() ([]*ZesMem, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumMemoryModules(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesMemHandle, count)
+	ret := zesDeviceEnumMemoryModules(z.handle, &count, handles)
+	return handlesToWrappers[zesMemHandle, ZesMem](handles), ret.ToError()
+}
+
+func (z *ZesMem) GetProperties() (ZesMemProperties, error) {
+	var props ZesMemProperties
+	ret := zesMemoryGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesMem) GetState() (ZesMemState, error) {
+	var state ZesMemState
+	ret := zesMemoryGetState(z.handle, &state)
+	return state, ret.ToError()
+}
+
+func (z *ZesMem) GetBandwidth() (ZesMemBandwidth, error) {
+	var bandwidth ZesMemBandwidth
+	ret := zesMemoryGetBandwidth(z.handle, &bandwidth)
+	return bandwidth, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
