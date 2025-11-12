@@ -444,6 +444,49 @@ func (z *ZesFabricPort) GetFabricErrorCounters() (ZesFabricPortErrorCounters, er
 	return counters, ret.ToError()
 }
 
+func (z *ZeDevice) EnumFans() ([]*ZesFan, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumFans(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesFanHandle, count)
+	ret := zesDeviceEnumFans(z.handle, &count, handles)
+	return handlesToWrappers[zesFanHandle, ZesFan](handles), ret.ToError()
+}
+
+func (z *ZesFan) GetProperties() (ZesFanProperties, error) {
+	var props ZesFanProperties
+	ret := zesFanGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesFan) GetConfig() (ZesFanConfig, error) {
+	var config ZesFanConfig
+	ret := zesFanGetConfig(z.handle, &config)
+	return config, ret.ToError()
+}
+
+func (z *ZesFan) SetDefaultMode() error {
+	ret := zesFanSetDefaultMode(z.handle)
+	return ret.ToError()
+}
+
+func (z *ZesFan) SetFixedSpeedMode(speed ZesFanSpeed) error {
+	ret := zesFanSetFixedSpeedMode(z.handle, &speed)
+	return ret.ToError()
+}
+
+func (z *ZesFan) SetSpeedTableMode(speedTable *ZesFanSpeedTable) error {
+	ret := zesFanSetSpeedTableMode(z.handle, speedTable)
+	return ret.ToError()
+}
+
+func (z *ZesFan) GetState(units ZesFanSpeedUnits) (int32, error) {
+	var speed int32
+	ret := zesFanGetState(z.handle, units, &speed)
+	return speed, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

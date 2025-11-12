@@ -57,6 +57,8 @@ func main() {
 			printEngineGroups(device)
 
 			printFabricPorts(device)
+
+			printFans(device)
 		}
 	}
 }
@@ -322,6 +324,42 @@ func printFabricPorts(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get error counters for fabric port %d: %v", i, err)
 		} else {
 			fmt.Printf("  Error Counters: %+v\n", errCounters)
+		}
+	}
+}
+
+func printFans(device *levelzero.ZeDevice) {
+	fans, err := device.EnumFans()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate fans: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d fans\n", len(fans))
+	for i, fan := range fans {
+		fmt.Printf("### Fan %d\n", i)
+
+		props, err := fan.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for fan %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		config, err := fan.GetConfig()
+		if err != nil {
+			log.Printf("ERROR: Failed to get config for fan %d: %v", i, err)
+		} else {
+			fmt.Printf("  Config:\n")
+			dump(config, 4)
+		}
+
+		speed, err := fan.GetState(levelzero.ZES_FAN_SPEED_UNITS_RPM)
+		if err != nil {
+			log.Printf("ERROR: Failed to get speed for fan %d: %v", i, err)
+		} else {
+			fmt.Printf("  Speed: %d\n", speed)
 		}
 	}
 }
