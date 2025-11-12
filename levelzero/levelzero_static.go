@@ -808,6 +808,58 @@ func (z *ZesRas) ClearStateExp(category ZesRasErrorCategoryExp) error {
 	return ret.ToError()
 }
 
+func (z *ZeDevice) EnumSchedulers() ([]*ZesSched, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumSchedulers(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesSchedHandle, count)
+	ret := zesDeviceEnumSchedulers(z.handle, &count, handles)
+	return handlesToWrappers[zesSchedHandle, ZesSched](handles), ret.ToError()
+}
+
+func (z *ZesSched) GetProperties() (ZesSchedProperties, error) {
+	var props ZesSchedProperties
+	ret := zesSchedulerGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesSched) GetCurrentMode() (ZesSchedMode, error) {
+	var mode ZesSchedMode
+	ret := zesSchedulerGetCurrentMode(z.handle, &mode)
+	return mode, ret.ToError()
+}
+
+func (z *ZesSched) GetTimeoutModeProperties(getDefaults bool) (ZesSchedTimeoutProperties, error) {
+	var props ZesSchedTimeoutProperties
+	ret := zesSchedulerGetTimeoutModeProperties(z.handle, boolToByte(getDefaults), &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesSched) GetTimesliceModeProperties(getDefaults bool) (ZesSchedTimesliceProperties, error) {
+	var props ZesSchedTimesliceProperties
+	ret := zesSchedulerGetTimesliceModeProperties(z.handle, boolToByte(getDefaults), &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesSched) SetTimeoutMode(properties *ZesSchedTimeoutProperties) (bool, error) {
+	var needReload byte
+	ret := zesSchedulerSetTimeoutMode(z.handle, properties, &needReload)
+	return needReload != 0, ret.ToError()
+}
+
+func (z *ZesSched) SetTimesliceMode(properties *ZesSchedTimesliceProperties) (bool, error) {
+	var needReload byte
+	ret := zesSchedulerSetTimesliceMode(z.handle, properties, &needReload)
+	return needReload != 0, ret.ToError()
+}
+
+func (z *ZesSched) SetExclusiveMode() (bool, error) {
+	var needReload byte
+	ret := zesSchedulerSetExclusiveMode(z.handle, &needReload)
+	return needReload != 0, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

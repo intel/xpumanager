@@ -75,6 +75,8 @@ func main() {
 			printPsu(device)
 
 			printRas(device)
+
+			printSched(device)
 		}
 	}
 }
@@ -647,6 +649,50 @@ func printRas(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  Extended State:\n")
 			dump(stateExp, 4)
+		}
+	}
+}
+
+func printSched(device *levelzero.ZeDevice) {
+	scheds, err := device.EnumSchedulers()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate schedulers: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d schedulers\n", len(scheds))
+	for i, sched := range scheds {
+		fmt.Printf("### Scheduler %d\n", i)
+
+		props, err := sched.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for scheduler %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		mode, err := sched.GetCurrentMode()
+		if err != nil {
+			log.Printf("ERROR: Failed to get current mode for scheduler %d: %v", i, err)
+		} else {
+			fmt.Printf("  Current Mode: %v\n", mode)
+		}
+
+		timoutModeProps, err := sched.GetTimeoutModeProperties(false)
+		if err != nil {
+			log.Printf("ERROR: Failed to get timeout mode properties for scheduler %d: %v", i, err)
+		} else {
+			fmt.Printf("  Timeout Mode Properties:\n")
+			dump(timoutModeProps, 4)
+		}
+
+		timesliceModeProps, err := sched.GetTimesliceModeProperties(false)
+		if err != nil {
+			log.Printf("ERROR: Failed to get timeslice mode properties for scheduler %d: %v", i, err)
+		} else {
+			fmt.Printf("  Timeslice Mode Properties:\n")
+			dump(timesliceModeProps, 4)
 		}
 	}
 }
