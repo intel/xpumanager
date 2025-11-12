@@ -61,6 +61,8 @@ func main() {
 			printFans(device)
 
 			printFirmwares(device)
+
+			printFrequencyDomains(device)
 		}
 	}
 }
@@ -374,6 +376,57 @@ func printFirmwares(device *levelzero.ZeDevice) {
 	}
 
 	fmt.Printf("## Found %d firmwares\n", len(firmwares))
+}
+
+func printFrequencyDomains(device *levelzero.ZeDevice) {
+	freqDomains, err := device.EnumFrequencyDomains()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate frequency domains: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d frequency domains\n", len(freqDomains))
+	for i, domain := range freqDomains {
+		fmt.Printf("### Frequency Domain %d\n", i)
+
+		props, err := domain.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for frequency domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		clocks, err := domain.GetAvailableClocks()
+		if err != nil {
+			log.Printf("ERROR: Failed to get available clocks for frequency domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Available Clocks: %+v\n", clocks)
+		}
+
+		domainRange, err := domain.GetRange()
+		if err != nil {
+			log.Printf("ERROR: Failed to get range for frequency domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Range: %+v\n", domainRange)
+		}
+
+		state, err := domain.GetState()
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for frequency domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  State:\n")
+			dump(state, 4)
+		}
+
+		throttleTime, err := domain.GetThrottleTime()
+		if err != nil {
+			log.Printf("ERROR: Failed to get throttle time for frequency domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Throttle Time:\n")
+			dump(throttleTime, 4)
+		}
+	}
 }
 
 func dump(obj interface{}, indent int) {

@@ -553,6 +553,55 @@ func (z *ZesFirmware) SetSecurityVersionExp() error {
 	return ret.ToError()
 }
 
+func (z *ZeDevice) EnumFrequencyDomains() ([]*ZesFreq, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumFrequencyDomains(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesFreqHandle, count)
+	ret := zesDeviceEnumFrequencyDomains(z.handle, &count, handles)
+	return handlesToWrappers[zesFreqHandle, ZesFreq](handles), ret.ToError()
+}
+
+func (z *ZesFreq) GetProperties() (ZesFreqProperties, error) {
+	var props ZesFreqProperties
+	ret := zesFrequencyGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesFreq) GetAvailableClocks() ([]float64, error) {
+	count := uint32(0)
+	if ret := zesFrequencyGetAvailableClocks(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	clocks := make([]float64, count)
+	ret := zesFrequencyGetAvailableClocks(z.handle, &count, clocks)
+	return clocks, ret.ToError()
+}
+
+func (z *ZesFreq) GetRange() (ZesFreqRange, error) {
+	var freqRange ZesFreqRange
+	ret := zesFrequencyGetRange(z.handle, &freqRange)
+	return freqRange, ret.ToError()
+}
+
+func (z *ZesFreq) SetRange(freqRange *ZesFreqRange) error {
+	ret := zesFrequencySetRange(z.handle, freqRange)
+	return ret.ToError()
+}
+
+func (z *ZesFreq) GetState() (ZesFreqState, error) {
+	var state ZesFreqState
+	ret := zesFrequencyGetState(z.handle, &state)
+	return state, ret.ToError()
+}
+
+func (z *ZesFreq) GetThrottleTime() (ZesFreqThrottleTime, error) {
+	var throttleTime ZesFreqThrottleTime
+	ret := zesFrequencyGetThrottleTime(z.handle, &throttleTime)
+	return throttleTime, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
