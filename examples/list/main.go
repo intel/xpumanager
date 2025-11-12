@@ -71,6 +71,8 @@ func main() {
 			printPerf(device)
 
 			printPower(device)
+
+			printPsu(device)
 		}
 	}
 }
@@ -569,6 +571,35 @@ func printPower(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  Limits:\n")
 			dump(limits, 4)
+		}
+	}
+}
+
+func printPsu(device *levelzero.ZeDevice) {
+	psus, err := device.EnumPsus()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate PSUs: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d PSUs\n", len(psus))
+	for i, psu := range psus {
+		fmt.Printf("### PSU %d\n", i)
+
+		props, err := psu.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for PSU %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		state, err := psu.GetState()
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for PSU %d: %v", i, err)
+		} else {
+			fmt.Printf("  State:\n")
+			dump(state, 4)
 		}
 	}
 }
