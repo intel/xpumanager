@@ -53,6 +53,8 @@ func main() {
 			printOverock(device)
 
 			printDiags(device)
+
+			printEngineGroups(device)
 		}
 	}
 }
@@ -223,6 +225,43 @@ func printDiags(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  Tests:\n")
 			dump(tests, 4)
+		}
+	}
+}
+
+func printEngineGroups(device *levelzero.ZeDevice) {
+	engines, err := device.EnumEngineGroups()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate engine groups: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d engine groups\n", len(engines))
+	for i, engine := range engines {
+		fmt.Printf("### Engine Group %d\n", i)
+
+		props, err := engine.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for engine group %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		stats, err := engine.GetActivity()
+		if err != nil {
+			log.Printf("ERROR: Failed to get activity for engine group %d: %v", i, err)
+		} else {
+			fmt.Printf("  Activity:\n")
+			dump(stats, 4)
+		}
+
+		activityExt, err := engine.GetActivityExt()
+		if err != nil {
+			log.Printf("ERROR: Failed to get extended activity for engine group %d: %v", i, err)
+		} else {
+			fmt.Printf("  Extended Activity:\n")
+			dump(activityExt, 4)
 		}
 	}
 }

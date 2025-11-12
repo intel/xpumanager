@@ -346,6 +346,38 @@ func (z *ZesDiagnostics) RunTests(startIdx, endIdx uint32) ([]ZesDiagResult, err
 
 }
 
+func (z *ZeDevice) EnumEngineGroups() ([]*ZesEngine, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumEngineGroups(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesEngineHandle, count)
+	ret := zesDeviceEnumEngineGroups(z.handle, &count, handles)
+	return handlesToWrappers[zesEngineHandle, ZesEngine](handles), ret.ToError()
+}
+
+func (z *ZesEngine) GetProperties() (ZesEngineProperties, error) {
+	var props ZesEngineProperties
+	ret := zesEngineGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesEngine) GetActivity() (ZesEngineStats, error) {
+	var stats ZesEngineStats
+	ret := zesEngineGetActivity(z.handle, &stats)
+	return stats, ret.ToError()
+}
+
+func (z *ZesEngine) GetActivityExt() ([]ZesEngineStats, error) {
+	count := uint32(0)
+	if ret := zesEngineGetActivityExt(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	stats := make([]ZesEngineStats, count)
+	ret := zesEngineGetActivityExt(z.handle, &count, stats)
+	return stats, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
