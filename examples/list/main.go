@@ -55,6 +55,8 @@ func main() {
 			printDiags(device)
 
 			printEngineGroups(device)
+
+			printFabricPorts(device)
 		}
 	}
 }
@@ -262,6 +264,64 @@ func printEngineGroups(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  Extended Activity:\n")
 			dump(activityExt, 4)
+		}
+	}
+}
+
+func printFabricPorts(device *levelzero.ZeDevice) {
+	fabricPorts, err := device.EnumFabricPorts()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate fabric ports: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d fabric ports\n", len(fabricPorts))
+	for i, port := range fabricPorts {
+		fmt.Printf("### Fabric Port %d\n", i)
+
+		props, err := port.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for fabric port %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		linkType, err := port.GetLinkType()
+		if err != nil {
+			log.Printf("ERROR: Failed to get link type for fabric port %d: %v", i, err)
+		} else {
+			fmt.Printf("  Link Type: %+v\n", linkType)
+		}
+
+		config, err := port.GetConfig()
+		if err != nil {
+			log.Printf("ERROR: Failed to get config for fabric port %d: %v", i, err)
+		} else {
+			fmt.Printf("  Config:\n")
+			dump(config, 4)
+		}
+
+		state, err := port.GetState()
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for fabric port %d: %v", i, err)
+		} else {
+			fmt.Printf("  State:\n")
+			dump(state, 4)
+		}
+
+		throughput, err := port.GetThroughput()
+		if err != nil {
+			log.Printf("ERROR: Failed to get throughput for fabric port %d: %v", i, err)
+		} else {
+			fmt.Printf("  Throughput: %+v\n", throughput)
+		}
+
+		errCounters, err := port.GetFabricErrorCounters()
+		if err != nil {
+			log.Printf("ERROR: Failed to get error counters for fabric port %d: %v", i, err)
+		} else {
+			fmt.Printf("  Error Counters: %+v\n", errCounters)
 		}
 	}
 }

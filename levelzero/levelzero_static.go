@@ -255,6 +255,21 @@ func (z *ZeDevice) EnumOverclockDomains() ([]*ZesOverclock, error) {
 	return handlesToWrappers[zesOverclockHandle, ZesOverclock](handles), ret.ToError()
 }
 
+func (z *ZeDevice) FabricPortGetMultiPortThroughput(ports []*ZesFabricPort) ([]ZesFabricPortThroughput, error) {
+	handles := wrappersToHandles[zesFabricPortHandle, ZesFabricPort](ports)
+	count := uint32(len(handles))
+	throughputs := make([]*ZesFabricPortThroughput, count)
+	for i := range throughputs {
+		throughputs[i] = &ZesFabricPortThroughput{}
+	}
+	ret := zesFabricPortGetMultiPortThroughput(z.handle, count, handles, throughputs)
+	retThroughput := make([]ZesFabricPortThroughput, count)
+	for i, t := range throughputs {
+		retThroughput[i] = *t
+	}
+	return retThroughput, ret.ToError()
+}
+
 func (z *ZesOverclock) GetDomainProperties() (ZesOverclockProperties, error) {
 	var props ZesOverclockProperties
 	ret := zesOverclockGetDomainProperties(z.handle, &props)
@@ -376,6 +391,57 @@ func (z *ZesEngine) GetActivityExt() ([]ZesEngineStats, error) {
 	stats := make([]ZesEngineStats, count)
 	ret := zesEngineGetActivityExt(z.handle, &count, stats)
 	return stats, ret.ToError()
+}
+
+func (z *ZeDevice) EnumFabricPorts() ([]*ZesFabricPort, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumFabricPorts(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesFabricPortHandle, count)
+	ret := zesDeviceEnumFabricPorts(z.handle, &count, handles)
+	return handlesToWrappers[zesFabricPortHandle, ZesFabricPort](handles), ret.ToError()
+}
+
+func (z *ZesFabricPort) GetProperties() (ZesFabricPortProperties, error) {
+	var props ZesFabricPortProperties
+	ret := zesFabricPortGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesFabricPort) GetLinkType() (ZesFabricLinkType, error) {
+	var linkType ZesFabricLinkType
+	ret := zesFabricPortGetLinkType(z.handle, &linkType)
+	return linkType, ret.ToError()
+}
+
+func (z *ZesFabricPort) GetConfig() (ZesFabricPortConfig, error) {
+	var config ZesFabricPortConfig
+	ret := zesFabricPortGetConfig(z.handle, &config)
+	return config, ret.ToError()
+}
+
+func (z *ZesFabricPort) SetConfig(config *ZesFabricPortConfig) error {
+	ret := zesFabricPortSetConfig(z.handle, config)
+	return ret.ToError()
+}
+
+func (z *ZesFabricPort) GetState() (ZesFabricPortState, error) {
+	var state ZesFabricPortState
+	ret := zesFabricPortGetState(z.handle, &state)
+	return state, ret.ToError()
+}
+
+func (z *ZesFabricPort) GetThroughput() (ZesFabricPortThroughput, error) {
+	var throughput ZesFabricPortThroughput
+	ret := zesFabricPortGetThroughput(z.handle, &throughput)
+	return throughput, ret.ToError()
+}
+
+func (z *ZesFabricPort) GetFabricErrorCounters() (ZesFabricPortErrorCounters, error) {
+	var counters ZesFabricPortErrorCounters
+	ret := zesFabricPortGetFabricErrorCounters(z.handle, &counters)
+	return counters, ret.ToError()
 }
 
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
