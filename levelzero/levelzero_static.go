@@ -760,6 +760,54 @@ func (z *ZesPsu) GetState() (ZesPsuState, error) {
 	return state, ret.ToError()
 }
 
+func (z *ZeDevice) EnumRasErrorSets() ([]*ZesRas, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumRasErrorSets(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesRasHandle, count)
+	ret := zesDeviceEnumRasErrorSets(z.handle, &count, handles)
+	return handlesToWrappers[zesRasHandle, ZesRas](handles), ret.ToError()
+}
+
+func (z *ZesRas) GetProperties() (ZesRasProperties, error) {
+	var props ZesRasProperties
+	ret := zesRasGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesRas) GetConfig() (ZesRasConfig, error) {
+	var config ZesRasConfig
+	ret := zesRasGetConfig(z.handle, &config)
+	return config, ret.ToError()
+}
+
+func (z *ZesRas) SetConfig(config *ZesRasConfig) error {
+	ret := zesRasSetConfig(z.handle, config)
+	return ret.ToError()
+}
+
+func (z *ZesRas) GetState(resetCounters bool) (ZesRasState, error) {
+	var state ZesRasState
+	ret := zesRasGetState(z.handle, boolToByte(resetCounters), &state)
+	return state, ret.ToError()
+}
+
+func (z *ZesRas) GetStateExp() ([]ZesRasStateExp, error) {
+	count := uint32(0)
+	if ret := zesRasGetStateExp(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	states := make([]ZesRasStateExp, count)
+	ret := zesRasGetStateExp(z.handle, &count, states)
+	return states, ret.ToError()
+}
+
+func (z *ZesRas) ClearStateExp(category ZesRasErrorCategoryExp) error {
+	ret := zesRasClearStateExp(z.handle, category)
+	return ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

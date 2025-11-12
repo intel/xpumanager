@@ -73,6 +73,8 @@ func main() {
 			printPower(device)
 
 			printPsu(device)
+
+			printRas(device)
 		}
 	}
 }
@@ -600,6 +602,51 @@ func printPsu(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  State:\n")
 			dump(state, 4)
+		}
+	}
+}
+
+func printRas(device *levelzero.ZeDevice) {
+	rasDomains, err := device.EnumRasErrorSets()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate RAS error sets: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d RAS error sets\n", len(rasDomains))
+	for i, ras := range rasDomains {
+		fmt.Printf("### RAS Error Set %d\n", i)
+
+		props, err := ras.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for RAS error set %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		config, err := ras.GetConfig()
+		if err != nil {
+			log.Printf("ERROR: Failed to get config for RAS error set %d: %v", i, err)
+		} else {
+			fmt.Printf("  Config:\n")
+			dump(config, 4)
+		}
+
+		state, err := ras.GetState(false)
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for RAS error set %d: %v", i, err)
+		} else {
+			fmt.Printf("  State:\n")
+			dump(state, 4)
+		}
+
+		stateExp, err := ras.GetStateExp()
+		if err != nil {
+			log.Printf("ERROR: Failed to get extended state for RAS error set %d: %v", i, err)
+		} else {
+			fmt.Printf("  Extended State:\n")
+			dump(stateExp, 4)
 		}
 	}
 }
