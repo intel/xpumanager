@@ -63,6 +63,8 @@ func main() {
 			printFirmwares(device)
 
 			printFrequencyDomains(device)
+
+			printLeds(device)
 		}
 	}
 }
@@ -427,6 +429,35 @@ func printFrequencyDomains(device *levelzero.ZeDevice) {
 			dump(throttleTime, 4)
 		}
 	}
+}
+
+func printLeds(device *levelzero.ZeDevice) {
+	leds, err := device.EnumLeds()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate LEDs: %v", err)
+		return
+	}
+
+	for i, led := range leds {
+		fmt.Printf("### LED %d\n", i)
+		props, err := led.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for LED %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		state, err := led.GetState()
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for LED %d: %v", i, err)
+		} else {
+			fmt.Printf("  State:\n")
+			dump(state, 4)
+		}
+	}
+
+	fmt.Printf("## Found %d LEDs\n", len(leds))
 }
 
 func dump(obj interface{}, indent int) {

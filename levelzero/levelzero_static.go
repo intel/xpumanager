@@ -602,6 +602,38 @@ func (z *ZesFreq) GetThrottleTime() (ZesFreqThrottleTime, error) {
 	return throttleTime, ret.ToError()
 }
 
+func (z *ZeDevice) EnumLeds() ([]*ZesLed, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumLeds(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesLedHandle, count)
+	ret := zesDeviceEnumLeds(z.handle, &count, handles)
+	return handlesToWrappers[zesLedHandle, ZesLed](handles), ret.ToError()
+}
+
+func (z *ZesLed) GetProperties() (ZesLedProperties, error) {
+	var props ZesLedProperties
+	ret := zesLedGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesLed) GetState() (ZesLedState, error) {
+	var state ZesLedState
+	ret := zesLedGetState(z.handle, &state)
+	return state, ret.ToError()
+}
+
+func (z *ZesLed) SetState(enable bool) error {
+	ret := zesLedSetState(z.handle, boolToByte(enable))
+	return ret.ToError()
+}
+
+func (z *ZesLed) SetColor(color ZesLedColor) error {
+	ret := zesLedSetColor(z.handle, &color)
+	return ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
