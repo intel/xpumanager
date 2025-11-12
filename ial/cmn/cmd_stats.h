@@ -26,6 +26,7 @@
 #define _CMD_STATS_H
 
 #include "cmds.h"
+#include "printer.h"
 #include <os.h>
 #include <chrono>
 #include <string>
@@ -33,6 +34,10 @@
 #include <map>
 #include <cstdint>
 #include <limits>
+#include <functional>
+#include <sstream>
+#include <iomanip>
+#include <nlohmann/json.hpp>
 
 enum statsCmdType
 {
@@ -44,25 +49,15 @@ enum statsCmdType
 	STATS_X,
 	STATS_XELINK,
 	STATS_UTILS,
+	STATS_SAMPLES,
+	STATS_INTERVAL,
 	TOTAL_STATS,
 };
 
 struct statsCmdStruct;
 
-constexpr size_t DEFAULT_SAMPLE_COUNT = 3;
+constexpr size_t DEFAULT_SAMPLE_COUNT = 2;
 constexpr std::chrono::milliseconds DEFAULT_SAMPLE_INTERVAL{100};
-
-struct StatsOptions
-{
-	bool json = false;
-	bool eu = false;
-	bool ras = false;
-	bool fabricSummary = false;
-	bool fabricMatrix = false;
-	bool fabricUtil = false;
-	size_t sampleCount = DEFAULT_SAMPLE_COUNT;
-	std::chrono::milliseconds sampleInterval = DEFAULT_SAMPLE_INTERVAL;
-};
 
 struct SummaryStats
 {
@@ -111,6 +106,13 @@ struct EngineSnapshot
 	uint64_t activeTime = 0;
 	uint64_t timestamp = 0;
 	bool valid = false;
+};
+
+struct EngineInstanceTracker
+{
+	uint32_t engineIndex = 0;
+	EngineSnapshot baseline{};
+	std::vector<double> samples;
 };
 
 struct PowerSnapshot
@@ -179,6 +181,25 @@ struct DeviceMetrics
 	std::vector<std::string> mediaEmEngineDetails;
 
 	bool hasFabricData = false;
+};
+
+/**
+ * @brief Printer for stats table output
+ */
+class StatsTextPrinter : public Printer
+{
+public:
+	StatsTextPrinter() : Printer() {}
+	void print(nlohmann::ordered_json *jsonObj) override;
+
+private:
+	void printDeviceTable(const nlohmann::ordered_json &deviceJson);
+    void printMetric(const nlohmann::ordered_json &deviceJson,
+					 std::function<void(const std::string &, const std::string &)> printRow, const std::string &label,
+					 const nlohmann::json::json_pointer &ptr);
+	void printEngineInstances(const nlohmann::ordered_json &deviceJson,
+							  std::function<void(const std::string &, const std::string &)> printRow,
+							  const std::string &label, const nlohmann::json::json_pointer &ptr);
 };
 
 class cmdStats : public cmds
