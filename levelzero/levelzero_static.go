@@ -662,6 +662,33 @@ func (z *ZesMem) GetBandwidth() (ZesMemBandwidth, error) {
 	return bandwidth, ret.ToError()
 }
 
+func (z *ZeDevice) EnumPerformanceFactorDomains() ([]*ZesPerf, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumPerformanceFactorDomains(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesPerfHandle, count)
+	ret := zesDeviceEnumPerformanceFactorDomains(z.handle, &count, handles)
+	return handlesToWrappers[zesPerfHandle, ZesPerf](handles), ret.ToError()
+}
+
+func (z *ZesPerf) GetProperties() (ZesPerfProperties, error) {
+	var props ZesPerfProperties
+	ret := zesPerformanceFactorGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesPerf) GetConfig() (float64, error) {
+	var factor float64
+	ret := zesPerformanceFactorGetConfig(z.handle, &factor)
+	return factor, ret.ToError()
+}
+
+func (z *ZesPerf) SetConfig(factor float64) error {
+	ret := zesPerformanceFactorSetConfig(z.handle, factor)
+	return ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

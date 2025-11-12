@@ -67,6 +67,8 @@ func main() {
 			printLeds(device)
 
 			printMemory(device)
+
+			printPerf(device)
 		}
 	}
 }
@@ -495,6 +497,34 @@ func printMemory(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  Bandwidth:\n")
 			dump(bandwidth, 4)
+		}
+	}
+}
+
+func printPerf(device *levelzero.ZeDevice) {
+	perfDomains, err := device.EnumPerformanceFactorDomains()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate performance factor domains: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d performance domains\n", len(perfDomains))
+	for i, domain := range perfDomains {
+		fmt.Printf("### Performance Domain %d\n", i)
+
+		props, err := domain.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for performance domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		factor, err := domain.GetConfig()
+		if err != nil {
+			log.Printf("ERROR: Failed to get config for performance domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Config: %+v\n", factor)
 		}
 	}
 }
