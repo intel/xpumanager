@@ -689,6 +689,55 @@ func (z *ZesPerf) SetConfig(factor float64) error {
 	return ret.ToError()
 }
 
+func (z *ZeDevice) EnumPowerDomains() ([]*ZesPwr, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumPowerDomains(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesPwrHandle, count)
+	ret := zesDeviceEnumPowerDomains(z.handle, &count, handles)
+	return handlesToWrappers[zesPwrHandle, ZesPwr](handles), ret.ToError()
+}
+
+func (z *ZesPwr) GetProperties() (ZesPowerProperties, error) {
+	var props ZesPowerProperties
+	ret := zesPowerGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesPwr) GetEnergyCounter() (ZesPowerEnergyCounter, error) {
+	var counter ZesPowerEnergyCounter
+	ret := zesPowerGetEnergyCounter(z.handle, &counter)
+	return counter, ret.ToError()
+}
+
+func (z *ZesPwr) GetEnergyThreshold() (ZesEnergyThreshold, error) {
+	var threshold ZesEnergyThreshold
+	ret := zesPowerGetEnergyThreshold(z.handle, &threshold)
+	return threshold, ret.ToError()
+}
+
+func (z *ZesPwr) SetEnergyThreshold(threshold float64) error {
+	ret := zesPowerSetEnergyThreshold(z.handle, threshold)
+	return ret.ToError()
+}
+
+func (z *ZesPwr) GetLimitsExt() ([]ZesPowerLimitExtDesc, error) {
+	count := uint32(0)
+	if ret := zesPowerGetLimitsExt(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	limits := make([]ZesPowerLimitExtDesc, count)
+	ret := zesPowerGetLimitsExt(z.handle, &count, limits)
+	return limits, ret.ToError()
+}
+
+func (z *ZesPwr) SetLimitsExt(limits []ZesPowerLimitExtDesc) error {
+	count := uint32(len(limits))
+	ret := zesPowerSetLimitsExt(z.handle, &count, limits)
+	return ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

@@ -69,6 +69,8 @@ func main() {
 			printMemory(device)
 
 			printPerf(device)
+
+			printPower(device)
 		}
 	}
 }
@@ -525,6 +527,48 @@ func printPerf(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get config for performance domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Config: %+v\n", factor)
+		}
+	}
+}
+
+func printPower(device *levelzero.ZeDevice) {
+	powerDomains, err := device.EnumPowerDomains()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate power domains: %v", err)
+		return
+	}
+	fmt.Printf("## Found %d power domains\n", len(powerDomains))
+	for i, domain := range powerDomains {
+		fmt.Printf("### Power Domain %d\n", i)
+
+		props, err := domain.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for power domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		energyCounter, err := domain.GetEnergyCounter()
+		if err != nil {
+			log.Printf("ERROR: Failed to get energy counter for power domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Energy Counter: %+v\n", energyCounter)
+		}
+
+		energyThreshold, err := domain.GetEnergyThreshold()
+		if err != nil {
+			log.Printf("ERROR: Failed to get energy threshold for power domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Energy Threshold: %+v\n", energyThreshold)
+		}
+
+		limits, err := domain.GetLimitsExt()
+		if err != nil {
+			log.Printf("ERROR: Failed to get limits for power domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Limits:\n")
+			dump(limits, 4)
 		}
 	}
 }
