@@ -910,14 +910,14 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	enginegroup *eg = d->dev->getEngineGroup();
-	if (eg == nullptr) {
+	enginegroup *engineGroup = d->dev->getEngineGroup();
+	if (engineGroup == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	uint32_t mediaEnginesCount = 0;
-	ze_result_t result = eg->getMediaEngines(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE);
+	ze_result_t result = engineGroup->getEngineCountByType(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -939,14 +939,14 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
 {
 	TRACING();
 
-	enginegroup *eg = d->dev->getEngineGroup();
-	if (eg == nullptr) {
+	enginegroup *engineGroup = d->dev->getEngineGroup();
+	if (engineGroup == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	uint32_t mediaEnhancementEnginesCount = 0;
-	ze_result_t result = eg->getMediaEngines(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
+	ze_result_t result = engineGroup->getEngineCountByType(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

@@ -200,26 +200,27 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 }
 
 /**
- * @brief Counts the number of media engines of a specific type
+ * @brief Counts the number of engine instances of a specific type
  *
  * This function iterates through all engine groups to count how many
- * engines match the specified media engine type, useful for system
- * capability assessment and workload distribution planning.
+ * engines match the specified engine type.
  *
- * @param mediaEngines Pointer to variable to store the count of media engines
- * @param type The specific engine group type to count
+ * @param [out] count Pointer to variable to store the count of engine instances
+ * @param [in] type The specific engine group type to count
  * @return ze_result_t ZE_RESULT_SUCCESS if counting completed successfully, error code otherwise
  */
-ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_group_t type)
+ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_t type)
 {
 	zes_engine_properties_t engineProperties;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
 
-	if (mediaEngines == nullptr) {
-		ERR("Media engines pointer is null.\n");
+	if (count == nullptr) {
+		ERR("Count pointer is null.\n");
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
+
+	*count = 0;
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
@@ -231,7 +232,7 @@ ze_result_t enginegroup::getMediaEngines(uint32_t *mediaEngines, zes_engine_grou
 
 		DBG("  - Engine Group %d Type: %d\n", i, engineProperties.type);
 		if (engineProperties.type == type) {
-			(*mediaEngines)++;
+			(*count)++;
 		}
 	}
 	return ZE_RESULT_SUCCESS;
@@ -299,6 +300,70 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t 
 		}
 	}
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Gets activity statistics for a specific engine instance by type and index
+ *
+ * This function retrieves utilization activity (active time and timestamp) for
+ * a specific engine instance. Engines are indexed in the order they appear when
+ * filtered by type.
+ *
+ * @param [in] type The engine group type to query
+ * @param [in] engineIndex Zero-based index of the engine instance within engines of this type
+ * @param [out] activeTime Pointer to store the cumulative active time in microseconds
+ * @param [out] timestamp Pointer to store the measurement timestamp in microseconds
+ * @return ze_result_t ZE_RESULT_SUCCESS if activity retrieved successfully, error code otherwise
+ */
+ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32_t engineIndex, uint64_t *activeTime,
+												 uint64_t *timestamp)
+{
+	zes_engine_properties_t engineProperties;
+	zes_engine_stats_t engineStats;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t matchIndex = 0;
+	TRACING();
+
+	if (activeTime == nullptr) {
+		ERR("Active time pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	if (timestamp == nullptr) {
+		ERR("Timestamp pointer is null.\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+		zes_engine_handle_t engineGroup = engineGroups[i];
+		result = getProperties(engineGroup, &engineProperties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (engineProperties.type == type) {
+			if (matchIndex == engineIndex) {
+				result = getActivity(engineGroup, &engineStats);
+				if (result != ZE_RESULT_SUCCESS) {
+					ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result,
+						l0_error_to_string(result));
+					return result;
+				}
+
+				*activeTime = engineStats.activeTime;
+				*timestamp = engineStats.timestamp;
+
+				DBG("Engine type %d index %u: activeTime=%" PRIu64 ", timestamp=%" PRIu64 "\n", type, engineIndex,
+					*activeTime, *timestamp);
+				return ZE_RESULT_SUCCESS;
+			}
+			matchIndex++;
+		}
+	}
+
+	ERR("Engine type %d index %u not found (only %u engines of this type)\n", type, engineIndex, matchIndex);
+	return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
 /**
