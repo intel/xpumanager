@@ -920,6 +920,42 @@ func (z *ZesTemp) GetState() (float64, error) {
 	return state, ret.ToError()
 }
 
+func (z *ZeDevice) EnumEnabledVFExp() ([]*ZesVf, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumEnabledVFExp(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesVfHandle, count)
+	ret := zesDeviceEnumEnabledVFExp(z.handle, &count, handles)
+	return handlesToWrappers[zesVfHandle, ZesVf](handles), ret.ToError()
+}
+
+func (z *ZesVf) GetVFMemoryUtilizationExp2() ([]ZesVfUtilMemExp2, error) {
+	count := uint32(0)
+	if ret := zesVFManagementGetVFMemoryUtilizationExp2(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	utils := make([]ZesVfUtilMemExp2, count)
+	ret := zesVFManagementGetVFMemoryUtilizationExp2(z.handle, &count, utils)
+	return utils, ret.ToError()
+}
+
+func (z *ZesVf) GetVFEngineUtilizationExp2() ([]ZesVfUtilEngineExp2, error) {
+	count := uint32(0)
+	if ret := zesVFManagementGetVFEngineUtilizationExp2(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	utils := make([]ZesVfUtilEngineExp2, count)
+	ret := zesVFManagementGetVFEngineUtilizationExp2(z.handle, &count, utils)
+	return utils, ret.ToError()
+}
+
+func (z *ZesVf) GetVFCapabilitiesExp2() (ZesVfExp2Capabilities, error) {
+	var caps ZesVfExp2Capabilities
+	ret := zesVFManagementGetVFCapabilitiesExp2(z.handle, &caps)
+	return caps, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

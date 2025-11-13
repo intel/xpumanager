@@ -81,6 +81,8 @@ func main() {
 			printStandby(device)
 
 			printTemperature(device)
+
+			printVF(device)
 		}
 	}
 }
@@ -761,6 +763,33 @@ func printTemperature(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for temperature sensor %d: %v", i, err)
 		} else {
 			fmt.Printf("  Temperature: %+v\n", temp)
+		}
+	}
+}
+
+func printVF(device *levelzero.ZeDevice) {
+	vfs, err := device.EnumEnabledVFExp()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate enabled VFs: %v", err)
+		return
+	}
+	fmt.Printf("## Found %d enabled VFs\n", len(vfs))
+	for i, vf := range vfs {
+		fmt.Printf("### VF %d\n", i)
+
+		caps, err := vf.GetVFCapabilitiesExp2()
+		if err != nil {
+			log.Printf("ERROR: Failed to get capabilities for VF %d: %v", i, err)
+		} else {
+			fmt.Printf("  Capabilities:\n")
+			dump(caps, 4)
+		}
+
+		memoryUtilization, err := vf.GetVFMemoryUtilizationExp2()
+		if err != nil {
+			log.Printf("ERROR: Failed to get memory utilization for VF %d: %v", i, err)
+		} else {
+			fmt.Printf("  Memory Utilization: %+v\n", memoryUtilization)
 		}
 	}
 }
