@@ -23,7 +23,9 @@ generate-dockerized: clean
 	$(Q)cd $(OUTDIR)/levelzero && go tool cgo -godefs ./types.go > types.go.tmp && \
 	    mv types.go.tmp ./types.go
 	$(Q)sed -i $(OUTDIR)/levelzero/types.go \
-	        -e s'!Pad_cgo_[0-9]*!_!'
+	        -e s'!Pad_cgo_[0-9]*!_!' \
+	        -e s'!Stype!stype!' \
+	        -e s'!PNext!pnext!'
 	$(Q)go fmt $(OUTDIR)/levelzero/types.go
 
 clean:
