@@ -44,6 +44,9 @@ public:
 	ze_result_t createVFs(DeviceSriovInfo *deviceInfo);
 	ze_result_t removeVFs(DeviceSriovInfo *deviceInfo);
 	ze_result_t listVFs(DeviceSriovInfo *deviceInfo, std::vector<DeviceSriovInfo> &vfDeviceInfoList);
+	bool vmxSupport();
+	bool iommuSupport();
+	bool sriovSupport(DeviceSriovInfo *deviceInfo);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

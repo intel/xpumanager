@@ -47,6 +47,9 @@ typedef wchar_t TCHAR;
 #define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
 #define REMOVEVFS(deviceInfoPtr) removeAllVFs(deviceInfoPtr)
 #define LISTVFS(deviceInfoPtr, result) linListVFs(deviceInfoPtr, result)
+#define VMXSUPPORT() isVmxSupported()
+#define IOMMUSUPPORT() isIommuSupported()
+#define SRIOVSUPPORT(deviceInfoPtr) isSriovSupported(deviceInfoPtr)
 #define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult) checkMediaCodec(bdfStr, functionalCheck, finalResult)
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
@@ -86,6 +89,9 @@ std::string getDrmPath(const std::string &bdf);
 int linCreateVFs(DeviceSriovInfo *di);
 int removeAllVFs(DeviceSriovInfo *di);
 int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result);
+bool isVmxSupported();
+bool isIommuSupported();
+bool isSriovSupported(DeviceSriovInfo *di);
 bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &finalResult);
 
 #endif

@@ -322,6 +322,58 @@ ze_result_t vf::listVFs(DeviceSriovInfo *deviceInfo, std::vector<DeviceSriovInfo
 }
 
 /**
+ * @brief Checks for VMX support on the system
+ *
+ * This function determines whether Virtual Machine Extensions (VMX) are
+ * supported on the current system, which is a prerequisite for certain
+ * virtualization features.
+ *
+ * @return bool True if VMX is supported, false otherwise
+ *
+ */
+bool vf::vmxSupport()
+{
+	TRACING();
+	bool ret = VMXSUPPORT();
+	DBG("VMX is%s supported on this system\n", ret ? "" : " not");
+	return ret;
+}
+
+/**
+ * @brief Checks for IOMMU support on the system
+ *
+ * This function determines whether Input-Output Memory Management Unit (IOMMU)
+ * is supported on the current system, which is essential for secure device
+ * virtualization.
+ *
+ * @return bool True if IOMMU is supported, false otherwise
+ */
+bool vf::iommuSupport()
+{
+	TRACING();
+	bool ret = IOMMUSUPPORT();
+	DBG("IOMMU is%s supported on this system\n", ret ? "" : " not");
+	return ret;
+}
+
+/**
+ * @brief Checks for SR-IOV support on the device
+ *
+ * This function determines whether Single Root I/O Virtualization (SR-IOV)
+ * is supported on the specified device, which is essential for VF functionality.
+ *
+ * @param[in] deviceInfo Pointer to the device information structure
+ * @return bool True if SR-IOV is supported, false otherwise
+ */
+bool vf::sriovSupport(DeviceSriovInfo *deviceInfo)
+{
+	TRACING();
+	bool ret = SRIOVSUPPORT(deviceInfo);
+	DBG("SRIOV is%s supported on this device\n", ret ? "" : " not");
+	return ret;
+}
+
+/**
  * @brief Initializes the Virtual Function management module for a device
  *
  * This function performs initial setup of VF monitoring capabilities by
