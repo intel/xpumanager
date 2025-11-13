@@ -99,13 +99,22 @@ void cmdVgpu::help(HELP helpType)
  * This function validates system requirements and prerequisites for vGPU functionality.
  * Currently implemented as a placeholder for future vGPU validation logic.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param d[in] Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS on successful pre-check validation
  */
-ze_result_t cmdVgpu::precheck(UNUSED devInfo *d)
+ze_result_t cmdVgpu::precheck(devInfo *d)
 {
 	TRACING();
-	DBG("Precheck vGPU...\n");
+	vf *v = d->dev->getVF();
+	DeviceSriovInfo deviceInfo = {};
+	pci *p = d->dev->getPCI();
+
+	deviceInfo.bdfAddress = p->getBDFStr();
+	deviceInfo.drmPath = d->dev->getDrmDevPath();
+
+	PRINT("VMX is %s\n", v->vmxSupport() ? "supported" : "not supported");
+	PRINT("IOMMU is %s\n", v->iommuSupport() ? "supported" : "not supported");
+	PRINT("SR-IOV %s supported on device\n", v->sriovSupport(&deviceInfo) ? "is" : "is not");
 	return ZE_RESULT_SUCCESS;
 }
 

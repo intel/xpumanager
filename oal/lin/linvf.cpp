@@ -803,3 +803,79 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 	}
 	return 0;
 }
+
+/**
+ * @brief Check if the CPU supports Intel VT-x (VMX) virtualization
+ *
+ * Reads /proc/cpuinfo to determine if the "vmx" flag is present,
+ * indicating support for Intel VT-x.
+ *
+ * @return bool true if VMX is supported, false otherwise
+ */
+bool isVmxSupported()
+{
+	std::ifstream cpuinfo("/proc/cpuinfo");
+	std::string line;
+
+	while (std::getline(cpuinfo, line)) {
+		if (line.find("flags") == 0) { // Line starts with "flags"
+			return line.find(" vmx ") != std::string::npos || line.find(" vmx\t") != std::string::npos;
+		}
+	}
+	return false;
+}
+
+/**
+ * @brief Check if an IOMMU device is present on the system
+ *
+ * Scans the /sys/class/iommu directory to see if any IOMMU instances
+ * are listed, indicating that IOMMU is enabled on the system.
+ *
+ * @return bool true if an IOMMU device is found, false otherwise
+ */
+bool isIommuSupported()
+{
+	DIR *dir;
+	struct dirent *ent;
+	bool result = false;
+	/*
+	 *   The devices managed by IOMMU will be listed here: /sys/class/iommu/<iommu instance>/devices
+	 *   So /sys/class/iommu/ non-empty means IOMMU enabled.
+	 *   https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-iommu
+	 */
+	if ((dir = opendir(std::string("/sys/class/iommu").c_str())) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
+				result = true;
+				break;
+			}
+		}
+		closedir(dir);
+	} else {
+		ERR("Failed to open directory /sys/class/iommu\n");
+	}
+	return result;
+}
+
+/**
+ * @brief Check if SRIOV is supported on the specified device
+ *
+ * Reads the sriov_totalvfs sysfs file to determine if the device
+ * supports SRIOV by checking if the total number of VFs is greater than zero.
+ *
+ * @param[in] di Pointer to DeviceSriovInfo structure containing device information
+ * @return bool true if SRIOV is supported, false otherwise
+ */
+bool isSriovSupported(DeviceSriovInfo *di)
+{
+	TRACING();
+	std::string numVfsString;
+	std::stringstream numvfsPath;
+
+	numvfsPath << "/sys/bus/pci/devices/" << di->bdfAddress << "/sriov_totalvfs";
+	if (readFile(numvfsPath.str(), numVfsString) != 0) {
+		return false;
+	}
+
+	return std::stoi(numVfsString) > 0 ? true : false;
+}
