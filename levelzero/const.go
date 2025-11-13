@@ -394,14 +394,9 @@ const (
 	ZES_ENGINE_GROUP_COPY_ALL                 ZesEngineGroup = 3
 	ZES_ENGINE_GROUP_COMPUTE_SINGLE           ZesEngineGroup = 4
 	ZES_ENGINE_GROUP_RENDER_SINGLE            ZesEngineGroup = 5
-	ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE      ZesEngineGroup = 6
-	ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE      ZesEngineGroup = 7
 	ZES_ENGINE_GROUP_COPY_SINGLE              ZesEngineGroup = 8
 	ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE ZesEngineGroup = 9
-	ZES_ENGINE_GROUP_3D_SINGLE                ZesEngineGroup = 10
-	ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL    ZesEngineGroup = 11
 	ZES_ENGINE_GROUP_RENDER_ALL               ZesEngineGroup = 12
-	ZES_ENGINE_GROUP_3D_ALL                   ZesEngineGroup = 13
 	ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE       ZesEngineGroup = 14
 	ZES_ENGINE_GROUP_FORCE_UINT32             ZesEngineGroup = 2147483647
 )
@@ -509,18 +504,6 @@ const (
 	ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE      ZesFreqThrottleReasonFlag = 32
 	ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE      ZesFreqThrottleReasonFlag = 64
 	ZES_FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32  ZesFreqThrottleReasonFlag = 2147483647
-)
-
-// ZesOcMode as declared in levelzero/zes_api.h:3750
-type ZesOcMode int32
-
-// ZesOcMode enumeration from levelzero/zes_api.h:3750
-const (
-	ZES_OC_MODE_OFF           ZesOcMode = iota
-	ZES_OC_MODE_OVERRIDE      ZesOcMode = 1
-	ZES_OC_MODE_INTERPOLATIVE ZesOcMode = 2
-	ZES_OC_MODE_FIXED         ZesOcMode = 3
-	ZES_OC_MODE_FORCE_UINT32  ZesOcMode = 2147483647
 )
 
 // ZesMemType as declared in levelzero/zes_api.h:4542
@@ -665,11 +648,10 @@ type ZesSchedMode int32
 
 // ZesSchedMode enumeration from levelzero/zes_api.h:5718
 const (
-	ZES_SCHED_MODE_TIMEOUT            ZesSchedMode = iota
-	ZES_SCHED_MODE_TIMESLICE          ZesSchedMode = 1
-	ZES_SCHED_MODE_EXCLUSIVE          ZesSchedMode = 2
-	ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG ZesSchedMode = 3
-	ZES_SCHED_MODE_FORCE_UINT32       ZesSchedMode = 2147483647
+	ZES_SCHED_MODE_TIMEOUT      ZesSchedMode = iota
+	ZES_SCHED_MODE_TIMESLICE    ZesSchedMode = 1
+	ZES_SCHED_MODE_EXCLUSIVE    ZesSchedMode = 2
+	ZES_SCHED_MODE_FORCE_UINT32 ZesSchedMode = 2147483647
 )
 
 // ZesStandbyType as declared in levelzero/zes_api.h:6070
@@ -821,31 +803,7 @@ type ZesVfManagementExpVersion int32
 
 // ZesVfManagementExpVersion enumeration from levelzero/zes_api.h:7122
 const (
-	ZES_VF_MANAGEMENT_EXP_VERSION_1_0          ZesVfManagementExpVersion = 65536
-	ZES_VF_MANAGEMENT_EXP_VERSION_1_1          ZesVfManagementExpVersion = 65537
 	ZES_VF_MANAGEMENT_EXP_VERSION_1_2          ZesVfManagementExpVersion = 65538
 	ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT      ZesVfManagementExpVersion = 65538
 	ZES_VF_MANAGEMENT_EXP_VERSION_FORCE_UINT32 ZesVfManagementExpVersion = 2147483647
-)
-
-// ZesVfInfoMemTypeExpFlag as declared in levelzero/zes_api.h:7133
-type ZesVfInfoMemTypeExpFlag int32
-
-// ZesVfInfoMemTypeExpFlag enumeration from levelzero/zes_api.h:7133
-const (
-	ZES_VF_INFO_MEM_TYPE_EXP_FLAG_MEM_TYPE_SYSTEM ZesVfInfoMemTypeExpFlag = 1
-	ZES_VF_INFO_MEM_TYPE_EXP_FLAG_MEM_TYPE_DEVICE ZesVfInfoMemTypeExpFlag = 2
-	ZES_VF_INFO_MEM_TYPE_EXP_FLAG_FORCE_UINT32    ZesVfInfoMemTypeExpFlag = 2147483647
-)
-
-// ZesVfInfoUtilExpFlag as declared in levelzero/zes_api.h:7146
-type ZesVfInfoUtilExpFlag int32
-
-// ZesVfInfoUtilExpFlag enumeration from levelzero/zes_api.h:7146
-const (
-	ZES_VF_INFO_UTIL_EXP_FLAG_INFO_NONE    ZesVfInfoUtilExpFlag = 1
-	ZES_VF_INFO_UTIL_EXP_FLAG_INFO_MEM_CPU ZesVfInfoUtilExpFlag = 2
-	ZES_VF_INFO_UTIL_EXP_FLAG_INFO_MEM_GPU ZesVfInfoUtilExpFlag = 4
-	ZES_VF_INFO_UTIL_EXP_FLAG_INFO_ENGINE  ZesVfInfoUtilExpFlag = 8
-	ZES_VF_INFO_UTIL_EXP_FLAG_FORCE_UINT32 ZesVfInfoUtilExpFlag = 2147483647
 )
