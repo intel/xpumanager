@@ -46,6 +46,7 @@ typedef wchar_t TCHAR;
 #define CHECKPROCESSEXCLUSIVE(processId) checkProcessExclusive(processId)
 #define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
 #define REMOVEVFS(deviceInfoPtr) removeAllVFs(deviceInfoPtr)
+#define LISTVFS(deviceInfoPtr, result) linListVFs(deviceInfoPtr, result)
 #define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult) checkMediaCodec(bdfStr, functionalCheck, finalResult)
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
@@ -84,6 +85,7 @@ bool checkProcessExclusive(uint32_t processId);
 std::string getDrmPath(const std::string &bdf);
 int linCreateVFs(DeviceSriovInfo *di);
 int removeAllVFs(DeviceSriovInfo *di);
+int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result);
 bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &finalResult);
 
 #endif

@@ -108,6 +108,7 @@ struct option
 #define GETDRMPATH(bdf) ""
 #define CREATEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define REMOVEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
+#define LISTVFS(deviceInfoPtr, result) (UNUSED_VAR(deviceInfoPtr), UNUSED_VAR(result), 0)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;

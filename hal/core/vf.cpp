@@ -299,6 +299,28 @@ ze_result_t vf::removeVFs(DeviceSriovInfo *deviceInfo)
 	return ZE_RESULT_SUCCESS;
 }
 
+/*
+ * @brief Lists all Virtual Functions (VFs) for a device
+ *
+ * This function retrieves and populates information about all Virtual Functions
+ * associated with the specified device, including their configuration and status.
+ *
+ * @param[in] deviceInfo Pointer to device information structure
+ * @param[out] result Reference to a vector to populate with DeviceSriovInfo structures
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful VF listing, error code otherwise
+ */
+ze_result_t vf::listVFs(DeviceSriovInfo *deviceInfo, std::vector<DeviceSriovInfo> &result)
+{
+	TRACING();
+
+	/* Call OAL Macro for listing VFs */
+	if (LISTVFS(deviceInfo, result)) {
+		ERR("Failed to list VFs.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
 /**
  * @brief Initializes the Virtual Function management module for a device
  *
