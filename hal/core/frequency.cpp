@@ -22,6 +22,8 @@
  *
  */
 #include "frequency.h"
+#include "device.h"
+#include <vector>
 
 /**
  * @brief Destructor for the frequency class
@@ -271,7 +273,7 @@ ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle, zes_freq_stat
 	}
 
 	DBG("Frequency State:\n");
-	DBG("  Current voltage: %f MHz\n", state->currentVoltage);
+	DBG("  Current voltage: %f V\n", state->currentVoltage);
 	DBG("  Requested Frequency: %f MHz\n", state->request);
 	DBG("  TDP Frequency: %f MHz\n", state->tdp);
 	DBG("  Efficient Frequency: %f MHz\n", state->efficient);
@@ -301,8 +303,8 @@ ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 	}
 
 	DBG("Throttle Time:\n");
-	DBG("  Timestamp: %" PRIu64 "\n", throttleTime.timestamp);
-	DBG("  Throttle Time: %" PRIu64 "microseconds\n", throttleTime.throttleTime);
+	DBG("  Timestamp: %" PRIu64 " microseconds\n", throttleTime.timestamp);
+	DBG("  Throttle Time: %" PRIu64 " microseconds\n", throttleTime.throttleTime);
 
 	return result;
 }
@@ -356,7 +358,26 @@ ze_result_t frequency::getThrottleReason(zes_freq_throttle_reason_flags_t *throt
  * @param device Handle to the device for frequency initialization
  * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
  */
-ze_result_t frequency::init(zes_device_handle_t device) { return enumFrequencies(device); }
+ze_result_t frequency::init(zes_device_handle_t device)
+{
+	deviceHandle = device;
+	parentDevice = nullptr;
+	return enumFrequencies(device);
+}
+
+/**
+ * @brief Initializes the frequency management module with parent device context
+ *
+ * @param device Handle to the device for frequency initialization
+ * @param parent Pointer to parent device object for subdevice mapping support
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
+ */
+ze_result_t frequency::init(zes_device_handle_t device, class device *parent)
+{
+	deviceHandle = device;
+	parentDevice = parent;
+	return enumFrequencies(device);
+}
 
 /**
  * @brief Performs comprehensive frequency domain runtime operations
@@ -398,4 +419,407 @@ ze_result_t frequency::zesRun(UNUSED zes_device_handle_t device)
 	}
 
 	return result;
+}
+
+/**
+ * @brief Sets frequency range for a specific subdevice or all GPU domains
+ *
+ * This function configures the minimum and maximum frequency limits for either
+ * a specific subdevice (when subdeviceId >= 0) or all GPU frequency domains
+ * (when subdeviceId = -1). The function uses the parent device's subdevice
+ * mapping to ensure proper hardware domain targeting.
+ *
+ * @param [in] minFreq Minimum frequency limit in MHz
+ * @param [in] maxFreq Maximum frequency limit in MHz
+ * @param [in] subdeviceId Subdevice identifier (-1 for all GPU domains, >= 0 for specific subdevice)
+ * @retval ZE_RESULT_SUCCESS On success
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT If subdeviceId < -1
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If parent device not set for subdevice-specific operation
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching frequency domain found
+ */
+ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t subdeviceId)
+{
+	TRACING();
+
+	// Validate subdeviceId parameter
+	if (subdeviceId < -1) {
+		ERR("Invalid subdeviceId %d. Must be -1 (all) or >= 0 (specific subdevice).\n", subdeviceId);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	zes_freq_properties_t props = {};
+	zes_freq_range_t range = {};
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	bool anySuccess = false;
+	ze_result_t lastError = ZE_RESULT_SUCCESS;
+	bool setAll = (subdeviceId == -1);
+
+	// Get subdevice mapping if tileId is specified
+	uint32_t targetSubdeviceId = 0;
+	if (!setAll) {
+		if (parentDevice == nullptr) {
+			ERR("Parent device not set. Cannot map tile to subdevice.\n");
+			return ZE_RESULT_ERROR_UNINITIALIZED;
+		}
+
+		zes_subdevice_exp_properties_t subdeviceProps = {};
+		result = parentDevice->getSubdeviceProperties(static_cast<uint32_t>(subdeviceId), subdeviceProps);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		targetSubdeviceId = subdeviceProps.subdeviceId;
+	}
+
+	range.min = minFreq;
+	range.max = maxFreq;
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		result = getProperties(frequencyHandles[i], &props);
+		if (result != ZE_RESULT_SUCCESS) {
+			lastError = result;
+			continue;
+		}
+
+		// Only process GPU frequency domains
+		if (props.type != ZES_FREQ_DOMAIN_GPU) {
+			continue;
+		}
+
+		// Check if this domain matches our criteria
+		bool shouldSet = false;
+		if (setAll) {
+			// Set all GPU domains
+			shouldSet = true;
+		} else {
+			// Set specific subdevice only - must check onSubdevice per L0 spec
+			shouldSet = (props.onSubdevice && props.subdeviceId == targetSubdeviceId);
+		}
+
+		if (shouldSet) {
+			result = zesFrequencySetRange(frequencyHandles[i], &range);
+			if (result == ZE_RESULT_SUCCESS) {
+				anySuccess = true;
+				if (props.onSubdevice) {
+					DBG("Successfully set frequency range for subdevice %u:\n", props.subdeviceId);
+				} else {
+					DBG("Successfully set frequency range for device-level GPU domain:\n");
+				}
+				DBG("  Min Frequency: %f MHz\n", range.min);
+				DBG("  Max Frequency: %f MHz\n", range.max);
+
+				// If we're setting a specific subdevice and found it, we can return
+				if (!setAll) {
+					return ZE_RESULT_SUCCESS;
+				}
+			} else {
+				lastError = result;
+				if (props.onSubdevice) {
+					ERR("Failed to set frequency range for subdevice %u. 0x%X (%s)\n", props.subdeviceId, result,
+						l0_error_to_string(result));
+				} else {
+					ERR("Failed to set frequency range for device-level GPU domain. 0x%X (%s)\n", result,
+						l0_error_to_string(result));
+				}
+			}
+		}
+	}
+
+	// If setting all, return success if any succeeded
+	if (setAll) {
+		return anySuccess ? ZE_RESULT_SUCCESS : lastError;
+	}
+
+	// If setting specific subdevice and we got here, we didn't find it
+	ERR("No matching GPU frequency domain found for subdevice %d\n", subdeviceId);
+	return ZE_RESULT_ERROR_NOT_AVAILABLE;
+}
+
+/**
+ * @brief Sets frequency range for all GPU frequency domains
+ *
+ * This is a convenience wrapper around setFrequencyRange() that sets
+ * the frequency range for all GPU domains on the device.
+ *
+ * @param [in] minFreq Minimum frequency limit in MHz
+ * @param [in] maxFreq Maximum frequency limit in MHz
+ * @retval ZE_RESULT_SUCCESS On success
+ * @retval ZE_RESULT_ERROR_* On failure (passes through errors from setFrequencyRange)
+ */
+ze_result_t frequency::setFrequencyRangeForAll(double minFreq, double maxFreq)
+{
+	return setFrequencyRange(minFreq, maxFreq, -1);
+}
+
+/**
+ * @brief Gets available clock frequencies for a specific subdevice
+ *
+ * This function retrieves all available discrete clock frequencies for a
+ * specific subdevice's GPU frequency domain, using subdevice mapping
+ * to ensure proper hardware targeting.
+ *
+ * @param [in] subdeviceId Subdevice identifier
+ * @param [out] clocks Vector to store available clock frequencies in MHz
+ * @retval ZE_RESULT_SUCCESS On success
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If parent device not set
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching frequency domain found
+ */
+ze_result_t frequency::getFreqAvailableClocks(uint32_t subdeviceId, std::vector<double> &clocks)
+{
+	TRACING();
+	zes_freq_properties_t props = {};
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	if (parentDevice == nullptr) {
+		ERR("Parent device not set. Cannot map tile to subdevice.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	// Get subdevice mapping
+	zes_subdevice_exp_properties_t subdeviceProps = {};
+	result = parentDevice->getSubdeviceProperties(subdeviceId, subdeviceProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	uint32_t targetSubdeviceId = subdeviceProps.subdeviceId;
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		result = getProperties(frequencyHandles[i], &props);
+		if (result != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		// Check onSubdevice flag before accessing subdeviceId per L0 spec
+		if (props.type == ZES_FREQ_DOMAIN_GPU && props.onSubdevice && props.subdeviceId == targetSubdeviceId) {
+			uint32_t count = 0;
+			result = zesFrequencyGetAvailableClocks(frequencyHandles[i], &count, nullptr);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get available clock count for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+					l0_error_to_string(result));
+				return result;
+			}
+
+			if (count == 0) {
+				DBG("No available clocks found for subdevice %u.\n", subdeviceId);
+				return ZE_RESULT_SUCCESS;
+			}
+
+			clocks.resize(count);
+			result = zesFrequencyGetAvailableClocks(frequencyHandles[i], &count, clocks.data());
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get available clocks for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+					l0_error_to_string(result));
+				return result;
+			}
+
+			DBG("Available Clocks for subdevice %u:\n", subdeviceId);
+			for (uint32_t j = 0; j < count; ++j) {
+				DBG("  Clock %u: %f MHz\n", j, clocks[j]);
+			}
+			return ZE_RESULT_SUCCESS;
+		}
+	}
+
+	ERR("No matching GPU frequency domain found for subdevice %u\n", subdeviceId);
+	return ZE_RESULT_ERROR_NOT_AVAILABLE;
+}
+
+/**
+ * @brief Helper function to get scheduler handle for a specific subdevice
+ *
+ * This function enumerates all schedulers on the device and finds the one
+ * corresponding to the specified subdevice ID. It uses the parent device's
+ * subdevice mapping to ensure proper hardware targeting. This is used by
+ * scheduler configuration functions to avoid code duplication.
+ *
+ * @param [in] subdeviceId Subdevice identifier
+ * @param [out] schedulerHandle Handle to the scheduler for the specified subdevice
+ * @retval ZE_RESULT_SUCCESS If scheduler found
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT If device handle is null
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If parent device not set
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE If no schedulers found on device
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching scheduler found for subdevice
+ */
+ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_handle_t &schedulerHandle)
+{
+	if (deviceHandle == nullptr) {
+		ERR("Device handle is null\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (parentDevice == nullptr) {
+		ERR("Parent device not set. Cannot map tile to subdevice.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	// Get subdevice mapping using device's helper function
+	zes_subdevice_exp_properties_t subdeviceProps = {};
+	ze_result_t result = parentDevice->getSubdeviceProperties(subdeviceId, subdeviceProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	uint32_t targetSubdeviceId = subdeviceProps.subdeviceId;
+
+	uint32_t schedulerCount = 0;
+	result = zesDeviceEnumSchedulers(deviceHandle, &schedulerCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to enumerate schedulers. 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (schedulerCount == 0) {
+		ERR("No schedulers found on device\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	std::vector<zes_sched_handle_t> schedulers(schedulerCount);
+	result = zesDeviceEnumSchedulers(deviceHandle, &schedulerCount, schedulers.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get scheduler handles. 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Find the scheduler for the specified subdevice
+	for (const auto &sched : schedulers) {
+		zes_sched_properties_t props = {};
+		result = zesSchedulerGetProperties(sched, &props);
+		if (result != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		// Check onSubdevice flag before accessing subdeviceId per L0 spec
+		if (props.onSubdevice && props.subdeviceId == targetSubdeviceId) {
+			schedulerHandle = sched;
+			DBG("Found scheduler for tile %u (subdeviceId %u)\n", subdeviceId, targetSubdeviceId);
+			return ZE_RESULT_SUCCESS;
+		}
+	}
+
+	ERR("No scheduler found for tile %u (subdeviceId %u)\n", subdeviceId, targetSubdeviceId);
+	return ZE_RESULT_ERROR_NOT_AVAILABLE;
+}
+
+/**
+ * @brief Sets scheduler timeout mode for a specific subdevice
+ *
+ * This function configures the scheduler timeout mode for a specific subdevice,
+ * which sets a watchdog timeout for compute operations to prevent hangs.
+ *
+ * @param [in] subdeviceId Subdevice identifier
+ * @param [in] watchdogTimeout Watchdog timeout in microseconds
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT If device handle is null
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If parent device not set
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE If no schedulers found on device
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching scheduler found for subdevice
+ */
+ze_result_t frequency::setSchedulerTimeoutMode(uint32_t subdeviceId, uint64_t watchdogTimeout)
+{
+	TRACING();
+
+	zes_sched_handle_t scheduler;
+	ze_result_t result = getSchedulerForSubdevice(subdeviceId, scheduler);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	ze_bool_t needReload = false;
+	zes_sched_timeout_properties_t timeoutProps = {};
+	timeoutProps.stype = ZES_STRUCTURE_TYPE_SCHED_TIMEOUT_PROPERTIES;
+	timeoutProps.pNext = nullptr;
+	timeoutProps.watchdogTimeout = watchdogTimeout;
+
+	result = zesSchedulerSetTimeoutMode(scheduler, &timeoutProps, &needReload);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set scheduler timeout mode for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+			l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Successfully set scheduler timeout mode for subdevice %u\n", subdeviceId);
+	DBG("  Watchdog Timeout: %" PRIu64 " microseconds\n", watchdogTimeout);
+	DBG("  Need Reload: %s\n", needReload ? "true" : "false");
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Sets scheduler timeslice mode for a specific subdevice
+ *
+ * This function configures the scheduler timeslice mode for a specific subdevice,
+ * controlling how compute workloads are time-multiplexed on the hardware.
+ *
+ * @param [in] subdeviceId Subdevice identifier
+ * @param [in] interval Timeslice interval in microseconds
+ * @param [in] yieldTimeout Yield timeout in microseconds
+ * @retval ZE_RESULT_SUCCESS On success
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT If device handle is null
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If parent device not set
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE If no schedulers found on device
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching scheduler found for subdevice
+ */
+ze_result_t frequency::setSchedulerTimesliceMode(uint32_t subdeviceId, uint64_t interval, uint64_t yieldTimeout)
+{
+	TRACING();
+
+	zes_sched_handle_t scheduler;
+	ze_result_t result = getSchedulerForSubdevice(subdeviceId, scheduler);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	ze_bool_t needReload = false;
+	zes_sched_timeslice_properties_t timesliceProps = {};
+	timesliceProps.stype = ZES_STRUCTURE_TYPE_SCHED_TIMESLICE_PROPERTIES;
+	timesliceProps.pNext = nullptr;
+	timesliceProps.interval = interval;
+	timesliceProps.yieldTimeout = yieldTimeout;
+
+	result = zesSchedulerSetTimesliceMode(scheduler, &timesliceProps, &needReload);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set scheduler timeslice mode for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+			l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Successfully set scheduler timeslice mode for subdevice %u\n", subdeviceId);
+	DBG("  Interval: %" PRIu64 " microseconds\n", interval);
+	DBG("  Yield Timeout: %" PRIu64 " microseconds\n", yieldTimeout);
+	DBG("  Need Reload: %s\n", needReload ? "true" : "false");
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Sets scheduler exclusive mode for a specific subdevice
+ *
+ * This function configures the scheduler to exclusive mode for a specific subdevice,
+ * where a single process gets dedicated access to the compute resources.
+ *
+ * @param [in] subdeviceId Subdevice identifier
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT If device handle is null
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If parent device not set
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE If no schedulers found on device
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching scheduler found for subdevice
+ */
+ze_result_t frequency::setSchedulerExclusiveMode(uint32_t subdeviceId)
+{
+	TRACING();
+
+	zes_sched_handle_t scheduler;
+	ze_result_t result = getSchedulerForSubdevice(subdeviceId, scheduler);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	ze_bool_t needReload = false;
+	result = zesSchedulerSetExclusiveMode(scheduler, &needReload);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set scheduler exclusive mode for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+			l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Successfully set scheduler exclusive mode for subdevice %u\n", subdeviceId);
+	DBG("  Need Reload: %s\n", needReload ? "true" : "false");
+
+	return ZE_RESULT_SUCCESS;
 }
