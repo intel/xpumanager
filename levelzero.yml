@@ -63,6 +63,7 @@ TRANSLATOR:
       - {transform: unexport, from: "Zes_device_properties$"}
       - {transform: unexport, from: "Ze_device_properties$"}
       - {load: snakecase}
+      - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
       # Deprecated types from zes_api.h
       - {action: ignore, from: "^zes_oc_mode_t$"}
       - {action: ignore, from: "^zes_oc_capabilities_t$"}
