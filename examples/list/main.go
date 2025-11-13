@@ -77,6 +77,8 @@ func main() {
 			printRas(device)
 
 			printSched(device)
+
+			printStandby(device)
 		}
 	}
 }
@@ -693,6 +695,34 @@ func printSched(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  Timeslice Mode Properties:\n")
 			dump(timesliceModeProps, 4)
+		}
+	}
+}
+
+func printStandby(device *levelzero.ZeDevice) {
+	standbys, err := device.EnumStandbyDomains()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate standby domains: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d standby domains\n", len(standbys))
+	for i, standby := range standbys {
+		fmt.Printf("### Standby Domain %d\n", i)
+
+		props, err := standby.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for standby domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		mode, err := standby.GetMode()
+		if err != nil {
+			log.Printf("ERROR: Failed to get mode for standby domain %d: %v", i, err)
+		} else {
+			fmt.Printf("  Mode: %v\n", mode)
 		}
 	}
 }

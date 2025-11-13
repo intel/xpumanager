@@ -860,6 +860,33 @@ func (z *ZesSched) SetExclusiveMode() (bool, error) {
 	return needReload != 0, ret.ToError()
 }
 
+func (z *ZeDevice) EnumStandbyDomains() ([]*ZesStandby, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumStandbyDomains(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesStandbyHandle, count)
+	ret := zesDeviceEnumStandbyDomains(z.handle, &count, handles)
+	return handlesToWrappers[zesStandbyHandle, ZesStandby](handles), ret.ToError()
+}
+
+func (z *ZesStandby) GetProperties() (ZesStandbyProperties, error) {
+	var props ZesStandbyProperties
+	ret := zesStandbyGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesStandby) GetMode() (ZesStandbyPromoMode, error) {
+	var mode ZesStandbyPromoMode
+	ret := zesStandbyGetMode(z.handle, &mode)
+	return mode, ret.ToError()
+}
+
+func (z *ZesStandby) SetMode(mode ZesStandbyPromoMode) error {
+	ret := zesStandbySetMode(z.handle, mode)
+	return ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
