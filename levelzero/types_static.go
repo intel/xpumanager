@@ -17,44 +17,220 @@ package levelzero
 */
 import "C"
 
-type ZeDriverHandle C.ze_driver_handle_t
+type zeDriverHandle C.ze_driver_handle_t
 
-type ZeDeviceHandle C.ze_device_handle_t
+type zeDeviceHandle C.ze_device_handle_t
 
-type ZesDriverHandle C.ze_driver_handle_t
+type zesDriverHandle C.ze_driver_handle_t
 
-type ZesDeviceHandle C.ze_device_handle_t
+type zesDeviceHandle C.ze_device_handle_t
 
-type ZesSchedHandle C.zes_sched_handle_t
+type zesSchedHandle C.zes_sched_handle_t
 
-type ZesPerfHandle C.zes_perf_handle_t
+type zesPerfHandle C.zes_perf_handle_t
 
-type ZesPwrHandle C.zes_pwr_handle_t
+type zesPwrHandle C.zes_pwr_handle_t
 
-type ZesFreqHandle C.zes_freq_handle_t
+type zesFreqHandle C.zes_freq_handle_t
 
-type ZesEngineHandle C.zes_engine_handle_t
+type zesEngineHandle C.zes_engine_handle_t
 
-type ZesStandbyHandle C.zes_standby_handle_t
+type zesStandbyHandle C.zes_standby_handle_t
 
-type ZesFirmwareHandle C.zes_firmware_handle_t
+type zesFirmwareHandle C.zes_firmware_handle_t
 
-type ZesMemHandle C.zes_mem_handle_t
+type zesMemHandle C.zes_mem_handle_t
 
-type ZesFabricPortHandle C.zes_fabric_port_handle_t
+type zesFabricPortHandle C.zes_fabric_port_handle_t
 
-type ZesTempHandle C.zes_temp_handle_t
+type zesTempHandle C.zes_temp_handle_t
 
-type ZesPsuHandle C.zes_psu_handle_t
+type zesPsuHandle C.zes_psu_handle_t
 
-type ZesFanHandle C.zes_fan_handle_t
+type zesFanHandle C.zes_fan_handle_t
 
-type ZesLedHandle C.zes_led_handle_t
+type zesLedHandle C.zes_led_handle_t
 
-type ZesRasHandle C.zes_ras_handle_t
+type zesRasHandle C.zes_ras_handle_t
 
-type ZesDiagHandle C.zes_diag_handle_t
+type zesDiagHandle C.zes_diag_handle_t
 
-type ZesOverclockHandle C.zes_overclock_handle_t
+type zesOverclockHandle C.zes_overclock_handle_t
 
-type ZesVfHandle C.zes_vf_handle_t
+type zesVfHandle C.zes_vf_handle_t
+
+/* Wrappers for handles */
+type ZeDriver struct {
+	handle zeDriverHandle
+}
+
+func (w *ZeDriver) setHandle(h zeDriverHandle) {
+	w.handle = h
+}
+
+type ZeDevice struct {
+	handle zeDeviceHandle
+}
+
+func (w *ZeDevice) setHandle(h zeDeviceHandle) {
+	w.handle = h
+}
+
+func (w *ZeDevice) getHandle() zeDeviceHandle {
+	return w.handle
+}
+
+type ZesOverclock struct {
+	handle zesOverclockHandle
+}
+
+func (w *ZesOverclock) setHandle(h zesOverclockHandle) {
+	w.handle = h
+}
+
+type ZesDiagnostics struct {
+	handle zesDiagHandle
+}
+
+func (w *ZesDiagnostics) setHandle(h zesDiagHandle) {
+	w.handle = h
+}
+
+type ZesEngine struct {
+	handle zesEngineHandle
+}
+
+func (w *ZesEngine) setHandle(h zesEngineHandle) {
+	w.handle = h
+}
+
+type ZesFabricPort struct {
+	handle zesFabricPortHandle
+}
+
+func (w *ZesFabricPort) setHandle(h zesFabricPortHandle) {
+	w.handle = h
+}
+
+func (w *ZesFabricPort) getHandle() zesFabricPortHandle {
+	return w.handle
+}
+
+type ZesFan struct {
+	handle zesFanHandle
+}
+
+func (w *ZesFan) setHandle(h zesFanHandle) {
+	w.handle = h
+}
+
+type ZesFirmware struct {
+	handle zesFirmwareHandle
+}
+
+func (w *ZesFirmware) setHandle(h zesFirmwareHandle) {
+	w.handle = h
+}
+
+type ZesFreq struct {
+	handle zesFreqHandle
+}
+
+func (w *ZesFreq) setHandle(h zesFreqHandle) {
+	w.handle = h
+}
+
+type ZesLed struct {
+	handle zesLedHandle
+}
+
+func (w *ZesLed) setHandle(h zesLedHandle) {
+	w.handle = h
+}
+
+type ZesMem struct {
+	handle zesMemHandle
+}
+
+func (w *ZesMem) setHandle(h zesMemHandle) {
+	w.handle = h
+}
+
+type ZesPerf struct {
+	handle zesPerfHandle
+}
+
+func (w *ZesPerf) setHandle(h zesPerfHandle) {
+	w.handle = h
+}
+
+type ZesPwr struct {
+	handle zesPwrHandle
+}
+
+func (w *ZesPwr) setHandle(h zesPwrHandle) {
+	w.handle = h
+}
+
+type ZesPsu struct {
+	handle zesPsuHandle
+}
+
+func (w *ZesPsu) setHandle(h zesPsuHandle) {
+	w.handle = h
+}
+
+type ZesRas struct {
+	handle zesRasHandle
+}
+
+func (w *ZesRas) setHandle(h zesRasHandle) {
+	w.handle = h
+}
+
+type ZesSched struct {
+	handle zesSchedHandle
+}
+
+func (w *ZesSched) setHandle(h zesSchedHandle) {
+	w.handle = h
+}
+
+type ZesStandby struct {
+	handle zesStandbyHandle
+}
+
+func (w *ZesStandby) setHandle(h zesStandbyHandle) {
+	w.handle = h
+}
+
+type ZesTemp struct {
+	handle zesTempHandle
+}
+
+func (w *ZesTemp) setHandle(h zesTempHandle) {
+	w.handle = h
+}
+
+type ZesVf struct {
+	handle zesVfHandle
+}
+
+func (w *ZesVf) setHandle(h zesVfHandle) {
+	w.handle = h
+}
+
+/* Generics for handle wrappers */
+func handlesToWrappers[H any, V any, W interface {
+	*V
+	setHandle(H)
+}](handles []H) []W {
+	wrappers := make([]W, len(handles))
+	for i, handle := range handles {
+		v := new(V)
+		w := W(v)
+		w.setHandle(handle)
+		wrappers[i] = w
+	}
+	return wrappers
+}

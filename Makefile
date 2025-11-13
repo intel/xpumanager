@@ -27,6 +27,7 @@ generate-dockerized: clean
 	        -e s'!Stype!stype!' \
 	        -e s'!PNext!pnext!'
 	$(Q)go fmt $(OUTDIR)/levelzero/types.go
+	$(Q)go generate ./levelzero/...
 
 clean:
 	rm -f levelzero/cgo_helpers.go levelzero/cgo_helpers.h levelzero/cgo_helpers.c
