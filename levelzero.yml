@@ -30,7 +30,7 @@ TRANSLATOR:
       - {action: ignore, from: "^ZES_VF_MANAGEMENT_EXP_VERSION_1_[01]$"}
     function:
       - {action: accept, from: "^zes[A-Z]"}
-      - {transform: export}
+      - {transform: unexport}
       # Disable from zes_api.h
       - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
       # Deprecated functions from zes_api.h
@@ -60,6 +60,8 @@ TRANSLATOR:
       - {action: ignore, from: "^zes_structure_type_t$"}
       - {action: replace, from: "_t$"}
       - {transform: export}
+      - {transform: unexport, from: "Zes_device_properties$"}
+      - {transform: unexport, from: "Ze_device_properties$"}
       - {load: snakecase}
       # Deprecated types from zes_api.h
       - {action: ignore, from: "^zes_oc_mode_t$"}
