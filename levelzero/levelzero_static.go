@@ -887,6 +887,39 @@ func (z *ZesStandby) SetMode(mode ZesStandbyPromoMode) error {
 	return ret.ToError()
 }
 
+func (z *ZeDevice) EnumTemperatureSensors() ([]*ZesTemp, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumTemperatureSensors(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesTempHandle, count)
+	ret := zesDeviceEnumTemperatureSensors(z.handle, &count, handles)
+	return handlesToWrappers[zesTempHandle, ZesTemp](handles), ret.ToError()
+}
+
+func (z *ZesTemp) GetProperties() (ZesTempProperties, error) {
+	var props ZesTempProperties
+	ret := zesTemperatureGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+func (z *ZesTemp) GetConfig() (ZesTempConfig, error) {
+	var config ZesTempConfig
+	ret := zesTemperatureGetConfig(z.handle, &config)
+	return config, ret.ToError()
+}
+
+func (z *ZesTemp) SetConfig(config *ZesTempConfig) error {
+	ret := zesTemperatureSetConfig(z.handle, config)
+	return ret.ToError()
+}
+
+func (z *ZesTemp) GetState() (float64, error) {
+	var state float64
+	ret := zesTemperatureGetState(z.handle, &state)
+	return state, ret.ToError()
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.

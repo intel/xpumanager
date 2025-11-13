@@ -79,6 +79,8 @@ func main() {
 			printSched(device)
 
 			printStandby(device)
+
+			printTemperature(device)
 		}
 	}
 }
@@ -723,6 +725,42 @@ func printStandby(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get mode for standby domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Mode: %v\n", mode)
+		}
+	}
+}
+
+func printTemperature(device *levelzero.ZeDevice) {
+	tempSensors, err := device.EnumTemperatureSensors()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate temperature sensors: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d temperature sensors\n", len(tempSensors))
+	for i, sensor := range tempSensors {
+		fmt.Printf("### Temperature Sensor %d\n", i)
+
+		props, err := sensor.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for temperature sensor %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		config, err := sensor.GetConfig()
+		if err != nil {
+			log.Printf("ERROR: Failed to get config for temperature sensor %d: %v", i, err)
+		} else {
+			fmt.Printf("  Config:\n")
+			dump(config, 4)
+		}
+
+		temp, err := sensor.GetState()
+		if err != nil {
+			log.Printf("ERROR: Failed to get state for temperature sensor %d: %v", i, err)
+		} else {
+			fmt.Printf("  Temperature: %+v\n", temp)
 		}
 	}
 }
