@@ -48,6 +48,7 @@ struct DeviceSriovInfo
 	uint64_t ggttSizeFree;
 	uint32_t doorbellFree;
 	uint32_t contextFree;
+	devFuncType functionType;
 };
 
 // PCI Configuration Space offsets

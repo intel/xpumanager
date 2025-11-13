@@ -720,3 +720,86 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
 
 	return 0;
 }
+
+/**
+ * @brief List all SRIOV Virtual Functions for a device
+ *
+ * Enumerates the Physical Function and its associated Virtual Functions,
+ * retrieving their BDF addresses and resource allocations.
+ *
+ * @param[in] di Pointer to DeviceSriovInfo structure containing device information
+ * @param[out] result Reference to vector to populate with DeviceSriovInfo for each VF
+ * @return int 0 on success, -1 on failure
+ */
+int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
+{
+	TRACING();
+	std::string numVfsString;
+	std::string cardName = getCardNameFromDrmPath(di->drmPath);
+	std::string devicePath = std::string("/sys/class/drm/") + cardName;
+	std::stringstream numvfsPath;
+	std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
+	int numVfs;
+
+	if (!loadSriovData(di)) {
+		return -1;
+	}
+
+	DBG("device Path: %s\n", devicePath.c_str());
+	numvfsPath << "/sys/bus/pci/devices/" << di->bdfAddress << "/sriov_numvfs";
+	if (readFile(numvfsPath.str(), numVfsString) != 0) {
+		return -1;
+	}
+
+	try {
+		numVfs = std::stoi(numVfsString);
+	} catch (std::invalid_argument &) {
+		return -1;
+	}
+	DBG("%d VFs detected.", numVfs);
+	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + di->bdfAddress;
+	/*
+	 *  Put PF info into index 0, and VF1..n into index 1..n respectively
+	 */
+	for (int functionIndex = 0; functionIndex <= numVfs; functionIndex++) {
+		std::string lmemString, uevent, lmemPath, ueventPath;
+		DeviceSriovInfo info = {};
+
+		if (functionIndex == 0) {
+			lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" + "lmem_spare";
+		} else {
+			lmemPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(functionIndex) + "/lmem_quota";
+		}
+
+		if (readFile(lmemPath.c_str(), lmemString) != 0) {
+			return -1;
+		}
+		info.functionType = (functionIndex == 0) ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL;
+		info.vGpuNumber = functionIndex;
+		info.vGpuMemorySize = std::stoul(lmemString);
+
+		if (functionIndex == 0) {
+			ueventPath = devicePath + "/device/uevent";
+		} else {
+			ueventPath = devicePath + "/device/virtfn" + std::to_string(functionIndex - 1) + "/uevent";
+		}
+
+		std::ifstream ifs(ueventPath);
+		std::string line;
+		while (std::getline(ifs, line)) {
+			if (line.length() >= MAX_PATH) {
+				ERR("Invalid line length in %s", ueventPath.c_str());
+				return -1;
+			}
+			char bdfBuffer[MAX_PATH] = {0};
+			sscanf(line.c_str(), "PCI_SLOT_NAME=%s", bdfBuffer);
+			if (bdfBuffer[0] != 0) {
+				info.bdfAddress = bdfBuffer;
+				DBG("BDF Address: %s\n", bdfBuffer);
+				break;
+			}
+		}
+		result.push_back(info);
+	}
+	return 0;
+}

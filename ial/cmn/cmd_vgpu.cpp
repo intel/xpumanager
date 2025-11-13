@@ -230,12 +230,33 @@ ze_result_t cmdVgpu::remove(devInfo *d)
  * This function retrieves and displays all GPU devices available for vGPU operations.
  * Currently implemented as a placeholder for future GPU device listing functionality.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param d[in] Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful device listing
  */
-ze_result_t cmdVgpu::listGpus(UNUSED devInfo *d)
+ze_result_t cmdVgpu::listGpus(devInfo *d)
 {
 	TRACING();
+	int result;
+	DeviceSriovInfo deviceInfo = {};
+	std::vector<DeviceSriovInfo> vfDeviceInfoList;
+	vf *v = d->dev->getVF();
+	pci *p = d->dev->getPCI();
+
+	deviceInfo.bdfAddress = p->getBDFStr();
+	deviceInfo.drmPath = d->dev->getDrmDevPath();
+
+	// List the VFs
+	result = v->listVFs(&deviceInfo, vfDeviceInfoList);
+	if (result != 0) {
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	for (const auto &vfInfo : vfDeviceInfoList) {
+		PRINT("PCI BDF Address: %s\n", vfInfo.bdfAddress.c_str());
+		PRINT("Function Type: %s\n", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
+		PRINT("Memory Physical Size:  %" PRIu64 " MiB\n\n", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
