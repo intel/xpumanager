@@ -33,13 +33,11 @@ enum vgpuCmdType
 	VGPU_HELP,
 	VGPU_JSON,
 	VGPU_DEVICE,
-	VGPU_ADDKERNELPARAM,
 	VGPU_PRECHECK,
 	VGPU_CREATE,
 	VGPU_REMOVE,
 	VGPU_LIST,
 	VGPU_NUMBER,
-	VGPU_ASSUMEYES,
 	VGPU_STATS,
 	VGPU_LMEM,
 	TOTAL_VGPU,
@@ -55,7 +53,6 @@ public:
 	~cmdVgpu(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(devInfo *d);
-	ze_result_t addKernelParam(devInfo *d);
 	ze_result_t create(devInfo *d);
 	ze_result_t remove(devInfo *d);
 	ze_result_t listGpus(devInfo *d);
