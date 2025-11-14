@@ -32,13 +32,11 @@ static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
 	{VGPU_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
 	{VGPU_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
 	{VGPU_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{VGPU_ADDKERNELPARAM, {{"addkernelparam", no_argument, 0, 0}, &cmdVgpu::addKernelParam, false, ""}},
 	{VGPU_PRECHECK, {{"precheck", no_argument, 0, 0}, &cmdVgpu::precheck, false, ""}},
 	{VGPU_NUMBER, {{"number", required_argument, 0, 'n'}, nullptr, false, ""}},
 	{VGPU_CREATE, {{"create", no_argument, 0, 'c'}, &cmdVgpu::create, false, ""}},
 	{VGPU_REMOVE, {{"remove", no_argument, 0, 'r'}, &cmdVgpu::remove, false, ""}},
 	{VGPU_LIST, {{"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus, false, ""}},
-	{VGPU_ASSUMEYES, {{"assumeyes", no_argument, 0, 'y'}, nullptr, false, ""}},
 	{VGPU_STATS, {{"stats", no_argument, 0, 's'}, &cmdVgpu::stats, false, ""}},
 	{VGPU_LMEM, {{"lmem", required_argument, 0, 0}, nullptr, false, ""}},
 };
@@ -57,7 +55,6 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s vgpu [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s vgpu --precheck", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu --addkernelparam", progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
 	helpList.push_back(
@@ -73,8 +70,6 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address"));
-	helpList.push_back(
-		helpCmd(HEADING, "--addkernelparam            Add the kernel command line parameters for the virtual GPUs"));
 	helpList.push_back(
 		helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
 	helpList.push_back(helpCmd(HEADING, "-c,--create                 Create the virtual GPUs"));
@@ -115,21 +110,6 @@ ze_result_t cmdVgpu::precheck(devInfo *d)
 	PRINT("VMX is %s\n", v->vmxSupport() ? "supported" : "not supported");
 	PRINT("IOMMU is %s\n", v->iommuSupport() ? "supported" : "not supported");
 	PRINT("SR-IOV %s supported on device\n", v->sriovSupport(&deviceInfo) ? "is" : "is not");
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Adds kernel parameters required for vGPU functionality
- *
- * This function configures kernel parameters necessary for vGPU operations.
- * Currently implemented as a placeholder for future kernel parameter configuration.
- *
- * @param d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful kernel parameter addition
- */
-ze_result_t cmdVgpu::addKernelParam(UNUSED devInfo *d)
-{
-	TRACING();
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -330,9 +310,6 @@ int cmdVgpu::run(arg_struct *args)
 		case 'n':
 			vgpuCmds[vgpuCmdType::VGPU_NUMBER].enabled = true;
 			vgpuCmds[vgpuCmdType::VGPU_NUMBER].val = optarg;
-			break;
-		case 'y':
-			vgpuCmds[vgpuCmdType::VGPU_ASSUMEYES].enabled = true;
 			break;
 		case 's':
 			vgpuCmds[vgpuCmdType::VGPU_STATS].enabled = true;
