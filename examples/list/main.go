@@ -51,6 +51,8 @@ func main() {
 			printProcs(device)
 
 			printOverock(device)
+
+			printDiags(device)
 		}
 	}
 }
@@ -192,6 +194,35 @@ func printOverock(device *levelzero.ZeDevice) {
 		} else {
 			fmt.Printf("  VF Properties:\n")
 			dump(vfProps, 4)
+		}
+	}
+}
+
+func printDiags(device *levelzero.ZeDevice) {
+	diags, err := device.EnumDiagnosticTestSuites()
+	if err != nil {
+		log.Printf("ERROR: Failed to enumerate diagnostic test suites: %v", err)
+		return
+	}
+
+	fmt.Printf("## Found %d diagnostic test suites\n", len(diags))
+	for i, diag := range diags {
+		fmt.Printf("### Diagnostic Test Suite %d\n", i)
+
+		props, err := diag.GetProperties()
+		if err != nil {
+			log.Printf("ERROR: Failed to get properties for diagnostic test suite %d: %v", i, err)
+		} else {
+			fmt.Printf("  Properties:\n")
+			dump(props, 4)
+		}
+
+		tests, err := diag.GetTests()
+		if err != nil {
+			log.Printf("ERROR: Failed to get tests for diagnostic test suite %d: %v", i, err)
+		} else {
+			fmt.Printf("  Tests:\n")
+			dump(tests, 4)
 		}
 	}
 }

@@ -311,6 +311,41 @@ func (z *ZesOverclock) SetVFPointValues(vfType ZesVfType, pointIndex uint32, val
 	return ret.ToError()
 }
 
+func (z *ZeDevice) EnumDiagnosticTestSuites() ([]*ZesDiagnostics, error) {
+	count := uint32(0)
+	if ret := zesDeviceEnumDiagnosticTestSuites(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]zesDiagHandle, count)
+	ret := zesDeviceEnumDiagnosticTestSuites(z.handle, &count, handles)
+	return handlesToWrappers[zesDiagHandle, ZesDiagnostics](handles), ret.ToError()
+}
+
+func (z *ZesDiagnostics) GetProperties() (ZesDiagProperties, error) {
+	var props ZesDiagProperties
+	ret := zesDiagnosticsGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+// TODO: static type for ZesDiagTest that contains golang strings
+func (z *ZesDiagnostics) GetTests() ([]ZesDiagTest, error) {
+	count := uint32(0)
+	if ret := zesDiagnosticsGetTests(z.handle, &count, nil); ret != ZE_RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	tests := make([]ZesDiagTest, count)
+	ret := zesDiagnosticsGetTests(z.handle, &count, tests)
+	return tests, ret.ToError()
+}
+
+func (z *ZesDiagnostics) RunTests(startIdx, endIdx uint32) ([]ZesDiagResult, error) {
+	count := endIdx - startIdx + 1
+	results := make([]ZesDiagResult, count)
+	ret := zesDiagnosticsRunTests(z.handle, startIdx, endIdx, results)
+	return results, ret.ToError()
+
+}
+
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
 // Negative durations are treated as infinite timeout (UINT32_MAX).
 // Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
