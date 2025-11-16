@@ -47,6 +47,7 @@ enum configCmdType
 	RESET,
 	PPR,
 	FORCE,
+	PCIEDOWNGRADE,
 	TOTAL_CONFIG,
 };
 
@@ -67,6 +68,7 @@ public:
 	ze_result_t setXeLinkPort(devInfo *d);
 	ze_result_t setXeLinkPortBeaconing(devInfo *d);
 	ze_result_t setMemoryEcc(devInfo *d);
+	ze_result_t setPCIeGenUpdate(devInfo *d);
 	ze_result_t resetDevice(devInfo *d);
 	ze_result_t applyPpr(devInfo *d);
 	ze_result_t forcePpr(devInfo *d);

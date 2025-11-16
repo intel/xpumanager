@@ -275,7 +275,8 @@ ze_result_t driver::init()
 			DBG("Driver %u Device %u: %p\n", i, j, (void *)devs[i].zeDevices[j]);
 
 			// Initialize each device in the group
-			result = devs[i].dev[j].init(zeDrivers[i], devs[i].zeDevices[j], totalZesDevices, totalZesDevicesCount);
+			result = devs[i].dev[j].init(zeDrivers[i], zesDrivers[0], devs[i].zeDevices[j], totalZesDevices,
+										 +totalZesDevicesCount);
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
 				return result;

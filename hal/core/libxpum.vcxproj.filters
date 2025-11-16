@@ -286,6 +286,12 @@
     <ClInclude Include="..\..\oal\win\oswin.h">
       <Filter>oal</Filter>
     </ClInclude>
+    <ClInclude Include="include/ze_stypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include/zes_intel_gpu_sysman.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="oal">

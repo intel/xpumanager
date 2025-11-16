@@ -201,6 +201,8 @@
     <ClInclude Include="temperature.h" />
     <ClInclude Include="threading.h" />
     <ClInclude Include="vf.h" />
+    <ClInclude Include="include/zes_intel_gpu_sysman.h" />
+    <ClInclude Include="include/ze_stypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\oal\win\dllmain.cpp" />
