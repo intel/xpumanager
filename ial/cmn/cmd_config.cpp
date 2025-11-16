@@ -50,6 +50,8 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::XELINKPORTBEACONING,
 	 {{"xelinkportbeaconing", required_argument, 0, 0}, &cmdConfig::setXeLinkPortBeaconing, false, ""}},
 	{configCmdType::MEMORYECC, {{"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc, false, ""}},
+	{configCmdType::PCIEDOWNGRADE,
+	 {{"pciedowngrade", required_argument, 0, 0}, &cmdConfig::setPCIeGenUpdate, false, ""}},
 	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
 	{configCmdType::PPR, {{"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr, false, ""}},
 	{configCmdType::FORCE, {{"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""}},
@@ -84,6 +86,9 @@ void cmdConfig::help(HELP helpType)
 		helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]", progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s config -d [deviceId] --pciedowngrade [0|1] 0:disable; 1:enable", progName.c_str()));
+
 	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --reset", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --ppr", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
@@ -122,6 +127,8 @@ void cmdConfig::help(HELP helpType)
 		"--xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on"));
 	helpList.push_back(
 		helpCmd(HEADING, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
+	helpList.push_back(
+		helpCmd(HEADING, "--pciedowngrade                 Enable/disable PCIe downgrade setting. 0:disable; 1:enable"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -443,6 +450,94 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 		ERR("Failed to %s ECC memory setting on GPU %d\n", (memoryEcc == 1 ? "enable" : "disable"), d->index);
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Converts a PCIe downgrade pending action enumeration to a human-readable string.
+ *
+ * This function translates the zes_device_action_t enumeration value into a descriptive
+ * string that indicates what action is required for PCIe downgrade changes to take effect.
+ *
+ * @param[in] action The device action enumeration value to convert.
+ * @return std::string A human-readable string describing the required action:
+ *         - "none" for ZES_DEVICE_ACTION_NONE (no action required)
+ *         - "warm card reset" for ZES_DEVICE_ACTION_WARM_CARD_RESET
+ *         - "cold card reset" for ZES_DEVICE_ACTION_COLD_CARD_RESET
+ *         - "cold system reboot" for ZES_DEVICE_ACTION_COLD_SYSTEM_REBOOT
+ *         - "none" for any unrecognized action value
+ */
+std::string pciDownGradePendingActionToString(zes_device_action_t action)
+{
+	switch (action) {
+	case ZES_DEVICE_ACTION_NONE:
+		return "none";
+	case ZES_DEVICE_ACTION_WARM_CARD_RESET:
+		return "warm card reset";
+	case ZES_DEVICE_ACTION_COLD_CARD_RESET:
+		return "cold card reset";
+	case ZES_DEVICE_ACTION_COLD_SYSTEM_REBOOT:
+		return "cold system reboot";
+	default:
+		break;
+	}
+
+	return "none";
+}
+
+/**
+ * @brief Sets the PCIe generation downgrade configuration for the device.
+ *
+ * This function enables or disables PCIe link speed downgrade on the specified device.
+ * It first checks if the feature is supported and verifies the current state before
+ * attempting to change it. The operation may require a device reset or system reboot
+ * to take effect, which will be indicated in the output message.
+ *
+ * @param[in] d Device information structure containing device handle and properties.
+ *
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::setPCIeGenUpdate(devInfo *d)
+{
+	TRACING();
+	// Set PCIe downgrade. Valid options are 0:disable; 1:enable
+	int pcieDowngrade = stoi(configCmds[configCmdType::PCIEDOWNGRADE].val);
+	if (pcieDowngrade != 0 && pcieDowngrade != 1) {
+		ERR("Invalid PCIe downgrade value. Valid options are 0:disable; 1:enable\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Check the PCIe downgrade status using the device class
+	bool enabled = (pcieDowngrade == 1);
+	PciDowngradeState state = {};
+	ze_result_t result = d->dev->getPCI()->getPciDowngradeState(d->zesDeviceHdl, state);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	if (!state.downgradeSupported) {
+		PRINT("PCIe downgrade feature is not supported.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	if (state.downgradeEnabled && enabled) {
+		PRINT("PCIe downgrade is already enabled.\n");
+		return ZE_RESULT_SUCCESS;
+	} else if (!state.downgradeEnabled && !enabled) {
+		PRINT("PCIe downgrade is already disabled.\n");
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Set the PCIe downgrade using the device class
+	state = {};
+	result = d->dev->getPCI()->setPciDowngradeState(d->zesDeviceHdl, enabled, state);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	PRINT("PCIe downgrade %s successfully. please complete %s for change to take effect\n",
+		  (enabled ? "enabled" : "disabled"), pciDownGradePendingActionToString(state.pendingAction).c_str());
 
 	return ZE_RESULT_SUCCESS;
 }

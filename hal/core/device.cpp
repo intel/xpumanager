@@ -689,13 +689,14 @@ std::vector<sysman *> device::zetFunctionTable()
  *
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
-						 uint32_t totalZesDeviceCount)
+ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_device_handle_t zeHdl,
+						 zes_device_handle_t *totalZesDevices, uint32_t totalZesDeviceCount)
 {
 	TRACING();
 	bool found;
 	std::string drmPath;
 	zeDriver = zeD;
+	zesDriver = zesD;
 	zeDevice = zeHdl;
 
 	// Create a context
@@ -779,6 +780,9 @@ ze_result_t device::init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_d
 	if (drmPath.length() > 0) {
 		STRCPY_S(drmDevPath, sizeof(drmDevPath), drmPath.c_str());
 	}
+
+	// Pass the zesDriver to the pci class
+	pciInstance.setZesDriver(zesDriver);
 
 	return ZE_RESULT_SUCCESS;
 }

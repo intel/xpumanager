@@ -92,6 +92,7 @@ class LIBXPUM_API device
 {
 private:
 	ze_driver_handle_t zeDriver;
+	zes_driver_handle_t zesDriver;
 	ze_context_handle_t context;
 	ze_device_handle_t zeDevice;
 	zes_device_handle_t zesDevice;
@@ -152,8 +153,10 @@ public:
 	std::string getDrmDevPath() const { return std::string(drmDevPath); }
 	bool isBDF(const char *bdf);
 	void addInfo(std::vector<devInfo> *devList, uint32_t devIndex);
-	ze_result_t init(ze_driver_handle_t zeD, ze_device_handle_t zeHdl, zes_device_handle_t *totalZesDevices,
-					 uint32_t totalZesDeviceCount);
+
+	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_device_handle_t zeHdl,
+					 zes_device_handle_t *totalZesDevices, uint32_t totalZesDeviceCount);
+
 	ze_result_t run();
 	ze_context_handle_t getContext() const { return context; }
 	ze_result_t getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_properties_t &subdeviceProps);

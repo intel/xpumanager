@@ -25,6 +25,7 @@
 #define PCI_H
 
 #include "sysman.h"
+#include "include/zes_intel_gpu_sysman.h"
 #include <string>
 #include <osvf.h>
 
@@ -37,15 +38,26 @@ typedef struct pci_addr_mei_device
 	std::string fwStatus;
 } pci_addr_mei_device;
 
+struct PciDowngradeState
+{
+	bool downgradeSupported;
+	bool downgradeEnabled;
+	zes_device_action_t pendingAction;
+};
+
 class LIBXPUM_API pci : public sysman
 {
 private:
 	pci_addr_mei_device deviceProperties;
+	PciDowngradeState downgradeState;
 	uint32_t domain;
 	uint32_t bus;
 	uint32_t dev;
 	uint32_t func;
 	char bdfStr[BDF_STR_LEN];
+	zes_driver_handle_t zesDriver = nullptr;
+	typedef ze_result_t (*pfnZesIntelDevicePciLinkSpeedUpdateExp_t)(zes_device_handle_t hDevice, ze_bool_t bDowngrade,
+																	zes_device_action_t *pPendingAction);
 
 public:
 	pci() : deviceProperties{} { deviceProperties.fwStatus = "unknown"; }
@@ -55,6 +67,8 @@ public:
 	ze_result_t getBars(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device, zes_pci_link_status_t &pciLinkStatus);
 	ze_result_t getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats);
+	ze_result_t getPciDowngradeState(const zes_device_handle_t &device, PciDowngradeState &state);
+	ze_result_t setPciDowngradeState(const zes_device_handle_t &device, bool enabled, PciDowngradeState &state);
 	ze_result_t zesRun(zes_device_handle_t device);
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
@@ -66,6 +80,7 @@ public:
 		bdf.device = this->dev;
 		bdf.function = this->func;
 	}
+	void setZesDriver(zes_driver_handle_t zesD) { zesDriver = zesD; }
 	std::string getBDFStr() const { return std::string(bdfStr); }
 	devFuncType getFuncType();
 };

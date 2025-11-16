@@ -191,6 +191,119 @@ ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 }
 
 /**
+ * @brief Gets the PCIe downgrade state for a device
+ *
+ * This function retrieves the PCIe generation downgrade state information for the
+ * specified device, including whether downgrade is supported, currently enabled,
+ * and any pending actions required for the configuration to take effect.
+ *
+ * @param[in] device Handle to the device
+ * @param[out] state Reference to PciDowngradeState structure to store the downgrade state
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state retrieval, error code otherwise
+ */
+ze_result_t pci::getPciDowngradeState(const zes_device_handle_t &device, PciDowngradeState &state)
+{
+	TRACING();
+	ze_result_t res;
+	zes_pci_properties_t pciProps = {};
+	zes_intel_pci_link_speed_downgrade_exp_properties_t downProps = {};
+
+	downProps.stype = ZES_INTEL_PCI_LINK_SPEED_DOWNGRADE_EXP_PROPERTIES;
+	pciProps.pNext = &downProps;
+	res = zesDevicePciGetProperties(device, &pciProps);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	state.downgradeSupported = downProps.pciLinkSpeedUpdateCapable;
+	if (!state.downgradeSupported) {
+		DBG("PCIe Link Speed Downgrade is not supported\n");
+		return ZE_RESULT_SUCCESS;
+	}
+
+	zes_pci_state_t pciState = {};
+	zes_intel_pci_link_speed_downgrade_exp_state_t downState = {};
+
+	downState.stype = ZES_INTEL_PCI_LINK_SPEED_DOWNGRADE_EXP_STATE;
+	pciState.pNext = &downState;
+	res = zesDevicePciGetState(device, &pciState);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI State: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	state.downgradeEnabled = downState.pciLinkSpeedDowngradeStatus;
+
+	DBG("  - PCIe Downgrade State:\n");
+	DBG("    - Downgrade Supported: %s\n", state.downgradeSupported ? "Yes" : "No");
+	DBG("    - Downgrade Enabled: %s\n", state.downgradeEnabled ? "Yes" : "No");
+	DBG("    - Pending Action: %d\n", state.pendingAction);
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Sets the PCIe downgrade state for a device
+ *
+ * This function enables or disables PCIe generation downgrade for the specified device.
+ * PCIe downgrade allows the device to operate at a lower PCIe generation for compatibility
+ * or power management purposes. A device reset may be required for changes to take effect.
+ *
+ * @param[in] device Handle to the device
+ * @param[in] enabled Boolean flag to enable (true) or disable (false) PCIe downgrade
+ * @param[out] state Reference to PciDowngradeState structure to store the updated downgrade state
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful state update, error code otherwise
+ */
+ze_result_t pci::setPciDowngradeState(const zes_device_handle_t &device, bool enabled, PciDowngradeState &state)
+{
+	TRACING();
+
+	// First check if PCIe downgrade is supported
+	PciDowngradeState currentState = {};
+	ze_result_t res = getPciDowngradeState(device, currentState);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get current PCIe downgrade state: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	if (!currentState.downgradeSupported) {
+		ERR("PCIe Link Speed Downgrade is not supported on this device\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	// Set the PCIe downgrade state
+	void *extFunction = nullptr;
+
+	res = zesDriverGetExtensionFunctionAddress(zesDriver, "zesIntelDevicePciLinkSpeedUpdateExp", &extFunction);
+	if (res != ZE_RESULT_SUCCESS || extFunction == nullptr) {
+		ERR("PCIe Downgrade extension function not available\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	pfnZesIntelDevicePciLinkSpeedUpdateExp_t pfnZesIntelDevicePciLinkSpeedUpdateExp =
+		reinterpret_cast<pfnZesIntelDevicePciLinkSpeedUpdateExp_t>(extFunction);
+	ze_bool_t downState = (enabled == true) ? true : false;
+	zes_device_action_t pendingAction = {};
+
+	res = pfnZesIntelDevicePciLinkSpeedUpdateExp(device, downState, &pendingAction);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	// Update the output state structure
+	state.downgradeSupported = currentState.downgradeSupported;
+	state.downgradeEnabled = enabled;
+	state.pendingAction = pendingAction;
+
+	DBG("PCIe downgrade state set to: %s\n", enabled ? "enabled" : "disabled");
+	DBG("Pending Action: %d\n", pendingAction);
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Checks if a string matches the Bus:Device.Function (BDF) format
  *
  * This function validates whether the provided string conforms to the standard
