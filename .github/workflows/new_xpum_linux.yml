@@ -300,6 +300,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+          ref: ${{ github.head_ref }}
 
       - name: Setup Python environment
         run: |
@@ -323,14 +326,10 @@ jobs:
               --native-file conan_meson_native.ini
 
       - name: Check code formatting
-        continue-on-error: true
         run: |
             echo "Checking code formatting with clang-format..."
-            git ls-files "hal/**.cpp" "hal/**.h" "hal/**.hpp" \
-            "ial/**.cpp" "ial/**.h" "ial/**.hpp" \
-            "oal/**.cpp" "oal/**.h" "oal/**.hpp" > /tmp/all_files.txt
-            grep -v -f .clang-format-ignore /tmp/all_files.txt > /tmp/files_to_format.txt
-            xargs -a /tmp/files_to_format.txt clang-format-19 --dry-run --style=file
+            git fetch origin ${{ github.base_ref }}
+            git-clang-format --diff origin/${{ github.base_ref }} HEAD
 
       - name: Check license headers
         continue-on-error: true
