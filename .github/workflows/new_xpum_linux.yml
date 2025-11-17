@@ -120,7 +120,7 @@ jobs:
               --buildtype=${{ matrix.build_type.buildtype }} \
               ${{ matrix.build_type.coverage == true && '-D b_coverage=true' || '' }} \
               ${{ matrix.build_type.sanitizer != '' && format('-D b_sanitize={0}', matrix.build_type.sanitizer) || '' }} \
-              -D dev=true \
+              -D werror=true \
               --native-file conan_meson_native.ini
 
       - name: Build project (${{ matrix.build_type.name }})
@@ -319,7 +319,7 @@ jobs:
             conan install . --build=missing -s build_type=Release
             meson setup builddir \
               --buildtype=release \
-              -D dev=true \
+              -D werror=false \
               --native-file conan_meson_native.ini
 
       - name: Check code formatting
