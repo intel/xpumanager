@@ -13,7 +13,8 @@ project('xpum', 'cpp',
   default_options : [
     'cpp_std=c++20',
     'buildtype=debugoptimized',
-    'warning_level=3'
+    'warning_level=3',
+    'werror=true'
     ]
 )
 
@@ -129,12 +130,6 @@ elif is_linux
     # use "release" buildtype (-O3 = better analysis) to see all possible warnings
     compile_args += [
       '-Wimplicit-fallthrough',
-      '-Wno-unused-parameter',
-      '-Wno-unused-variable',
-      '-Wno-unused-function',
-      '-Wno-missing-field-initializers',
-      '-Wno-missing-braces',
-      '-Wno-unknown-pragmas',
       '-Wno-deprecated-declarations',
       '-Wfloat-equal',
       '-Wshadow',
@@ -142,15 +137,6 @@ elif is_linux
       '-Wcast-qual',
       '-Wconversion',
     ]
-  endif
-endif
-
-# Warnings as errors (default = true)
-if not get_option('dev')
-  if is_windows
-    compile_args += ['/WX']
-  elif is_linux
-    compile_args += ['-Werror']
   endif
 endif
 
