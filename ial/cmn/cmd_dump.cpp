@@ -1550,8 +1550,8 @@ int cmdDump::run(arg_struct *args)
 	}
 	PRINT("%s\n", header.c_str());
 
-	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()]{};
-	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()]{};
+	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()] {};
+	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()] {};
 	if (tidList == nullptr) {
 		ERR("Failed to allocate memory for thread ID list.\n");
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
