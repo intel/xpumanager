@@ -136,7 +136,7 @@ void processOptions(const MapType &mapData, std::string &shortOpts, std::vector<
 	for (const auto &pair : mapData) {
 		longOptsVec.push_back(pair.second.opt);
 
-		char val = (char) pair.second.opt.val;
+		char val = (char)pair.second.opt.val;
 		if (val == 0)
 			continue; // skip if no short option
 		shortOpts += val;
