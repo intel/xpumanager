@@ -1,0 +1,99 @@
+//
+// Copyright (C) 2025 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package sysman
+
+import (
+	"context"
+
+	"go.opentelemetry.io/otel/metric"
+
+	"github.com/intel/level-zero-go/levelzero"
+)
+
+type sysman struct {
+	metrics *metricsRegistry
+	devices *deviceRegistry
+}
+
+type metricsRegistry struct {
+	frequency *frequencyMetrics
+	memory    *memoryMetrics
+}
+
+// New creates and initializes a new Sysman instance.
+func New() (*sysman, error) {
+	s := &sysman{}
+	if err := s.init(); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *sysman) init() error {
+	if err := levelzero.ZesInit(0); err != nil {
+		return err
+	}
+
+	var err error
+	s.devices, err = newDeviceRegistry()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RegisterMetrics registers Sysman metrics callbacks with the provided OTEL meter.
+func (s *sysman) RegisterMetrics(meter metric.Meter) error {
+	if err := s.initMetrics(meter); err != nil {
+		return err
+	}
+	_, err := meter.RegisterCallback(
+		func(ctx context.Context, o metric.Observer) error {
+			s.metrics.observe(o, s.devices)
+			return nil
+		},
+		s.metrics.getInstruments()...,
+	)
+	return err
+}
+
+func (s *sysman) initMetrics(meter metric.Meter) error {
+	var err error
+	s.metrics, err = newMetricsRegistry(meter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func newMetricsRegistry(meter metric.Meter) (*metricsRegistry, error) {
+	var err error
+	registry := &metricsRegistry{}
+	registry.memory, err = newMemoryMetrics(meter)
+	if err != nil {
+		return nil, err
+	}
+
+	registry.frequency, err = newFrequencyMetrics(meter)
+	if err != nil {
+		return nil, err
+	}
+	return registry, nil
+}
+
+func (r *metricsRegistry) getInstruments() []metric.Observable {
+	instruments := []metric.Observable{}
+	instruments = append(instruments, r.frequency.getInstruments()...)
+	instruments = append(instruments, r.memory.getInstruments()...)
+	return instruments
+}
+
+func (r *metricsRegistry) observe(o metric.Observer, d *deviceRegistry) {
+	for _, dev := range d.devices {
+		dev.observe(o, r)
+	}
+}
