@@ -33,6 +33,33 @@
 #include <thread>
 
 /**
+ * @brief Structure pairing RAS error category enum with its display name
+ *
+ * This structure maintains the mapping between Level Zero RAS error category
+ * enums and their human-readable string representations.
+ */
+struct RasCategoryInfo
+{
+	zes_ras_error_cat_t category;
+	const char *name;
+};
+
+/**
+ * @brief Global list of all RAS error categories with their display names
+ *
+ * This vector defines all supported RAS error categories, pairing each
+ * Level Zero enum value with its corresponding user-friendly name. This
+ * serves as the definitive list for iteration and lookup operations.
+ */
+static const std::vector<RasCategoryInfo> rasCategories = {
+	{ZES_RAS_ERROR_CAT_RESET, "Reset"},
+	{ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, "Programming Errors"},
+	{ZES_RAS_ERROR_CAT_DRIVER_ERRORS, "Driver Errors"},
+	{ZES_RAS_ERROR_CAT_CACHE_ERRORS, "Cache Errors"},
+	{ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, "Mem Errors"},
+};
+
+/**
  * @brief Format a time point as ISO 8601 timestamp string with millisecond precision
  *
  * This function converts a std::chrono::system_clock::time_point to an ISO 8601
@@ -41,7 +68,7 @@
  * @param [in] timePoint The time point to format
  * @return std::string ISO 8601 formatted timestamp string in UTC (e.g., "2025-11-13T10:30:45.123Z")
  */
-std::string formatIso8601Timestamp(const std::chrono::system_clock::time_point &timePoint)
+std::string cmdStats::formatIso8601Timestamp(const std::chrono::system_clock::time_point &timePoint)
 {
 	TRACING();
 	return std::format("{:%Y-%m-%dT%H:%M:%S}Z", std::chrono::floor<std::chrono::milliseconds>(timePoint));
@@ -60,7 +87,7 @@ std::string formatIso8601Timestamp(const std::chrono::system_clock::time_point &
  * @param [in] end The ending engine snapshot
  * @return double Utilization percentage (0.0-100.0) or NaN if invalid
  */
-double computeUtilPercent(const EngineSnapshot &start, const EngineSnapshot &end)
+double cmdStats::computeUtilPercent(const EngineSnapshot &start, const EngineSnapshot &end)
 {
 	TRACING();
 	if (!start.valid || !end.valid) {
@@ -94,7 +121,7 @@ double computeUtilPercent(const EngineSnapshot &start, const EngineSnapshot &end
  * @param [in] samples Vector of sample values to compute statistics from
  * @return SummaryStats Structure containing min, max, avg, and current values
  */
-SummaryStats computeSummaryStats(const std::vector<double> &samples)
+SummaryStats cmdStats::computeSummaryStats(const std::vector<double> &samples)
 {
 	TRACING();
 	SummaryStats stats;
@@ -126,6 +153,62 @@ SummaryStats computeSummaryStats(const std::vector<double> &samples)
 }
 
 /**
+ * @brief Collect RAS (Reliability, Availability, Serviceability) error counters
+ *
+ * This function queries the HAL RAS layer to collect error counts for all RAS
+ * error categories including Reset, Programming Errors, Driver Errors, Cache Errors
+ * (Correctable/Uncorrectable), and Memory Errors (Correctable/Uncorrectable).
+ * For each category, it retrieves both correctable and uncorrectable error counts
+ * and populates the DeviceMetrics rasCounters map.
+ *
+ * @param [in] device The device to collect RAS counters from
+ * @param [out] metrics Output structure to store RAS counter data
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics)
+{
+	TRACING();
+	if (device == nullptr || device->dev == nullptr) {
+		ERR("Invalid device reference.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	auto *rasHandler = reinterpret_cast<::ras *>(device->dev->getRAS());
+	if (rasHandler == nullptr) {
+		DBG("RAS handler not available for device %d.\n", device->index);
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	for (const auto &categoryInfo : rasCategories) {
+		RasCounter counter;
+		counter.categoryName = categoryInfo.name;
+
+		ze_result_t result = rasHandler->getErrorsPerTile(categoryInfo.category, ZES_RAS_ERROR_TYPE_CORRECTABLE,
+														  counter.correctablePerTile, &counter.correctableTotal);
+		if (result == ZE_RESULT_SUCCESS) {
+			counter.valid = true;
+		}
+
+		result = rasHandler->getErrorsPerTile(categoryInfo.category, ZES_RAS_ERROR_TYPE_UNCORRECTABLE,
+											  counter.uncorrectablePerTile, &counter.uncorrectableTotal);
+		if (result == ZE_RESULT_SUCCESS) {
+			counter.valid = true;
+		}
+
+		if (counter.valid) {
+			counter.total = counter.correctableTotal + counter.uncorrectableTotal;
+		}
+
+		metrics.rasCounters[categoryInfo.category] = counter;
+
+		DBG("RAS Category %s: correctable=%" PRIu64 ", uncorrectable=%" PRIu64 ", total=%" PRIu64 "\n",
+			counter.categoryName, counter.correctableTotal, counter.uncorrectableTotal, counter.total);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Enumerate and initialize trackers for all engines of a specific type
  *
  * This function queries the HAL layer to determine how many engine instances exist
@@ -139,8 +222,8 @@ SummaryStats computeSummaryStats(const std::vector<double> &samples)
  * @param [out] trackers Output vector of engine trackers, one per engine instance
  * @return ze_result_t ZE_RESULT_SUCCESS if enumeration successful
  */
-ze_result_t enumerateEnginesByType(enginegroup *engineGroup, zes_engine_group_t engineType,
-								   std::vector<EngineInstanceTracker> &trackers)
+ze_result_t cmdStats::enumerateEnginesByType(enginegroup *engineGroup, zes_engine_group_t engineType,
+											 std::vector<EngineInstanceTracker> &trackers)
 {
 	TRACING();
 	trackers.clear();
@@ -186,8 +269,8 @@ ze_result_t enumerateEnginesByType(enginegroup *engineGroup, zes_engine_group_t 
  * @param [in,out] trackers Vector of engine trackers to update with new snapshots
  * @return ze_result_t ZE_RESULT_SUCCESS if capture successful
  */
-ze_result_t captureEnginesByType(enginegroup *engineGroup, zes_engine_group_t engineType,
-								 std::vector<EngineInstanceTracker> &trackers)
+ze_result_t cmdStats::captureEnginesByType(enginegroup *engineGroup, zes_engine_group_t engineType,
+										   std::vector<EngineInstanceTracker> &trackers)
 {
 	TRACING();
 	if (engineGroup == nullptr || trackers.empty()) {
@@ -230,8 +313,8 @@ ze_result_t captureEnginesByType(enginegroup *engineGroup, zes_engine_group_t en
  * @param [out] deviceJson JSON object to populate with engine statistics
  * @param [out] detailsVector Vector to populate with formatted current values
  */
-static void populateEngineStats(const std::vector<EngineInstanceTracker> &trackers, const std::string &jsonKey,
-								nlohmann::ordered_json &deviceJson, std::vector<std::string> &detailsVector)
+void cmdStats::populateEngineStats(const std::vector<EngineInstanceTracker> &trackers, const std::string &jsonKey,
+								   nlohmann::ordered_json &deviceJson, std::vector<std::string> &detailsVector)
 {
 	TRACING();
 	if (trackers.empty()) {
@@ -272,8 +355,8 @@ static void populateEngineStats(const std::vector<EngineInstanceTracker> &tracke
  * @param [out] deviceJson Output JSON object to store device statistics
  * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
  */
-ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
-							   DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson)
+ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
+										 DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas)
 {
 	TRACING();
 	if (device == nullptr || device->dev == nullptr) {
@@ -357,6 +440,38 @@ ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono:
 	populateEngineStats(copyEngines, "copy_engines", deviceJson, metrics.copyEngineDetails);
 	populateEngineStats(mediaEmEngines, "media_em_engines", deviceJson, metrics.mediaEmEngineDetails);
 
+	if (collectRas) {
+		ze_result_t rasResult = collectRasCounters(device, metrics);
+		if (rasResult == ZE_RESULT_SUCCESS && !metrics.rasCounters.empty()) {
+			auto &rasJson = deviceJson["ras_errors"];
+			for (const auto &[category, counter] : metrics.rasCounters) {
+				if (counter.valid) {
+					auto &categoryJson = rasJson[counter.categoryName];
+					categoryJson["correctable_total"] = counter.correctableTotal;
+					categoryJson["uncorrectable_total"] = counter.uncorrectableTotal;
+					categoryJson["total"] = counter.total;
+
+					if (!counter.correctablePerTile.empty() || !counter.uncorrectablePerTile.empty()) {
+						auto &tilesJson = categoryJson["tiles"];
+
+						for (const auto &[tileId, count] : counter.correctablePerTile) {
+							std::string tileKey = std::string("tile_") + std::to_string(tileId);
+							tilesJson[tileKey]["correctable"] = count;
+							tilesJson[tileKey]["total"] = count;
+						}
+
+						for (const auto &[tileId, count] : counter.uncorrectablePerTile) {
+							std::string tileKey = std::string("tile_") + std::to_string(tileId);
+							auto &tileData = tilesJson[tileKey];
+							tileData["uncorrectable"] = count;
+							tileData["total"] = tileData.value("total", 0) + count;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -435,6 +550,12 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", "/utilization/copy_engines"_json_pointer);
 	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)",
 						 "/utilization/media_em_engines"_json_pointer);
+
+	if (deviceJson.contains("ras_errors")) {
+		printSeparator();
+		printRasCounters(deviceJson, printRow);
+	}
+
 	printSeparator();
 }
 
@@ -547,6 +668,116 @@ void StatsTextPrinter::printEngineInstances(const nlohmann::ordered_json &device
 		printRow(label, "N/A");
 	} else {
 		printRow(label, oss.str());
+	}
+}
+
+/**
+ * @brief Print RAS error counters in table format
+ *
+ * This function displays RAS (Reliability, Availability, Serviceability) error
+ * counters matching the legacy output format. For each error category, it shows
+ * tile-level counts and total counts. The format matches:
+ * "Category Name | Tile 0: value, total: value"
+ *
+ * @param [in] deviceJson JSON object containing device statistics with RAS data
+ * @param [in] printRow Callback function to print a row
+ */
+void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson,
+										std::function<void(const std::string &, const std::string &)> printRow)
+{
+	TRACING();
+	if (!deviceJson.contains("ras_errors")) {
+		return;
+	}
+
+	auto &rasJson = deviceJson["ras_errors"];
+
+	// For legacy compatibility, we show cache errors separately as correctable/uncorrectable
+	// and map memory errors from Non-Compute errors category
+	auto printRasCategory = [&](const std::string &jsonKey, const std::string &errorType = "") {
+		std::string displayName = jsonKey;
+		if (errorType == "correctable") {
+			displayName += " Correctable";
+		} else if (errorType == "uncorrectable") {
+			displayName += " Uncorrectable";
+		}
+
+		if (!rasJson.contains(jsonKey)) {
+			printRow(displayName, "Tile 0: N/A, total: N/A");
+			return;
+		}
+
+		auto &categoryJson = rasJson[jsonKey];
+		std::ostringstream oss;
+
+		uint64_t totalValue = 0;
+
+		if (errorType == "correctable") {
+			totalValue = categoryJson.value("correctable_total", 0);
+		} else if (errorType == "uncorrectable") {
+			totalValue = categoryJson.value("uncorrectable_total", 0);
+		} else {
+			totalValue = categoryJson.value("total", 0);
+		}
+
+		if (categoryJson.contains("tiles") && categoryJson["tiles"].is_object()) {
+			auto &tilesJson = categoryJson["tiles"];
+			bool first = true;
+
+			std::vector<uint32_t> tileIds;
+			for (auto it = tilesJson.begin(); it != tilesJson.end(); ++it) {
+				const std::string &tileKey = it.key();
+				if (tileKey.find("tile_") == 0) {
+					try {
+						uint32_t tileId = static_cast<uint32_t>(std::stoul(tileKey.substr(5)));
+						tileIds.push_back(tileId);
+					} catch (...) {
+						continue;
+					}
+				}
+			}
+			std::sort(tileIds.begin(), tileIds.end());
+
+			for (uint32_t tileId : tileIds) {
+				std::string tileKey = std::string("tile_") + std::to_string(tileId);
+				auto &tileData = tilesJson[tileKey];
+
+				uint64_t tileValue = 0;
+				if (errorType == "correctable") {
+					tileValue = tileData.value("correctable", 0);
+				} else if (errorType == "uncorrectable") {
+					tileValue = tileData.value("uncorrectable", 0);
+				} else {
+					tileValue = tileData.value("total", 0);
+				}
+
+				if (!first) {
+					oss << ", ";
+				}
+				first = false;
+				oss << "Tile " << tileId << ": " << tileValue;
+			}
+
+			if (!first) {
+				oss << ", total: " << totalValue;
+			} else {
+				oss << "Tile 0: N/A, total: " << totalValue;
+			}
+		} else {
+			oss << "Tile 0: " << totalValue << ", total: " << totalValue;
+		}
+
+		printRow(displayName, oss.str());
+	};
+
+	for (const auto &categoryInfo : rasCategories) {
+		if (categoryInfo.category == ZES_RAS_ERROR_CAT_CACHE_ERRORS ||
+			categoryInfo.category == ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS) {
+			printRasCategory(categoryInfo.name, "correctable");
+			printRasCategory(categoryInfo.name, "uncorrectable");
+		} else {
+			printRasCategory(categoryInfo.name);
+		}
 	}
 }
 
@@ -827,7 +1058,8 @@ int cmdStats::run(arg_struct *args)
 		DeviceMetrics metrics;
 		nlohmann::ordered_json deviceJson;
 
-		result = collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson);
+		result =
+			collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson, statsCmds[STATS_RAS].enabled);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to collect stats for device %d.\n", device.index);
 			continue;

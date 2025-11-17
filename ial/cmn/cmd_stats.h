@@ -95,10 +95,13 @@ struct EuArrayMetrics
 
 struct RasCounter
 {
-	uint64_t value = 0;
-	uint64_t correctable = 0;
-	uint64_t uncorrectable = 0;
+	std::map<uint32_t, uint64_t> correctablePerTile;   // tile_id -> correctable count
+	std::map<uint32_t, uint64_t> uncorrectablePerTile; // tile_id -> uncorrectable count
+	uint64_t correctableTotal = 0;
+	uint64_t uncorrectableTotal = 0;
+	uint64_t total = 0;
 	bool valid = false;
+	const char *categoryName = nullptr;
 };
 
 struct EngineSnapshot
@@ -194,12 +197,14 @@ public:
 
 private:
 	void printDeviceTable(const nlohmann::ordered_json &deviceJson);
-    void printMetric(const nlohmann::ordered_json &deviceJson,
+	void printMetric(const nlohmann::ordered_json &deviceJson,
 					 std::function<void(const std::string &, const std::string &)> printRow, const std::string &label,
 					 const nlohmann::json::json_pointer &ptr);
 	void printEngineInstances(const nlohmann::ordered_json &deviceJson,
 							  std::function<void(const std::string &, const std::string &)> printRow,
 							  const std::string &label, const nlohmann::json::json_pointer &ptr);
+	void printRasCounters(const nlohmann::ordered_json &deviceJson,
+						  std::function<void(const std::string &, const std::string &)> printRow);
 };
 
 class cmdStats : public cmds
@@ -215,6 +220,22 @@ public:
 	ze_result_t xelink(devInfo *d);
 	ze_result_t utils(devInfo *d);
 	int run(arg_struct *args);
+
+private:
+	static std::string formatIso8601Timestamp(const std::chrono::system_clock::time_point &timePoint);
+	static double computeUtilPercent(const EngineSnapshot &start, const EngineSnapshot &end);
+	static SummaryStats computeSummaryStats(const std::vector<double> &samples);
+
+	static ze_result_t enumerateEnginesByType(enginegroup *engineGroup, zes_engine_group_t engineType,
+											  std::vector<EngineInstanceTracker> &trackers);
+	static ze_result_t captureEnginesByType(enginegroup *engineGroup, zes_engine_group_t engineType,
+											std::vector<EngineInstanceTracker> &trackers);
+	static void populateEngineStats(const std::vector<EngineInstanceTracker> &trackers, const std::string &jsonKey,
+									nlohmann::ordered_json &deviceJson, std::vector<std::string> &detailsVector);
+
+	static ze_result_t collectRasCounters(devInfo *device, DeviceMetrics &metrics);
+	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
+										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas);
 };
 
 using statsSubCmdFunc = ze_result_t (cmdStats::*)(devInfo *d);

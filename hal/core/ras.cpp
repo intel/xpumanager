@@ -166,12 +166,49 @@ ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
  * across all RAS error sets, providing targeted reliability monitoring for
  * specific hardware components and error conditions.
  *
- * @param type The RAS error category to query
- * @param errorType The specific error type (correctable or uncorrectable)
- * @param rasCounter Pointer to store the accumulated error count
+ * This is a convenience wrapper around getErrorsPerTile() that returns just
+ * the total count without per-tile breakdown.
+ *
+ * @param [in] type The RAS error category to query
+ * @param [in] errorType The specific error type (correctable or uncorrectable)
+ * @param [out] rasCounter Pointer to store the accumulated error count
  * @return ze_result_t ZE_RESULT_SUCCESS on successful error count retrieval, error code otherwise
  */
 ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorType, uint64_t *rasCounter)
+{
+	TRACING();
+
+	if (rasCounter == nullptr) {
+		ERR("Invalid argument: rasCounter is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	// Use getErrorsPerTile and just return the total
+	std::map<uint32_t, uint64_t> countersPerTile;
+	ze_result_t result = getErrorsPerTile(type, errorType, countersPerTile, rasCounter);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		DBG("RAS error count for category %d: %" PRIu64 "\n", type, *rasCounter);
+	}
+
+	return result;
+}
+
+/**
+ * @brief Gets RAS error counts per tile for a specific category and type
+ *
+ * This function retrieves error counts for each tile/subdevice separately,
+ * along with the total count across all tiles. This enables proper multi-tile
+ * device monitoring where each tile's RAS errors can be tracked independently.
+ *
+ * @param [in] type The RAS error category to query
+ * @param [in] errorType The specific error type (correctable or uncorrectable)
+ * @param [out] countersPerTile Map to store per-tile error counts (tile_id -> count)
+ * @param [out] totalCounter Pointer to store the total error count across all tiles
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful error count retrieval, error code otherwise
+ */
+ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t errorType,
+								  std::map<uint32_t, uint64_t> &countersPerTile, uint64_t *totalCounter)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -183,11 +220,13 @@ ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorT
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (rasCounter == nullptr) {
-		ERR("Invalid argument: rasCounter is null\n");
+	if (totalCounter == nullptr) {
+		ERR("Invalid argument: totalCounter is null\n");
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
-	*rasCounter = 0;
+
+	countersPerTile.clear();
+	*totalCounter = 0;
 
 	for (uint32_t i = 0; i < rasCount; ++i) {
 		result = getProperties(rasHandles[i], &properties);
@@ -200,13 +239,22 @@ ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorT
 			return result;
 		}
 
-		if (type != ZES_RAS_ERROR_CAT_CACHE_ERRORS || errorType == properties.type ||
-			errorType == ZES_RAS_ERROR_TYPE_FORCE_UINT32) {
-			*rasCounter = states.category[type];
-			DBG("RAS error count for category %d: %" PRIu64 "\n", type, *rasCounter);
+		// For cache errors, filter by properties.type to get correctable/uncorrectable separately
+		// For other categories, sum all handles (legacy behavior)
+		if (type == ZES_RAS_ERROR_CAT_CACHE_ERRORS && errorType != ZES_RAS_ERROR_TYPE_FORCE_UINT32 &&
+			properties.type != errorType) {
+			continue;
 		}
+
+		uint64_t errorCount = states.category[type];
+
+		uint32_t tileId = properties.onSubdevice ? properties.subdeviceId : 0;
+
+		countersPerTile[tileId] += errorCount;
+		*totalCounter += errorCount;
 	}
-	return result;
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
