@@ -21,7 +21,8 @@ generate-dockerized: clean
 	    -f hack/Dockerfile.generate .
 	$(Q)# HACK: FIXME: needs tp be under generate target
 	$(Q)cd $(OUTDIR)/levelzero && go tool cgo -godefs ./types.go > types.go.tmp && \
-	    mv types.go.tmp ./types.go
+	    go run ../hack/types-mangle -file types.go.tmp > types.go && \
+	    rm types.go.tmp
 	$(Q)sed -i $(OUTDIR)/levelzero/types.go \
 	        -e s'!Pad_cgo_[0-9]*!_!' \
 	        -e s'!Stype!stype!' \

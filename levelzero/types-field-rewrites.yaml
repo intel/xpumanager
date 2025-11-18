@@ -1,0 +1,87 @@
+#
+# Config file for struct field type mangling.
+# Format is:
+# <type name>:
+#  <field name>: <field type name>
+#
+ZesDeviceEccProperties:
+  PendingAction: ZesDeviceAction
+
+ZesDeviceEccDesc:
+  State: ZesDeviceEccState
+
+ZesDeviceExtProperties:
+  Type: ZesDeviceType
+
+ZesEngineProperties:
+  Type: ZesEngineGroup
+
+ZesVfUtilEngineExp2:
+  VfEngineType: ZesEngineGroup
+
+ZesVfUtilMemExp2:
+  VfMemLocation: ZesMemLoc
+
+ZesFabricPortState:
+  Status: ZesFabricPortStatus
+
+ZesFanConfig:
+  Mode: ZesFanSpeedMode
+
+ZesFanSpeed:
+  Units: ZesFanSpeedUnits
+
+ZesFreqProperties:
+  Type: ZesFreqDomain
+
+ZesPowerLimitExtDesc:
+  Level: ZesPowerLevel
+  LimitUnit: ZesLimitUnit
+  Source: ZesPowerSource
+
+ZesMemState:
+  Health: ZesMemHealth
+
+ZesMemProperties:
+  Type: ZesMemType
+  Location: ZesMemLoc
+
+ZesOverclockProperties:
+  DomainType: ZesOverclockDomain
+  VFProgramType: ZesVfProgramType
+
+ZesPciBarProperties:
+  Type: ZesPciBarType
+
+ZesPciBarProperties12:
+  Type: ZesPciBarType
+
+ZesPciState:
+  Status: ZesPciLinkStatus
+
+ZesPowerExtProperties:
+  Domain: ZesPowerDomain
+
+ZesPowerDomainExpProperties:
+  PowerDomain: ZesPowerDomain
+
+ZesPsuState:
+  VoltStatus: ZesPsuVoltageStatus
+
+ZesRasStateExp:
+  Category: ZesRasErrorCategoryExp
+
+ZesRasProperties:
+  Type: ZesRasErrorType
+
+ZesDeviceState:
+  Repaired: ZesRepairStatus
+
+ZesResetProperties:
+  ResetType: ZesResetType
+
+ZesStandbyProperties:
+  Type: ZesStandbyType
+
+ZesTempProperties:
+  Type: ZesTempSensors

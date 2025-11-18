@@ -40,14 +40,14 @@ type ZesDeviceState struct {
 	stype    uint32
 	pnext    *byte
 	Reset    uint32
-	Repaired uint32
+	Repaired ZesRepairStatus
 }
 
 type ZesResetProperties struct {
 	stype     uint32
 	pnext     *byte
 	Force     uint8
-	ResetType uint32
+	ResetType ZesResetType
 }
 
 type ZesUuid struct {
@@ -72,7 +72,7 @@ type ZesDeviceExtProperties struct {
 	stype uint32
 	pnext *byte
 	Uuid  ZesUuid
-	Type  uint32
+	Type  ZesDeviceType
 	Flags uint32
 }
 
@@ -113,7 +113,7 @@ type ZesPciProperties struct {
 type ZesPciState struct {
 	stype           uint32
 	pnext           *byte
-	Status          uint32
+	Status          ZesPciLinkStatus
 	QualityIssues   uint32
 	StabilityIssues uint32
 	Speed           ZesPciSpeed
@@ -122,7 +122,7 @@ type ZesPciState struct {
 type ZesPciBarProperties struct {
 	stype uint32
 	pnext *byte
-	Type  uint32
+	Type  ZesPciBarType
 	Index uint32
 	Base  uint64
 	Size  uint64
@@ -131,7 +131,7 @@ type ZesPciBarProperties struct {
 type ZesPciBarProperties12 struct {
 	stype                 uint32
 	pnext                 *byte
-	Type                  uint32
+	Type                  ZesPciBarType
 	Index                 uint32
 	Base                  uint64
 	Size                  uint64
@@ -152,9 +152,9 @@ type ZesPciStats struct {
 type ZesOverclockProperties struct {
 	stype             uint32
 	pnext             *byte
-	DomainType        uint32
+	DomainType        ZesOverclockDomain
 	AvailableControls uint32
-	VFProgramType     uint32
+	VFProgramType     ZesVfProgramType
 	NumberOfVFPoints  uint32
 }
 
@@ -193,7 +193,7 @@ type ZesDiagProperties struct {
 type ZesDeviceEccDesc struct {
 	stype uint32
 	pnext *byte
-	State uint32
+	State ZesDeviceEccState
 	_     [4]byte
 }
 
@@ -202,14 +202,14 @@ type ZesDeviceEccProperties struct {
 	pnext         *byte
 	CurrentState  uint32
 	PendingState  uint32
-	PendingAction uint32
+	PendingAction ZesDeviceAction
 	_             [4]byte
 }
 
 type ZesEngineProperties struct {
 	stype       uint32
 	pnext       *byte
-	Type        uint32
+	Type        ZesEngineGroup
 	OnSubdevice uint8
 	SubdeviceId uint32
 	_           [4]byte
@@ -259,7 +259,7 @@ type ZesFabricPortConfig struct {
 type ZesFabricPortState struct {
 	stype          uint32
 	pnext          *byte
-	Status         uint32
+	Status         ZesFabricPortStatus
 	QualityIssues  uint32
 	FailureReasons uint32
 	RemotePortId   ZesFabricPortId
@@ -284,7 +284,7 @@ type ZesFabricPortErrorCounters struct {
 
 type ZesFanSpeed struct {
 	Speed int32
-	Units uint32
+	Units ZesFanSpeedUnits
 }
 
 type ZesFanTempSpeed struct {
@@ -313,7 +313,7 @@ type ZesFanProperties struct {
 type ZesFanConfig struct {
 	stype      uint32
 	pnext      *byte
-	Mode       uint32
+	Mode       ZesFanSpeedMode
 	SpeedFixed ZesFanSpeed
 	SpeedTable ZesFanSpeedTable
 }
@@ -332,7 +332,7 @@ type ZesFirmwareProperties struct {
 type ZesFreqProperties struct {
 	stype                    uint32
 	pnext                    *byte
-	Type                     uint32
+	Type                     ZesFreqDomain
 	OnSubdevice              uint8
 	SubdeviceId              uint32
 	CanControl               uint8
@@ -389,10 +389,10 @@ type ZesLedState struct {
 type ZesMemProperties struct {
 	stype        uint32
 	pnext        *byte
-	Type         uint32
+	Type         ZesMemType
 	OnSubdevice  uint8
 	SubdeviceId  uint32
-	Location     uint32
+	Location     ZesMemLoc
 	PhysicalSize uint64
 	BusWidth     int32
 	NumChannels  int32
@@ -401,7 +401,7 @@ type ZesMemProperties struct {
 type ZesMemState struct {
 	stype  uint32
 	pnext  *byte
-	Health uint32
+	Health ZesMemHealth
 	Free   uint64
 	Size   uint64
 }
@@ -458,7 +458,7 @@ type ZesPsuProperties struct {
 type ZesPsuState struct {
 	stype       uint32
 	pnext       *byte
-	VoltStatus  uint32
+	VoltStatus  ZesPsuVoltageStatus
 	FanFailed   uint8
 	Temperature int32
 	Current     int32
@@ -467,7 +467,7 @@ type ZesPsuState struct {
 type ZesRasProperties struct {
 	stype       uint32
 	pnext       *byte
-	Type        uint32
+	Type        ZesRasErrorType
 	OnSubdevice uint8
 	SubdeviceId uint32
 	_           [4]byte
@@ -513,7 +513,7 @@ type ZesSchedTimesliceProperties struct {
 type ZesStandbyProperties struct {
 	stype       uint32
 	pnext       *byte
-	Type        uint32
+	Type        ZesStandbyType
 	OnSubdevice uint8
 	SubdeviceId uint32
 	_           [4]byte
@@ -522,7 +522,7 @@ type ZesStandbyProperties struct {
 type ZesTempProperties struct {
 	stype                   uint32
 	pnext                   *byte
-	Type                    uint32
+	Type                    ZesTempSensors
 	OnSubdevice             uint8
 	SubdeviceId             uint32
 	MaxTemperature          float64
@@ -556,9 +556,9 @@ type ZesDeviceEccDefaultPropertiesExt struct {
 type ZesPowerLimitExtDesc struct {
 	stype               uint32
 	pnext               *byte
-	Level               uint32
-	Source              uint32
-	LimitUnit           uint32
+	Level               ZesPowerLevel
+	Source              ZesPowerSource
+	LimitUnit           ZesLimitUnit
 	EnabledStateLocked  uint8
 	Enabled             uint8
 	IntervalValueLocked uint8
@@ -571,7 +571,7 @@ type ZesPowerLimitExtDesc struct {
 type ZesPowerExtProperties struct {
 	stype        uint32
 	pnext        *byte
-	Domain       uint32
+	Domain       ZesPowerDomain
 	DefaultLimit *ZesPowerLimitExtDesc
 }
 
@@ -583,7 +583,7 @@ type ZesEngineExtProperties struct {
 }
 
 type ZesRasStateExp struct {
-	Category     uint32
+	Category     ZesRasErrorCategoryExp
 	ErrorCounter uint64
 }
 
@@ -604,7 +604,7 @@ type ZesMemBandwidthCounterBitsExpProperties struct {
 type ZesPowerDomainExpProperties struct {
 	stype       uint32
 	pnext       *byte
-	PowerDomain uint32
+	PowerDomain ZesPowerDomain
 	_           [4]byte
 }
 
@@ -628,14 +628,14 @@ type ZesVfExp2Capabilities struct {
 type ZesVfUtilMemExp2 struct {
 	stype         uint32
 	pnext         *byte
-	VfMemLocation uint32
+	VfMemLocation ZesMemLoc
 	VfMemUtilized uint64
 }
 
 type ZesVfUtilEngineExp2 struct {
 	stype                uint32
 	pnext                *byte
-	VfEngineType         uint32
+	VfEngineType         ZesEngineGroup
 	ActiveCounterValue   uint64
 	SamplingCounterValue uint64
 }
