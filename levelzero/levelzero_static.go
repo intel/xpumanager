@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 //
 
-//go:generate go tool stringer -type ZeResult -output zz_strings.go -trimprefix ZE_RESULT_
+//go:generate ./generate-stringer.sh
 
 package levelzero
 

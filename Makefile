@@ -34,3 +34,4 @@ clean:
 	rm -f levelzero/cgo_helpers.go levelzero/cgo_helpers.h levelzero/cgo_helpers.c
 	rm -f levelzero/const.go levelzero/doc.go levelzero/types.go
 	rm -f levelzero/levelzero.go
+	rm -f levelzero/zz_*
