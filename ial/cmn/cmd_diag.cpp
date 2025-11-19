@@ -503,9 +503,9 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
 ze_result_t cmdDiag::runSingleTest(devInfo *d)
 {
 	TRACING();
-	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	static std::unordered_map<diagSubCmdType, diagSubCmdStruct> diagSingleTests = {
+	// Map user-facing test IDs (1-10) to enum values
+	static const std::vector<std::pair<diagSubCmdType, diagSubCmdStruct>> diagSingleTests = {
 		{DIAG_COMPUTATION, {&cmdDiag::computation}},
 		{DIAG_MEMORYERROR, {&cmdDiag::memoryError}},
 		{DIAG_MEMORYBANDWIDTH, {&cmdDiag::memoryBandwidth}},
@@ -518,15 +518,19 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d)
 		{DIAG_XELINKALLTOALLTHROUGHPUT, {&cmdDiag::xeLinkAllToAllThroughput}},
 	};
 
-	for (const auto &test : diagSingleTests) {
-		if (test.first == stoi(diagCmds[diagCmdType::SINGLETEST].val)) {
-			DBG("Running test: %d\n", test.first);
-			result = (this->*test.second.func)(d);
-			break;
-		}
+	// Debug helper - makes it easier to inspect in GDB
+	diagCmdStruct &debug_cmd = diagCmds[diagCmdType::SINGLETEST];
+	int testId = stoi(debug_cmd.val);
+
+	// Validate test ID and use it as array index (1-based user input to 0-based index)
+	if (testId < 1 || testId > static_cast<int>(diagSingleTests.size())) {
+		ERR("Invalid singletest id: %d. Valid options are 1 to %zu.\n", testId, diagSingleTests.size());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	return result;
+	// Execute the test function using 0-based indexing
+	DBG("Running test: %d\n", testId);
+	return (this->*diagSingleTests[testId - 1].second.func)(d);
 }
 
 /**
