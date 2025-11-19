@@ -22,9 +22,13 @@
  *
  */
 
-#include "diagnostic.h"
 #include <device.h>
 #include <vector>
+#include <fstream>
+#include <algorithm>
+#include <filesystem>
+#include "diagnostic.h"
+#include "file_io.h"
 
 /**
  * @brief Destructor for the diagnostic class
@@ -165,13 +169,13 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 	long double timed;
 	std::size_t flops_per_work_item = 4096;
 	std::vector<uint8_t> binary_file;
-	ze_result_t ret = d->dev->loadBinaryFile("ze_sp_compute.spv", &binary_file);
+	ze_result_t ret = loadBinaryFile("ze_sp_compute.spv", &binary_file);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
 		return ret;
 	}
 	ze_module_handle_t module_handle;
-	ret = d->dev->moduleCreate(context, d->deviceHdl, binary_file, &module_handle);
+	ret = moduleCreate(context, d->deviceHdl, binary_file, &module_handle);
 	if (ret != ZE_RESULT_SUCCESS) {
 		return ret;
 	}
@@ -181,39 +185,39 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 	uint64_t max_number_of_allocated_items = zeDevProp.maxMemAllocSize / sizeof(float);
 	uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
 	ZeWorkGroups workgroup_info;
-	number_of_work_items = d->dev->setWorkgroups(&zeComputeProp, number_of_work_items, &workgroup_info);
+	number_of_work_items = setWorkgroups(&zeComputeProp, number_of_work_items, &workgroup_info);
 
 	void *device_input_value;
-	ret = d->dev->memoryAlloc(context, d->deviceHdl, sizeof(float), 1, &device_input_value);
+	ret = memoryAlloc(context, d->deviceHdl, sizeof(float), 1, &device_input_value);
 	if (ret != ZE_RESULT_SUCCESS) {
-		d->dev->moduleDestroy(module_handle);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
 	void *device_output_buffer;
-	ret = d->dev->memoryAlloc(context, d->deviceHdl, static_cast<std::size_t>((number_of_work_items * sizeof(float))),
-							  1, &device_output_buffer);
+	ret = memoryAlloc(context, d->deviceHdl, static_cast<std::size_t>((number_of_work_items * sizeof(float))), 1,
+					  &device_output_buffer);
 	if (ret != ZE_RESULT_SUCCESS) {
-		d->dev->memoryFree(context, device_input_value);
-		d->dev->moduleDestroy(module_handle);
+		memoryFree(context, device_input_value);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
 	ze_command_list_handle_t command_list;
-	ret = d->dev->commandListCreate(context, d->deviceHdl, 0, &command_list, ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY);
+	ret = commandListCreate(context, d->deviceHdl, 0, &command_list, ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY);
 	if (ret != ZE_RESULT_SUCCESS) {
-		d->dev->memoryFree(context, device_input_value);
-		d->dev->memoryFree(context, device_output_buffer);
-		d->dev->moduleDestroy(module_handle);
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
 	ze_command_queue_handle_t command_queue;
-	ret = d->dev->commandQueueCreate(context, d->deviceHdl, 0, 0, &command_queue, ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
+	ret = commandQueueCreate(context, d->deviceHdl, 0, 0, &command_queue, ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
 	if (ret != ZE_RESULT_SUCCESS) {
-		d->dev->memoryFree(context, device_input_value);
-		d->dev->memoryFree(context, device_output_buffer);
-		d->dev->moduleDestroy(module_handle);
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
@@ -221,39 +225,39 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 										nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
-		d->dev->memoryFree(context, device_input_value);
-		d->dev->memoryFree(context, device_output_buffer);
-		d->dev->moduleDestroy(module_handle);
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
 	ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Couldn't append barrier: %s\n", l0_error_to_string(ret));
-		d->dev->memoryFree(context, device_input_value);
-		d->dev->memoryFree(context, device_output_buffer);
-		d->dev->moduleDestroy(module_handle);
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
 	ret = zeCommandListClose(command_list);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
-		d->dev->memoryFree(context, device_input_value);
-		d->dev->memoryFree(context, device_output_buffer);
-		d->dev->moduleDestroy(module_handle);
+		memoryFree(context, device_input_value);
+		memoryFree(context, device_output_buffer);
+		moduleDestroy(module_handle);
 		return ret;
 	}
 
-	d->dev->commandQueueExecuteCommandLists(command_queue, command_list);
-	d->dev->commandQueueSynchronize(command_queue);
-	d->dev->commandListReset(command_list);
+	commandQueueExecuteCommandLists(command_queue, command_list);
+	commandQueueSynchronize(command_queue);
+	commandListReset(command_list);
 	ze_kernel_handle_t compute_sp_v1;
-	d->dev->setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
+	setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
 
 	timed = 0;
 	// Vector width 1
-	timed = d->dev->runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, checkOnly);
+	timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, checkOnly);
 	out_gflops = calculateGbps(timed, (long double)number_of_work_items * flops_per_work_item);
 	//	all_gflops[i] = std::max(all_gflops[i], current);
 	ret = zeKernelDestroy(compute_sp_v1);
@@ -271,10 +275,464 @@ ze_result_t diagnostic::computationTest(devInfo *d, long double &out_gflops)
 		ERR("Error destroying command queue: %s\n", l0_error_to_string(ret));
 	}
 
-	d->dev->memoryFree(context, device_input_value);
-	d->dev->memoryFree(context, device_output_buffer);
-	d->dev->moduleDestroy(module_handle);
+	memoryFree(context, device_input_value);
+	memoryFree(context, device_output_buffer);
+	moduleDestroy(module_handle);
+
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Creates a Level Zero module from SPIR-V binary data
+ *
+ * This function creates a GPU compute module from compiled SPIR-V binary code,
+ * enabling kernel execution on the target device. It configures the module
+ * descriptor and handles module creation for diagnostic compute operations.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] ze_device Device handle for the target GPU device
+ * @param[in] binary_file Vector containing the SPIR-V binary data
+ * @param[out] module_handle Pointer to receive the created module handle
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful module creation, error code otherwise
+ */
+ze_result_t diagnostic::moduleCreate(const ze_context_handle_t &context_handle, ze_device_handle_t ze_device,
+									 std::vector<uint8_t> binary_file, ze_module_handle_t *module_handle)
+{
+	ze_module_desc_t module_description = {};
+	module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+	module_description.pNext = nullptr;
+	module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
+	module_description.inputSize = static_cast<uint32_t>(binary_file.size());
+	module_description.pInputModule = binary_file.data();
+	module_description.pBuildFlags = nullptr;
+	ze_result_t ret;
+
+	ret = zeModuleCreate(context_handle, ze_device, &module_description, module_handle, nullptr);
+
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't create module: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Destroys a Level Zero module and releases its resources
+ *
+ * This function properly destroys a GPU compute module created earlier,
+ * releasing all associated resources and handles. It provides cleanup
+ * functionality for diagnostic operations using GPU modules.
+ *
+ * @param[in] hModule Handle to the module to be destroyed
+ */
+void diagnostic::moduleDestroy(ze_module_handle_t hModule)
+{
+	ze_result_t ret = zeModuleDestroy(hModule);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't destroy module: %s\n", l0_error_to_string(ret));
+	}
+}
+
+/**
+ * @brief Allocates device memory for GPU operations
+ *
+ * This function allocates memory on the GPU device for diagnostic operations,
+ * configuring memory allocation parameters and handling device-specific
+ * memory requirements for compute kernels and data buffers.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] ze_device Device handle for the target GPU device
+ * @param[in] size Size of memory to allocate in bytes
+ * @param[in] alignment Memory alignment requirement in bytes
+ * @param[out] ptr Pointer to receive the allocated memory address
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful allocation, error code otherwise
+ */
+ze_result_t diagnostic::memoryAlloc(const ze_context_handle_t context_handle, ze_device_handle_t ze_device, size_t size,
+									size_t alignment, void **ptr)
+{
+	ze_device_mem_alloc_desc_t device_desc = {};
+	device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+	device_desc.pNext = nullptr;
+	device_desc.ordinal = 0;
+	device_desc.flags = 0;
+	ze_result_t ret;
+	ret = zeMemAllocDevice(context_handle, &device_desc, size, alignment, ze_device, ptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Creates a Level Zero command list for GPU operations
+ *
+ * This function creates a command list that will contain GPU commands for
+ * diagnostic operations. Command lists are used to batch and submit GPU
+ * operations efficiently for kernel execution and memory operations.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] ze_device Device handle for the target GPU device
+ * @param[in] command_queue_group_ordinal Ordinal of the command queue group
+ * @param[out] phCommandList Pointer to receive the created command list handle
+ * @param[in] flags Command list creation flags
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful creation, error code otherwise
+ */
+ze_result_t diagnostic::commandListCreate(const ze_context_handle_t context_handle, ze_device_handle_t ze_device,
+										  uint32_t command_queue_group_ordinal, ze_command_list_handle_t *phCommandList,
+										  uint32_t flags)
+{
+	ze_command_list_desc_t command_list_description{};
+	command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+	command_list_description.commandQueueGroupOrdinal = command_queue_group_ordinal;
+	command_list_description.pNext = nullptr;
+	command_list_description.flags = flags;
+	ze_result_t ret;
+	ret = zeCommandListCreate(context_handle, ze_device, &command_list_description, phCommandList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't create command list: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Creates a Level Zero command queue for GPU operation submission
+ *
+ * This function creates a command queue that will be used to submit command
+ * lists to the GPU for execution. Command queues manage the execution of
+ * GPU operations and provide synchronization capabilities for diagnostic tests.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] ze_device Device handle for the target GPU device
+ * @param[in] command_queue_group_ordinal Ordinal of the command queue group
+ * @param[in] command_queue_index Index within the command queue group
+ * @param[out] phCommandQueue Pointer to receive the created command queue handle
+ * @param[in] flags Command queue creation flags
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful creation, error code otherwise
+ */
+ze_result_t diagnostic::commandQueueCreate(const ze_context_handle_t context_handle, ze_device_handle_t ze_device,
+										   const uint32_t command_queue_group_ordinal,
+										   const uint32_t command_queue_index,
+										   ze_command_queue_handle_t *phCommandQueue, uint32_t flags)
+{
+	ze_command_queue_desc_t command_queue_description{.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+													  .pNext = nullptr,
+													  .ordinal = command_queue_group_ordinal,
+													  .index = command_queue_index,
+													  .flags = flags,
+													  .mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
+													  .priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL};
+
+	ze_result_t ret;
+	ret = zeCommandQueueCreate(context_handle, ze_device, &command_queue_description, phCommandQueue);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't create command queue: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Configures work group parameters for GPU kernel execution
+ *
+ * This function calculates optimal work group dimensions and counts based on
+ * device compute properties and requested work items. It ensures work group
+ * configuration stays within device limits while maximizing GPU utilization.
+ *
+ * @param[in] device_compute_properties Pointer to device compute properties structure
+ * @param[in] total_work_items_requested Total number of work items requested for execution
+ * @param[out] workgroup_info Pointer to work group structure to be populated
+ * @return uint64_t Actual number of work items that will be executed
+ */
+uint64_t diagnostic::setWorkgroups(ze_device_compute_properties_t *device_compute_properties,
+								   const uint64_t total_work_items_requested, struct ZeWorkGroups *workgroup_info)
+{
+	auto group_size_x =
+		std::clamp(total_work_items_requested, uint64_t(1), uint64_t(device_compute_properties->maxGroupSizeX));
+	auto group_size_y = 1;
+	auto group_size_z = 1;
+	auto group_size = group_size_x * group_size_y * group_size_z;
+
+	auto group_count_x = total_work_items_requested / group_size;
+	group_count_x = std::clamp(group_count_x, uint64_t(1), uint64_t(device_compute_properties->maxGroupCountX));
+	auto remaining_items = total_work_items_requested - group_count_x * group_size;
+
+	uint64_t group_count_y = remaining_items / (group_count_x * group_size);
+	group_count_y = std::clamp(group_count_y, uint64_t(1), uint64_t(device_compute_properties->maxGroupCountY));
+	remaining_items = total_work_items_requested - group_count_x * group_count_y * group_size;
+
+	uint64_t group_count_z = remaining_items / (group_count_x * group_count_y * group_size);
+	group_count_z = std::clamp(group_count_z, uint64_t(1), uint64_t(device_compute_properties->maxGroupCountZ));
+
+	auto final_work_items = group_count_x * group_count_y * group_count_z * group_size;
+	remaining_items = total_work_items_requested - final_work_items;
+
+	workgroup_info->group_size_x = static_cast<uint32_t>(group_size_x);
+	workgroup_info->group_size_y = static_cast<uint32_t>(group_size_y);
+	workgroup_info->group_size_z = static_cast<uint32_t>(group_size_z);
+	workgroup_info->group_count_x = static_cast<uint32_t>(group_count_x);
+	workgroup_info->group_count_y = static_cast<uint32_t>(group_count_y);
+	workgroup_info->group_count_z = static_cast<uint32_t>(group_count_z);
+
+	return final_work_items;
+}
+
+/**
+ * @brief Loads SPIR-V binary file for GPU kernel execution
+ *
+ * This function reads a compiled SPIR-V binary file from the resources directory
+ * and loads it into memory for module creation. It provides kernel loading
+ * capabilities for diagnostic compute operations.
+ *
+ * @param[in] filePath Path to the SPIR-V binary file relative to kernels directory
+ * @param[out] binary_file Pointer to vector that will contain the loaded binary data
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful file loading, error code otherwise
+ */
+ze_result_t diagnostic::loadBinaryFile(const std::string &filePath, std::vector<uint8_t> *binary_file)
+{
+	std::string folder = std::string(XPUM_RESOURCES_DIR) + std::string("kernels/");
+	if (!fileExists(folder)) {
+		ERR("Kernel folder does not exist: %s\n", folder.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::string absolute_file_path = folder + filePath;
+	std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
+
+	if (!stream.good()) {
+		ERR("Failed to open kernel file: %s\n", absolute_file_path.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	size_t length = 0;
+	stream.seekg(0, stream.end);
+	length = static_cast<size_t>(stream.tellg());
+	stream.seekg(0, stream.beg);
+	binary_file->resize(length);
+	stream.read(reinterpret_cast<char *>(binary_file->data()), length);
+	stream.close();
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Executes command lists on a GPU command queue
+ *
+ * This function submits a command list to the specified command queue for
+ * execution on the GPU. It provides the mechanism to trigger GPU operations
+ * that have been recorded in command lists for diagnostic tests.
+ *
+ * @param[in] hCommandQueue Handle to the command queue for execution
+ * @param[in] hCommandList Handle to the command list to execute
+ */
+ze_result_t diagnostic::commandQueueExecuteCommandLists(ze_command_queue_handle_t hCommandQueue,
+														ze_command_list_handle_t hCommandList)
+{
+	ze_result_t ret = zeCommandQueueExecuteCommandLists(hCommandQueue, 1, &hCommandList, nullptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't execute command lists: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Synchronizes with GPU command queue completion
+ *
+ * This function waits for all commands in the specified command queue to
+ * complete execution. It provides synchronization between CPU and GPU
+ * operations, ensuring diagnostic tests complete before proceeding.
+ *
+ * @param[in] hCommandQueue Handle to the command queue to synchronize with
+ */
+ze_result_t diagnostic::commandQueueSynchronize(ze_command_queue_handle_t hCommandQueue)
+{
+	ze_result_t ret = zeCommandQueueSynchronize(hCommandQueue, UINT64_MAX);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't synchronize command queue: %s\n", l0_error_to_string(ret));
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Resets a command list for reuse
+ *
+ * This function resets a command list to its initial state, allowing it to
+ * be reused for recording new GPU commands. It provides efficient command
+ * list management for iterative diagnostic operations.
+ *
+ * @param[in] hCommandList Handle to the command list to reset
+ */
+ze_result_t diagnostic::commandListReset(ze_command_list_handle_t hCommandList)
+{
+	ze_result_t ret = zeCommandListReset(hCommandList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't reset command list: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Creates a GPU kernel from a module
+ *
+ * This function creates a kernel object from a compiled module, allowing
+ * specific kernel functions to be executed on the GPU. It provides the
+ * foundation for running compute operations in diagnostic tests.
+ *
+ * @param[in] hModule Handle to the module containing the kernel
+ * @param[in] name String name of the kernel function to create
+ * @param[out] hKernel Pointer to receive the created kernel handle
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful kernel creation, error code otherwise
+ */
+ze_result_t diagnostic::kernelCreate(ze_module_handle_t hModule, std::string name, ze_kernel_handle_t *hKernel)
+{
+	ze_kernel_desc_t test_function_description = {};
+	test_function_description.stype = ZE_STRUCTURE_TYPE_KERNEL_DESC;
+	test_function_description.pNext = nullptr;
+	test_function_description.flags = 0;
+	test_function_description.pKernelName = name.c_str();
+
+	ze_result_t ret = zeKernelCreate(hModule, &test_function_description, hKernel);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error creating kernel: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
+ * @brief Frees GPU device memory
+ *
+ * This function releases device memory that was previously allocated for
+ * GPU operations. It provides proper cleanup and resource management
+ * for diagnostic tests that use GPU memory buffers.
+ *
+ * @param[in] context Level Zero context handle
+ * @param[in] ptr Pointer to the device memory to free
+ */
+ze_result_t diagnostic::memoryFree(const ze_context_handle_t &context_handle, const void *ptr)
+{
+	ze_result_t ret = zeMemFree(context_handle, const_cast<void *>(ptr));
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error freeing memory: %s\n", l0_error_to_string(ret));
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Configures a kernel function with input and output parameters
+ *
+ * This function sets up a kernel for execution by creating the kernel object
+ * and configuring its arguments with input and output memory buffers.
+ * It prepares kernels for diagnostic compute operations.
+ *
+ * @param[in] module_handle Handle to the module containing the kernel
+ * @param[out] function Reference to kernel handle to be created and configured
+ * @param[in] name Name of the kernel function to set up
+ * @param[in] input Pointer to input data buffer
+ * @param[in] output Pointer to output data buffer
+ */
+ze_result_t diagnostic::setupFunction(ze_module_handle_t module_handle, ze_kernel_handle_t &function, const char *name,
+									  void *input, void *output)
+{
+	ze_result_t ret = kernelCreate(module_handle, name, &function);
+	if (ret != ZE_RESULT_SUCCESS) {
+		return ret;
+	}
+
+	ret = zeKernelSetArgumentValue(function, 0, sizeof(input), &input);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error setting kernel argument value: %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+	ret = zeKernelSetArgumentValue(function, 1, sizeof(output), &output);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error setting kernel argument value: %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+	return ret;
+}
+
+/**
+ * @brief Appends a kernel launch command to a command list
+ *
+ * This function records a kernel launch operation in the specified command
+ * list with the given launch parameters. It provides the mechanism to
+ * schedule kernel execution as part of GPU command sequences.
+ *
+ * @param[in] hCommandList Handle to the command list
+ * @param[in] hKernel Handle to the kernel to launch
+ * @param[in] pLaunchFuncArgs Pointer to launch function arguments containing work group configuration
+ */
+void diagnostic::commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_kernel_handle_t hKernel,
+											   const ze_group_count_t *pLaunchFuncArgs)
+{
+	ze_result_t ret = zeCommandListAppendLaunchKernel(hCommandList, hKernel, pLaunchFuncArgs, nullptr, 0, nullptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error appending launch kernel: %s\n", l0_error_to_string(ret));
+	}
+}
+
+/**
+ * @brief Executes a GPU kernel with timing and performance measurement
+ *
+ * This function runs a GPU kernel with the specified work group configuration,
+ * measures execution time, and optionally performs performance analysis.
+ * It supports both functional testing and performance benchmarking modes.
+ *
+ * @param[in] command_queue Handle to the command queue for kernel execution
+ * @param[in] command_list Handle to the command list containing kernel commands
+ * @param[in,out] function Reference to the kernel function to execute
+ * @param[in] workgroup_info Work group configuration parameters
+ * @param[in] checkOnly Boolean flag: true for functional testing, false for performance measurement
+ * @return long double Execution time in nanoseconds, or -1 on error
+ */
+long double diagnostic::runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
+								  ze_kernel_handle_t &function, struct ZeWorkGroups &workgroup_info, bool checkOnly)
+{
+	long double timed = 0;
+
+	ze_result_t ret = zeKernelSetGroupSize(function, workgroup_info.group_size_x, workgroup_info.group_size_y,
+										   workgroup_info.group_size_z);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Error setting kernel group size: %s\n", l0_error_to_string(ret));
+		return -1;
+	}
+
+	ze_group_count_t thread_group_dimensions;
+	thread_group_dimensions.groupCountX = workgroup_info.group_count_x;
+	thread_group_dimensions.groupCountY = workgroup_info.group_count_y;
+	thread_group_dimensions.groupCountZ = workgroup_info.group_count_z;
+	commandListAppendLaunchKernel(command_list, function, &thread_group_dimensions);
+
+	ret = zeCommandListClose(command_list);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+		return -1;
+	}
+
+	// 1 round is good enough if it is not perf diag
+	if (checkOnly == true) {
+		commandQueueExecuteCommandLists(command_queue, command_list);
+		commandQueueSynchronize(command_queue);
+		return 0;
+	}
+	// Consistent with ze_peak
+	uint32_t warmup_iterations = 5;
+	uint32_t iters = 20;
+	for (uint32_t i = 0; i < warmup_iterations; i++) {
+		commandQueueExecuteCommandLists(command_queue, command_list);
+		commandQueueSynchronize(command_queue);
+	}
+
+	std::chrono::high_resolution_clock::time_point time_start, time_end;
+	time_start = std::chrono::high_resolution_clock::now();
+	for (uint32_t i = 0; i < iters; i++) {
+		commandQueueExecuteCommandLists(command_queue, command_list);
+		commandQueueSynchronize(command_queue);
+	}
+
+	time_end = std::chrono::high_resolution_clock::now();
+	timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
+	commandListReset(command_list);
+	return (timed / static_cast<long double>(iters));
 }
 
 /**
