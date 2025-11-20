@@ -19,8 +19,9 @@ type sysman struct {
 }
 
 type metricsRegistry struct {
-	frequency *frequencyMetrics
-	memory    *memoryMetrics
+	frequency   *frequencyMetrics
+	memory      *memoryMetrics
+	temperature *temperatureMetrics
 }
 
 // New creates and initializes a new Sysman instance.
@@ -73,12 +74,18 @@ func (s *sysman) initMetrics(meter metric.Meter) error {
 func newMetricsRegistry(meter metric.Meter) (*metricsRegistry, error) {
 	var err error
 	registry := &metricsRegistry{}
+
+	registry.frequency, err = newFrequencyMetrics(meter)
+	if err != nil {
+		return nil, err
+	}
+
 	registry.memory, err = newMemoryMetrics(meter)
 	if err != nil {
 		return nil, err
 	}
 
-	registry.frequency, err = newFrequencyMetrics(meter)
+	registry.temperature, err = newTemperatureMetrics(meter)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +96,7 @@ func (r *metricsRegistry) getInstruments() []metric.Observable {
 	instruments := []metric.Observable{}
 	instruments = append(instruments, r.frequency.getInstruments()...)
 	instruments = append(instruments, r.memory.getInstruments()...)
+	instruments = append(instruments, r.temperature.getInstruments()...)
 	return instruments
 }
 

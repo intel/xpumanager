@@ -21,8 +21,9 @@ type sysmanDevice struct {
 	*levelzero.ZeDevice
 	attributes []attribute.KeyValue
 
-	frequency []*sysmanFrequency
-	memory    []*sysmanMemory
+	frequency   []*sysmanFrequency
+	memory      []*sysmanMemory
+	temperature []*sysmanTemperature
 }
 
 func newDeviceRegistry() (*deviceRegistry, error) {
@@ -79,6 +80,7 @@ func newSysmanDevice(device *levelzero.ZeDevice) (*sysmanDevice, error) {
 
 	d.enumFrequency()
 	d.enumMemory()
+	d.enumTemperature()
 
 	return d, nil
 }
@@ -91,11 +93,18 @@ func (d *sysmanDevice) enumMemory() {
 	d.memory = enumMemory(d.ZeDevice)
 }
 
+func (d *sysmanDevice) enumTemperature() {
+	d.temperature = enumTemperature(d.ZeDevice)
+}
+
 func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry) {
 	for _, freq := range d.frequency {
 		registry.frequency.observe(o, freq, d.attributes)
 	}
 	for _, mem := range d.memory {
 		registry.memory.observe(o, mem, d.attributes)
+	}
+	for _, temp := range d.temperature {
+		registry.temperature.observe(o, temp, d.attributes)
 	}
 }
