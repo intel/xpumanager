@@ -10,3 +10,6 @@ build:
 
 clean:
 	rm -rf bin
+
+lint:
+	go tool golangci-lint run
