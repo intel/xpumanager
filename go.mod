@@ -228,6 +228,6 @@ require (
 )
 
 // HACK: use local level-zero-go module until published
-replace github.com/intel/level-zero-go => ../level-zero-go
+replace github.com/intel/level-zero-go => ./level-zero-go
 
 tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint

@@ -3,13 +3,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+OUT_DIR ?= bin
+
 all: build
 
 build:
-	go build -o bin/xpu-exporter ./cmd/xpu-exporter
-
-clean:
-	rm -rf bin
+	go build -o $(OUT_DIR)/xpu-exporter ./cmd/xpu-exporter
 
 lint:
 	go tool golangci-lint run
