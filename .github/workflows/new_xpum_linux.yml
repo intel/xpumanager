@@ -300,9 +300,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 10
-          ref: ${{ github.head_ref }}
 
       - name: Setup Python environment
         run: |
@@ -328,8 +325,11 @@ jobs:
       - name: Check code formatting
         run: |
             echo "Checking code formatting with clang-format..."
-            git fetch origin ${{ github.base_ref }}
-            git-clang-format --diff origin/${{ github.base_ref }} HEAD
+            git ls-files "hal/**.cpp" "hal/**.h" "hal/**.hpp" \
+            "ial/**.cpp" "ial/**.h" "ial/**.hpp" \
+            "oal/**.cpp" "oal/**.h" "oal/**.hpp" > /tmp/all_files.txt
+            grep -v -f .clang-format-ignore /tmp/all_files.txt > /tmp/files_to_format.txt
+            xargs -a /tmp/files_to_format.txt clang-format --dry-run -Werror --style=file
 
       - name: Check license headers
         continue-on-error: true
@@ -339,6 +339,9 @@ jobs:
 
       - name: Run clang-tidy
         continue-on-error: true
+        # clang-tidy currently has millions of errors per file and takes 10+ minutes before finally causing a system OOM error
+        # restrict it to 1 minute
+        timeout-minutes: 1
         run: |
             echo "Running clang-tidy static analysis..."
             # Copy compile commands for clang-tidy
