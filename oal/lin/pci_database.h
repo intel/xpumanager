@@ -60,7 +60,7 @@ public:
 
 private:
 	PciDatabase();
-	~PciDatabase() {};
+	~PciDatabase(){};
 
 	PciDatabase &operator=(const PciDatabase &) = delete;
 	PciDatabase(const PciDatabase &) = delete;

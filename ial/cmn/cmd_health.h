@@ -67,7 +67,7 @@ class cmdHealth : public cmds
 
 public:
 	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
-	~cmdHealth() {};
+	~cmdHealth(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t coreTemperature(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t memoryTemperature(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);

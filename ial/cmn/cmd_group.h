@@ -49,7 +49,7 @@ class cmdGroup : public cmds
 {
 public:
 	cmdGroup() { STRCPY_S(name, MAX_PATH, "group"); };
-	~cmdGroup() {};
+	~cmdGroup(){};
 	void help(HELP helpType = FULL_HELP);
 
 	ze_result_t create(devInfo *d);

@@ -32,7 +32,7 @@ class cmdTopdown : public cmds
 {
 public:
 	cmdTopdown() { STRCPY_S(name, MAX_PATH, "topdown"); };
-	~cmdTopdown() {};
+	~cmdTopdown(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 };

@@ -89,7 +89,7 @@ class cmdDiscovery : public cmds
 
 public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
-	~cmdDiscovery() {};
+	~cmdDiscovery(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t preCheck(std::vector<std::string> *dumpArgs);
 	ze_result_t dumpHeading(nlohmann::ordered_json *jsonObj);

@@ -129,7 +129,7 @@ class cmdDump : public cmds
 
 public:
 	cmdDump() { STRCPY_S(name, MAX_PATH, "dump"); };
-	~cmdDump() {};
+	~cmdDump(){};
 	void help(HELP helpType = FULL_HELP);
 
 	ze_result_t gpuUtilization(devInfo *d, std::string *outputLine, threadData *td);

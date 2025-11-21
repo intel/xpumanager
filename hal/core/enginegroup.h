@@ -44,7 +44,7 @@ public:
 	ze_result_t getUtilization(zes_engine_group_t *typeTable, uint32_t tableSize, uint64_t *utilization,
 							   uint64_t *timestamp);
 	ze_result_t getEngineActivityByType(zes_engine_group_t type, uint32_t engineIndex, uint64_t *activeTime,
-										 uint64_t *timestamp);
+										uint64_t *timestamp);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

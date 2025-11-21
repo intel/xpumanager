@@ -53,7 +53,7 @@ class cmdPolicy : public cmds
 {
 public:
 	cmdPolicy() { STRCPY_S(name, MAX_PATH, "policy"); };
-	~cmdPolicy() {};
+	~cmdPolicy(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t create(devInfo *d);
 	ze_result_t listPolicies(devInfo *d);

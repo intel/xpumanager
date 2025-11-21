@@ -95,9 +95,9 @@ protected:
 	char name[MAX_PATH];
 
 public:
-	cmds() {};
+	cmds(){};
 	char *getName() { return name; }
-	virtual ~cmds() {};
+	virtual ~cmds(){};
 	void printHelp(std::vector<helpCmd> helpList, HELP helpType = FULL_HELP);
 	virtual void help(HELP helpType = FULL_HELP) = 0;
 	virtual int run(arg_struct *args) = 0;
