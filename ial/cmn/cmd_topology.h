@@ -43,7 +43,7 @@ class cmdTopology : public cmds
 
 public:
 	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
-	~cmdTopology() {};
+	~cmdTopology(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t showTopology(devInfo *d);
 	ze_result_t generateFile(devInfo *d);

@@ -946,7 +946,8 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
 	}
 
 	uint32_t mediaEnhancementEnginesCount = 0;
-	ze_result_t result = engineGroup->getEngineCountByType(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
+	ze_result_t result =
+		engineGroup->getEngineCountByType(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

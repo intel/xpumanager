@@ -57,7 +57,7 @@ class cmdConfig : public cmds
 
 public:
 	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
-	~cmdConfig() {};
+	~cmdConfig(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t setFrequencyRange(devInfo *d);
 	ze_result_t setPowerLimit(devInfo *d);

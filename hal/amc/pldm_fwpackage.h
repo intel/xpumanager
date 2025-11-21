@@ -38,7 +38,7 @@
 #define PLDM_UUID_LEN 16
 #define PLDM_TIMESTAMP104_SIZE 13
 
-#define offset_of(type, element) ((size_t)&(((type *)0)->element))
+#define offset_of(type, element) ((size_t) & (((type *)0)->element))
 
 typedef union
 {

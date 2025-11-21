@@ -32,7 +32,7 @@ class cmdAmcSensor : public cmds
 {
 public:
 	cmdAmcSensor() { STRCPY_S(name, MAX_PATH, "amcsensor"); };
-	~cmdAmcSensor() {};
+	~cmdAmcSensor(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 };

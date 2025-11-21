@@ -52,7 +52,7 @@ class cmdVgpu : public cmds
 
 public:
 	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
-	~cmdVgpu() {};
+	~cmdVgpu(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(devInfo *d);
 	ze_result_t addKernelParam(devInfo *d);
