@@ -39,3 +39,25 @@ Test the container image:
 ```bash
 docker run --rm -p 8080:8080 --device /dev/dri registry.local/xpu-exporter:main
 ```
+
+## Helm chart
+
+A Helm chart for deploying the XPU Exporter is available in the `charts/xpu-exporter` directory.
+
+### Testing in single-node cluster
+
+First, build the container image as instructed above.
+
+Next, load the image into the kind cluster. E.g. with containerd:
+
+```bash
+docker save registry.local/xpu-exporter:main  -o xpum-main.tar
+sudo ctr -n k8s.io images  import xpum-main.tar
+rm xpum-main.tar
+```
+
+Then, install the Helm chart:
+
+```bash
+helm install xpu-exporter charts/xpu-exporter --set image.pullPolicy=Never
+```
