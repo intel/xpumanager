@@ -1,0 +1,56 @@
+name: Container Images
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: intelsb.prod.amr.dind
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v6
+
+    - name: Checkout level-zero-go
+      uses: actions/checkout@v6
+      with:
+        repository: marquiz/level-zero-go
+        path: ./level-zero-go
+        token: ${{ secrets.LEVEL_ZERO_GO_TOKEN }}
+
+    - name: Docker login
+      if: ${{ github.event_name == 'push' }}
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Set image tags
+      id: vars
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          tag="pr-${{ github.event.pull_request.number }}"
+        else
+          tag="${{ github.ref_name }}"
+        fi
+
+        echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpu-exporter:${tag}" >> $GITHUB_ENV
+
+    - name: Build and push image
+      id: build_and_push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: ${{ github.event_name == 'push' }}
+        tags: ${{ env.IMAGE_TAG }}
