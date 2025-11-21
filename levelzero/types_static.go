@@ -9,7 +9,6 @@
 package levelzero
 
 /*
-#cgo pkg-config: level-zero
 #include "ze_api.h"
 #include "zes_api.h"
 #include <stdlib.h>

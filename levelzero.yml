@@ -5,7 +5,8 @@ GENERATOR:
     Copyright (C) 2019-2025 Intel Corporation
 
     SPDX-License-Identifier: MIT
-  PkgConfigOpts: ["level-zero"]
+  FlagGroups:
+    - {name: "LDFLAGS", flags: ["-lze_loader"]}
   Includes:
     - ze_api.h
     - zes_api.h
