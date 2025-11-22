@@ -21,6 +21,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
     - name: Check out code
       uses: actions/checkout@v6
@@ -31,6 +32,12 @@ jobs:
         repository: marquiz/level-zero-go
         path: ./level-zero-go
         token: ${{ secrets.LEVEL_ZERO_GO_TOKEN }}
+
+    - name: Install cosign
+      if: github.event_name == 'push'
+      uses: sigstore/cosign-installer@v3
+      with:
+        cosign-release: 'v2.6.1'
 
     - name: Docker login
       if: ${{ github.event_name == 'push' }}
@@ -54,3 +61,9 @@ jobs:
         context: .
         push: ${{ github.event_name == 'push' }}
         tags: ${{ env.IMAGE_TAG }}
+
+    - name: Sign image
+      if: ${{ github.event_name == 'push' }}
+      env:
+        DIGEST: ${{ steps.build_and_push.outputs.digest }}
+      run: cosign sign --yes ${{ env.IMAGE_TAG }}@${{ steps.build_and_push.outputs.digest }}
