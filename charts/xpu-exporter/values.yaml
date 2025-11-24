@@ -1,11 +1,14 @@
+# @schema additionalProperties:false
 image:
   # -- Image repository
   repository: ghcr.io/marquiz/xpu-exporter/xpu-exporter
+  # @schema enum: [Always, IfNotPresent, Never]
   # -- Image pull policy
   pullPolicy: Always
   # -- Image tag, defaults to Chart.AppVersion
   tag: ""
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets
 # -- [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod)
 imagePullSecrets: []
 
@@ -14,33 +17,43 @@ nameOverride: ""
 # -- Override the fully qualified app name
 fullnameOverride: ""
 
+# @schema additionalProperties:false
 serviceAccount:
   # -- Create service account
   create: true
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
   # -- Annotations to add to the service account
   annotations: {}
   # -- The name of the service account to use. If not specified and create is true, a name is generated using the fully qualified app name.
   name: ""
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
 # -- Annotations to add to the pod
 podAnnotations: {}
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext
 # -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)
 podSecurityContext: {}
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext
 # -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
 securityContext:
+  # @schema hidden
   runAsUser: 0
+  # @schema hidden
   privileged: true
 
+# @schema additionalProperties:false
 service:
   # -- Create service
   create: true
+  # @schema enum: [ClusterIP, NodePort, LoadBalancer, ExternalName]
   # -- Service type
   type: ClusterIP
   # -- Service port
   port: 8080
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
 # -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container
 resources: {}
   # limits:
@@ -50,11 +63,14 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector
 # -- Node selector for pod placement
 nodeSelector: {}
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations
 # -- [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the pods
 tolerations: []
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity
 # -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods
 affinity: {}

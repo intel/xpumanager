@@ -15,4 +15,5 @@ lint:
 
 generate:
 	cd charts/xpu-exporter && \
-	go tool helm-docs
+	go tool helm-docs && \
+	go tool helm-values-schema-json
