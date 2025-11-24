@@ -1,30 +1,47 @@
 image:
+  # -- Image repository
   repository: ghcr.io/marquiz/xpu-exporter/xpu-exporter
+  # -- Image pull policy
   pullPolicy: Always
+  # -- Image tag, defaults to Chart.AppVersion
   tag: ""
 
+# -- [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod)
 imagePullSecrets: []
+
+# -- Override the chart name
 nameOverride: ""
+# -- Override the fully qualified app name
 fullnameOverride: ""
 
 serviceAccount:
+  # -- Create service account
   create: true
+  # -- Annotations to add to the service account
   annotations: {}
+  # -- The name of the service account to use. If not specified and create is true, a name is generated using the fully qualified app name.
   name: ""
 
+# -- Annotations to add to the pod
 podAnnotations: {}
 
+# -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)
 podSecurityContext: {}
 
+# -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
 securityContext:
   runAsUser: 0
   privileged: true
 
 service:
+  # -- Create service
   create: true
+  # -- Service type
   type: ClusterIP
+  # -- Service port
   port: 8080
 
+# -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container
 resources: {}
   # limits:
   #   cpu: 100m
@@ -33,8 +50,11 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+# -- Node selector for pod placement
 nodeSelector: {}
 
+# -- [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the pods
 tolerations: []
 
+# -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods
 affinity: {}

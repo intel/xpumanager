@@ -12,3 +12,7 @@ build:
 
 lint:
 	go tool golangci-lint run
+
+generate:
+	cd charts/xpu-exporter && \
+	go tool helm-docs
