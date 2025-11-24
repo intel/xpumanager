@@ -1,0 +1,28 @@
+# XPU Exporter
+
+Metrics exporter daemon for Intel(R) GPU devices.
+
+## Installation
+
+Helm login to ghcr.io:
+
+```bash
+helm registry login ghcr.io -u GITHUB_USERNAME
+```
+
+Create an image pull secret in your Kubernetes cluster:
+
+```bash
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io/intel \
+  --docker-username=GITHUB_USERNAME \
+  --docker-password=GITHUB_PERSONAL_ACCESS_TOKEN \
+```
+
+Install the chart:
+
+```bash
+helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter \
+  --set imagePullSecrets[0].name=ghcr-secret \
+  --version 0.0.0-main
+```
