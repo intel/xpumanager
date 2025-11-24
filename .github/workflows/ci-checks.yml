@@ -25,3 +25,17 @@ jobs:
 
     - name: Golangci-lint
       run: docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:latest golangci-lint run
+
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+
+    - name: Verify generated assets
+      run: |
+        ./scripts/generate.sh
+        if ! git diff --quiet; then
+          echo "Generated assets are out of date. Please run make generate and commit the changes."
+          git --no-pager diff
+          exit 1
+        fi
