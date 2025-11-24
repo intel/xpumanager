@@ -71,6 +71,8 @@ jobs:
         context: .
         push: ${{ github.event_name == 'push' }}
         tags: ${{ env.IMAGE_TAG }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Sign image
       if: ${{ github.event_name == 'push' }}
