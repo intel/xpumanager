@@ -39,6 +39,10 @@ jobs:
       with:
         cosign-release: 'v2.6.1'
 
+    - name: Setup Helm
+      if: github.event_name == 'push'
+      uses: azure/setup-helm@v4
+
     - name: Docker login
       if: ${{ github.event_name == 'push' }}
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -51,8 +55,14 @@ jobs:
         else
           tag="${{ github.ref_name }}"
         fi
+        if [ "${{ github.ref_type }}" = "tag" ]; then
+          chart_version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+        else
+          chart_version="0.0.0-${{ github.ref_name }}"
+        fi
 
         echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpu-exporter:${tag}" >> $GITHUB_ENV
+        echo "CHART_VERSION=${chart_version}" >> $GITHUB_ENV
 
     - name: Build and push image
       id: build_and_push
@@ -67,3 +77,16 @@ jobs:
       env:
         DIGEST: ${{ steps.build_and_push.outputs.digest }}
       run: cosign sign --yes ${{ env.IMAGE_TAG }}@${{ steps.build_and_push.outputs.digest }}
+
+    - name: Helm login
+      if: github.event_name == 'push'
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Package Helm chart
+      if: github.event_name == 'push'
+      run: |
+        helm package ./charts/xpu-exporter/ --version ${{ env.CHART_VERSION }} --app-version ${{ github.ref_name }}
+
+    - name: Push Helm chart
+      if: github.event_name == 'push'
+      run: helm push xpu-exporter-*.tgz oci://ghcr.io/${{ github.repository }}/charts/

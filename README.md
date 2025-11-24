@@ -59,5 +59,5 @@ rm xpum-main.tar
 Then, install the Helm chart:
 
 ```bash
-helm install xpu-exporter charts/xpu-exporter --set image.pullPolicy=Never
+helm install xpu-exporter charts/xpu-exporter --set image.repository=registry.local/xpu-exporter --set image.pullPolicy=Never
 ```

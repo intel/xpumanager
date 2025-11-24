@@ -1,5 +1,5 @@
 image:
-  repository: registry.local/xpu-exporter
+  repository: ghcr.io/marquiz/xpu-exporter/xpu-exporter
   pullPolicy: Always
   tag: ""
 
