@@ -13,6 +13,23 @@ import (
 	"github.com/intel/level-zero-go/levelzero"
 )
 
+type createCollectorFunc func(metric.Meter) (collector, error)
+
+type subsystem struct {
+	createCollector func(metric.Meter) (collector, error)
+}
+
+var subsystems = map[string]subsystem{}
+
+func registerSubsystem(name string, create createCollectorFunc) {
+	if _, exists := subsystems[name]; exists {
+		panic("subsystem already registered: " + name)
+	}
+	subsystems[name] = subsystem{
+		createCollector: create,
+	}
+}
+
 type sysman struct {
 	metrics *metricsRegistry
 	devices *deviceRegistry

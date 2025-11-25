@@ -14,6 +14,10 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+func init() {
+	registerSubsystem("memory", newMemoryMetrics)
+}
+
 type sysmanMemory struct {
 	*levelzero.ZesMem
 	attributes []attribute.KeyValue
@@ -61,7 +65,7 @@ func enumMemory(d *levelzero.ZeDevice) []*sysmanMemory {
 	return memory
 }
 
-func newMemoryMetrics(meter metric.Meter) (*memoryMetrics, error) {
+func newMemoryMetrics(meter metric.Meter) (collector, error) {
 	var err error
 	m := &memoryMetrics{}
 
@@ -109,23 +113,25 @@ func (m *memoryMetrics) getInstruments() []metric.Observable {
 	}
 }
 
-func (m *memoryMetrics) observe(o metric.Observer, mem *sysmanMemory, attrs []attribute.KeyValue) {
-	state, err := mem.GetState()
-	if err != nil {
-		slog.Error("Failed to get memory module state", "error", err)
-		return
+func (m *memoryMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
+	for _, mem := range dev.memory {
+		state, err := mem.GetState()
+		if err != nil {
+			slog.Error("Failed to get memory module state", "error", err)
+			return
+		}
+
+		attrs := append(dev.attributes, mem.attributes...)
+
+		opt := metric.WithAttributes(attrs...)
+		o.ObserveInt64(m.limit, int64(state.Size), opt)
+
+		usage := int64(state.Size - state.Free)
+		o.ObserveInt64(m.usage, usage, opt)
+
+		o.ObserveFloat64(m.utilization, float64(usage)/float64(state.Size)*100, opt)
+
+		opt = metric.WithAttributes(append(attrs, attribute.String("hw.gpu.memory.health_status", strings.ToLower(state.Health.String())))...)
+		o.ObserveInt64(m.health, 1, opt)
 	}
-
-	attrs = append(attrs, mem.attributes...)
-
-	opt := metric.WithAttributes(attrs...)
-	o.ObserveInt64(m.limit, int64(state.Size), opt)
-
-	usage := int64(state.Size - state.Free)
-	o.ObserveInt64(m.usage, usage, opt)
-
-	o.ObserveFloat64(m.utilization, float64(usage)/float64(state.Size)*100, opt)
-
-	opt = metric.WithAttributes(append(attrs, attribute.String("hw.gpu.memory.health_status", strings.ToLower(state.Health.String())))...)
-	o.ObserveInt64(m.health, 1, opt)
 }

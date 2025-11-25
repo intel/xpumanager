@@ -6,41 +6,44 @@
 package sysman
 
 import (
+	"fmt"
+	"log/slog"
+	"maps"
+	"slices"
+
 	"go.opentelemetry.io/otel/metric"
 )
 
+type collector interface {
+	getInstruments() []metric.Observable
+	observeDevice(o metric.Observer, d *sysmanDevice)
+}
+
 type metricsRegistry struct {
-	frequency   *frequencyMetrics
-	memory      *memoryMetrics
-	temperature *temperatureMetrics
+	collectors []collector
 }
 
 func newMetricsRegistry(meter metric.Meter) (*metricsRegistry, error) {
-	var err error
 	registry := &metricsRegistry{}
 
-	registry.frequency, err = newFrequencyMetrics(meter)
-	if err != nil {
-		return nil, err
+	for _, name := range slices.Sorted(maps.Keys(subsystems)) {
+		s := subsystems[name]
+		c, err := s.createCollector(meter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create collector for subsystem %s: %w", name, err)
+		}
+		registry.collectors = append(registry.collectors, c)
+		slog.Info("registered sysman subsystem collector", "subsystem", name)
 	}
 
-	registry.memory, err = newMemoryMetrics(meter)
-	if err != nil {
-		return nil, err
-	}
-
-	registry.temperature, err = newTemperatureMetrics(meter)
-	if err != nil {
-		return nil, err
-	}
 	return registry, nil
 }
 
 func (r *metricsRegistry) getInstruments() []metric.Observable {
 	instruments := []metric.Observable{}
-	instruments = append(instruments, r.frequency.getInstruments()...)
-	instruments = append(instruments, r.memory.getInstruments()...)
-	instruments = append(instruments, r.temperature.getInstruments()...)
+	for _, c := range r.collectors {
+		instruments = append(instruments, c.getInstruments()...)
+	}
 	return instruments
 }
 
