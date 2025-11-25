@@ -28,11 +28,31 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
   --version 0.0.0-main
 ```
 
+By default no metrics exporters are enabled. To enable exporters, the corresponding
+values must be set. For example, to enable the OTLP gRPC exporter:
+
+```bash
+helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter \
+  --set imagePullSecrets[0].name=ghcr-secret \
+  --set config.exporters.grpc.enabled=true \
+  --set config.exporters.grpc.endpoint="otel-collector:4317" \
+```
+
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
+| config | object |   | Configuration for the XPU exporter |
+| config.exporters.collectInterval | int | `30` | Metrics collection interval in seconds |
+| config.exporters.grpc.enabled | bool | `false` | Enable OTLP gRPC metrics exporter |
+| config.exporters.grpc.endpoint | string | `""` | OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default. |
+| config.exporters.grpc.insecure | bool | `false` | Use insecure connection (no TLS) |
+| config.exporters.http.enabled | bool | `false` | Enable OTLP HTTP metrics exporter |
+| config.exporters.http.endpoint | string | `""` | OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default. |
+| config.exporters.http.insecure | bool | `false` | Use insecure connection (no TLS) |
+| config.exporters.prometheus.enabled | bool | `false` | Enable Prometheus metrics exporter |
+| config.exporters.stdout.enabled | bool | `false` | Enable stdout metrics exporter |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/marquiz/xpu-exporter/xpu-exporter"` | Image repository |

@@ -9,6 +9,79 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
             "type": "object"
         },
+        "config": {
+            "description": "Configuration for the XPU exporter",
+            "type": "object",
+            "properties": {
+                "exporters": {
+                    "type": "object",
+                    "properties": {
+                        "collectInterval": {
+                            "description": "Metrics collection interval in seconds",
+                            "type": "integer"
+                        },
+                        "grpc": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "description": "Enable OTLP gRPC metrics exporter",
+                                    "type": "boolean"
+                                },
+                                "endpoint": {
+                                    "description": "OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default.",
+                                    "type": "string"
+                                },
+                                "insecure": {
+                                    "description": "Use insecure connection (no TLS)",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "http": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "description": "Enable OTLP HTTP metrics exporter",
+                                    "type": "boolean"
+                                },
+                                "endpoint": {
+                                    "description": "OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default.",
+                                    "type": "string"
+                                },
+                                "insecure": {
+                                    "description": "Use insecure connection (no TLS)",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "prometheus": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "description": "Enable Prometheus metrics exporter",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "stdout": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "description": "Enable stdout metrics exporter",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
         "fullnameOverride": {
             "description": "Override the fully qualified app name",
             "type": "string"

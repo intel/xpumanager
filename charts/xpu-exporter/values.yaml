@@ -74,3 +74,36 @@ tolerations: []
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity
 # -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods
 affinity: {}
+
+# @schema additionalProperties:false
+# -- Configuration for the XPU exporter
+# @default --  
+config:
+  # @schema additionalProperties:false
+  exporters:
+    # -- Metrics collection interval in seconds
+    collectInterval: 30
+    # @schema additionalProperties:false
+    stdout:
+      # -- Enable stdout metrics exporter
+      enabled: false
+    # @schema additionalProperties:false
+    prometheus:
+      # -- Enable Prometheus metrics exporter
+      enabled: false
+    # @schema additionalProperties:false
+    grpc:
+      # -- Enable OTLP gRPC metrics exporter
+      enabled: false
+      # -- OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default.
+      endpoint: ""
+      # -- Use insecure connection (no TLS)
+      insecure: false
+    # @schema additionalProperties:false
+    http:
+      # -- Enable OTLP HTTP metrics exporter
+      enabled: false
+      # -- OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default.
+      endpoint: ""
+      # -- Use insecure connection (no TLS)
+      insecure: false
