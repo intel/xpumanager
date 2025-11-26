@@ -1,0 +1,176 @@
+name: Windows XPUM Build New
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - "dev/**"
+  # pull_request:
+  #   branches: ['new_xpum']
+  #   types: [opened, reopened, synchronize]
+
+jobs:
+  build-windows:
+    runs-on: [self-hosted, windows, xpum-windows-runner]
+    timeout-minutes: 45
+    env:
+      no_proxy: "intel.com,.intel.com,localhost,127.0.0.1"
+      https_proxy: "http://proxy-chain.intel.com:912"
+      http_proxy: "http://proxy-chain.intel.com:912"
+      socks_proxy: "http://proxy-us.intel.com:1080"
+      ftp_proxy: "http://proxy-chain.intel.com:912"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build_type: Release
+            build_type_lower: release
+          - build_type: Debug
+            build_type_lower: debug
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup MSVC environment
+        uses: intel-innersource/frameworks.actions.thirdparty.msvc-dev-cmd@v1
+      - name: Setup Python environment
+        shell: powershell
+        run: |
+          # Add chocolatey to PATH first
+          $chocoPath = "C:\ProgramData\chocolatey\bin"
+
+          # Create venv if not exists
+          if (!(Test-Path "$env:USERPROFILE\.ci-venv")) {
+            python -m venv $env:USERPROFILE\.ci-venv
+            & "$env:USERPROFILE\.ci-venv\Scripts\Activate.ps1"
+            pip install -U meson conan ninja cmake
+          } else {
+            & "$env:USERPROFILE\.ci-venv\Scripts\Activate.ps1"
+          }
+
+          # Set environment for subsequent steps (including chocolatey)
+          echo "VIRTUAL_ENV=$env:USERPROFILE\.ci-venv" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PATH=$env:USERPROFILE\.ci-venv\Scripts;$chocoPath;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install Conan dependencies
+        shell: powershell
+        run: |
+          conan profile detect --force
+
+          # Create custom packages
+          conan create recipes/level-zero --name=level-zero --version=1.23.1 `
+            -s arch=x86_64 `
+            -s build_type=${{ matrix.build_type }} `
+            -s compiler=msvc `
+            -s compiler.cppstd=20 `
+            -s compiler.runtime=dynamic `
+            -s compiler.version=194 `
+            -s os=Windows `
+            -s:b compiler.cppstd=20 `
+            -s:b build_type=${{ matrix.build_type }}
+          conan create recipes/metee --name=metee --version=6.0.0  `
+            -s arch=x86_64 `
+            -s build_type=${{ matrix.build_type }} `
+            -s compiler=msvc `
+            -s compiler.cppstd=20 `
+            -s compiler.runtime=dynamic `
+            -s compiler.version=194 `
+            -s os=Windows `
+            -s:b compiler.cppstd=20 `
+            -s:b build_type=${{ matrix.build_type }}
+          conan create recipes/igsc --name=igsc --version=0.9.6 `
+            -s arch=x86_64 `
+            -s build_type=${{ matrix.build_type }} `
+            -s compiler=msvc `
+            -s compiler.cppstd=20 `
+            -s compiler.runtime=dynamic `
+            -s compiler.version=194 `
+            -s os=Windows `
+            -s:b compiler.cppstd=20 `
+            -s:b build_type=${{ matrix.build_type }}
+
+          # Install dependencies
+          conan install . --build=missing -s build_type=${{ matrix.build_type }} `
+            -s arch=x86_64 `
+            -s compiler=msvc `
+            -s compiler.cppstd=20 `
+            -s compiler.runtime=dynamic `
+            -s compiler.version=194 `
+            -s os=Windows `
+            -s:b compiler.cppstd=20 `
+            -s:b build_type=${{ matrix.build_type }}
+
+      - name: Setup Meson build
+        shell: powershell
+        run: |
+          $builddir = "build_${{ matrix.build_type }}"
+          if (Test-Path "$builddir\meson-info") {
+            meson configure $builddir --buildtype=${{ matrix.build_type_lower }}
+          } else {
+            meson setup $builddir --buildtype=${{ matrix.build_type_lower }} --native-file conan_meson_native.ini
+          }
+
+      - name: Build project
+        shell: powershell
+        run: |
+          $builddir = "build_${{ matrix.build_type }}"
+          meson compile -C $builddir xpumcli xpu-smi
+
+      - name: Run unit tests
+        if: matrix.build_type == 'Release'
+        shell: powershell
+        run: |
+          $builddir = "build_Release"
+          meson test -C $builddir --verbose
+
+      - name: Create build artifacts
+        shell: powershell
+        run: |
+          $builddir = "build_${{ matrix.build_type }}"
+          New-Item -ItemType Directory -Force -Path artifacts
+
+          # Copy executables and DLLs
+          Get-ChildItem -Path $builddir -Recurse -Include "*.exe","*.dll" | ForEach-Object {
+            Copy-Item $_.FullName artifacts\ -Force
+          }
+
+          # Copy resources if they exist
+          if (Test-Path "resources") {
+            Copy-Item -Recurse resources artifacts\
+          }
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpum-windows-${{ matrix.build_type }}-${{ github.sha }}
+          path: artifacts\
+          retention-days: 14
+
+      - name: Upload test results
+        if: matrix.build_type == 'Release' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpum-windows-test-results-${{ github.sha }}
+          path: build_Release\meson-logs\
+          retention-days: 7
+
+      - name: Upload all artifacts to JFrog Artifactory
+        if: matrix.build_type == 'Release' || matrix.build_type == 'Debug'
+        env:
+          ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_URL: https://gfx-assets.fm.intel.com/artifactory/gfx-xpu-manager
+          PROJECT: xpum
+          PR_NUMBER: ${{ github.event.pull_request.number || 'no-pr' }}
+          COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          if [ -d "artifacts" ]; then
+            for file in artifacts/*; do
+              if [ -f "$file" ]; then
+                curl -u "$ARTIFACTORY_USER:$ARTIFACTORY_PASSWORD" \
+                  -T "$file" \
+                  "$ARTIFACTORY_URL/$PROJECT/$PR_NUMBER/$COMMIT/artifacts/$(basename $file)"
+              fi
+            done
+          fi

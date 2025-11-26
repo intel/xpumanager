@@ -30,6 +30,7 @@
 using namespace xpum;
 
 namespace xpum::cli {
+extern bool isConfigResetEnabled;
 
 LibCoreStub::LibCoreStub(bool initCore) {
     char* env = std::getenv("SPDLOG_LEVEL");
@@ -38,7 +39,7 @@ LibCoreStub::LibCoreStub(bool initCore) {
     }
     this->initCore = initCore;
     if (this->initCore)
-        xpumInit();
+        xpumInit(isConfigResetEnabled);
 }
 
 LibCoreStub::~LibCoreStub() {
@@ -1163,7 +1164,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
                 scope = std::to_string(powerRangeArray[i].min_limit / 1000) + " to " + std::to_string(powerRangeArray[i].max_limit / 1000);
             else
                 scope = "1 to " + std::to_string(powerRangeArray[i].max_limit / 1000);
-            (*json)["power_vaild_range"] = scope;
+            (*json)["power_valid_range"] = scope;
             break;
         }
     }
@@ -1606,12 +1607,6 @@ LOG_ERR:
 std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool force) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
-    res = validateDeviceId(deviceId);
-    if (res != XPUM_OK) {
-        (*json)["error"] = "device Id or tile Id is invalid";
-        (*json)["errno"] = errorNumTranslate(res);
-        goto LOG_ERR;
-    }
 
     res = xpumResetDevice(deviceId, force);
     if (res != XPUM_OK) {
@@ -2157,6 +2152,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 (*json)["error"] = "Level Zero Initialization Error";
                 break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                (*json)["error"] = "Stress did not run successfully";
+                break;
             default:
                 (*json)["error"] = "Error";
                 break;
@@ -2391,10 +2389,10 @@ std::string LibCoreStub::getPciSlotName(std::vector<std::string> &bdfs) {
     }
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::doVgpuPrecheck() {
+std::unique_ptr<nlohmann::json> LibCoreStub::doVgpuPrecheck(int deviceId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_vgpu_precheck_result_t precheckResult;
-    xpum_result_t res = xpumDoVgpuPrecheck(&precheckResult);
+    xpum_result_t res = xpumDoVgpuPrecheck(deviceId, &precheckResult);
     if (res == XPUM_OK) {
         (*json)["vmx_flag"] = precheckResult.vmxFlag ? "Pass" : "Fail";
         (*json)["vmx_message"] = precheckResult.vmxMessage;

@@ -91,10 +91,6 @@ class ConfigParameterSchema(Schema):
 
 class TileConfigSchema(Schema):
     tileId = fields.String(metadata={"description": "Tile id"})
-    #power_average_window = fields.Integer(
-    #    metadata={"description": "The interval window"})
-    #power_average_window_vaild_range = fields.String(
-    #    metadata={"description": "power's inteval scope"})
     min_frequency = fields.Integer(metadata={"description": "min frequency"})
     max_frequency = fields.Integer(metadata={"description": "max frequency"})
     gpu_frequency_valid_options = fields.String(
@@ -118,7 +114,7 @@ class ConfigSchema(Schema):
     memory_ecc_current_state = fields.String(metadata={"description": "The current state of memory ecc"})
     memory_ecc_pending_state = fields.String(metadata={"description": "The pending state of memory ecc"})
     power_limit = fields.Integer(metadata={"description": "The power limit value"})
-    power_vaild_range = fields.String(metadata={"description": "power's scope"})
+    power_valid_range = fields.String(metadata={"description": "power's scope"})
     tileConfigData = fields.Nested(TileConfigSchema)
 
 

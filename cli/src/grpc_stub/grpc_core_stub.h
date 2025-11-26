@@ -137,7 +137,7 @@ class GrpcCoreStub : public CoreStub {
     std::string getPciSlotName(std::vector<std::string> &bdfs) {
         return "";
     }
-    std::unique_ptr<nlohmann::json> doVgpuPrecheck();
+    std::unique_ptr<nlohmann::json> doVgpuPrecheck(int deviceId);
 
     std::unique_ptr<nlohmann::json> createVf(int deviceId, uint32_t numVfs, uint64_t lmem);
 

@@ -40,6 +40,7 @@ int getDeviceModelByPciDeviceId(int deviceId) {
         case 0xe211:
         case 0xe212:
         case 0xe216:
+        case 0xe223:
             return XPUM_DEVICE_MODEL_BMG;
         default:
             return XPUM_DEVICE_MODEL_UNKNOWN;

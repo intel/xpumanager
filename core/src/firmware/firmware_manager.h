@@ -102,6 +102,9 @@ class FirmwareManager {
     xpum_result_t runGSCLateBindingFlash(xpum_device_id_t deviceId, const char* filePath, xpum_firmware_type_t type, bool igscOnly = false);
     void getGSCLateBindingFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result, xpum_firmware_type_t type, bool igscOnly = false);
 
+    xpum_result_t runGSCOpromFwFlash(xpum_device_id_t deviceId, const char* filePath, xpum_firmware_type_t type, bool igscOnly = false);
+    void getGSCOpromFwFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result, xpum_firmware_type_t type, bool igscOnly = false);
+
     std::string getAmcFwErrMsg() {
         return amcFwErrMsg;
     }
@@ -127,6 +130,8 @@ class FirmwareManager {
     std::atomic<int> gscFwDataFlashTotalPercent;
     std::atomic<int> gscLateBindingFlashPercent;
     std::atomic<int> gscLateBindingFlashTotalPercent;
+    std::atomic<int> gscOpromFwFlashPercent;
+    std::atomic<int> gscOpromFwFlashTotalPercent;    
 };
 
 std::vector<char> readImageContent(const char* filePath);

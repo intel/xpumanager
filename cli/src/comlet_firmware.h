@@ -61,6 +61,7 @@ class ComletFirmware : public ComletBase {
     bool validateFwDataImage();
     std::string getFwDataImageFwVersion();
     std::string getPSCImageFwVersion();
+    std::string getOpromImageFwVersion(uint32_t type);
     nlohmann::json getDeviceProperties(int deviceId);
     int deviceIdStrToInt(std::string deviceId);
 

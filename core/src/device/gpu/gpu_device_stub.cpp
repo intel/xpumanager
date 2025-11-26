@@ -54,6 +54,8 @@
 
 namespace xpum {
 
+extern bool isZeinitRequired;
+
 std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> GPUDeviceStub::device_perf_groups;
 const char* GPU_TIME_NAME = "GpuTime";
 
@@ -328,12 +330,15 @@ void GPUDeviceStub::init() {
         putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
     }
 
-    ze_result_t ret = zeInit(0);
-    GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
-    if (ret != ZE_RESULT_SUCCESS) {
-        XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
-        checkInitDependency();
-        throw LevelZeroInitializationException("zeInit error");
+    ze_result_t ret;
+    if (isZeinitRequired) {
+	ret = zeInit(0);
+	GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
+	if (ret != ZE_RESULT_SUCCESS) {
+	    XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
+	    checkInitDependency();
+	    throw LevelZeroInitializationException("zeInit error");
+	}
     }
 
     XPUM_LOG_INFO("GPUDeviceStub::init zesInit start...");
@@ -1495,7 +1500,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, fwVersion));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME, std::string("GFX_PSCBIN")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION, fwVersion));
-
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_NAME, std::string("OPROM_CODE")));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_VERSION, fwVersion));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_NAME, std::string("OPROM_DATA")));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_VERSION, fwVersion));             
                 {
                 std::lock_guard<std::mutex> lock(GPUDeviceStub::fabric_mutex);
                 uint32_t fabric_count = 0;
@@ -4202,7 +4210,7 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
         std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumPowerDomains(zes_device, &power_domain_count, power_handles.data()));
         if (res == ZE_RESULT_SUCCESS) {
-            auto current_device_value = 0;
+            auto current_device_max_domain_value = 0;
             auto current_sub_device_value_sum = 0;
             for (auto& power : power_handles) {
                 zes_power_properties_t props = {};
@@ -4220,17 +4228,17 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                     if (res == ZE_RESULT_SUCCESS && 
                             snap2.timestamp != snap1.timestamp) {
                         int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-                        if (!props.onSubdevice) {
-                            current_device_value = value;
-                        } else {
+                        if (props.onSubdevice) {
                             current_sub_device_value_sum += value;
+                        } else if (value > current_device_max_domain_value) {
+                            current_device_max_domain_value = value;
                         }
                     }
                 }
             }
-            XPUM_LOG_DEBUG("health: current device power value: {}", current_device_value);
+            XPUM_LOG_DEBUG("health: current device max domain power value: {}", current_device_max_domain_value);
             XPUM_LOG_DEBUG("health: current sum of sub-device power values: {}", current_sub_device_value_sum);
-            auto power_val = std::max(current_device_value, current_sub_device_value_sum);
+            auto power_val = std::max(current_device_max_domain_value, current_sub_device_value_sum);
             if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
                 description = "All power domains are healthy.";

@@ -35,19 +35,12 @@ def getConfig(deviceId, tileId):
     data = dict()
     data['device_id'] = resp.deviceId
     data['power_limit'] = resp.powerLimit
-    data['power_vaild_range'] = resp.powerScope
-    #data['power_average_window'] = resp.interval
-    #data['power_average_window_vaild_range'] = resp.intervalScope
-    #data['tileCount'] = resp.tileCount
+    data['power_valid_range'] = resp.powerScope
 
     tilelist = list()
     for i in range(0, resp.tileCount):
         tiledata = dict()
         tiledata['tile_id'] = resp.tileConfigData[i].tileId
-        #tiledata['power_limit'] = resp.tileConfigData[i].powerLimit
-        #tiledata['power_vaild_range'] = resp.tileConfigData[i].powerScope
-        #tiledata['power_average_window'] = resp.tileConfigData[i].interval
-        #tiledata['power_average_window_vaild_range'] = resp.tileConfigData[i].intervalScope
         tiledata['gpu_frequency_valid_options'] = resp.tileConfigData[i].freqOption
         tiledata['min_frequency'] = resp.tileConfigData[i].minFreq
         tiledata['max_frequency'] = resp.tileConfigData[i].maxFreq

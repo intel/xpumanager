@@ -1620,8 +1620,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
                 }
             }
             (*json)["power_valid_range"] = response.powerscope();
-            //(*json)["power_average_window"] = response.interval();
-            //(*json)["power_average_window_vaild_range"] = response.intervalscope();
 
             std::vector<nlohmann::json> tileJsonList;
             for (uint i{0}; i < response.tilecount(); ++i) {
@@ -2683,11 +2681,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::genDebugLog(
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::doVgpuPrecheck() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::doVgpuPrecheck(int deviceId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
+    VgpuPrecheckRequest request;
+    request.set_deviceid(deviceId);
     VgpuPrecheckResponse response;
-    grpc::Status status = stub->doVgpuPrecheck(&context, google::protobuf::Empty(), &response);
+    grpc::Status status = stub->doVgpuPrecheck(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() > 0) {
             (*json)["error"] = response.errormsg();

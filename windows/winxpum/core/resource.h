@@ -8,7 +8,7 @@
 // Used by Resource.rc
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE 101
@@ -20,7 +20,7 @@
 
 #define VER_VERSION_MAJOR 1
 #define VER_VERSION_MINOR 3
-#define VER_VERSION_PATCH 3
+#define VER_VERSION_PATCH 4
 #define VER_VERSION_BUILD 0
 
 #ifndef VER_FILEVERSION

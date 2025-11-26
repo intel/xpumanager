@@ -48,6 +48,7 @@
 
 namespace xpum {
 
+bool isZeinitRequired = true; 
 const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
     switch (name) {
         case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
@@ -92,6 +93,14 @@ const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
             return "AMC_FIRMWARE_NAME";
         case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
             return "AMC_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_OPROM_CODE_FIRMWARE_NAME:
+            return "OPROM_CODE_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_OPROM_CODE_FIRMWARE_VERSION:
+            return "OPROM_CODE_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_OPROM_DATA_FIRMWARE_NAME:
+            return "OPROM_DATA_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_OPROM_DATA_FIRMWARE_VERSION:
+            return "OPROM_DATA_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return "SERIAL_NUMBER";
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -280,7 +289,8 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
     return res;
 }
 
-xpum_result_t xpumInit() {
+xpum_result_t xpumInit(bool zeinitDisable) {
+    if (zeinitDisable) isZeinitRequired = false;
     try {
         Logger::init();
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());
@@ -677,7 +687,7 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             // check if same model
             std::vector<std::shared_ptr<Device>> devices;
             Core::instance().getDeviceManager()->getDeviceList(devices);
-
+ 
             std::string previousModel;
             for (std::shared_ptr<Device> device : devices) {
                 Property model;
@@ -716,6 +726,10 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
         case XPUM_DEVICE_FIRMWARE_FAN_TABLE:
         case XPUM_DEVICE_FIRMWARE_VR_CONFIG:
             res = Core::instance().getFirmwareManager()->runGSCLateBindingFlash(deviceId, job->filePath, job->type, igscOnly);
+            break;
+        case XPUM_DEVICE_FIRMWARE_OPROM_CODE:
+        case XPUM_DEVICE_FIRMWARE_OPROM_DATA:
+            res = Core::instance().getFirmwareManager()->runGSCOpromFwFlash(deviceId, job->filePath, job->type, igscOnly);
             break;
         default:
             break;
@@ -787,6 +801,10 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         case XPUM_DEVICE_FIRMWARE_FAN_TABLE:
         case XPUM_DEVICE_FIRMWARE_VR_CONFIG:
             Core::instance().getFirmwareManager()->getGSCLateBindingFlashResult(deviceId, result, firmwareType, igscOnly);
+            break;
+        case XPUM_DEVICE_FIRMWARE_OPROM_CODE:
+        case XPUM_DEVICE_FIRMWARE_OPROM_DATA:
+            Core::instance().getFirmwareManager()->getGSCOpromFwFlashResult(deviceId, result, firmwareType, igscOnly);
             break;
         default:
             break;
@@ -867,6 +885,14 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME;
         case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_OPROM_CODE_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_OPROM_CODE_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_OPROM_DATA_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_OPROM_DATA_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -2656,19 +2682,20 @@ xpum_result_t xpumApplyPPR(xpum_device_id_t deviceId, xpum_diag_result_t* diagRe
 }
 
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
-    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-    if (device->isUpgradingFw()) {
-        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    if (isZeinitRequired) {
+	std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (device == nullptr) {
+            return XPUM_RESULT_DEVICE_NOT_FOUND;
+        }
+        if (device->isUpgradingFw()) {
+            return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        }
     }
 
     if (Core::instance().getFirmwareManager() && Core::instance().getFirmwareManager()->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
-
-
+   
     uint32_t driver_count = 0;
     auto res = zesDriverGet(&driver_count, nullptr);
     if (res != ZE_RESULT_SUCCESS)
@@ -3823,12 +3850,12 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     }
 }
 
-xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
+xpum_result_t xpumDoVgpuPrecheck(xpum_device_id_t deviceId, xpum_vgpu_precheck_result_t *result) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
     }
-    return vgpuPrecheck(result);
+    return vgpuPrecheck(deviceId, result);
 }
 
 xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf) {

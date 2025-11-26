@@ -78,7 +78,7 @@ void ComletFirmware::setupOptions() {
         return errStr;
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC, FAN_TABLE, VR_CONFIG. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC, FAN_TABLE, VR_CONFIG, OPROM_CODE, OPROM_DATA. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
 
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
@@ -88,7 +88,9 @@ void ComletFirmware::setupOptions() {
             str.compare("GFX_CODE_DATA") == 0 ||
             str.compare("GFX_PSCBIN") == 0 ||
             str.compare("FAN_TABLE") == 0 ||
-            str.compare("VR_CONFIG") == 0) {
+            str.compare("VR_CONFIG") == 0 ||
+            str.compare("OPROM_DATA") == 0 ||
+            str.compare("OPROM_CODE") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -222,6 +224,10 @@ static int getIntFirmwareType(std::string firmwareType) {
         return XPUM_DEVICE_FIRMWARE_FAN_TABLE;
     if (firmwareType.compare("VR_CONFIG") == 0)
         return XPUM_DEVICE_FIRMWARE_VR_CONFIG;
+    if (firmwareType.compare("OPROM_DATA") == 0)
+        return XPUM_DEVICE_FIRMWARE_OPROM_DATA;
+    if (firmwareType.compare("OPROM_CODE") == 0)
+        return XPUM_DEVICE_FIRMWARE_OPROM_CODE;    
     return -1;
 }
 
@@ -291,6 +297,7 @@ nlohmann::json ComletFirmware::getDeviceProperties(int deviceId) {
 }
 
 std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
+    std::string tempprop = json.dump().c_str();
     std::string res = "unknown";
     int type = getIntFirmwareType(opts->firmwareType);
     if (type == XPUM_DEVICE_FIRMWARE_GFX) {
@@ -308,7 +315,17 @@ std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
             return res;
         }
         return json["gfx_pscbin_firmware_version"];
-    } else {
+    } else if (type == XPUM_DEVICE_FIRMWARE_OPROM_CODE) {
+        if (!json.contains("oprom_code_firmware_version")) {
+            return res;
+        }
+	return json["oprom_code_firmware_version"];
+    } else if (type == XPUM_DEVICE_FIRMWARE_OPROM_DATA) {
+        if (!json.contains("oprom_data_firmware_version")) {
+            return res;
+        }
+	return json["oprom_data_firmware_version"];	
+    }else {
         return res;
     }
 }
@@ -343,6 +360,22 @@ std::string ComletFirmware::getImageFwVersion() {
 static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version) {
     std::stringstream ss;
     ss << "0x" << std::hex << fwdata_version->oem_manuf_data_version;
+    return ss.str();
+}
+
+static std::string get_oprom_version(struct igsc_device_handle *handle, uint32_t type) {
+    int ret;
+    std::stringstream ss;
+    struct igsc_oprom_version oprom_version;
+    memset(&oprom_version, 0, sizeof(oprom_version));
+    ret = igsc_device_oprom_version(handle, type, &oprom_version);
+    if (ret != IGSC_SUCCESS) {
+        return "";
+    }
+    for (int i=0; i<IGSC_OPROM_VER_SIZE; i++) {
+        ss << std::hex << (int)oprom_version.version[i];
+	ss << " ";
+    }
     return ss.str();
 }
 
@@ -395,7 +428,11 @@ static std::string print_devices_fw_versions(int type) {
             if (ret == IGSC_SUCCESS) {
                 version = print_fwdata_version(&dev_version);
             }
-        }
+        } else if (type == XPUM_DEVICE_FIRMWARE_OPROM_CODE) {
+	    version = get_oprom_version(&handle, IGSC_OPROM_CODE);
+	} else if (type == XPUM_DEVICE_FIRMWARE_OPROM_DATA) {
+	    version = get_oprom_version(&handle, IGSC_OPROM_DATA);
+	}
         ss << " FW version: " << version << std::endl;
         (void)igsc_device_close(&handle);
     }
@@ -423,6 +460,34 @@ std::string ComletFirmware::getFwDataImageFwVersion() {
         version = print_fwdata_version(&fwdata_version);
     }
     return version;
+}
+
+std::string ComletFirmware::getOpromImageFwVersion(uint32_t type) {
+    std::string version = "unknown";
+    std::stringstream ss;
+    auto &buffer = imgBuffer;
+    if (buffer.size() == 0) return version;
+
+    struct igsc_oprom_image *oimg = NULL;
+    struct igsc_oprom_version oprom_version;
+    int ret;
+
+    ret = igsc_image_oprom_init(&oimg, (const uint8_t *)buffer.data(), buffer.size());
+    if (ret != IGSC_SUCCESS) {
+        igsc_image_oprom_release(oimg);
+        return version;
+    }
+    ret = igsc_image_oprom_version(oimg, (igsc_oprom_type)type, &oprom_version);
+    if (ret != IGSC_SUCCESS) {
+        igsc_image_oprom_release(oimg);
+        return version;
+    }
+    igsc_image_oprom_release(oimg);
+    for (int i=0; i<IGSC_OPROM_VER_SIZE; i++) {
+        ss << std::hex << (int)oprom_version.version[i];
+        ss << " ";
+    }
+    return ss.str();
 }
 
 std::string ComletFirmware::getPSCImageFwVersion() {
@@ -857,6 +922,10 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
             } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
                 out << "Image FW version: " << getPSCImageFwVersion() << std::endl;
+            } else if(type == XPUM_DEVICE_FIRMWARE_OPROM_DATA) {
+                out << "Image FW version: " << getOpromImageFwVersion(IGSC_OPROM_DATA) << "\n";
+            }  else if(type == XPUM_DEVICE_FIRMWARE_OPROM_CODE) {
+                out << "Image FW version: " << getOpromImageFwVersion(IGSC_OPROM_CODE) << "\n";
             }
             out << "Do you want to continue? (y/n) ";
             if (!opts->assumeyes) {

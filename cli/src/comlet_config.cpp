@@ -616,4 +616,8 @@ void ComletConfig::getTableResult(std::ostream &out) {
         showPureCommandOutput(out, json);
     }
 }
+
+bool ComletConfig::getResetOption(){
+    return this->opts->resetDevice;
+}
 } // end namespace xpum::cli

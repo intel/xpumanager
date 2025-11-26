@@ -2258,7 +2258,7 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
             }
 
             try {
-                auto current_device_power_value = 0;
+                auto current_device_max_power_domain_value = 0;
                 auto current_sub_device_power_value_sum = 0;
                 ze_result_t res;
                 uint32_t power_domain_count = 0;
@@ -2284,18 +2284,18 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
                             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 int value = std::ceil((snap2.energy - snap1.energy) * 1.0 / (snap2.timestamp - snap1.timestamp));
-                                if (!props.onSubdevice) {
-                                    current_device_power_value = value;
-                                } else {
+                                if (props.onSubdevice) {
                                     current_sub_device_power_value_sum += value;
+                                } else if (value > current_device_max_power_domain_value) {
+                                    current_device_max_power_domain_value = value;
                                 }
                             }
                         }
                     }
                 }
-                XPUM_LOG_DEBUG("diagnostic: current device power value: {}", current_device_power_value);
+                XPUM_LOG_DEBUG("diagnostic: current device max power domain value: {}", current_device_max_power_domain_value);
                 XPUM_LOG_DEBUG("diagnostic: current sum of sub-device power values: {}", current_sub_device_power_value_sum);
-                auto current_power_value = std::max(current_device_power_value, current_sub_device_power_value_sum);
+                auto current_power_value = std::max(current_device_max_power_domain_value, current_sub_device_power_value_sum);
                 if (current_power_value > max_power_value) {
                     max_power_value = current_power_value;
                     XPUM_LOG_DEBUG("update peak power value: {}", max_power_value);
@@ -3874,10 +3874,12 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
         contextDestroy(context);
 
     } catch (BaseException &e) {
-        XPUM_LOG_DEBUG("Error in stress test with BaseException");
-        XPUM_LOG_DEBUG(e.what());
+        p_task_info->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        XPUM_LOG_ERROR("Error in stress test with BaseException");
+        XPUM_LOG_ERROR(e.what());
     } catch (...) {
-        XPUM_LOG_DEBUG("Error in stress test");
+        p_task_info->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        XPUM_LOG_ERROR("Error in stress test");
     }
 
     p_task_info->finished = true;
@@ -3971,6 +3973,9 @@ xpum_result_t DiagnosticManager::checkStress(xpum_device_id_t deviceId, xpum_dia
         }
         if (stress_task_map.find(deviceId) == stress_task_map.end()) {
             return XPUM_RESULT_DEVICE_NOT_FOUND;
+        }
+        if (stress_task_map.at(deviceId)->result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+            return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
         }
         resultList[0].deviceId = deviceId;
         resultList[0].finished = stress_task_map.at(deviceId)->finished;

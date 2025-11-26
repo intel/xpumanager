@@ -1118,6 +1118,10 @@ message GenDebugLogResponse {
     string errorMsg = 2;
 }
 
+message VgpuPrecheckRequest {
+    int32 deviceId = 1;
+}
+
 message VgpuPrecheckResponse {
     bool vmxFlag = 1;
     string vmxMessage = 2;
@@ -1264,7 +1268,7 @@ service XpumCoreService {
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
     rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
     rpc genDebugLog ( FileName ) returns ( GenDebugLogResponse );
-    rpc doVgpuPrecheck ( google.protobuf.Empty ) returns ( VgpuPrecheckResponse );
+    rpc doVgpuPrecheck ( VgpuPrecheckRequest ) returns ( VgpuPrecheckResponse );
     rpc createVf ( VgpuCreateVfRequest ) returns ( VgpuCreateVfResponse );
     rpc getDeviceFunction ( VgpuGetDeviceFunctionRequest ) returns ( VgpuGetDeviceFunctionResponse );
     rpc removeAllVf ( VgpuRemoveAllVfRequest ) returns ( VgpuRemoveAllVfResponse );

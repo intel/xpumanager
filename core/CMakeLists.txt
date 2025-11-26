@@ -102,6 +102,7 @@ target_include_directories(
           ${CMAKE_CURRENT_LIST_DIR}/src
           ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 
+target_compile_definitions(xpum PRIVATE SPDLOG_COMPILED_LIB)
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_include_directories(
     test_xpum_api
@@ -114,6 +115,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/pcm-iio-gpu/include
             ${CMAKE_CURRENT_LIST_DIR}/src
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
+  target_compile_definitions(test_xpum_api PRIVATE SPDLOG_COMPILED_LIB)
 endif()
 
 target_sources(
@@ -174,7 +176,7 @@ message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
 set_target_properties(xpum PROPERTIES VERSION ${PROJECT_REAL_VERSION}
                                       SOVERSION ${PROJECT_VERSION_MAJOR})
 
-set(LibSpd spdlog$<$<CONFIG:Debug>:d>)
+set(LibSpd "-Wl,--push-state,--whole-archive" "spdlog$<$<CONFIG:Debug>:d>" "-Wl,--pop-state")
 
 if(HAVE_PCIACCESS_H)
   target_link_libraries(

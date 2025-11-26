@@ -163,6 +163,10 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION,    ///< The GFX_PSCBIN firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME,              ///< The AMC firmware name of device
     XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION,           ///< The AMC firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_NAME,       ///< The OPROM CODE firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_VERSION,    ///< The OPROM CODE firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_NAME,       ///< The OPROM CODE firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_VERSION,    ///< The OPROM DATA firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes

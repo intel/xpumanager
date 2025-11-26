@@ -2775,9 +2775,9 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::doVgpuPrecheck(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::VgpuPrecheckResponse *response) {
+::grpc::Status XpumCoreServiceImpl::doVgpuPrecheck(::grpc::ServerContext* context, const ::VgpuPrecheckRequest* request, ::VgpuPrecheckResponse *response) {
     xpum_vgpu_precheck_result_t result;
-    xpum_result_t res = xpumDoVgpuPrecheck(&result);
+    xpum_result_t res = xpumDoVgpuPrecheck(request->deviceid(), &result);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
     } else {

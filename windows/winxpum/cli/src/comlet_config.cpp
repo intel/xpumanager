@@ -38,7 +38,7 @@ namespace xpum::cli {
                     { "label": "  sustain(w) ", "value": "pl_package_sustain" },
                     { "label": "  burst(w) ", "value": "pl_package_burst" },
                     { "label": "  peak(w) ", "value": "pl_package_peak" },
-                    { "label": "  Valid Range", "value": "power_vaild_range" },
+                    { "label": "  Valid Range", "value": "power_valid_range" },
                     {"rowTitle": " " },
                     { "rowTitle": "Memory ECC:" },
                     { "label": "  Current", "value": "memory_ecc_current_state" },

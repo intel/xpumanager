@@ -30,6 +30,7 @@ class FwDataMgmt;
 class PscMgmt;
 class FwCodeDataMgmt;
 class LateBindingMgmt;
+class OpromFwMgmt;
 
 struct RunGSCFirmwareFlashParam;
 struct GetGSCFirmwareFlashResultParam;
@@ -216,6 +217,14 @@ class Device {
         return pLateBindingMgmt;
     }
 
+    void setOpromFwMgmt(std::shared_ptr<OpromFwMgmt> pOpromFwMgmt) {
+        this->pOpromFwMgmt = pOpromFwMgmt;
+    }
+
+    std::shared_ptr<OpromFwMgmt> getOpromFwMgmt() {
+        return pOpromFwMgmt;
+    }
+
     bool try_lock() {
         if (_operation_lock.test_and_set()) {
             return false;
@@ -270,6 +279,8 @@ class Device {
     std::shared_ptr<FwCodeDataMgmt> pFwCodeDataMgmt;
 
     std::shared_ptr<LateBindingMgmt> pLateBindingMgmt;
+
+    std::shared_ptr<OpromFwMgmt> pOpromFwMgmt;
 
    private:
     std::atomic_flag _operation_lock = ATOMIC_FLAG_INIT;

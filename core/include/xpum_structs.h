@@ -175,6 +175,7 @@ typedef enum xpum_result_enum {
     XPUM_UNSUPPORTED_FEATURE_PL_BURST = 70,
     XPUM_UNSUPPORTED_FEATURE_PL_UNKNOWN = 71,
     XPUM_RESULT_PCIE_DOWNGRADE_LIB_NOT_SUPPORT = 72,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_OPROM_FW = 73,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -274,6 +275,10 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_DRIVER_PACK_VERSION = 48,            ///< The driver package version
     XPUM_DEVICE_PROPERTY_PCIE_MAX_BANDWIDTH = 49,             ///< PCIe max link speed
     XPUM_DEVICE_PROPERTY_PCIE_DOWNGRADE_STATE = 50,           ///< The PCIe Gen4 Downgrade state of device
+    XPUM_DEVICE_PROPERTY_OPROM_CODE_FIRMWARE_NAME = 51,
+    XPUM_DEVICE_PROPERTY_OPROM_CODE_FIRMWARE_VERSION = 52,
+    XPUM_DEVICE_PROPERTY_OPROM_DATA_FIRMWARE_NAME = 53,
+    XPUM_DEVICE_PROPERTY_OPROM_DATA_FIRMWARE_VERSION = 54,
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -401,6 +406,8 @@ typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA = 4, ///< GFX_CODE_DATA firmware
     XPUM_DEVICE_FIRMWARE_FAN_TABLE = 5,     ///< FAN_TABLE firmware
     XPUM_DEVICE_FIRMWARE_VR_CONFIG = 6,     ///< VR_CONFIG firmware
+    XPUM_DEVICE_FIRMWARE_OPROM_DATA = 7,
+    XPUM_DEVICE_FIRMWARE_OPROM_CODE = 8,
 } xpum_firmware_type_t;
 
 /**

@@ -47,7 +47,8 @@ bool isIommuDeviceFound() {
     return false;
 }
 
-xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
+xpum_result_t vgpuPrecheck(xpum_device_id_t deviceId,
+    xpum_vgpu_precheck_result_t* result) {
     /*
     *   VMX flag: lscpu
     *   iommu status: /sys/class/iommu
@@ -83,38 +84,33 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
         strncpy(result->iommuMessage, msg.c_str(), msg.size() + 1);
     }
 
-    std::vector<std::shared_ptr<Device>> devices;
-    Core::instance().getDeviceManager()->getDeviceList(devices);
-    for (auto& device: devices) {
-        Property prop;
-        device->getProperty(xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
-        if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
-            continue;
-        }
+    Property prop;
+    auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    device->getProperty(xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
+    if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
 
-        device->getProperty(
-            xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS,
-            prop
-        );
-        const std::string& deviceBdfAddr = prop.getValue();
-        std::string totalVfs = readFileSingleLine("/sys/bus/pci/devices/" + deviceBdfAddr + "/sriov_totalvfs");
-        XPUM_LOG_DEBUG("Checking SR-IOV status, /sys/bus/pci/devices/{}/sriov_totalvfs report {}", deviceBdfAddr, totalVfs);
-        /*
-        *   SR-IOV is enabled by i915, so all of the cards should have either totalvfs > 0 or totalvfs == 0
-        */
-        if (totalVfs.size() == 0) {
-            result->sriovStatus = false;
-            std::string msg = "Failed to read sriov_totalvfs.";
-            strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
-            break;
-        } else if (stoi(totalVfs) > 0) {
-            result->sriovStatus = true;
-        } else {
-            result->sriovStatus = false;
-            std::string msg = "SR-IOV is disabled. Please set the related BIOS settings and kernel command line parameters.";
-            strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
-            break;
-        }
+    device->getProperty(
+        xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS,
+        prop
+    );
+    const std::string& deviceBdfAddr = prop.getValue();
+    std::string totalVfs = readFileSingleLine("/sys/bus/pci/devices/" + deviceBdfAddr + "/sriov_totalvfs");
+    XPUM_LOG_DEBUG("Checking SR-IOV status, /sys/bus/pci/devices/{}/sriov_totalvfs report {}", deviceBdfAddr, totalVfs);
+    /*
+     *   SR-IOV is enabled by i915, so all of the cards should have either totalvfs > 0 or totalvfs == 0
+     */
+    if (totalVfs.size() == 0) {
+        result->sriovStatus = false;
+        std::string msg = "Failed to read sriov_totalvfs.";
+        strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
+    } else if (stoi(totalVfs) > 0) {
+        result->sriovStatus = true;
+    } else {
+        result->sriovStatus = false;
+        std::string msg = "SR-IOV is disabled or sriov_totalvfs is 0. Please set the related BIOS settings and kernel command line parameters.";
+        strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
     }
     return XPUM_OK;
 }

@@ -518,7 +518,7 @@ namespace xpum::cli {
         xpum_power_prop_data_t powerRangeArray[32];
         uint32_t powerRangeCount = 32;
         res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
-        (*json)["power_vaild_range"] = "1 to " + std::to_string(powerRangeArray[0].max_limit);
+        (*json)["power_valid_range"] = "1 to " + std::to_string(powerRangeArray[0].max_limit);
 
         bool available, configurable;
         xpum_ecc_state_t current, pending;

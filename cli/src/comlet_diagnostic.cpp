@@ -441,6 +441,15 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
         }
         out << "Started to stress GPU and would update the status in every minute" << std::endl;
         uint64_t round = 0;
+        // check if the stress task started or not
+        std::this_thread::sleep_for(std::chrono::seconds(XPUM_STRESS_STARTUP_CHECK_DELAY));
+        json = this->coreStub->checkStress(deviceId);
+        if (json->contains("error")) {
+            out << "Error: " <<
+                (*json)["error"].get<std::string>() << std::endl;
+            setExitCodeByJson(*json);
+            return;
+        }
         while (true) {
             std::this_thread::sleep_for(std::chrono::seconds(60));
             json = this->coreStub->checkStress(deviceId);

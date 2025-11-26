@@ -161,7 +161,7 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual ::grpc::Status genDebugLog(::grpc::ServerContext* context, const ::FileName* request, ::GenDebugLogResponse *response) override;
 
-    virtual ::grpc::Status doVgpuPrecheck(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::VgpuPrecheckResponse *response) override;
+    virtual ::grpc::Status doVgpuPrecheck(::grpc::ServerContext* context, const ::VgpuPrecheckRequest* request, ::VgpuPrecheckResponse *response) override;
 
     virtual ::grpc::Status createVf(::grpc::ServerContext* context, const ::VgpuCreateVfRequest* request, ::VgpuCreateVfResponse *response) override;
 

@@ -10,6 +10,7 @@
 #include "fwcodedata_mgmt.h"
 #include "psc_mgmt.h"
 #include "latebinding_mgmt.h"
+#include "oprom_fw_mgmt.h"
 #include "group/group_manager.h"
 #include "api/device_model.h"
 #include "amc/ipmi_amc_manager.h"
@@ -90,6 +91,32 @@ static std::string getGfxVersionByMeiDevice(std::string meiDevicePath) {
     return res;
 }
 
+static std::string getOpromVersionByMeiDevice(std::string meiDevicePath, uint32_t type) {
+    int ret;
+    struct igsc_device_handle handle;
+    struct igsc_oprom_version oprom_version;
+    std::string res = "unknown";
+    ret = igsc_device_init_by_device(&handle, meiDevicePath.c_str());
+    if (ret != IGSC_SUCCESS) {
+        return res;
+    }
+
+    ret = igsc_device_oprom_version(&handle, type, &oprom_version);
+    if (ret == IGSC_SUCCESS) {
+        std::stringstream ss;
+        for (int i = 0; i < IGSC_OPROM_VER_SIZE; i++) {
+            ss << std::hex << (int)oprom_version.version[i];
+            ss << " ";
+        }
+        res = ss.str();
+    } else {
+        XPUM_LOG_ERROR("Fail to get SoC fw version from device: {}", meiDevicePath);
+    }
+    /* make sure we have a printable name */
+    (void)igsc_device_close(&handle);
+    return res;
+}
+
 bool FirmwareManager::isModelSupported(int model) const {
     switch (model) {
         case XPUM_DEVICE_MODEL_PVC:
@@ -138,6 +165,15 @@ void FirmwareManager::init() {
                 pDevice->setLateBindingMgmt(std::make_shared<LateBindingMgmt>(pDevice->getMeiDevicePath(), pDevice));
                 XPUM_LOG_DEBUG("Device {} set LateBinding", i);
             }
+	    //OPROM firmware
+            if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_BMG) {
+                pDevice->setOpromFwMgmt(std::make_shared<OpromFwMgmt>(pDevice->getMeiDevicePath(), pDevice));
+                auto version = getOpromVersionByMeiDevice(pDevice->getMeiDevicePath(), IGSC_OPROM_CODE);
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_VERSION, version));
+                version = getOpromVersionByMeiDevice(pDevice->getMeiDevicePath(), IGSC_OPROM_DATA);
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_VERSION, version));
+                XPUM_LOG_DEBUG("Device {} set OpromFwMgmt", i);
+            }	    
         }
     });
 
@@ -245,6 +281,13 @@ std::string FirmwareManager::getAmcWarnMsg() {
     if (p_amc_manager)
         return "";
     return getRedfishAmcWarn();
+}
+
+static bool isGscOPROMFwImage(igsc_oprom_image* oprom_img) {
+    uint32_t type;
+    int ret;
+    ret = igsc_image_oprom_type(oprom_img, &type);
+    return (ret == IGSC_SUCCESS) && (type == IGSC_OPROM_CODE || type == IGSC_OPROM_DATA);
 }
 
 static bool isGscFwImage(std::vector<char>& buffer) {
@@ -365,7 +408,6 @@ static void data_progress_percentage_func(uint32_t done, uint32_t total, void* c
     pFM->gscFwDataFlashPercent.store(percent);
 }
 
-
 xpum_result_t FirmwareManager::runGscOnlyFwFlash(const char* filePath, bool force) {
     // read image file
     auto img = readImageContent(filePath);
@@ -464,6 +506,117 @@ void FirmwareManager::getGscOnlyFwFlashResult(xpum_firmware_flash_task_result_t*
     } else {
         result->result = taskGSC.get();
     }
+}
+
+xpum_result_t FirmwareManager::runGSCOpromFwFlash(xpum_device_id_t deviceId, const char* filePath,
+						     xpum_firmware_type_t type, bool igscOnly) {
+    // read image file
+    auto buffer = readImageContent(filePath);
+
+    // check device exists
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            return XPUM_GENERIC_ERROR;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            return XPUM_GENERIC_ERROR;
+        }
+        // check for ats-m3
+        deviceList = getSiblingDevices(pDevice);
+    }
+
+    xpum_result_t res = XPUM_GENERIC_ERROR;
+
+    bool locked = Core::instance().getDeviceManager()->tryLockDevices(deviceList);
+    if (!locked)
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;    
+    for (auto pd : deviceList) {
+        if (pd->isUpgradingFw()) {
+            Core::instance().getDeviceManager()->unlockDevices(deviceList);
+            return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        }
+    }
+    // try to update
+    bool stop = false;
+    std::vector<std::shared_ptr<Device>> toUnlock;
+    for (auto pd : deviceList) {
+        if (!stop) {
+	    flashFwErrMsg.clear();
+            FlashOpromFwParam param;
+            param.filePath = filePath;
+            param.type = type;
+	    auto pOpromFwMgmt = pd->getOpromFwMgmt();
+	    if (!pOpromFwMgmt) {
+		return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_OPROM_FW;
+	    }
+	    res = pOpromFwMgmt->flashOpromFw(param);
+            if (res != XPUM_OK) {
+                flashFwErrMsg = param.errMsg;
+                if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                    flashFwErrMsg += " Device ID: " + pd->getId();
+                }
+                stop = true;
+                toUnlock.push_back(pd);
+            }
+        } else {
+            toUnlock.push_back(pd);
+        }
+    }
+    if (toUnlock.size() > 0) {
+        // some device fail to start, remember to unlock
+        Core::instance().getDeviceManager()->unlockDevices(toUnlock);
+    }
+    return res;
+}
+
+void FirmwareManager::getGSCOpromFwFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t *result, xpum_firmware_type_t type, bool igscOnly) {
+    std::shared_ptr<Device> pDevice = nullptr;
+    std::vector<std::shared_ptr<Device>> deviceList;
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        Core::instance().getDeviceManager()->getDeviceList(deviceList);
+        if (deviceList.size() == 0) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+    } else {
+        pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+        if (pDevice == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            return;
+        }
+        deviceList = getSiblingDevices(pDevice);
+    }
+
+    result->deviceId = deviceId;
+    result->type = type;
+
+    int totalPercent = 0;
+    for (auto pd : deviceList) {
+        auto pOpromFwMgmt = pd->getOpromFwMgmt();
+        if (pOpromFwMgmt == nullptr) {
+            result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+            return;
+        }
+        totalPercent += pOpromFwMgmt->percent.load();
+        GetFlashOpromFwResultParam param;
+        auto res = pOpromFwMgmt->getFlashOpromFwResult(param);
+        flashFwErrMsg = param.errMsg;
+        result->result = res;
+        if (res != XPUM_DEVICE_FIRMWARE_FLASH_OK &&
+            res != XPUM_DEVICE_FIRMWARE_FLASH_ONGOING) {
+            if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+                flashFwErrMsg += " Device ID: " + pd->getId();
+            }
+            break;
+        }
+    }
+    result->percentage = totalPercent / deviceList.size();
+    return;
 }
 
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force, bool igscOnly) {

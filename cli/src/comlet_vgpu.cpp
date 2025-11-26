@@ -138,7 +138,7 @@ void ComletVgpu::setupOptions() {
     /*
      *  All the flags should be exclusive to each other.
      */
-    precheckFlag->excludes(deviceIdOpt);
+    precheckFlag->needs(deviceIdOpt);
     precheckFlag->excludes(numVfsOpt);
     precheckFlag->excludes(lmemOpt);
     createFlag->excludes(precheckFlag);
@@ -189,7 +189,7 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
      */
     if (this->opts->create || this->opts->list || this->opts->remove || 
         this->opts->stats) {
-        json = this->coreStub->doVgpuPrecheck();
+        json = this->coreStub->doVgpuPrecheck(targetId);
         if (json->contains("iommu_status") && (*json)["iommu_status"].get<std::string>().compare("Pass") == 0
             && json->contains("sriov_status") && (*json)["sriov_status"].get<std::string>().compare("Pass") == 0
             && json->contains("vmx_flag") && (*json)["vmx_flag"].get<std::string>().compare("Pass") == 0
@@ -202,7 +202,7 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
     }
 
     if (this->opts->precheck) {
-        json = this->coreStub->doVgpuPrecheck();
+        json = this->coreStub->doVgpuPrecheck(targetId);
         if (json->contains("vmx_flag") && (*json)["vmx_flag"].get<std::string>().compare("Fail") == 0) {
             (*json)["errno"] = XPUM_CLI_ERROR_VGPU_NO_VMX_FLAG;
         } else if (json->contains("iommu_status") && (*json)["iommu_status"].get<std::string>().compare("Fail") == 0) {
