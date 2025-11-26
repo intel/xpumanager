@@ -11,9 +11,11 @@ FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
 WORKDIR /go/src
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=src=.,target=. \
-    make generate OUTDIR=/go/_out
+    --mount=src=.,target=.,rw \
+    make generate && \
+    mkdir /gen && \
+    cp -r levelzero /gen/
 
 FROM scratch AS artifacts
 
-COPY --from=builder /go/_out .
+COPY --from=builder /gen .
