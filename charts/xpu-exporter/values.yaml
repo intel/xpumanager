@@ -76,34 +76,48 @@ tolerations: []
 affinity: {}
 
 # @schema additionalProperties:false
-# -- Configuration for the XPU exporter
-# @default --  
 config:
   # @schema additionalProperties:false
+  # -- Configuration for exporters. By default none are enabled, please select a suitable one.
+  # @default --  
+  # @section -- XPU Exporter Configuration
   exporters:
     # -- Metrics collection interval in seconds
+    # @section -- XPU Exporter Configuration
     collectInterval: 30
     # @schema additionalProperties:false
+    # @section -- XPU Exporter Configuration
     stdout:
       # -- Enable stdout metrics exporter
+      # @section -- XPU Exporter Configuration
       enabled: false
     # @schema additionalProperties:false
+    # @section -- XPU Exporter Configuration
     prometheus:
       # -- Enable Prometheus metrics exporter
+      # @section -- XPU Exporter Configuration
       enabled: false
     # @schema additionalProperties:false
+    # @section -- XPU Exporter Configuration
     grpc:
       # -- Enable OTLP gRPC metrics exporter
+      # @section -- XPU Exporter Configuration
       enabled: false
       # -- OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default.
+      # @section -- XPU Exporter Configuration
       endpoint: ""
       # -- Use insecure connection (no TLS)
+      # @section -- XPU Exporter Configuration
       insecure: false
     # @schema additionalProperties:false
+    # @section -- XPU Exporter Configuration
     http:
       # -- Enable OTLP HTTP metrics exporter
+      # @section -- XPU Exporter Configuration
       enabled: false
       # -- OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default.
+      # @section -- XPU Exporter Configuration
       endpoint: ""
       # -- Use insecure connection (no TLS)
+      # @section -- XPU Exporter Configuration
       insecure: false

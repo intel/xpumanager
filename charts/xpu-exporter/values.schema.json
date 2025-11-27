@@ -10,10 +10,10 @@
             "type": "object"
         },
         "config": {
-            "description": "Configuration for the XPU exporter",
             "type": "object",
             "properties": {
                 "exporters": {
+                    "description": "Configuration for exporters. By default none are enabled, please select a suitable one.",
                     "type": "object",
                     "properties": {
                         "collectInterval": {
