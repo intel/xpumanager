@@ -9,7 +9,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -29,12 +28,18 @@ import (
 	"github.com/intel/xpu-exporter/sysman"
 )
 
-func main() {
-	port := flag.Int("port", 8080, "Port to expose metrics on")
-	configFile := flag.String("config", "", "Path to configuration file")
+var (
+	port       = flag.Int("port", 8080, "Port to expose metrics on")
+	configFile = flag.String("config", "", "Path to configuration file")
+)
 
+func main() {
 	flag.Parse()
 
+	os.Exit(run())
+}
+
+func run() (exitCode int) {
 	slog.Info("xpu exporter starting")
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
@@ -43,12 +48,14 @@ func main() {
 	cfg := defaultConfig()
 	if *configFile != "" {
 		if err := cfg.loadFromFile(*configFile); err != nil {
-			log.Fatalf("failed to load configuration file: %v", err)
+			slog.Error("failed to load configuration file", "file", *configFile, "error", err)
+			return 1
 		}
 		slog.Info("configuration file loaded", "file", *configFile)
 	}
 	if err := cfg.validate(); err != nil {
-		log.Fatalf("invalid configuration: %v", err)
+		slog.Error("invalid configuration", "error", err)
+		return 1
 	}
 
 	// HTTP server mux
@@ -76,7 +83,8 @@ func main() {
 	if cfg.Exporters.Stdout.Enabled {
 		exporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
 		if err != nil {
-			log.Fatalf("failed to create stdout metrics exporter: %v", err)
+			slog.Error("failed to create stdout metrics exporter", "error", err)
+			return 1
 		}
 		slog.Info("stdout metrics exporter enabled")
 		mpOpts = append(mpOpts, withPeriodicReader(exporter))
@@ -86,7 +94,8 @@ func main() {
 		promRegistry := promclient.NewRegistry()
 		promExporter, err := prometheus.New(prometheus.WithRegisterer(promRegistry))
 		if err != nil {
-			log.Fatalf("failed to create Prometheus exporter: %v", err)
+			slog.Error("failed to create Prometheus exporter", "error", err)
+			return 1
 		}
 		mpOpts = append(mpOpts, sdkmetric.WithReader(promExporter))
 		mux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
@@ -103,7 +112,8 @@ func main() {
 		}
 		exporter, err := otlpmetricgrpc.New(ctx, opts...)
 		if err != nil {
-			log.Fatalf("failed to create OTLP/gRPC metrics exporter: %v", err)
+			slog.Error("failed to create OTLP/gRPC metrics exporter", "error", err)
+			return 1
 		}
 		slog.Info("OTLP/gRPC metrics exporter enabled")
 
@@ -120,7 +130,8 @@ func main() {
 		}
 		exporter, err := otlpmetrichttp.New(ctx, opts...)
 		if err != nil {
-			log.Fatalf("failed to create OTLP/HTTP metrics exporter: %v", err)
+			slog.Error("failed to create OTLP/HTTP metrics exporter", "error", err)
+			return 1
 		}
 		slog.Info("OTLP/HTTP metrics exporter enabled")
 		mpOpts = append(mpOpts, withPeriodicReader(exporter))
@@ -129,7 +140,8 @@ func main() {
 	meterProvider := sdkmetric.NewMeterProvider(mpOpts...)
 	defer func() {
 		if err := meterProvider.Shutdown(ctx); err != nil {
-			log.Fatalf("failed to shut down meter provider: %v", err)
+			slog.Error("failed to shut down meter provider", "error", err)
+			exitCode = 1
 		}
 		slog.Info("meter provider shut down")
 	}()
@@ -139,10 +151,12 @@ func main() {
 	// Initialize Sysman
 	s, err := sysman.New()
 	if err != nil {
-		log.Fatalf("failed to initialize sysman API: %v", err)
+		slog.Error("failed to initialize sysman API", "error", err)
+		return 1
 	}
 	if err := s.RegisterMetrics(meter); err != nil {
-		log.Fatalf("failed to register metrics: %v", err)
+		slog.Error("failed to register sysman metrics", "error", err)
+		return 1
 	}
 
 	// Start HTTP server
@@ -155,7 +169,9 @@ func main() {
 		go func() {
 			slog.Info("starting HTTP server", "port", *port)
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				log.Fatalf("HTTP server failed: %v", err)
+				slog.Error("HTTP server failed", "error", err)
+				exitCode = 1
+				cancel()
 			}
 		}()
 	}
@@ -165,7 +181,10 @@ func main() {
 	slog.Info("xpu exporter shutting down")
 	if server != nil {
 		if err := server.Shutdown(context.Background()); err != nil {
-			log.Fatalf("failed to shutdown HTTP server: %v", err)
+			slog.Error("failed to shutdown HTTP server", "error", err)
+			exitCode = 1
 		}
 	}
+
+	return exitCode
 }
