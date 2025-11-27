@@ -40,10 +40,11 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 
 ## Values
 
+### XPU Exporter Configuration
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
-| config | object |   | Configuration for the XPU exporter |
+| config.exporters | object |   | Configuration for exporters. By default none are enabled, please select a suitable one. |
 | config.exporters.collectInterval | int | `30` | Metrics collection interval in seconds |
 | config.exporters.grpc.enabled | bool | `false` | Enable OTLP gRPC metrics exporter |
 | config.exporters.grpc.endpoint | string | `""` | OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default. |
@@ -53,6 +54,12 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 | config.exporters.http.insecure | bool | `false` | Use insecure connection (no TLS) |
 | config.exporters.prometheus.enabled | bool | `false` | Enable Prometheus metrics exporter |
 | config.exporters.stdout.enabled | bool | `false` | Enable stdout metrics exporter |
+
+### Other Values
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/marquiz/xpu-exporter/xpu-exporter"` | Image repository |

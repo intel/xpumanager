@@ -1,5 +1,5 @@
 # Configuration for exporters
-# - By default none are enabled, please select suitable one
+# - By default none are enabled, please select a suitable one
 exporters:
   # Metrics collection interval in seconds
   collectInterval: 30
