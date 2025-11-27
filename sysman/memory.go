@@ -9,9 +9,10 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/intel/level-zero-go/levelzero"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
 func init() {
@@ -19,7 +20,7 @@ func init() {
 }
 
 type sysmanMemory struct {
-	*levelzero.ZesMem
+	*l0sysman.Mem
 	attributes []attribute.KeyValue
 }
 
@@ -30,7 +31,7 @@ type memoryMetrics struct {
 	health      metric.Int64ObservableGauge
 }
 
-func newSysmanMemory(mem *levelzero.ZesMem) (*sysmanMemory, error) {
+func newSysmanMemory(mem *l0sysman.Mem) (*sysmanMemory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
 		return nil, err
@@ -42,12 +43,12 @@ func newSysmanMemory(mem *levelzero.ZesMem) (*sysmanMemory, error) {
 	}
 
 	return &sysmanMemory{
-		ZesMem:     mem,
+		Mem:        mem,
 		attributes: attrs,
 	}, nil
 }
 
-func enumMemory(d *levelzero.ZeDevice) []*sysmanMemory {
+func enumMemory(d *l0sysman.Device) []*sysmanMemory {
 	mems, err := d.EnumMemoryModules()
 	if err != nil {
 		slog.Error("Failed to enumerate memory modules", "error", err)

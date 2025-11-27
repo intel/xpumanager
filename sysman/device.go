@@ -8,9 +8,10 @@ package sysman
 import (
 	"fmt"
 
-	"github.com/intel/level-zero-go/levelzero"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
 type deviceRegistry struct {
@@ -18,7 +19,7 @@ type deviceRegistry struct {
 }
 
 type sysmanDevice struct {
-	*levelzero.ZeDevice
+	*l0sysman.Device
 	attributes []attribute.KeyValue
 
 	frequency   []*sysmanFrequency
@@ -29,7 +30,7 @@ type sysmanDevice struct {
 func newDeviceRegistry() (*deviceRegistry, error) {
 	reg := &deviceRegistry{}
 
-	drivers, err := levelzero.ZesDriverGet()
+	drivers, err := l0sysman.DriverGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES drivers: %w", err)
 	}
@@ -45,8 +46,8 @@ func newDeviceRegistry() (*deviceRegistry, error) {
 	return reg, nil
 }
 
-func enumDevices(driver *levelzero.ZeDriver) ([]*sysmanDevice, error) {
-	zesDevs, err := driver.ZesDeviceGet()
+func enumDevices(driver *l0sysman.Driver) ([]*sysmanDevice, error) {
+	zesDevs, err := driver.DeviceGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES devices: %w", err)
 	}
@@ -61,7 +62,7 @@ func enumDevices(driver *levelzero.ZeDriver) ([]*sysmanDevice, error) {
 	return devs, nil
 }
 
-func newSysmanDevice(device *levelzero.ZeDevice) (*sysmanDevice, error) {
+func newSysmanDevice(device *l0sysman.Device) (*sysmanDevice, error) {
 	props, err := device.GetProperties()
 	if err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func newSysmanDevice(device *levelzero.ZeDevice) (*sysmanDevice, error) {
 	}
 
 	d := &sysmanDevice{
-		ZeDevice:   device,
+		Device:     device,
 		attributes: attrs,
 	}
 
@@ -86,15 +87,15 @@ func newSysmanDevice(device *levelzero.ZeDevice) (*sysmanDevice, error) {
 }
 
 func (d *sysmanDevice) enumFrequency() {
-	d.frequency = enumFrequency(d.ZeDevice)
+	d.frequency = enumFrequency(d.Device)
 }
 
 func (d *sysmanDevice) enumMemory() {
-	d.memory = enumMemory(d.ZeDevice)
+	d.memory = enumMemory(d.Device)
 }
 
 func (d *sysmanDevice) enumTemperature() {
-	d.temperature = enumTemperature(d.ZeDevice)
+	d.temperature = enumTemperature(d.Device)
 }
 
 func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry) {
