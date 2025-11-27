@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 //
 
-//go:generate ./generate-stringer.sh
+//go:generate ../hack/generate-stringer.sh
 
 package levelzero
 

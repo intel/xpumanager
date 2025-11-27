@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,rw \
     make generate && \
     mkdir /gen && \
-    cp -r levelzero /gen/
+    cp -r core levelzero /gen/
 
 FROM scratch AS artifacts
 
