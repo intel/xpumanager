@@ -4,11 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 Q := @
+PACKAGES := levelzero
 
 all: build
 
 generate: clean
-	$(Q)hack/generate.sh levelzero
+	$(Q)for pkg in $(PACKAGES); do \
+	    hack/generate.sh $$pkg || exit 1; \
+	done
 
 generate-dockerized: clean
 	$(Q)docker build --target artifacts \
@@ -16,7 +19,9 @@ generate-dockerized: clean
 	    -f hack/Dockerfile.generate .
 
 clean:
-	rm -f levelzero/cgo_helpers.go levelzero/cgo_helpers.h levelzero/cgo_helpers.c
-	rm -f levelzero/const.go levelzero/doc.go levelzero/types.go
-	rm -f levelzero/levelzero.go
-	rm -f levelzero/zz_*
+	for pkg in $(PACKAGES); do \
+	    rm -f $$pkg/cgo_helpers.go $$pkg/cgo_helpers.h $$pkg/cgo_helpers.c; \
+	    rm -f $$pkg/const.go $$pkg/doc.go $$pkg/types.go; \
+	    rm -f $$pkg/$$pkg.go; \
+	    rm -f $$pkg/zz_*; \
+	done
