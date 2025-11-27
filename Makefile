@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 Q := @
-PACKAGES := levelzero
+PACKAGES := core levelzero
 
 all: build
 
