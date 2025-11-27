@@ -1,0 +1,33 @@
+# Configuration for exporters
+# - By default none are enabled, please select suitable one
+exporters:
+  # Metrics collection interval in seconds
+  collectInterval: 30
+  # Configuration for the stdout exporter
+  stdout:
+    # Enable this exporter
+    enabled: false
+  # Configuration for the Prometheus exporter
+  prometheus:
+    # Enable this exporter
+    enabled: false
+  # Configuration for the OTLP gRPC exporter
+  grpc:
+    # Enable this exporter
+    enabled: false
+    # OTLP/gRPC collector endpoint. If empty, taken from
+    # OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+    # environment variable, or localhost:4317 by default.
+    endpoint: ""
+    # Use insecure connection (no TLS)
+    insecure: false
+  # Configuration for the OTLP HTTP exporter
+  http:
+    # Enable this exporter
+    enabled: false
+    # OTLP/HTTP collector endpoint. If empty, taken from
+    # OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+    # environment variable, or localhost:4318 by default.
+    endpoint: ""
+    # Use insecure connection (no TLS)
+    insecure: false
