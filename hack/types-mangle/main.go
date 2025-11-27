@@ -18,20 +18,38 @@ import (
 	"go.yaml.in/yaml/v4"
 )
 
-type fieldMap map[string]string
+type config struct {
+	Structs []structRewriteConfig `yaml:"structs"`
+}
 
-type typeMap map[string]fieldMap
+// structRewriteConfig holds the configuration mangling struct types
+type structRewriteConfig struct {
+	Name   string               `yaml:"name"`
+	Fields []fieldRewriteConfig `yaml:"fields"`
+}
+
+// fieldRewriteConfig holds the configuration for mangling a specific field of
+// a struct
+type fieldRewriteConfig struct {
+	Name    string `yaml:"name"`
+	NewType string `yaml:"newType"`
+}
+
+type typeRewriter struct {
+	config *config
+}
 
 func main() {
 	filePath := flag.String("file", "types.go", "Path to the Go source file to process")
-	mappingsPath := flag.String("field-rewrites", "types-field-rewrites.yaml", "Path to the YAML file containing struct field type rewrite rules")
+	mappingsPath := flag.String("config", "types-mangle.yaml", "Path to the type rewrite rules config file")
 	flag.Parse()
 
-	// Read mappings configuration
-	mappings, err := loadMappings(*mappingsPath)
+	// Read configuration
+	cfg, err := loadConfig(*mappingsPath)
 	if err != nil {
-		log.Fatalf("Failed to load mappings: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
+	trw := newTypeRewriter(cfg)
 
 	// Parse the Go source file
 	fset := token.NewFileSet()
@@ -40,26 +58,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ast.Inspect(file, func(n ast.Node) bool {
-		// Look for type declarations
-		if typeSpec, ok := n.(*ast.TypeSpec); ok {
-			structName := typeSpec.Name.Name
-			if fieldMappings, ok := mappings[structName]; ok {
-				// Check if it's a struct type
-				if structType, ok := typeSpec.Type.(*ast.StructType); ok {
-					// Iterate over the fields and update types as per the mapping
-					for _, field := range structType.Fields.List {
-						for _, fieldName := range field.Names {
-							if newType, exists := fieldMappings[fieldName.Name]; exists {
-								field.Type = ast.NewIdent(newType)
-							}
-						}
-					}
-				}
+	for _, decl := range file.Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		for _, spec := range genDecl.Specs {
+			// Look for type declarations
+			if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+				trw.handleType(typeSpec)
 			}
 		}
-		return true
-	})
+	}
 
 	// Write back the modified file to stdout
 	var buf bytes.Buffer
@@ -70,14 +80,55 @@ func main() {
 	_, _ = os.Stdout.Write(buf.Bytes())
 }
 
-func loadMappings(path string) (typeMap, error) {
+func loadConfig(path string) (*config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	mappings := typeMap{}
-	if err := yaml.Unmarshal(data, &mappings); err != nil {
+	cfg := &config{}
+	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, err
 	}
-	return mappings, nil
+	return cfg, nil
+}
+
+func newTypeRewriter(cfg *config) *typeRewriter {
+	return &typeRewriter{config: cfg}
+}
+
+func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) {
+	typeName := typeSpec.Name.Name
+
+	switch v := typeSpec.Type.(type) {
+	case *ast.StructType:
+		for _, structRewrite := range t.config.Structs {
+			if structRewrite.Name == typeName {
+				structRewrite.apply(v)
+				return
+			}
+		}
+	default:
+	}
+
+}
+
+func (s *structRewriteConfig) apply(structType *ast.StructType) {
+	fieldRewrites := make(map[string]fieldRewriteConfig)
+	for _, field := range s.Fields {
+		fieldRewrites[field.Name] = field
+	}
+
+	for _, field := range structType.Fields.List {
+		for _, fieldName := range field.Names {
+			if fieldRewrite, ok := fieldRewrites[fieldName.Name]; ok {
+				fieldRewrite.apply(field)
+			}
+		}
+	}
+}
+
+func (f *fieldRewriteConfig) apply(field *ast.Field) {
+	if f.NewType != "" {
+		field.Type = ast.NewIdent(f.NewType)
+	}
 }
