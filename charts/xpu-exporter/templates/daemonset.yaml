@@ -10,8 +10,9 @@ spec:
       {{- include "xpu-exporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -28,6 +29,10 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - "xpu-exporter"
+        args:
+        - "-config=/etc/xpu-exporter/config.yaml"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         ports:
@@ -38,6 +43,10 @@ spec:
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/xpu-exporter
+          readOnly: true
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -50,3 +59,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "xpu-exporter.fullname" . }}-config
