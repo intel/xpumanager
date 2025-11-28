@@ -32,6 +32,7 @@ type structRewriteConfig struct {
 // a struct
 type fieldRewriteConfig struct {
 	Name    string `yaml:"name"`
+	NewName string `yaml:"newName"`
 	NewType string `yaml:"newType"`
 }
 
@@ -128,6 +129,11 @@ func (s *structRewriteConfig) apply(structType *ast.StructType) {
 }
 
 func (f *fieldRewriteConfig) apply(field *ast.Field) {
+	if f.NewName != "" {
+		for _, name := range field.Names {
+			name.Name = f.NewName
+		}
+	}
 	if f.NewType != "" {
 		field.Type = ast.NewIdent(f.NewType)
 	}
