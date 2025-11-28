@@ -25,13 +25,6 @@ go run "$ROOT_DIR/hack/types-mangle" -file types.go.tmp > types.go
 rm -f types.go.tmp
 cd -
 
-sed -i "$PACKAGE/types.go" \
-    -e s'!Pad_cgo_[0-9]*!_!' \
-    -e s'!Stype!stype!' \
-    -e s'!PNext!pnext!'
-
-go fmt "$PACKAGE/types.go"
-
 go generate "./$PACKAGE/..."
 
 rm -rf "$PACKAGE"/{cgo_helpers.go,_obj/}
