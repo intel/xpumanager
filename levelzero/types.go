@@ -3,11 +3,13 @@
 
 package levelzero
 
+import "github.com/google/uuid"
+
 type ZeDeviceUuid struct {
-	Id [16]uint8
+	Id uuid.UUID
 }
 
-type zeDeviceProperties struct {
+type ZeDeviceProperties struct {
 	stype                    uint32
 	pnext                    *byte
 	Type                     uint32
@@ -28,7 +30,7 @@ type zeDeviceProperties struct {
 	TimestampValidBits       uint32
 	KernelTimestampValidBits uint32
 	Uuid                     ZeDeviceUuid
-	Name                     [256]int8
+	Name                     StringProperty256
 }
 
 type ZesDriverExtensionProperties struct {
@@ -54,17 +56,17 @@ type ZesUuid struct {
 	Id [16]uint8
 }
 
-type zesDeviceProperties struct {
+type ZesDeviceProperties struct {
 	stype         uint32
 	pnext         *byte
-	Core          zeDeviceProperties
+	Core          ZeDeviceProperties
 	NumSubdevices uint32
-	SerialNumber  [64]int8
-	BoardNumber   [64]int8
-	BrandName     [64]int8
-	ModelName     [64]int8
-	VendorName    [64]int8
-	DriverVersion [64]int8
+	SerialNumber  StringProperty64
+	BoardNumber   StringProperty64
+	BrandName     StringProperty64
+	ModelName     StringProperty64
+	VendorName    StringProperty64
+	DriverVersion StringProperty64
 	_             [4]byte
 }
 

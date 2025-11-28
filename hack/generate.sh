@@ -22,6 +22,7 @@ fi
 cd "$PACKAGE"
 go tool cgo -godefs ./types.go > types.go.tmp
 go run "$ROOT_DIR/hack/types-mangle" -file types.go.tmp > types.go
+go tool goimports -w types.go
 rm -f types.go.tmp
 cd -
 
