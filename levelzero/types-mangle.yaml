@@ -56,10 +56,35 @@ structs:
     fields:
       - name: Repaired
         newType: ZesRepairStatus
+  - name: ZesDiagTest
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+  - name: ZesDiagProperties
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+  - name: ZesDriverExtensionProperties
+    fields:
+      - name: Name
+        typeAssert: "[256]int8"
+        newType: StringProperty256
   - name: ZesEngineProperties
     fields:
       - name: Type
         newType: ZesEngineGroup
+  - name: ZesFabricLinkType
+    fields:
+      - name: Desc
+        typeAssert: "[256]int8"
+        newType: StringProperty256
+  - name: ZesFabricPortProperties
+    fields:
+      - name: Model
+        typeAssert: "[256]int8"
+        newType: StringProperty256
   - name: ZesFabricPortState
     fields:
       - name: Status
@@ -72,6 +97,14 @@ structs:
     fields:
       - name: Units
         newType: ZesFanSpeedUnits
+  - name: ZesFirmwareProperties
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: Version
+        typeAssert: "[64]int8"
+        newType: StringProperty64
   - name: ZesFreqProperties
     fields:
       - name: Type

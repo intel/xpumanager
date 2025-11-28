@@ -34,7 +34,7 @@ type ZeDeviceProperties struct {
 }
 
 type ZesDriverExtensionProperties struct {
-	Name    [256]int8
+	Name    StringProperty256
 	Version uint32
 }
 
@@ -179,7 +179,7 @@ type ZesVfProperty struct {
 
 type ZesDiagTest struct {
 	Index uint32
-	Name  [64]int8
+	Name  StringProperty64
 }
 
 type ZesDiagProperties struct {
@@ -187,7 +187,7 @@ type ZesDiagProperties struct {
 	pnext       *byte
 	OnSubdevice uint8
 	SubdeviceId uint32
-	Name        [64]int8
+	Name        StringProperty64
 	HaveTests   uint8
 	_           [7]byte
 }
@@ -238,7 +238,7 @@ type ZesFabricPortSpeed struct {
 type ZesFabricPortProperties struct {
 	stype       uint32
 	pnext       *byte
-	Model       [256]int8
+	Model       StringProperty256
 	OnSubdevice uint8
 	SubdeviceId uint32
 	PortId      ZesFabricPortId
@@ -247,7 +247,7 @@ type ZesFabricPortProperties struct {
 }
 
 type ZesFabricLinkType struct {
-	Desc [256]int8
+	Desc StringProperty256
 }
 
 type ZesFabricPortConfig struct {
@@ -326,8 +326,8 @@ type ZesFirmwareProperties struct {
 	OnSubdevice uint8
 	SubdeviceId uint32
 	CanControl  uint8
-	Name        [64]int8
-	Version     [64]int8
+	Name        StringProperty64
+	Version     StringProperty64
 	_           [7]byte
 }
 
