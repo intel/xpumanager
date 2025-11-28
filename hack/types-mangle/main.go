@@ -8,12 +8,14 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
 	"log"
 	"os"
+	"path/filepath"
 
 	"go.yaml.in/yaml/v4"
 )
@@ -67,7 +69,9 @@ func main() {
 		for _, spec := range genDecl.Specs {
 			// Look for type declarations
 			if typeSpec, ok := spec.(*ast.TypeSpec); ok {
-				trw.handleType(typeSpec)
+				if err := trw.handleType(typeSpec); err != nil {
+					log.Fatalf("Failed to handle type %s: %v", typeSpec.Name.Name, err)
+				}
 			}
 		}
 	}
@@ -97,20 +101,21 @@ func newTypeRewriter(cfg *config) *typeRewriter {
 	return &typeRewriter{config: cfg}
 }
 
-func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) {
+func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) error {
 	typeName := typeSpec.Name.Name
 
 	switch v := typeSpec.Type.(type) {
 	case *ast.StructType:
 		for _, structRewrite := range t.config.Structs {
-			if structRewrite.Name == typeName {
+			if matched, err := filepath.Match(structRewrite.Name, typeName); err != nil {
+				return fmt.Errorf("invalid struct name pattern %q: %w", structRewrite.Name, err)
+			} else if matched {
 				structRewrite.apply(v)
-				return
 			}
 		}
 	default:
 	}
-
+	return nil
 }
 
 func (s *structRewriteConfig) apply(structType *ast.StructType) {
