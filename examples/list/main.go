@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 
+	"github.com/intel/level-zero-go/examples/common"
 	"github.com/intel/level-zero-go/levelzero"
-	"go.yaml.in/yaml/v4"
 )
 
 func main() {
@@ -94,7 +93,7 @@ func printDevice(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("## Device Properties:\n")
-	dump(props, 2)
+	common.Dump(props, 2)
 
 	state, err := device.GetState()
 	if err != nil {
@@ -102,7 +101,7 @@ func printDevice(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("## Device State:\n")
-	dump(state, 2)
+	common.Dump(state, 2)
 
 	subDeviceProps, err := device.GetSubDevicePropertiesExp()
 	if err != nil {
@@ -110,7 +109,7 @@ func printDevice(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("## Sub-Device Properties:\n")
-	dump(subDeviceProps, 2)
+	common.Dump(subDeviceProps, 2)
 }
 
 func printPCI(device *levelzero.ZeDevice) {
@@ -121,7 +120,7 @@ func printPCI(device *levelzero.ZeDevice) {
 	}
 	fmt.Printf("## PCI:\n")
 	fmt.Printf("  Properties:\n")
-	dump(props, 4)
+	common.Dump(props, 4)
 
 	pciState, err := device.PciGetState()
 	if err != nil {
@@ -129,7 +128,7 @@ func printPCI(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("  State:\n")
-	dump(pciState, 4)
+	common.Dump(pciState, 4)
 
 	pciBars, err := device.PciGetBars()
 	if err != nil {
@@ -137,7 +136,7 @@ func printPCI(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("  BARs:\n")
-	dump(pciBars, 4)
+	common.Dump(pciBars, 4)
 
 	pciStats, err := device.PciGetStats()
 	if err != nil {
@@ -145,7 +144,7 @@ func printPCI(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("  Stats:\n")
-	dump(pciStats, 4)
+	common.Dump(pciStats, 4)
 }
 
 func printECC(device *levelzero.ZeDevice) {
@@ -181,7 +180,7 @@ func printProcs(device *levelzero.ZeDevice) {
 		return
 	}
 	fmt.Printf("## Processes State:\n")
-	dump(procs, 2)
+	common.Dump(procs, 2)
 }
 
 func printOverock(device *levelzero.ZeDevice) {
@@ -197,7 +196,7 @@ func printOverock(device *levelzero.ZeDevice) {
 		log.Printf("ERROR: Failed to get overclocking state: %v", err)
 	} else {
 		fmt.Printf("## Overclocking State:\n")
-		dump(state, 2)
+		common.Dump(state, 2)
 	}
 
 	domains, err := device.EnumOverclockDomains()
@@ -215,7 +214,7 @@ func printOverock(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for overclocking domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		vfProps, err := domain.GetDomainVFProperties()
@@ -223,7 +222,7 @@ func printOverock(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get VF properties for overclocking domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  VF Properties:\n")
-			dump(vfProps, 4)
+			common.Dump(vfProps, 4)
 		}
 	}
 }
@@ -244,7 +243,7 @@ func printDiags(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for diagnostic test suite %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		tests, err := diag.GetTests()
@@ -252,7 +251,7 @@ func printDiags(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get tests for diagnostic test suite %d: %v", i, err)
 		} else {
 			fmt.Printf("  Tests:\n")
-			dump(tests, 4)
+			common.Dump(tests, 4)
 		}
 	}
 }
@@ -273,7 +272,7 @@ func printEngineGroups(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for engine group %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		stats, err := engine.GetActivity()
@@ -281,7 +280,7 @@ func printEngineGroups(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get activity for engine group %d: %v", i, err)
 		} else {
 			fmt.Printf("  Activity:\n")
-			dump(stats, 4)
+			common.Dump(stats, 4)
 		}
 
 		activityExt, err := engine.GetActivityExt()
@@ -289,7 +288,7 @@ func printEngineGroups(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get extended activity for engine group %d: %v", i, err)
 		} else {
 			fmt.Printf("  Extended Activity:\n")
-			dump(activityExt, 4)
+			common.Dump(activityExt, 4)
 		}
 	}
 }
@@ -310,7 +309,7 @@ func printFabricPorts(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for fabric port %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		linkType, err := port.GetLinkType()
@@ -325,7 +324,7 @@ func printFabricPorts(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get config for fabric port %d: %v", i, err)
 		} else {
 			fmt.Printf("  Config:\n")
-			dump(config, 4)
+			common.Dump(config, 4)
 		}
 
 		state, err := port.GetState()
@@ -333,7 +332,7 @@ func printFabricPorts(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for fabric port %d: %v", i, err)
 		} else {
 			fmt.Printf("  State:\n")
-			dump(state, 4)
+			common.Dump(state, 4)
 		}
 
 		throughput, err := port.GetThroughput()
@@ -368,7 +367,7 @@ func printFans(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for fan %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		config, err := fan.GetConfig()
@@ -376,7 +375,7 @@ func printFans(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get config for fan %d: %v", i, err)
 		} else {
 			fmt.Printf("  Config:\n")
-			dump(config, 4)
+			common.Dump(config, 4)
 		}
 
 		speed, err := fan.GetState(levelzero.ZES_FAN_SPEED_UNITS_RPM)
@@ -414,7 +413,7 @@ func printFrequencyDomains(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for frequency domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		clocks, err := domain.GetAvailableClocks()
@@ -436,7 +435,7 @@ func printFrequencyDomains(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for frequency domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  State:\n")
-			dump(state, 4)
+			common.Dump(state, 4)
 		}
 
 		throttleTime, err := domain.GetThrottleTime()
@@ -444,7 +443,7 @@ func printFrequencyDomains(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get throttle time for frequency domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Throttle Time:\n")
-			dump(throttleTime, 4)
+			common.Dump(throttleTime, 4)
 		}
 	}
 }
@@ -463,7 +462,7 @@ func printLeds(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for LED %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		state, err := led.GetState()
@@ -471,7 +470,7 @@ func printLeds(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for LED %d: %v", i, err)
 		} else {
 			fmt.Printf("  State:\n")
-			dump(state, 4)
+			common.Dump(state, 4)
 		}
 	}
 
@@ -494,7 +493,7 @@ func printMemory(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for memory module %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		stats, err := module.GetState()
@@ -502,7 +501,7 @@ func printMemory(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for memory module %d: %v", i, err)
 		} else {
 			fmt.Printf("  State:\n")
-			dump(stats, 4)
+			common.Dump(stats, 4)
 		}
 
 		bandwidth, err := module.GetBandwidth()
@@ -510,7 +509,7 @@ func printMemory(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get bandwidth for memory module %d: %v", i, err)
 		} else {
 			fmt.Printf("  Bandwidth:\n")
-			dump(bandwidth, 4)
+			common.Dump(bandwidth, 4)
 		}
 	}
 }
@@ -531,7 +530,7 @@ func printPerf(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for performance domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		factor, err := domain.GetConfig()
@@ -558,7 +557,7 @@ func printPower(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for power domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		energyCounter, err := domain.GetEnergyCounter()
@@ -580,7 +579,7 @@ func printPower(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get limits for power domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Limits:\n")
-			dump(limits, 4)
+			common.Dump(limits, 4)
 		}
 	}
 }
@@ -601,7 +600,7 @@ func printPsu(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for PSU %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		state, err := psu.GetState()
@@ -609,7 +608,7 @@ func printPsu(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for PSU %d: %v", i, err)
 		} else {
 			fmt.Printf("  State:\n")
-			dump(state, 4)
+			common.Dump(state, 4)
 		}
 	}
 }
@@ -630,7 +629,7 @@ func printRas(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for RAS error set %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		config, err := ras.GetConfig()
@@ -638,7 +637,7 @@ func printRas(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get config for RAS error set %d: %v", i, err)
 		} else {
 			fmt.Printf("  Config:\n")
-			dump(config, 4)
+			common.Dump(config, 4)
 		}
 
 		state, err := ras.GetState(false)
@@ -646,7 +645,7 @@ func printRas(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get state for RAS error set %d: %v", i, err)
 		} else {
 			fmt.Printf("  State:\n")
-			dump(state, 4)
+			common.Dump(state, 4)
 		}
 
 		stateExp, err := ras.GetStateExp()
@@ -654,7 +653,7 @@ func printRas(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get extended state for RAS error set %d: %v", i, err)
 		} else {
 			fmt.Printf("  Extended State:\n")
-			dump(stateExp, 4)
+			common.Dump(stateExp, 4)
 		}
 	}
 }
@@ -675,7 +674,7 @@ func printSched(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for scheduler %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		mode, err := sched.GetCurrentMode()
@@ -690,7 +689,7 @@ func printSched(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get timeout mode properties for scheduler %d: %v", i, err)
 		} else {
 			fmt.Printf("  Timeout Mode Properties:\n")
-			dump(timoutModeProps, 4)
+			common.Dump(timoutModeProps, 4)
 		}
 
 		timesliceModeProps, err := sched.GetTimesliceModeProperties(false)
@@ -698,7 +697,7 @@ func printSched(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get timeslice mode properties for scheduler %d: %v", i, err)
 		} else {
 			fmt.Printf("  Timeslice Mode Properties:\n")
-			dump(timesliceModeProps, 4)
+			common.Dump(timesliceModeProps, 4)
 		}
 	}
 }
@@ -719,7 +718,7 @@ func printStandby(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for standby domain %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		mode, err := standby.GetMode()
@@ -747,7 +746,7 @@ func printTemperature(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get properties for temperature sensor %d: %v", i, err)
 		} else {
 			fmt.Printf("  Properties:\n")
-			dump(props, 4)
+			common.Dump(props, 4)
 		}
 
 		config, err := sensor.GetConfig()
@@ -755,7 +754,7 @@ func printTemperature(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get config for temperature sensor %d: %v", i, err)
 		} else {
 			fmt.Printf("  Config:\n")
-			dump(config, 4)
+			common.Dump(config, 4)
 		}
 
 		temp, err := sensor.GetState()
@@ -782,7 +781,7 @@ func printVF(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get capabilities for VF %d: %v", i, err)
 		} else {
 			fmt.Printf("  Capabilities:\n")
-			dump(caps, 4)
+			common.Dump(caps, 4)
 		}
 
 		memoryUtilization, err := vf.GetVFMemoryUtilizationExp2()
@@ -790,21 +789,6 @@ func printVF(device *levelzero.ZeDevice) {
 			log.Printf("ERROR: Failed to get memory utilization for VF %d: %v", i, err)
 		} else {
 			fmt.Printf("  Memory Utilization: %+v\n", memoryUtilization)
-		}
-	}
-}
-
-func dump(obj interface{}, indent int) {
-	prefix := strings.Repeat(" ", indent)
-	data, err := yaml.Marshal(obj)
-	if err != nil {
-		log.Printf("ERROR: Failed to marshal object: %v", err)
-		return
-	}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		if line != "" {
-			fmt.Printf("%s%s\n", prefix, line)
 		}
 	}
 }
