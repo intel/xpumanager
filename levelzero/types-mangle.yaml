@@ -2,6 +2,14 @@
 # Config file for the hack/types-mangle tool.
 #
 structs:
+  - name: "*"
+    fields:
+      - name: Pad_cgo_0
+        newName: _
+      - name: Stype
+        newName: stype
+      - name: PNext
+        newName: pnext
   - name: ZesDeviceEccDesc
     fields:
       - name: State
