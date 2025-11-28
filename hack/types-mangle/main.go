@@ -67,7 +67,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	os.Stdout.Write(buf.Bytes())
+	_, _ = os.Stdout.Write(buf.Bytes())
 }
 
 func loadMappings(path string) (typeMap, error) {
