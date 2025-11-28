@@ -4,13 +4,16 @@ set -o pipefail
 ROOT_DIR=$(pwd)
 PACKAGE="$1"
 
+if [ -z "$PACKAGE" ] || [ ! -d "$PACKAGE" ]; then
+    echo "ERROR: package <dir> argument missing or not a dir ('$PACKAGE')!" 1>&2
+    exit 1
+fi
+
 go tool c-for-go -nostamp $PACKAGE.yml
 
 sed -i "$PACKAGE/$PACKAGE.go" \
     -e s'!*C.struct__\(ze_[a-z_]*_handle_t\)!*C.\1!' \
     -e s'!*C.struct__\(zes_[a-z_]*_handle_t\)!*C.\1!'
-
-rm -f "$PACKAGE/cgo_helpers.go"
 
 if [ "$PACKAGE" != "levelzero" ]; then
     cp levelzero/{ze,zes}_api.h "$PACKAGE"
@@ -30,3 +33,5 @@ sed -i "$PACKAGE/types.go" \
 go fmt "$PACKAGE/types.go"
 
 go generate "./$PACKAGE/..."
+
+rm -rf "$PACKAGE"/{cgo_helpers.go,_obj/}
