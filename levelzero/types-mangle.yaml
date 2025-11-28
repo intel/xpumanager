@@ -1,0 +1,116 @@
+#
+# Config file for the hack/types-mangle tool.
+#
+structs:
+  - name: ZesDeviceEccDesc
+    fields:
+      - name: State
+        newType: ZesDeviceEccState
+  - name: ZesDeviceEccProperties
+    fields:
+      - name: PendingAction
+        newType: ZesDeviceAction
+  - name: ZesDeviceExtProperties
+    fields:
+      - name: Type
+        newType: ZesDeviceType
+  - name: ZesDeviceState
+    fields:
+      - name: Repaired
+        newType: ZesRepairStatus
+  - name: ZesEngineProperties
+    fields:
+      - name: Type
+        newType: ZesEngineGroup
+  - name: ZesFabricPortState
+    fields:
+      - name: Status
+        newType: ZesFabricPortStatus
+  - name: ZesFanConfig
+    fields:
+      - name: Mode
+        newType: ZesFanSpeedMode
+  - name: ZesFanSpeed
+    fields:
+      - name: Units
+        newType: ZesFanSpeedUnits
+  - name: ZesFreqProperties
+    fields:
+      - name: Type
+        newType: ZesFreqDomain
+  - name: ZesMemProperties
+    fields:
+      - name: Location
+        newType: ZesMemLoc
+      - name: Type
+        newType: ZesMemType
+  - name: ZesMemState
+    fields:
+      - name: Health
+        newType: ZesMemHealth
+  - name: ZesOverclockProperties
+    fields:
+      - name: DomainType
+        newType: ZesOverclockDomain
+      - name: VFProgramType
+        newType: ZesVfProgramType
+  - name: ZesPciBarProperties
+    fields:
+      - name: Type
+        newType: ZesPciBarType
+  - name: ZesPciBarProperties12
+    fields:
+      - name: Type
+        newType: ZesPciBarType
+  - name: ZesPciState
+    fields:
+      - name: Status
+        newType: ZesPciLinkStatus
+  - name: ZesPowerDomainExpProperties
+    fields:
+      - name: PowerDomain
+        newType: ZesPowerDomain
+  - name: ZesPowerExtProperties
+    fields:
+      - name: Domain
+        newType: ZesPowerDomain
+  - name: ZesPowerLimitExtDesc
+    fields:
+      - name: Level
+        newType: ZesPowerLevel
+      - name: LimitUnit
+        newType: ZesLimitUnit
+      - name: Source
+        newType: ZesPowerSource
+  - name: ZesPsuState
+    fields:
+      - name: VoltStatus
+        newType: ZesPsuVoltageStatus
+  - name: ZesRasProperties
+    fields:
+      - name: Type
+        newType: ZesRasErrorType
+  - name: ZesRasStateExp
+    fields:
+      - name: Category
+        newType: ZesRasErrorCategoryExp
+  - name: ZesResetProperties
+    fields:
+      - name: ResetType
+        newType: ZesResetType
+  - name: ZesStandbyProperties
+    fields:
+      - name: Type
+        newType: ZesStandbyType
+  - name: ZesTempProperties
+    fields:
+      - name: Type
+        newType: ZesTempSensors
+  - name: ZesVfUtilEngineExp2
+    fields:
+      - name: VfEngineType
+        newType: ZesEngineGroup
+  - name: ZesVfUtilMemExp2
+    fields:
+      - name: VfMemLocation
+        newType: ZesMemLoc
