@@ -110,7 +110,9 @@ func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) error {
 			if matched, err := filepath.Match(structRewrite.Name, typeName); err != nil {
 				return fmt.Errorf("invalid struct name pattern %q: %w", structRewrite.Name, err)
 			} else if matched {
-				structRewrite.apply(v)
+				if err := structRewrite.apply(v); err != nil {
+					return fmt.Errorf("failed to rewrite struct: %w", err)
+				}
 			}
 		}
 	default:
@@ -118,7 +120,7 @@ func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) error {
 	return nil
 }
 
-func (s *structRewriteConfig) apply(structType *ast.StructType) {
+func (s *structRewriteConfig) apply(structType *ast.StructType) error {
 	fieldRewrites := make(map[string]fieldRewriteConfig)
 	for _, field := range s.Fields {
 		fieldRewrites[field.Name] = field
@@ -127,19 +129,24 @@ func (s *structRewriteConfig) apply(structType *ast.StructType) {
 	for _, field := range structType.Fields.List {
 		for _, fieldName := range field.Names {
 			if fieldRewrite, ok := fieldRewrites[fieldName.Name]; ok {
-				fieldRewrite.apply(field)
+				if err := fieldRewrite.apply(field); err != nil {
+					return fmt.Errorf("failed to apply rewrite for field %q: %w", fieldName.Name, err)
+				}
 			}
 		}
 	}
+	return nil
 }
 
-func (f *fieldRewriteConfig) apply(field *ast.Field) {
+func (f *fieldRewriteConfig) apply(field *ast.Field) error {
+	if len(field.Names) > 1 {
+		return fmt.Errorf("field rewrite cannot be applied to identifier lists")
+	}
 	if f.NewName != "" {
-		for _, name := range field.Names {
-			name.Name = f.NewName
-		}
+		field.Names[0].Name = f.NewName
 	}
 	if f.NewType != "" {
 		field.Type = ast.NewIdent(f.NewType)
 	}
+	return nil
 }
