@@ -1,0 +1,8 @@
+#
+# Config file for struct field type mangling.
+# Format is:
+# <type name>:
+#  <field name>: <field type name>
+#
+deviceProperties:
+  Flags: DevicePropertyFlag
