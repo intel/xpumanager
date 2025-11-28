@@ -7,7 +7,7 @@ type DeviceUuid struct {
 	Id [16]uint8
 }
 
-type deviceProperties struct {
+type DeviceProperties struct {
 	stype                    uint32
 	pnext                    *byte
 	Type                     uint32

@@ -31,7 +31,6 @@ TRANSLATOR:
       - {action: replace, from: "^ze_"}
       - {action: replace, from: "_t$"}
       - {transform: export}
-      - {transform: unexport, from: "Device_properties$"}
       - {load: snakecase}
   PtrTips:
   TypeTips:
