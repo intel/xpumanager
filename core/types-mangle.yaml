@@ -14,3 +14,11 @@ structs:
     fields:
       - name: Flags
         newType: DevicePropertyFlag
+      - name: Name
+        typeAssert: "[256]int8"
+        newType: StringProperty256
+  - name: DeviceUuid
+    fields:
+      - name: id
+        typeAssert: "[16]uint8"
+        newType: uuid.UUID

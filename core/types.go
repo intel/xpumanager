@@ -28,5 +28,5 @@ type DeviceProperties struct {
 	TimestampValidBits       uint32
 	KernelTimestampValidBits uint32
 	Uuid                     DeviceUuid
-	Name                     [256]int8
+	Name                     StringProperty256
 }
