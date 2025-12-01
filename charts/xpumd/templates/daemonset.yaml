@@ -45,6 +45,8 @@ spec:
         - name: config
           mountPath: /etc/xpumd
           readOnly: true
+        - name: rundir
+          mountPath: /run/xpumd
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -61,3 +63,7 @@ spec:
       - name: config
         configMap:
           name: {{ include "xpumd.fullname" . }}-config
+      - name: rundir
+        hostPath:
+          path: /run/xpumd
+          type: DirectoryOrCreate

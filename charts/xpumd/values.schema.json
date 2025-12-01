@@ -14,7 +14,18 @@
             "properties": {
                 "exporters": {
                     "description": "Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "intelxpuinfo": {
+                            "description": "Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported.",
+                            "type": "object",
+                            "properties": {
+                                "endpoint": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
                 },
                 "extensions": {
                     "description": "Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)",
@@ -77,6 +88,12 @@
                                 "metrics": {
                                     "type": "object",
                                     "properties": {
+                                        "exporters": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
                                         "receivers": {
                                             "type": "array",
                                             "items": {
