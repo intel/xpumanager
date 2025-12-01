@@ -13,15 +13,26 @@ import (
 	"github.com/intel/level-zero-go/levelzero"
 )
 
+type createCollectorFunc func(metric.Meter) (collector, error)
+
+type subsystem struct {
+	createCollector func(metric.Meter) (collector, error)
+}
+
+var subsystems = map[string]subsystem{}
+
+func registerSubsystem(name string, create createCollectorFunc) {
+	if _, exists := subsystems[name]; exists {
+		panic("subsystem already registered: " + name)
+	}
+	subsystems[name] = subsystem{
+		createCollector: create,
+	}
+}
+
 type sysman struct {
 	metrics *metricsRegistry
 	devices *deviceRegistry
-}
-
-type metricsRegistry struct {
-	frequency   *frequencyMetrics
-	memory      *memoryMetrics
-	temperature *temperatureMetrics
 }
 
 // New creates and initializes a new Sysman instance.
@@ -69,39 +80,4 @@ func (s *sysman) initMetrics(meter metric.Meter) error {
 	}
 
 	return nil
-}
-
-func newMetricsRegistry(meter metric.Meter) (*metricsRegistry, error) {
-	var err error
-	registry := &metricsRegistry{}
-
-	registry.frequency, err = newFrequencyMetrics(meter)
-	if err != nil {
-		return nil, err
-	}
-
-	registry.memory, err = newMemoryMetrics(meter)
-	if err != nil {
-		return nil, err
-	}
-
-	registry.temperature, err = newTemperatureMetrics(meter)
-	if err != nil {
-		return nil, err
-	}
-	return registry, nil
-}
-
-func (r *metricsRegistry) getInstruments() []metric.Observable {
-	instruments := []metric.Observable{}
-	instruments = append(instruments, r.frequency.getInstruments()...)
-	instruments = append(instruments, r.memory.getInstruments()...)
-	instruments = append(instruments, r.temperature.getInstruments()...)
-	return instruments
-}
-
-func (r *metricsRegistry) observe(o metric.Observer, d *deviceRegistry) {
-	for _, dev := range d.devices {
-		dev.observe(o, r)
-	}
 }

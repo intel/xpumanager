@@ -98,13 +98,7 @@ func (d *sysmanDevice) enumTemperature() {
 }
 
 func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry) {
-	for _, freq := range d.frequency {
-		registry.frequency.observe(o, freq, d.attributes)
-	}
-	for _, mem := range d.memory {
-		registry.memory.observe(o, mem, d.attributes)
-	}
-	for _, temp := range d.temperature {
-		registry.temperature.observe(o, temp, d.attributes)
+	for _, c := range registry.collectors {
+		c.observeDevice(o, d)
 	}
 }

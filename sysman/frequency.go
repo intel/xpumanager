@@ -14,6 +14,10 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+func init() {
+	registerSubsystem("frequency", newFrequencyMetrics)
+}
+
 type sysmanFrequency struct {
 	*levelzero.ZesFreq
 	attributes []attribute.KeyValue
@@ -60,7 +64,7 @@ func enumFrequency(d *levelzero.ZeDevice) []*sysmanFrequency {
 	return frequency
 }
 
-func newFrequencyMetrics(meter metric.Meter) (*frequencyMetrics, error) {
+func newFrequencyMetrics(meter metric.Meter) (collector, error) {
 	var err error
 	m := &frequencyMetrics{}
 
@@ -109,21 +113,23 @@ func (m *frequencyMetrics) getInstruments() []metric.Observable {
 	}
 }
 
-func (m *frequencyMetrics) observe(o metric.Observer, freq *sysmanFrequency, attrs []attribute.KeyValue) {
-	attrs = append(attrs, freq.attributes...)
-	opt := metric.WithAttributes(attrs...)
+func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
+	for _, freq := range dev.frequency {
+		attrs := append(dev.attributes, freq.attributes...)
+		opt := metric.WithAttributes(attrs...)
 
-	if rang, err := freq.GetRange(); err != nil {
-		slog.Error("Failed to get frequency range", "error", err)
-	} else {
-		o.ObserveFloat64(m.minimum, rang.Min*1000000, opt)
-		o.ObserveFloat64(m.maximum, rang.Max*1000000, opt)
-	}
+		if rang, err := freq.GetRange(); err != nil {
+			slog.Error("Failed to get frequency range", "error", err)
+		} else {
+			o.ObserveFloat64(m.minimum, rang.Min*1000000, opt)
+			o.ObserveFloat64(m.maximum, rang.Max*1000000, opt)
+		}
 
-	if state, err := freq.GetState(); err != nil {
-		slog.Error("Failed to get frequency state", "error", err)
-	} else {
-		o.ObserveFloat64(m.request, state.Request*1000000, opt)
-		o.ObserveFloat64(m.actual, state.Actual*1000000, opt)
+		if state, err := freq.GetState(); err != nil {
+			slog.Error("Failed to get frequency state", "error", err)
+		} else {
+			o.ObserveFloat64(m.request, state.Request*1000000, opt)
+			o.ObserveFloat64(m.actual, state.Actual*1000000, opt)
+		}
 	}
 }

@@ -14,6 +14,10 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+func init() {
+	registerSubsystem("temperature", newTemperatureMetrics)
+}
+
 type sysmanTemperature struct {
 	*levelzero.ZesTemp
 	attributes []attribute.KeyValue
@@ -56,7 +60,7 @@ func enumTemperature(d *levelzero.ZeDevice) []*sysmanTemperature {
 	return temperature
 }
 
-func newTemperatureMetrics(meter metric.Meter) (*temperatureMetrics, error) {
+func newTemperatureMetrics(meter metric.Meter) (collector, error) {
 	var err error
 	m := &temperatureMetrics{}
 	m.current, err = meter.Float64ObservableGauge(
@@ -76,12 +80,14 @@ func (m *temperatureMetrics) getInstruments() []metric.Observable {
 	}
 }
 
-func (m *temperatureMetrics) observe(o metric.Observer, temp *sysmanTemperature, attrs []attribute.KeyValue) {
-	attrs = append(attrs, temp.attributes...)
-	opt := metric.WithAttributes(attrs...)
-	if current, err := temp.GetState(); err != nil {
-		slog.Error("Failed to get temperature state", "error", err)
-	} else {
-		o.ObserveFloat64(m.current, current, opt)
+func (m *temperatureMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
+	for _, temp := range dev.temperature {
+		attrs := append(dev.attributes, temp.attributes...)
+		opt := metric.WithAttributes(attrs...)
+		if current, err := temp.GetState(); err != nil {
+			slog.Error("Failed to get temperature state", "error", err)
+		} else {
+			o.ObserveFloat64(m.current, current, opt)
+		}
 	}
 }
