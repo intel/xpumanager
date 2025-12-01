@@ -85,7 +85,7 @@ func (m *temperatureMetrics) observeDevice(o metric.Observer, dev *sysmanDevice)
 		attrs := append(dev.attributes, temp.attributes...)
 		opt := metric.WithAttributes(attrs...)
 		if current, err := temp.GetState(); err != nil {
-			slog.Error("Failed to get temperature state", "error", err)
+			slog.Error("Failed to get temperature state", "error", err, attrsToSlog(attrs))
 		} else {
 			o.ObserveFloat64(m.current, current, opt)
 		}
