@@ -1,0 +1,58 @@
+//
+// Copyright (C) 2026 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package deviceinfo;
+option go_package = "github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1";
+
+// DeviceInfo service provides info for XPU devices.
+service DeviceInfo {
+  // WatchDeviceHealth returns a stream of health metrics for all devices.
+  rpc WatchDeviceHealth(WatchDeviceHealthRequest) returns (stream DeviceHealthResponse);
+}
+
+// Request message for WatchDeviceHealth.
+message WatchDeviceHealthRequest {}
+
+// Health metrics for a single device
+message DeviceHealthResponse {
+  DeviceInformation info = 1;
+
+  repeated HealthStatus health = 2;
+}
+
+// Device identification and metadata
+message DeviceInformation {
+  string uuid = 1;
+  string model = 2;
+  PciInfo pci = 3;
+}
+
+// PCI information of the device.
+message PciInfo {
+  string bdf = 1;
+}
+
+// Status of a health domain.
+message HealthStatus {
+  // Name of the health domain.
+  string name = 1;
+  // Severity level of the status condition.
+  SeverityLevel severity = 2;
+  // Short (single word) reason for the status.
+  string reason = 3;
+  // Detailed message about the status.
+  string message = 4;
+}
+
+// Health status of a health domain.
+enum SeverityLevel {
+  SEVERITY_LEVEL_UNKNOWN = 0;
+  SEVERITY_LEVEL_OK = 1;
+  SEVERITY_LEVEL_WARNING = 2;
+  SEVERITY_LEVEL_CRITICAL = 3;
+  SEVERITY_LEVEL_FAILED = 4;
+}
