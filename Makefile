@@ -31,6 +31,10 @@ build:
 generate:
 	scripts/generate.sh $(GO_MODULES)
 
+.PHONY: install-protoc
+install-protoc:
+	scripts/install-protoc.sh
+
 # --- Test / lint targets
 
 .PHONY: test
