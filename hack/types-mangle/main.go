@@ -22,6 +22,7 @@ import (
 
 type config struct {
 	Structs []structRewriteConfig `yaml:"structs"`
+	Types   []typeRewriteConfig   `yaml:"types"`
 }
 
 // structRewriteConfig holds the configuration mangling struct types
@@ -35,6 +36,11 @@ type structRewriteConfig struct {
 type fieldRewriteConfig struct {
 	Name    string `yaml:"name"`
 	NewName string `yaml:"newName"`
+	NewType string `yaml:"newType"`
+}
+
+type typeRewriteConfig struct {
+	Name    string `yaml:"name"`
 	NewType string `yaml:"newType"`
 }
 
@@ -104,6 +110,16 @@ func newTypeRewriter(cfg *config) *typeRewriter {
 func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) error {
 	typeName := typeSpec.Name.Name
 
+	for _, typeRewrite := range t.config.Types {
+		if matched, err := filepath.Match(typeRewrite.Name, typeName); err != nil {
+			return fmt.Errorf("invalid type name pattern %q: %w", typeRewrite.Name, err)
+		} else if matched {
+			if err := typeRewrite.apply(typeSpec); err != nil {
+				return fmt.Errorf("failed to rewrite type: %w", err)
+			}
+		}
+	}
+
 	switch v := typeSpec.Type.(type) {
 	case *ast.StructType:
 		for _, structRewrite := range t.config.Structs {
@@ -147,6 +163,13 @@ func (f *fieldRewriteConfig) apply(field *ast.Field) error {
 	}
 	if f.NewType != "" {
 		field.Type = ast.NewIdent(f.NewType)
+	}
+	return nil
+}
+
+func (t *typeRewriteConfig) apply(typeSpec *ast.TypeSpec) error {
+	if t.NewType != "" {
+		typeSpec.Type = ast.NewIdent(t.NewType)
 	}
 	return nil
 }
