@@ -7,7 +7,6 @@
 #ifndef _OSVF_H
 #define _OSVF_H
 
-#include "os.h"
 #include <cinttypes>
 #include <string>
 #include <zes_api.h>

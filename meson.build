@@ -7,7 +7,7 @@
 #   as its higher optimization levels do more extensive analysis:
 #   - https://mesonbuild.com/Builtin-options.html#details-for-buildtype
 #   - https://mesonbuild.com/Builtin-options.html#details-for-warning_level
-project('xpum', 'cpp',
+project('xpum', 'c', 'cpp',
   version : '1.0.0',
   license : 'MIT',
   default_options : [
