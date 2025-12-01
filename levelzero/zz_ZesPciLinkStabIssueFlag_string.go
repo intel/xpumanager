@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[ZES_PCI_LINK_STAB_ISSUE_FLAG_RETRAINING-1]
-	_ = x[ZES_PCI_LINK_STAB_ISSUE_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_PCI_LINK_STAB_ISSUE_FLAG_END_MARKER-2147483647]
 }
 
 const (
 	_ZesPciLinkStabIssueFlag_name_0 = "RETRAINING"
-	_ZesPciLinkStabIssueFlag_name_1 = "FORCE_UINT32"
+	_ZesPciLinkStabIssueFlag_name_1 = "END_MARKER"
 )
 
 func (i ZesPciLinkStabIssueFlag) String() string {

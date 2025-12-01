@@ -14,7 +14,7 @@ func _() {
 	_ = x[ZES_ENGINE_TYPE_FLAG_MEDIA-8]
 	_ = x[ZES_ENGINE_TYPE_FLAG_DMA-16]
 	_ = x[ZES_ENGINE_TYPE_FLAG_RENDER-32]
-	_ = x[ZES_ENGINE_TYPE_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_ENGINE_TYPE_FLAG_END_MARKER-2147483647]
 }
 
 const (
@@ -23,7 +23,7 @@ const (
 	_ZesEngineTypeFlag_name_2 = "MEDIA"
 	_ZesEngineTypeFlag_name_3 = "DMA"
 	_ZesEngineTypeFlag_name_4 = "RENDER"
-	_ZesEngineTypeFlag_name_5 = "FORCE_UINT32"
+	_ZesEngineTypeFlag_name_5 = "END_MARKER"
 )
 
 var (

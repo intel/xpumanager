@@ -15,7 +15,7 @@ func _() {
 	_ = x[ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT-16]
 	_ = x[ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE-32]
 	_ = x[ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE-64]
-	_ = x[ZES_FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_FREQ_THROTTLE_REASON_FLAG_END_MARKER-2147483647]
 }
 
 const (
@@ -25,7 +25,7 @@ const (
 	_ZesFreqThrottleReasonFlag_name_3 = "PSU_ALERT"
 	_ZesFreqThrottleReasonFlag_name_4 = "SW_RANGE"
 	_ZesFreqThrottleReasonFlag_name_5 = "HW_RANGE"
-	_ZesFreqThrottleReasonFlag_name_6 = "FORCE_UINT32"
+	_ZesFreqThrottleReasonFlag_name_6 = "END_MARKER"
 )
 
 var (

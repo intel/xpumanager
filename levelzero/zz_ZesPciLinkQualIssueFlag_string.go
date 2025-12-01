@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS-1]
 	_ = x[ZES_PCI_LINK_QUAL_ISSUE_FLAG_SPEED-2]
-	_ = x[ZES_PCI_LINK_QUAL_ISSUE_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_PCI_LINK_QUAL_ISSUE_FLAG_END_MARKER-2147483647]
 }
 
 const (
 	_ZesPciLinkQualIssueFlag_name_0 = "REPLAYSSPEED"
-	_ZesPciLinkQualIssueFlag_name_1 = "FORCE_UINT32"
+	_ZesPciLinkQualIssueFlag_name_1 = "END_MARKER"
 )
 
 var (

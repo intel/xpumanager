@@ -11,12 +11,12 @@ func _() {
 	_ = x[ZES_RESET_TYPE_WARM-0]
 	_ = x[ZES_RESET_TYPE_COLD-1]
 	_ = x[ZES_RESET_TYPE_FLR-2]
-	_ = x[ZES_RESET_TYPE_FORCE_UINT32-2147483647]
+	_ = x[ZES_RESET_TYPE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesResetType_name_0 = "WARMCOLDFLR"
-	_ZesResetType_name_1 = "FORCE_UINT32"
+	_ZesResetType_name_1 = "END_MARKER"
 )
 
 var (

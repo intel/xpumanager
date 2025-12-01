@@ -14,12 +14,12 @@ func _() {
 	_ = x[ZES_POWER_DOMAIN_STACK-3]
 	_ = x[ZES_POWER_DOMAIN_MEMORY-4]
 	_ = x[ZES_POWER_DOMAIN_GPU-5]
-	_ = x[ZES_POWER_DOMAIN_FORCE_UINT32-2147483647]
+	_ = x[ZES_POWER_DOMAIN_END_MARKER-2147483647]
 }
 
 const (
 	_ZesPowerDomain_name_0 = "UNKNOWNCARDPACKAGESTACKMEMORYGPU"
-	_ZesPowerDomain_name_1 = "FORCE_UINT32"
+	_ZesPowerDomain_name_1 = "END_MARKER"
 )
 
 var (

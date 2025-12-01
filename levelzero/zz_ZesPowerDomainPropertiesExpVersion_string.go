@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_1_0-65536]
 	_ = x[ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_CURRENT-65536]
-	_ = x[ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_FORCE_UINT32-2147483647]
+	_ = x[ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_END_MARKER-2147483647]
 }
 
 const (
 	_ZesPowerDomainPropertiesExpVersion_name_0 = "1_0"
-	_ZesPowerDomainPropertiesExpVersion_name_1 = "FORCE_UINT32"
+	_ZesPowerDomainPropertiesExpVersion_name_1 = "END_MARKER"
 )
 
 func (i ZesPowerDomainPropertiesExpVersion) String() string {

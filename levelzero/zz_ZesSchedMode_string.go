@@ -11,12 +11,12 @@ func _() {
 	_ = x[ZES_SCHED_MODE_TIMEOUT-0]
 	_ = x[ZES_SCHED_MODE_TIMESLICE-1]
 	_ = x[ZES_SCHED_MODE_EXCLUSIVE-2]
-	_ = x[ZES_SCHED_MODE_FORCE_UINT32-2147483647]
+	_ = x[ZES_SCHED_MODE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesSchedMode_name_0 = "TIMEOUTTIMESLICEEXCLUSIVE"
-	_ZesSchedMode_name_1 = "FORCE_UINT32"
+	_ZesSchedMode_name_1 = "END_MARKER"
 )
 
 var (

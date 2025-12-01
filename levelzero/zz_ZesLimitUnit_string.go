@@ -11,12 +11,12 @@ func _() {
 	_ = x[ZES_LIMIT_UNIT_UNKNOWN-0]
 	_ = x[ZES_LIMIT_UNIT_CURRENT-1]
 	_ = x[ZES_LIMIT_UNIT_POWER-2]
-	_ = x[ZES_LIMIT_UNIT_FORCE_UINT32-2147483647]
+	_ = x[ZES_LIMIT_UNIT_END_MARKER-2147483647]
 }
 
 const (
 	_ZesLimitUnit_name_0 = "UNKNOWNCURRENTPOWER"
-	_ZesLimitUnit_name_1 = "FORCE_UINT32"
+	_ZesLimitUnit_name_1 = "END_MARKER"
 )
 
 var (

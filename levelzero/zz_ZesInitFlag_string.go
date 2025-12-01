@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[ZES_INIT_FLAG_PLACEHOLDER-1]
-	_ = x[ZES_INIT_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_INIT_FLAG_END_MARKER-2147483647]
 }
 
 const (
 	_ZesInitFlag_name_0 = "PLACEHOLDER"
-	_ZesInitFlag_name_1 = "FORCE_UINT32"
+	_ZesInitFlag_name_1 = "END_MARKER"
 )
 
 func (i ZesInitFlag) String() string {

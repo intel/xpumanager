@@ -12,12 +12,12 @@ func _() {
 	_ = x[ZES_PSU_VOLTAGE_STATUS_NORMAL-1]
 	_ = x[ZES_PSU_VOLTAGE_STATUS_OVER-2]
 	_ = x[ZES_PSU_VOLTAGE_STATUS_UNDER-3]
-	_ = x[ZES_PSU_VOLTAGE_STATUS_FORCE_UINT32-2147483647]
+	_ = x[ZES_PSU_VOLTAGE_STATUS_END_MARKER-2147483647]
 }
 
 const (
 	_ZesPsuVoltageStatus_name_0 = "UNKNOWNNORMALOVERUNDER"
-	_ZesPsuVoltageStatus_name_1 = "FORCE_UINT32"
+	_ZesPsuVoltageStatus_name_1 = "END_MARKER"
 )
 
 var (

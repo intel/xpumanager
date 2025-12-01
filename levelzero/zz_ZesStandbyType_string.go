@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[ZES_STANDBY_TYPE_GLOBAL-0]
-	_ = x[ZES_STANDBY_TYPE_FORCE_UINT32-2147483647]
+	_ = x[ZES_STANDBY_TYPE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesStandbyType_name_0 = "GLOBAL"
-	_ZesStandbyType_name_1 = "FORCE_UINT32"
+	_ZesStandbyType_name_1 = "END_MARKER"
 )
 
 func (i ZesStandbyType) String() string {

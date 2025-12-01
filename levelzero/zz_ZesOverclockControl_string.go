@@ -20,10 +20,10 @@ func _() {
 	_ = x[ZES_OVERCLOCK_CONTROL_TEMP_LIMIT-512]
 	_ = x[ZES_OVERCLOCK_CONTROL_ITD_DISABLE-1024]
 	_ = x[ZES_OVERCLOCK_CONTROL_ACM_DISABLE-2048]
-	_ = x[ZES_OVERCLOCK_CONTROL_FORCE_UINT32-2147483647]
+	_ = x[ZES_OVERCLOCK_CONTROL_END_MARKER-2147483647]
 }
 
-const _ZesOverclockControl_name = "VFFREQ_OFFSETVMAX_OFFSETFREQVOLT_LIMITPOWER_SUSTAINED_LIMITPOWER_BURST_LIMITPOWER_PEAK_LIMITICCMAX_LIMITTEMP_LIMITITD_DISABLEACM_DISABLEFORCE_UINT32"
+const _ZesOverclockControl_name = "VFFREQ_OFFSETVMAX_OFFSETFREQVOLT_LIMITPOWER_SUSTAINED_LIMITPOWER_BURST_LIMITPOWER_PEAK_LIMITICCMAX_LIMITTEMP_LIMITITD_DISABLEACM_DISABLEEND_MARKER"
 
 var _ZesOverclockControl_map = map[ZesOverclockControl]string{
 	1:          _ZesOverclockControl_name[0:2],
@@ -38,7 +38,7 @@ var _ZesOverclockControl_map = map[ZesOverclockControl]string{
 	512:        _ZesOverclockControl_name[104:114],
 	1024:       _ZesOverclockControl_name[114:125],
 	2048:       _ZesOverclockControl_name[125:136],
-	2147483647: _ZesOverclockControl_name[136:148],
+	2147483647: _ZesOverclockControl_name[136:146],
 }
 
 func (i ZesOverclockControl) String() string {

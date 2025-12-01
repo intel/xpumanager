@@ -12,14 +12,14 @@ func _() {
 	_ = x[ZES_DEVICE_PROPERTY_FLAG_SUBDEVICE-2]
 	_ = x[ZES_DEVICE_PROPERTY_FLAG_ECC-4]
 	_ = x[ZES_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING-8]
-	_ = x[ZES_DEVICE_PROPERTY_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_DEVICE_PROPERTY_FLAG_END_MARKER-2147483647]
 }
 
 const (
 	_ZesDevicePropertyFlag_name_0 = "INTEGRATEDSUBDEVICE"
 	_ZesDevicePropertyFlag_name_1 = "ECC"
 	_ZesDevicePropertyFlag_name_2 = "ONDEMANDPAGING"
-	_ZesDevicePropertyFlag_name_3 = "FORCE_UINT32"
+	_ZesDevicePropertyFlag_name_3 = "END_MARKER"
 )
 
 var (
