@@ -25,7 +25,8 @@ stats:
 
 .PHONY: build
 build:
-	go tool -modfile tools/go.mod builder --config=builder-config.yaml 
+	go tool -modfile tools/go.mod builder --config=builder-config.yaml
+	go -C dist build github.com/intel/xpumanager/exporter/xpuinfo-cli
 
 .PHONY: generate
 generate: generate-proto
