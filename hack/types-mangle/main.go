@@ -14,9 +14,12 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"html/template"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"go.yaml.in/yaml/v4"
 )
@@ -42,12 +45,15 @@ type fieldRewriteConfig struct {
 }
 
 type typeRewriteConfig struct {
-	Name    string `yaml:"name"`
-	NewType string `yaml:"newType"`
+	Name          string             `yaml:"name"`
+	NewType       string             `yaml:"newType"`
+	NewComment    string             `yaml:"newComment"`
+	newCommentTpl *template.Template `yaml:"-"`
 }
 
 type typeRewriter struct {
 	config *config
+	cmap   ast.CommentMap
 }
 
 func main() {
@@ -86,28 +92,27 @@ func loadConfig(path string) (*config, error) {
 }
 
 func handleFile(filePath string, inPlace bool, cfg *config) error {
-	trw := newTypeRewriter(cfg)
-
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
 		return fmt.Errorf("failed to parse file: %w", err)
 	}
 
+	cmap := ast.NewCommentMap(fset, file, file.Comments)
+	trw := newTypeRewriter(cfg, cmap)
+
 	for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
 		if !ok {
 			continue
 		}
-		for _, spec := range genDecl.Specs {
-			// Look for type declarations
-			if typeSpec, ok := spec.(*ast.TypeSpec); ok {
-				if err := trw.handleType(typeSpec); err != nil {
-					return fmt.Errorf("failed to handle type %s: %w", typeSpec.Name.Name, err)
-				}
-			}
+		if err := trw.handleDecl(genDecl); err != nil {
+			return err
 		}
 	}
+
+	// Update comments
+	file.Comments = cmap.Comments()
 
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fset, file); err != nil {
@@ -124,18 +129,33 @@ func handleFile(filePath string, inPlace bool, cfg *config) error {
 	return nil
 }
 
-func newTypeRewriter(cfg *config) *typeRewriter {
-	return &typeRewriter{config: cfg}
+func newTypeRewriter(cfg *config, cmap ast.CommentMap) *typeRewriter {
+	return &typeRewriter{
+		config: cfg,
+		cmap:   cmap,
+	}
 }
 
-func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) error {
+func (t *typeRewriter) handleDecl(genDecl *ast.GenDecl) error {
+	for _, spec := range genDecl.Specs {
+		if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+			if err := t.handleType(genDecl, typeSpec); err != nil {
+				return fmt.Errorf("failed to handle type %s: %w", typeSpec.Name.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (t *typeRewriter) handleType(genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) error {
 	typeName := typeSpec.Name.Name
 
 	for _, typeRewrite := range t.config.Types {
 		if matched, err := filepath.Match(typeRewrite.Name, typeName); err != nil {
 			return fmt.Errorf("invalid type name pattern %q: %w", typeRewrite.Name, err)
 		} else if matched {
-			if err := typeRewrite.apply(typeSpec); err != nil {
+			if err := typeRewrite.apply(t.cmap, genDecl, typeSpec); err != nil {
 				return fmt.Errorf("failed to rewrite type: %w", err)
 			}
 		}
@@ -154,6 +174,7 @@ func (t *typeRewriter) handleType(typeSpec *ast.TypeSpec) error {
 		}
 	default:
 	}
+
 	return nil
 }
 
@@ -195,9 +216,68 @@ func (f *fieldRewriteConfig) apply(field *ast.Field) error {
 	return nil
 }
 
-func (t *typeRewriteConfig) apply(typeSpec *ast.TypeSpec) error {
+func (t *typeRewriteConfig) apply(cmap ast.CommentMap, genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) error {
+	if t.NewComment != "" {
+		if t.newCommentTpl == nil {
+			tpl, err := template.New("comment").Parse(t.NewComment)
+			if err != nil {
+				return fmt.Errorf("failed to parse comment template: %w", err)
+			}
+			t.newCommentTpl = tpl
+		}
+		var commentBuf bytes.Buffer
+		vars := map[string]string{
+			"Name":      typeSpec.Name.Name,
+			"DocAnchor": typeNameToL0DocsAnchor(typeSpec.Name.Name),
+		}
+		if err := t.newCommentTpl.Execute(&commentBuf, vars); err != nil {
+			return fmt.Errorf("failed to execute comment template: %w", err)
+		}
+		text := commentBuf.String()
+
+		if len(genDecl.Specs) > 1 {
+			// For multi-spec declarations, attach comment to the type spec
+			newComment := newCommentGroup(text, typeSpec.Pos()-1)
+			cmap[typeSpec] = []*ast.CommentGroup{newComment}
+			return nil
+		} else {
+			// For single-spec declarations, attach comment to the genDecl
+			newComment := newCommentGroup(text, genDecl.Pos()-1)
+			cmap[genDecl] = []*ast.CommentGroup{newComment}
+		}
+	}
 	if t.NewType != "" {
 		typeSpec.Type = ast.NewIdent(t.NewType)
 	}
 	return nil
+}
+
+func newCommentGroup(text string, pos token.Pos) *ast.CommentGroup {
+	return &ast.CommentGroup{
+		List: []*ast.Comment{
+			{
+				Slash: pos,
+				Text:  text,
+			},
+		},
+	}
+}
+
+func typeNameToL0DocsAnchor(n string) string {
+	if strings.HasSuffix(n, "Flag") {
+		// The anchors of the singular flag types in the L0 docs are strange
+		// unpredictable form like "#_CPPv426zes_device_property_flag_t". Thus,
+		// use the anchor of the plural type instead.
+		n = n + "s"
+	}
+
+	// Multiple capitals followed by lowercase
+	re1 := regexp.MustCompile("([A-Z]+)([A-Z][a-z])")
+	n = re1.ReplaceAllString(n, "${1}-${2}")
+
+	// Lowercase or digit followed by capital
+	re2 := regexp.MustCompile("([a-z0-9])([A-Z])")
+	n = re2.ReplaceAllString(n, "${1}-${2}")
+
+	return strings.ToLower(n) + "-t"
 }
