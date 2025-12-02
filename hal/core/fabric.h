@@ -27,6 +27,24 @@
 #include "sysman.h"
 #include <vector>
 
+// Add fabric port info structures
+struct portInfo
+{
+	zes_fabric_port_properties_t portProps;
+	zes_fabric_port_state_t portState;
+	zes_fabric_link_type_t portLink;
+	zes_fabric_port_config_t portConf;
+};
+
+struct portInfoSet
+{
+	uint32_t subdeviceId;
+	zes_fabric_port_id_t portId;
+	bool enabled;
+	bool beaconing;
+	bool settingEnabled;
+	bool settingBeaconing;
+};
 class LIBXPUM_API fabric : public sysman
 {
 private:
@@ -45,6 +63,8 @@ public:
 	ze_result_t portGetFabricErrorCounters(zes_fabric_port_handle_t hFabricPort);
 	ze_result_t portGetMultiPortThroughput(zes_device_handle_t device, uint32_t count,
 										   zes_fabric_port_throughput_t *throughputs);
+	ze_result_t getFabricPorts(zes_device_handle_t device, std::vector<portInfo> &portInfoIn);
+	ze_result_t setFabricPorts(zes_device_handle_t device, const portInfoSet &portInfoSetIn);
 	zes_fabric_port_handle_t getPortHandle(uint32_t index) const;
 	uint32_t getPortCount() const { return portCount; }
 

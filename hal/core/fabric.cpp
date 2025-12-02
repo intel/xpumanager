@@ -106,6 +106,183 @@ ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort, zes_
 }
 
 /**
+ * @brief Gets comprehensive information for all fabric ports on a device
+ *
+ * This function enumerates all fabric ports on the specified device and collects
+ * detailed information including properties, state, link type, and configuration
+ * for each port. The collected data is returned in a vector for easy processing
+ * and analysis of fabric interconnect topology.
+ *
+ * @param [in] device Handle to the Level Zero Sysman device
+ * @param [out] portInfoIn Vector to receive port information structures, each containing
+ *                      properties, state, link type, and configuration for one port
+ * @retval ZE_RESULT_SUCCESS Fabric port information retrieved successfully
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No fabric ports found on device
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_HANDLE Device handle is nullptr
+ * @retval Other error codes from zesDeviceEnumFabricPorts, zesFabricPortGetProperties,
+ *         zesFabricPortGetState, zesFabricPortGetLinkType, or zesFabricPortGetConfig
+ */
+ze_result_t fabric::getFabricPorts(zes_device_handle_t device, std::vector<portInfo> &portInfoIn)
+{
+	if (device == nullptr) {
+		ERR("Device handle is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_HANDLE;
+	}
+
+	ze_result_t res;
+
+	// If ports not already enumerated, enumerate them
+	if (ports == nullptr) {
+		res = enumFabricPorts(device);
+		if (res != ZE_RESULT_SUCCESS) {
+			return res;
+		}
+	}
+
+	if (portCount == 0) {
+		DBG("No fabric ports found\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	// Use the cached port handles
+	for (uint32_t i = 0; i < portCount; i++) {
+		portInfo info = {};
+
+		// Get properties
+		info.portProps.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
+		res = zesFabricPortGetProperties(ports[i], &info.portProps);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get fabric port properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		// Get state
+		info.portState.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
+		res = zesFabricPortGetState(ports[i], &info.portState);
+		if (res != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get fabric port state: 0x%X (%s) port:%u.%u.%u\n", res, l0_error_to_string(res),
+				info.portProps.portId.fabricId, info.portProps.portId.attachId, info.portProps.portId.portNumber);
+		}
+
+		// Get link type
+		res = zesFabricPortGetLinkType(ports[i], &info.portLink);
+		if (res != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get fabric port link type: 0x%X (%s) port:%u.%u.%u\n", res, l0_error_to_string(res),
+				info.portProps.portId.fabricId, info.portProps.portId.attachId, info.portProps.portId.portNumber);
+		}
+
+		// Get configuration
+		info.portConf.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_CONFIG;
+		res = zesFabricPortGetConfig(ports[i], &info.portConf);
+		if (res != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get fabric port config: 0x%X (%s) port:%u.%u.%u\n", res, l0_error_to_string(res),
+				info.portProps.portId.fabricId, info.portProps.portId.attachId, info.portProps.portId.portNumber);
+		}
+
+		portInfoIn.push_back(info);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Sets configuration for a specific fabric port
+ *
+ * This function modifies the configuration of a specific fabric port identified
+ * by subdevice ID and port ID. It allows selective configuration of port enabled
+ * state and beaconing feature based on the flags set in the portInfoSet structure.
+ *
+ * @param [in] device Handle to the Level Zero Sysman device
+ * @param [in] portInfoSetIn Configuration structure containing subdeviceId, portId,
+ *                        and configuration flags (enabled, beaconing) along with
+ *                        settingEnabled and settingBeaconing to control which
+ *                        fields should be modified
+ * @retval ZE_RESULT_SUCCESS Fabric port configuration updated successfully
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No fabric ports found on device
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_HANDLE Device handle is nullptr
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT Specified fabric port not found
+ * @retval Other error codes from zesDeviceEnumFabricPorts, zesFabricPortGetProperties,
+ *         zesFabricPortGetConfig, or zesFabricPortSetConfig
+ */
+ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet &portInfoSetIn)
+{
+	if (device == nullptr) {
+		ERR("Device handle is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_HANDLE;
+	}
+
+	ze_result_t res;
+
+	// If ports not already enumerated, enumerate them
+	if (ports == nullptr) {
+		res = enumFabricPorts(device);
+		if (res != ZE_RESULT_SUCCESS) {
+			return res;
+		}
+	}
+
+	if (portCount == 0) {
+		ERR("No fabric ports found\n");
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Use the cached port handles
+	bool found = false;
+	for (uint32_t i = 0; i < portCount; i++) {
+		zes_fabric_port_properties_t props = {};
+		zes_fabric_port_config_t config = {};
+
+		props.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
+		res = zesFabricPortGetProperties(ports[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get fabric port properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+			continue;
+		}
+
+		// Match the port based on subdeviceId and portId
+		if (props.subdeviceId != portInfoSetIn.subdeviceId ||
+			props.portId.portNumber != portInfoSetIn.portId.portNumber) {
+			continue;
+		}
+
+		found = true;
+
+		// Get current configuration
+		config.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_CONFIG;
+		res = zesFabricPortGetConfig(ports[i], &config);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get current fabric port config: 0x%X (%s)\n", res, l0_error_to_string(res));
+			return res;
+		}
+
+		// Update only the fields that are set
+		if (portInfoSetIn.settingEnabled) {
+			config.enabled = portInfoSetIn.enabled;
+		}
+		if (portInfoSetIn.settingBeaconing) {
+			config.beaconing = portInfoSetIn.beaconing;
+		}
+
+		// Set new configuration
+		res = zesFabricPortSetConfig(ports[i], &config);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to set fabric port config: 0x%X (%s)\n", res, l0_error_to_string(res));
+			return res;
+		}
+
+		break;
+	}
+
+	if (!found) {
+		ERR("Fabric port not found: subdevice %u, port %u\n", portInfoSetIn.subdeviceId,
+			portInfoSetIn.portId.portNumber);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Gets the link type for a specific fabric port
  *
  * This function retrieves the link type information for a fabric port,
