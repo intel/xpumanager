@@ -81,30 +81,22 @@ func (z *ZeDriver) GetDeviceByUuidExp(uuid uuid.UUID) (*ZeDevice, bool, uint32, 
 	return device, onSubdevice != 0, subDeviceId, nil
 }
 
-func (z *ZeDriver) EventListen(timeout time.Duration, devices []*ZeDevice) (uint32, []ZesEventTypeFlag, error) {
+func (z *ZeDriver) EventListen(timeout time.Duration, devices []*ZeDevice) (uint32, []ZesEventTypeFlags, error) {
 	handles := wrappersToHandles[zeDeviceHandle, ZeDevice](devices)
 	var numEvents uint32
 	events := make([]ZesEventTypeFlags, len(handles))
 	ms := durationToMillisecondsUint32(timeout)
 	ret := zesDriverEventListen(z.handle, ms, uint32(len(handles)), handles, &numEvents, events)
-	retE := make([]ZesEventTypeFlag, len(events))
-	for i, e := range events {
-		retE[i] = ZesEventTypeFlag(e)
-	}
-	return numEvents, retE, ret.ToError()
+	return numEvents, events, ret.ToError()
 }
 
-func (z *ZeDriver) EventListenEx(timeout time.Duration, devices []*ZeDevice) (uint32, []ZesEventTypeFlag, error) {
+func (z *ZeDriver) EventListenEx(timeout time.Duration, devices []*ZeDevice) (uint32, []ZesEventTypeFlags, error) {
 	handles := wrappersToHandles[zeDeviceHandle, ZeDevice](devices)
 	var numEvents uint32
 	events := make([]ZesEventTypeFlags, len(handles))
 	ms := durationToMillisecondsUint64(timeout)
 	ret := zesDriverEventListenEx(z.handle, ms, uint32(len(handles)), handles, &numEvents, events)
-	retE := make([]ZesEventTypeFlag, len(events))
-	for i, e := range events {
-		retE[i] = ZesEventTypeFlag(e)
-	}
-	return numEvents, retE, ret.ToError()
+	return numEvents, events, ret.ToError()
 }
 
 func (z *ZeDevice) GetProperties() (ZesDeviceProperties, error) {
@@ -149,8 +141,8 @@ func (z *ZeDevice) ProcessesGetState() ([]ZesProcessState, error) {
 	return processes, ret.ToError()
 }
 
-func (z *ZeDevice) EventRegister(eventType ZesEventTypeFlag) error {
-	ret := zesDeviceEventRegister(z.handle, ZesEventTypeFlags(eventType))
+func (z *ZeDevice) EventRegister(eventType ZesEventTypeFlags) error {
+	ret := zesDeviceEventRegister(z.handle, eventType)
 	return ret.ToError()
 }
 

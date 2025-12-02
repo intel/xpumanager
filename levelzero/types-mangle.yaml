@@ -122,3 +122,25 @@ structs:
     fields:
       - name: VfMemLocation
         newType: ZesMemLoc
+
+types:
+  - name: ZesInitFlags
+    newType: ZesInitFlag
+  - name: ZesEngineTypeFlags
+    newType: ZesEngineTypeFlag
+  - name: ZesResetReasonFlags
+    newType: ZesResetReasonFlag
+  - name: ZesDevicePropertyFlags
+    newType: ZesDevicePropertyFlag
+  - name: ZesPciLinkQualIssueFlags
+    newType: ZesPciLinkQualIssueFlag
+  - name: ZesPciLinkStabIssueFlags
+    newType: ZesPciLinkStabIssueFlag
+  - name: ZesEventTypeFlags
+    newType: ZesEventTypeFlag
+  - name: ZesFabricPortQualIssueFlags
+    newType: ZesFabricPortQualIssueFlag
+  - name: ZesFabricPortFailureFlags
+    newType: ZesFabricPortFailureFlag
+  - name: ZesFreqThrottleReasonFlags
+    newType: ZesFreqThrottleReasonFlag

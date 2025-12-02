@@ -640,22 +640,22 @@ type ZesVfUtilEngineExp2 struct {
 	SamplingCounterValue uint64
 }
 
-type ZesInitFlags uint32
+type ZesInitFlags ZesInitFlag
 
-type ZesEngineTypeFlags uint32
+type ZesEngineTypeFlags ZesEngineTypeFlag
 
-type ZesResetReasonFlags uint32
+type ZesResetReasonFlags ZesResetReasonFlag
 
-type ZesDevicePropertyFlags uint32
+type ZesDevicePropertyFlags ZesDevicePropertyFlag
 
-type ZesPciLinkQualIssueFlags uint32
+type ZesPciLinkQualIssueFlags ZesPciLinkQualIssueFlag
 
-type ZesPciLinkStabIssueFlags uint32
+type ZesPciLinkStabIssueFlags ZesPciLinkStabIssueFlag
 
-type ZesEventTypeFlags uint32
+type ZesEventTypeFlags ZesEventTypeFlag
 
-type ZesFabricPortQualIssueFlags uint32
+type ZesFabricPortQualIssueFlags ZesFabricPortQualIssueFlag
 
-type ZesFabricPortFailureFlags uint32
+type ZesFabricPortFailureFlags ZesFabricPortFailureFlag
 
-type ZesFreqThrottleReasonFlags uint32
+type ZesFreqThrottleReasonFlags ZesFreqThrottleReasonFlag

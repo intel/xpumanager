@@ -16,6 +16,8 @@ package levelzero
 */
 import "C"
 import (
+	"fmt"
+	"strings"
 	"unsafe"
 
 	"github.com/google/uuid"
@@ -327,4 +329,76 @@ func newZesDeviceProperties(z *zesDeviceProperties) ZesDeviceProperties {
 		VendorName:    C.GoString((*C.char)(unsafe.Pointer(&z.VendorName[0]))),
 		DriverVersion: C.GoString((*C.char)(unsafe.Pointer(&z.DriverVersion[0]))),
 	}
+}
+
+/* Stringers for flags types */
+
+// String representation of all set bits of ZesInitFlags.
+func (f ZesInitFlags) String() string {
+	return flagsToString[ZesInitFlag](ZesInitFlag(f))
+}
+
+// String representation of all set bits of ZesEngineTypeFlags.
+func (f ZesEngineTypeFlags) String() string {
+	return flagsToString[ZesEngineTypeFlag](ZesEngineTypeFlag(f))
+}
+
+// String representation of all set bits of ZesResetReasonFlags.
+func (f ZesResetReasonFlags) String() string {
+	return flagsToString[ZesResetReasonFlag](ZesResetReasonFlag(f))
+}
+
+// String representation of all set bits of ZesDevicePropertyFlags.
+func (f ZesDevicePropertyFlags) String() string {
+	return flagsToString[ZesDevicePropertyFlag](ZesDevicePropertyFlag(f))
+}
+
+// String representation of all set bits of ZesPciLinkQualIssueFlags.
+func (f ZesPciLinkQualIssueFlags) String() string {
+	return flagsToString[ZesPciLinkQualIssueFlag](ZesPciLinkQualIssueFlag(f))
+}
+
+// String representation of all set bits of ZesPciLinkStabIssueFlags.
+func (f ZesPciLinkStabIssueFlags) String() string {
+	return flagsToString[ZesPciLinkStabIssueFlag](ZesPciLinkStabIssueFlag(f))
+}
+
+// String representation of all set bits of ZesEventTypeFlags.
+func (f ZesEventTypeFlags) String() string {
+	return flagsToString[ZesEventTypeFlag](ZesEventTypeFlag(f))
+}
+
+// String representation of all set bits of ZesFabricPortQualIssueFlags.
+func (f ZesFabricPortQualIssueFlags) String() string {
+	return flagsToString[ZesFabricPortQualIssueFlag](ZesFabricPortQualIssueFlag(f))
+}
+
+// String representation of all set bits of ZesFabricPortFailureFlags.
+func (f ZesFabricPortFailureFlags) String() string {
+	return flagsToString[ZesFabricPortFailureFlag](ZesFabricPortFailureFlag(f))
+}
+
+// String representation of all set bits of ZesFreqThrottleReasonFlags.
+func (f ZesFreqThrottleReasonFlags) String() string {
+	return flagsToString[ZesFreqThrottleReasonFlag](ZesFreqThrottleReasonFlag(f))
+}
+
+type flagType interface {
+	~int32
+	fmt.Stringer
+}
+
+func flagsToString[T flagType](flags T) string {
+	vals := []string{}
+
+	for flags != 0 {
+		// Get the lowest set bit
+		bit := flags & -flags
+
+		vals = append(vals, T(bit).String())
+
+		// Clear the lowest set bit
+		flags &= flags - 1
+	}
+	return strings.Join(vals, " | ")
 }
