@@ -890,8 +890,8 @@ ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 	}
 
 	if (zeDevProp.pNext != nullptr) {
-		ze_eu_count_ext_t *eu_count_ext = (ze_eu_count_ext_t *)(zeDevProp.pNext);
-		*outputLine = std::to_string(eu_count_ext->numTotalEUs);
+		ze_eu_count_ext_t *euCountExt = (ze_eu_count_ext_t *)(zeDevProp.pNext);
+		*outputLine = std::to_string(euCountExt->numTotalEUs);
 	}
 
 	delete extendedPropertiesPtr;

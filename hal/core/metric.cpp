@@ -1032,15 +1032,15 @@ ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_ha
 	}
 
 	ze_result_t res;
-	uint32_t sub_device_count = 0;
+	uint32_t subDeviceCount = 0;
 
-	res = zeDeviceGetSubDevices(device, &sub_device_count, nullptr);
+	res = zeDeviceGetSubDevices(device, &subDeviceCount, nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get subdevice count: 0x%X (%s)\n", res, l0_error_to_string(res));
 		return res;
 	}
 
-	if (sub_device_count == 0) {
+	if (subDeviceCount == 0) {
 		// Single device, no subdevices
 		EuMetricsData euData;
 		res = getEuActiveStallIdleCore(device, UINT32_MAX, driver, euData);
@@ -1051,40 +1051,40 @@ ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_ha
 	}
 
 	// Handle subdevices
-	std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-	res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data());
+	std::vector<ze_device_handle_t> subDeviceHandles(subDeviceCount);
+	res = zeDeviceGetSubDevices(device, &subDeviceCount, subDeviceHandles.data());
 	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get subdevice handles: 0x%X (%s)\n", res, l0_error_to_string(res));
 		return res;
 	}
 
-	ze_result_t overall_result = ZE_RESULT_SUCCESS;
-	for (uint32_t i = 0; i < sub_device_count; ++i) {
-		auto &sub_device = sub_device_handles[i];
+	ze_result_t overallResult = ZE_RESULT_SUCCESS;
+	for (uint32_t i = 0; i < subDeviceCount; ++i) {
+		auto &subDevice = subDeviceHandles[i];
 		ze_device_properties_t props = {};
 		props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-		res = zeDeviceGetProperties(sub_device, &props);
+		res = zeDeviceGetProperties(subDevice, &props);
 		if (res != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get subdevice properties: 0x%X (%s)\n", res, l0_error_to_string(res));
-			overall_result = res;
+			overallResult = res;
 			continue;
 		}
 
 		EuMetricsData euData;
-		res = getEuActiveStallIdleCore(sub_device, props.subdeviceId, driver, euData);
+		res = getEuActiveStallIdleCore(subDevice, props.subdeviceId, driver, euData);
 		if (res == ZE_RESULT_SUCCESS) {
 			euData.subdeviceId = props.subdeviceId; // Ensure subdeviceId is set
 			metricsData.push_back(euData);
 		} else {
-			overall_result = res;
+			overallResult = res;
 		}
 	}
 
 	if (metricsData.empty()) {
-		return overall_result != ZE_RESULT_SUCCESS ? overall_result : ZE_RESULT_ERROR_UNKNOWN;
+		return overallResult != ZE_RESULT_SUCCESS ? overallResult : ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	return overall_result;
+	return overallResult;
 }
 
 /**

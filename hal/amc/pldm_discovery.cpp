@@ -158,7 +158,7 @@ uint8_t pldm::pldmDiscoveryFillPayload(uint8_t cmd, uint8_t pldmCmdLen)
  * @note GetFirstPart is set to 1 to request the first part of version info
  * @note Automatically calculates and appends CRC8 checksum
  */
-void pldm::pldmDiscoveryGetVersionPayload(uint8_t msg_type, uint8_t pldmCmdLen)
+void pldm::pldmDiscoveryGetVersionPayload(uint8_t msgType, uint8_t pldmCmdLen)
 {
 	TRACING();
 
@@ -171,7 +171,7 @@ void pldm::pldmDiscoveryGetVersionPayload(uint8_t msg_type, uint8_t pldmCmdLen)
 	mI2cPldmWrite->respPayload[BYTE_2] = 0;
 	mI2cPldmWrite->respPayload[BYTE_3] = 0;
 	mI2cPldmWrite->respPayload[BYTE_4] = 1; // GetFirstPart = 1
-	mI2cPldmWrite->respPayload[BYTE_5] = msg_type;
+	mI2cPldmWrite->respPayload[BYTE_5] = msgType;
 	// CRC is calculated over the payload excluding the CRC byte itself
 	mI2cPldmWrite->respPayload[BYTE_6] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 }

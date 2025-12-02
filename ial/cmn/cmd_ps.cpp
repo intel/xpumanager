@@ -115,7 +115,7 @@ void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
  * @param Reference to a json object that will be filled with psInfo structure
  * @param Reference to a psInfo structure which has device process information
  */
-void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
+void toJson(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
 {
 	jsonObj = nlohmann::ordered_json{{"process_id", procInfo.processId},
 									 {"process_name", procInfo.commandName},
@@ -168,7 +168,7 @@ int cmdPs::run(arg_struct *args)
 	std::unique_ptr<Printer> printer;
 	std::vector<zes_process_state_t> processList;
 
-	static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+	static struct option longOptions[] = {{"help", no_argument, 0, 'h'},
 										   {"json", no_argument, 0, 'j'},
 										   {"device", required_argument, 0, 'd'},
 										   {0, 0, 0, 0}};
@@ -177,7 +177,7 @@ int cmdPs::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, "hjd:", long_options, &optionIndex)) != -1) {
+	while ((opt = getopt_long(args->argc, args->argv, "hjd:", longOptions, &optionIndex)) != -1) {
 		switch (opt) {
 		case 'h':
 			help();

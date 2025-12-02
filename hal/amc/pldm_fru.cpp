@@ -48,7 +48,7 @@
 uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
 {
 	TRACING();
-	uint8_t pldm_cmd_len = size;
+	uint8_t pldmCmdLen = size;
 	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
 	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
 
@@ -57,20 +57,20 @@ uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
 	}
 
 	// UA will calculate this PAK_SEQ for multi packet messages, currently we are not using multi packet messages
-	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (pldm_cmd_len - 3),
+	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (pldmCmdLen - 3),
 						MCTP_INTEGRITY_CHECK);
 	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
 	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_FRU, cmd, PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
 
-	if (pldmFruFillPayload(cmd, pldm_cmd_len) != PLDM_SUCCESS) {
+	if (pldmFruFillPayload(cmd, pldmCmdLen) != PLDM_SUCCESS) {
 		ERR("PLDM FRU : Fill payload failed for command 0x%02x\n", cmd);
 		return PLDM_ERROR;
 	}
 
 	DBG("PLDM TX  :: ");
-	hexdump((uint8_t *)mI2cPldmWrite, pldm_cmd_len);
+	hexdump((uint8_t *)mI2cPldmWrite, pldmCmdLen);
 
-	if (i2cobj->writeAmc(wptr + 1, pldm_cmd_len) != true) {
+	if (i2cobj->writeAmc(wptr + 1, pldmCmdLen) != true) {
 		ERR("PLDM FRU : I2C Write failure\n");
 		return PLDM_ERROR;
 	}
@@ -107,7 +107,7 @@ uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
  *
  * @note Automatically calculates and appends CRC8 checksum to payload
  */
-uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldm_cmd_len)
+uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldmCmdLen)
 {
 	TRACING();
 	uint8_t ret = PLDM_SUCCESS;
@@ -115,9 +115,9 @@ uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldm_cmd_len)
 	switch (cmd) {
 	case PLDM_GET_FRU_RECORD_TABLE_METADATA:
 		// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
-		memset(mI2cPldmWrite->respPayload, 0, pldm_cmd_len);
+		memset(mI2cPldmWrite->respPayload, 0, pldmCmdLen);
 		// No payload data for metadata request, CRC is calculated over the payload excluding the CRC byte itself
-		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldm_cmd_len - 1);
+		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 		break;
 
 	case PLDM_GET_FRU_RECORD_TABLE:
@@ -128,7 +128,7 @@ uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldm_cmd_len)
 		mI2cPldmWrite->respPayload[BYTE_3] = (uint8_t)((mFruTableRequest.dataXferHandle >> 24) & 0xFF);
 		mI2cPldmWrite->respPayload[BYTE_4] = mFruTableRequest.xferOpFlag;
 		// CRC is calculated over the payload excluding the CRC byte itself
-		mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldm_cmd_len - 1);
+		mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 		break;
 
 	default:
@@ -343,18 +343,18 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 	mFruTable.genSerialNum[sizeof(mFruTable.genSerialNum) - 1] = '\0';
 
 	// Check if serial number is available by using strnlen for safety
-	size_t serial_len = strnlen(mFruTable.genSerialNum, sizeof(mFruTable.genSerialNum) - 1);
-	if (serial_len == 0) {
+	size_t serialLen = strnlen(mFruTable.genSerialNum, sizeof(mFruTable.genSerialNum) - 1);
+	if (serialLen == 0) {
 		DBG("FRU serial number not available\n");
 		return PLDM_ERROR;
 	}
 
-	size_t required_length = serial_len + 1; // +1 for null terminator
+	size_t requiredLength = serialLen + 1; // +1 for null terminator
 
 	// If serialNumber is nullptr, this is a length query only
 	if (serialNumber == nullptr) {
 		if (bufferSize != nullptr) {
-			*bufferSize = required_length;
+			*bufferSize = requiredLength;
 		}
 		return PLDM_SUCCESS;
 	}
@@ -366,9 +366,9 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 	}
 
 	// Check if buffer is large enough
-	if (*bufferSize < required_length) {
-		ERR("Buffer too small: need %zu, got %zu\n", required_length, *bufferSize);
-		*bufferSize = required_length; // Return required size
+	if (*bufferSize < requiredLength) {
+		ERR("Buffer too small: need %zu, got %zu\n", requiredLength, *bufferSize);
+		*bufferSize = requiredLength; // Return required size
 		return PLDM_ERROR;
 	}
 
@@ -424,18 +424,18 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 	mFruTable.genVersion[sizeof(mFruTable.genVersion) - 1] = '\0';
 
 	// Check if version is available by using strnlen for safety
-	size_t version_len = strnlen(mFruTable.genVersion, sizeof(mFruTable.genVersion) - 1);
-	if (version_len == 0) {
+	size_t versionLen = strnlen(mFruTable.genVersion, sizeof(mFruTable.genVersion) - 1);
+	if (versionLen == 0) {
 		DBG("FRU AMC version not available\n");
 		return PLDM_ERROR;
 	}
 
-	size_t required_length = version_len + 1; // +1 for null terminator
+	size_t requiredLength = versionLen + 1; // +1 for null terminator
 
 	// If version is nullptr, this is a length query only
 	if (version == nullptr) {
 		if (bufferSize != nullptr) {
-			*bufferSize = required_length;
+			*bufferSize = requiredLength;
 		}
 		return PLDM_SUCCESS;
 	}
@@ -447,9 +447,9 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 	}
 
 	// Check if buffer is large enough
-	if (*bufferSize < required_length) {
-		ERR("Buffer too small: need %zu, got %zu\n", required_length, *bufferSize);
-		*bufferSize = required_length; // Return required size
+	if (*bufferSize < requiredLength) {
+		ERR("Buffer too small: need %zu, got %zu\n", requiredLength, *bufferSize);
+		*bufferSize = requiredLength; // Return required size
 		return PLDM_ERROR;
 	}
 

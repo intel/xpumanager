@@ -218,9 +218,9 @@ int HttpClient::performRequest(const std::string &url, const std::string &userna
 
 	if (res == CURLE_OK) {
 		// Get response code
-		long response_code;
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-		response.statusCode = (int)response_code;
+		long responseCode;
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+		response.statusCode = (int)responseCode;
 
 		// Copy response data
 		if (!buffer.empty()) {

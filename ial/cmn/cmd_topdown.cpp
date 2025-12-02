@@ -124,7 +124,7 @@ void cmdTopdown::help(HELP helpType)
 int cmdTopdown::run(arg_struct *args)
 {
 	TRACING();
-	static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+	static struct option longOptions[] = {{"help", no_argument, 0, 'h'},
 										   {"json", no_argument, 0, 'j'},
 										   {"device", required_argument, 0, 'd'},
 										   {"tile", required_argument, 0, 't'},
@@ -134,7 +134,7 @@ int cmdTopdown::run(arg_struct *args)
 	ze_result_t result;
 	std::vector<devInfo> deviceList;
 	int opt;
-	int option_index = 0;
+	int optionIndex = 0;
 	std::string deviceId;
 	std::string tileId;
 	std::string samplingInterval;
@@ -144,7 +144,7 @@ int cmdTopdown::run(arg_struct *args)
 	int startind = 2;
 	optind = 2;
 
-	while ((opt = getopt_long(args->argc, args->argv, "hjd:t:s:", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(args->argc, args->argv, "hjd:t:s:", longOptions, &optionIndex)) != -1) {
 		switch (opt) {
 		case 'h':
 			help();

@@ -83,8 +83,8 @@ int cmdOOB::run(UNUSED arg_struct *args)
 	std::vector<struct option> longOptsVec;
 	amclib amcobj;
 	uint16_t portNum = 0;
-	RedfishGPUDevice *gpu_devices = nullptr;
-	int found_count = 0;
+	RedfishGPUDevice *gpuDevices = nullptr;
+	int foundCount = 0;
 	bool found = false;
 
 	processOptions(oobCmds, shortOpts, longOptsVec);
@@ -163,7 +163,7 @@ int cmdOOB::run(UNUSED arg_struct *args)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	if (amcobj.redfishDiscovery(&gpu_devices, &found_count)) {
+	if (amcobj.redfishDiscovery(&gpuDevices, &foundCount)) {
 		// Clear the "OOB discovery" message
 		PRINT("\r%*s\r", 80, "");
 		ERR("Failed to discover GPU devices.\n");
@@ -173,23 +173,23 @@ int cmdOOB::run(UNUSED arg_struct *args)
 	// Clear the "OOB discovery" message
 	PRINT("\r%*s\r", 80, "");
 
-	for (int i = 0; i < found_count; i++) {
+	for (int i = 0; i < foundCount; i++) {
 		// If either the device parameter wasn't provided or this device is the device index, then print the
 		// corresponding info
 		if (!oobCmds[oobCmdType::OOB_DEVICE].enabled ||
-			oobCmds[oobCmdType::OOB_DEVICE].val == std::to_string(gpu_devices[i].id) ||
-			oobCmds[oobCmdType::OOB_DEVICE].val == gpu_devices[i].pciBdfAddress) {
+			oobCmds[oobCmdType::OOB_DEVICE].val == std::to_string(gpuDevices[i].id) ||
+			oobCmds[oobCmdType::OOB_DEVICE].val == gpuDevices[i].pciBdfAddress) {
 			found = true;
-			PRINT("  Name: %s\n", gpu_devices[i].deviceName.c_str());
-			PRINT("  Vendor: %s\n", gpu_devices[i].vendorName.c_str());
-			PRINT("  Device ID: %s\n", gpu_devices[i].deviceId.c_str());
-			PRINT("  Vendor ID: %s\n", gpu_devices[i].vendorId.c_str());
-			PRINT("  Class Code: %s\n", gpu_devices[i].classCode.c_str());
-			PRINT("  Device Class: %s\n", gpu_devices[i].deviceClass.c_str());
-			PRINT("  PCI BDF Address: %s\n", gpu_devices[i].pciBdfAddress.c_str());
-			PRINT("  Function Type: %s\n", gpu_devices[i].functionType.c_str());
-			PRINT("  device_path = %s\n", gpu_devices[i].devicePath.c_str());
-			PRINT("  function_endpoint = %s\n", gpu_devices[i].functionEndpoint.c_str());
+			PRINT("  Name: %s\n", gpuDevices[i].deviceName.c_str());
+			PRINT("  Vendor: %s\n", gpuDevices[i].vendorName.c_str());
+			PRINT("  Device ID: %s\n", gpuDevices[i].deviceId.c_str());
+			PRINT("  Vendor ID: %s\n", gpuDevices[i].vendorId.c_str());
+			PRINT("  Class Code: %s\n", gpuDevices[i].classCode.c_str());
+			PRINT("  Device Class: %s\n", gpuDevices[i].deviceClass.c_str());
+			PRINT("  PCI BDF Address: %s\n", gpuDevices[i].pciBdfAddress.c_str());
+			PRINT("  Function Type: %s\n", gpuDevices[i].functionType.c_str());
+			PRINT("  device_path = %s\n", gpuDevices[i].devicePath.c_str());
+			PRINT("  function_endpoint = %s\n", gpuDevices[i].functionEndpoint.c_str());
 		}
 	}
 
@@ -197,7 +197,7 @@ int cmdOOB::run(UNUSED arg_struct *args)
 		ERR("No matching GPU device found.\n");
 	}
 
-	amcobj.freeGpuDevices(gpu_devices);
+	amcobj.freeGpuDevices(gpuDevices);
 
 	return 0;
 }

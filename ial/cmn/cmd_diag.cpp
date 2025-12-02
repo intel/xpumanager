@@ -552,7 +552,7 @@ ze_result_t cmdDiag::computation(devInfo *d)
 
 	const std::string fileName = "ze_sp_compute.spv";
 	const std::string moduleName = "compute_sp_v1";
-	float input_value = 1.3f;
+	float inputValue = 1.3f;
 	bool featureOnly;
 	long double current;
 
@@ -565,7 +565,7 @@ ze_result_t cmdDiag::computation(devInfo *d)
 
 	featureOnly = false;
 	ze_result_t res =
-		diag->computationTest(d, 4096, &input_value, sizeof(float), fileName, moduleName, current, featureOnly);
+		diag->computationTest(d, 4096, &inputValue, sizeof(float), fileName, moduleName, current, featureOnly);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
 			PRINT("Result:  Fail\n");
@@ -732,7 +732,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d)
 	ze_result_t ret;
 	const std::string filename = "ze_int_compute.spv";
 	const std::string moduleName = "compute_int_v1";
-	int input_value = 4;
+	int inputValue = 4;
 	bool featureOnly;
 	long double current;
 	int totalPowerValue;
@@ -744,7 +744,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d)
 	}
 
 	featureOnly = false;
-	ret = diag->computationTest(d, 2048, &input_value, sizeof(int), filename, moduleName, current, featureOnly);
+	ret = diag->computationTest(d, 2048, &inputValue, sizeof(int), filename, moduleName, current, featureOnly);
 	if (ret != ZE_RESULT_SUCCESS) {
 		ERR("Computation test failed: %s\n", l0_error_to_string(ret));
 		return ret;
@@ -784,7 +784,7 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d)
 
 	const std::string fileName = "ze_sp_compute.spv";
 	const std::string moduleName = "compute_sp_v1";
-	float input_value = 1.3f;
+	float inputValue = 1.3f;
 	bool featureOnly;
 	long double current;
 
@@ -796,7 +796,7 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d)
 
 	featureOnly = true;
 	ze_result_t res =
-		diag->computationTest(d, 4096, &input_value, sizeof(float), fileName, moduleName, current, featureOnly);
+		diag->computationTest(d, 4096, &inputValue, sizeof(float), fileName, moduleName, current, featureOnly);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
 			PRINT("Result:  Fail\n");

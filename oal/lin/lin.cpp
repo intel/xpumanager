@@ -137,12 +137,12 @@ char getch()
  */
 thread_id *create_thread(funcptr thread, void *args)
 {
-	pthread_t thread_hdl;
-	pthread_create(&thread_hdl, NULL, thread, args);
+	pthread_t threadHdl;
+	pthread_create(&threadHdl, NULL, thread, args);
 
-	DBG("%s: thread handle is %ld\n", __func__, thread_hdl);
-	thread_id *new_thread_id = new thread_id(thread_hdl);
-	return new_thread_id;
+	DBG("%s: thread handle is %ld\n", __func__, threadHdl);
+	thread_id *newThreadId = new thread_id(threadHdl);
+	return newThreadId;
 }
 
 /**
@@ -190,21 +190,21 @@ bool privilegeCheck()
 		ERR("getgrouplist ngroups is too small\n");
 		return false;
 	}
-	std::string xpum_grp("xpum");
-	bool has_privilege = false;
+	std::string xpumGrp("xpum");
+	bool hasPrivilege = false;
 	for (int i = 0; i < ngroups; i++) {
 		struct group *gr = getgrgid(groups[i]);
 		if (gr == NULL) {
 			ERR("getgrgid error\n");
 			return false;
 		}
-		std::string grp_name(gr->gr_name);
-		if (grp_name == xpum_grp) {
-			has_privilege = true;
+		std::string grpName(gr->gr_name);
+		if (grpName == xpumGrp) {
+			hasPrivilege = true;
 		}
 	}
 
-	return has_privilege;
+	return hasPrivilege;
 }
 
 /**
@@ -242,27 +242,27 @@ std::string getProcessName(uint32_t processId)
  */
 std::string timestamp()
 {
-	std::string timestamp_str = "";
+	std::string timestampStr = "";
 	time_t now;
-	struct tm *time_info;
+	struct tm *timeInfo;
 
 	// Get current time in seconds since the epoch
 	now = time(NULL);
 
-	time_info = localtime(&now);
-	if (time_info == NULL) {
+	timeInfo = localtime(&now);
+	if (timeInfo == NULL) {
 		ERR("localtime failed\n");
-		return timestamp_str;
+		return timestampStr;
 	}
 
 	struct timeval tv;
 	if (gettimeofday(&tv, NULL) == -1) {
 		ERR("gettimeofday failed\n");
-		return timestamp_str;
+		return timestampStr;
 	}
-	timestamp_str = std::format("{:02d}:{:02d}:{:02d}.{:03d}", time_info->tm_hour, time_info->tm_min, time_info->tm_sec,
+	timestampStr = std::format("{:02d}:{:02d}:{:02d}.{:03d}", timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec,
 								(int)tv.tv_usec / 1000);
-	return timestamp_str;
+	return timestampStr;
 }
 
 /**
@@ -338,8 +338,8 @@ std::string getCpuList(const std::string &bdf)
 bool isSwitchDevice(hwloc_obj_t obj)
 {
 	int vendorId = obj->attr->pcidev.vendor_id;
-	int device_id = obj->attr->pcidev.device_id;
-	const PcieDevice *pDevice = PciDatabase::instance().getDevice(vendorId, device_id);
+	int deviceId = obj->attr->pcidev.device_id;
+	const PcieDevice *pDevice = PciDatabase::instance().getDevice(vendorId, deviceId);
 	return (pDevice != nullptr);
 }
 
@@ -418,7 +418,7 @@ std::string pci2RegxString(hwloc_obj_t obj)
  * @param bdf_address String containing the PCI BDF address to search for
  * @return std::string Full path to the device directory in sysfs, empty string if not found
  */
-std::string getDevicePath(const std::string &bdf_address)
+std::string getDevicePath(const std::string &bdfAddress)
 {
 	std::string devicePath = "/sys/devices";
 	std::string result;
@@ -426,7 +426,7 @@ std::string getDevicePath(const std::string &bdf_address)
 	const stdfs::recursive_directory_iterator end{};
 
 	for (stdfs::recursive_directory_iterator iter{devicePath}; iter != end; ++iter) {
-		if (iter->path().string().find(bdf_address, 0) == std::string::npos) {
+		if (iter->path().string().find(bdfAddress, 0) == std::string::npos) {
 			continue;
 		}
 		if (stdfs::is_directory(*iter)) {
@@ -449,9 +449,9 @@ std::string getDevicePath(const std::string &bdf_address)
  * @param par_obj Hardware locality object representing the starting PCI device
  * @param switchDevicePath Pointer to string where the switch device path will be stored
  */
-void getSwitchDevicePath(hwloc_obj_t par_obj, std::string *switchDevicePath)
+void getSwitchDevicePath(hwloc_obj_t parObj, std::string *switchDevicePath)
 {
-	hwloc_obj_t obj = par_obj->parent;
+	hwloc_obj_t obj = parObj->parent;
 	int count = 0;
 	uint32_t preVendorId = -1, preDeviceId = -1;
 	while (obj != nullptr) {
@@ -600,21 +600,21 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 	TRACING();
 
 	// Use std::osyncstream for thread-safe output (C++20)
-	std::osyncstream sync_out(std::cout);
+	std::osyncstream syncOut(std::cout);
 
 	// POSIX/Linux ANSI escape sequences
 	// Save cursor position
-	sync_out << "\033[s";
+	syncOut << "\033[s";
 	// Move cursor up to the correct line
 	// We need to move up (totalThreads - lineNum) lines
-	int lines_up = totalThreads - lineNum;
-	sync_out << "\033[" << lines_up << "A\r";
-	sync_out << "Firmware progress for device " << devIndex << ": ";
+	int linesUp = totalThreads - lineNum;
+	syncOut << "\033[" << linesUp << "A\r";
+	syncOut << "Firmware progress for device " << devIndex << ": ";
 	for (int j = 0; j < (int)progress; ++j) {
-		sync_out << "#";
+		syncOut << "#";
 	}
-	sync_out << " " << progress << "%";
+	syncOut << " " << progress << "%";
 	// Restore cursor position
-	sync_out << "\033[u";
-	sync_out.flush();
+	syncOut << "\033[u";
+	syncOut.flush();
 }
