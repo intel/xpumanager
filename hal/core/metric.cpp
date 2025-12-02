@@ -23,6 +23,16 @@
  */
 
 #include "metric.h"
+#include <thread>
+#include <chrono>
+#include <algorithm>
+#include <cstring>
+#include <cinttypes>
+namespace {
+std::mutex metricMutex;
+std::map<ze_device_handle_t, zet_metric_group_handle_t> targetMetricGroups;
+std::map<ze_device_handle_t, ze_context_handle_t> targetMetricContexts;
+} // namespace
 
 /**
  * @brief Prints the metric type information for debugging
@@ -285,6 +295,455 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	delete[] metricGroups;
 
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Finds and caches the EU (Execution Unit) metric group for a device
+ *
+ * This function searches through available metric groups to locate the ComputeBasic
+ * group that contains EU activity metrics (EuActive, EuStall, GpuTime). The found
+ * metric group is cached for subsequent use to avoid repeated searches. Thread-safe
+ * through mutex protection.
+ *
+ * @param [in] device Handle to the Level Zero device
+ * @return zet_metric_group_handle_t Handle to the EU metric group, or nullptr if not found
+ */
+zet_metric_group_handle_t metric::findEuMetricGroup(ze_device_handle_t device)
+{
+	std::lock_guard<std::mutex> lock(metricMutex);
+
+	// Check cache first
+	if (targetMetricGroups.find(device) != targetMetricGroups.end()) {
+		return targetMetricGroups.at(device);
+	}
+
+	uint32_t metricGroupCount = 0;
+	ze_result_t res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
+	if (res != ZE_RESULT_SUCCESS || metricGroupCount == 0) {
+		ERR("Failed to get metric group count: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return nullptr;
+	}
+
+	std::vector<zet_metric_group_handle_t> metricGroups(metricGroupCount);
+	res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data());
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get metric groups: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return nullptr;
+	}
+
+	// Find EU metrics group
+	for (auto &group : metricGroups) {
+		zet_metric_group_properties_t groupProps = {};
+		groupProps.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+		res = zetMetricGroupGetProperties(group, &groupProps);
+		if (res != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		// Look for "ComputeBasic" or similar EU metric group
+		std::string groupName(groupProps.name);
+		if (groupName.find("ComputeBasic") != std::string::npos &&
+			(groupProps.samplingType & ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED)) {
+			// Verify it has the metrics we need
+			uint32_t groupMetricCount = 0;
+			res = zetMetricGet(group, &groupMetricCount, nullptr);
+			if (res != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+
+			std::vector<zet_metric_handle_t> groupMetrics(groupMetricCount);
+			res = zetMetricGet(group, &groupMetricCount, groupMetrics.data());
+			if (res != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+
+			bool hasEuActive = false;
+			bool hasEuStall = false;
+			bool hasGpuTime = false;
+
+			for (auto &metricHandle : groupMetrics) {
+				zet_metric_properties_t metricProps = {};
+				metricProps.stype = ZET_STRUCTURE_TYPE_METRIC_PROPERTIES;
+				res = zetMetricGetProperties(metricHandle, &metricProps);
+				if (res != ZE_RESULT_SUCCESS) {
+					continue;
+				}
+
+				std::string metricName(metricProps.name);
+				if (metricName == "EuActive" || metricName == "XveActive" || metricName == "XVE_ACTIVE") {
+					hasEuActive = true;
+				} else if (metricName == "EuStall" || metricName == "XveStall" || metricName == "XVE_STALL") {
+					hasEuStall = true;
+				} else if (metricName == "GpuTime") {
+					hasGpuTime = true;
+				}
+			}
+
+			if (hasEuActive && hasEuStall && hasGpuTime) {
+				targetMetricGroups[device] = group;
+				return group;
+			}
+		}
+	}
+
+	ERR("EU metric group not found\n");
+	return nullptr;
+}
+
+/**
+ * @brief Core implementation for collecting EU metrics from a single device or subdevice
+ *
+ * This function performs the actual metric collection for a single device or subdevice,
+ * including metric streamer setup, data collection over the monitoring period, and
+ * calculation of EU active, stall, and idle percentages. The function handles context
+ * management, metric group activation, and proper cleanup of resources.
+ *
+ * @param [in] device Handle to the Level Zero device or subdevice
+ * @param [in] subdeviceId ID of the subdevice (UINT32_MAX for non-subdevice systems)
+ * @param [in] driver Handle to the Level Zero driver
+ * @param [out] data Output structure to receive calculated EU metrics
+ * @retval ZE_RESULT_SUCCESS EU metrics collected successfully
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE EU metric group not found or not available
+ * @retval ZE_RESULT_ERROR_UNKNOWN No metric reports available or zero GPU elapsed time
+ * @retval Other error codes from zeContextCreate, zetContextActivateMetricGroups, zetMetricStreamerOpen,
+ *         zetMetricStreamerReadData, zetMetricGroupCalculateMetricValues, zetMetricGet, or zetMetricGetProperties
+ */
+ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t subdeviceId, ze_driver_handle_t driver,
+											 EuMetricsData &data)
+{
+	ze_result_t res;
+	zet_metric_group_handle_t hMetricGroup = nullptr;
+	ze_context_handle_t hContext = nullptr;
+	zet_metric_streamer_handle_t hMetricStreamer = nullptr;
+	bool contextCreate = false;
+
+	{
+		std::lock_guard<std::mutex> lock(metricMutex);
+
+		hMetricGroup = findEuMetricGroup(device);
+		if (hMetricGroup == nullptr) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+
+		// Create or get context
+		if (targetMetricContexts.find(device) != targetMetricContexts.end()) {
+			hContext = targetMetricContexts.at(device);
+		} else {
+			ze_context_desc_t contextDesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
+			res = zeContextCreate(driver, &contextDesc, &hContext);
+			if (res != ZE_RESULT_SUCCESS) {
+				ERR("Failed to create context: 0x%X (%s)\n", res, l0_error_to_string(res));
+				return res;
+			}
+			targetMetricContexts[device] = hContext;
+			contextCreate = true;
+		}
+
+		// Activate metric group
+		res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to activate metric groups: 0x%X (%s)\n", res, l0_error_to_string(res));
+			if (contextCreate) {
+				zeContextDestroy(hContext);
+				targetMetricContexts.erase(device);
+			}
+			return res;
+		}
+	}
+
+	// Open metric streamer
+	zet_metric_streamer_desc_t streamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, 8192,
+											   EU_STREAMER_SAMPLING_PERIOD};
+
+	res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &streamerDesc, nullptr, &hMetricStreamer);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to open metric streamer: 0x%X (%s)\n", res, l0_error_to_string(res));
+		std::lock_guard<std::mutex> lock(metricMutex);
+		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		if (contextCreate) {
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+
+	// Wait for data collection
+	std::this_thread::sleep_for(std::chrono::milliseconds(EU_MONITOR_PERIOD));
+
+	// Read data
+	size_t rawSize = 0;
+	res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get raw data size: 0x%X (%s)\n", res, l0_error_to_string(res));
+		zetMetricStreamerClose(hMetricStreamer);
+		std::lock_guard<std::mutex> lock(metricMutex);
+		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		if (contextCreate) {
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+
+	std::vector<uint8_t> rawData(rawSize);
+	res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to read metric data: 0x%X (%s)\n", res, l0_error_to_string(res));
+		zetMetricStreamerClose(hMetricStreamer);
+		std::lock_guard<std::mutex> lock(metricMutex);
+		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		if (contextCreate) {
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+
+	// Close streamer
+	zetMetricStreamerClose(hMetricStreamer);
+
+	{
+		std::lock_guard<std::mutex> lock(metricMutex);
+		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+	}
+
+	// Calculate metric values
+	uint32_t numMetricValues = 0;
+	zet_metric_group_calculation_type_t calculationType = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;
+	res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues,
+											  nullptr);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to calculate metric values size: 0x%X (%s)\n", res, l0_error_to_string(res));
+		if (contextCreate) {
+			std::lock_guard<std::mutex> lock(metricMutex);
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+
+	std::vector<zet_typed_value_t> metricValues(numMetricValues);
+	res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues,
+											  metricValues.data());
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to calculate metric values: 0x%X (%s)\n", res, l0_error_to_string(res));
+		if (contextCreate) {
+			std::lock_guard<std::mutex> lock(metricMutex);
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+
+	// Get metric properties
+	uint32_t numMetrics = 0;
+	res = zetMetricGet(hMetricGroup, &numMetrics, nullptr);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get metric count: 0x%X (%s)\n", res, l0_error_to_string(res));
+		if (contextCreate) {
+			std::lock_guard<std::mutex> lock(metricMutex);
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+	std::vector<zet_metric_handle_t> phMetrics(numMetrics);
+	res = zetMetricGet(hMetricGroup, &numMetrics, phMetrics.data());
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get metrics: 0x%X (%s)\n", res, l0_error_to_string(res));
+		if (contextCreate) {
+			std::lock_guard<std::mutex> lock(metricMutex);
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return res;
+	}
+
+	// Process metrics
+	uint32_t numReports = numMetricValues / numMetrics;
+	if (numReports == 0) {
+		ERR("No metric reports available\n");
+		if (contextCreate) {
+			std::lock_guard<std::mutex> lock(metricMutex);
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	uint64_t totalEuStall = 0;
+	uint64_t totalEuActive = 0;
+	uint64_t totalGPUElapsedTime = 0;
+
+	for (uint32_t report = 0; report < numReports; ++report) {
+		double currentEuStall = 0;
+		double currentEuActive = 0;
+		double currentXveStall = 0;
+		double currentXveActive = 0;
+		uint64_t currentGPUElapsedTime = 0;
+
+		for (uint32_t metricIdx = 0; metricIdx < numMetrics; metricIdx++) {
+			zet_metric_properties_t metricProperties = {};
+			metricProperties.stype = ZET_STRUCTURE_TYPE_METRIC_PROPERTIES;
+			res = zetMetricGetProperties(phMetrics[metricIdx], &metricProperties);
+			if (res != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+
+			zet_typed_value_t metricData = metricValues[report * numMetrics + metricIdx];
+
+			if (std::strcmp(metricProperties.name, "GpuBusy") == 0) {
+				// GpuBusy value read but not used in current implementation
+				(void)metricData.value.fp32;
+			} else if (std::strcmp(metricProperties.name, "EuActive") == 0) {
+				currentEuActive = metricData.value.fp32;
+			} else if (std::strcmp(metricProperties.name, "EuStall") == 0) {
+				currentEuStall = metricData.value.fp32;
+			} else if (std::strcmp(metricProperties.name, "XveActive") == 0 ||
+					   std::strcmp(metricProperties.name, "XVE_ACTIVE") == 0) {
+				currentXveActive = metricData.value.fp32;
+			} else if (std::strcmp(metricProperties.name, "XveStall") == 0 ||
+					   std::strcmp(metricProperties.name, "XVE_STALL") == 0) {
+				currentXveStall = metricData.value.fp32;
+			} else if (std::strcmp(metricProperties.name, "GpuTime") == 0) {
+				currentGPUElapsedTime = metricData.value.ui64;
+			}
+		}
+
+		currentEuActive = (std::max)(currentEuActive, currentXveActive);
+		currentEuStall = (std::max)(currentEuStall, currentXveStall);
+
+		if (currentEuActive > 100.0 || currentEuStall > 100.0) {
+			DBG("Abnormal EU data in report %u: euActive: %.2f, euStall: %.2f\n", report, currentEuActive,
+				currentEuStall);
+			continue;
+		}
+
+		totalEuStall += static_cast<uint64_t>(static_cast<double>(currentGPUElapsedTime) * currentEuStall);
+		totalEuActive += static_cast<uint64_t>(static_cast<double>(currentGPUElapsedTime) * currentEuActive);
+		totalGPUElapsedTime += currentGPUElapsedTime;
+	}
+
+	if (totalGPUElapsedTime == 0) {
+		ERR("Zero GPU elapsed time\n");
+		if (contextCreate) {
+			std::lock_guard<std::mutex> lock(metricMutex);
+			zeContextDestroy(hContext);
+			targetMetricContexts.erase(device);
+		}
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Calculate final values
+	uint64_t euActive = totalEuActive / totalGPUElapsedTime;
+	uint64_t euStall = totalEuStall / totalGPUElapsedTime;
+
+	// Ensure euIdle doesn't underflow
+	uint64_t euBusy = euActive + euStall;
+	if (euBusy > 100) {
+		ERR("euBusy (%" PRIu64 ") exceeds 100: possible data corruption or calculation error (euActive=%" PRIu64
+			", euStall=%" PRIu64 ")\n",
+			euBusy, euActive, euStall);
+	}
+	uint64_t euIdle = (euBusy > 100) ? 0 : (100 - euBusy);
+
+	data.scaleFactor = 1000;
+	data.euActive = euActive * data.scaleFactor;
+	data.euStall = euStall * data.scaleFactor;
+	data.euIdle = euIdle * data.scaleFactor;
+	data.subdeviceId = subdeviceId;
+
+	// Clean up context if we created it
+	if (contextCreate) {
+		std::lock_guard<std::mutex> lock(metricMutex);
+		zeContextDestroy(hContext);
+		targetMetricContexts.erase(device);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Retrieves EU active, stall, and idle metrics for a device
+ *
+ * This function collects Execution Unit (EU) utilization metrics including active time,
+ * stall time, and idle time for the specified device. For devices with subdevices,
+ * metrics are collected separately for each subdevice. The function uses metric streaming
+ * with time-based sampling to gather data over a monitoring period.
+ *
+ * @param [in] device Handle to the Level Zero device to monitor
+ * @param [in] driver Handle to the Level Zero driver
+ * @param [out] metricsData Output vector to receive collected EU metrics data. Each entry
+ *                         contains euActive, euStall, euIdle percentages (scaled by 1000),
+ *                         and the subdeviceId (UINT32_MAX for single-device systems)
+ * @retval ZE_RESULT_SUCCESS EU metrics collected successfully for all devices/subdevices
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_HANDLE Device or driver handle is nullptr
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE EU metrics not available on device
+ * @retval ZE_RESULT_ERROR_UNKNOWN Metrics data is empty after collection attempts
+ * @retval Other error codes from zeDeviceGetSubDevices, zeDeviceGetProperties, or getEuActiveStallIdleCore
+ */
+ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_handle_t driver,
+										 std::vector<EuMetricsData> &metricsData)
+{
+	if (device == nullptr || driver == nullptr) {
+		ERR("Invalid device or driver handle\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_HANDLE;
+	}
+
+	ze_result_t res;
+	uint32_t sub_device_count = 0;
+
+	res = zeDeviceGetSubDevices(device, &sub_device_count, nullptr);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get subdevice count: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	if (sub_device_count == 0) {
+		// Single device, no subdevices
+		EuMetricsData euData;
+		res = getEuActiveStallIdleCore(device, UINT32_MAX, driver, euData);
+		if (res == ZE_RESULT_SUCCESS) {
+			metricsData.push_back(euData);
+		}
+		return res;
+	}
+
+	// Handle subdevices
+	std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
+	res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data());
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get subdevice handles: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	ze_result_t overall_result = ZE_RESULT_SUCCESS;
+	for (uint32_t i = 0; i < sub_device_count; ++i) {
+		auto &sub_device = sub_device_handles[i];
+		ze_device_properties_t props = {};
+		props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+		res = zeDeviceGetProperties(sub_device, &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get subdevice properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+			overall_result = res;
+			continue;
+		}
+
+		EuMetricsData euData;
+		res = getEuActiveStallIdleCore(sub_device, props.subdeviceId, driver, euData);
+		if (res == ZE_RESULT_SUCCESS) {
+			euData.subdeviceId = props.subdeviceId; // Ensure subdeviceId is set
+			metricsData.push_back(euData);
+		} else {
+			overall_result = res;
+		}
+	}
+
+	if (metricsData.empty()) {
+		return overall_result != ZE_RESULT_SUCCESS ? overall_result : ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	return overall_result;
 }
 
 /**
