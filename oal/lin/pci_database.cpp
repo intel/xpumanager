@@ -149,8 +149,8 @@ bool PciDatabase::lineIsComment(const std::string &line)
 bool PciDatabase::parsePciDevice(std::ifstream &fstream)
 {
 	bool bResult = false;
-	int vendorId = 0, device_id = 0, subVendorId = 0, subDeviceId = 0;
-	std::string vendor_name, deviceName, subsystemName;
+	int vendorId = 0, deviceId = 0, subVendorId = 0, subDeviceId = 0;
+	std::string vendorName, deviceName, subsystemName;
 	id_type idtype = ID_UNKNOWN;
 	std::string info;
 
@@ -178,18 +178,18 @@ bool PciDatabase::parsePciDevice(std::ifstream &fstream)
 		}
 
 		if (level == 0) {
-			device_id = subVendorId = subDeviceId = -1;
+			deviceId = subVendorId = subDeviceId = -1;
 			bResult = parseLevel0(info, (int)len, &idtype, &vendorId, &idx);
 			std::string name = info.substr(idx);
-			vendor_name = name.erase(0, name.find_first_not_of(' '));
+			vendorName = name.erase(0, name.find_first_not_of(' '));
 		} else if (level == 1) {
-			device_id = subVendorId = subDeviceId = -1;
-			bResult = parseLevel1(info, (int)len, &idtype, &device_id, &idx);
+			deviceId = subVendorId = subDeviceId = -1;
+			bResult = parseLevel1(info, (int)len, &idtype, &deviceId, &idx);
 			std::string name = info.substr(idx);
 			deviceName = name.erase(0, name.find_first_not_of(' '));
 
 			if (idtype != ID_KNOWN_D_CLASS) {
-				addSwitchDevice(vendorId, device_id, deviceName, subVendorId, subDeviceId, subsystemName);
+				addSwitchDevice(vendorId, deviceId, deviceName, subVendorId, subDeviceId, subsystemName);
 			}
 		} else if (level == 2) {
 			subVendorId = subDeviceId = -1;
@@ -197,7 +197,7 @@ bool PciDatabase::parsePciDevice(std::ifstream &fstream)
 			std::string name = info.substr(idx);
 			subsystemName = name.erase(0, name.find_first_not_of(' '));
 			if (idtype != ID_KNOWN_D_CLASS) {
-				addSwitchDevice(vendorId, device_id, deviceName, subVendorId, subDeviceId, subsystemName);
+				addSwitchDevice(vendorId, deviceId, deviceName, subVendorId, subDeviceId, subsystemName);
 			}
 		} else {
 			// level 3 if not defined, the code should not be here, just ignore this line
@@ -226,14 +226,14 @@ bool PciDatabase::parsePciDevice(std::ifstream &fstream)
 bool PciDatabase::parseLevel0(const std::string &info, int len, id_type *type, int *vendorId, std::size_t *idx)
 {
 	bool bResult = false;
-	int min_level_0_len = 5;
+	int minLevel0Len = 5;
 	if (info.at(0) == 'C' && len >= 2 && isBlankSpace(info.at(1))) {
 		// known device classes, subclasses and programming interfaces
-		if (len > min_level_0_len) {
+		if (len > minLevel0Len) {
 			*vendorId = std::stoi(info.substr(2, 2).c_str(), nullptr, 16);
 			if (*vendorId >= 0) {
 				*type = ID_KNOWN_D_CLASS;
-				*idx = min_level_0_len;
+				*idx = minLevel0Len;
 				bResult = true;
 			}
 		}
@@ -241,11 +241,11 @@ bool PciDatabase::parseLevel0(const std::string &info, int len, id_type *type, i
 		*type = ID_UNKNOWN;
 		bResult = true;
 	} else {
-		if (len > min_level_0_len) {
+		if (len > minLevel0Len) {
 			*vendorId = std::stoi(info.substr(0, 4).c_str(), nullptr, 16);
 			if (*vendorId >= 0 && isBlankSpace(info.at(4))) {
 				*type = ID_VENDOR;
-				*idx = min_level_0_len;
+				*idx = minLevel0Len;
 				bResult = true;
 			}
 		}
@@ -267,32 +267,32 @@ bool PciDatabase::parseLevel0(const std::string &info, int len, id_type *type, i
  * @param idx Pointer to store the index where the name starts
  * @return bool True if parsing succeeded, false otherwise
  */
-bool PciDatabase::parseLevel1(const std::string &info, int len, id_type *type, int *device_id, std::size_t *idx)
+bool PciDatabase::parseLevel1(const std::string &info, int len, id_type *type, int *deviceId, std::size_t *idx)
 {
 	bool bResult = false;
 	int start = 1;
-	int min_level_1_len;
+	int minLevel1Len;
 	switch (*type) {
 	case ID_UNKNOWN: {
 		bResult = true;
 	} break;
 	case ID_KNOWN_D_CLASS: {
-		min_level_1_len = start + 3;
-		*device_id = std::stoi(info.substr(start, 2).c_str(), nullptr, 16);
-		if (*device_id >= 0 && isBlankSpace(info.at(start + 2))) {
-			*idx = min_level_1_len;
+		minLevel1Len = start + 3;
+		*deviceId = std::stoi(info.substr(start, 2).c_str(), nullptr, 16);
+		if (*deviceId >= 0 && isBlankSpace(info.at(start + 2))) {
+			*idx = minLevel1Len;
 			bResult = true;
 		}
 	} break;
 	case ID_VENDOR:
 	case ID_DEVICE:
 	case ID_SUB_SYS: {
-		min_level_1_len = start + 5;
-		if (len > min_level_1_len) {
-			*device_id = std::stoi(info.substr(start, 4).c_str(), nullptr, 16);
-			if (*device_id >= 0 && isBlankSpace(info.at(start + 4))) {
+		minLevel1Len = start + 5;
+		if (len > minLevel1Len) {
+			*deviceId = std::stoi(info.substr(start, 4).c_str(), nullptr, 16);
+			if (*deviceId >= 0 && isBlankSpace(info.at(start + 4))) {
 				*type = ID_DEVICE;
-				*idx = min_level_1_len;
+				*idx = minLevel1Len;
 				bResult = true;
 			}
 		}
@@ -321,19 +321,19 @@ bool PciDatabase::parseLevel2(const std::string &info, int len, id_type *type, i
 {
 	bool bResult = false;
 	int start = 2;
-	int min_level_2_len;
+	int minLevel2Len;
 	switch (*type) {
 	case ID_UNKNOWN: {
 		bResult = true;
 	} break;
 	case ID_KNOWN_D_CLASS: {
-		min_level_2_len = 5;
+		minLevel2Len = 5;
 		bResult = true;
 	} break;
 	case ID_DEVICE:
 	case ID_SUB_SYS: {
-		min_level_2_len = 12;
-		if (len > min_level_2_len) {
+		minLevel2Len = 12;
+		if (len > minLevel2Len) {
 			*subVendorId = std::stoi(info.substr(start, 4), nullptr, 16);
 			if (*subVendorId >= 0 && isBlankSpace(info.at(start + 4))) {
 				start = start + 5;
@@ -341,7 +341,7 @@ bool PciDatabase::parseLevel2(const std::string &info, int len, id_type *type, i
 				if (*subDeviceId >= 0 && isBlankSpace(info.at(start + 4))) {
 					*type = ID_SUB_SYS;
 					bResult = true;
-					*idx = min_level_2_len;
+					*idx = minLevel2Len;
 				}
 			}
 		}
@@ -380,7 +380,7 @@ bool PciDatabase::isBlankSpace(const char c) { return ((c == ' ') || (c == '\t')
  */
 void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 {
-	int vendorId = 0, device_id = 0;
+	int vendorId = 0, deviceId = 0;
 	std::string info;
 
 	while (std::getline(fstream, info)) {
@@ -410,18 +410,18 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 		start += pos + 1;
 		pos = 0;
 		if (start < len) {
-			device_id = std::stoi(info.substr(start), &pos, 16);
+			deviceId = std::stoi(info.substr(start), &pos, 16);
 			start += pos + 1;
 			if (start < len) {
-				PcieDevice device = {DV_UNKNOWN, false, vendorId, device_id, 0, 0, ""};
+				PcieDevice device = {DV_UNKNOWN, false, vendorId, deviceId, 0, 0, ""};
 
 				if (info.at(start) == '0') {
-					auto ret = devices.erase(std::make_pair(vendorId, device_id));
+					auto ret = devices.erase(std::make_pair(vendorId, deviceId));
 					DBG("PciDatabase::parse_switch_config()- remove d_id:v_id = [0x%X:0x%X] count:%zu\n", vendorId,
-						device_id, ret);
+						deviceId, ret);
 				} else if (info.at(start) == '1') {
 					device.type = DV_SWITCH;
-					devices[std::make_pair(vendorId, device_id)] = device;
+					devices[std::make_pair(vendorId, deviceId)] = device;
 				} else if (info.at(start) == '2') {
 					start++;
 					device.type = DV_GRAPHIC;
@@ -449,7 +449,7 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 						device.deviceName = info.substr(start);
 						DBG("PciDatabase::parse_switch_config()- deviceName: %s\n", device.deviceName.c_str());
 					}
-					devices[std::make_pair(vendorId, device_id)] = device;
+					devices[std::make_pair(vendorId, deviceId)] = device;
 				} else {
 					ERR("PciDatabase::parse_switch_config() error- unknown value.\n");
 				}
@@ -472,19 +472,19 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
  * @param subDeviceId Subsystem device ID
  * @param subsystemName Subsystem name string to search for switch keyword
  */
-void PciDatabase::addSwitchDevice(int32_t vendorId, int32_t device_id, const std::string &deviceName,
+void PciDatabase::addSwitchDevice(int32_t vendorId, int32_t deviceId, const std::string &deviceName,
 								  int32_t subVendorId, int32_t subDeviceId, const std::string &subsystemName)
 {
-	std::string switch_string = std::string(" Switch ");
-	PcieDevice device = {DV_SWITCH, false, vendorId, device_id, subVendorId, subDeviceId, ""};
+	std::string switchString = std::string(" Switch ");
+	PcieDevice device = {DV_SWITCH, false, vendorId, deviceId, subVendorId, subDeviceId, ""};
 
 	if (subVendorId >= 0 && subDeviceId >= 0 && !subsystemName.empty()) {
-		if (subsystemName.find(switch_string) != std::string::npos) {
-			devices[std::make_pair(vendorId, device_id)] = device;
+		if (subsystemName.find(switchString) != std::string::npos) {
+			devices[std::make_pair(vendorId, deviceId)] = device;
 		}
-	} else if (vendorId >= 0 && device_id >= 0 && !deviceName.empty()) {
-		if (deviceName.find(switch_string) != std::string::npos) {
-			devices[std::make_pair(vendorId, device_id)] = device;
+	} else if (vendorId >= 0 && deviceId >= 0 && !deviceName.empty()) {
+		if (deviceName.find(switchString) != std::string::npos) {
+			devices[std::make_pair(vendorId, deviceId)] = device;
 		}
 	} else {
 		ERR("PciDatabase::addSwitchDevice() error- unknown device %s.\n", device.tostring().c_str());
@@ -502,11 +502,11 @@ void PciDatabase::addSwitchDevice(int32_t vendorId, int32_t device_id, const std
  * @param device_id PCI device ID to search for
  * @return const PcieDevice* Pointer to device information if found, nullptr otherwise
  */
-const PcieDevice *PciDatabase::getDevice(int32_t vendorId, int32_t device_id)
+const PcieDevice *PciDatabase::getDevice(int32_t vendorId, int32_t deviceId)
 {
 	std::unique_lock<std::mutex> lock(mutex);
 
-	device_map::iterator it = devices.find(std::make_pair(vendorId, device_id));
+	device_map::iterator it = devices.find(std::make_pair(vendorId, deviceId));
 
 	if (it != devices.end()) {
 		return &it->second;

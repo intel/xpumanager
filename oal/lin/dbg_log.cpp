@@ -31,23 +31,23 @@ namespace {
 class TempDirectory
 {
 	std::filesystem::path dirPath;
-	bool should_cleanup = true;
-	bool created_successfully = false;
+	bool shouldCleanup = true;
+	bool createdSuccessfully = false;
 
 public:
 	explicit TempDirectory(std::string_view uuid) : dirPath{std::string("/var/tmp/xpum-") + std::string(uuid)}
 	{
 		std::error_code ec;
-		created_successfully = std::filesystem::create_directory(dirPath, ec);
+		createdSuccessfully = std::filesystem::create_directory(dirPath, ec);
 
-		if (!created_successfully) {
+		if (!createdSuccessfully) {
 			ERR("Failed to create directory %s: %s\n", dirPath.string().c_str(), ec.message().c_str());
 		}
 	}
 
 	~TempDirectory()
 	{
-		if (should_cleanup && created_successfully) {
+		if (shouldCleanup && createdSuccessfully) {
 			std::error_code ec;
 			std::filesystem::remove_all(dirPath, ec);
 			if (ec) {
@@ -59,18 +59,18 @@ public:
 	TempDirectory(const TempDirectory &) = delete;
 	TempDirectory &operator=(const TempDirectory &) = delete;
 	TempDirectory(TempDirectory &&other) noexcept
-		: dirPath(std::move(other.dirPath)), should_cleanup(other.should_cleanup),
-		  created_successfully(other.created_successfully)
+		: dirPath(std::move(other.dirPath)), shouldCleanup(other.shouldCleanup),
+		  createdSuccessfully(other.createdSuccessfully)
 	{
-		other.should_cleanup = false;
+		other.shouldCleanup = false;
 	}
 	TempDirectory &operator=(TempDirectory &&other) noexcept
 	{
 		if (this != &other) {
 			dirPath = std::move(other.dirPath);
-			should_cleanup = other.should_cleanup;
-			created_successfully = other.created_successfully;
-			other.should_cleanup = false;
+			shouldCleanup = other.shouldCleanup;
+			createdSuccessfully = other.createdSuccessfully;
+			other.shouldCleanup = false;
 		}
 		return *this;
 	}
@@ -80,10 +80,10 @@ public:
 	{
 		return dirPath.filename().string().substr(5);
 	} // Remove "xpum-", left with just the UUID
-	bool is_valid() const { return created_successfully; }
-	void keep() { should_cleanup = false; } // Don't cleanup on destruction
+	bool isValid() const { return createdSuccessfully; }
+	void keep() { shouldCleanup = false; } // Don't cleanup on destruction
 
-	explicit operator bool() const { return created_successfully; }
+	explicit operator bool() const { return createdSuccessfully; }
 };
 } // namespace
 
@@ -442,12 +442,12 @@ std::string getKernelVersion()
 // Couple all parts of the kernel module we're interested in reporting
 struct ModuleInfo
 {
-	bool is_loaded = false;
+	bool isLoaded = false;
 	std::string path;
 	std::string status;
 };
 
-ModuleInfo checkXeModule(const std::string &kernel_version)
+ModuleInfo checkXeModule(const std::string &kernelVersion)
 {
 	ModuleInfo info;
 
@@ -457,7 +457,7 @@ ModuleInfo checkXeModule(const std::string &kernel_version)
 		std::string line;
 		while (std::getline(file, line)) {
 			if (line.find("xe ") == 0) { // starts_with equivalent
-				info.is_loaded = true;
+				info.isLoaded = true;
 				info.status = "xe module is loaded\n";
 				break;
 			}
@@ -465,13 +465,13 @@ ModuleInfo checkXeModule(const std::string &kernel_version)
 	}
 
 	// Try to find module file paths
-	const std::vector<std::string> module_extensions = {".ko", ".ko.xz"};
-	const std::string base_path = "/lib/modules/" + kernel_version + "/kernel/drivers/gpu/drm/xe/xe";
+	const std::vector<std::string> moduleExtensions = {".ko", ".ko.xz"};
+	const std::string basePath = "/lib/modules/" + kernelVersion + "/kernel/drivers/gpu/drm/xe/xe";
 
-	for (const auto &ext : module_extensions) {
-		const std::string module_path = base_path + ext;
-		if (std::filesystem::exists(module_path)) {
-			info.path = "Module path: " + module_path + "\n";
+	for (const auto &ext : moduleExtensions) {
+		const std::string modulePath = basePath + ext;
+		if (std::filesystem::exists(modulePath)) {
+			info.path = "Module path: " + modulePath + "\n";
 			break;
 		}
 	}
@@ -485,15 +485,15 @@ ModuleInfo checkXeModule(const std::string &kernel_version)
 
 std::string getDriListing()
 {
-	const std::string dri_path = "/dev/dri";
+	const std::string driPath = "/dev/dri";
 
 	try {
-		if (!std::filesystem::exists(dri_path) || !std::filesystem::is_directory(dri_path)) {
+		if (!std::filesystem::exists(driPath) || !std::filesystem::is_directory(driPath)) {
 			return "/dev/dri directory not found\n";
 		}
 
 		std::string result;
-		for (const auto &entry : std::filesystem::directory_iterator(dri_path)) {
+		for (const auto &entry : std::filesystem::directory_iterator(driPath)) {
 			result += entry.path().filename().string() + "\n";
 		}
 		return result;
@@ -507,24 +507,24 @@ std::string getDriListing()
 // Helper function to generate driver information
 static int generateDriverInfo(const std::string &uuid)
 {
-	const auto output_file = std::filesystem::path("/var/tmp") / ("xpum-" + uuid) / "driver-info";
+	const auto outputFile = std::filesystem::path("/var/tmp") / ("xpum-" + uuid) / "driver-info";
 
-	std::ofstream output(output_file);
+	std::ofstream output(outputFile);
 	if (!output) {
 		return -1; // Failed to open output file
 	}
 
 	// Get kernel version
-	const auto kernel_version = getKernelVersion();
-	output << "Kernel Version:\n" << kernel_version << "\n";
+	const auto kernelVersion = getKernelVersion();
+	output << "Kernel Version:\n" << kernelVersion << "\n";
 
 	// Get module information
-	const auto module_info = checkXeModule(kernel_version);
-	output << "modinfo -n xe\n" << module_info.status << module_info.path;
+	const auto moduleInfo = checkXeModule(kernelVersion);
+	output << "modinfo -n xe\n" << moduleInfo.status << moduleInfo.path;
 
 	// Get DRI listing
-	const auto dri_listing = getDriListing();
-	output << "\nls /dev/dri\n" << dri_listing;
+	const auto driListing = getDriListing();
+	output << "\nls /dev/dri\n" << driListing;
 
 	return 0;
 }
@@ -791,7 +791,7 @@ int getLinLogs(const std::string &fileName)
 		return ERR_UUID;
 	}
 	TempDirectory tmpDir{uuid};
-	if (!tmpDir.is_valid()) {
+	if (!tmpDir.isValid()) {
 		return ERR_TMP_DIR;
 	}
 	if (copyFiles(uuid) != 0) {

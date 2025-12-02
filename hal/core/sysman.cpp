@@ -53,12 +53,12 @@ void sysman::printEngines(zes_engine_type_flags_t engines)
  * @param ret_val The Level Zero error code.
  * @return const char* The string representation of the error code.
  */
-LIBXPUM_API const char *l0_error_to_string(ze_result_t ret_val)
+LIBXPUM_API const char *l0_error_to_string(ze_result_t retVal)
 {
 #define CASE(ret_val)                                                                                                  \
 	case ret_val:                                                                                                      \
 		return #ret_val;
-	switch (ret_val) {
+	switch (retVal) {
 		CASE(ZE_RESULT_SUCCESS)
 		CASE(ZE_RESULT_NOT_READY)
 		CASE(ZE_RESULT_ERROR_UNINITIALIZED)

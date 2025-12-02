@@ -70,8 +70,8 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 		return PLDM_ERROR;
 	}
 
-	size_t read_size = fread(pkgbuf.data(), 1, fileSize, mCompFp);
-	if (read_size != fileSize) {
+	size_t readSize = fread(pkgbuf.data(), 1, fileSize, mCompFp);
+	if (readSize != fileSize) {
 		ERR("Failed to read package file\n");
 		fclose(mCompFp);
 		return PLDM_ERROR;

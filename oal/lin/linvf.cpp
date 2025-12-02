@@ -225,40 +225,40 @@ static PciDeviceInfo queryPciDevice(uint16_t domain, uint8_t bus, uint8_t device
  * @param[in] bdf_string BDF string in format "XXXX:XX:XX.X" or "XX:XX.X"
  * @return PciDeviceInfo structure with device information
  */
-static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdf_string)
+static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdfString)
 {
 	uint16_t domain = 0;
 	uint8_t bus, device, function;
 
 	// Parse BDF string
-	size_t colon1 = bdf_string.find(':');
+	size_t colon1 = bdfString.find(':');
 	if (colon1 == std::string::npos) {
-		ERR("Invalid BDF format: %s (expected XXXX:XX:XX.X or XX:XX.X)\n", bdf_string.c_str());
+		ERR("Invalid BDF format: %s (expected XXXX:XX:XX.X or XX:XX.X)\n", bdfString.c_str());
 		return {};
 	}
 
-	size_t colon2 = bdf_string.find(':', colon1 + 1);
-	size_t dot = bdf_string.find('.');
+	size_t colon2 = bdfString.find(':', colon1 + 1);
+	size_t dot = bdfString.find('.');
 
 	try {
 		if (colon2 != std::string::npos && dot != std::string::npos) {
 			// Format: XXXX:XX:XX.X
-			domain = static_cast<uint16_t>(std::stoul(bdf_string.substr(0, colon1), nullptr, 16));
-			bus = static_cast<uint8_t>(std::stoul(bdf_string.substr(colon1 + 1, colon2 - colon1 - 1), nullptr, 16));
-			device = static_cast<uint8_t>(std::stoul(bdf_string.substr(colon2 + 1, dot - colon2 - 1), nullptr, 16));
-			function = static_cast<uint8_t>(std::stoul(bdf_string.substr(dot + 1), nullptr, 16));
+			domain = static_cast<uint16_t>(std::stoul(bdfString.substr(0, colon1), nullptr, 16));
+			bus = static_cast<uint8_t>(std::stoul(bdfString.substr(colon1 + 1, colon2 - colon1 - 1), nullptr, 16));
+			device = static_cast<uint8_t>(std::stoul(bdfString.substr(colon2 + 1, dot - colon2 - 1), nullptr, 16));
+			function = static_cast<uint8_t>(std::stoul(bdfString.substr(dot + 1), nullptr, 16));
 		} else if (dot != std::string::npos) {
 			// Format: XX:XX.X (domain assumed to be 0)
 			domain = 0;
-			bus = static_cast<uint8_t>(std::stoul(bdf_string.substr(0, colon1), nullptr, 16));
-			device = static_cast<uint8_t>(std::stoul(bdf_string.substr(colon1 + 1, dot - colon1 - 1), nullptr, 16));
-			function = static_cast<uint8_t>(std::stoul(bdf_string.substr(dot + 1), nullptr, 16));
+			bus = static_cast<uint8_t>(std::stoul(bdfString.substr(0, colon1), nullptr, 16));
+			device = static_cast<uint8_t>(std::stoul(bdfString.substr(colon1 + 1, dot - colon1 - 1), nullptr, 16));
+			function = static_cast<uint8_t>(std::stoul(bdfString.substr(dot + 1), nullptr, 16));
 		} else {
-			ERR("Invalid BDF format: %s (expected XXXX:XX:XX.X or XX:XX.X)\n", bdf_string.c_str());
+			ERR("Invalid BDF format: %s (expected XXXX:XX:XX.X or XX:XX.X)\n", bdfString.c_str());
 			return {};
 		}
 	} catch (const std::exception &e) {
-		ERR("Error parsing BDF string %s: %s\n", bdf_string.c_str(), e.what());
+		ERR("Error parsing BDF string %s: %s\n", bdfString.c_str(), e.what());
 		return {};
 	}
 
@@ -496,7 +496,7 @@ static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromCon
 	std::string line;
 	std::map<uint32_t, AttrFromConfigFile> data;
 	uint32_t currentNameId = 0;
-	std::string default_vgpu_scheduler;
+	std::string defaultVgpuScheduler;
 
 	std::string fileName = std::string(VGPU_CONF_FILE);
 	if (!fileExists(fileName)) {
@@ -567,7 +567,7 @@ static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromCon
 			} else if (strcmp(key.c_str(), "VGPU_SCHEDULER") == 0 && currentNameId) {
 				updateVgpuSchedulerConfigParameters(currentNameId, data);
 				if (currentNameId == XPUM_MAX_VF_NUM)
-					default_vgpu_scheduler = value;
+					defaultVgpuScheduler = value;
 			} else if (strcmp(key.c_str(), "DRIVERS_AUTOPROBE") == 0 && currentNameId) {
 				data[currentNameId].driversAutoprobe = (bool)std::stoi(value);
 				if (currentNameId != XPUM_MAX_VF_NUM) {

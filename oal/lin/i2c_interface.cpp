@@ -271,12 +271,12 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 			// Extract the filename portion after the last slash
 			std::string filename = device.substr(device.find_last_of('/') + 1);
 			// Find the hyphen in the filename
-			size_t hyphen_pos = filename.find('-');
-			std::string bus_number = (hyphen_pos != std::string::npos) ? filename.substr(0, hyphen_pos) : "";
-			std::string i2cDevice = "/dev/i2c-" + bus_number;
+			size_t hyphenPos = filename.find('-');
+			std::string busNumber = (hyphenPos != std::string::npos) ? filename.substr(0, hyphenPos) : "";
+			std::string i2cDevice = "/dev/i2c-" + busNumber;
 			amcCardInfo info;
 			info.amcDevicePath = i2cDevice;
-			info.gpuParentPath = getGpuDeviceFromI2C("/sys/bus/i2c/devices/i2c-" + bus_number);
+			info.gpuParentPath = getGpuDeviceFromI2C("/sys/bus/i2c/devices/i2c-" + busNumber);
 			amcDeviceList->push_back(info);
 			DBG("Found AMC device: %s\n", i2cDevice.c_str());
 			cardsCount++;

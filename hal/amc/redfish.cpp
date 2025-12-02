@@ -534,15 +534,15 @@ int redfish::discoverIntelGpusHttpScan(const std::string &systemId, RedfishGPUDe
 	}
 
 	// Parse the Members array to collect all PCIe device paths
-	size_t members_pos = pcieDevicesCollection.find("\"Members\"");
-	if (members_pos == std::string::npos) {
+	size_t membersPos = pcieDevicesCollection.find("\"Members\"");
+	if (membersPos == std::string::npos) {
 		ERR("Redfish: No Members found in PCIeDevices collection\n");
 		threading->destroyMutex(gpuArrayMutex);
 		return REDFISH_FAILURE;
 	}
 
 	// Find the array start
-	size_t arrayStartPos = pcieDevicesCollection.find("[", members_pos);
+	size_t arrayStartPos = pcieDevicesCollection.find("[", membersPos);
 	if (arrayStartPos == std::string::npos) {
 		ERR("Redfish: Invalid Members array format\n");
 		threading->destroyMutex(gpuArrayMutex);

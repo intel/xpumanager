@@ -700,9 +700,9 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 	zeDevice = zeHdl;
 
 	// Create a context
-	ze_context_desc_t context_desc = {};
-	context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-	ze_result_t result = zeContextCreate(zeDriver, &context_desc, &context);
+	ze_context_desc_t contextDesc = {};
+	contextDesc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+	ze_result_t result = zeContextCreate(zeDriver, &contextDesc, &context);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to create context: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;

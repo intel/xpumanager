@@ -72,7 +72,7 @@ void commonProgressCallback(uint32_t done, uint32_t total, void *ctx)
  */
 uint8_t crc8Smbus(const uint8_t *data, size_t len)
 {
-	static constexpr auto crc8_lut = []() constexpr -> std::array<uint8_t, 256> {
+	static constexpr auto crc8Lut = []() constexpr -> std::array<uint8_t, 256> {
 		std::array<uint8_t, 256> lut{};
 		for (int i = 0; i < 256; i++) {
 			auto crc = static_cast<uint8_t>(i);
@@ -85,7 +85,7 @@ uint8_t crc8Smbus(const uint8_t *data, size_t len)
 	}();
 	uint8_t crc = 0x00;
 	for (size_t i = 0; i < len; i++) {
-		crc = crc8_lut[crc ^ data[i]];
+		crc = crc8Lut[crc ^ data[i]];
 	}
 	return crc;
 }
