@@ -20,7 +20,14 @@ func init() {
 
 type sysmanFrequency struct {
 	*levelzero.ZesFreq
+
+	state      sysmanFrequencyState
 	attributes []attribute.KeyValue
+}
+
+// sysmanFrequencyState holds the dynamic runtime state.
+type sysmanFrequencyState struct {
+	throttleReasonsSeen levelzero.ZesFreqThrottleReasonFlags
 }
 
 type frequencyMetrics struct {
@@ -153,9 +160,16 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 				value := int64(0)
 				if levelzero.ZesFreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
 					value = 1
+					freq.state.throttleReasonsSeen |= levelzero.ZesFreqThrottleReasonFlags(reason)
 				}
-				reasonAttr := attribute.String("hw.gpu.frequency.throttle_reason.type", strings.ToLower(reason.String()))
-				o.ObserveInt64(m.throttleReason, value, metric.WithAttributes(append(attrs, reasonAttr)...))
+
+				// Flags may be unset because the driver lacks support for this
+				// throttle reason (does not know the status). Emit the metric
+				// only once support is confirmed.
+				if levelzero.ZesFreqThrottleReasonFlag(freq.state.throttleReasonsSeen)&reason != 0 {
+					reasonAttr := attribute.String("hw.gpu.frequency.throttle_reason.type", strings.ToLower(reason.String()))
+					o.ObserveInt64(m.throttleReason, value, metric.WithAttributes(append(attrs, reasonAttr)...))
+				}
 			}
 		}
 	}
