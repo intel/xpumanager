@@ -5,13 +5,17 @@
 
 OUT_DIR ?= bin
 
+.PHONY: all
 all: build
 
+.PHONY: build
 build:
 	go build -o $(OUT_DIR)/xpu-exporter ./cmd/xpu-exporter
 
+.PHONY: lint
 lint:
 	go tool golangci-lint run
 
+.PHONY: generate
 generate:
 	scripts/generate.sh
