@@ -331,6 +331,11 @@ jobs:
             grep -v -f .clang-format-ignore /tmp/all_files.txt > /tmp/files_to_format.txt
             xargs -a /tmp/files_to_format.txt clang-format --dry-run -Werror --style=file
 
+            # Copy compile commands for clang-tidy
+            find builddir -name "compile_commands.json" -exec cp {} . \;
+            echo "Checking naming style (no snake_case) matches our style guide"
+            run-clang-tidy.py -warnings-as-errors='readability-identifier-naming' -checks='-*,readability-identifier-naming'
+
       - name: Check license headers
         continue-on-error: true
         run: |
