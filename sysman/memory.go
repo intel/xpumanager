@@ -129,7 +129,7 @@ func (m *memoryMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 		usage := int64(state.Size - state.Free)
 		o.ObserveInt64(m.usage, usage, opt)
 
-		o.ObserveFloat64(m.utilization, float64(usage)/float64(state.Size)*100, opt)
+		o.ObserveFloat64(m.utilization, float64(usage)/float64(state.Size), opt)
 
 		opt = metric.WithAttributes(append(attrs, attribute.String("hw.gpu.memory.health_status", strings.ToLower(state.Health.String())))...)
 		o.ObserveInt64(m.health, 1, opt)
