@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"strings"
 	"unsafe"
-
-	"github.com/google/uuid"
 )
 
 type zeDriverHandle C.ze_driver_handle_t
@@ -253,37 +251,16 @@ func wrappersToHandles[H any, V any, W interface {
 }
 
 /* Types for the higher level golang API */
-type ZeDeviceProperties struct {
-	Type                     uint32
-	VendorId                 uint32
-	DeviceId                 uint32
-	Flags                    uint32
-	SubdeviceId              uint32
-	CoreClockRate            uint32
-	MaxMemAllocSize          uint64
-	MaxHardwareContexts      uint32
-	MaxCommandQueuePriority  uint32
-	NumThreadsPerEU          uint32
-	PhysicalEUSimdWidth      uint32
-	NumEUsPerSubslice        uint32
-	NumSubslicesPerSlice     uint32
-	NumSlices                uint32
-	TimerResolution          uint64
-	TimestampValidBits       uint32
-	KernelTimestampValidBits uint32
-	Uuid                     uuid.UUID
-	Name                     string
+type StringProperty64 [64]byte
+
+func (s StringProperty64) String() string {
+	return C.GoString((*C.char)(unsafe.Pointer(&s[0])))
 }
 
-type ZesDeviceProperties struct {
-	Core          ZeDeviceProperties
-	NumSubdevices uint32
-	SerialNumber  string
-	BoardNumber   string
-	BrandName     string
-	ModelName     string
-	VendorName    string
-	DriverVersion string
+type StringProperty256 [256]byte
+
+func (s StringProperty256) String() string {
+	return C.GoString((*C.char)(unsafe.Pointer(&s[0])))
 }
 
 type ZesOverclockState struct {
@@ -292,43 +269,6 @@ type ZesOverclockState struct {
 	State         bool
 	PendingAction ZesPendingAction
 	PendingReset  bool
-}
-
-func newZeDeviceProperties(z *zeDeviceProperties) ZeDeviceProperties {
-	return ZeDeviceProperties{
-		Type:                     z.Type,
-		VendorId:                 z.VendorId,
-		DeviceId:                 z.DeviceId,
-		Flags:                    z.Flags,
-		SubdeviceId:              z.SubdeviceId,
-		CoreClockRate:            z.CoreClockRate,
-		MaxMemAllocSize:          z.MaxMemAllocSize,
-		MaxHardwareContexts:      z.MaxHardwareContexts,
-		MaxCommandQueuePriority:  z.MaxCommandQueuePriority,
-		NumThreadsPerEU:          z.NumThreadsPerEU,
-		PhysicalEUSimdWidth:      z.PhysicalEUSimdWidth,
-		NumEUsPerSubslice:        z.NumEUsPerSubslice,
-		NumSubslicesPerSlice:     z.NumSubslicesPerSlice,
-		NumSlices:                z.NumSlices,
-		TimerResolution:          z.TimerResolution,
-		TimestampValidBits:       z.TimestampValidBits,
-		KernelTimestampValidBits: z.KernelTimestampValidBits,
-		Uuid:                     uuid.UUID(z.Uuid.Id),
-		Name:                     C.GoString((*C.char)(unsafe.Pointer(&z.Name[0]))),
-	}
-}
-
-func newZesDeviceProperties(z *zesDeviceProperties) ZesDeviceProperties {
-	return ZesDeviceProperties{
-		Core:          newZeDeviceProperties(&z.Core),
-		NumSubdevices: z.NumSubdevices,
-		SerialNumber:  C.GoString((*C.char)(unsafe.Pointer(&z.SerialNumber[0]))),
-		BoardNumber:   C.GoString((*C.char)(unsafe.Pointer(&z.BoardNumber[0]))),
-		BrandName:     C.GoString((*C.char)(unsafe.Pointer(&z.BrandName[0]))),
-		ModelName:     C.GoString((*C.char)(unsafe.Pointer(&z.ModelName[0]))),
-		VendorName:    C.GoString((*C.char)(unsafe.Pointer(&z.VendorName[0]))),
-		DriverVersion: C.GoString((*C.char)(unsafe.Pointer(&z.DriverVersion[0]))),
-	}
 }
 
 /* Stringers for flags types */

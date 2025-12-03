@@ -13,6 +13,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"log"
 	"os"
 	"path/filepath"
@@ -34,9 +35,10 @@ type structRewriteConfig struct {
 // fieldRewriteConfig holds the configuration for mangling a specific field of
 // a struct
 type fieldRewriteConfig struct {
-	Name    string `yaml:"name"`
-	NewName string `yaml:"newName"`
-	NewType string `yaml:"newType"`
+	Name       string `yaml:"name"`
+	NewName    string `yaml:"newName"`
+	NewType    string `yaml:"newType"`
+	TypeAssert string `yaml:"typeAssert"`
 }
 
 type typeRewriteConfig struct {
@@ -146,7 +148,7 @@ func (s *structRewriteConfig) apply(structType *ast.StructType) error {
 		for _, fieldName := range field.Names {
 			if fieldRewrite, ok := fieldRewrites[fieldName.Name]; ok {
 				if err := fieldRewrite.apply(field); err != nil {
-					return fmt.Errorf("failed to apply rewrite for field %q: %w", fieldName.Name, err)
+					return fmt.Errorf("failed to rewrite field %s: %w", fieldName.Name, err)
 				}
 			}
 		}
@@ -158,12 +160,19 @@ func (f *fieldRewriteConfig) apply(field *ast.Field) error {
 	if len(field.Names) > 1 {
 		return fmt.Errorf("field rewrite cannot be applied to identifier lists")
 	}
+	if f.TypeAssert != "" {
+		typeIdent := types.ExprString(field.Type)
+		if typeIdent != f.TypeAssert {
+			return fmt.Errorf("field type assertion failed: expected %s, got %s", f.TypeAssert, typeIdent)
+		}
+	}
 	if f.NewName != "" {
 		field.Names[0].Name = f.NewName
 	}
 	if f.NewType != "" {
 		field.Type = ast.NewIdent(f.NewType)
 	}
+
 	return nil
 }
 

@@ -100,9 +100,9 @@ func (z *ZeDriver) EventListenEx(timeout time.Duration, devices []*ZeDevice) (ui
 }
 
 func (z *ZeDevice) GetProperties() (ZesDeviceProperties, error) {
-	var props zesDeviceProperties
+	var props ZesDeviceProperties
 	ret := zesDeviceGetProperties(z.handle, &props)
-	return newZesDeviceProperties(&props), ret.ToError()
+	return props, ret.ToError()
 }
 
 func (z *ZeDevice) GetSubDevicePropertiesExp() ([]ZesSubdeviceExpProperties, error) {

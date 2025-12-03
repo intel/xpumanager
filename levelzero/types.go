@@ -3,11 +3,13 @@
 
 package levelzero
 
+import "github.com/google/uuid"
+
 type ZeDeviceUuid struct {
-	Id [16]uint8
+	Id uuid.UUID
 }
 
-type zeDeviceProperties struct {
+type ZeDeviceProperties struct {
 	stype                    uint32
 	pnext                    *byte
 	Type                     uint32
@@ -28,11 +30,11 @@ type zeDeviceProperties struct {
 	TimestampValidBits       uint32
 	KernelTimestampValidBits uint32
 	Uuid                     ZeDeviceUuid
-	Name                     [256]int8
+	Name                     StringProperty256
 }
 
 type ZesDriverExtensionProperties struct {
-	Name    [256]int8
+	Name    StringProperty256
 	Version uint32
 }
 
@@ -54,17 +56,17 @@ type ZesUuid struct {
 	Id [16]uint8
 }
 
-type zesDeviceProperties struct {
+type ZesDeviceProperties struct {
 	stype         uint32
 	pnext         *byte
-	Core          zeDeviceProperties
+	Core          ZeDeviceProperties
 	NumSubdevices uint32
-	SerialNumber  [64]int8
-	BoardNumber   [64]int8
-	BrandName     [64]int8
-	ModelName     [64]int8
-	VendorName    [64]int8
-	DriverVersion [64]int8
+	SerialNumber  StringProperty64
+	BoardNumber   StringProperty64
+	BrandName     StringProperty64
+	ModelName     StringProperty64
+	VendorName    StringProperty64
+	DriverVersion StringProperty64
 	_             [4]byte
 }
 
@@ -177,7 +179,7 @@ type ZesVfProperty struct {
 
 type ZesDiagTest struct {
 	Index uint32
-	Name  [64]int8
+	Name  StringProperty64
 }
 
 type ZesDiagProperties struct {
@@ -185,7 +187,7 @@ type ZesDiagProperties struct {
 	pnext       *byte
 	OnSubdevice uint8
 	SubdeviceId uint32
-	Name        [64]int8
+	Name        StringProperty64
 	HaveTests   uint8
 	_           [7]byte
 }
@@ -236,7 +238,7 @@ type ZesFabricPortSpeed struct {
 type ZesFabricPortProperties struct {
 	stype       uint32
 	pnext       *byte
-	Model       [256]int8
+	Model       StringProperty256
 	OnSubdevice uint8
 	SubdeviceId uint32
 	PortId      ZesFabricPortId
@@ -245,7 +247,7 @@ type ZesFabricPortProperties struct {
 }
 
 type ZesFabricLinkType struct {
-	Desc [256]int8
+	Desc StringProperty256
 }
 
 type ZesFabricPortConfig struct {
@@ -324,8 +326,8 @@ type ZesFirmwareProperties struct {
 	OnSubdevice uint8
 	SubdeviceId uint32
 	CanControl  uint8
-	Name        [64]int8
-	Version     [64]int8
+	Name        StringProperty64
+	Version     StringProperty64
 	_           [7]byte
 }
 

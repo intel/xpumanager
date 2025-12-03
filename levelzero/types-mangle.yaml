@@ -10,6 +10,16 @@ structs:
         newName: stype
       - name: PNext
         newName: pnext
+  - name: ZeDeviceProperties
+    fields:
+      - name: Name
+        typeAssert: "[256]int8"
+        newType: StringProperty256
+  - name: ZeDeviceUuid
+    fields:
+      - name: Id
+        typeAssert: "[16]uint8"
+        newType: uuid.UUID
   - name: ZesDeviceEccDesc
     fields:
       - name: State
@@ -22,14 +32,59 @@ structs:
     fields:
       - name: Type
         newType: ZesDeviceType
+  - name: ZesDeviceProperties
+    fields:
+      - name: BoardNumber
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: BrandName
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: DriverVersion
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: ModelName
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: SerialNumber
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: VendorName
+        typeAssert: "[64]int8"
+        newType: StringProperty64
   - name: ZesDeviceState
     fields:
       - name: Repaired
         newType: ZesRepairStatus
+  - name: ZesDiagTest
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+  - name: ZesDiagProperties
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+  - name: ZesDriverExtensionProperties
+    fields:
+      - name: Name
+        typeAssert: "[256]int8"
+        newType: StringProperty256
   - name: ZesEngineProperties
     fields:
       - name: Type
         newType: ZesEngineGroup
+  - name: ZesFabricLinkType
+    fields:
+      - name: Desc
+        typeAssert: "[256]int8"
+        newType: StringProperty256
+  - name: ZesFabricPortProperties
+    fields:
+      - name: Model
+        typeAssert: "[256]int8"
+        newType: StringProperty256
   - name: ZesFabricPortState
     fields:
       - name: Status
@@ -42,6 +97,14 @@ structs:
     fields:
       - name: Units
         newType: ZesFanSpeedUnits
+  - name: ZesFirmwareProperties
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: StringProperty64
+      - name: Version
+        typeAssert: "[64]int8"
+        newType: StringProperty64
   - name: ZesFreqProperties
     fields:
       - name: Type

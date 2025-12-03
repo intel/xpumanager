@@ -68,7 +68,7 @@ func zesDeviceGet(HDriver zeDriverHandle, PCount *uint32, PhDevices []zeDeviceHa
 }
 
 // zesDeviceGetProperties function as declared in levelzero/zes_api.h:965
-func zesDeviceGetProperties(HDevice zeDeviceHandle, PProperties *zesDeviceProperties) ZeResult {
+func zesDeviceGetProperties(HDevice zeDeviceHandle, PProperties *ZesDeviceProperties) ZeResult {
 	cHDevice, cHDeviceAllocMap := *(*C.ze_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPProperties, cPPropertiesAllocMap := (*C.zes_device_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
 	__ret := C.zesDeviceGetProperties(cHDevice, cPProperties)

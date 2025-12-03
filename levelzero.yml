@@ -61,8 +61,6 @@ TRANSLATOR:
       - {action: ignore, from: "^zes_structure_type_t$"}
       - {action: replace, from: "_t$"}
       - {transform: export}
-      - {transform: unexport, from: "Zes_device_properties$"}
-      - {transform: unexport, from: "Ze_device_properties$"}
       - {load: snakecase}
       - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
       # Deprecated types from zes_api.h
