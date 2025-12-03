@@ -20,6 +20,7 @@ TRANSLATOR:
     const:
       - {action: accept, from: "^ZE_RESULT_"}
       - {action: accept, from: "^ZE_DEVICE_PROPERTY_FLAG_"}
+      - {action: accept, from: "^ZE_DEVICE_TYPE_"}
       - {action: replace, from: "^ZE_"}
       - {transform: export}
     function:
@@ -28,6 +29,7 @@ TRANSLATOR:
       - {action: accept, from: "^ze_device_properties_t$"}
       - {action: accept, from: "^ze_device_uuid_t$"}
       - {action: accept, from: "^ze_device_property_flag_t$"}
+      - {action: accept, from: "^ze_device_type_t$"}
       - {action: replace, from: "^ze_"}
       - {action: replace, from: "_t$"}
       - {transform: export}

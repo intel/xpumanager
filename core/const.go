@@ -77,6 +77,19 @@ const (
 	RESULT_FORCE_UINT32                         Result = 2147483647
 )
 
+// DeviceType as declared in levelzero/ze_api.h:1702
+type DeviceType int32
+
+// DeviceType enumeration from levelzero/ze_api.h:1702
+const (
+	DEVICE_TYPE_GPU          DeviceType = 1
+	DEVICE_TYPE_CPU          DeviceType = 2
+	DEVICE_TYPE_FPGA         DeviceType = 3
+	DEVICE_TYPE_MCA          DeviceType = 4
+	DEVICE_TYPE_VPU          DeviceType = 5
+	DEVICE_TYPE_FORCE_UINT32 DeviceType = 2147483647
+)
+
 // DevicePropertyFlag as declared in levelzero/ze_api.h:1735
 type DevicePropertyFlag int32
 

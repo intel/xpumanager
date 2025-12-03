@@ -17,6 +17,8 @@ structs:
       - name: Name
         typeAssert: "[256]int8"
         newType: StringProperty256
+      - name: Type
+        newType: DeviceType
   - name: DeviceUuid
     fields:
       - name: Id
