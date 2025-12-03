@@ -19,6 +19,6 @@ structs:
         newType: StringProperty256
   - name: DeviceUuid
     fields:
-      - name: id
+      - name: Id
         typeAssert: "[16]uint8"
         newType: uuid.UUID

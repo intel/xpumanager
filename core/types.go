@@ -3,8 +3,10 @@
 
 package core
 
+import "github.com/google/uuid"
+
 type DeviceUuid struct {
-	Id [16]uint8
+	Id uuid.UUID
 }
 
 type DeviceProperties struct {
