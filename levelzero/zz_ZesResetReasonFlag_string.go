@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_RESET_REASON_FLAG_WEDGED-1]
 	_ = x[ZES_RESET_REASON_FLAG_REPAIR-2]
-	_ = x[ZES_RESET_REASON_FLAG_FORCE_UINT32-2147483647]
+	_ = x[ZES_RESET_REASON_FLAG_END_MARKER-2147483647]
 }
 
 const (
 	_ZesResetReasonFlag_name_0 = "WEDGEDREPAIR"
-	_ZesResetReasonFlag_name_1 = "FORCE_UINT32"
+	_ZesResetReasonFlag_name_1 = "END_MARKER"
 )
 
 var (

@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_MEM_LOC_SYSTEM-0]
 	_ = x[ZES_MEM_LOC_DEVICE-1]
-	_ = x[ZES_MEM_LOC_FORCE_UINT32-2147483647]
+	_ = x[ZES_MEM_LOC_END_MARKER-2147483647]
 }
 
 const (
 	_ZesMemLoc_name_0 = "SYSTEMDEVICE"
-	_ZesMemLoc_name_1 = "FORCE_UINT32"
+	_ZesMemLoc_name_1 = "END_MARKER"
 )
 
 var (

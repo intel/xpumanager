@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_VF_MANAGEMENT_EXP_VERSION_1_2-65538]
 	_ = x[ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT-65538]
-	_ = x[ZES_VF_MANAGEMENT_EXP_VERSION_FORCE_UINT32-2147483647]
+	_ = x[ZES_VF_MANAGEMENT_EXP_VERSION_END_MARKER-2147483647]
 }
 
 const (
 	_ZesVfManagementExpVersion_name_0 = "1_2"
-	_ZesVfManagementExpVersion_name_1 = "FORCE_UINT32"
+	_ZesVfManagementExpVersion_name_1 = "END_MARKER"
 )
 
 func (i ZesVfManagementExpVersion) String() string {

@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_RAS_ERROR_TYPE_CORRECTABLE-0]
 	_ = x[ZES_RAS_ERROR_TYPE_UNCORRECTABLE-1]
-	_ = x[ZES_RAS_ERROR_TYPE_FORCE_UINT32-2147483647]
+	_ = x[ZES_RAS_ERROR_TYPE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesRasErrorType_name_0 = "CORRECTABLEUNCORRECTABLE"
-	_ZesRasErrorType_name_1 = "FORCE_UINT32"
+	_ZesRasErrorType_name_1 = "END_MARKER"
 )
 
 var (

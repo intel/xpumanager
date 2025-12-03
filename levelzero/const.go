@@ -118,7 +118,7 @@ const (
 	ZE_RESULT_ERROR_SURVIVABILITY_MODE_DETECTED    ZeResult = 2013265952
 	ZE_RESULT_ERROR_ADDRESS_NOT_FOUND              ZeResult = 2013265953
 	ZE_RESULT_ERROR_UNKNOWN                        ZeResult = 2147483646
-	ZE_RESULT_FORCE_UINT32                         ZeResult = 2147483647
+	ZE_RESULT_END_MARKER                           ZeResult = 2147483647
 )
 
 // ZesInitFlag as declared in levelzero/zes_api.h:592
@@ -126,8 +126,8 @@ type ZesInitFlag int32
 
 // ZesInitFlag enumeration from levelzero/zes_api.h:592
 const (
-	ZES_INIT_FLAG_PLACEHOLDER  ZesInitFlag = 1
-	ZES_INIT_FLAG_FORCE_UINT32 ZesInitFlag = 2147483647
+	ZES_INIT_FLAG_PLACEHOLDER ZesInitFlag = 1
+	ZES_INIT_FLAG_END_MARKER  ZesInitFlag = 2147483647
 )
 
 // ZesEngineTypeFlag as declared in levelzero/zes_api.h:803
@@ -135,13 +135,13 @@ type ZesEngineTypeFlag int32
 
 // ZesEngineTypeFlag enumeration from levelzero/zes_api.h:803
 const (
-	ZES_ENGINE_TYPE_FLAG_OTHER        ZesEngineTypeFlag = 1
-	ZES_ENGINE_TYPE_FLAG_COMPUTE      ZesEngineTypeFlag = 2
-	ZES_ENGINE_TYPE_FLAG_3D           ZesEngineTypeFlag = 4
-	ZES_ENGINE_TYPE_FLAG_MEDIA        ZesEngineTypeFlag = 8
-	ZES_ENGINE_TYPE_FLAG_DMA          ZesEngineTypeFlag = 16
-	ZES_ENGINE_TYPE_FLAG_RENDER       ZesEngineTypeFlag = 32
-	ZES_ENGINE_TYPE_FLAG_FORCE_UINT32 ZesEngineTypeFlag = 2147483647
+	ZES_ENGINE_TYPE_FLAG_OTHER      ZesEngineTypeFlag = 1
+	ZES_ENGINE_TYPE_FLAG_COMPUTE    ZesEngineTypeFlag = 2
+	ZES_ENGINE_TYPE_FLAG_3D         ZesEngineTypeFlag = 4
+	ZES_ENGINE_TYPE_FLAG_MEDIA      ZesEngineTypeFlag = 8
+	ZES_ENGINE_TYPE_FLAG_DMA        ZesEngineTypeFlag = 16
+	ZES_ENGINE_TYPE_FLAG_RENDER     ZesEngineTypeFlag = 32
+	ZES_ENGINE_TYPE_FLAG_END_MARKER ZesEngineTypeFlag = 2147483647
 )
 
 // ZesRepairStatus as declared in levelzero/zes_api.h:814
@@ -152,7 +152,7 @@ const (
 	ZES_REPAIR_STATUS_UNSUPPORTED   ZesRepairStatus = iota
 	ZES_REPAIR_STATUS_NOT_PERFORMED ZesRepairStatus = 1
 	ZES_REPAIR_STATUS_PERFORMED     ZesRepairStatus = 2
-	ZES_REPAIR_STATUS_FORCE_UINT32  ZesRepairStatus = 2147483647
+	ZES_REPAIR_STATUS_END_MARKER    ZesRepairStatus = 2147483647
 )
 
 // ZesResetReasonFlag as declared in levelzero/zes_api.h:826
@@ -160,9 +160,9 @@ type ZesResetReasonFlag int32
 
 // ZesResetReasonFlag enumeration from levelzero/zes_api.h:826
 const (
-	ZES_RESET_REASON_FLAG_WEDGED       ZesResetReasonFlag = 1
-	ZES_RESET_REASON_FLAG_REPAIR       ZesResetReasonFlag = 2
-	ZES_RESET_REASON_FLAG_FORCE_UINT32 ZesResetReasonFlag = 2147483647
+	ZES_RESET_REASON_FLAG_WEDGED     ZesResetReasonFlag = 1
+	ZES_RESET_REASON_FLAG_REPAIR     ZesResetReasonFlag = 2
+	ZES_RESET_REASON_FLAG_END_MARKER ZesResetReasonFlag = 2147483647
 )
 
 // ZesResetType as declared in levelzero/zes_api.h:837
@@ -170,10 +170,10 @@ type ZesResetType int32
 
 // ZesResetType enumeration from levelzero/zes_api.h:837
 const (
-	ZES_RESET_TYPE_WARM         ZesResetType = iota
-	ZES_RESET_TYPE_COLD         ZesResetType = 1
-	ZES_RESET_TYPE_FLR          ZesResetType = 2
-	ZES_RESET_TYPE_FORCE_UINT32 ZesResetType = 2147483647
+	ZES_RESET_TYPE_WARM       ZesResetType = iota
+	ZES_RESET_TYPE_COLD       ZesResetType = 1
+	ZES_RESET_TYPE_FLR        ZesResetType = 2
+	ZES_RESET_TYPE_END_MARKER ZesResetType = 2147483647
 )
 
 // ZesDeviceType as declared in levelzero/zes_api.h:884
@@ -181,12 +181,12 @@ type ZesDeviceType int32
 
 // ZesDeviceType enumeration from levelzero/zes_api.h:884
 const (
-	ZES_DEVICE_TYPE_GPU          ZesDeviceType = 1
-	ZES_DEVICE_TYPE_CPU          ZesDeviceType = 2
-	ZES_DEVICE_TYPE_FPGA         ZesDeviceType = 3
-	ZES_DEVICE_TYPE_MCA          ZesDeviceType = 4
-	ZES_DEVICE_TYPE_VPU          ZesDeviceType = 5
-	ZES_DEVICE_TYPE_FORCE_UINT32 ZesDeviceType = 2147483647
+	ZES_DEVICE_TYPE_GPU        ZesDeviceType = 1
+	ZES_DEVICE_TYPE_CPU        ZesDeviceType = 2
+	ZES_DEVICE_TYPE_FPGA       ZesDeviceType = 3
+	ZES_DEVICE_TYPE_MCA        ZesDeviceType = 4
+	ZES_DEVICE_TYPE_VPU        ZesDeviceType = 5
+	ZES_DEVICE_TYPE_END_MARKER ZesDeviceType = 2147483647
 )
 
 // ZesDevicePropertyFlag as declared in levelzero/zes_api.h:897
@@ -198,7 +198,7 @@ const (
 	ZES_DEVICE_PROPERTY_FLAG_SUBDEVICE      ZesDevicePropertyFlag = 2
 	ZES_DEVICE_PROPERTY_FLAG_ECC            ZesDevicePropertyFlag = 4
 	ZES_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING ZesDevicePropertyFlag = 8
-	ZES_DEVICE_PROPERTY_FLAG_FORCE_UINT32   ZesDevicePropertyFlag = 2147483647
+	ZES_DEVICE_PROPERTY_FLAG_END_MARKER     ZesDevicePropertyFlag = 2147483647
 )
 
 // ZesPciLinkStatus as declared in levelzero/zes_api.h:1181
@@ -210,7 +210,7 @@ const (
 	ZES_PCI_LINK_STATUS_GOOD             ZesPciLinkStatus = 1
 	ZES_PCI_LINK_STATUS_QUALITY_ISSUES   ZesPciLinkStatus = 2
 	ZES_PCI_LINK_STATUS_STABILITY_ISSUES ZesPciLinkStatus = 3
-	ZES_PCI_LINK_STATUS_FORCE_UINT32     ZesPciLinkStatus = 2147483647
+	ZES_PCI_LINK_STATUS_END_MARKER       ZesPciLinkStatus = 2147483647
 )
 
 // ZesPciLinkQualIssueFlag as declared in levelzero/zes_api.h:1192
@@ -218,9 +218,9 @@ type ZesPciLinkQualIssueFlag int32
 
 // ZesPciLinkQualIssueFlag enumeration from levelzero/zes_api.h:1192
 const (
-	ZES_PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS      ZesPciLinkQualIssueFlag = 1
-	ZES_PCI_LINK_QUAL_ISSUE_FLAG_SPEED        ZesPciLinkQualIssueFlag = 2
-	ZES_PCI_LINK_QUAL_ISSUE_FLAG_FORCE_UINT32 ZesPciLinkQualIssueFlag = 2147483647
+	ZES_PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS    ZesPciLinkQualIssueFlag = 1
+	ZES_PCI_LINK_QUAL_ISSUE_FLAG_SPEED      ZesPciLinkQualIssueFlag = 2
+	ZES_PCI_LINK_QUAL_ISSUE_FLAG_END_MARKER ZesPciLinkQualIssueFlag = 2147483647
 )
 
 // ZesPciLinkStabIssueFlag as declared in levelzero/zes_api.h:1202
@@ -228,8 +228,8 @@ type ZesPciLinkStabIssueFlag int32
 
 // ZesPciLinkStabIssueFlag enumeration from levelzero/zes_api.h:1202
 const (
-	ZES_PCI_LINK_STAB_ISSUE_FLAG_RETRAINING   ZesPciLinkStabIssueFlag = 1
-	ZES_PCI_LINK_STAB_ISSUE_FLAG_FORCE_UINT32 ZesPciLinkStabIssueFlag = 2147483647
+	ZES_PCI_LINK_STAB_ISSUE_FLAG_RETRAINING ZesPciLinkStabIssueFlag = 1
+	ZES_PCI_LINK_STAB_ISSUE_FLAG_END_MARKER ZesPciLinkStabIssueFlag = 2147483647
 )
 
 // ZesPciBarType as declared in levelzero/zes_api.h:1235
@@ -237,10 +237,10 @@ type ZesPciBarType int32
 
 // ZesPciBarType enumeration from levelzero/zes_api.h:1235
 const (
-	ZES_PCI_BAR_TYPE_MMIO         ZesPciBarType = iota
-	ZES_PCI_BAR_TYPE_ROM          ZesPciBarType = 1
-	ZES_PCI_BAR_TYPE_MEM          ZesPciBarType = 2
-	ZES_PCI_BAR_TYPE_FORCE_UINT32 ZesPciBarType = 2147483647
+	ZES_PCI_BAR_TYPE_MMIO       ZesPciBarType = iota
+	ZES_PCI_BAR_TYPE_ROM        ZesPciBarType = 1
+	ZES_PCI_BAR_TYPE_MEM        ZesPciBarType = 2
+	ZES_PCI_BAR_TYPE_END_MARKER ZesPciBarType = 2147483647
 )
 
 // ZesOverclockDomain as declared in levelzero/zes_api.h:1428
@@ -257,7 +257,7 @@ const (
 	ZES_OVERCLOCK_DOMAIN_GPU_MEDIA          ZesOverclockDomain = 64
 	ZES_OVERCLOCK_DOMAIN_VRAM               ZesOverclockDomain = 128
 	ZES_OVERCLOCK_DOMAIN_ADM                ZesOverclockDomain = 256
-	ZES_OVERCLOCK_DOMAIN_FORCE_UINT32       ZesOverclockDomain = 2147483647
+	ZES_OVERCLOCK_DOMAIN_END_MARKER         ZesOverclockDomain = 2147483647
 )
 
 // ZesOverclockControl as declared in levelzero/zes_api.h:1451
@@ -277,7 +277,7 @@ const (
 	ZES_OVERCLOCK_CONTROL_TEMP_LIMIT            ZesOverclockControl = 512
 	ZES_OVERCLOCK_CONTROL_ITD_DISABLE           ZesOverclockControl = 1024
 	ZES_OVERCLOCK_CONTROL_ACM_DISABLE           ZesOverclockControl = 2048
-	ZES_OVERCLOCK_CONTROL_FORCE_UINT32          ZesOverclockControl = 2147483647
+	ZES_OVERCLOCK_CONTROL_END_MARKER            ZesOverclockControl = 2147483647
 )
 
 // ZesOverclockMode as declared in levelzero/zes_api.h:1465
@@ -290,7 +290,7 @@ const (
 	ZES_OVERCLOCK_MODE_MODE_ON          ZesOverclockMode = 3
 	ZES_OVERCLOCK_MODE_MODE_UNAVAILABLE ZesOverclockMode = 4
 	ZES_OVERCLOCK_MODE_MODE_DISABLED    ZesOverclockMode = 5
-	ZES_OVERCLOCK_MODE_FORCE_UINT32     ZesOverclockMode = 2147483647
+	ZES_OVERCLOCK_MODE_END_MARKER       ZesOverclockMode = 2147483647
 )
 
 // ZesControlState as declared in levelzero/zes_api.h:1478
@@ -301,7 +301,7 @@ const (
 	ZES_CONTROL_STATE_STATE_UNSET    ZesControlState = iota
 	ZES_CONTROL_STATE_STATE_ACTIVE   ZesControlState = 2
 	ZES_CONTROL_STATE_STATE_DISABLED ZesControlState = 3
-	ZES_CONTROL_STATE_FORCE_UINT32   ZesControlState = 2147483647
+	ZES_CONTROL_STATE_END_MARKER     ZesControlState = 2147483647
 )
 
 // ZesPendingAction as declared in levelzero/zes_api.h:1491
@@ -313,7 +313,7 @@ const (
 	ZES_PENDING_ACTION_PENDING_IMMINENT   ZesPendingAction = 1
 	ZES_PENDING_ACTION_PENDING_COLD_RESET ZesPendingAction = 2
 	ZES_PENDING_ACTION_PENDING_WARM_RESET ZesPendingAction = 3
-	ZES_PENDING_ACTION_FORCE_UINT32       ZesPendingAction = 2147483647
+	ZES_PENDING_ACTION_END_MARKER         ZesPendingAction = 2147483647
 )
 
 // ZesVfProgramType as declared in levelzero/zes_api.h:1506
@@ -324,7 +324,7 @@ const (
 	ZES_VF_PROGRAM_TYPE_VF_ARBITRARY  ZesVfProgramType = iota
 	ZES_VF_PROGRAM_TYPE_VF_FREQ_FIXED ZesVfProgramType = 1
 	ZES_VF_PROGRAM_TYPE_VF_VOLT_FIXED ZesVfProgramType = 2
-	ZES_VF_PROGRAM_TYPE_FORCE_UINT32  ZesVfProgramType = 2147483647
+	ZES_VF_PROGRAM_TYPE_END_MARKER    ZesVfProgramType = 2147483647
 )
 
 // ZesVfType as declared in levelzero/zes_api.h:1516
@@ -332,9 +332,9 @@ type ZesVfType int32
 
 // ZesVfType enumeration from levelzero/zes_api.h:1516
 const (
-	ZES_VF_TYPE_VOLT         ZesVfType = iota
-	ZES_VF_TYPE_FREQ         ZesVfType = 1
-	ZES_VF_TYPE_FORCE_UINT32 ZesVfType = 2147483647
+	ZES_VF_TYPE_VOLT       ZesVfType = iota
+	ZES_VF_TYPE_FREQ       ZesVfType = 1
+	ZES_VF_TYPE_END_MARKER ZesVfType = 2147483647
 )
 
 // ZesVfArrayType as declared in levelzero/zes_api.h:1527
@@ -345,7 +345,7 @@ const (
 	ZES_VF_ARRAY_TYPE_USER_VF_ARRAY    ZesVfArrayType = iota
 	ZES_VF_ARRAY_TYPE_DEFAULT_VF_ARRAY ZesVfArrayType = 1
 	ZES_VF_ARRAY_TYPE_LIVE_VF_ARRAY    ZesVfArrayType = 2
-	ZES_VF_ARRAY_TYPE_FORCE_UINT32     ZesVfArrayType = 2147483647
+	ZES_VF_ARRAY_TYPE_END_MARKER       ZesVfArrayType = 2147483647
 )
 
 // ZesDiagResult as declared in levelzero/zes_api.h:2041
@@ -357,7 +357,7 @@ const (
 	ZES_DIAG_RESULT_ABORT             ZesDiagResult = 1
 	ZES_DIAG_RESULT_FAIL_CANT_REPAIR  ZesDiagResult = 2
 	ZES_DIAG_RESULT_REBOOT_FOR_REPAIR ZesDiagResult = 3
-	ZES_DIAG_RESULT_FORCE_UINT32      ZesDiagResult = 2147483647
+	ZES_DIAG_RESULT_END_MARKER        ZesDiagResult = 2147483647
 )
 
 // ZesDeviceEccState as declared in levelzero/zes_api.h:2227
@@ -365,10 +365,10 @@ type ZesDeviceEccState int32
 
 // ZesDeviceEccState enumeration from levelzero/zes_api.h:2227
 const (
-	ZES_DEVICE_ECC_STATE_UNAVAILABLE  ZesDeviceEccState = iota
-	ZES_DEVICE_ECC_STATE_ENABLED      ZesDeviceEccState = 1
-	ZES_DEVICE_ECC_STATE_DISABLED     ZesDeviceEccState = 2
-	ZES_DEVICE_ECC_STATE_FORCE_UINT32 ZesDeviceEccState = 2147483647
+	ZES_DEVICE_ECC_STATE_UNAVAILABLE ZesDeviceEccState = iota
+	ZES_DEVICE_ECC_STATE_ENABLED     ZesDeviceEccState = 1
+	ZES_DEVICE_ECC_STATE_DISABLED    ZesDeviceEccState = 2
+	ZES_DEVICE_ECC_STATE_END_MARKER  ZesDeviceEccState = 2147483647
 )
 
 // ZesDeviceAction as declared in levelzero/zes_api.h:2239
@@ -380,7 +380,7 @@ const (
 	ZES_DEVICE_ACTION_WARM_CARD_RESET    ZesDeviceAction = 1
 	ZES_DEVICE_ACTION_COLD_CARD_RESET    ZesDeviceAction = 2
 	ZES_DEVICE_ACTION_COLD_SYSTEM_REBOOT ZesDeviceAction = 3
-	ZES_DEVICE_ACTION_FORCE_UINT32       ZesDeviceAction = 2147483647
+	ZES_DEVICE_ACTION_END_MARKER         ZesDeviceAction = 2147483647
 )
 
 // ZesEngineGroup as declared in levelzero/zes_api.h:2416
@@ -398,7 +398,7 @@ const (
 	ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE ZesEngineGroup = 9
 	ZES_ENGINE_GROUP_RENDER_ALL               ZesEngineGroup = 12
 	ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE       ZesEngineGroup = 14
-	ZES_ENGINE_GROUP_FORCE_UINT32             ZesEngineGroup = 2147483647
+	ZES_ENGINE_GROUP_END_MARKER               ZesEngineGroup = 2147483647
 )
 
 // ZesEventTypeFlag as declared in levelzero/zes_api.h:2584
@@ -422,7 +422,7 @@ const (
 	ZES_EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS    ZesEventTypeFlag = 8192
 	ZES_EVENT_TYPE_FLAG_DEVICE_RESET_REQUIRED       ZesEventTypeFlag = 16384
 	ZES_EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED ZesEventTypeFlag = 32768
-	ZES_EVENT_TYPE_FLAG_FORCE_UINT32                ZesEventTypeFlag = 2147483647
+	ZES_EVENT_TYPE_FLAG_END_MARKER                  ZesEventTypeFlag = 2147483647
 )
 
 // ZesFabricPortStatus as declared in levelzero/zes_api.h:2731
@@ -430,12 +430,12 @@ type ZesFabricPortStatus int32
 
 // ZesFabricPortStatus enumeration from levelzero/zes_api.h:2731
 const (
-	ZES_FABRIC_PORT_STATUS_UNKNOWN      ZesFabricPortStatus = iota
-	ZES_FABRIC_PORT_STATUS_HEALTHY      ZesFabricPortStatus = 1
-	ZES_FABRIC_PORT_STATUS_DEGRADED     ZesFabricPortStatus = 2
-	ZES_FABRIC_PORT_STATUS_FAILED       ZesFabricPortStatus = 3
-	ZES_FABRIC_PORT_STATUS_DISABLED     ZesFabricPortStatus = 4
-	ZES_FABRIC_PORT_STATUS_FORCE_UINT32 ZesFabricPortStatus = 2147483647
+	ZES_FABRIC_PORT_STATUS_UNKNOWN    ZesFabricPortStatus = iota
+	ZES_FABRIC_PORT_STATUS_HEALTHY    ZesFabricPortStatus = 1
+	ZES_FABRIC_PORT_STATUS_DEGRADED   ZesFabricPortStatus = 2
+	ZES_FABRIC_PORT_STATUS_FAILED     ZesFabricPortStatus = 3
+	ZES_FABRIC_PORT_STATUS_DISABLED   ZesFabricPortStatus = 4
+	ZES_FABRIC_PORT_STATUS_END_MARKER ZesFabricPortStatus = 2147483647
 )
 
 // ZesFabricPortQualIssueFlag as declared in levelzero/zes_api.h:2742
@@ -443,9 +443,9 @@ type ZesFabricPortQualIssueFlag int32
 
 // ZesFabricPortQualIssueFlag enumeration from levelzero/zes_api.h:2742
 const (
-	ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_LINK_ERRORS  ZesFabricPortQualIssueFlag = 1
-	ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_SPEED        ZesFabricPortQualIssueFlag = 2
-	ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_FORCE_UINT32 ZesFabricPortQualIssueFlag = 2147483647
+	ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_LINK_ERRORS ZesFabricPortQualIssueFlag = 1
+	ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_SPEED       ZesFabricPortQualIssueFlag = 2
+	ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_END_MARKER  ZesFabricPortQualIssueFlag = 2147483647
 )
 
 // ZesFabricPortFailureFlag as declared in levelzero/zes_api.h:2762
@@ -456,7 +456,7 @@ const (
 	ZES_FABRIC_PORT_FAILURE_FLAG_FAILED           ZesFabricPortFailureFlag = 1
 	ZES_FABRIC_PORT_FAILURE_FLAG_TRAINING_TIMEOUT ZesFabricPortFailureFlag = 2
 	ZES_FABRIC_PORT_FAILURE_FLAG_FLAPPING         ZesFabricPortFailureFlag = 4
-	ZES_FABRIC_PORT_FAILURE_FLAG_FORCE_UINT32     ZesFabricPortFailureFlag = 2147483647
+	ZES_FABRIC_PORT_FAILURE_FLAG_END_MARKER       ZesFabricPortFailureFlag = 2147483647
 )
 
 // ZesFanSpeedMode as declared in levelzero/zes_api.h:3147
@@ -464,10 +464,10 @@ type ZesFanSpeedMode int32
 
 // ZesFanSpeedMode enumeration from levelzero/zes_api.h:3147
 const (
-	ZES_FAN_SPEED_MODE_DEFAULT      ZesFanSpeedMode = iota
-	ZES_FAN_SPEED_MODE_FIXED        ZesFanSpeedMode = 1
-	ZES_FAN_SPEED_MODE_TABLE        ZesFanSpeedMode = 2
-	ZES_FAN_SPEED_MODE_FORCE_UINT32 ZesFanSpeedMode = 2147483647
+	ZES_FAN_SPEED_MODE_DEFAULT    ZesFanSpeedMode = iota
+	ZES_FAN_SPEED_MODE_FIXED      ZesFanSpeedMode = 1
+	ZES_FAN_SPEED_MODE_TABLE      ZesFanSpeedMode = 2
+	ZES_FAN_SPEED_MODE_END_MARKER ZesFanSpeedMode = 2147483647
 )
 
 // ZesFanSpeedUnits as declared in levelzero/zes_api.h:3157
@@ -475,9 +475,9 @@ type ZesFanSpeedUnits int32
 
 // ZesFanSpeedUnits enumeration from levelzero/zes_api.h:3157
 const (
-	ZES_FAN_SPEED_UNITS_RPM          ZesFanSpeedUnits = iota
-	ZES_FAN_SPEED_UNITS_PERCENT      ZesFanSpeedUnits = 1
-	ZES_FAN_SPEED_UNITS_FORCE_UINT32 ZesFanSpeedUnits = 2147483647
+	ZES_FAN_SPEED_UNITS_RPM        ZesFanSpeedUnits = iota
+	ZES_FAN_SPEED_UNITS_PERCENT    ZesFanSpeedUnits = 1
+	ZES_FAN_SPEED_UNITS_END_MARKER ZesFanSpeedUnits = 2147483647
 )
 
 // ZesFreqDomain as declared in levelzero/zes_api.h:3604
@@ -485,10 +485,10 @@ type ZesFreqDomain int32
 
 // ZesFreqDomain enumeration from levelzero/zes_api.h:3604
 const (
-	ZES_FREQ_DOMAIN_GPU          ZesFreqDomain = iota
-	ZES_FREQ_DOMAIN_MEMORY       ZesFreqDomain = 1
-	ZES_FREQ_DOMAIN_MEDIA        ZesFreqDomain = 2
-	ZES_FREQ_DOMAIN_FORCE_UINT32 ZesFreqDomain = 2147483647
+	ZES_FREQ_DOMAIN_GPU        ZesFreqDomain = iota
+	ZES_FREQ_DOMAIN_MEMORY     ZesFreqDomain = 1
+	ZES_FREQ_DOMAIN_MEDIA      ZesFreqDomain = 2
+	ZES_FREQ_DOMAIN_END_MARKER ZesFreqDomain = 2147483647
 )
 
 // ZesFreqThrottleReasonFlag as declared in levelzero/zes_api.h:3678
@@ -503,7 +503,7 @@ const (
 	ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT     ZesFreqThrottleReasonFlag = 16
 	ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE      ZesFreqThrottleReasonFlag = 32
 	ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE      ZesFreqThrottleReasonFlag = 64
-	ZES_FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32  ZesFreqThrottleReasonFlag = 2147483647
+	ZES_FREQ_THROTTLE_REASON_FLAG_END_MARKER    ZesFreqThrottleReasonFlag = 2147483647
 )
 
 // ZesMemType as declared in levelzero/zes_api.h:4542
@@ -511,27 +511,27 @@ type ZesMemType int32
 
 // ZesMemType enumeration from levelzero/zes_api.h:4542
 const (
-	ZES_MEM_TYPE_HBM          ZesMemType = iota
-	ZES_MEM_TYPE_DDR          ZesMemType = 1
-	ZES_MEM_TYPE_DDR3         ZesMemType = 2
-	ZES_MEM_TYPE_DDR4         ZesMemType = 3
-	ZES_MEM_TYPE_DDR5         ZesMemType = 4
-	ZES_MEM_TYPE_LPDDR        ZesMemType = 5
-	ZES_MEM_TYPE_LPDDR3       ZesMemType = 6
-	ZES_MEM_TYPE_LPDDR4       ZesMemType = 7
-	ZES_MEM_TYPE_LPDDR5       ZesMemType = 8
-	ZES_MEM_TYPE_SRAM         ZesMemType = 9
-	ZES_MEM_TYPE_L1           ZesMemType = 10
-	ZES_MEM_TYPE_L3           ZesMemType = 11
-	ZES_MEM_TYPE_GRF          ZesMemType = 12
-	ZES_MEM_TYPE_SLM          ZesMemType = 13
-	ZES_MEM_TYPE_GDDR4        ZesMemType = 14
-	ZES_MEM_TYPE_GDDR5        ZesMemType = 15
-	ZES_MEM_TYPE_GDDR5X       ZesMemType = 16
-	ZES_MEM_TYPE_GDDR6        ZesMemType = 17
-	ZES_MEM_TYPE_GDDR6X       ZesMemType = 18
-	ZES_MEM_TYPE_GDDR7        ZesMemType = 19
-	ZES_MEM_TYPE_FORCE_UINT32 ZesMemType = 2147483647
+	ZES_MEM_TYPE_HBM        ZesMemType = iota
+	ZES_MEM_TYPE_DDR        ZesMemType = 1
+	ZES_MEM_TYPE_DDR3       ZesMemType = 2
+	ZES_MEM_TYPE_DDR4       ZesMemType = 3
+	ZES_MEM_TYPE_DDR5       ZesMemType = 4
+	ZES_MEM_TYPE_LPDDR      ZesMemType = 5
+	ZES_MEM_TYPE_LPDDR3     ZesMemType = 6
+	ZES_MEM_TYPE_LPDDR4     ZesMemType = 7
+	ZES_MEM_TYPE_LPDDR5     ZesMemType = 8
+	ZES_MEM_TYPE_SRAM       ZesMemType = 9
+	ZES_MEM_TYPE_L1         ZesMemType = 10
+	ZES_MEM_TYPE_L3         ZesMemType = 11
+	ZES_MEM_TYPE_GRF        ZesMemType = 12
+	ZES_MEM_TYPE_SLM        ZesMemType = 13
+	ZES_MEM_TYPE_GDDR4      ZesMemType = 14
+	ZES_MEM_TYPE_GDDR5      ZesMemType = 15
+	ZES_MEM_TYPE_GDDR5X     ZesMemType = 16
+	ZES_MEM_TYPE_GDDR6      ZesMemType = 17
+	ZES_MEM_TYPE_GDDR6X     ZesMemType = 18
+	ZES_MEM_TYPE_GDDR7      ZesMemType = 19
+	ZES_MEM_TYPE_END_MARKER ZesMemType = 2147483647
 )
 
 // ZesMemLoc as declared in levelzero/zes_api.h:4552
@@ -539,9 +539,9 @@ type ZesMemLoc int32
 
 // ZesMemLoc enumeration from levelzero/zes_api.h:4552
 const (
-	ZES_MEM_LOC_SYSTEM       ZesMemLoc = iota
-	ZES_MEM_LOC_DEVICE       ZesMemLoc = 1
-	ZES_MEM_LOC_FORCE_UINT32 ZesMemLoc = 2147483647
+	ZES_MEM_LOC_SYSTEM     ZesMemLoc = iota
+	ZES_MEM_LOC_DEVICE     ZesMemLoc = 1
+	ZES_MEM_LOC_END_MARKER ZesMemLoc = 2147483647
 )
 
 // ZesMemHealth as declared in levelzero/zes_api.h:4567
@@ -549,12 +549,12 @@ type ZesMemHealth int32
 
 // ZesMemHealth enumeration from levelzero/zes_api.h:4567
 const (
-	ZES_MEM_HEALTH_UNKNOWN      ZesMemHealth = iota
-	ZES_MEM_HEALTH_OK           ZesMemHealth = 1
-	ZES_MEM_HEALTH_DEGRADED     ZesMemHealth = 2
-	ZES_MEM_HEALTH_CRITICAL     ZesMemHealth = 3
-	ZES_MEM_HEALTH_REPLACE      ZesMemHealth = 4
-	ZES_MEM_HEALTH_FORCE_UINT32 ZesMemHealth = 2147483647
+	ZES_MEM_HEALTH_UNKNOWN    ZesMemHealth = iota
+	ZES_MEM_HEALTH_OK         ZesMemHealth = 1
+	ZES_MEM_HEALTH_DEGRADED   ZesMemHealth = 2
+	ZES_MEM_HEALTH_CRITICAL   ZesMemHealth = 3
+	ZES_MEM_HEALTH_REPLACE    ZesMemHealth = 4
+	ZES_MEM_HEALTH_END_MARKER ZesMemHealth = 2147483647
 )
 
 // ZesPowerDomain as declared in levelzero/zes_api.h:4905
@@ -562,13 +562,13 @@ type ZesPowerDomain int32
 
 // ZesPowerDomain enumeration from levelzero/zes_api.h:4905
 const (
-	ZES_POWER_DOMAIN_UNKNOWN      ZesPowerDomain = iota
-	ZES_POWER_DOMAIN_CARD         ZesPowerDomain = 1
-	ZES_POWER_DOMAIN_PACKAGE      ZesPowerDomain = 2
-	ZES_POWER_DOMAIN_STACK        ZesPowerDomain = 3
-	ZES_POWER_DOMAIN_MEMORY       ZesPowerDomain = 4
-	ZES_POWER_DOMAIN_GPU          ZesPowerDomain = 5
-	ZES_POWER_DOMAIN_FORCE_UINT32 ZesPowerDomain = 2147483647
+	ZES_POWER_DOMAIN_UNKNOWN    ZesPowerDomain = iota
+	ZES_POWER_DOMAIN_CARD       ZesPowerDomain = 1
+	ZES_POWER_DOMAIN_PACKAGE    ZesPowerDomain = 2
+	ZES_POWER_DOMAIN_STACK      ZesPowerDomain = 3
+	ZES_POWER_DOMAIN_MEMORY     ZesPowerDomain = 4
+	ZES_POWER_DOMAIN_GPU        ZesPowerDomain = 5
+	ZES_POWER_DOMAIN_END_MARKER ZesPowerDomain = 2147483647
 )
 
 // ZesPowerLevel as declared in levelzero/zes_api.h:4925
@@ -581,7 +581,7 @@ const (
 	ZES_POWER_LEVEL_BURST         ZesPowerLevel = 2
 	ZES_POWER_LEVEL_PEAK          ZesPowerLevel = 3
 	ZES_POWER_LEVEL_INSTANTANEOUS ZesPowerLevel = 4
-	ZES_POWER_LEVEL_FORCE_UINT32  ZesPowerLevel = 2147483647
+	ZES_POWER_LEVEL_END_MARKER    ZesPowerLevel = 2147483647
 )
 
 // ZesPowerSource as declared in levelzero/zes_api.h:4937
@@ -589,10 +589,10 @@ type ZesPowerSource int32
 
 // ZesPowerSource enumeration from levelzero/zes_api.h:4937
 const (
-	ZES_POWER_SOURCE_ANY          ZesPowerSource = iota
-	ZES_POWER_SOURCE_MAINS        ZesPowerSource = 1
-	ZES_POWER_SOURCE_BATTERY      ZesPowerSource = 2
-	ZES_POWER_SOURCE_FORCE_UINT32 ZesPowerSource = 2147483647
+	ZES_POWER_SOURCE_ANY        ZesPowerSource = iota
+	ZES_POWER_SOURCE_MAINS      ZesPowerSource = 1
+	ZES_POWER_SOURCE_BATTERY    ZesPowerSource = 2
+	ZES_POWER_SOURCE_END_MARKER ZesPowerSource = 2147483647
 )
 
 // ZesLimitUnit as declared in levelzero/zes_api.h:4948
@@ -600,10 +600,10 @@ type ZesLimitUnit int32
 
 // ZesLimitUnit enumeration from levelzero/zes_api.h:4948
 const (
-	ZES_LIMIT_UNIT_UNKNOWN      ZesLimitUnit = iota
-	ZES_LIMIT_UNIT_CURRENT      ZesLimitUnit = 1
-	ZES_LIMIT_UNIT_POWER        ZesLimitUnit = 2
-	ZES_LIMIT_UNIT_FORCE_UINT32 ZesLimitUnit = 2147483647
+	ZES_LIMIT_UNIT_UNKNOWN    ZesLimitUnit = iota
+	ZES_LIMIT_UNIT_CURRENT    ZesLimitUnit = 1
+	ZES_LIMIT_UNIT_POWER      ZesLimitUnit = 2
+	ZES_LIMIT_UNIT_END_MARKER ZesLimitUnit = 2147483647
 )
 
 // ZesPsuVoltageStatus as declared in levelzero/zes_api.h:5315
@@ -611,11 +611,11 @@ type ZesPsuVoltageStatus int32
 
 // ZesPsuVoltageStatus enumeration from levelzero/zes_api.h:5315
 const (
-	ZES_PSU_VOLTAGE_STATUS_UNKNOWN      ZesPsuVoltageStatus = iota
-	ZES_PSU_VOLTAGE_STATUS_NORMAL       ZesPsuVoltageStatus = 1
-	ZES_PSU_VOLTAGE_STATUS_OVER         ZesPsuVoltageStatus = 2
-	ZES_PSU_VOLTAGE_STATUS_UNDER        ZesPsuVoltageStatus = 3
-	ZES_PSU_VOLTAGE_STATUS_FORCE_UINT32 ZesPsuVoltageStatus = 2147483647
+	ZES_PSU_VOLTAGE_STATUS_UNKNOWN    ZesPsuVoltageStatus = iota
+	ZES_PSU_VOLTAGE_STATUS_NORMAL     ZesPsuVoltageStatus = 1
+	ZES_PSU_VOLTAGE_STATUS_OVER       ZesPsuVoltageStatus = 2
+	ZES_PSU_VOLTAGE_STATUS_UNDER      ZesPsuVoltageStatus = 3
+	ZES_PSU_VOLTAGE_STATUS_END_MARKER ZesPsuVoltageStatus = 2147483647
 )
 
 // ZesRasErrorType as declared in levelzero/zes_api.h:5444
@@ -625,7 +625,7 @@ type ZesRasErrorType int32
 const (
 	ZES_RAS_ERROR_TYPE_CORRECTABLE   ZesRasErrorType = iota
 	ZES_RAS_ERROR_TYPE_UNCORRECTABLE ZesRasErrorType = 1
-	ZES_RAS_ERROR_TYPE_FORCE_UINT32  ZesRasErrorType = 2147483647
+	ZES_RAS_ERROR_TYPE_END_MARKER    ZesRasErrorType = 2147483647
 )
 
 // ZesRasErrorCat as declared in levelzero/zes_api.h:5463
@@ -640,7 +640,7 @@ const (
 	ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS ZesRasErrorCat = 4
 	ZES_RAS_ERROR_CAT_CACHE_ERRORS       ZesRasErrorCat = 5
 	ZES_RAS_ERROR_CAT_DISPLAY_ERRORS     ZesRasErrorCat = 6
-	ZES_RAS_ERROR_CAT_FORCE_UINT32       ZesRasErrorCat = 2147483647
+	ZES_RAS_ERROR_CAT_END_MARKER         ZesRasErrorCat = 2147483647
 )
 
 // ZesSchedMode as declared in levelzero/zes_api.h:5718
@@ -648,10 +648,10 @@ type ZesSchedMode int32
 
 // ZesSchedMode enumeration from levelzero/zes_api.h:5718
 const (
-	ZES_SCHED_MODE_TIMEOUT      ZesSchedMode = iota
-	ZES_SCHED_MODE_TIMESLICE    ZesSchedMode = 1
-	ZES_SCHED_MODE_EXCLUSIVE    ZesSchedMode = 2
-	ZES_SCHED_MODE_FORCE_UINT32 ZesSchedMode = 2147483647
+	ZES_SCHED_MODE_TIMEOUT    ZesSchedMode = iota
+	ZES_SCHED_MODE_TIMESLICE  ZesSchedMode = 1
+	ZES_SCHED_MODE_EXCLUSIVE  ZesSchedMode = 2
+	ZES_SCHED_MODE_END_MARKER ZesSchedMode = 2147483647
 )
 
 // ZesStandbyType as declared in levelzero/zes_api.h:6070
@@ -659,8 +659,8 @@ type ZesStandbyType int32
 
 // ZesStandbyType enumeration from levelzero/zes_api.h:6070
 const (
-	ZES_STANDBY_TYPE_GLOBAL       ZesStandbyType = iota
-	ZES_STANDBY_TYPE_FORCE_UINT32 ZesStandbyType = 2147483647
+	ZES_STANDBY_TYPE_GLOBAL     ZesStandbyType = iota
+	ZES_STANDBY_TYPE_END_MARKER ZesStandbyType = 2147483647
 )
 
 // ZesStandbyPromoMode as declared in levelzero/zes_api.h:6095
@@ -668,9 +668,9 @@ type ZesStandbyPromoMode int32
 
 // ZesStandbyPromoMode enumeration from levelzero/zes_api.h:6095
 const (
-	ZES_STANDBY_PROMO_MODE_DEFAULT      ZesStandbyPromoMode = iota
-	ZES_STANDBY_PROMO_MODE_NEVER        ZesStandbyPromoMode = 1
-	ZES_STANDBY_PROMO_MODE_FORCE_UINT32 ZesStandbyPromoMode = 2147483647
+	ZES_STANDBY_PROMO_MODE_DEFAULT    ZesStandbyPromoMode = iota
+	ZES_STANDBY_PROMO_MODE_NEVER      ZesStandbyPromoMode = 1
+	ZES_STANDBY_PROMO_MODE_END_MARKER ZesStandbyPromoMode = 2147483647
 )
 
 // ZesTempSensors as declared in levelzero/zes_api.h:6223
@@ -687,7 +687,7 @@ const (
 	ZES_TEMP_SENSORS_GPU_BOARD         ZesTempSensors = 6
 	ZES_TEMP_SENSORS_GPU_BOARD_MIN     ZesTempSensors = 7
 	ZES_TEMP_SENSORS_VOLTAGE_REGULATOR ZesTempSensors = 8
-	ZES_TEMP_SENSORS_FORCE_UINT32      ZesTempSensors = 2147483647
+	ZES_TEMP_SENSORS_END_MARKER        ZesTempSensors = 2147483647
 )
 
 // ZesDeviceEccDefaultPropertiesExtVersion as declared in levelzero/zes_api.h:6454
@@ -695,9 +695,9 @@ type ZesDeviceEccDefaultPropertiesExtVersion int32
 
 // ZesDeviceEccDefaultPropertiesExtVersion enumeration from levelzero/zes_api.h:6454
 const (
-	ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_1_0          ZesDeviceEccDefaultPropertiesExtVersion = 65536
-	ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_CURRENT      ZesDeviceEccDefaultPropertiesExtVersion = 65536
-	ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_FORCE_UINT32 ZesDeviceEccDefaultPropertiesExtVersion = 2147483647
+	ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_1_0        ZesDeviceEccDefaultPropertiesExtVersion = 65536
+	ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_CURRENT    ZesDeviceEccDefaultPropertiesExtVersion = 65536
+	ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_END_MARKER ZesDeviceEccDefaultPropertiesExtVersion = 2147483647
 )
 
 // ZesPowerLimitsExtVersion as declared in levelzero/zes_api.h:6489
@@ -705,9 +705,9 @@ type ZesPowerLimitsExtVersion int32
 
 // ZesPowerLimitsExtVersion enumeration from levelzero/zes_api.h:6489
 const (
-	ZES_POWER_LIMITS_EXT_VERSION_1_0          ZesPowerLimitsExtVersion = 65536
-	ZES_POWER_LIMITS_EXT_VERSION_CURRENT      ZesPowerLimitsExtVersion = 65536
-	ZES_POWER_LIMITS_EXT_VERSION_FORCE_UINT32 ZesPowerLimitsExtVersion = 2147483647
+	ZES_POWER_LIMITS_EXT_VERSION_1_0        ZesPowerLimitsExtVersion = 65536
+	ZES_POWER_LIMITS_EXT_VERSION_CURRENT    ZesPowerLimitsExtVersion = 65536
+	ZES_POWER_LIMITS_EXT_VERSION_END_MARKER ZesPowerLimitsExtVersion = 2147483647
 )
 
 // ZesEngineActivityExtVersion as declared in levelzero/zes_api.h:6629
@@ -715,9 +715,9 @@ type ZesEngineActivityExtVersion int32
 
 // ZesEngineActivityExtVersion enumeration from levelzero/zes_api.h:6629
 const (
-	ZES_ENGINE_ACTIVITY_EXT_VERSION_1_0          ZesEngineActivityExtVersion = 65536
-	ZES_ENGINE_ACTIVITY_EXT_VERSION_CURRENT      ZesEngineActivityExtVersion = 65536
-	ZES_ENGINE_ACTIVITY_EXT_VERSION_FORCE_UINT32 ZesEngineActivityExtVersion = 2147483647
+	ZES_ENGINE_ACTIVITY_EXT_VERSION_1_0        ZesEngineActivityExtVersion = 65536
+	ZES_ENGINE_ACTIVITY_EXT_VERSION_CURRENT    ZesEngineActivityExtVersion = 65536
+	ZES_ENGINE_ACTIVITY_EXT_VERSION_END_MARKER ZesEngineActivityExtVersion = 2147483647
 )
 
 // ZesRasStateExpVersion as declared in levelzero/zes_api.h:6713
@@ -725,9 +725,9 @@ type ZesRasStateExpVersion int32
 
 // ZesRasStateExpVersion enumeration from levelzero/zes_api.h:6713
 const (
-	ZES_RAS_STATE_EXP_VERSION_1_0          ZesRasStateExpVersion = 65536
-	ZES_RAS_STATE_EXP_VERSION_CURRENT      ZesRasStateExpVersion = 65536
-	ZES_RAS_STATE_EXP_VERSION_FORCE_UINT32 ZesRasStateExpVersion = 2147483647
+	ZES_RAS_STATE_EXP_VERSION_1_0        ZesRasStateExpVersion = 65536
+	ZES_RAS_STATE_EXP_VERSION_CURRENT    ZesRasStateExpVersion = 65536
+	ZES_RAS_STATE_EXP_VERSION_END_MARKER ZesRasStateExpVersion = 2147483647
 )
 
 // ZesRasErrorCategoryExp as declared in levelzero/zes_api.h:6735
@@ -745,7 +745,7 @@ const (
 	ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS      ZesRasErrorCategoryExp = 7
 	ZES_RAS_ERROR_CATEGORY_EXP_SCALE_ERRORS       ZesRasErrorCategoryExp = 8
 	ZES_RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS    ZesRasErrorCategoryExp = 9
-	ZES_RAS_ERROR_CATEGORY_EXP_FORCE_UINT32       ZesRasErrorCategoryExp = 2147483647
+	ZES_RAS_ERROR_CATEGORY_EXP_END_MARKER         ZesRasErrorCategoryExp = 2147483647
 )
 
 // ZesMemPageOfflineStateExpVersion as declared in levelzero/zes_api.h:6831
@@ -753,9 +753,9 @@ type ZesMemPageOfflineStateExpVersion int32
 
 // ZesMemPageOfflineStateExpVersion enumeration from levelzero/zes_api.h:6831
 const (
-	ZES_MEM_PAGE_OFFLINE_STATE_EXP_VERSION_1_0          ZesMemPageOfflineStateExpVersion = 65536
-	ZES_MEM_PAGE_OFFLINE_STATE_EXP_VERSION_CURRENT      ZesMemPageOfflineStateExpVersion = 65536
-	ZES_MEM_PAGE_OFFLINE_STATE_EXP_VERSION_FORCE_UINT32 ZesMemPageOfflineStateExpVersion = 2147483647
+	ZES_MEM_PAGE_OFFLINE_STATE_EXP_VERSION_1_0        ZesMemPageOfflineStateExpVersion = 65536
+	ZES_MEM_PAGE_OFFLINE_STATE_EXP_VERSION_CURRENT    ZesMemPageOfflineStateExpVersion = 65536
+	ZES_MEM_PAGE_OFFLINE_STATE_EXP_VERSION_END_MARKER ZesMemPageOfflineStateExpVersion = 2147483647
 )
 
 // ZesMemBandwidthCounterBitsExpVersion as declared in levelzero/zes_api.h:6871
@@ -763,9 +763,9 @@ type ZesMemBandwidthCounterBitsExpVersion int32
 
 // ZesMemBandwidthCounterBitsExpVersion enumeration from levelzero/zes_api.h:6871
 const (
-	ZES_MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_1_0          ZesMemBandwidthCounterBitsExpVersion = 65536
-	ZES_MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_CURRENT      ZesMemBandwidthCounterBitsExpVersion = 65536
-	ZES_MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_FORCE_UINT32 ZesMemBandwidthCounterBitsExpVersion = 2147483647
+	ZES_MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_1_0        ZesMemBandwidthCounterBitsExpVersion = 65536
+	ZES_MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_CURRENT    ZesMemBandwidthCounterBitsExpVersion = 65536
+	ZES_MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_END_MARKER ZesMemBandwidthCounterBitsExpVersion = 2147483647
 )
 
 // ZesPowerDomainPropertiesExpVersion as declared in levelzero/zes_api.h:6913
@@ -773,9 +773,9 @@ type ZesPowerDomainPropertiesExpVersion int32
 
 // ZesPowerDomainPropertiesExpVersion enumeration from levelzero/zes_api.h:6913
 const (
-	ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_1_0          ZesPowerDomainPropertiesExpVersion = 65536
-	ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_CURRENT      ZesPowerDomainPropertiesExpVersion = 65536
-	ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_FORCE_UINT32 ZesPowerDomainPropertiesExpVersion = 2147483647
+	ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_1_0        ZesPowerDomainPropertiesExpVersion = 65536
+	ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_CURRENT    ZesPowerDomainPropertiesExpVersion = 65536
+	ZES_POWER_DOMAIN_PROPERTIES_EXP_VERSION_END_MARKER ZesPowerDomainPropertiesExpVersion = 2147483647
 )
 
 // ZesFirmwareSecurityExpVersion as declared in levelzero/zes_api.h:6953
@@ -783,9 +783,9 @@ type ZesFirmwareSecurityExpVersion int32
 
 // ZesFirmwareSecurityExpVersion enumeration from levelzero/zes_api.h:6953
 const (
-	ZES_FIRMWARE_SECURITY_EXP_VERSION_1_0          ZesFirmwareSecurityExpVersion = 65536
-	ZES_FIRMWARE_SECURITY_EXP_VERSION_CURRENT      ZesFirmwareSecurityExpVersion = 65536
-	ZES_FIRMWARE_SECURITY_EXP_VERSION_FORCE_UINT32 ZesFirmwareSecurityExpVersion = 2147483647
+	ZES_FIRMWARE_SECURITY_EXP_VERSION_1_0        ZesFirmwareSecurityExpVersion = 65536
+	ZES_FIRMWARE_SECURITY_EXP_VERSION_CURRENT    ZesFirmwareSecurityExpVersion = 65536
+	ZES_FIRMWARE_SECURITY_EXP_VERSION_END_MARKER ZesFirmwareSecurityExpVersion = 2147483647
 )
 
 // ZesSysmanDeviceMappingExpVersion as declared in levelzero/zes_api.h:7024
@@ -793,9 +793,9 @@ type ZesSysmanDeviceMappingExpVersion int32
 
 // ZesSysmanDeviceMappingExpVersion enumeration from levelzero/zes_api.h:7024
 const (
-	ZES_SYSMAN_DEVICE_MAPPING_EXP_VERSION_1_0          ZesSysmanDeviceMappingExpVersion = 65536
-	ZES_SYSMAN_DEVICE_MAPPING_EXP_VERSION_CURRENT      ZesSysmanDeviceMappingExpVersion = 65536
-	ZES_SYSMAN_DEVICE_MAPPING_EXP_VERSION_FORCE_UINT32 ZesSysmanDeviceMappingExpVersion = 2147483647
+	ZES_SYSMAN_DEVICE_MAPPING_EXP_VERSION_1_0        ZesSysmanDeviceMappingExpVersion = 65536
+	ZES_SYSMAN_DEVICE_MAPPING_EXP_VERSION_CURRENT    ZesSysmanDeviceMappingExpVersion = 65536
+	ZES_SYSMAN_DEVICE_MAPPING_EXP_VERSION_END_MARKER ZesSysmanDeviceMappingExpVersion = 2147483647
 )
 
 // ZesVfManagementExpVersion as declared in levelzero/zes_api.h:7122
@@ -803,7 +803,7 @@ type ZesVfManagementExpVersion int32
 
 // ZesVfManagementExpVersion enumeration from levelzero/zes_api.h:7122
 const (
-	ZES_VF_MANAGEMENT_EXP_VERSION_1_2          ZesVfManagementExpVersion = 65538
-	ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT      ZesVfManagementExpVersion = 65538
-	ZES_VF_MANAGEMENT_EXP_VERSION_FORCE_UINT32 ZesVfManagementExpVersion = 2147483647
+	ZES_VF_MANAGEMENT_EXP_VERSION_1_2        ZesVfManagementExpVersion = 65538
+	ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT    ZesVfManagementExpVersion = 65538
+	ZES_VF_MANAGEMENT_EXP_VERSION_END_MARKER ZesVfManagementExpVersion = 2147483647
 )

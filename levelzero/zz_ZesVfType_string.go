@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_VF_TYPE_VOLT-0]
 	_ = x[ZES_VF_TYPE_FREQ-1]
-	_ = x[ZES_VF_TYPE_FORCE_UINT32-2147483647]
+	_ = x[ZES_VF_TYPE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesVfType_name_0 = "VOLTFREQ"
-	_ZesVfType_name_1 = "FORCE_UINT32"
+	_ZesVfType_name_1 = "END_MARKER"
 )
 
 var (

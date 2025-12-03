@@ -23,6 +23,7 @@ TRANSLATOR:
       - {action: accept, from: "^ZE_RESULT_"}
       - {action: accept, from: "^ZES_"}
       - {action: ignore, from: "^ZES_STRUCTURE_TYPE_"}
+      - {action: replace, from: "_FORCE_UINT32$", to: "_END_MARKER"}
       - {transform: export}
       # Deprecated consts from zes_api.h
       - {action: ignore, from: "^ZES_ENGINE_GROUP_MEDIA_(DE|EN)CODE_SINGLE$"}

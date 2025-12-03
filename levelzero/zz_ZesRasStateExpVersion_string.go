@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ZES_RAS_STATE_EXP_VERSION_1_0-65536]
 	_ = x[ZES_RAS_STATE_EXP_VERSION_CURRENT-65536]
-	_ = x[ZES_RAS_STATE_EXP_VERSION_FORCE_UINT32-2147483647]
+	_ = x[ZES_RAS_STATE_EXP_VERSION_END_MARKER-2147483647]
 }
 
 const (
 	_ZesRasStateExpVersion_name_0 = "1_0"
-	_ZesRasStateExpVersion_name_1 = "FORCE_UINT32"
+	_ZesRasStateExpVersion_name_1 = "END_MARKER"
 )
 
 func (i ZesRasStateExpVersion) String() string {

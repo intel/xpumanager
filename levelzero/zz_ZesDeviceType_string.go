@@ -13,12 +13,12 @@ func _() {
 	_ = x[ZES_DEVICE_TYPE_FPGA-3]
 	_ = x[ZES_DEVICE_TYPE_MCA-4]
 	_ = x[ZES_DEVICE_TYPE_VPU-5]
-	_ = x[ZES_DEVICE_TYPE_FORCE_UINT32-2147483647]
+	_ = x[ZES_DEVICE_TYPE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesDeviceType_name_0 = "GPUCPUFPGAMCAVPU"
-	_ZesDeviceType_name_1 = "FORCE_UINT32"
+	_ZesDeviceType_name_1 = "END_MARKER"
 )
 
 var (

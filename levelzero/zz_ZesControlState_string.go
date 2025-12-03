@@ -11,13 +11,13 @@ func _() {
 	_ = x[ZES_CONTROL_STATE_STATE_UNSET-0]
 	_ = x[ZES_CONTROL_STATE_STATE_ACTIVE-2]
 	_ = x[ZES_CONTROL_STATE_STATE_DISABLED-3]
-	_ = x[ZES_CONTROL_STATE_FORCE_UINT32-2147483647]
+	_ = x[ZES_CONTROL_STATE_END_MARKER-2147483647]
 }
 
 const (
 	_ZesControlState_name_0 = "STATE_UNSET"
 	_ZesControlState_name_1 = "STATE_ACTIVESTATE_DISABLED"
-	_ZesControlState_name_2 = "FORCE_UINT32"
+	_ZesControlState_name_2 = "END_MARKER"
 )
 
 var (
