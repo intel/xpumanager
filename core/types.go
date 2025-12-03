@@ -12,7 +12,7 @@ type DeviceUuid struct {
 type DeviceProperties struct {
 	stype                    uint32
 	pnext                    *byte
-	Type                     uint32
+	Type                     DeviceType
 	VendorId                 uint32
 	DeviceId                 uint32
 	Flags                    DevicePropertyFlag
