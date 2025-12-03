@@ -12,7 +12,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
 )
 
@@ -58,22 +57,6 @@ func (z *Driver) DeviceGet() ([]*Device, error) {
 	return handlesToWrappers[zeDeviceHandle, Device](handles), ret.ToError()
 }
 
-func (z *Driver) GetDeviceByUuidExp(uuid uuid.UUID) (*Device, bool, uint32, error) {
-	var (
-		deviceHandle zeDeviceHandle
-		onSubdevice  byte
-		subDeviceId  uint32
-	)
-	zesUUID := Uuid{Id: uuid}
-	ret := zesDriverGetDeviceByUuidExp(z.handle, zesUUID, &deviceHandle, &onSubdevice, &subDeviceId)
-	if ret != core.RESULT_SUCCESS {
-		return nil, false, 0, ret.ToError()
-	}
-	device := &Device{}
-	device.setHandle(deviceHandle)
-	return device, onSubdevice != 0, subDeviceId, nil
-}
-
 func (z *Driver) EventListen(timeout time.Duration, devices []*Device) (uint32, []EventTypeFlags, error) {
 	handles := wrappersToHandles[zeDeviceHandle, Device](devices)
 	var numEvents uint32
@@ -95,16 +78,6 @@ func (z *Driver) EventListenEx(timeout time.Duration, devices []*Device) (uint32
 func (z *Device) GetProperties() (DeviceProperties, error) {
 	var props DeviceProperties
 	ret := zesDeviceGetProperties(z.handle, &props)
-	return props, ret.ToError()
-}
-
-func (z *Device) GetSubDevicePropertiesExp() ([]SubdeviceExpProperties, error) {
-	count := uint32(0)
-	if ret := zesDeviceGetSubDevicePropertiesExp(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
-		return nil, ret.ToError()
-	}
-	props := make([]SubdeviceExpProperties, count)
-	ret := zesDeviceGetSubDevicePropertiesExp(z.handle, &count, props)
 	return props, ret.ToError()
 }
 
@@ -524,20 +497,6 @@ func (z *Firmware) GetConsoleLogs() (string, error) {
 	return logs, nil
 }
 
-func (z *Firmware) GetSecurityVersionExp() (string, error) {
-	version := make([]byte, STRING_PROPERTY_SIZE)
-	ret := zesFirmwareGetSecurityVersionExp(z.handle, &version[0])
-	if ret != core.RESULT_SUCCESS {
-		return "", ret.ToError()
-	}
-	return string(version), nil
-}
-
-func (z *Firmware) SetSecurityVersionExp() error {
-	ret := zesFirmwareSetSecurityVersionExp(z.handle)
-	return ret.ToError()
-}
-
 func (z *Device) EnumFrequencyDomains() ([]*Freq, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumFrequencyDomains(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
@@ -778,21 +737,6 @@ func (z *Ras) GetState(resetCounters bool) (RasState, error) {
 	return state, ret.ToError()
 }
 
-func (z *Ras) GetStateExp() ([]RasStateExp, error) {
-	count := uint32(0)
-	if ret := zesRasGetStateExp(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
-		return nil, ret.ToError()
-	}
-	states := make([]RasStateExp, count)
-	ret := zesRasGetStateExp(z.handle, &count, states)
-	return states, ret.ToError()
-}
-
-func (z *Ras) ClearStateExp(category RasErrorCategoryExp) error {
-	ret := zesRasClearStateExp(z.handle, category)
-	return ret.ToError()
-}
-
 func (z *Device) EnumSchedulers() ([]*Sched, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumSchedulers(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
@@ -903,42 +847,6 @@ func (z *Temp) GetState() (float64, error) {
 	var state float64
 	ret := zesTemperatureGetState(z.handle, &state)
 	return state, ret.ToError()
-}
-
-func (z *Device) EnumEnabledVFExp() ([]*Vf, error) {
-	count := uint32(0)
-	if ret := zesDeviceEnumEnabledVFExp(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
-		return nil, ret.ToError()
-	}
-	handles := make([]zesVfHandle, count)
-	ret := zesDeviceEnumEnabledVFExp(z.handle, &count, handles)
-	return handlesToWrappers[zesVfHandle, Vf](handles), ret.ToError()
-}
-
-func (z *Vf) GetVFMemoryUtilizationExp2() ([]VfUtilMemExp2, error) {
-	count := uint32(0)
-	if ret := zesVFManagementGetVFMemoryUtilizationExp2(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
-		return nil, ret.ToError()
-	}
-	utils := make([]VfUtilMemExp2, count)
-	ret := zesVFManagementGetVFMemoryUtilizationExp2(z.handle, &count, utils)
-	return utils, ret.ToError()
-}
-
-func (z *Vf) GetVFEngineUtilizationExp2() ([]VfUtilEngineExp2, error) {
-	count := uint32(0)
-	if ret := zesVFManagementGetVFEngineUtilizationExp2(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
-		return nil, ret.ToError()
-	}
-	utils := make([]VfUtilEngineExp2, count)
-	ret := zesVFManagementGetVFEngineUtilizationExp2(z.handle, &count, utils)
-	return utils, ret.ToError()
-}
-
-func (z *Vf) GetVFCapabilitiesExp2() (VfExp2Capabilities, error) {
-	var caps VfExp2Capabilities
-	ret := zesVFManagementGetVFCapabilitiesExp2(z.handle, &caps)
-	return caps, ret.ToError()
 }
 
 // durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
