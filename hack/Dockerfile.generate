@@ -8,13 +8,17 @@ ARG BASE_DEBIAN_DISTRO="trixie"
 
 FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
 
+ARG PACKAGES="core levelzero"
+
 WORKDIR /go/src
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,rw \
-    make generate && \
+    make generate PACKAGES="${PACKAGES}" && \
     mkdir /gen && \
-    cp -r core levelzero /gen/
+    if [ -n "${PACKAGES}" ]; then \
+        cp -r ${PACKAGES} /gen/; \
+    fi
 
 FROM scratch AS artifacts
 

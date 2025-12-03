@@ -16,6 +16,7 @@ generate: clean
 generate-dockerized: clean
 	$(Q)docker build --target artifacts \
 	    --output type=local,dest=. \
+	    --build-arg PACKAGES="$(PACKAGES)" \
 	    -f hack/Dockerfile.generate .
 
 clean:
