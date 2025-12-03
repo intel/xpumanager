@@ -80,8 +80,6 @@ func main() {
 			printStandby(device)
 
 			printTemperature(device)
-
-			printVF(device)
 		}
 	}
 }
@@ -102,14 +100,6 @@ func printDevice(device *sysman.Device) {
 	}
 	fmt.Printf("## Device State:\n")
 	common.Dump(state, 2)
-
-	subDeviceProps, err := device.GetSubDevicePropertiesExp()
-	if err != nil {
-		log.Printf("ERROR: Failed to get sub-device properties: %v", err)
-		return
-	}
-	fmt.Printf("## Sub-Device Properties:\n")
-	common.Dump(subDeviceProps, 2)
 }
 
 func printPCI(device *sysman.Device) {
@@ -647,14 +637,6 @@ func printRas(device *sysman.Device) {
 			fmt.Printf("  State:\n")
 			common.Dump(state, 4)
 		}
-
-		stateExp, err := ras.GetStateExp()
-		if err != nil {
-			log.Printf("ERROR: Failed to get extended state for RAS error set %d: %v", i, err)
-		} else {
-			fmt.Printf("  Extended State:\n")
-			common.Dump(stateExp, 4)
-		}
 	}
 }
 
@@ -762,33 +744,6 @@ func printTemperature(device *sysman.Device) {
 			log.Printf("ERROR: Failed to get state for temperature sensor %d: %v", i, err)
 		} else {
 			fmt.Printf("  Temperature: %+v\n", temp)
-		}
-	}
-}
-
-func printVF(device *sysman.Device) {
-	vfs, err := device.EnumEnabledVFExp()
-	if err != nil {
-		log.Printf("ERROR: Failed to enumerate enabled VFs: %v", err)
-		return
-	}
-	fmt.Printf("## Found %d enabled VFs\n", len(vfs))
-	for i, vf := range vfs {
-		fmt.Printf("### VF %d\n", i)
-
-		caps, err := vf.GetVFCapabilitiesExp2()
-		if err != nil {
-			log.Printf("ERROR: Failed to get capabilities for VF %d: %v", i, err)
-		} else {
-			fmt.Printf("  Capabilities:\n")
-			common.Dump(caps, 4)
-		}
-
-		memoryUtilization, err := vf.GetVFMemoryUtilizationExp2()
-		if err != nil {
-			log.Printf("ERROR: Failed to get memory utilization for VF %d: %v", i, err)
-		} else {
-			fmt.Printf("  Memory Utilization: %+v\n", memoryUtilization)
 		}
 	}
 }
