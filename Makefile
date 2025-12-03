@@ -9,6 +9,7 @@ PACKAGES := core levelzero
 all: build
 
 generate: clean
+	go mod download
 	$(Q)for pkg in $(PACKAGES); do \
 	    hack/generate.sh $$pkg || exit 1; \
 	done
