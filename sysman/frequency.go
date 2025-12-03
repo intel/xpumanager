@@ -20,14 +20,22 @@ func init() {
 
 type sysmanFrequency struct {
 	*levelzero.ZesFreq
+
+	state      sysmanFrequencyState
 	attributes []attribute.KeyValue
 }
 
+// sysmanFrequencyState holds the dynamic runtime state.
+type sysmanFrequencyState struct {
+	throttleReasonsSeen levelzero.ZesFreqThrottleReasonFlags
+}
+
 type frequencyMetrics struct {
-	minimum metric.Float64ObservableGauge
-	maximum metric.Float64ObservableGauge
-	request metric.Float64ObservableGauge
-	actual  metric.Float64ObservableGauge
+	minimum        metric.Float64ObservableGauge
+	maximum        metric.Float64ObservableGauge
+	request        metric.Float64ObservableGauge
+	actual         metric.Float64ObservableGauge
+	throttleReason metric.Int64ObservableUpDownCounter
 }
 
 func newSysmanFrequency(freq *levelzero.ZesFreq) (*sysmanFrequency, error) {
@@ -100,6 +108,14 @@ func newFrequencyMetrics(meter metric.Meter) (collector, error) {
 	if err != nil {
 		return nil, err
 	}
+	m.throttleReason, err = meter.Int64ObservableUpDownCounter(
+		"hw.gpu.frequency.throttle_reason",
+		metric.WithDescription("GPU frequency throttle reason"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return m, nil
 }
@@ -110,6 +126,7 @@ func (m *frequencyMetrics) getInstruments() []metric.Observable {
 		m.maximum,
 		m.request,
 		m.actual,
+		m.throttleReason,
 	}
 }
 
@@ -137,6 +154,22 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 			}
 			if state.Actual >= 0 {
 				o.ObserveFloat64(m.actual, state.Actual*1e6, opt)
+			}
+
+			for reason := levelzero.ZesFreqThrottleReasonFlag(1); reason <= levelzero.ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
+				value := int64(0)
+				if levelzero.ZesFreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
+					value = 1
+					freq.state.throttleReasonsSeen |= levelzero.ZesFreqThrottleReasonFlags(reason)
+				}
+
+				// Flags may be unset because the driver lacks support for this
+				// throttle reason (does not know the status). Emit the metric
+				// only once support is confirmed.
+				if levelzero.ZesFreqThrottleReasonFlag(freq.state.throttleReasonsSeen)&reason != 0 {
+					reasonAttr := attribute.String("hw.gpu.frequency.throttle_reason.type", strings.ToLower(reason.String()))
+					o.ObserveInt64(m.throttleReason, value, metric.WithAttributes(append(attrs, reasonAttr)...))
+				}
 			}
 		}
 	}

@@ -67,10 +67,10 @@ func newSysmanDevice(device *levelzero.ZeDevice) (*sysmanDevice, error) {
 		return nil, err
 	}
 	attrs := []attribute.KeyValue{
-		attribute.String("hw.id", props.Core.Uuid.String()),
-		attribute.String("hw.model", props.ModelName),
-		attribute.String("hw.serial_number", props.SerialNumber),
-		attribute.String("hw.vendor", props.VendorName),
+		attribute.String("hw.id", props.Core.Uuid.Id.String()),
+		attribute.String("hw.model", props.ModelName.String()),
+		attribute.String("hw.serial_number", props.SerialNumber.String()),
+		attribute.String("hw.vendor", props.VendorName.String()),
 	}
 
 	d := &sysmanDevice{
