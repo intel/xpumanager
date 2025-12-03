@@ -556,64 +556,6 @@ type EngineExtProperties struct {
 	_                              [4]byte
 }
 
-type RasStateExp struct {
-	Category     RasErrorCategoryExp
-	ErrorCounter uint64
-}
-
-type MemPageOfflineStateExp struct {
-	stype                uint32
-	pnext                *byte
-	MemoryPageOffline    uint32
-	MaxMemoryPageOffline uint32
-}
-
-type MemBandwidthCounterBitsExpProperties struct {
-	stype          uint32
-	pnext          *byte
-	ValidBitsCount uint32
-	_              [4]byte
-}
-
-type PowerDomainExpProperties struct {
-	stype       uint32
-	pnext       *byte
-	PowerDomain PowerDomain
-	_           [4]byte
-}
-
-type SubdeviceExpProperties struct {
-	stype       uint32
-	pnext       *byte
-	SubdeviceId uint32
-	Uuid        Uuid
-	_           [4]byte
-}
-
-type VfExp2Capabilities struct {
-	stype           uint32
-	pnext           *byte
-	Address         PciAddress
-	VfDeviceMemSize uint64
-	VfID            uint32
-	_               [4]byte
-}
-
-type VfUtilMemExp2 struct {
-	stype         uint32
-	pnext         *byte
-	VfMemLocation MemLoc
-	VfMemUtilized uint64
-}
-
-type VfUtilEngineExp2 struct {
-	stype                uint32
-	pnext                *byte
-	VfEngineType         EngineGroup
-	ActiveCounterValue   uint64
-	SamplingCounterValue uint64
-}
-
 type InitFlags InitFlag
 
 type EngineTypeFlags EngineTypeFlag

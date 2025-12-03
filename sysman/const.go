@@ -44,20 +44,6 @@ const (
 	POWER_LIMITS_EXT_NAME = "ZES_extension_power_limits"
 	// ENGINE_ACTIVITY_EXT_NAME as defined in levelzero/zes_api.h:6618
 	ENGINE_ACTIVITY_EXT_NAME = "ZES_extension_engine_activity"
-	// RAS_GET_STATE_EXP_NAME as defined in levelzero/zes_api.h:6702
-	RAS_GET_STATE_EXP_NAME = "ZES_extension_ras_state"
-	// MEM_PAGE_OFFLINE_STATE_EXP_NAME as defined in levelzero/zes_api.h:6820
-	MEM_PAGE_OFFLINE_STATE_EXP_NAME = "ZES_extension_mem_state"
-	// MEMORY_BANDWIDTH_COUNTER_BITS_EXP_PROPERTIES_NAME as defined in levelzero/zes_api.h:6860
-	MEMORY_BANDWIDTH_COUNTER_BITS_EXP_PROPERTIES_NAME = "ZES_extension_mem_bandwidth_counter_bits_properties"
-	// POWER_DOMAIN_PROPERTIES_EXP_NAME as defined in levelzero/zes_api.h:6902
-	POWER_DOMAIN_PROPERTIES_EXP_NAME = "ZES_extension_power_domain_properties"
-	// FIRMWARE_SECURITY_VERSION_EXP_NAME as defined in levelzero/zes_api.h:6942
-	FIRMWARE_SECURITY_VERSION_EXP_NAME = "ZES_experimental_firmware_security_version"
-	// SYSMAN_DEVICE_MAPPING_EXP_NAME as defined in levelzero/zes_api.h:7013
-	SYSMAN_DEVICE_MAPPING_EXP_NAME = "ZES_experimental_sysman_device_mapping"
-	// VIRTUAL_FUNCTION_MANAGEMENT_EXP_NAME as defined in levelzero/zes_api.h:7109
-	VIRTUAL_FUNCTION_MANAGEMENT_EXP_NAME = "ZES_experimental_virtual_function_management"
 )
 
 // InitFlag as declared in levelzero/zes_api.h:592
@@ -657,92 +643,4 @@ const (
 	ENGINE_ACTIVITY_EXT_VERSION_1_0        EngineActivityExtVersion = 65536
 	ENGINE_ACTIVITY_EXT_VERSION_CURRENT    EngineActivityExtVersion = 65536
 	ENGINE_ACTIVITY_EXT_VERSION_END_MARKER EngineActivityExtVersion = 2147483647
-)
-
-// RasStateExpVersion as declared in levelzero/zes_api.h:6713
-type RasStateExpVersion int32
-
-// RasStateExpVersion enumeration from levelzero/zes_api.h:6713
-const (
-	RAS_STATE_EXP_VERSION_1_0        RasStateExpVersion = 65536
-	RAS_STATE_EXP_VERSION_CURRENT    RasStateExpVersion = 65536
-	RAS_STATE_EXP_VERSION_END_MARKER RasStateExpVersion = 2147483647
-)
-
-// RasErrorCategoryExp as declared in levelzero/zes_api.h:6735
-type RasErrorCategoryExp int32
-
-// RasErrorCategoryExp enumeration from levelzero/zes_api.h:6735
-const (
-	RAS_ERROR_CATEGORY_EXP_RESET              RasErrorCategoryExp = iota
-	RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS RasErrorCategoryExp = 1
-	RAS_ERROR_CATEGORY_EXP_DRIVER_ERRORS      RasErrorCategoryExp = 2
-	RAS_ERROR_CATEGORY_EXP_COMPUTE_ERRORS     RasErrorCategoryExp = 3
-	RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS RasErrorCategoryExp = 4
-	RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS       RasErrorCategoryExp = 5
-	RAS_ERROR_CATEGORY_EXP_DISPLAY_ERRORS     RasErrorCategoryExp = 6
-	RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS      RasErrorCategoryExp = 7
-	RAS_ERROR_CATEGORY_EXP_SCALE_ERRORS       RasErrorCategoryExp = 8
-	RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS    RasErrorCategoryExp = 9
-	RAS_ERROR_CATEGORY_EXP_END_MARKER         RasErrorCategoryExp = 2147483647
-)
-
-// MemPageOfflineStateExpVersion as declared in levelzero/zes_api.h:6831
-type MemPageOfflineStateExpVersion int32
-
-// MemPageOfflineStateExpVersion enumeration from levelzero/zes_api.h:6831
-const (
-	MEM_PAGE_OFFLINE_STATE_EXP_VERSION_1_0        MemPageOfflineStateExpVersion = 65536
-	MEM_PAGE_OFFLINE_STATE_EXP_VERSION_CURRENT    MemPageOfflineStateExpVersion = 65536
-	MEM_PAGE_OFFLINE_STATE_EXP_VERSION_END_MARKER MemPageOfflineStateExpVersion = 2147483647
-)
-
-// MemBandwidthCounterBitsExpVersion as declared in levelzero/zes_api.h:6871
-type MemBandwidthCounterBitsExpVersion int32
-
-// MemBandwidthCounterBitsExpVersion enumeration from levelzero/zes_api.h:6871
-const (
-	MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_1_0        MemBandwidthCounterBitsExpVersion = 65536
-	MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_CURRENT    MemBandwidthCounterBitsExpVersion = 65536
-	MEM_BANDWIDTH_COUNTER_BITS_EXP_VERSION_END_MARKER MemBandwidthCounterBitsExpVersion = 2147483647
-)
-
-// PowerDomainPropertiesExpVersion as declared in levelzero/zes_api.h:6913
-type PowerDomainPropertiesExpVersion int32
-
-// PowerDomainPropertiesExpVersion enumeration from levelzero/zes_api.h:6913
-const (
-	POWER_DOMAIN_PROPERTIES_EXP_VERSION_1_0        PowerDomainPropertiesExpVersion = 65536
-	POWER_DOMAIN_PROPERTIES_EXP_VERSION_CURRENT    PowerDomainPropertiesExpVersion = 65536
-	POWER_DOMAIN_PROPERTIES_EXP_VERSION_END_MARKER PowerDomainPropertiesExpVersion = 2147483647
-)
-
-// FirmwareSecurityExpVersion as declared in levelzero/zes_api.h:6953
-type FirmwareSecurityExpVersion int32
-
-// FirmwareSecurityExpVersion enumeration from levelzero/zes_api.h:6953
-const (
-	FIRMWARE_SECURITY_EXP_VERSION_1_0        FirmwareSecurityExpVersion = 65536
-	FIRMWARE_SECURITY_EXP_VERSION_CURRENT    FirmwareSecurityExpVersion = 65536
-	FIRMWARE_SECURITY_EXP_VERSION_END_MARKER FirmwareSecurityExpVersion = 2147483647
-)
-
-// SysmanDeviceMappingExpVersion as declared in levelzero/zes_api.h:7024
-type SysmanDeviceMappingExpVersion int32
-
-// SysmanDeviceMappingExpVersion enumeration from levelzero/zes_api.h:7024
-const (
-	SYSMAN_DEVICE_MAPPING_EXP_VERSION_1_0        SysmanDeviceMappingExpVersion = 65536
-	SYSMAN_DEVICE_MAPPING_EXP_VERSION_CURRENT    SysmanDeviceMappingExpVersion = 65536
-	SYSMAN_DEVICE_MAPPING_EXP_VERSION_END_MARKER SysmanDeviceMappingExpVersion = 2147483647
-)
-
-// VfManagementExpVersion as declared in levelzero/zes_api.h:7122
-type VfManagementExpVersion int32
-
-// VfManagementExpVersion enumeration from levelzero/zes_api.h:7122
-const (
-	VF_MANAGEMENT_EXP_VERSION_1_2        VfManagementExpVersion = 65538
-	VF_MANAGEMENT_EXP_VERSION_CURRENT    VfManagementExpVersion = 65538
-	VF_MANAGEMENT_EXP_VERSION_END_MARKER VfManagementExpVersion = 2147483647
 )
