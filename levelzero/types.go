@@ -41,7 +41,7 @@ type ZesDriverExtensionProperties struct {
 type ZesDeviceState struct {
 	stype    uint32
 	pnext    *byte
-	Reset    uint32
+	Reset    ZesResetReasonFlags
 	Repaired ZesRepairStatus
 }
 
@@ -75,7 +75,7 @@ type ZesDeviceExtProperties struct {
 	pnext *byte
 	Uuid  ZesUuid
 	Type  ZesDeviceType
-	Flags uint32
+	Flags ZesDevicePropertyFlags
 }
 
 type ZesProcessState struct {
@@ -84,7 +84,7 @@ type ZesProcessState struct {
 	ProcessId  uint32
 	MemSize    uint64
 	SharedSize uint64
-	Engines    uint32
+	Engines    ZesEngineTypeFlags
 	_          [4]byte
 }
 
@@ -116,8 +116,8 @@ type ZesPciState struct {
 	stype           uint32
 	pnext           *byte
 	Status          ZesPciLinkStatus
-	QualityIssues   uint32
-	StabilityIssues uint32
+	QualityIssues   ZesPciLinkQualIssueFlags
+	StabilityIssues ZesPciLinkStabIssueFlags
 	Speed           ZesPciSpeed
 }
 
@@ -202,8 +202,8 @@ type ZesDeviceEccDesc struct {
 type ZesDeviceEccProperties struct {
 	stype         uint32
 	pnext         *byte
-	CurrentState  uint32
-	PendingState  uint32
+	CurrentState  ZesDeviceEccState
+	PendingState  ZesDeviceEccState
 	PendingAction ZesDeviceAction
 	_             [4]byte
 }
@@ -262,8 +262,8 @@ type ZesFabricPortState struct {
 	stype          uint32
 	pnext          *byte
 	Status         ZesFabricPortStatus
-	QualityIssues  uint32
-	FailureReasons uint32
+	QualityIssues  ZesFabricPortQualIssueFlags
+	FailureReasons ZesFabricPortFailureFlags
 	RemotePortId   ZesFabricPortId
 	RxSpeed        ZesFabricPortSpeed
 	TxSpeed        ZesFabricPortSpeed
@@ -356,7 +356,7 @@ type ZesFreqState struct {
 	Tdp             float64
 	Efficient       float64
 	Actual          float64
-	ThrottleReasons uint32
+	ThrottleReasons ZesFreqThrottleReasonFlags
 	_               [4]byte
 }
 
@@ -420,7 +420,7 @@ type ZesPerfProperties struct {
 	pnext       *byte
 	OnSubdevice uint8
 	SubdeviceId uint32
-	Engines     uint32
+	Engines     ZesEngineTypeFlags
 	_           [4]byte
 }
 
@@ -494,7 +494,7 @@ type ZesSchedProperties struct {
 	OnSubdevice    uint8
 	SubdeviceId    uint32
 	CanControl     uint8
-	Engines        uint32
+	Engines        ZesEngineTypeFlags
 	SupportedModes uint32
 	_              [4]byte
 }
@@ -551,7 +551,7 @@ type ZesTempConfig struct {
 type ZesDeviceEccDefaultPropertiesExt struct {
 	stype        uint32
 	pnext        *byte
-	DefaultState uint32
+	DefaultState ZesDeviceEccState
 	_            [4]byte
 }
 
