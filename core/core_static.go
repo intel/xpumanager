@@ -9,6 +9,7 @@ package core
 
 import "errors"
 
+// ToError converts the Result to an error.
 func (r *Result) ToError() error {
 	if *r == RESULT_SUCCESS {
 		return nil
