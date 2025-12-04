@@ -115,7 +115,8 @@ void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
  * @param Reference to a json object that will be filled with psInfo structure
  * @param Reference to a psInfo structure which has device process information
  */
-void toJson(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
+// NOLINTNEXTLINE (readability-identifier-naming) // nlohmann_json requires to_json for ADL
+void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
 {
 	jsonObj = nlohmann::ordered_json{{"process_id", procInfo.processId},
 									 {"process_name", procInfo.commandName},
@@ -169,9 +170,9 @@ int cmdPs::run(arg_struct *args)
 	std::vector<zes_process_state_t> processList;
 
 	static struct option longOptions[] = {{"help", no_argument, 0, 'h'},
-										   {"json", no_argument, 0, 'j'},
-										   {"device", required_argument, 0, 'd'},
-										   {0, 0, 0, 0}};
+										  {"json", no_argument, 0, 'j'},
+										  {"device", required_argument, 0, 'd'},
+										  {0, 0, 0, 0}};
 
 	// Skip the first two arguments (process and command name)
 	int startind = 2;

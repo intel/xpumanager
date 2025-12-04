@@ -334,7 +334,11 @@ jobs:
             # Copy compile commands for clang-tidy
             find builddir -name "compile_commands.json" -exec cp {} . \;
             echo "Checking naming style (no snake_case) matches our style guide"
-            run-clang-tidy.py -warnings-as-errors='readability-identifier-naming' -checks='-*,readability-identifier-naming'
+            run-clang-tidy.py -warnings-as-errors='readability-identifier-naming' \
+                              -checks='-*,readability-identifier-naming' \
+                              -extra-arg=-Wno-gnu-zero-variadic-macro-arguments \
+                              -extra-arg=-Wno-sign-conversion \
+                              -extra-arg=-Wno-inconsistent-missing-override
 
       - name: Check license headers
         continue-on-error: true

@@ -284,8 +284,8 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 			if (parseTimestamp104(fieldData, fieldLength, &mFruTable.genManufacturerDate)) {
 				// Convert microsecond byte array to uint32_t for display
 				uint32_t microsecondVal = (uint32_t)mFruTable.genManufacturerDate.microsecond[0] |
-										   ((uint32_t)mFruTable.genManufacturerDate.microsecond[1] << 8) |
-										   ((uint32_t)mFruTable.genManufacturerDate.microsecond[2] << 16);
+										  ((uint32_t)mFruTable.genManufacturerDate.microsecond[1] << 8) |
+										  ((uint32_t)mFruTable.genManufacturerDate.microsecond[2] << 16);
 
 				// Print formatted manufacturer date
 				DBG("    Manufacturer Date: %04d-%02d-%02d %02d:%02d:%02d.%06u (UTC%+d)\n",
@@ -392,8 +392,8 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 
 		case FRU_OEM_FIELD_TYPE_HARDWARE_ARBITRATION_OPT_IN:
 			safeLength = (fieldLength < sizeof(mFruTable.oemHWArbitrationOptIn))
-							  ? fieldLength
-							  : sizeof(mFruTable.oemHWArbitrationOptIn);
+							 ? fieldLength
+							 : sizeof(mFruTable.oemHWArbitrationOptIn);
 			memcpy(&mFruTable.oemHWArbitrationOptIn, fieldData, safeLength);
 			DBG("    OEM Hardware Arbitration Opt-in: 0x%X\n", mFruTable.oemHWArbitrationOptIn);
 			break;
