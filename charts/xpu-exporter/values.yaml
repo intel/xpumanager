@@ -77,14 +77,15 @@ affinity: {}
 
 # @schema additionalProperties:false
 config:
+  # -- Metrics data collection interval in seconds
+  # @section -- XPU Exporter Configuration
+  collectInterval: 30
+
   # @schema additionalProperties:false
   # -- Configuration for exporters. By default none are enabled, please select a suitable one.
   # @default --  
   # @section -- XPU Exporter Configuration
   exporters:
-    # -- Metrics collection interval in seconds
-    # @section -- XPU Exporter Configuration
-    collectInterval: 30
     # @schema additionalProperties:false
     # @section -- XPU Exporter Configuration
     stdout:

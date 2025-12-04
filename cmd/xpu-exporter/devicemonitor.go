@@ -87,7 +87,7 @@ func newDeviceMonitor(cfg *config) (*deviceMonitor, error) {
 
 // run is the main loop for the device monitor.
 func (m *deviceMonitor) run(ctx context.Context) error {
-	ticker := time.NewTicker(time.Duration(m.cfg.Exporters.CollectInterval) * time.Second)
+	ticker := time.NewTicker(time.Duration(m.cfg.CollectInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
