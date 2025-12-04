@@ -394,7 +394,7 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 		while (start < len) {
 			if (isBlankSpace(info.at(start))) {
 				start++;
-			} else if ((info.at(start) == '#')) {
+			} else if (info.at(start) == '#') {
 				comment = true;
 				break;
 			} else {

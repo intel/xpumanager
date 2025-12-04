@@ -154,7 +154,6 @@ elif is_linux
     '-fstack-clash-protection',
     '-Wformat-security',
     '-D_GLIBCXX_ASSERTIONS',
-    '-Wtrampolines',
   ]
 endif
 

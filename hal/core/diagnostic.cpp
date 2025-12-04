@@ -215,7 +215,7 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 	}
 
 	uint64_t maxWorkItems = (uint64_t)zeDevProp.numSlices * zeDevProp.numSubslicesPerSlice *
-							  zeDevProp.numEUsPerSubslice * zeComputeProp.maxGroupCountX * 2048;
+							zeDevProp.numEUsPerSubslice * zeComputeProp.maxGroupCountX * 2048;
 	uint64_t maxNumberOfAllocatedItems = zeDevProp.maxMemAllocSize / srcSize;
 	uint64_t numberOfWorkItems = std::min(maxNumberOfAllocatedItems, (maxWorkItems * srcSize));
 	ZeWorkGroups workgroupInfo;
@@ -474,17 +474,16 @@ ze_result_t diagnostic::commandListCreate(const ze_context_handle_t contextHandl
  * @return ze_result_t ZE_RESULT_SUCCESS on successful creation, error code otherwise
  */
 ze_result_t diagnostic::commandQueueCreate(const ze_context_handle_t contextHandle, ze_device_handle_t zeDevice,
-										   const uint32_t commandQueueGroupOrdinal,
-										   const uint32_t commandQueueIndex,
+										   const uint32_t commandQueueGroupOrdinal, const uint32_t commandQueueIndex,
 										   ze_command_queue_handle_t *phCommandQueue, uint32_t flags)
 {
 	ze_command_queue_desc_t commandQueueDescription{.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
-													  .pNext = nullptr,
-													  .ordinal = commandQueueGroupOrdinal,
-													  .index = commandQueueIndex,
-													  .flags = flags,
-													  .mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
-													  .priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL};
+													.pNext = nullptr,
+													.ordinal = commandQueueGroupOrdinal,
+													.index = commandQueueIndex,
+													.flags = flags,
+													.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
+													.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL};
 
 	ze_result_t ret;
 	ret = zeCommandQueueCreate(contextHandle, zeDevice, &commandQueueDescription, phCommandQueue);

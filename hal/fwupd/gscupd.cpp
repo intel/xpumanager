@@ -177,8 +177,8 @@ ze_result_t gscupd::preUpdateGfx(firmwareInfo *fwInfo)
 
 	// Check if the image is valid
 	memset(&imageFwVersion, 0, sizeof(imageFwVersion));
-	ret = igsc_image_fw_version((const uint8_t *)fwInfo->buffer.data(), (uint32_t)fwInfo->buffer.size(),
-								&imageFwVersion);
+	ret =
+		igsc_image_fw_version((const uint8_t *)fwInfo->buffer.data(), (uint32_t)fwInfo->buffer.size(), &imageFwVersion);
 	if (ret != IGSC_SUCCESS) {
 		ERR("Failed to get image firmware version %d\n", ret);
 		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;

@@ -125,11 +125,11 @@ int cmdTopdown::run(arg_struct *args)
 {
 	TRACING();
 	static struct option longOptions[] = {{"help", no_argument, 0, 'h'},
-										   {"json", no_argument, 0, 'j'},
-										   {"device", required_argument, 0, 'd'},
-										   {"tile", required_argument, 0, 't'},
-										   {"samplingInterval", required_argument, 0, 's'},
-										   {0, 0, 0, 0}};
+										  {"json", no_argument, 0, 'j'},
+										  {"device", required_argument, 0, 'd'},
+										  {"tile", required_argument, 0, 't'},
+										  {"samplingInterval", required_argument, 0, 's'},
+										  {0, 0, 0, 0}};
 
 	ze_result_t result;
 	std::vector<devInfo> deviceList;

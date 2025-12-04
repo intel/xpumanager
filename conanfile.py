@@ -31,7 +31,7 @@ class XpumConan(ConanFile):
     def requirements(self):
         self.requires("level-zero/1.23.1")
         self.requires("igsc/0.9.6")
-        self.requires("nlohmann_json/3.11.3")
+        self.requires("nlohmann_json/3.10.2")
         
         # Platform-specific dependencies
         if self.settings.os == "Linux":

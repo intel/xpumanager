@@ -51,7 +51,7 @@ struct RasCategoryInfo
  * Level Zero enum value with its corresponding user-friendly name. This
  * serves as the definitive list for iteration and lookup operations.
  */
-static const std::vector<RasCategoryInfo> rasCategories = {
+static const std::vector<RasCategoryInfo> RAS_CATEGORIES = {
 	{ZES_RAS_ERROR_CAT_RESET, "Reset"},
 	{ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, "Programming Errors"},
 	{ZES_RAS_ERROR_CAT_DRIVER_ERRORS, "Driver Errors"},
@@ -179,7 +179,7 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 		return ZE_RESULT_SUCCESS; // Not an error, just not supported
 	}
 
-	for (const auto &categoryInfo : rasCategories) {
+	for (const auto &categoryInfo : RAS_CATEGORIES) {
 		RasCounter counter;
 		counter.categoryName = categoryInfo.name;
 
@@ -770,7 +770,7 @@ void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson
 		printRow(displayName, oss.str());
 	};
 
-	for (const auto &categoryInfo : rasCategories) {
+	for (const auto &categoryInfo : RAS_CATEGORIES) {
 		if (categoryInfo.category == ZES_RAS_ERROR_CAT_CACHE_ERRORS ||
 			categoryInfo.category == ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS) {
 			printRasCategory(categoryInfo.name, "correctable");

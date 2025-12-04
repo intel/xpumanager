@@ -261,7 +261,7 @@ std::string timestamp()
 		return timestampStr;
 	}
 	timestampStr = std::format("{:02d}:{:02d}:{:02d}.{:03d}", timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec,
-								(int)tv.tv_usec / 1000);
+							   (int)tv.tv_usec / 1000);
 	return timestampStr;
 }
 
