@@ -53,6 +53,7 @@ type typeRewriter struct {
 func main() {
 	filePath := flag.String("file", "types.go", "Path to the Go source file to process")
 	mappingsPath := flag.String("config", "types-mangle.yaml", "Path to the type rewrite rules config file")
+	inPlace := flag.Bool("in-place", false, "Modify the file in place")
 	flag.Parse()
 
 	// Read configuration
@@ -84,13 +85,18 @@ func main() {
 		}
 	}
 
-	// Write back the modified file to stdout
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fset, file); err != nil {
 		log.Fatal(err)
 	}
 
-	_, _ = os.Stdout.Write(buf.Bytes())
+	if *inPlace {
+		if err := os.WriteFile(*filePath, buf.Bytes(), 0644); err != nil {
+			log.Fatalf("Failed to write modified file: %v", err)
+		}
+	} else {
+		_, _ = os.Stdout.Write(buf.Bytes())
+	}
 }
 
 func loadConfig(path string) (*config, error) {
