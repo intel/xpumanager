@@ -74,7 +74,7 @@ const (
 	RESULT_ERROR_SURVIVABILITY_MODE_DETECTED    Result = 2013265952
 	RESULT_ERROR_ADDRESS_NOT_FOUND              Result = 2013265953
 	RESULT_ERROR_UNKNOWN                        Result = 2147483646
-	RESULT_FORCE_UINT32                         Result = 2147483647
+	RESULT_END_MARKER                           Result = 2147483647
 )
 
 // DeviceType as declared in levelzero/ze_api.h:1702
@@ -82,12 +82,12 @@ type DeviceType int32
 
 // DeviceType enumeration from levelzero/ze_api.h:1702
 const (
-	DEVICE_TYPE_GPU          DeviceType = 1
-	DEVICE_TYPE_CPU          DeviceType = 2
-	DEVICE_TYPE_FPGA         DeviceType = 3
-	DEVICE_TYPE_MCA          DeviceType = 4
-	DEVICE_TYPE_VPU          DeviceType = 5
-	DEVICE_TYPE_FORCE_UINT32 DeviceType = 2147483647
+	DEVICE_TYPE_GPU        DeviceType = 1
+	DEVICE_TYPE_CPU        DeviceType = 2
+	DEVICE_TYPE_FPGA       DeviceType = 3
+	DEVICE_TYPE_MCA        DeviceType = 4
+	DEVICE_TYPE_VPU        DeviceType = 5
+	DEVICE_TYPE_END_MARKER DeviceType = 2147483647
 )
 
 // DevicePropertyFlag as declared in levelzero/ze_api.h:1735
@@ -99,5 +99,5 @@ const (
 	DEVICE_PROPERTY_FLAG_SUBDEVICE      DevicePropertyFlag = 2
 	DEVICE_PROPERTY_FLAG_ECC            DevicePropertyFlag = 4
 	DEVICE_PROPERTY_FLAG_ONDEMANDPAGING DevicePropertyFlag = 8
-	DEVICE_PROPERTY_FLAG_FORCE_UINT32   DevicePropertyFlag = 2147483647
+	DEVICE_PROPERTY_FLAG_END_MARKER     DevicePropertyFlag = 2147483647
 )
