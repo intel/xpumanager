@@ -5,10 +5,12 @@ package core
 
 import "github.com/google/uuid"
 
+// DeviceUuid as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-uuid-t
 type DeviceUuid struct {
 	Id uuid.UUID
 }
 
+// DeviceProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-properties-t
 type DeviceProperties struct {
 	stype                    uint32
 	pnext                    *byte

@@ -5,11 +5,13 @@ package sysman
 
 import "github.com/intel/level-zero-go/core"
 
+// DriverExtensionProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-extension-properties-t
 type DriverExtensionProperties struct {
 	Name    core.StringProperty256
 	Version uint32
 }
 
+// DeviceState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
 type DeviceState struct {
 	stype    uint32
 	pnext    *byte
@@ -17,6 +19,7 @@ type DeviceState struct {
 	Repaired RepairStatus
 }
 
+// ResetProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-properties-t
 type ResetProperties struct {
 	stype     uint32
 	pnext     *byte
@@ -24,10 +27,12 @@ type ResetProperties struct {
 	ResetType ResetType
 }
 
+// Uuid as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-uuid-t
 type Uuid struct {
 	Id [16]uint8
 }
 
+// DeviceProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
 type DeviceProperties struct {
 	stype         uint32
 	pnext         *byte
@@ -42,6 +47,7 @@ type DeviceProperties struct {
 	_             [4]byte
 }
 
+// DeviceExtProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-properties-t
 type DeviceExtProperties struct {
 	stype uint32
 	pnext *byte
@@ -50,6 +56,7 @@ type DeviceExtProperties struct {
 	Flags DevicePropertyFlags
 }
 
+// ProcessState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-process-state-t
 type ProcessState struct {
 	stype      uint32
 	pnext      *byte
@@ -60,6 +67,7 @@ type ProcessState struct {
 	_          [4]byte
 }
 
+// PciAddress as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-address-t
 type PciAddress struct {
 	Domain   uint32
 	Bus      uint32
@@ -67,12 +75,14 @@ type PciAddress struct {
 	Function uint32
 }
 
+// PciSpeed as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-speed-t
 type PciSpeed struct {
 	Gen          int32
 	Width        int32
 	MaxBandwidth int64
 }
 
+// PciProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-properties-t
 type PciProperties struct {
 	stype                 uint32
 	pnext                 *byte
@@ -84,6 +94,7 @@ type PciProperties struct {
 	_                     [5]byte
 }
 
+// PciState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
 type PciState struct {
 	stype           uint32
 	pnext           *byte
@@ -93,6 +104,7 @@ type PciState struct {
 	Speed           PciSpeed
 }
 
+// PciBarProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties-t
 type PciBarProperties struct {
 	stype uint32
 	pnext *byte
@@ -102,6 +114,7 @@ type PciBarProperties struct {
 	Size  uint64
 }
 
+// PciBarProperties12 as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties12-t
 type PciBarProperties12 struct {
 	stype                 uint32
 	pnext                 *byte
@@ -114,6 +127,7 @@ type PciBarProperties12 struct {
 	_                     [6]byte
 }
 
+// PciStats as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-stats-t
 type PciStats struct {
 	Timestamp     uint64
 	ReplayCounter uint64
@@ -123,6 +137,7 @@ type PciStats struct {
 	Speed         PciSpeed
 }
 
+// OverclockProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-properties-t
 type OverclockProperties struct {
 	stype             uint32
 	pnext             *byte
@@ -132,6 +147,7 @@ type OverclockProperties struct {
 	NumberOfVFPoints  uint32
 }
 
+// ControlProperty as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-control-property-t
 type ControlProperty struct {
 	MinValue     float64
 	MaxValue     float64
@@ -140,6 +156,7 @@ type ControlProperty struct {
 	DefaultValue float64
 }
 
+// VfProperty as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-property-t
 type VfProperty struct {
 	MinFreq  float64
 	MaxFreq  float64
@@ -149,11 +166,13 @@ type VfProperty struct {
 	StepVolt float64
 }
 
+// DiagTest as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-test-t
 type DiagTest struct {
 	Index uint32
 	Name  core.StringProperty64
 }
 
+// DiagProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-properties-t
 type DiagProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -164,6 +183,7 @@ type DiagProperties struct {
 	_           [7]byte
 }
 
+// DeviceEccDesc as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-desc-t
 type DeviceEccDesc struct {
 	stype uint32
 	pnext *byte
@@ -171,6 +191,7 @@ type DeviceEccDesc struct {
 	_     [4]byte
 }
 
+// DeviceEccProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-properties-t
 type DeviceEccProperties struct {
 	stype         uint32
 	pnext         *byte
@@ -180,6 +201,7 @@ type DeviceEccProperties struct {
 	_             [4]byte
 }
 
+// EngineProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
 type EngineProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -189,11 +211,13 @@ type EngineProperties struct {
 	_           [4]byte
 }
 
+// EngineStats as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-stats-t
 type EngineStats struct {
 	ActiveTime uint64
 	Timestamp  uint64
 }
 
+// FabricPortId as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-id-t
 type FabricPortId struct {
 	FabricId   uint32
 	AttachId   uint32
@@ -201,12 +225,14 @@ type FabricPortId struct {
 	_          [3]byte
 }
 
+// FabricPortSpeed as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-speed-t
 type FabricPortSpeed struct {
 	BitRate int64
 	Width   int32
 	_       [4]byte
 }
 
+// FabricPortProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-properties-t
 type FabricPortProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -218,10 +244,12 @@ type FabricPortProperties struct {
 	MaxTxSpeed  FabricPortSpeed
 }
 
+// FabricLinkType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-link-type-t
 type FabricLinkType struct {
 	Desc core.StringProperty256
 }
 
+// FabricPortConfig as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-config-t
 type FabricPortConfig struct {
 	stype     uint32
 	pnext     *byte
@@ -230,6 +258,7 @@ type FabricPortConfig struct {
 	_         [6]byte
 }
 
+// FabricPortState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-state-t
 type FabricPortState struct {
 	stype          uint32
 	pnext          *byte
@@ -241,12 +270,14 @@ type FabricPortState struct {
 	TxSpeed        FabricPortSpeed
 }
 
+// FabricPortThroughput as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-throughput-t
 type FabricPortThroughput struct {
 	Timestamp uint64
 	RxCounter uint64
 	TxCounter uint64
 }
 
+// FabricPortErrorCounters as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-error-counters-t
 type FabricPortErrorCounters struct {
 	stype            uint32
 	pnext            *byte
@@ -256,21 +287,25 @@ type FabricPortErrorCounters struct {
 	LinkDegradeCount uint64
 }
 
+// FanSpeed as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-t
 type FanSpeed struct {
 	Speed int32
 	Units FanSpeedUnits
 }
 
+// FanTempSpeed as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-temp-speed-t
 type FanTempSpeed struct {
 	Temperature uint32
 	Speed       FanSpeed
 }
 
+// FanSpeedTable as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-table-t
 type FanSpeedTable struct {
 	NumPoints int32
 	Table     [32]FanTempSpeed
 }
 
+// FanProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-properties-t
 type FanProperties struct {
 	stype          uint32
 	pnext          *byte
@@ -284,6 +319,7 @@ type FanProperties struct {
 	_              [4]byte
 }
 
+// FanConfig as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-config-t
 type FanConfig struct {
 	stype      uint32
 	pnext      *byte
@@ -292,6 +328,7 @@ type FanConfig struct {
 	SpeedTable FanSpeedTable
 }
 
+// FirmwareProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-firmware-properties-t
 type FirmwareProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -303,6 +340,7 @@ type FirmwareProperties struct {
 	_           [7]byte
 }
 
+// FreqProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-properties-t
 type FreqProperties struct {
 	stype                    uint32
 	pnext                    *byte
@@ -315,11 +353,13 @@ type FreqProperties struct {
 	Max                      float64
 }
 
+// FreqRange as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-range-t
 type FreqRange struct {
 	Min float64
 	Max float64
 }
 
+// FreqState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
 type FreqState struct {
 	stype           uint32
 	pnext           *byte
@@ -332,11 +372,13 @@ type FreqState struct {
 	_               [4]byte
 }
 
+// FreqThrottleTime as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-time-t
 type FreqThrottleTime struct {
 	ThrottleTime uint64
 	Timestamp    uint64
 }
 
+// LedProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-properties-t
 type LedProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -347,12 +389,14 @@ type LedProperties struct {
 	_           [6]byte
 }
 
+// LedColor as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-color-t
 type LedColor struct {
 	Red   float64
 	Green float64
 	Blue  float64
 }
 
+// LedState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-state-t
 type LedState struct {
 	stype uint32
 	pnext *byte
@@ -360,6 +404,7 @@ type LedState struct {
 	Color LedColor
 }
 
+// MemProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-properties-t
 type MemProperties struct {
 	stype        uint32
 	pnext        *byte
@@ -372,6 +417,7 @@ type MemProperties struct {
 	NumChannels  int32
 }
 
+// MemState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-state-t
 type MemState struct {
 	stype  uint32
 	pnext  *byte
@@ -380,6 +426,7 @@ type MemState struct {
 	Size   uint64
 }
 
+// MemBandwidth as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-t
 type MemBandwidth struct {
 	ReadCounter  uint64
 	WriteCounter uint64
@@ -387,6 +434,7 @@ type MemBandwidth struct {
 	Timestamp    uint64
 }
 
+// PerfProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-perf-properties-t
 type PerfProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -396,6 +444,7 @@ type PerfProperties struct {
 	_           [4]byte
 }
 
+// PowerProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-properties-t
 type PowerProperties struct {
 	stype                      uint32
 	pnext                      *byte
@@ -408,11 +457,13 @@ type PowerProperties struct {
 	MaxLimit                   int32
 }
 
+// PowerEnergyCounter as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-energy-counter-t
 type PowerEnergyCounter struct {
 	Energy    uint64
 	Timestamp uint64
 }
 
+// EnergyThreshold as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-energy-threshold-t
 type EnergyThreshold struct {
 	Enable    uint8
 	Threshold float64
@@ -420,6 +471,7 @@ type EnergyThreshold struct {
 	_         [4]byte
 }
 
+// PsuProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-properties-t
 type PsuProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -429,6 +481,7 @@ type PsuProperties struct {
 	AmpLimit    int32
 }
 
+// PsuState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-state-t
 type PsuState struct {
 	stype       uint32
 	pnext       *byte
@@ -438,6 +491,7 @@ type PsuState struct {
 	Current     int32
 }
 
+// RasProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-properties-t
 type RasProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -447,12 +501,14 @@ type RasProperties struct {
 	_           [4]byte
 }
 
+// RasState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-t
 type RasState struct {
 	stype    uint32
 	pnext    *byte
 	Category [7]uint64
 }
 
+// RasConfig as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-config-t
 type RasConfig struct {
 	stype              uint32
 	pnext              *byte
@@ -460,6 +516,7 @@ type RasConfig struct {
 	DetailedThresholds RasState
 }
 
+// SchedProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-properties-t
 type SchedProperties struct {
 	stype          uint32
 	pnext          *byte
@@ -471,12 +528,14 @@ type SchedProperties struct {
 	_              [4]byte
 }
 
+// SchedTimeoutProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-timeout-properties-t
 type SchedTimeoutProperties struct {
 	stype           uint32
 	pnext           *byte
 	WatchdogTimeout uint64
 }
 
+// SchedTimesliceProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-timeslice-properties-t
 type SchedTimesliceProperties struct {
 	stype        uint32
 	pnext        *byte
@@ -484,6 +543,7 @@ type SchedTimesliceProperties struct {
 	YieldTimeout uint64
 }
 
+// StandbyProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-properties-t
 type StandbyProperties struct {
 	stype       uint32
 	pnext       *byte
@@ -493,6 +553,7 @@ type StandbyProperties struct {
 	_           [4]byte
 }
 
+// TempProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-properties-t
 type TempProperties struct {
 	stype                   uint32
 	pnext                   *byte
@@ -506,12 +567,14 @@ type TempProperties struct {
 	_                       [5]byte
 }
 
+// TempThreshold as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-threshold-t
 type TempThreshold struct {
 	EnableLowToHigh uint8
 	EnableHighToLow uint8
 	Threshold       float64
 }
 
+// TempConfig as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-config-t
 type TempConfig struct {
 	stype          uint32
 	pnext          *byte
@@ -520,6 +583,7 @@ type TempConfig struct {
 	Threshold2     TempThreshold
 }
 
+// DeviceEccDefaultPropertiesExt as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-t
 type DeviceEccDefaultPropertiesExt struct {
 	stype        uint32
 	pnext        *byte
@@ -527,6 +591,7 @@ type DeviceEccDefaultPropertiesExt struct {
 	_            [4]byte
 }
 
+// PowerLimitExtDesc as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limit-ext-desc-t
 type PowerLimitExtDesc struct {
 	stype               uint32
 	pnext               *byte
@@ -542,6 +607,7 @@ type PowerLimitExtDesc struct {
 	_                   [4]byte
 }
 
+// PowerExtProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-ext-properties-t
 type PowerExtProperties struct {
 	stype        uint32
 	pnext        *byte
@@ -549,6 +615,7 @@ type PowerExtProperties struct {
 	DefaultLimit *PowerLimitExtDesc
 }
 
+// EngineExtProperties as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-ext-properties-t
 type EngineExtProperties struct {
 	stype                          uint32
 	pnext                          *byte
@@ -556,22 +623,32 @@ type EngineExtProperties struct {
 	_                              [4]byte
 }
 
+// InitFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 type InitFlags InitFlag
 
+// EngineTypeFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-type-flags-t
 type EngineTypeFlags EngineTypeFlag
 
+// ResetReasonFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
 type ResetReasonFlags ResetReasonFlag
 
+// DevicePropertyFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
 type DevicePropertyFlags DevicePropertyFlag
 
+// PciLinkQualIssueFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-qual-issue-flags-t
 type PciLinkQualIssueFlags PciLinkQualIssueFlag
 
+// PciLinkStabIssueFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-stab-issue-flags-t
 type PciLinkStabIssueFlags PciLinkStabIssueFlag
 
+// EventTypeFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t
 type EventTypeFlags EventTypeFlag
 
+// FabricPortQualIssueFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-qual-issue-flags-t
 type FabricPortQualIssueFlags FabricPortQualIssueFlag
 
+// FabricPortFailureFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-failure-flags-t
 type FabricPortFailureFlags FabricPortFailureFlag
 
+// FreqThrottleReasonFlags as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-reason-flags-t
 type FreqThrottleReasonFlags FreqThrottleReasonFlag

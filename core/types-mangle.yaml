@@ -24,3 +24,7 @@ structs:
       - name: Id
         typeAssert: "[16]uint8"
         newType: uuid.UUID
+
+types:
+  - name: "*"
+    newComment: "// {{ .Name }} as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-{{ .DocAnchor }}"
