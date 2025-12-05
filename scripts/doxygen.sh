@@ -9,6 +9,12 @@ if [ -z "$MESON_SOURCE_ROOT" ] || [ -z "$MESON_BUILD_ROOT" ]; then
 fi
 cd "$MESON_SOURCE_ROOT"
 
+# Check if 'dot' tool is available for generating graphs
+if [ -z $(which dot 2>/dev/null) ]; then
+	echo "ERROR: 'dot' tool for generating graphs missing, please install 'graphviz' first!" 1>&2
+	exit 1
+fi
+
 conf="Doxyfile"
 if [ ! -f "$conf" ]; then
 	echo "ERROR: Doxygen '$conf' config file missing!" 1>&2
