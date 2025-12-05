@@ -51,46 +51,26 @@ type typeRewriter struct {
 }
 
 func main() {
-	filePath := flag.String("file", "types.go", "Path to the Go source file to process")
 	mappingsPath := flag.String("config", "types-mangle.yaml", "Path to the type rewrite rules config file")
+	inPlace := flag.Bool("in-place", false, "Modify the file in place")
 	flag.Parse()
+
+	args := flag.Args()
+	if len(args) == 0 {
+		log.Fatal("No source files specified")
+	}
 
 	// Read configuration
 	cfg, err := loadConfig(*mappingsPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	trw := newTypeRewriter(cfg)
 
-	// Parse the Go source file
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, *filePath, nil, parser.ParseComments)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, decl := range file.Decls {
-		genDecl, ok := decl.(*ast.GenDecl)
-		if !ok {
-			continue
-		}
-		for _, spec := range genDecl.Specs {
-			// Look for type declarations
-			if typeSpec, ok := spec.(*ast.TypeSpec); ok {
-				if err := trw.handleType(typeSpec); err != nil {
-					log.Fatalf("Failed to handle type %s: %v", typeSpec.Name.Name, err)
-				}
-			}
+	for _, filePath := range args {
+		if err := handleFile(filePath, *inPlace, cfg); err != nil {
+			log.Fatalf("Failed to process file %s: %v", filePath, err)
 		}
 	}
-
-	// Write back the modified file to stdout
-	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, file); err != nil {
-		log.Fatal(err)
-	}
-
-	_, _ = os.Stdout.Write(buf.Bytes())
 }
 
 func loadConfig(path string) (*config, error) {
@@ -103,6 +83,45 @@ func loadConfig(path string) (*config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+func handleFile(filePath string, inPlace bool, cfg *config) error {
+	trw := newTypeRewriter(cfg)
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return fmt.Errorf("failed to parse file: %w", err)
+	}
+
+	for _, decl := range file.Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		for _, spec := range genDecl.Specs {
+			// Look for type declarations
+			if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+				if err := trw.handleType(typeSpec); err != nil {
+					return fmt.Errorf("failed to handle type %s: %w", typeSpec.Name.Name, err)
+				}
+			}
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, file); err != nil {
+		log.Fatal(err)
+	}
+
+	if inPlace {
+		if err := os.WriteFile(filePath, buf.Bytes(), 0644); err != nil {
+			return fmt.Errorf("failed to write modified file: %w", err)
+		}
+	} else {
+		_, _ = os.Stdout.Write(buf.Bytes())
+	}
+	return nil
 }
 
 func newTypeRewriter(cfg *config) *typeRewriter {
