@@ -4,12 +4,16 @@ set -o pipefail
 ROOT_DIR=$(pwd)
 PACKAGE="$1"
 
+gotool() {
+    go tool -modfile "$ROOT_DIR/hack/go.mod" "$@"
+}
+
 if [ -z "$PACKAGE" ] || [ ! -d "$PACKAGE" ]; then
     echo "ERROR: package <dir> argument missing or not a dir ('$PACKAGE')!" 1>&2
     exit 1
 fi
 
-go tool c-for-go -nostamp $PACKAGE.yml
+gotool c-for-go -nostamp $PACKAGE.yml
 
 sed -i "$PACKAGE/$PACKAGE.go" \
     -e s'!*C.struct__\(ze_[a-z_]*_handle_t\)!*C.\1!' \
@@ -21,8 +25,11 @@ fi
 
 cd "$PACKAGE"
 go tool cgo -godefs ./types.go > types.go.tmp
-go run "$ROOT_DIR/hack/types-mangle" -in-place types.go.tmp
-go tool goimports types.go.tmp > types.go
+go -C "$ROOT_DIR/hack" run ./types-mangle \
+    -in-place \
+    -config "$PWD/types-mangle.yaml" \
+    "$PWD/types.go.tmp"
+gotool goimports types.go.tmp > types.go
 rm -f types.go.tmp
 cd -
 
