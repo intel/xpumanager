@@ -15,14 +15,20 @@ import (
 // doxygen represents a Doxygen XML document.
 type doxygen struct {
 	Members      []memberDef `xml:"compounddef>sectiondef>memberdef"`
-	golanMembers map[string]memberDef
+	golanMembers map[string]memberBase
 }
 
-type memberDef struct {
-	Kind   string      `xml:"kind,attr"`
+// memberBase is a base struct for common member and value fields
+type memberBase struct {
 	Name   string      `xml:"name"`
 	Brief  description `xml:"briefdescription"`
 	Detail description `xml:"detaileddescription"`
+}
+
+type memberDef struct {
+	memberBase
+	Kind  string       `xml:"kind,attr"`
+	Enums []memberBase `xml:"enumvalue"`
 }
 
 type description struct {
@@ -62,7 +68,7 @@ func loadDoxygenXml(path, prefix string) (*doxygen, error) {
 	return &doc, nil
 }
 
-func (d *doxygen) getMemberByGoName(goName string) (*memberDef, bool) {
+func (d *doxygen) getMemberByGoName(goName string) (*memberBase, bool) {
 	m, ok := d.golanMembers[goName]
 	if !ok {
 		return nil, false
@@ -70,22 +76,33 @@ func (d *doxygen) getMemberByGoName(goName string) (*memberDef, bool) {
 	return &m, true
 }
 
-// membersMap returns a map of golang-name to memberDef.
-func (d *doxygen) membersMap(prefix string) (map[string]memberDef, error) {
-	members := make(map[string]memberDef, len(d.Members))
+// membersMap returns a map of golang-name to members and enums.
+// NOTE: We simplify and rely on the fact that there are no name clashes
+// between members and enums.
+func (d *doxygen) membersMap(prefix string) (map[string]memberBase, error) {
+	members := make(map[string]memberBase, len(d.Members))
 	for _, member := range d.Members {
-		gn := member.goName(prefix)
+		gn := member.goName(member.Kind, prefix)
 		if m, exists := members[gn]; exists {
 			// We shouldn't have duplicate members with the same name.
 			return nil, fmt.Errorf("clashing go name: %s (%s and %s)", gn, m.Name, member.Name)
 		}
-		members[gn] = member
+		members[gn] = member.memberBase
+
+		// Add enum values if any
+		for _, enum := range member.Enums {
+			egn := enum.goName("define", prefix)
+			if _, exists := members[egn]; exists {
+				return nil, fmt.Errorf("clashing go name: %s (%s and %s)", egn, enum.Name, member.Name)
+			}
+			members[egn] = enum
+		}
 	}
 	return members, nil
 }
 
-func (m *memberDef) goName(prefix string) string {
-	switch m.Kind {
+func (m *memberBase) goName(kind, prefix string) string {
+	switch kind {
 	case "function":
 		// Expect the function names not to be mangled
 		return m.Name
