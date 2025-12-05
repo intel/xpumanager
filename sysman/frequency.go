@@ -136,7 +136,7 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 		opt := metric.WithAttributes(attrs...)
 
 		if rang, err := freq.GetRange(); err != nil {
-			slog.Error("Failed to get frequency range", "error", err)
+			slog.Error("Failed to get frequency range", "error", err, attrsToSlog(attrs))
 		} else {
 			if rang.Min >= 0 {
 				o.ObserveFloat64(m.minimum, rang.Min*1e6, opt)
@@ -147,7 +147,7 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 		}
 
 		if state, err := freq.GetState(); err != nil {
-			slog.Error("Failed to get frequency state", "error", err)
+			slog.Error("Failed to get frequency state", "error", err, attrsToSlog(attrs))
 		} else {
 			if state.Request >= 0 {
 				o.ObserveFloat64(m.request, state.Request*1e6, opt)

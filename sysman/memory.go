@@ -115,13 +115,13 @@ func (m *memoryMetrics) getInstruments() []metric.Observable {
 
 func (m *memoryMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 	for _, mem := range dev.memory {
+		attrs := append(dev.attributes, mem.attributes...)
+
 		state, err := mem.GetState()
 		if err != nil {
-			slog.Error("Failed to get memory module state", "error", err)
+			slog.Error("Failed to get memory module state", "error", err, attrsToSlog(attrs))
 			return
 		}
-
-		attrs := append(dev.attributes, mem.attributes...)
 
 		opt := metric.WithAttributes(attrs...)
 		o.ObserveInt64(m.limit, int64(state.Size), opt)
