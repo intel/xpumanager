@@ -28,13 +28,19 @@ import (
 type flagsT struct {
 	port       int
 	configFile string
+	debug      bool
 }
 
 func main() {
 	flags := flagsT{}
 	flag.IntVar(&flags.port, "port", 8080, "Port to expose metrics on")
 	flag.StringVar(&flags.configFile, "config", "", "Path to configuration file")
+	flag.BoolVar(&flags.debug, "debug", false, "Enable debug logging")
 	flag.Parse()
+
+	if flags.debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 
 	os.Exit(run(flags))
 }
