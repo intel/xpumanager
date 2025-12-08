@@ -1,6 +1,10 @@
 #
 # Config file for the hack/types-mangle tool.
 #
+options:
+  prefix: "zes"
+  doxygenPath: xml/zes__api_8h.xml
+
 structs:
   - name: "*"
     fields:
@@ -216,7 +220,13 @@ structs:
 
 types:
   - name: "*"
-    newComment: "// {{ .Name }} as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}"
+    newComment: |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}
+      {{- with doxygen . }}
+      
+      {{ . }}
+      {{- end -}}
   - name: InitFlags
     newType: InitFlag
   - name: EngineTypeFlags
