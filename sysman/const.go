@@ -46,7 +46,8 @@ const (
 	ENGINE_ACTIVITY_EXT_NAME = "ZES_extension_engine_activity"
 )
 
-// InitFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
+// InitFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 type InitFlag int32
 
 // InitFlag enumeration from levelzero/zes_api.h:592
@@ -55,7 +56,8 @@ const (
 	INIT_FLAG_END_MARKER  InitFlag = 2147483647
 )
 
-// EngineTypeFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-type-flags-t
+// EngineTypeFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-type-flags-t
 type EngineTypeFlag int32
 
 // EngineTypeFlag enumeration from levelzero/zes_api.h:803
@@ -69,7 +71,10 @@ const (
 	ENGINE_TYPE_FLAG_END_MARKER EngineTypeFlag = 2147483647
 )
 
-// RepairStatus as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-repair-status-t
+// RepairStatus declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-repair-status-t
+//
+// Device repair status.
 type RepairStatus int32
 
 // RepairStatus enumeration from levelzero/zes_api.h:814
@@ -80,7 +85,8 @@ const (
 	REPAIR_STATUS_END_MARKER    RepairStatus = 2147483647
 )
 
-// ResetReasonFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
+// ResetReasonFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
 type ResetReasonFlag int32
 
 // ResetReasonFlag enumeration from levelzero/zes_api.h:826
@@ -90,7 +96,10 @@ const (
 	RESET_REASON_FLAG_END_MARKER ResetReasonFlag = 2147483647
 )
 
-// ResetType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-type-t
+// ResetType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-type-t
+//
+// Device reset type.
 type ResetType int32
 
 // ResetType enumeration from levelzero/zes_api.h:837
@@ -101,7 +110,10 @@ const (
 	RESET_TYPE_END_MARKER ResetType = 2147483647
 )
 
-// DeviceType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-type-t
+// DeviceType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-type-t
+//
+// Supported device types.
 type DeviceType int32
 
 // DeviceType enumeration from levelzero/zes_api.h:884
@@ -114,7 +126,8 @@ const (
 	DEVICE_TYPE_END_MARKER DeviceType = 2147483647
 )
 
-// DevicePropertyFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
+// DevicePropertyFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
 type DevicePropertyFlag int32
 
 // DevicePropertyFlag enumeration from levelzero/zes_api.h:897
@@ -126,7 +139,10 @@ const (
 	DEVICE_PROPERTY_FLAG_END_MARKER     DevicePropertyFlag = 2147483647
 )
 
-// PciLinkStatus as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-status-t
+// PciLinkStatus declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-status-t
+//
+// PCI link status.
 type PciLinkStatus int32
 
 // PciLinkStatus enumeration from levelzero/zes_api.h:1181
@@ -138,7 +154,8 @@ const (
 	PCI_LINK_STATUS_END_MARKER       PciLinkStatus = 2147483647
 )
 
-// PciLinkQualIssueFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-qual-issue-flags-t
+// PciLinkQualIssueFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-qual-issue-flags-t
 type PciLinkQualIssueFlag int32
 
 // PciLinkQualIssueFlag enumeration from levelzero/zes_api.h:1192
@@ -148,7 +165,8 @@ const (
 	PCI_LINK_QUAL_ISSUE_FLAG_END_MARKER PciLinkQualIssueFlag = 2147483647
 )
 
-// PciLinkStabIssueFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-stab-issue-flags-t
+// PciLinkStabIssueFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-stab-issue-flags-t
 type PciLinkStabIssueFlag int32
 
 // PciLinkStabIssueFlag enumeration from levelzero/zes_api.h:1202
@@ -157,7 +175,10 @@ const (
 	PCI_LINK_STAB_ISSUE_FLAG_END_MARKER PciLinkStabIssueFlag = 2147483647
 )
 
-// PciBarType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-type-t
+// PciBarType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-type-t
+//
+// PCI bar types.
 type PciBarType int32
 
 // PciBarType enumeration from levelzero/zes_api.h:1235
@@ -168,7 +189,10 @@ const (
 	PCI_BAR_TYPE_END_MARKER PciBarType = 2147483647
 )
 
-// OverclockDomain as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-domain-t
+// OverclockDomain declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-domain-t
+//
+// Overclock domains.
 type OverclockDomain int32
 
 // OverclockDomain enumeration from levelzero/zes_api.h:1428
@@ -185,7 +209,10 @@ const (
 	OVERCLOCK_DOMAIN_END_MARKER         OverclockDomain = 2147483647
 )
 
-// OverclockControl as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-control-t
+// OverclockControl declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-control-t
+//
+// Overclock controls.
 type OverclockControl int32
 
 // OverclockControl enumeration from levelzero/zes_api.h:1451
@@ -205,7 +232,10 @@ const (
 	OVERCLOCK_CONTROL_END_MARKER            OverclockControl = 2147483647
 )
 
-// OverclockMode as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-mode-t
+// OverclockMode declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-mode-t
+//
+// Overclock modes.
 type OverclockMode int32
 
 // OverclockMode enumeration from levelzero/zes_api.h:1465
@@ -218,7 +248,10 @@ const (
 	OVERCLOCK_MODE_END_MARKER       OverclockMode = 2147483647
 )
 
-// ControlState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-control-state-t
+// ControlState declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-control-state-t
+//
+// Overclock control states.
 type ControlState int32
 
 // ControlState enumeration from levelzero/zes_api.h:1478
@@ -229,7 +262,10 @@ const (
 	CONTROL_STATE_END_MARKER     ControlState = 2147483647
 )
 
-// PendingAction as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pending-action-t
+// PendingAction declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pending-action-t
+//
+// Overclock pending actions.
 type PendingAction int32
 
 // PendingAction enumeration from levelzero/zes_api.h:1491
@@ -241,7 +277,10 @@ const (
 	PENDING_ACTION_END_MARKER         PendingAction = 2147483647
 )
 
-// VfProgramType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-program-type-t
+// VfProgramType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-program-type-t
+//
+// Overclock V-F curve programing.
 type VfProgramType int32
 
 // VfProgramType enumeration from levelzero/zes_api.h:1506
@@ -252,7 +291,10 @@ const (
 	VF_PROGRAM_TYPE_END_MARKER    VfProgramType = 2147483647
 )
 
-// VfType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-type-t
+// VfType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-type-t
+//
+// VF type.
 type VfType int32
 
 // VfType enumeration from levelzero/zes_api.h:1516
@@ -262,7 +304,10 @@ const (
 	VF_TYPE_END_MARKER VfType = 2147483647
 )
 
-// VfArrayType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-array-type-t
+// VfArrayType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-array-type-t
+//
+// VF type.
 type VfArrayType int32
 
 // VfArrayType enumeration from levelzero/zes_api.h:1527
@@ -273,7 +318,10 @@ const (
 	VF_ARRAY_TYPE_END_MARKER       VfArrayType = 2147483647
 )
 
-// DiagResult as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-result-t
+// DiagResult declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-result-t
+//
+// Diagnostic results.
 type DiagResult int32
 
 // DiagResult enumeration from levelzero/zes_api.h:2041
@@ -285,7 +333,10 @@ const (
 	DIAG_RESULT_END_MARKER        DiagResult = 2147483647
 )
 
-// DeviceEccState as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-state-t
+// DeviceEccState declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-state-t
+//
+// ECC State.
 type DeviceEccState int32
 
 // DeviceEccState enumeration from levelzero/zes_api.h:2227
@@ -296,7 +347,10 @@ const (
 	DEVICE_ECC_STATE_END_MARKER  DeviceEccState = 2147483647
 )
 
-// DeviceAction as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-action-t
+// DeviceAction declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-action-t
+//
+// State Change Requirements.
 type DeviceAction int32
 
 // DeviceAction enumeration from levelzero/zes_api.h:2239
@@ -308,7 +362,10 @@ const (
 	DEVICE_ACTION_END_MARKER         DeviceAction = 2147483647
 )
 
-// EngineGroup as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-group-t
+// EngineGroup declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-group-t
+//
+// Accelerator engine groups.
 type EngineGroup int32
 
 // EngineGroup enumeration from levelzero/zes_api.h:2416
@@ -326,7 +383,8 @@ const (
 	ENGINE_GROUP_END_MARKER               EngineGroup = 2147483647
 )
 
-// EventTypeFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t
+// EventTypeFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t
 type EventTypeFlag int32
 
 // EventTypeFlag enumeration from levelzero/zes_api.h:2584
@@ -350,7 +408,10 @@ const (
 	EVENT_TYPE_FLAG_END_MARKER                  EventTypeFlag = 2147483647
 )
 
-// FabricPortStatus as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-status-t
+// FabricPortStatus declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-status-t
+//
+// Fabric port status.
 type FabricPortStatus int32
 
 // FabricPortStatus enumeration from levelzero/zes_api.h:2731
@@ -363,7 +424,8 @@ const (
 	FABRIC_PORT_STATUS_END_MARKER FabricPortStatus = 2147483647
 )
 
-// FabricPortQualIssueFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-qual-issue-flags-t
+// FabricPortQualIssueFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-qual-issue-flags-t
 type FabricPortQualIssueFlag int32
 
 // FabricPortQualIssueFlag enumeration from levelzero/zes_api.h:2742
@@ -373,7 +435,8 @@ const (
 	FABRIC_PORT_QUAL_ISSUE_FLAG_END_MARKER  FabricPortQualIssueFlag = 2147483647
 )
 
-// FabricPortFailureFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-failure-flags-t
+// FabricPortFailureFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-failure-flags-t
 type FabricPortFailureFlag int32
 
 // FabricPortFailureFlag enumeration from levelzero/zes_api.h:2762
@@ -384,7 +447,10 @@ const (
 	FABRIC_PORT_FAILURE_FLAG_END_MARKER       FabricPortFailureFlag = 2147483647
 )
 
-// FanSpeedMode as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-mode-t
+// FanSpeedMode declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-mode-t
+//
+// Fan resource speed mode.
 type FanSpeedMode int32
 
 // FanSpeedMode enumeration from levelzero/zes_api.h:3147
@@ -395,7 +461,10 @@ const (
 	FAN_SPEED_MODE_END_MARKER FanSpeedMode = 2147483647
 )
 
-// FanSpeedUnits as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-units-t
+// FanSpeedUnits declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-units-t
+//
+// Fan speed units.
 type FanSpeedUnits int32
 
 // FanSpeedUnits enumeration from levelzero/zes_api.h:3157
@@ -405,7 +474,10 @@ const (
 	FAN_SPEED_UNITS_END_MARKER FanSpeedUnits = 2147483647
 )
 
-// FreqDomain as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-domain-t
+// FreqDomain declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-domain-t
+//
+// Frequency domains.
 type FreqDomain int32
 
 // FreqDomain enumeration from levelzero/zes_api.h:3604
@@ -416,7 +488,8 @@ const (
 	FREQ_DOMAIN_END_MARKER FreqDomain = 2147483647
 )
 
-// FreqThrottleReasonFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-reason-flags-t
+// FreqThrottleReasonFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-reason-flags-t
 type FreqThrottleReasonFlag int32
 
 // FreqThrottleReasonFlag enumeration from levelzero/zes_api.h:3678
@@ -431,7 +504,10 @@ const (
 	FREQ_THROTTLE_REASON_FLAG_END_MARKER    FreqThrottleReasonFlag = 2147483647
 )
 
-// MemType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-type-t
+// MemType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-type-t
+//
+// Memory module types.
 type MemType int32
 
 // MemType enumeration from levelzero/zes_api.h:4542
@@ -459,7 +535,10 @@ const (
 	MEM_TYPE_END_MARKER MemType = 2147483647
 )
 
-// MemLoc as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-loc-t
+// MemLoc declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-loc-t
+//
+// Memory module location.
 type MemLoc int32
 
 // MemLoc enumeration from levelzero/zes_api.h:4552
@@ -469,7 +548,10 @@ const (
 	MEM_LOC_END_MARKER MemLoc = 2147483647
 )
 
-// MemHealth as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-health-t
+// MemHealth declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-health-t
+//
+// Memory health.
 type MemHealth int32
 
 // MemHealth enumeration from levelzero/zes_api.h:4567
@@ -482,7 +564,10 @@ const (
 	MEM_HEALTH_END_MARKER MemHealth = 2147483647
 )
 
-// PowerDomain as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-domain-t
+// PowerDomain declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-domain-t
+//
+// Power Domain.
 type PowerDomain int32
 
 // PowerDomain enumeration from levelzero/zes_api.h:4905
@@ -496,7 +581,10 @@ const (
 	POWER_DOMAIN_END_MARKER PowerDomain = 2147483647
 )
 
-// PowerLevel as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-level-t
+// PowerLevel declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-level-t
+//
+// Power Level Type.
 type PowerLevel int32
 
 // PowerLevel enumeration from levelzero/zes_api.h:4925
@@ -509,7 +597,10 @@ const (
 	POWER_LEVEL_END_MARKER    PowerLevel = 2147483647
 )
 
-// PowerSource as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-source-t
+// PowerSource declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-source-t
+//
+// Power Source Type.
 type PowerSource int32
 
 // PowerSource enumeration from levelzero/zes_api.h:4937
@@ -520,7 +611,10 @@ const (
 	POWER_SOURCE_END_MARKER PowerSource = 2147483647
 )
 
-// LimitUnit as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-limit-unit-t
+// LimitUnit declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-limit-unit-t
+//
+// Limit Unit.
 type LimitUnit int32
 
 // LimitUnit enumeration from levelzero/zes_api.h:4948
@@ -531,7 +625,10 @@ const (
 	LIMIT_UNIT_END_MARKER LimitUnit = 2147483647
 )
 
-// PsuVoltageStatus as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-voltage-status-t
+// PsuVoltageStatus declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-voltage-status-t
+//
+// PSU voltage status.
 type PsuVoltageStatus int32
 
 // PsuVoltageStatus enumeration from levelzero/zes_api.h:5315
@@ -543,7 +640,10 @@ const (
 	PSU_VOLTAGE_STATUS_END_MARKER PsuVoltageStatus = 2147483647
 )
 
-// RasErrorType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-type-t
+// RasErrorType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-type-t
+//
+// RAS error type.
 type RasErrorType int32
 
 // RasErrorType enumeration from levelzero/zes_api.h:5444
@@ -553,7 +653,10 @@ const (
 	RAS_ERROR_TYPE_END_MARKER    RasErrorType = 2147483647
 )
 
-// RasErrorCat as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-cat-t
+// RasErrorCat declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-cat-t
+//
+// RAS error categories.
 type RasErrorCat int32
 
 // RasErrorCat enumeration from levelzero/zes_api.h:5463
@@ -568,7 +671,10 @@ const (
 	RAS_ERROR_CAT_END_MARKER         RasErrorCat = 2147483647
 )
 
-// SchedMode as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-mode-t
+// SchedMode declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-mode-t
+//
+// Scheduler mode.
 type SchedMode int32
 
 // SchedMode enumeration from levelzero/zes_api.h:5718
@@ -579,7 +685,10 @@ const (
 	SCHED_MODE_END_MARKER SchedMode = 2147483647
 )
 
-// StandbyType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-type-t
+// StandbyType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-type-t
+//
+// Standby hardware components.
 type StandbyType int32
 
 // StandbyType enumeration from levelzero/zes_api.h:6070
@@ -588,7 +697,10 @@ const (
 	STANDBY_TYPE_END_MARKER StandbyType = 2147483647
 )
 
-// StandbyPromoMode as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-promo-mode-t
+// StandbyPromoMode declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-promo-mode-t
+//
+// Standby promotion modes.
 type StandbyPromoMode int32
 
 // StandbyPromoMode enumeration from levelzero/zes_api.h:6095
@@ -598,7 +710,10 @@ const (
 	STANDBY_PROMO_MODE_END_MARKER StandbyPromoMode = 2147483647
 )
 
-// TempSensors as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-sensors-t
+// TempSensors declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-sensors-t
+//
+// Temperature sensors.
 type TempSensors int32
 
 // TempSensors enumeration from levelzero/zes_api.h:6223
@@ -615,7 +730,10 @@ const (
 	TEMP_SENSORS_END_MARKER        TempSensors = 2147483647
 )
 
-// DeviceEccDefaultPropertiesExtVersion as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-version-t
+// DeviceEccDefaultPropertiesExtVersion declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-version-t
+//
+// Device ECC default properties Extension Version(s)
 type DeviceEccDefaultPropertiesExtVersion int32
 
 // DeviceEccDefaultPropertiesExtVersion enumeration from levelzero/zes_api.h:6454
@@ -625,7 +743,10 @@ const (
 	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_END_MARKER DeviceEccDefaultPropertiesExtVersion = 2147483647
 )
 
-// PowerLimitsExtVersion as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limits-ext-version-t
+// PowerLimitsExtVersion declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limits-ext-version-t
+//
+// Power Limits Extension Version(s)
 type PowerLimitsExtVersion int32
 
 // PowerLimitsExtVersion enumeration from levelzero/zes_api.h:6489
@@ -635,7 +756,10 @@ const (
 	POWER_LIMITS_EXT_VERSION_END_MARKER PowerLimitsExtVersion = 2147483647
 )
 
-// EngineActivityExtVersion as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-activity-ext-version-t
+// EngineActivityExtVersion declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-activity-ext-version-t
+//
+// Engine Activity Extension Version(s)
 type EngineActivityExtVersion int32
 
 // EngineActivityExtVersion enumeration from levelzero/zes_api.h:6629
