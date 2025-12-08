@@ -1,0 +1,5 @@
+INPUT          = ze_api.h
+HAVE_DOT       = NO
+GENERATE_XML   = YES
+GENERATE_LATEX = NO
+GENERATE_HTML  = NO
