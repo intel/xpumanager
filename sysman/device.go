@@ -46,6 +46,12 @@ func newDeviceRegistry() (*deviceRegistry, error) {
 	return reg, nil
 }
 
+func (r *deviceRegistry) pollAggregatedMetrics() {
+	for _, dev := range r.devices {
+		dev.pollAggregatedMetrics()
+	}
+}
+
 func enumDevices(driver *l0sysman.Driver) ([]*sysmanDevice, error) {
 	zesDevs, err := driver.DeviceGet()
 	if err != nil {
@@ -102,4 +108,8 @@ func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry) {
 	for _, c := range registry.collectors {
 		c.observeDevice(o, d)
 	}
+}
+
+func (d *sysmanDevice) pollAggregatedMetrics() {
+	// TODO: hook subsystems that have aggregated metrics
 }

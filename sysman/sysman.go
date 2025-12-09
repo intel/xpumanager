@@ -72,6 +72,10 @@ func (s *sysman) RegisterMetrics(meter metric.Meter) error {
 	return err
 }
 
+func (s *sysman) PollAggregatedMetrics() {
+	s.devices.pollAggregatedMetrics()
+}
+
 func (s *sysman) initMetrics(meter metric.Meter) error {
 	var err error
 	s.metrics, err = newMetricsRegistry(meter)
