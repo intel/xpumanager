@@ -195,6 +195,14 @@ ze_result_t driver::init()
 	// Set ZET_ENABLE_METRICS environment variable
 	SETENV("ZET_ENABLE_METRICS", "1");
 
+	// Set COMPOSITE device hierarchy mode to ensure zeDeviceGet returns root devices.
+	// zesDeviceGet always returns root device handles.
+	// Setting to COMPOSITE mode ensures correct device mapping via UUID.
+	SETENV("ZE_FLAT_DEVICE_HIERARCHY", "COMPOSITE");
+
+	// Set ZE_ENABLE_PCI_ID_DEVICE_ORDER to ensure consistent device ordering
+	SETENV("ZE_ENABLE_PCI_ID_DEVICE_ORDER", "1");
+
 	ze_result_t result = zeInitialize();
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
