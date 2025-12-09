@@ -1,5 +1,5 @@
-# Metrics data collection interval in seconds
-collectInterval: 30
+# Metrics data collection interval
+collectInterval: 30s
 
 # Configuration for exporters
 # - By default none are enabled, please select a suitable one

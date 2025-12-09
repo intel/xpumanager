@@ -13,8 +13,8 @@
             "type": "object",
             "properties": {
                 "collectInterval": {
-                    "description": "Metrics data collection interval in seconds",
-                    "type": "integer"
+                    "description": "Metrics data collection interval",
+                    "type": "string"
                 },
                 "exporters": {
                     "description": "Configuration for exporters. By default none are enabled, please select a suitable one.",
