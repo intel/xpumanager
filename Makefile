@@ -54,5 +54,18 @@ stats:
 		printf " %-5s %5d %8d\n" $$ext $$files $$lines; \
 	done
 
+
+# Add all Makefile targets to the .PHONY target, after removing current ones.
+# - Assumes all Makefile targets to be phony and in small caps
+# - Requires .PHONY target to be the last item in the Makefile!
+phony-update:
+	@awk '/^.PHONY/ { printf(".PHONY: "); exit } { print }' Makefile > Makefile.new
+	@awk -v count=4 '\
+		/^[-_a-z]*:/ { if (idx && idx % count == 0) printf("\\\n\t"); printf("%s ", $$1); idx += 1 } \
+		END { printf("\n") }' Makefile | tr -d : | sed 's/ *$$//' >> Makefile.new
+	@mv Makefile.new Makefile
+
+# Must be last item for "phony-update" to work!
 .PHONY: help generate generate-dockerized clean \
-	golint shellcheck yamllint stats
+	golint shellcheck yamllint stats \
+	phony-update
