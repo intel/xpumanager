@@ -23,7 +23,6 @@ TRANSLATOR:
       - {action: accept, from: "^ZES_"}
       - {action: ignore, from: "^ZES_STRUCTURE_TYPE_"}
       - {action: replace, from: "^ZES_"}
-      - {action: replace, from: "_FORCE_UINT32$", to: "_END_MARKER"}
       - {transform: export}
       # Ignore experimental
       - {action: ignore, from: "_EXP_"}

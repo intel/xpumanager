@@ -22,7 +22,6 @@ TRANSLATOR:
       - {action: accept, from: "^ZE_DEVICE_PROPERTY_FLAG_"}
       - {action: accept, from: "^ZE_DEVICE_TYPE_"}
       - {action: replace, from: "^ZE_"}
-      - {action: replace, from: "_FORCE_UINT32$", to: "_END_MARKER"}
       - {transform: export}
     function:
     type:
