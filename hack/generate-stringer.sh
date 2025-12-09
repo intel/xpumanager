@@ -1,7 +1,7 @@
 #!/bin/bash
 
 project_root_dir=$(dirname "$(go env GOMOD)")
-types=$(grep type const.go | awk '{print $2;}')
+types=$(grep '^type' const.go | awk '{print $2;}')
 
 camel_to_snake() {
     echo "$1" | sed 's/\([A-Z]\)/_\1/g;s/^_//;s/.*/\U&/'
