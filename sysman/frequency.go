@@ -24,6 +24,9 @@ type sysmanFrequency struct {
 
 	state      sysmanFrequencyState
 	attributes []attribute.KeyValue
+
+	// Aggregated metrics
+	actual *aggregatedMetric[float64]
 }
 
 // sysmanFrequencyState holds the dynamic runtime state.
@@ -35,7 +38,9 @@ type frequencyMetrics struct {
 	minimum        metric.Float64ObservableGauge
 	maximum        metric.Float64ObservableGauge
 	request        metric.Float64ObservableGauge
-	actual         metric.Float64ObservableGauge
+	actualMin      metric.Float64ObservableGauge
+	actualMax      metric.Float64ObservableGauge
+	actualAvg      metric.Float64ObservableGauge
 	throttleReason metric.Int64ObservableUpDownCounter
 }
 
@@ -52,6 +57,7 @@ func newSysmanFrequency(freq *l0sysman.Freq) (*sysmanFrequency, error) {
 	return &sysmanFrequency{
 		Freq:       freq,
 		attributes: attrs,
+		actual:     newAggregatedMetric[float64](0),
 	}, nil
 }
 
@@ -101,9 +107,25 @@ func newFrequencyMetrics(meter metric.Meter) (collector, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.actual, err = meter.Float64ObservableGauge(
-		"hw.gpu.frequency.actual",
-		metric.WithDescription("Actual GPU frequency"),
+	m.actualMin, err = meter.Float64ObservableGauge(
+		"hw.gpu.frequency.actual.min",
+		metric.WithDescription("Actual GPU frequency minimum value during the last collection interval"),
+		metric.WithUnit("Hz"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	m.actualMax, err = meter.Float64ObservableGauge(
+		"hw.gpu.frequency.actual.max",
+		metric.WithDescription("Actual GPU frequency maximum value during the last collection interval"),
+		metric.WithUnit("Hz"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	m.actualAvg, err = meter.Float64ObservableGauge(
+		"hw.gpu.frequency.actual.avg",
+		metric.WithDescription("Actual GPU frequency average value during the last collection interval"),
 		metric.WithUnit("Hz"),
 	)
 	if err != nil {
@@ -126,7 +148,9 @@ func (m *frequencyMetrics) getInstruments() []metric.Observable {
 		m.minimum,
 		m.maximum,
 		m.request,
-		m.actual,
+		m.actualMin,
+		m.actualMax,
+		m.actualAvg,
 		m.throttleReason,
 	}
 }
@@ -153,9 +177,6 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 			if state.Request >= 0 {
 				o.ObserveFloat64(m.request, state.Request*1e6, opt)
 			}
-			if state.Actual >= 0 {
-				o.ObserveFloat64(m.actual, state.Actual*1e6, opt)
-			}
 
 			for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
 				value := int64(0)
@@ -173,5 +194,24 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 				}
 			}
 		}
+
+		// Handle aggregated metrics
+		actualStats := freq.actual.collect()
+		if actualStats.samples > 0 {
+			o.ObserveFloat64(m.actualMin, actualStats.minValue*1e6, opt)
+			o.ObserveFloat64(m.actualMax, actualStats.maxValue*1e6, opt)
+			o.ObserveFloat64(m.actualAvg, actualStats.avgValue*1e6, opt)
+		}
+		if actualStats.lostSamples > 0 {
+			slog.Debug("Lost samples of actual frequency", "count", actualStats.lostSamples, attrsToSlog(attrs))
+		}
+	}
+}
+
+func (f *sysmanFrequency) pollAggregatedMetrics() {
+	if state, err := f.GetState(); err != nil {
+		slog.Error("Failed to get frequency state for aggregated metrics", "error", err, attrsToSlog(f.attributes))
+	} else {
+		f.actual.add(state.Actual)
 	}
 }
