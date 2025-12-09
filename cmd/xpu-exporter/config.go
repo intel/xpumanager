@@ -8,12 +8,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"go.yaml.in/yaml/v3"
 )
 
 type config struct {
-	CollectInterval uint           `json:"collectInterval" yaml:"collectInterval"`
+	CollectInterval time.Duration  `json:"collectInterval" yaml:"collectInterval"`
 	Exporters       exporterConfig `json:"exporters"       yaml:"exporters"`
 }
 
@@ -36,7 +37,7 @@ type otlpExporterConfig struct {
 
 func defaultConfig() *config {
 	return &config{
-		CollectInterval: 30,
+		CollectInterval: 30 * time.Second,
 		Exporters: exporterConfig{
 			Stdout: basicExporterConfig{
 				Enabled: true,
@@ -46,8 +47,8 @@ func defaultConfig() *config {
 }
 
 func (c *config) validate() error {
-	if c.CollectInterval == 0 {
-		return fmt.Errorf("collectInterval must be greater than zero")
+	if c.CollectInterval < time.Second {
+		return fmt.Errorf("collectInterval too short (%s), must be at least 1 second", c.CollectInterval)
 	}
 	if err := c.Exporters.validate(); err != nil {
 		return err
