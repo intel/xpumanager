@@ -44,7 +44,7 @@ type frequencyMetrics struct {
 	throttleReason metric.Int64ObservableUpDownCounter
 }
 
-func newSysmanFrequency(freq *l0sysman.Freq) (*sysmanFrequency, error) {
+func newSysmanFrequency(freq *l0sysman.Freq, aggregatedMetricsBufferSize int) (*sysmanFrequency, error) {
 	props, err := freq.GetProperties()
 	if err != nil {
 		return nil, err
@@ -57,11 +57,11 @@ func newSysmanFrequency(freq *l0sysman.Freq) (*sysmanFrequency, error) {
 	return &sysmanFrequency{
 		Freq:       freq,
 		attributes: attrs,
-		actual:     newAggregatedMetric[float64](0),
+		actual:     newAggregatedMetric[float64](aggregatedMetricsBufferSize),
 	}, nil
 }
 
-func enumFrequency(d *l0sysman.Device) []*sysmanFrequency {
+func enumFrequency(d *l0sysman.Device, aggregatedMetricsBufferSize int) []*sysmanFrequency {
 	freqs, err := d.EnumFrequencyDomains()
 	if err != nil {
 		slog.Error("Failed to enumerate frequency domains", "error", err)
@@ -69,7 +69,7 @@ func enumFrequency(d *l0sysman.Device) []*sysmanFrequency {
 	}
 	frequency := make([]*sysmanFrequency, len(freqs))
 	for i, freq := range freqs {
-		f, err := newSysmanFrequency(freq)
+		f, err := newSysmanFrequency(freq, aggregatedMetricsBufferSize)
 		if err != nil {
 			slog.Error("Failed to create sysman frequency domain", "error", err)
 			continue

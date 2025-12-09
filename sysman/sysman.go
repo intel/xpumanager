@@ -31,13 +31,16 @@ func registerSubsystem(name string, create createCollectorFunc) {
 }
 
 type sysman struct {
-	metrics *metricsRegistry
-	devices *deviceRegistry
+	aggregatedMetricsBufferSize int
+	metrics                     *metricsRegistry
+	devices                     *deviceRegistry
 }
 
 // New creates and initializes a new Sysman instance.
-func New() (*sysman, error) {
-	s := &sysman{}
+func New(aggregatedMetricsBufferSize int) (*sysman, error) {
+	s := &sysman{
+		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
+	}
 	if err := s.init(); err != nil {
 		return nil, err
 	}
@@ -50,7 +53,7 @@ func (s *sysman) init() error {
 	}
 
 	var err error
-	s.devices, err = newDeviceRegistry()
+	s.devices, err = newDeviceRegistry(s.aggregatedMetricsBufferSize)
 	if err != nil {
 		return err
 	}
