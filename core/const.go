@@ -24,60 +24,114 @@ type Result int32
 
 // Result enumeration from levelzero/ze_api.h:263
 const (
-	RESULT_SUCCESS                              Result = iota
-	RESULT_NOT_READY                            Result = 1
-	RESULT_ERROR_DEVICE_LOST                    Result = 1879048193
-	RESULT_ERROR_OUT_OF_HOST_MEMORY             Result = 1879048194
-	RESULT_ERROR_OUT_OF_DEVICE_MEMORY           Result = 1879048195
-	RESULT_ERROR_MODULE_BUILD_FAILURE           Result = 1879048196
-	RESULT_ERROR_MODULE_LINK_FAILURE            Result = 1879048197
-	RESULT_ERROR_DEVICE_REQUIRES_RESET          Result = 1879048198
-	RESULT_ERROR_DEVICE_IN_LOW_POWER_STATE      Result = 1879048199
-	RESULT_EXP_ERROR_DEVICE_IS_NOT_VERTEX       Result = 2146435073
-	RESULT_EXP_ERROR_VERTEX_IS_NOT_DEVICE       Result = 2146435074
-	RESULT_EXP_ERROR_REMOTE_DEVICE              Result = 2146435075
-	RESULT_EXP_ERROR_OPERANDS_INCOMPATIBLE      Result = 2146435076
-	RESULT_EXP_RTAS_BUILD_RETRY                 Result = 2146435077
-	RESULT_EXP_RTAS_BUILD_DEFERRED              Result = 2146435078
-	RESULT_ERROR_INSUFFICIENT_PERMISSIONS       Result = 1879113728
-	RESULT_ERROR_NOT_AVAILABLE                  Result = 1879113729
-	RESULT_ERROR_DEPENDENCY_UNAVAILABLE         Result = 1879179264
-	RESULT_WARNING_DROPPED_DATA                 Result = 1879179265
-	RESULT_ERROR_UNINITIALIZED                  Result = 2013265921
-	RESULT_ERROR_UNSUPPORTED_VERSION            Result = 2013265922
-	RESULT_ERROR_UNSUPPORTED_FEATURE            Result = 2013265923
-	RESULT_ERROR_INVALID_ARGUMENT               Result = 2013265924
-	RESULT_ERROR_INVALID_NULL_HANDLE            Result = 2013265925
-	RESULT_ERROR_HANDLE_OBJECT_IN_USE           Result = 2013265926
-	RESULT_ERROR_INVALID_NULL_POINTER           Result = 2013265927
-	RESULT_ERROR_INVALID_SIZE                   Result = 2013265928
-	RESULT_ERROR_UNSUPPORTED_SIZE               Result = 2013265929
-	RESULT_ERROR_UNSUPPORTED_ALIGNMENT          Result = 2013265930
+	// [Core] success
+	RESULT_SUCCESS Result = iota
+	// [Core] synchronization primitive not signaled
+	RESULT_NOT_READY Result = 1
+	// [Core] device hung, reset, was removed, or driver update occurred
+	RESULT_ERROR_DEVICE_LOST Result = 1879048193
+	// [Core] insufficient host memory to satisfy call
+	RESULT_ERROR_OUT_OF_HOST_MEMORY Result = 1879048194
+	// [Core] insufficient device memory to satisfy call
+	RESULT_ERROR_OUT_OF_DEVICE_MEMORY Result = 1879048195
+	// [Core] error occurred when building module, see build log for details
+	RESULT_ERROR_MODULE_BUILD_FAILURE Result = 1879048196
+	// [Core] error occurred when linking modules, see build log for details
+	RESULT_ERROR_MODULE_LINK_FAILURE Result = 1879048197
+	// [Core] device requires a reset
+	RESULT_ERROR_DEVICE_REQUIRES_RESET Result = 1879048198
+	// [Core] device currently in low power state
+	RESULT_ERROR_DEVICE_IN_LOW_POWER_STATE Result = 1879048199
+	// [Core, Experimental] device is not represented by a fabric vertex
+	RESULT_EXP_ERROR_DEVICE_IS_NOT_VERTEX Result = 2146435073
+	// [Core, Experimental] fabric vertex does not represent a device
+	RESULT_EXP_ERROR_VERTEX_IS_NOT_DEVICE Result = 2146435074
+	// [Core, Experimental] fabric vertex represents a remote device or subdevice
+	RESULT_EXP_ERROR_REMOTE_DEVICE Result = 2146435075
+	// [Core, Experimental] operands of comparison are not compatible
+	RESULT_EXP_ERROR_OPERANDS_INCOMPATIBLE Result = 2146435076
+	// [Core, Experimental] ray tracing acceleration structure build operation failed due to insufficient resources, retry with a larger acceleration structure buffer allocation
+	RESULT_EXP_RTAS_BUILD_RETRY Result = 2146435077
+	// [Core, Experimental] ray tracing acceleration structure build operation deferred to parallel operation join
+	RESULT_EXP_RTAS_BUILD_DEFERRED Result = 2146435078
+	// [Sysman] access denied due to permission level
+	RESULT_ERROR_INSUFFICIENT_PERMISSIONS Result = 1879113728
+	// [Sysman] resource already in use and simultaneous access not allowed or resource was removed
+	RESULT_ERROR_NOT_AVAILABLE Result = 1879113729
+	// [Common] external required dependency is unavailable or missing
+	RESULT_ERROR_DEPENDENCY_UNAVAILABLE Result = 1879179264
+	// [Tools] data may have been dropped
+	RESULT_WARNING_DROPPED_DATA Result = 1879179265
+	// [Validation] driver is not initialized
+	RESULT_ERROR_UNINITIALIZED Result = 2013265921
+	// [Validation] generic error code for unsupported versions
+	RESULT_ERROR_UNSUPPORTED_VERSION Result = 2013265922
+	// [Validation] generic error code for unsupported features
+	RESULT_ERROR_UNSUPPORTED_FEATURE Result = 2013265923
+	// [Validation] generic error code for invalid arguments
+	RESULT_ERROR_INVALID_ARGUMENT Result = 2013265924
+	// [Validation] handle argument is not valid
+	RESULT_ERROR_INVALID_NULL_HANDLE Result = 2013265925
+	// [Validation] object pointed to by handle still in-use by device
+	RESULT_ERROR_HANDLE_OBJECT_IN_USE Result = 2013265926
+	// [Validation] pointer argument may not be nullptr
+	RESULT_ERROR_INVALID_NULL_POINTER Result = 2013265927
+	// [Validation] size argument is invalid (e.g., must not be zero)
+	RESULT_ERROR_INVALID_SIZE Result = 2013265928
+	// [Validation] size argument is not supported by the device (e.g., too large)
+	RESULT_ERROR_UNSUPPORTED_SIZE Result = 2013265929
+	// [Validation] alignment argument is not supported by the device (e.g., too small)
+	RESULT_ERROR_UNSUPPORTED_ALIGNMENT Result = 2013265930
+	// [Validation] synchronization object in invalid state
 	RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT Result = 2013265931
-	RESULT_ERROR_INVALID_ENUMERATION            Result = 2013265932
-	RESULT_ERROR_UNSUPPORTED_ENUMERATION        Result = 2013265933
-	RESULT_ERROR_UNSUPPORTED_IMAGE_FORMAT       Result = 2013265934
-	RESULT_ERROR_INVALID_NATIVE_BINARY          Result = 2013265935
-	RESULT_ERROR_INVALID_GLOBAL_NAME            Result = 2013265936
-	RESULT_ERROR_INVALID_KERNEL_NAME            Result = 2013265937
-	RESULT_ERROR_INVALID_FUNCTION_NAME          Result = 2013265938
-	RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION   Result = 2013265939
+	// [Validation] enumerator argument is not valid
+	RESULT_ERROR_INVALID_ENUMERATION Result = 2013265932
+	// [Validation] enumerator argument is not supported by the device
+	RESULT_ERROR_UNSUPPORTED_ENUMERATION Result = 2013265933
+	// [Validation] image format is not supported by the device
+	RESULT_ERROR_UNSUPPORTED_IMAGE_FORMAT Result = 2013265934
+	// [Validation] native binary is not supported by the device
+	RESULT_ERROR_INVALID_NATIVE_BINARY Result = 2013265935
+	// [Validation] global variable is not found in the module
+	RESULT_ERROR_INVALID_GLOBAL_NAME Result = 2013265936
+	// [Validation] kernel name is not found in the module
+	RESULT_ERROR_INVALID_KERNEL_NAME Result = 2013265937
+	// [Validation] function name is not found in the module
+	RESULT_ERROR_INVALID_FUNCTION_NAME Result = 2013265938
+	// [Validation] group size dimension is not valid for the kernel or device
+	RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION Result = 2013265939
+	// [Validation] global width dimension is not valid for the kernel or device
 	RESULT_ERROR_INVALID_GLOBAL_WIDTH_DIMENSION Result = 2013265940
-	RESULT_ERROR_INVALID_KERNEL_ARGUMENT_INDEX  Result = 2013265941
-	RESULT_ERROR_INVALID_KERNEL_ARGUMENT_SIZE   Result = 2013265942
+	// [Validation] kernel argument index is not valid for kernel
+	RESULT_ERROR_INVALID_KERNEL_ARGUMENT_INDEX Result = 2013265941
+	// [Validation] kernel argument size does not match kernel
+	RESULT_ERROR_INVALID_KERNEL_ARGUMENT_SIZE Result = 2013265942
+	// [Validation] value of kernel attribute is not valid for the kernel or device
 	RESULT_ERROR_INVALID_KERNEL_ATTRIBUTE_VALUE Result = 2013265943
-	RESULT_ERROR_INVALID_MODULE_UNLINKED        Result = 2013265944
-	RESULT_ERROR_INVALID_COMMAND_LIST_TYPE      Result = 2013265945
-	RESULT_ERROR_OVERLAPPING_REGIONS            Result = 2013265946
-	RESULT_WARNING_ACTION_REQUIRED              Result = 2013265947
-	RESULT_ERROR_INVALID_KERNEL_HANDLE          Result = 2013265948
-	RESULT_EXT_RTAS_BUILD_RETRY                 Result = 2013265949
-	RESULT_EXT_RTAS_BUILD_DEFERRED              Result = 2013265950
-	RESULT_EXT_ERROR_OPERANDS_INCOMPATIBLE      Result = 2013265951
-	RESULT_ERROR_SURVIVABILITY_MODE_DETECTED    Result = 2013265952
-	RESULT_ERROR_ADDRESS_NOT_FOUND              Result = 2013265953
-	RESULT_ERROR_UNKNOWN                        Result = 2147483646
-	RESULT_END_MARKER                           Result = 2147483647
+	// [Validation] module with imports needs to be linked before kernels can be created from it.
+	RESULT_ERROR_INVALID_MODULE_UNLINKED Result = 2013265944
+	// [Validation] command list type does not match command queue type
+	RESULT_ERROR_INVALID_COMMAND_LIST_TYPE Result = 2013265945
+	// [Validation] copy operations do not support overlapping regions of memory
+	RESULT_ERROR_OVERLAPPING_REGIONS Result = 2013265946
+	// [Sysman] an action is required to complete the desired operation
+	RESULT_WARNING_ACTION_REQUIRED Result = 2013265947
+	// [Core, Validation] kernel handle is invalid for the operation
+	RESULT_ERROR_INVALID_KERNEL_HANDLE Result = 2013265948
+	// [Core, Extension] ray tracing acceleration structure build operation failed due to insufficient resources, retry with a larger acceleration structure buffer allocation
+	RESULT_EXT_RTAS_BUILD_RETRY Result = 2013265949
+	// [Core, Extension] ray tracing acceleration structure build operation deferred to parallel operation join
+	RESULT_EXT_RTAS_BUILD_DEFERRED Result = 2013265950
+	// [Core, Extension] operands of comparison are not compatible
+	RESULT_EXT_ERROR_OPERANDS_INCOMPATIBLE Result = 2013265951
+	// [Sysman] device is in survivability mode, firmware update needed
+	RESULT_ERROR_SURVIVABILITY_MODE_DETECTED Result = 2013265952
+	// [Core] address not found within specified or current context
+	RESULT_ERROR_ADDRESS_NOT_FOUND Result = 2013265953
+	// [Core] unknown or internal error
+	RESULT_ERROR_UNKNOWN Result = 2147483646
+	// Value marking end of ZE_RESULT_* ENUMs.
+	RESULT_FORCE_UINT32 Result = 2147483647
 )
 
 // DeviceType declared in:
@@ -88,12 +142,18 @@ type DeviceType int32
 
 // DeviceType enumeration from levelzero/ze_api.h:1702
 const (
-	DEVICE_TYPE_GPU        DeviceType = 1
-	DEVICE_TYPE_CPU        DeviceType = 2
-	DEVICE_TYPE_FPGA       DeviceType = 3
-	DEVICE_TYPE_MCA        DeviceType = 4
-	DEVICE_TYPE_VPU        DeviceType = 5
-	DEVICE_TYPE_END_MARKER DeviceType = 2147483647
+	// Graphics Processing Unit.
+	DEVICE_TYPE_GPU DeviceType = 1
+	// Central Processing Unit.
+	DEVICE_TYPE_CPU DeviceType = 2
+	// Field Programmable Gate Array.
+	DEVICE_TYPE_FPGA DeviceType = 3
+	// Memory Copy Accelerator.
+	DEVICE_TYPE_MCA DeviceType = 4
+	// Vision Processing Unit.
+	DEVICE_TYPE_VPU DeviceType = 5
+	// Value marking end of ZE_DEVICE_TYPE_* ENUMs.
+	DEVICE_TYPE_FORCE_UINT32 DeviceType = 2147483647
 )
 
 // DevicePropertyFlag declared in:
@@ -102,9 +162,14 @@ type DevicePropertyFlag int32
 
 // DevicePropertyFlag enumeration from levelzero/ze_api.h:1735
 const (
-	DEVICE_PROPERTY_FLAG_INTEGRATED     DevicePropertyFlag = 1
-	DEVICE_PROPERTY_FLAG_SUBDEVICE      DevicePropertyFlag = 2
-	DEVICE_PROPERTY_FLAG_ECC            DevicePropertyFlag = 4
+	// Device is integrated with the Host.
+	DEVICE_PROPERTY_FLAG_INTEGRATED DevicePropertyFlag = 1
+	// Device handle used for query represents a sub-device.
+	DEVICE_PROPERTY_FLAG_SUBDEVICE DevicePropertyFlag = 2
+	// Device supports error correction memory access.
+	DEVICE_PROPERTY_FLAG_ECC DevicePropertyFlag = 4
+	// Device supports on-demand page-faulting.
 	DEVICE_PROPERTY_FLAG_ONDEMANDPAGING DevicePropertyFlag = 8
-	DEVICE_PROPERTY_FLAG_END_MARKER     DevicePropertyFlag = 2147483647
+	// Value marking end of ZE_DEVICE_PROPERTY_FLAG_* ENUMs.
+	DEVICE_PROPERTY_FLAG_FORCE_UINT32 DevicePropertyFlag = 2147483647
 )

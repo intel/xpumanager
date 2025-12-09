@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[STANDBY_TYPE_GLOBAL-0]
-	_ = x[STANDBY_TYPE_END_MARKER-2147483647]
+	_ = x[STANDBY_TYPE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_StandbyType_name_0 = "GLOBAL"
-	_StandbyType_name_1 = "END_MARKER"
+	_StandbyType_name_1 = "FORCE_UINT32"
 )
 
 func (i StandbyType) String() string {

@@ -12,12 +12,12 @@ func _() {
 	_ = x[PSU_VOLTAGE_STATUS_NORMAL-1]
 	_ = x[PSU_VOLTAGE_STATUS_OVER-2]
 	_ = x[PSU_VOLTAGE_STATUS_UNDER-3]
-	_ = x[PSU_VOLTAGE_STATUS_END_MARKER-2147483647]
+	_ = x[PSU_VOLTAGE_STATUS_FORCE_UINT32-2147483647]
 }
 
 const (
 	_PsuVoltageStatus_name_0 = "UNKNOWNNORMALOVERUNDER"
-	_PsuVoltageStatus_name_1 = "END_MARKER"
+	_PsuVoltageStatus_name_1 = "FORCE_UINT32"
 )
 
 var (

@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[STANDBY_PROMO_MODE_DEFAULT-0]
 	_ = x[STANDBY_PROMO_MODE_NEVER-1]
-	_ = x[STANDBY_PROMO_MODE_END_MARKER-2147483647]
+	_ = x[STANDBY_PROMO_MODE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_StandbyPromoMode_name_0 = "DEFAULTNEVER"
-	_StandbyPromoMode_name_1 = "END_MARKER"
+	_StandbyPromoMode_name_1 = "FORCE_UINT32"
 )
 
 var (

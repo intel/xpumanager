@@ -11,12 +11,12 @@ func _() {
 	_ = x[LIMIT_UNIT_UNKNOWN-0]
 	_ = x[LIMIT_UNIT_CURRENT-1]
 	_ = x[LIMIT_UNIT_POWER-2]
-	_ = x[LIMIT_UNIT_END_MARKER-2147483647]
+	_ = x[LIMIT_UNIT_FORCE_UINT32-2147483647]
 }
 
 const (
 	_LimitUnit_name_0 = "UNKNOWNCURRENTPOWER"
-	_LimitUnit_name_1 = "END_MARKER"
+	_LimitUnit_name_1 = "FORCE_UINT32"
 )
 
 var (

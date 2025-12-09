@@ -17,7 +17,7 @@ func _() {
 	_ = x[OVERCLOCK_DOMAIN_GPU_MEDIA-64]
 	_ = x[OVERCLOCK_DOMAIN_VRAM-128]
 	_ = x[OVERCLOCK_DOMAIN_ADM-256]
-	_ = x[OVERCLOCK_DOMAIN_END_MARKER-2147483647]
+	_ = x[OVERCLOCK_DOMAIN_FORCE_UINT32-2147483647]
 }
 
 const (
@@ -29,7 +29,7 @@ const (
 	_OverclockDomain_name_5 = "GPU_MEDIA"
 	_OverclockDomain_name_6 = "VRAM"
 	_OverclockDomain_name_7 = "ADM"
-	_OverclockDomain_name_8 = "END_MARKER"
+	_OverclockDomain_name_8 = "FORCE_UINT32"
 )
 
 var (

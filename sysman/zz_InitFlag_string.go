@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[INIT_FLAG_PLACEHOLDER-1]
-	_ = x[INIT_FLAG_END_MARKER-2147483647]
+	_ = x[INIT_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
 	_InitFlag_name_0 = "PLACEHOLDER"
-	_InitFlag_name_1 = "END_MARKER"
+	_InitFlag_name_1 = "FORCE_UINT32"
 )
 
 func (i InitFlag) String() string {

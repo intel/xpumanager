@@ -13,12 +13,12 @@ func _() {
 	_ = x[MEM_HEALTH_DEGRADED-2]
 	_ = x[MEM_HEALTH_CRITICAL-3]
 	_ = x[MEM_HEALTH_REPLACE-4]
-	_ = x[MEM_HEALTH_END_MARKER-2147483647]
+	_ = x[MEM_HEALTH_FORCE_UINT32-2147483647]
 }
 
 const (
 	_MemHealth_name_0 = "UNKNOWNOKDEGRADEDCRITICALREPLACE"
-	_MemHealth_name_1 = "END_MARKER"
+	_MemHealth_name_1 = "FORCE_UINT32"
 )
 
 var (

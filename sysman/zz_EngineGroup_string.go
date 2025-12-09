@@ -18,7 +18,7 @@ func _() {
 	_ = x[ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE-9]
 	_ = x[ENGINE_GROUP_RENDER_ALL-12]
 	_ = x[ENGINE_GROUP_MEDIA_CODEC_SINGLE-14]
-	_ = x[ENGINE_GROUP_END_MARKER-2147483647]
+	_ = x[ENGINE_GROUP_FORCE_UINT32-2147483647]
 }
 
 const (
@@ -26,7 +26,7 @@ const (
 	_EngineGroup_name_1 = "COPY_SINGLEMEDIA_ENHANCEMENT_SINGLE"
 	_EngineGroup_name_2 = "RENDER_ALL"
 	_EngineGroup_name_3 = "MEDIA_CODEC_SINGLE"
-	_EngineGroup_name_4 = "END_MARKER"
+	_EngineGroup_name_4 = "FORCE_UINT32"
 )
 
 var (

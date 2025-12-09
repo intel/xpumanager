@@ -13,12 +13,12 @@ func _() {
 	_ = x[DEVICE_TYPE_FPGA-3]
 	_ = x[DEVICE_TYPE_MCA-4]
 	_ = x[DEVICE_TYPE_VPU-5]
-	_ = x[DEVICE_TYPE_END_MARKER-2147483647]
+	_ = x[DEVICE_TYPE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_DeviceType_name_0 = "GPUCPUFPGAMCAVPU"
-	_DeviceType_name_1 = "END_MARKER"
+	_DeviceType_name_1 = "FORCE_UINT32"
 )
 
 var (
