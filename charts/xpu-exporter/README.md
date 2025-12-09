@@ -44,8 +44,8 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| config.collectInterval | int | `30` | Metrics data collection interval in seconds |
 | config.exporters | object |   | Configuration for exporters. By default none are enabled, please select a suitable one. |
-| config.exporters.collectInterval | int | `30` | Metrics collection interval in seconds |
 | config.exporters.grpc.enabled | bool | `false` | Enable OTLP gRPC metrics exporter |
 | config.exporters.grpc.endpoint | string | `""` | OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default. |
 | config.exporters.grpc.insecure | bool | `false` | Use insecure connection (no TLS) |

@@ -12,14 +12,14 @@
         "config": {
             "type": "object",
             "properties": {
+                "collectInterval": {
+                    "description": "Metrics data collection interval in seconds",
+                    "type": "integer"
+                },
                 "exporters": {
                     "description": "Configuration for exporters. By default none are enabled, please select a suitable one.",
                     "type": "object",
                     "properties": {
-                        "collectInterval": {
-                            "description": "Metrics collection interval in seconds",
-                            "type": "integer"
-                        },
                         "grpc": {
                             "type": "object",
                             "properties": {

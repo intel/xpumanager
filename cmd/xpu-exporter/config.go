@@ -13,15 +13,15 @@ import (
 )
 
 type config struct {
-	Exporters exporterConfig `json:"exporters" yaml:"exporters"`
+	CollectInterval uint           `json:"collectInterval" yaml:"collectInterval"`
+	Exporters       exporterConfig `json:"exporters"       yaml:"exporters"`
 }
 
 type exporterConfig struct {
-	CollectInterval uint                `json:"collectInterval" yaml:"collectInterval"`
-	Stdout          basicExporterConfig `json:"stdout"          yaml:"stdout"`
-	Prometheus      basicExporterConfig `json:"prometheus"      yaml:"prometheus"`
-	Grpc            otlpExporterConfig  `json:"grpc"            yaml:"grpc"`
-	Http            otlpExporterConfig  `json:"http"            yaml:"http"`
+	Stdout     basicExporterConfig `json:"stdout"          yaml:"stdout"`
+	Prometheus basicExporterConfig `json:"prometheus"      yaml:"prometheus"`
+	Grpc       otlpExporterConfig  `json:"grpc"            yaml:"grpc"`
+	Http       otlpExporterConfig  `json:"http"            yaml:"http"`
 }
 
 type basicExporterConfig struct {
@@ -36,8 +36,8 @@ type otlpExporterConfig struct {
 
 func defaultConfig() *config {
 	return &config{
+		CollectInterval: 30,
 		Exporters: exporterConfig{
-			CollectInterval: 30,
 			Stdout: basicExporterConfig{
 				Enabled: true,
 			},
@@ -46,6 +46,9 @@ func defaultConfig() *config {
 }
 
 func (c *config) validate() error {
+	if c.CollectInterval == 0 {
+		return fmt.Errorf("collectInterval must be greater than zero")
+	}
 	if err := c.Exporters.validate(); err != nil {
 		return err
 	}
@@ -66,8 +69,5 @@ func (c *config) loadFromFile(path string) error {
 }
 
 func (c *exporterConfig) validate() error {
-	if c.CollectInterval == 0 {
-		return fmt.Errorf("collectInterval must be greater than zero")
-	}
 	return nil
 }

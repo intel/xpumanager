@@ -1,8 +1,9 @@
+# Metrics data collection interval in seconds
+collectInterval: 30
+
 # Configuration for exporters
 # - By default none are enabled, please select a suitable one
 exporters:
-  # Metrics collection interval in seconds
-  collectInterval: 30
   # Configuration for the stdout exporter
   stdout:
     # Enable this exporter

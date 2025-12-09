@@ -17,10 +17,7 @@ import (
 
 	promclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -72,24 +69,7 @@ func run() (exitCode int) {
 		sdkmetric.WithResource(otelResource),
 	}
 
-	// Initialize exporters
-	// NOTE: for the periodic exporters, each exporter gets its own reader with
-	// the same collection interval. Improvement for the future, if multiple
-	// exporters is a valid use case: share a single reader and push to
-	// enabled exporters.
-	withPeriodicReader := func(exporter sdkmetric.Exporter) sdkmetric.Option {
-		return sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(time.Duration(cfg.Exporters.CollectInterval)*time.Second)))
-	}
-	if cfg.Exporters.Stdout.Enabled {
-		exporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
-		if err != nil {
-			slog.Error("failed to create stdout metrics exporter", "error", err)
-			return 1
-		}
-		slog.Info("stdout metrics exporter enabled")
-		mpOpts = append(mpOpts, withPeriodicReader(exporter))
-	}
-
+	// Initialize Prometheus exporter (async)
 	if cfg.Exporters.Prometheus.Enabled {
 		promRegistry := promclient.NewRegistry()
 		promExporter, err := prometheus.New(prometheus.WithRegisterer(promRegistry))
@@ -102,40 +82,13 @@ func run() (exitCode int) {
 		slog.Info("Prometheus exporter enabled")
 	}
 
-	if c := cfg.Exporters.Grpc; c.Enabled {
-		opts := []otlpmetricgrpc.Option{}
-		if c.Endpoint != "" {
-			opts = append(opts, otlpmetricgrpc.WithEndpoint(c.Endpoint))
-		}
-		if c.Insecure {
-			opts = append(opts, otlpmetricgrpc.WithInsecure())
-		}
-		exporter, err := otlpmetricgrpc.New(ctx, opts...)
-		if err != nil {
-			slog.Error("failed to create OTLP/gRPC metrics exporter", "error", err)
-			return 1
-		}
-		slog.Info("OTLP/gRPC metrics exporter enabled")
-
-		mpOpts = append(mpOpts, withPeriodicReader(exporter))
+	h, err := newDeviceMonitor(cfg)
+	if err != nil {
+		slog.Error("failed to create device monitor", "error", err)
+		return 1
 	}
 
-	if c := cfg.Exporters.Http; c.Enabled {
-		opts := []otlpmetrichttp.Option{}
-		if c.Endpoint != "" {
-			opts = append(opts, otlpmetrichttp.WithEndpoint(c.Endpoint))
-		}
-		if c.Insecure {
-			opts = append(opts, otlpmetrichttp.WithInsecure())
-		}
-		exporter, err := otlpmetrichttp.New(ctx, opts...)
-		if err != nil {
-			slog.Error("failed to create OTLP/HTTP metrics exporter", "error", err)
-			return 1
-		}
-		slog.Info("OTLP/HTTP metrics exporter enabled")
-		mpOpts = append(mpOpts, withPeriodicReader(exporter))
-	}
+	mpOpts = append(mpOpts, sdkmetric.WithReader(h.metricsReader))
 
 	meterProvider := sdkmetric.NewMeterProvider(mpOpts...)
 	defer func() {
@@ -176,11 +129,22 @@ func run() (exitCode int) {
 		}()
 	}
 
+	go func() {
+		if err := h.run(ctx); err != nil {
+			slog.Error("device monitor failed", "error", err)
+			exitCode = 1
+			cancel()
+		}
+	}()
+
 	// Wait for shutdown signal
 	<-ctx.Done()
 	slog.Info("xpu exporter shutting down")
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
 	if server != nil {
-		if err := server.Shutdown(context.Background()); err != nil {
+		if err := server.Shutdown(shutdownCtx); err != nil {
 			slog.Error("failed to shutdown HTTP server", "error", err)
 			exitCode = 1
 		}
