@@ -9,4 +9,4 @@ docker run --rm -v $(pwd):/app -w /app \
     "curl -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
           -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
      apt-get install -y ./*.deb && \
-     make lint"
+     make $*"
