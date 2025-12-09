@@ -247,3 +247,10 @@ types:
     newType: FabricPortFailureFlag
   - name: FreqThrottleReasonFlags
     newType: FreqThrottleReasonFlag
+
+values:
+  - name: "*"
+    newComment: |-
+      {{- with doxygen . -}}
+      {{ . }}
+      {{- end -}}
