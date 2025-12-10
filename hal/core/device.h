@@ -157,6 +157,7 @@ public:
 	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_device_handle_t zeHdl,
 					 zes_device_handle_t *totalZesDevices, uint32_t totalZesDeviceCount);
 
+	metric *getMetric() { return &metricInstance; }
 	ze_result_t run();
 	ze_context_handle_t getContext() const { return context; }
 	ze_result_t getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_properties_t &subdeviceProps);
