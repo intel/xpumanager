@@ -81,7 +81,7 @@ func (m *temperatureMetrics) getInstruments() []metric.Observable {
 	}
 }
 
-func (m *temperatureMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
+func (m *temperatureMetrics) observeDevice(o metric.Observer, dev *sysmanDevice, readerIdx int) {
 	for _, temp := range dev.temperature {
 		attrs := append(dev.attributes, temp.attributes...)
 		opt := metric.WithAttributes(attrs...)

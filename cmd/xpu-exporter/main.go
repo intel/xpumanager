@@ -18,6 +18,7 @@ import (
 	promclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -80,15 +81,26 @@ func run(flags flagsT) (exitCode int) {
 		sdkmetric.WithResource(otelResource),
 	}
 
+	shutdownMeterProvider := func(mp *sdkmetric.MeterProvider, name string) {
+		if err := mp.Shutdown(ctx); err != nil {
+			slog.Error("failed to shut down meter provider", "error", err, "name", name)
+			exitCode = 1
+		}
+		slog.Info("meter provider shut down", "name", name)
+	}
+
 	// Initialize Prometheus exporter (async)
+	var meterProm metric.Meter
 	if cfg.Exporters.Prometheus.Enabled {
 		promRegistry := promclient.NewRegistry()
-		promExporter, err := prometheus.New(prometheus.WithRegisterer(promRegistry))
+		exporter, err := prometheus.New(prometheus.WithRegisterer(promRegistry))
 		if err != nil {
 			slog.Error("failed to create Prometheus exporter", "error", err)
 			return 1
 		}
-		mpOpts = append(mpOpts, sdkmetric.WithReader(promExporter))
+		meterProviderProm := sdkmetric.NewMeterProvider(append(mpOpts, sdkmetric.WithReader(exporter))...)
+		defer shutdownMeterProvider(meterProviderProm, "Prometheus")
+		meterProm = meterProviderProm.Meter("sysman-prom")
 		mux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
 		slog.Info("Prometheus exporter enabled")
 	}
@@ -110,22 +122,20 @@ func run(flags flagsT) (exitCode int) {
 		return 1
 	}
 
-	mpOpts = append(mpOpts, sdkmetric.WithReader(h.metricsReader))
-
-	meterProvider := sdkmetric.NewMeterProvider(mpOpts...)
-	defer func() {
-		if err := meterProvider.Shutdown(ctx); err != nil {
-			slog.Error("failed to shut down meter provider", "error", err)
-			exitCode = 1
-		}
-		slog.Info("meter provider shut down")
-	}()
+	meterProvider := sdkmetric.NewMeterProvider(append(mpOpts, sdkmetric.WithReader(h.metricsReader))...)
+	defer shutdownMeterProvider(meterProvider, "device-monitor")
 
 	meter := meterProvider.Meter("sysman")
 
 	if err := s.RegisterMetrics(meter); err != nil {
 		slog.Error("failed to register sysman metrics", "error", err)
 		return 1
+	}
+	if meterProm != nil {
+		if err := s.RegisterMetrics(meterProm); err != nil {
+			slog.Error("failed to register Prometheus metrics from sysman", "error", err)
+			return 1
+		}
 	}
 
 	// Start HTTP server

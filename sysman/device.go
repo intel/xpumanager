@@ -104,12 +104,14 @@ func (d *sysmanDevice) enumTemperature() {
 	d.temperature = enumTemperature(d.Device)
 }
 
-func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry) {
+func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry, readerIdx int) {
 	for _, c := range registry.collectors {
-		c.observeDevice(o, d)
+		c.observeDevice(o, d, readerIdx)
 	}
 }
 
 func (d *sysmanDevice) pollAggregatedMetrics() {
-	// TODO: hook subsystems that have aggregated metrics
+	for _, f := range d.frequency {
+		f.pollAggregatedMetrics()
+	}
 }

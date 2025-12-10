@@ -16,7 +16,7 @@ import (
 
 type collector interface {
 	getInstruments() []metric.Observable
-	observeDevice(o metric.Observer, d *sysmanDevice)
+	observeDevice(o metric.Observer, d *sysmanDevice, readerIdx int)
 }
 
 type metricsRegistry struct {
@@ -47,8 +47,8 @@ func (r *metricsRegistry) getInstruments() []metric.Observable {
 	return instruments
 }
 
-func (r *metricsRegistry) observe(o metric.Observer, d *deviceRegistry) {
+func (r *metricsRegistry) observe(o metric.Observer, d *deviceRegistry, readerIdx int) {
 	for _, dev := range d.devices {
-		dev.observe(o, r)
+		dev.observe(o, r, readerIdx)
 	}
 }

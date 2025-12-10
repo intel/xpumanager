@@ -7,10 +7,16 @@ package sysman
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel/metric"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
+)
+
+const (
+	// Maximum number of independent metric readers for aggregated metrics.
+	maxAggregatedMetricsReaders = 2
 )
 
 // Handle is the interface for Sysman functionality.
@@ -38,7 +44,7 @@ func registerSubsystem(name string, create createCollectorFunc) {
 
 type sysman struct {
 	aggregatedMetricsBufferSize int
-	metrics                     *metricsRegistry
+	metrics                     []*metricsRegistry
 	devices                     *deviceRegistry
 }
 
@@ -68,29 +74,27 @@ func (s *sysman) init() error {
 
 // RegisterMetrics registers Sysman metrics callbacks with the provided OTEL meter.
 func (s *sysman) RegisterMetrics(meter metric.Meter) error {
-	if err := s.initMetrics(meter); err != nil {
+	idx := len(s.metrics)
+	if idx >= maxAggregatedMetricsReaders {
+		return fmt.Errorf("maximum number of aggregated metric readers (%d) exceeded", maxAggregatedMetricsReaders)
+	}
+
+	m, err := newMetricsRegistry(meter)
+	if err != nil {
 		return err
 	}
-	_, err := meter.RegisterCallback(
+	s.metrics = append(s.metrics, m)
+
+	_, err = meter.RegisterCallback(
 		func(ctx context.Context, o metric.Observer) error {
-			s.metrics.observe(o, s.devices)
+			m.observe(o, s.devices, idx)
 			return nil
 		},
-		s.metrics.getInstruments()...,
+		m.getInstruments()...,
 	)
 	return err
 }
 
 func (s *sysman) PollAggregatedMetrics() {
 	s.devices.pollAggregatedMetrics()
-}
-
-func (s *sysman) initMetrics(meter metric.Meter) error {
-	var err error
-	s.metrics, err = newMetricsRegistry(meter)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
