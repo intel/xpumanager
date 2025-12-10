@@ -54,6 +54,7 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 | config.exporters.http.insecure | bool | `false` | Use insecure connection (no TLS) |
 | config.exporters.prometheus.enabled | bool | `false` | Enable Prometheus metrics exporter |
 | config.exporters.stdout.enabled | bool | `false` | Enable stdout metrics exporter |
+| config.logLevel | string | `"info"` | Log level (debug, info, warn, error) |
 
 ### Other Values
 

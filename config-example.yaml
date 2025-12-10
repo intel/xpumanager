@@ -1,3 +1,6 @@
+# Log level (debug, info, warn, error)
+logLevel: info
+
 # Metrics data collection interval
 collectInterval: 30s
 

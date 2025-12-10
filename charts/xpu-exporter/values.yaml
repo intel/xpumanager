@@ -77,6 +77,11 @@ affinity: {}
 
 # @schema additionalProperties:false
 config:
+  # @schema enum: [debug, info, warn, error]
+  # -- Log level (debug, info, warn, error)
+  # @section -- XPU Exporter Configuration
+  logLevel: info
+
   # -- Metrics data collection interval
   # @section -- XPU Exporter Configuration
   collectInterval: 30s

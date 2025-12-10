@@ -78,6 +78,16 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "logLevel": {
+                    "description": "Log level (debug, info, warn, error)",
+                    "type": "string",
+                    "enum": [
+                        "debug",
+                        "info",
+                        "warn",
+                        "error"
+                    ]
                 }
             },
             "additionalProperties": false

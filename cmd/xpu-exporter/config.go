@@ -7,7 +7,10 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
+	"maps"
 	"os"
+	"slices"
 	"time"
 
 	"go.yaml.in/yaml/v3"
@@ -15,6 +18,7 @@ import (
 
 type config struct {
 	CollectInterval time.Duration  `json:"collectInterval" yaml:"collectInterval"`
+	LogLevel        logLevel       `json:"logLevel"        yaml:"logLevel"`
 	Exporters       exporterConfig `json:"exporters"       yaml:"exporters"`
 }
 
@@ -35,8 +39,11 @@ type otlpExporterConfig struct {
 	Insecure bool   `json:"insecure" yaml:"insecure"`
 }
 
+type logLevel string
+
 func defaultConfig() *config {
 	return &config{
+		LogLevel:        "info",
 		CollectInterval: 30 * time.Second,
 		Exporters: exporterConfig{
 			Stdout: basicExporterConfig{
@@ -49,6 +56,9 @@ func defaultConfig() *config {
 func (c *config) validate() error {
 	if c.CollectInterval < time.Second {
 		return fmt.Errorf("collectInterval too short (%s), must be at least 1 second", c.CollectInterval)
+	}
+	if err := c.LogLevel.validate(); err != nil {
+		return err
 	}
 	if err := c.Exporters.validate(); err != nil {
 		return err
@@ -71,4 +81,23 @@ func (c *config) loadFromFile(path string) error {
 
 func (c *exporterConfig) validate() error {
 	return nil
+}
+
+var logLevels = map[string]slog.Level{
+	"debug": slog.LevelDebug,
+	"info":  slog.LevelInfo,
+	"warn":  slog.LevelWarn,
+	"error": slog.LevelError,
+}
+
+func (l *logLevel) validate() error {
+	if _, ok := logLevels[string(*l)]; !ok {
+		return fmt.Errorf("invalid log level: %s (must be one of %v)", *l, slices.Collect(maps.Keys(logLevels)))
+	}
+	return nil
+}
+
+func (l *logLevel) toSlogLevel() slog.Level {
+	// Defaults to 0 (slog.LevelInfo)
+	return logLevels[string(*l)]
 }

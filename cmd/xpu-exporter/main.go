@@ -35,12 +35,8 @@ func main() {
 	flags := flagsT{}
 	flag.IntVar(&flags.port, "port", 8080, "Port to expose metrics on")
 	flag.StringVar(&flags.configFile, "config", "", "Path to configuration file")
-	flag.BoolVar(&flags.debug, "debug", false, "Enable debug logging")
+	flag.BoolVar(&flags.debug, "debug", false, "Enable debug logging, overrides the logLevel option from the configuration file")
 	flag.Parse()
-
-	if flags.debug {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
 
 	os.Exit(run(flags))
 }
@@ -62,6 +58,12 @@ func run(flags flagsT) (exitCode int) {
 	if err := cfg.validate(); err != nil {
 		slog.Error("invalid configuration", "error", err)
 		return 1
+	}
+
+	if flags.debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	} else {
+		slog.SetLogLoggerLevel(cfg.LogLevel.toSlogLevel())
 	}
 
 	// HTTP server mux
