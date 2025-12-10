@@ -25,34 +25,45 @@ import (
 	"github.com/intel/xpu-exporter/sysman"
 )
 
-var (
-	port       = flag.Int("port", 8080, "Port to expose metrics on")
-	configFile = flag.String("config", "", "Path to configuration file")
-)
-
-func main() {
-	flag.Parse()
-
-	os.Exit(run())
+type flagsT struct {
+	port       int
+	configFile string
+	debug      bool
 }
 
-func run() (exitCode int) {
+func main() {
+	flags := flagsT{}
+	flag.IntVar(&flags.port, "port", 8080, "Port to expose metrics on")
+	flag.StringVar(&flags.configFile, "config", "", "Path to configuration file")
+	flag.BoolVar(&flags.debug, "debug", false, "Enable debug logging, overrides the logLevel option from the configuration file")
+	flag.Parse()
+
+	os.Exit(run(flags))
+}
+
+func run(flags flagsT) (exitCode int) {
 	slog.Info("xpu exporter starting")
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	// Load configuration
 	cfg := defaultConfig()
-	if *configFile != "" {
-		if err := cfg.loadFromFile(*configFile); err != nil {
-			slog.Error("failed to load configuration file", "file", *configFile, "error", err)
+	if f := flags.configFile; f != "" {
+		if err := cfg.loadFromFile(f); err != nil {
+			slog.Error("failed to load configuration file", "file", f, "error", err)
 			return 1
 		}
-		slog.Info("configuration file loaded", "file", *configFile)
+		slog.Info("configuration file loaded", "file", f)
 	}
 	if err := cfg.validate(); err != nil {
 		slog.Error("invalid configuration", "error", err)
 		return 1
+	}
+
+	if flags.debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	} else {
+		slog.SetLogLoggerLevel(cfg.LogLevel.toSlogLevel())
 	}
 
 	// HTTP server mux
@@ -116,11 +127,11 @@ func run() (exitCode int) {
 	var server *http.Server
 	if cfg.Exporters.Prometheus.Enabled {
 		server = &http.Server{
-			Addr:    fmt.Sprintf(":%d", *port),
+			Addr:    fmt.Sprintf(":%d", flags.port),
 			Handler: mux,
 		}
 		go func() {
-			slog.Info("starting HTTP server", "port", *port)
+			slog.Info("starting HTTP server", "port", flags.port)
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				slog.Error("HTTP server failed", "error", err)
 				exitCode = 1
