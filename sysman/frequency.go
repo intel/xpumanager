@@ -57,7 +57,7 @@ func newSysmanFrequency(freq *l0sysman.Freq, aggregatedMetricsBufferSize int) (*
 	return &sysmanFrequency{
 		Freq:       freq,
 		attributes: attrs,
-		actual:     newAggregatedMetric[float64](aggregatedMetricsBufferSize),
+		actual:     newAggregatedMetric[float64](aggregatedMetricsBufferSize, 1),
 	}, nil
 }
 
@@ -196,7 +196,7 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 		}
 
 		// Handle aggregated metrics
-		actualStats := freq.actual.collect()
+		actualStats := freq.actual.collect(0)
 		if actualStats.samples > 0 {
 			o.ObserveFloat64(m.actualMin, actualStats.minValue*1e6, opt)
 			o.ObserveFloat64(m.actualMax, actualStats.maxValue*1e6, opt)

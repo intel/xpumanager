@@ -27,59 +27,76 @@ type aggregatedMetric[T numeric] struct {
 	sync.Mutex
 
 	buffer      []T
-	size        int
-	index       int
-	samples     int
-	lostSamples int
+	head        int
+	tails       []int
+	lostSamples []int
 }
 
 // newAggregatedMetric creates a new aggregated metric with buffer size N
-func newAggregatedMetric[T numeric](bufferSize int) *aggregatedMetric[T] {
+func newAggregatedMetric[T numeric](bufferSize, numReaders int) *aggregatedMetric[T] {
 	return &aggregatedMetric[T]{
-		buffer: make([]T, bufferSize),
-		size:   bufferSize,
+		// Allocate one extra as the sample under head is not available.
+		buffer:      make([]T, bufferSize+1),
+		tails:       make([]int, numReaders),
+		lostSamples: make([]int, numReaders),
 	}
 }
+
+func (am *aggregatedMetric[T]) size() int { return cap(am.buffer) }
 
 // add adds a sample to the buffer
 func (am *aggregatedMetric[T]) add(value T) {
 	am.Lock()
 	defer am.Unlock()
 
-	if am.samples < am.size {
-		am.samples++
-	} else {
-		am.lostSamples++
-	}
-
-	if am.size > 0 {
-		am.buffer[am.index] = value
-		am.index = (am.index + 1) % am.size
+	// Rely on size being always > 0 (even if the requested buffer size is 0)
+	am.buffer[am.head] = value
+	am.head = (am.head + 1) % am.size()
+	for i := range am.tails {
+		// To keep implementation simple, the value under head is considered
+		// lost. Makes it easy to track multiple readers without the need of
+		// separate counters for valid samples, for example.
+		if am.head == am.tails[i] {
+			am.tails[i] = (am.tails[i] + 1) % am.size()
+			am.lostSamples[i]++
+		}
 	}
 }
 
-// collect returns the min/max/avg of collected samples and resets the buffer.
-func (am *aggregatedMetric[T]) collect() aggregatedStats[T] {
+// collect returns the min/max/avg of collected samples and resets the reader.
+func (am *aggregatedMetric[T]) collect(readerIdx int) aggregatedStats[T] {
 	am.Lock()
 	defer am.Unlock()
 
-	stats := am.computeStats()
-	am.reset()
+	if readerIdx >= len(am.tails) {
+		panic("reader index out of bounds")
+	}
+
+	// The sample at the write index (head) is not included in the stats
+	stats := am.computeStats(am.tails[readerIdx], am.head)
+	stats.lostSamples = am.lostSamples[readerIdx]
+	am.reset(readerIdx)
 	return stats
 }
 
 // computeStats calculates min, max, and average from the buffer.
-func (am *aggregatedMetric[T]) computeStats() aggregatedStats[T] {
-	if am.samples == 0 {
-		return aggregatedStats[T]{lostSamples: am.lostSamples}
+func (am *aggregatedMetric[T]) computeStats(start, end int) aggregatedStats[T] {
+	if start == end {
+		return aggregatedStats[T]{}
 	}
 
-	minV := am.buffer[0]
-	maxV := am.buffer[0]
+	minV := am.buffer[start]
+	maxV := am.buffer[start]
 
 	var sum float64
-	for i := 0; i < am.samples; i++ {
-		val := am.buffer[i]
+	samples := end - start
+	if end < start {
+		samples += am.size()
+	}
+	for i := 0; i < samples; i++ {
+		idx := (start + i) % am.size()
+
+		val := am.buffer[idx]
 		if val < minV {
 			minV = val
 		}
@@ -90,17 +107,15 @@ func (am *aggregatedMetric[T]) computeStats() aggregatedStats[T] {
 	}
 
 	return aggregatedStats[T]{
-		minValue:    minV,
-		maxValue:    maxV,
-		avgValue:    sum / float64(am.samples),
-		samples:     am.samples,
-		lostSamples: am.lostSamples,
+		minValue: minV,
+		maxValue: maxV,
+		avgValue: sum / float64(samples),
+		samples:  samples,
 	}
 }
 
-// reset clears the buffer counters, resetting the collection window.
-func (am *aggregatedMetric[T]) reset() {
-	am.index = 0
-	am.samples = 0
-	am.lostSamples = 0
+// reset clears the reader index and counters, resetting the collection window.
+func (am *aggregatedMetric[T]) reset(readerIdx int) {
+	am.tails[readerIdx] = am.head
+	am.lostSamples[readerIdx] = 0
 }
