@@ -10,6 +10,8 @@ FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
 
 ARG PACKAGES="core levelzero sysman"
 
+RUN apt-get update && apt-get install -y doxygen
+
 WORKDIR /go/src
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \

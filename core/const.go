@@ -16,7 +16,10 @@ package core
 */
 import "C"
 
-// Result as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-result-t
+// Result declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-result-t
+//
+// Defines Return/Error codes.
 type Result int32
 
 // Result enumeration from levelzero/ze_api.h:263
@@ -77,7 +80,10 @@ const (
 	RESULT_END_MARKER                           Result = 2147483647
 )
 
-// DeviceType as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-type-t
+// DeviceType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-type-t
+//
+// Supported device types.
 type DeviceType int32
 
 // DeviceType enumeration from levelzero/ze_api.h:1702
@@ -90,7 +96,8 @@ const (
 	DEVICE_TYPE_END_MARKER DeviceType = 2147483647
 )
 
-// DevicePropertyFlag as declared in https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
+// DevicePropertyFlag declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
 type DevicePropertyFlag int32
 
 // DevicePropertyFlag enumeration from levelzero/ze_api.h:1735

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Intel Corporation
+// Copyright (C) 2025 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 //
@@ -14,19 +14,28 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"html/template"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"text/template"
 
 	"go.yaml.in/yaml/v4"
 )
 
 type config struct {
+	Options options               `yaml:"options"`
 	Structs []structRewriteConfig `yaml:"structs"`
 	Types   []typeRewriteConfig   `yaml:"types"`
+}
+
+type options struct {
+	// Prefix to strip when converting C names to Go names.
+	Prefix string `yaml:"prefix"`
+	// DoxygenPath is the path to the Doxygen XML output file to read documentation from.
+	DoxygenPath string `yaml:"doxygenPath"`
 }
 
 // structRewriteConfig holds the configuration mangling struct types
@@ -53,6 +62,7 @@ type typeRewriteConfig struct {
 
 type typeRewriter struct {
 	config *config
+	dox    *doxygen
 	cmap   ast.CommentMap
 }
 
@@ -72,8 +82,20 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	var dox *doxygen
+	if p := cfg.Options.DoxygenPath; p != "" {
+		if !filepath.IsAbs(p) {
+			p = filepath.Join(filepath.Dir(*mappingsPath), p)
+		}
+		slog.Info("Loading Doxygen XML", "path", p)
+		dox, err = loadDoxygenXml(p, cfg.Options.Prefix)
+		if err != nil {
+			log.Fatalf("Failed to load Doxygen file %s: %v", p, err)
+		}
+	}
+
 	for _, filePath := range args {
-		if err := handleFile(filePath, *inPlace, cfg); err != nil {
+		if err := handleFile(filePath, *inPlace, cfg, dox); err != nil {
 			log.Fatalf("Failed to process file %s: %v", filePath, err)
 		}
 	}
@@ -91,7 +113,7 @@ func loadConfig(path string) (*config, error) {
 	return cfg, nil
 }
 
-func handleFile(filePath string, inPlace bool, cfg *config) error {
+func handleFile(filePath string, inPlace bool, cfg *config, dox *doxygen) error {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
@@ -99,7 +121,7 @@ func handleFile(filePath string, inPlace bool, cfg *config) error {
 	}
 
 	cmap := ast.NewCommentMap(fset, file, file.Comments)
-	trw := newTypeRewriter(cfg, cmap)
+	trw := newTypeRewriter(cfg, dox, cmap)
 
 	for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
@@ -129,10 +151,11 @@ func handleFile(filePath string, inPlace bool, cfg *config) error {
 	return nil
 }
 
-func newTypeRewriter(cfg *config, cmap ast.CommentMap) *typeRewriter {
+func newTypeRewriter(cfg *config, dox *doxygen, cmap ast.CommentMap) *typeRewriter {
 	return &typeRewriter{
 		config: cfg,
 		cmap:   cmap,
+		dox:    dox,
 	}
 }
 
@@ -155,7 +178,7 @@ func (t *typeRewriter) handleType(genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) 
 		if matched, err := filepath.Match(typeRewrite.Name, typeName); err != nil {
 			return fmt.Errorf("invalid type name pattern %q: %w", typeRewrite.Name, err)
 		} else if matched {
-			if err := typeRewrite.apply(t.cmap, genDecl, typeSpec); err != nil {
+			if err := t.rewriteType(&typeRewrite, genDecl, typeSpec); err != nil {
 				return fmt.Errorf("failed to rewrite type: %w", err)
 			}
 		}
@@ -216,38 +239,58 @@ func (f *fieldRewriteConfig) apply(field *ast.Field) error {
 	return nil
 }
 
-func (t *typeRewriteConfig) apply(cmap ast.CommentMap, genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) error {
-	if t.NewComment != "" {
-		if t.newCommentTpl == nil {
-			tpl, err := template.New("comment").Parse(t.NewComment)
+func (t *typeRewriter) rewriteType(tr *typeRewriteConfig, genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) error {
+	if tr.NewComment != "" {
+		if tr.newCommentTpl == nil {
+			tpl, err := template.New("type-rewriter").Funcs(template.FuncMap{
+				"doxygen": docFromDoxygen,
+			}).Parse(tr.NewComment)
 			if err != nil {
 				return fmt.Errorf("failed to parse comment template: %w", err)
 			}
-			t.newCommentTpl = tpl
+			tr.newCommentTpl = tpl
 		}
-		var commentBuf bytes.Buffer
-		vars := map[string]string{
-			"Name":      typeSpec.Name.Name,
+		var commentBuf strings.Builder
+		name := typeSpec.Name.Name
+		vars := map[string]any{
+			"Name":      name,
 			"DocAnchor": typeNameToL0DocsAnchor(typeSpec.Name.Name),
 		}
-		if err := t.newCommentTpl.Execute(&commentBuf, vars); err != nil {
+		if t.dox != nil {
+			if m, found := t.dox.getMemberByGoName(name); found {
+				vars["Doxygen"] = m
+			}
+		}
+
+		if err := tr.newCommentTpl.Execute(&commentBuf, vars); err != nil {
 			return fmt.Errorf("failed to execute comment template: %w", err)
 		}
-		text := commentBuf.String()
+		// Add comment markers
+		if text := strings.TrimSpace(commentBuf.String()); text != "" {
+			lines := []string{}
+			for _, l := range strings.Split(commentBuf.String(), "\n") {
+				if l == "" {
+					lines = append(lines, "//")
+				} else {
+					lines = append(lines, "// "+l)
+				}
+			}
+			text = strings.Join(lines, "\n")
 
-		if len(genDecl.Specs) > 1 {
-			// For multi-spec declarations, attach comment to the type spec
-			newComment := newCommentGroup(text, typeSpec.Pos()-1)
-			cmap[typeSpec] = []*ast.CommentGroup{newComment}
-			return nil
-		} else {
-			// For single-spec declarations, attach comment to the genDecl
-			newComment := newCommentGroup(text, genDecl.Pos()-1)
-			cmap[genDecl] = []*ast.CommentGroup{newComment}
+			if len(genDecl.Specs) > 1 {
+				// For multi-spec declarations, attach comment to the type spec
+				newComment := newCommentGroup(text, typeSpec.Pos()-1)
+				t.cmap[typeSpec] = []*ast.CommentGroup{newComment}
+				return nil
+			} else {
+				// For single-spec declarations, attach comment to the genDecl
+				newComment := newCommentGroup(text, genDecl.Pos()-1)
+				t.cmap[genDecl] = []*ast.CommentGroup{newComment}
+			}
 		}
 	}
-	if t.NewType != "" {
-		typeSpec.Type = ast.NewIdent(t.NewType)
+	if tr.NewType != "" {
+		typeSpec.Type = ast.NewIdent(tr.NewType)
 	}
 	return nil
 }
@@ -280,4 +323,18 @@ func typeNameToL0DocsAnchor(n string) string {
 	n = re2.ReplaceAllString(n, "${1}-${2}")
 
 	return strings.ToLower(n) + "-t"
+}
+
+func docFromDoxygen(vars map[string]any) string {
+	m, ok := vars["Doxygen"].(*memberDef)
+	if !ok || m == nil {
+		return ""
+	}
+
+	// Prefer detailed description
+	doc := m.Detail.String()
+	if doc == "" {
+		doc = m.Brief.String()
+	}
+	return doc
 }
