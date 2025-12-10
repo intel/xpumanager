@@ -32,6 +32,347 @@ namespace {
 std::mutex metricMutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> targetMetricGroups;
 std::map<ze_device_handle_t, ze_context_handle_t> targetMetricContexts;
+std::mutex perfMetricMutex;
+std::map<ze_device_handle_t, PerfMetricTypes::MetricGroupVector> devicePerfGroups;
+
+const std::string PERF_GPU_TIME_METRIC = "GpuTime";
+
+/**
+ * @brief Retrieves and caches performance metric groups for a device.
+ *
+ * Queries the Level Zero driver for available performance metric groups on the specified
+ * device. Filters for time-based sampling groups and caches the results for reuse.
+ * Thread-safe through internal mutex protection of the cache.
+ *
+ * @param [in] device Level Zero device handle
+ * @param [in] driver Level Zero driver handle (unused - reserved for future use)
+ *
+ * @retval PerfMetricTypes::MetricGroupVector Shared pointer to vector of metric groups
+ */
+PerfMetricTypes::MetricGroupVector getDevicePerfMetricGroups(ze_device_handle_t &dev, UNUSED ze_driver_handle_t &driver)
+{
+	// Check cache with lock
+	{
+		std::lock_guard<std::mutex> lock(perfMetricMutex);
+		if (devicePerfGroups.find(dev) != devicePerfGroups.end()) {
+			return devicePerfGroups[dev];
+		}
+	}
+
+	// Query available metric groups (without holding lock)
+	uint32_t groupCount = 0;
+	ze_result_t result = zetMetricGroupGet(dev, &groupCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || groupCount == 0) {
+		return std::make_shared<std::vector<PerfMetricTypes::MetricGroupPtr>>();
+	}
+
+	std::vector<zet_metric_group_handle_t> groupHandles(groupCount);
+	result = zetMetricGroupGet(dev, &groupCount, groupHandles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to enumerate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return std::make_shared<std::vector<PerfMetricTypes::MetricGroupPtr>>();
+	}
+
+	auto resultGroups = std::make_shared<std::vector<PerfMetricTypes::MetricGroupPtr>>();
+
+	// Process each metric group
+	for (uint32_t idx = 0; idx < groupCount; idx++) {
+		zet_metric_group_properties_t groupProps = {};
+		groupProps.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+
+		result = zetMetricGroupGetProperties(groupHandles[idx], &groupProps);
+		if (result != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		// Only collect time-based sampling groups
+		if (groupProps.samplingType != ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
+			continue;
+		}
+
+		auto groupInfo = std::make_shared<DeviceMetricGroups>();
+		groupInfo->groupName = groupProps.name;
+		groupInfo->domain = groupProps.domain;
+		groupInfo->metricCount = groupProps.metricCount;
+		groupInfo->metricGroup = groupHandles[idx];
+
+		// Enumerate metrics in this group
+		uint32_t metricCount = groupProps.metricCount;
+		std::vector<zet_metric_handle_t> metricHandles(metricCount);
+		result = zetMetricGet(groupInfo->metricGroup, &metricCount, metricHandles.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		// Process each metric in the group
+		for (uint32_t metricIdx = 0; metricIdx < metricCount; ++metricIdx) {
+			zet_metric_properties_t metricProps = {};
+			metricProps.stype = ZET_STRUCTURE_TYPE_METRIC_PROPERTIES;
+
+			result = zetMetricGetProperties(metricHandles[metricIdx], &metricProps);
+			if (result != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+
+			auto metricData = std::make_shared<PerfMetricData>();
+			metricData->name = metricProps.name;
+			metricData->type = (metricProps.resultType == ZET_VALUE_TYPE_UINT64) ? "uint64_t" : "double";
+			metricData->index = metricIdx;
+			metricData->current = 0;
+			metricData->average = 0;
+			metricData->total = 0;
+
+			groupInfo->targetMetrics[metricProps.name] = metricData;
+		}
+
+		// Only add groups that have metrics
+		if (!groupInfo->targetMetrics.empty()) {
+			resultGroups->push_back(groupInfo);
+		}
+	}
+
+	DBG("Device has %u performance metric groups\n", (uint32_t)resultGroups->size());
+
+	// Update cache with lock
+	{
+		std::lock_guard<std::mutex> lock(perfMetricMutex);
+		devicePerfGroups[dev] = resultGroups;
+	}
+
+	return resultGroups;
+}
+
+/**
+ * @brief Opens metric streamers for performance data collection.
+ *
+ * Creates Level Zero contexts, event pools, and events, then opens metric streamers
+ * for the specified metric groups. Handles resource creation and reuse across calls.
+ *
+ * @param [in] device Level Zero device handle
+ * @param [in] driver Level Zero driver handle
+ * @param [in] groupsToActivate Map of domain IDs to metric groups to activate
+ * @param [in,out] contexts Map of device handles to Level Zero contexts
+ * @param [in,out] eventPools Map of device handles to event pools
+ * @param [in,out] events Map of device handles to events for notification
+ */
+void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &driver,
+								PerfMetricTypes::ActiveGroupMap &groupsToActivate,
+								std::map<ze_device_handle_t, ze_context_handle_t> &contexts,
+								std::map<ze_device_handle_t, ze_event_pool_handle_t> &eventPools,
+								std::map<ze_device_handle_t, ze_event_handle_t> &events)
+{
+	ze_context_handle_t ctx;
+	ze_result_t result;
+
+	// Get or create Level Zero context
+	if (contexts.find(dev) != contexts.end()) {
+		ctx = contexts[dev];
+	} else {
+		ze_context_desc_t contextDescriptor = {};
+		contextDescriptor.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+
+		result = zeContextCreate(driver, &contextDescriptor, &ctx);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to create context: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return;
+		}
+		contexts[dev] = ctx;
+	}
+
+	// Build list of metric group handles to activate
+	std::vector<zet_metric_group_handle_t> groupHandles;
+	for (auto &[domain, group] : *groupsToActivate) {
+		groupHandles.push_back(group->metricGroup);
+	}
+
+	// Activate the metric groups
+	result = zetContextActivateMetricGroups(ctx, dev, static_cast<uint32_t>(groupHandles.size()), groupHandles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return;
+	}
+
+	// Get or create event pool
+	ze_event_pool_handle_t eventPool;
+	if (eventPools.find(dev) != eventPools.end()) {
+		eventPool = eventPools[dev];
+	} else {
+		ze_event_pool_desc_t poolDescriptor = {};
+		poolDescriptor.stype = ZE_STRUCTURE_TYPE_EVENT_POOL_DESC;
+		poolDescriptor.flags = ZE_EVENT_POOL_FLAG_HOST_VISIBLE;
+		poolDescriptor.count = 1;
+
+		result = zeEventPoolCreate(ctx, &poolDescriptor, 1, &dev, &eventPool);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to create event pool: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return;
+		}
+		eventPools[dev] = eventPool;
+	}
+
+	// Get or create notification event
+	ze_event_handle_t notificationEvent;
+	if (events.find(dev) != events.end()) {
+		notificationEvent = events[dev];
+		zeEventHostReset(notificationEvent);
+	} else {
+		ze_event_desc_t eventDescriptor = {};
+		eventDescriptor.stype = ZE_STRUCTURE_TYPE_EVENT_DESC;
+		eventDescriptor.index = 0;
+		eventDescriptor.signal = ZE_EVENT_SCOPE_FLAG_HOST;
+		eventDescriptor.wait = ZE_EVENT_SCOPE_FLAG_HOST;
+
+		result = zeEventCreate(eventPool, &eventDescriptor, &notificationEvent);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to create event: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return;
+		}
+		events[dev] = notificationEvent;
+	}
+
+	// Configure and open metric streamers
+	zet_metric_streamer_desc_t streamerConfig = {};
+	streamerConfig.stype = ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC;
+	streamerConfig.samplingPeriod = 1000000; // 1ms sampling period
+	streamerConfig.notifyEveryNReports = 100;
+
+	for (auto &[domain, group] : *groupsToActivate) {
+		result =
+			zetMetricStreamerOpen(ctx, dev, group->metricGroup, &streamerConfig, notificationEvent, &group->streamer);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to open metric streamer for domain %u: 0x%X (%s)\n", domain, result,
+				l0_error_to_string(result));
+		}
+	}
+}
+
+/**
+ * @brief Reads and processes performance metric data from streamers.
+ *
+ * Retrieves raw metric data from Level Zero streamers, calculates metric values,
+ * and aggregates the data including current values, averages, and totals.
+ *
+ * @param [in] metricGroups Map of domain IDs to metric groups to read from
+ * @param [out] outputData Shared pointer to structure that will contain the aggregated metric data
+ */
+void readPerfMetricsData(PerfMetricTypes::ActiveGroupMap &metricGroups, PerfMetricTypes::DeviceMetricData &outputData)
+{
+	for (auto &[domain, group] : *metricGroups) {
+		// Query raw data size
+		size_t dataSize = 0;
+		ze_result_t result = zetMetricStreamerReadData(group->streamer, UINT32_MAX, &dataSize, nullptr);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("No metric data available for domain %u\n", domain);
+			continue;
+		}
+
+		// Read raw metric data
+		std::vector<uint8_t> rawBuffer(dataSize);
+		result = zetMetricStreamerReadData(group->streamer, UINT32_MAX, &dataSize, rawBuffer.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to read streamer data for domain %u: 0x%X (%s)\n", domain, result, l0_error_to_string(result));
+			continue;
+		}
+
+		// Calculate number of metric values
+		uint32_t calculatedCount = 0;
+		result =
+			zetMetricGroupCalculateMetricValues(group->metricGroup, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
+												dataSize, rawBuffer.data(), &calculatedCount, nullptr);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to calculate metric value count for domain %u: 0x%X (%s)\n", domain, result,
+				l0_error_to_string(result));
+			continue;
+		}
+
+		// Calculate metric values from raw data
+		std::vector<zet_typed_value_t> calculatedValues(calculatedCount);
+		result =
+			zetMetricGroupCalculateMetricValues(group->metricGroup, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
+												dataSize, rawBuffer.data(), &calculatedCount, calculatedValues.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to calculate metric values for domain %u: 0x%X (%s)\n", domain, result,
+				l0_error_to_string(result));
+			continue;
+		}
+
+		// Process the metric reports
+		uint32_t reports = calculatedCount / group->metricCount;
+		uint64_t cumulativeTime = 0;
+		PerfMetricGroupData aggregatedGroupData;
+		aggregatedGroupData.name = group->groupName;
+
+		// Iterate through each report
+		for (uint32_t reportIdx = 0; reportIdx < reports; ++reportIdx) {
+			uint64_t reportElapsedTime = 0;
+
+			// Process each metric in the report
+			for (uint32_t metricIdx = 0; metricIdx < group->metricCount; ++metricIdx) {
+				zet_typed_value_t value = calculatedValues[reportIdx * group->metricCount + metricIdx];
+
+				// Find the corresponding target metric
+				for (auto &[name, targetMetric] : group->targetMetrics) {
+					if (targetMetric->index != metricIdx) {
+						continue;
+					}
+
+					// Update or add metric entry
+					bool foundExisting = false;
+					for (auto &metricEntry : aggregatedGroupData.data) {
+						if (metricEntry.name == name) {
+							if (name == PERF_GPU_TIME_METRIC) {
+								reportElapsedTime = value.value.ui64;
+								metricEntry.current = static_cast<double>(value.value.ui64);
+							} else {
+								metricEntry.current = value.value.fp32;
+							}
+							foundExisting = true;
+							break;
+						}
+					}
+
+					if (!foundExisting) {
+						PerfMetricData newMetric = {};
+						newMetric.name = name;
+						newMetric.type = targetMetric->type;
+						newMetric.average = 0;
+						newMetric.total = 0;
+
+						if (name == PERF_GPU_TIME_METRIC) {
+							newMetric.current = static_cast<double>(value.value.ui64);
+							reportElapsedTime = value.value.ui64;
+						} else {
+							newMetric.current = value.value.fp32;
+						}
+
+						aggregatedGroupData.data.push_back(newMetric);
+					}
+					break;
+				}
+			}
+
+			// Accumulate totals for averaging
+			for (auto &metricEntry : aggregatedGroupData.data) {
+				if (metricEntry.type == "time") {
+					metricEntry.total += static_cast<double>(reportElapsedTime) * metricEntry.current;
+				} else {
+					metricEntry.total += metricEntry.current;
+				}
+			}
+			cumulativeTime += reportElapsedTime;
+		}
+
+		// Calculate averages
+		for (auto &metricEntry : aggregatedGroupData.data) {
+			if (cumulativeTime > 0) {
+				metricEntry.average = metricEntry.total / static_cast<double>(cumulativeTime);
+			}
+		}
+
+		outputData->data.push_back(aggregatedGroupData);
+	}
+}
+
 } // namespace
 
 /**
@@ -744,6 +1085,156 @@ ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_ha
 	}
 
 	return overall_result;
+}
+
+/**
+ * @brief Collects performance metrics from a device and its subdevices.
+ *
+ * Orchestrates the complete performance metric collection process including:
+ * - Enumerating subdevices
+ * - Opening metric streamers in batches by domain
+ * - Collecting metric data over a configured time period
+ * - Aggregating results from all devices
+ * - Cleaning up resources
+ *
+ * This function handles multiple metric groups by cycling through them in batches,
+ * respecting domain limitations (only one group per domain can be active at a time).
+ *
+ * @param [in] device Level Zero device handle for the device to query
+ * @param [in] driver Level Zero driver handle
+ * @param [out] metricsData Shared pointer that will be populated with the collected metrics
+ *
+ * @retval ZE_RESULT_SUCCESS Performance metrics collected successfully
+ * @retval ZE_RESULT_ERROR_* Various Level Zero error codes on failure
+ */
+ze_result_t metric::getPerfMetrics(ze_device_handle_t device, ze_driver_handle_t driver,
+								   std::shared_ptr<PerfMeasurementData> &metricsData)
+{
+	TRACING();
+
+	metricsData = std::make_shared<PerfMeasurementData>();
+
+	// Enumerate sub-devices
+	uint32_t subdeviceCount = 0;
+	ze_result_t result = zeDeviceGetSubDevices(device, &subdeviceCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to query subdevice count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	std::vector<ze_device_handle_t> devicesToQuery;
+	if (subdeviceCount == 0) {
+		devicesToQuery.push_back(device);
+	} else {
+		std::vector<ze_device_handle_t> subdevices(subdeviceCount);
+		result = zeDeviceGetSubDevices(device, &subdeviceCount, subdevices.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to enumerate subdevices: 0x%X (%s)\n", result, l0_error_to_string(result));
+			return result;
+		}
+		devicesToQuery.insert(devicesToQuery.end(), subdevices.begin(), subdevices.end());
+	}
+
+	// Data structures for metric collection with type aliases
+	// Note: No mutex needed here - each call operates on its own local data structures
+	// The only shared state (devicePerfGroups cache) is protected inside getDevicePerfMetricGroups()
+	std::map<ze_device_handle_t, PerfMetricTypes::ActiveGroupMap> activeMetricGroups;
+	std::map<ze_device_handle_t, PerfMetricTypes::MetricGroupVector> pendingMetricGroups;
+	std::map<ze_device_handle_t, PerfMetricTypes::DeviceMetricData> collectedData;
+	std::map<ze_device_handle_t, ze_context_handle_t> contextsMap;
+	std::map<ze_device_handle_t, ze_event_pool_handle_t> eventPoolsMap;
+	std::map<ze_device_handle_t, ze_event_handle_t> eventsMap;
+
+	// Initialize metric groups for each device
+	for (auto &dev : devicesToQuery) {
+		auto availableGroups = getDevicePerfMetricGroups(dev, driver);
+		if (availableGroups && availableGroups->size() > 0) {
+			// Use alias instead of full type
+			auto groupCopy = std::make_shared<std::vector<PerfMetricTypes::MetricGroupPtr>>();
+			for (auto &grp : *availableGroups) {
+				groupCopy->push_back(grp);
+			}
+			pendingMetricGroups[dev] = groupCopy;
+		}
+	}
+
+	// Collect metrics in batches
+	while (!pendingMetricGroups.empty()) {
+		// Distribute pending groups to active slots
+		for (auto &[dev, pending] : pendingMetricGroups) {
+			// Use alias - try_emplace with cleaner type
+			auto &activeForDevice =
+				activeMetricGroups
+					.try_emplace(dev, std::make_shared<std::map<uint32_t, PerfMetricTypes::MetricGroupPtr>>())
+					.first->second;
+
+			// Move groups from pending to active (limited by domain)
+			for (auto it = pending->begin(); it != pending->end();) {
+				const auto &group = *it;
+				if (activeForDevice->find(group->domain) != activeForDevice->end()) {
+					++it; // Keep in pending
+				} else {
+					// Move to active and remove from pending
+					activeForDevice->insert({group->domain, group});
+					it = pending->erase(it);
+				}
+			}
+		}
+
+		// Remove devices with no pending groups
+		for (auto it = pendingMetricGroups.begin(); it != pendingMetricGroups.end();) {
+			if (it->second->empty()) {
+				it = pendingMetricGroups.erase(it);
+			} else {
+				++it;
+			}
+		}
+
+		// Open metric streams
+		for (auto &[dev, groups] : activeMetricGroups) {
+			auto devHandle = dev;
+			openDevicePerfMetricStream(devHandle, driver, groups, contextsMap, eventPoolsMap, eventsMap);
+		}
+
+		// Collection period (configurable)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+		// Read data - use try_emplace with cleaner type
+		for (auto &[dev, groups] : activeMetricGroups) {
+			auto &data = collectedData.try_emplace(dev, std::make_shared<PerfMetricDeviceData>()).first->second;
+
+			readPerfMetricsData(groups, data);
+
+			// Cleanup streamers and resources for this batch
+			for (auto &[domain, group] : *groups) {
+				zetMetricStreamerClose(group->streamer);
+			}
+
+			if (eventsMap.find(dev) != eventsMap.end()) {
+				zeEventDestroy(eventsMap[dev]);
+				eventsMap.erase(dev);
+			}
+			if (eventPoolsMap.find(dev) != eventPoolsMap.end()) {
+				zeEventPoolDestroy(eventPoolsMap[dev]);
+				eventPoolsMap.erase(dev);
+			}
+
+			zetContextActivateMetricGroups(contextsMap[dev], dev, 0, nullptr);
+			zeContextDestroy(contextsMap[dev]);
+			contextsMap.erase(dev);
+		}
+
+		activeMetricGroups.clear();
+	}
+
+	// Aggregate results from all devices
+	for (auto &dev : devicesToQuery) {
+		if (collectedData.find(dev) != collectedData.end()) {
+			metricsData->addData(collectedData[dev]);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
