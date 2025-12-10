@@ -9,7 +9,7 @@
 package core
 
 /*
-#cgo LDFLAGS: -lze_loader
+#cgo pkg-config: level-zero
 #include "ze_api.h"
 #include <stdlib.h>
 #include "cgo_helpers.h"

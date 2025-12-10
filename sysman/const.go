@@ -9,7 +9,7 @@
 package sysman
 
 /*
-#cgo LDFLAGS: -lze_loader
+#cgo pkg-config: level-zero
 #include "ze_api.h"
 #include "zes_api.h"
 #include <stdlib.h>
