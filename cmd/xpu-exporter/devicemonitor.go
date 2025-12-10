@@ -12,10 +12,13 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+
+	"github.com/intel/xpu-exporter/sysman"
 )
 
 type deviceMonitor struct {
 	cfg              *config
+	sysman           sysman.Handle
 	metricsReader    *sdkmetric.ManualReader
 	metricsExporters []*metricsExporter
 }
@@ -34,9 +37,10 @@ func newMetricsExporter(name string, exporter sdkmetric.Exporter) *metricsExport
 	}
 }
 
-func newDeviceMonitor(cfg *config) (*deviceMonitor, error) {
+func newDeviceMonitor(cfg *config, sysmanHandle sysman.Handle) (*deviceMonitor, error) {
 	m := &deviceMonitor{
 		cfg:           cfg,
+		sysman:        sysmanHandle,
 		metricsReader: sdkmetric.NewManualReader(),
 	}
 
@@ -87,8 +91,22 @@ func newDeviceMonitor(cfg *config) (*deviceMonitor, error) {
 
 // run is the main loop for the device monitor.
 func (m *deviceMonitor) run(ctx context.Context) error {
+	sampleTicker := time.NewTicker(m.cfg.SampleInterval)
+	defer sampleTicker.Stop()
 	ticker := time.NewTicker(m.cfg.CollectInterval)
 	defer ticker.Stop()
+
+	// Start a goroutine to sample device metrics at the configured interval.
+	go func() {
+		for {
+			select {
+			case <-sampleTicker.C:
+				m.sysman.PollAggregatedMetrics()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	for {
 		select {

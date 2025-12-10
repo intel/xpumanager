@@ -93,7 +93,18 @@ func run(flags flagsT) (exitCode int) {
 		slog.Info("Prometheus exporter enabled")
 	}
 
-	h, err := newDeviceMonitor(cfg)
+	// Initialize Sysman
+	// Reserve one second (or at least 10 samples) extra for the aggreated sample buffer to mitigate possible jitter to not lose samples
+	const sampleBufferMinExtraSamples = 10
+	aggregatedSampleCount := cfg.CollectInterval/cfg.SampleInterval + max(time.Second/cfg.SampleInterval, sampleBufferMinExtraSamples)
+
+	s, err := sysman.New(int(aggregatedSampleCount))
+	if err != nil {
+		slog.Error("failed to initialize sysman API", "error", err)
+		return 1
+	}
+
+	h, err := newDeviceMonitor(cfg, s)
 	if err != nil {
 		slog.Error("failed to create device monitor", "error", err)
 		return 1
@@ -112,12 +123,6 @@ func run(flags flagsT) (exitCode int) {
 
 	meter := meterProvider.Meter("sysman")
 
-	// Initialize Sysman
-	s, err := sysman.New()
-	if err != nil {
-		slog.Error("failed to initialize sysman API", "error", err)
-		return 1
-	}
 	if err := s.RegisterMetrics(meter); err != nil {
 		slog.Error("failed to register sysman metrics", "error", err)
 		return 1

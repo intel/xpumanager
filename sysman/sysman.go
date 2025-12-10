@@ -13,6 +13,12 @@ import (
 	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
+// Handle is the interface for Sysman functionality.
+type Handle interface {
+	RegisterMetrics(meter metric.Meter) error
+	PollAggregatedMetrics()
+}
+
 type createCollectorFunc func(metric.Meter) (collector, error)
 
 type subsystem struct {
@@ -37,7 +43,7 @@ type sysman struct {
 }
 
 // New creates and initializes a new Sysman instance.
-func New(aggregatedMetricsBufferSize int) (*sysman, error) {
+func New(aggregatedMetricsBufferSize int) (Handle, error) {
 	s := &sysman{
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}

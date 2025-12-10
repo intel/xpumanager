@@ -44,7 +44,7 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| config.collectInterval | string | `"30s"` | Metrics data collection interval |
+| config.collectInterval | string | `"30s"` | Metrics data collection interval. Must be at least twice the sampleInterval. |
 | config.exporters | object |   | Configuration for exporters. By default none are enabled, please select a suitable one. |
 | config.exporters.grpc.enabled | bool | `false` | Enable OTLP gRPC metrics exporter |
 | config.exporters.grpc.endpoint | string | `""` | OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default. |
@@ -55,6 +55,7 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 | config.exporters.prometheus.enabled | bool | `false` | Enable Prometheus metrics exporter |
 | config.exporters.stdout.enabled | bool | `false` | Enable stdout metrics exporter |
 | config.logLevel | string | `"info"` | Log level (debug, info, warn, error) |
+| config.sampleInterval | string | `"1s"` | Sample interval for the high-frequency metrics. |
 
 ### Other Values
 

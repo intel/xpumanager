@@ -13,7 +13,7 @@
             "type": "object",
             "properties": {
                 "collectInterval": {
-                    "description": "Metrics data collection interval",
+                    "description": "Metrics data collection interval. Must be at least twice the sampleInterval.",
                     "type": "string"
                 },
                 "exporters": {
@@ -88,6 +88,10 @@
                         "warn",
                         "error"
                     ]
+                },
+                "sampleInterval": {
+                    "description": "Sample interval for the high-frequency metrics.",
+                    "type": "string"
                 }
             },
             "additionalProperties": false
