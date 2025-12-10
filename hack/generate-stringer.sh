@@ -11,5 +11,5 @@ for type in $types; do
     echo "Generating string() method for type: $type"
 
     prefix=$(camel_to_snake "$type")_
-    go tool -modfile="$project_root_dir/hack/go.mod" stringer -type=$type -trimprefix=$prefix -output=zz_${type}_string.go const.go
+    go tool -modfile="$project_root_dir/hack/go.mod" stringer -type="$type" -trimprefix="$prefix" -output="zz_${type}_string.go" const.go
 done

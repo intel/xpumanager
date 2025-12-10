@@ -13,7 +13,7 @@ if [ -z "$PACKAGE" ] || [ ! -d "$PACKAGE" ]; then
     exit 1
 fi
 
-gotool c-for-go -nostamp $PACKAGE.yml
+gotool c-for-go -nostamp "$PACKAGE.yml"
 
 sed -i "$PACKAGE/$PACKAGE.go" \
     -e s'!*C.struct__\(ze_[a-z_]*_handle_t\)!*C.\1!' \
