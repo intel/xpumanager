@@ -276,11 +276,13 @@ const (
 	OVERCLOCK_CONTROL_VF OverclockControl = 1
 	// The V-F curve of the overclock domain can be shifted up or down using this control.
 	OVERCLOCK_CONTROL_FREQ_OFFSET OverclockControl = 2
-	// This control is used to increase the permitted voltage above the shipped voltage maximum.
+	// This control is used to increase the permitted voltage above the shipped voltage
+	// maximum.
 	OVERCLOCK_CONTROL_VMAX_OFFSET OverclockControl = 4
 	// This control permits direct changes to the operating frequency.
 	OVERCLOCK_CONTROL_FREQ OverclockControl = 8
-	// This control prevents frequencies that would push the voltage above this value, typically used by V-F scanners.
+	// This control prevents frequencies that would push the voltage above this value,
+	// typically used by V-F scanners.
 	OVERCLOCK_CONTROL_VOLT_LIMIT OverclockControl = 16
 	// This control changes the sustained power limit (PL1).
 	OVERCLOCK_CONTROL_POWER_SUSTAINED_LIMIT OverclockControl = 32
@@ -334,7 +336,8 @@ const (
 	CONTROL_STATE_STATE_UNSET ControlState = iota
 	// The overclock control has been set and it is active.
 	CONTROL_STATE_STATE_ACTIVE ControlState = 2
-	// The overclock control value has been disabled due to the current power configuration (typically when running on DC).
+	// The overclock control value has been disabled due to the current power configuration
+	// (typically when running on DC).
 	CONTROL_STATE_STATE_DISABLED ControlState = 3
 	// Value marking end of ZES_CONTROL_STATE_* ENUMs.
 	CONTROL_STATE_FORCE_UINT32 ControlState = 2147483647
@@ -368,11 +371,15 @@ type VfProgramType int32
 
 // VfProgramType enumeration from levelzero/zes_api.h:1506
 const (
-	// Can program an arbitrary number of V-F points up to the maximum number and each point can have arbitrary voltage and frequency values within the min/max/step limits
+	// Can program an arbitrary number of V-F points up to the maximum number and each
+	// point can have arbitrary voltage and frequency values within the min/max/step
+	// limits
 	VF_PROGRAM_TYPE_VF_ARBITRARY VfProgramType = iota
-	// Can only program the voltage for the V-F points that it reads back - the frequency of those points cannot be changed
+	// Can only program the voltage for the V-F points that it reads back - the frequency
+	// of those points cannot be changed
 	VF_PROGRAM_TYPE_VF_FREQ_FIXED VfProgramType = 1
-	// Can only program the frequency for the V-F points that is reads back - the voltage of each point cannot be changed.
+	// Can only program the frequency for the V-F points that is reads back - the voltage
+	// of each point cannot be changed.
 	VF_PROGRAM_TYPE_VF_VOLT_FIXED VfProgramType = 2
 	// Value marking end of ZES_VF_PROGRAM_TYPE_* ENUMs.
 	VF_PROGRAM_TYPE_FORCE_UINT32 VfProgramType = 2147483647
@@ -426,7 +433,8 @@ const (
 	DIAG_RESULT_ABORT DiagResult = 1
 	// Diagnostic had problems setting up repairs.
 	DIAG_RESULT_FAIL_CANT_REPAIR DiagResult = 2
-	// Diagnostics found errors, setup for repair and reboot is required to complete the process
+	// Diagnostics found errors, setup for repair and reboot is required to complete the
+	// process
 	DIAG_RESULT_REBOOT_FOR_REPAIR DiagResult = 3
 	// Value marking end of ZES_DIAG_RESULT_* ENUMs.
 	DIAG_RESULT_FORCE_UINT32 DiagResult = 2147483647
@@ -480,23 +488,42 @@ type EngineGroup int32
 const (
 	// Access information about all engines combined.
 	ENGINE_GROUP_ALL EngineGroup = iota
-	// Access information about all compute engines combined. Compute engines can only process compute kernels (no 3D content).
+	// Access information about all compute engines combined. Compute engines can only
+	// process compute kernels (no 3D content).
 	ENGINE_GROUP_COMPUTE_ALL EngineGroup = 1
 	// Access information about all media engines combined.
 	ENGINE_GROUP_MEDIA_ALL EngineGroup = 2
 	// Access information about all copy (blitter) engines combined.
 	ENGINE_GROUP_COPY_ALL EngineGroup = 3
-	// Access information about a single compute engine - this is an engine that can process compute kernels. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL for that.
+	// Access information about a single compute engine - this is an engine that can
+	// process compute kernels. Note that single engines may share the same underlying
+	// accelerator resources as other engines so activity of such an engine may not be
+	// indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL
+	// for that.
 	ENGINE_GROUP_COMPUTE_SINGLE EngineGroup = 4
-	// Access information about a single render engine - this is an engine that can process both 3D content and compute kernels. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL for that.
+	// Access information about a single render engine - this is an engine that can
+	// process both 3D content and compute kernels. Note that single engines may share
+	// the same underlying accelerator resources as other engines so activity of such
+	// an engine may not be indicative of the underlying resource utilization - use
+	// ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL for that.
 	ENGINE_GROUP_RENDER_SINGLE EngineGroup = 5
-	// Access information about a single media encode engine. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_COPY_ALL for that.
+	// Access information about a single media encode engine. Note that single engines
+	// may share the same underlying accelerator resources as other engines so activity
+	// of such an engine may not be indicative of the underlying resource utilization -
+	// use ZES_ENGINE_GROUP_COPY_ALL for that.
 	ENGINE_GROUP_COPY_SINGLE EngineGroup = 8
-	// Access information about a single media enhancement engine. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_MEDIA_ALL for that.
+	// Access information about a single media enhancement engine. Note that single
+	// engines may share the same underlying accelerator resources as other engines so
+	// activity of such an engine may not be indicative of the underlying resource
+	// utilization - use ZES_ENGINE_GROUP_MEDIA_ALL for that.
 	ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE EngineGroup = 9
-	// Access information about all render engines combined. Render engines are those than process both 3D content and compute kernels.
+	// Access information about all render engines combined. Render engines are those
+	// than process both 3D content and compute kernels.
 	ENGINE_GROUP_RENDER_ALL EngineGroup = 12
-	// Access information about a single media engine. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_MEDIA_ALL for that.
+	// Access information about a single media engine. Note that single engines may share
+	// the same underlying accelerator resources as other engines so activity of such
+	// an engine may not be indicative of the underlying resource utilization - use
+	// ZES_ENGINE_GROUP_MEDIA_ALL for that.
 	ENGINE_GROUP_MEDIA_CODEC_SINGLE EngineGroup = 14
 	// Value marking end of ZES_ENGINE_GROUP_* ENUMs.
 	ENGINE_GROUP_FORCE_UINT32 EngineGroup = 2147483647
@@ -508,23 +535,29 @@ type EventTypeFlag int32
 
 // EventTypeFlag enumeration from levelzero/zes_api.h:2584
 const (
-	// Event is triggered when the device is no longer available (due to a reset or being disabled).
+	// Event is triggered when the device is no longer available (due to a reset or being
+	// disabled).
 	EVENT_TYPE_FLAG_DEVICE_DETACH EventTypeFlag = 1
 	// Event is triggered after the device is available again.
 	EVENT_TYPE_FLAG_DEVICE_ATTACH EventTypeFlag = 2
-	// Event is triggered when the driver is about to put the device into a deep sleep state
+	// Event is triggered when the driver is about to put the device into a deep sleep
+	// state
 	EVENT_TYPE_FLAG_DEVICE_SLEEP_STATE_ENTER EventTypeFlag = 4
 	// Event is triggered when the driver is waking the device up from a deep sleep state
 	EVENT_TYPE_FLAG_DEVICE_SLEEP_STATE_EXIT EventTypeFlag = 8
 	// Event is triggered when the frequency starts being throttled.
 	EVENT_TYPE_FLAG_FREQ_THROTTLED EventTypeFlag = 16
-	// Event is triggered when the energy consumption threshold is reached (use zesPowerSetEnergyThreshold() to configure).
+	// Event is triggered when the energy consumption threshold is reached (use
+	// zesPowerSetEnergyThreshold() to configure).
 	EVENT_TYPE_FLAG_ENERGY_THRESHOLD_CROSSED EventTypeFlag = 32
-	// Event is triggered when the critical temperature is reached (use zesTemperatureSetConfig() to configure - disabled by default).
+	// Event is triggered when the critical temperature is reached (use zesTemperatureSetConfig()
+	// to configure - disabled by default).
 	EVENT_TYPE_FLAG_TEMP_CRITICAL EventTypeFlag = 64
-	// Event is triggered when the temperature crosses threshold 1 (use zesTemperatureSetConfig() to configure - disabled by default).
+	// Event is triggered when the temperature crosses threshold 1 (use zesTemperatureSetConfig()
+	// to configure - disabled by default).
 	EVENT_TYPE_FLAG_TEMP_THRESHOLD1 EventTypeFlag = 128
-	// Event is triggered when the temperature crosses threshold 2 (use zesTemperatureSetConfig() to configure - disabled by default).
+	// Event is triggered when the temperature crosses threshold 2 (use zesTemperatureSetConfig()
+	// to configure - disabled by default).
 	EVENT_TYPE_FLAG_TEMP_THRESHOLD2 EventTypeFlag = 256
 	// Event is triggered when the health of device memory changes.
 	EVENT_TYPE_FLAG_MEM_HEALTH EventTypeFlag = 512
@@ -532,11 +565,14 @@ const (
 	EVENT_TYPE_FLAG_FABRIC_PORT_HEALTH EventTypeFlag = 1024
 	// Event is triggered when the health of the PCI link changes.
 	EVENT_TYPE_FLAG_PCI_LINK_HEALTH EventTypeFlag = 2048
-	// Event is triggered when accelerator RAS correctable errors cross thresholds (use zesRasSetConfig() to configure - disabled by default).
+	// Event is triggered when accelerator RAS correctable errors cross thresholds (use
+	// zesRasSetConfig() to configure - disabled by default).
 	EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS EventTypeFlag = 4096
-	// Event is triggered when accelerator RAS uncorrectable errors cross thresholds (use zesRasSetConfig() to configure - disabled by default).
+	// Event is triggered when accelerator RAS uncorrectable errors cross thresholds
+	// (use zesRasSetConfig() to configure - disabled by default).
 	EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS EventTypeFlag = 8192
-	// Event is triggered when the device needs to be reset (use zesDeviceGetState() to determine the reasons for the reset).
+	// Event is triggered when the device needs to be reset (use zesDeviceGetState() to
+	// determine the reasons for the reset).
 	EVENT_TYPE_FLAG_DEVICE_RESET_REQUIRED EventTypeFlag = 16384
 	// Event is triggered when graphics driver encounter an error condition.
 	EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED EventTypeFlag = 32768
@@ -586,11 +622,17 @@ type FabricPortFailureFlag int32
 
 // FabricPortFailureFlag enumeration from levelzero/zes_api.h:2762
 const (
-	// A previously operating link has failed. Hardware will automatically retrain this port. This state will persist until either the physical connection is removed or the link trains successfully.
+	// A previously operating link has failed. Hardware will automatically retrain this
+	// port. This state will persist until either the physical connection is removed or
+	// the link trains successfully.
 	FABRIC_PORT_FAILURE_FLAG_FAILED FabricPortFailureFlag = 1
-	// A connection has not been established within an expected time. Hardware will continue to attempt port training. This status will persist until either the physical connection is removed or the link successfully trains.
+	// A connection has not been established within an expected time. Hardware will
+	// continue to attempt port training. This status will persist until either the
+	// physical connection is removed or the link successfully trains.
 	FABRIC_PORT_FAILURE_FLAG_TRAINING_TIMEOUT FabricPortFailureFlag = 2
-	// Port has excessively trained and then transitioned down for some period of time. Driver will allow port to continue to train, but will not enable the port for use until the port has been disabled and subsequently re-enabled using zesFabricPortSetConfig().
+	// Port has excessively trained and then transitioned down for some period of time.
+	// Driver will allow port to continue to train, but will not enable the port for use
+	// until the port has been disabled and subsequently re-enabled using zesFabricPortSetConfig().
 	FABRIC_PORT_FAILURE_FLAG_FLAPPING FabricPortFailureFlag = 4
 	// Value marking end of ZES_FABRIC_PORT_FAILURE_FLAG_* ENUMs.
 	FABRIC_PORT_FAILURE_FLAG_FORCE_UINT32 FabricPortFailureFlag = 2147483647
@@ -608,7 +650,8 @@ const (
 	FAN_SPEED_MODE_DEFAULT FanSpeedMode = iota
 	// The fan speed is currently set to a fixed value.
 	FAN_SPEED_MODE_FIXED FanSpeedMode = 1
-	// The fan speed is currently controlled dynamically by hardware based on a temp/speed table
+	// The fan speed is currently controlled dynamically by hardware based on a temp/speed
+	// table
 	FAN_SPEED_MODE_TABLE FanSpeedMode = 2
 	// Value marking end of ZES_FAN_SPEED_MODE_* ENUMs.
 	FAN_SPEED_MODE_FORCE_UINT32 FanSpeedMode = 2147483647
@@ -666,7 +709,8 @@ const (
 	FREQ_THROTTLE_REASON_FLAG_PSU_ALERT FreqThrottleReasonFlag = 16
 	// frequency throttled due to software supplied frequency range
 	FREQ_THROTTLE_REASON_FLAG_SW_RANGE FreqThrottleReasonFlag = 32
-	// frequency throttled due to a sub block that has a lower frequency range when it receives clocks
+	// frequency throttled due to a sub block that has a lower frequency range when it
+	// receives clocks
 	FREQ_THROTTLE_REASON_FLAG_HW_RANGE FreqThrottleReasonFlag = 64
 	// Value marking end of ZES_FREQ_THROTTLE_REASON_FLAG_* ENUMs.
 	FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32 FreqThrottleReasonFlag = 2147483647
@@ -752,7 +796,8 @@ const (
 	MEM_HEALTH_UNKNOWN MemHealth = iota
 	// All memory channels are healthy.
 	MEM_HEALTH_OK MemHealth = 1
-	// Excessive correctable errors have been detected on one or more channels. Device should be reset.
+	// Excessive correctable errors have been detected on one or more channels. Device
+	// should be reset.
 	MEM_HEALTH_DEGRADED MemHealth = 2
 	// Operating with reduced memory to cover banks with too many uncorrectable errors.
 	MEM_HEALTH_CRITICAL MemHealth = 3
@@ -796,13 +841,18 @@ type PowerLevel int32
 const (
 	// The PUnit power monitoring duration cannot be determined.
 	POWER_LEVEL_UNKNOWN PowerLevel = iota
-	// The PUnit determines effective power draw by computing a moving average of the actual power draw over a time interval (longer than BURST).
+	// The PUnit determines effective power draw by computing a moving average of the
+	// actual power draw over a time interval (longer than BURST).
 	POWER_LEVEL_SUSTAINED PowerLevel = 1
-	// The PUnit determines effective power draw by computing a moving average of the actual power draw over a time interval (longer than PEAK).
+	// The PUnit determines effective power draw by computing a moving average of the
+	// actual power draw over a time interval (longer than PEAK).
 	POWER_LEVEL_BURST PowerLevel = 2
-	// The PUnit determines effective power draw by computing a moving average of the actual power draw over a very short time interval.
+	// The PUnit determines effective power draw by computing a moving average of the
+	// actual power draw over a very short time interval.
 	POWER_LEVEL_PEAK PowerLevel = 3
-	// The PUnit predicts effective power draw using the current device configuration (frequency, voltage, etc...) & throttles proactively to stay within the specified limit.
+	// The PUnit predicts effective power draw using the current device configuration
+	// (frequency, voltage, etc...) & throttles proactively to stay within the specified
+	// limit.
 	POWER_LEVEL_INSTANTANEOUS PowerLevel = 4
 	// Value marking end of ZES_POWER_LEVEL_* ENUMs.
 	POWER_LEVEL_FORCE_UINT32 PowerLevel = 2147483647
@@ -816,7 +866,8 @@ type PowerSource int32
 
 // PowerSource enumeration from levelzero/zes_api.h:4937
 const (
-	// Limit active no matter whether the power source is mains powered or battery powered.
+	// Limit active no matter whether the power source is mains powered or battery
+	// powered.
 	POWER_SOURCE_ANY PowerSource = iota
 	// Limit active only when the device is mains powered.
 	POWER_SOURCE_MAINS PowerSource = 1
@@ -890,7 +941,8 @@ type RasErrorCat int32
 const (
 	// The number of accelerator engine resets attempted by the driver.
 	RAS_ERROR_CAT_RESET RasErrorCat = iota
-	// The number of hardware exceptions generated by the way workloads have programmed the hardware
+	// The number of hardware exceptions generated by the way workloads have programmed
+	// the hardware
 	RAS_ERROR_CAT_PROGRAMMING_ERRORS RasErrorCat = 1
 	// The number of low level driver communication errors have occurred.
 	RAS_ERROR_CAT_DRIVER_ERRORS RasErrorCat = 2
@@ -898,7 +950,8 @@ const (
 	RAS_ERROR_CAT_COMPUTE_ERRORS RasErrorCat = 3
 	// The number of errors that have occurred in the fixed-function accelerator hardware
 	RAS_ERROR_CAT_NON_COMPUTE_ERRORS RasErrorCat = 4
-	// The number of errors that have occurred in caches (L1/L3/register file/shared local memory/sampler)
+	// The number of errors that have occurred in caches (L1/L3/register file/shared
+	// local memory/sampler)
 	RAS_ERROR_CAT_CACHE_ERRORS RasErrorCat = 5
 	// The number of errors that have occurred in the display.
 	RAS_ERROR_CAT_DISPLAY_ERRORS RasErrorCat = 6
@@ -914,11 +967,16 @@ type SchedMode int32
 
 // SchedMode enumeration from levelzero/zes_api.h:5718
 const (
-	// Multiple applications or contexts are submitting work to the hardware. When higher priority work arrives, the scheduler attempts to pause the current executing work within some timeout interval, then submits the other work.
+	// Multiple applications or contexts are submitting work to the hardware. When higher
+	// priority work arrives, the scheduler attempts to pause the current executing work
+	// within some timeout interval, then submits the other work.
 	SCHED_MODE_TIMEOUT SchedMode = iota
-	// The scheduler attempts to fairly timeslice hardware execution time between multiple contexts submitting work to the hardware concurrently.
+	// The scheduler attempts to fairly timeslice hardware execution time between multiple
+	// contexts submitting work to the hardware concurrently.
 	SCHED_MODE_TIMESLICE SchedMode = 1
-	// Any application or context can run indefinitely on the hardware without being preempted or terminated. All pending work for other contexts must wait until the running context completes with no further submitted work.
+	// Any application or context can run indefinitely on the hardware without being
+	// preempted or terminated. All pending work for other contexts must wait until the
+	// running context completes with no further submitted work.
 	SCHED_MODE_EXCLUSIVE SchedMode = 2
 	// Value marking end of ZES_SCHED_MODE_* ENUMs.
 	SCHED_MODE_FORCE_UINT32 SchedMode = 2147483647
@@ -948,7 +1006,8 @@ type StandbyPromoMode int32
 const (
 	// Best compromise between performance and energy savings.
 	STANDBY_PROMO_MODE_DEFAULT StandbyPromoMode = iota
-	// The device/component will never shutdown. This can improve performance but uses more energy.
+	// The device/component will never shutdown. This can improve performance but uses
+	// more energy.
 	STANDBY_PROMO_MODE_NEVER StandbyPromoMode = 1
 	// Value marking end of ZES_STANDBY_PROMO_MODE_* ENUMs.
 	STANDBY_PROMO_MODE_FORCE_UINT32 StandbyPromoMode = 2147483647

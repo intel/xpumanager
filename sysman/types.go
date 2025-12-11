@@ -79,7 +79,8 @@ type DeviceExtProperties struct {
 //
 // Contains information about a process that has an open connection with this device.
 //
-// - The application can use the process ID to query the OS for the owner and the path to the executable.
+//   - The application can use the process ID to query the OS for the owner and the
+//     path to the executable.
 type ProcessState struct {
 	stype      uint32
 	pnext      *byte
@@ -173,8 +174,12 @@ type PciBarProperties12 struct {
 //
 // PCI stats counters.
 //
-// - Percent replays is calculated by taking two snapshots (s1, s2) and using the equation: replay = 10^6 * (s2.replayCounter - s1.replayCounter) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp))
-// - Percent throughput is calculated by taking two snapshots (s1, s2) and using the equation: bw = 10^6 * ((s2.rxCounter - s1.rxCounter) + (s2.txCounter - s1.txCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp))
+//   - Percent replays is calculated by taking two snapshots (s1, s2) and using the
+//     equation: replay = 10^6 * (s2.replayCounter - s1.replayCounter) / (s2.maxBandwidth
+//   - (s2.timestamp - s1.timestamp))
+//   - Percent throughput is calculated by taking two snapshots (s1, s2) and using the
+//     equation: bw = 10^6 * ((s2.rxCounter - s1.rxCounter) + (s2.txCounter -
+//     s1.txCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp))
 type PciStats struct {
 	Timestamp     uint64
 	ReplayCounter uint64
@@ -189,7 +194,8 @@ type PciStats struct {
 //
 // Overclock properties.
 //
-// - Information on the overclock domain type and all the contols that are part of the domain.
+//   - Information on the overclock domain type and all the contols that are part of
+//     the domain.
 type OverclockProperties struct {
 	stype             uint32
 	pnext             *byte
@@ -204,7 +210,8 @@ type OverclockProperties struct {
 //
 // Overclock Control properties.
 //
-// - Provides all the control capabilities supported by the device for the overclock domain.
+//   - Provides all the control capabilities supported by the device for the overclock
+//     domain.
 type ControlProperty struct {
 	MinValue     float64
 	MaxValue     float64
@@ -218,7 +225,8 @@ type ControlProperty struct {
 //
 // Overclock VF properties.
 //
-// - Provides all the VF capabilities supported by the device for the overclock domain.
+//   - Provides all the VF capabilities supported by the device for the overclock
+//     domain.
 type VfProperty struct {
 	MinFreq  float64
 	MaxFreq  float64
@@ -293,12 +301,17 @@ type EngineProperties struct {
 //
 // Engine activity counters.
 //
-// - Percent utilization is calculated by taking two snapshots (s1, s2) and using the equation: util = (s2.activeTime - s1.activeTime) / (s2.timestamp - s1.timestamp)
-// - The  time units are implementation-specific since the value is only intended to be used for calculating utilization percentage.
-// - The  should only be used to calculate delta between snapshots of this structure.
-// - The application should never take the delta of  with the timestamp from a different structure since they are not guaranteed to have the same base.
-// - When taking the delta, the difference between  samples could be , if the frequency of sampling the snapshots is higher than the frequency of the timestamp update.
-// - The absolute value of  is only valid during within the application and may be different on the next execution.
+//   - Percent utilization is calculated by taking two snapshots (s1, s2) and using
+//     the equation: util = (s2.activeTime - s1.activeTime) / (s2.timestamp - s1.timestamp)
+//   - The time units are implementation-specific since the value is only intended to
+//     be used for calculating utilization percentage.
+//   - The should only be used to calculate delta between snapshots of this structure.
+//   - The application should never take the delta of with the timestamp from a different
+//     structure since they are not guaranteed to have the same base.
+//   - When taking the delta, the difference between samples could be , if the frequency
+//     of sampling the snapshots is higher than the frequency of the timestamp update.
+//   - The absolute value of is only valid during within the application and may be
+//     different on the next execution.
 type EngineStats struct {
 	ActiveTime uint64
 	Timestamp  uint64
@@ -309,8 +322,12 @@ type EngineStats struct {
 //
 // Unique identifier for a fabric port.
 //
-// - This not a universal identifier. The identified is garanteed to be unique for the current hardware configuration of the system. Changes in the hardware may result in a different identifier for a given port.
-// - The main purpose of this identifier to build up an instantaneous topology map of system connectivity. An application should enumerate all fabric ports and match the  member of zes_fabric_port_state_t to the  member of zes_fabric_port_properties_t.
+//   - This not a universal identifier. The identified is garanteed to be unique for
+//     the current hardware configuration of the system. Changes in the hardware may
+//     result in a different identifier for a given port.
+//   - The main purpose of this identifier to build up an instantaneous topology map
+//     of system connectivity. An application should enumerate all fabric ports and
+//     match the member of zes_fabric_port_state_t to the member of zes_fabric_port_properties_t.
 type FabricPortId struct {
 	FabricId   uint32
 	AttachId   uint32
@@ -477,8 +494,11 @@ type FirmwareProperties struct {
 //
 // Frequency properties.
 //
-// - Indicates if this frequency domain can be overclocked (if true, functions such as zesFrequencyOcSetFrequencyTarget() are supported).
-// - The min/max hardware frequencies are specified for non-overclock configurations. For overclock configurations, use zesFrequencyOcGetFrequencyTarget() to determine the maximum frequency that can be requested.
+//   - Indicates if this frequency domain can be overclocked (if true, functions such
+//     as zesFrequencyOcSetFrequencyTarget() are supported).
+//   - The min/max hardware frequencies are specified for non-overclock configurations.
+//     For overclock configurations, use zesFrequencyOcGetFrequencyTarget() to determine
+//     the maximum frequency that can be requested.
 type FreqProperties struct {
 	stype                    uint32
 	pnext                    *byte
@@ -496,9 +516,11 @@ type FreqProperties struct {
 //
 // Frequency range between which the hardware can operate.
 //
-// - When setting limits, they will be clamped to the hardware limits.
-// - When setting limits, ensure that the max frequency is greater than or equal to the min frequency specified.
-// - When setting limits to return to factory settings, specify -1 for both the min and max limit.
+//   - When setting limits, they will be clamped to the hardware limits.
+//   - When setting limits, ensure that the max frequency is greater than or equal to
+//     the min frequency specified.
+//   - When setting limits to return to factory settings, specify -1 for both the min
+//     and max limit.
 type FreqRange struct {
 	Min float64
 	Max float64
@@ -525,7 +547,9 @@ type FreqState struct {
 //
 // Frequency throttle time snapshot.
 //
-// - Percent time throttled is calculated by taking two snapshots (s1, s2) and using the equation: throttled = (s2.throttleTime - s1.throttleTime) / (s2.timestamp - s1.timestamp)
+//   - Percent time throttled is calculated by taking two snapshots (s1, s2) and using
+//     the equation: throttled = (s2.throttleTime - s1.throttleTime) / (s2.timestamp
+//   - s1.timestamp)
 type FreqThrottleTime struct {
 	ThrottleTime uint64
 	Timestamp    uint64
@@ -602,9 +626,15 @@ type MemState struct {
 //
 // Memory bandwidth.
 //
-// - Percent bandwidth is calculated by taking two snapshots (s1, s2) and using the equation: bw = 10^6 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp))
-// - Counter can roll over and rollover needs to be handled by comparing the current read against the previous read
-// - Counter is a 32 byte transaction count, which means the calculated delta (delta = current_value - previous_value or delta = 2^32 - previous_value + current_value in case of rollover) needs to be multiplied by 32 to get delta between samples in actual byte count
+//   - Percent bandwidth is calculated by taking two snapshots (s1, s2) and using the
+//     equation: bw = 10^6 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter -
+//     s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp))
+//   - Counter can roll over and rollover needs to be handled by comparing the current
+//     read against the previous read
+//   - Counter is a 32 byte transaction count, which means the calculated delta (delta
+//     = current_value - previous_value or delta = 2^32 - previous_value + current_value
+//     in case of rollover) needs to be multiplied by 32 to get delta between samples
+//     in actual byte count
 type MemBandwidth struct {
 	ReadCounter  uint64
 	WriteCounter uint64
@@ -646,7 +676,8 @@ type PowerProperties struct {
 //
 // Energy counter snapshot.
 //
-// - Average power is calculated by taking two snapshots (s1, s2) and using the equation: PowerWatts = (s2.energy - s1.energy) / (s2.timestamp - s1.timestamp)
+//   - Average power is calculated by taking two snapshots (s1, s2) and using the
+//     equation: PowerWatts = (s2.energy - s1.energy) / (s2.timestamp - s1.timestamp)
 type PowerEnergyCounter struct {
 	Energy    uint64
 	Timestamp uint64
@@ -717,10 +748,18 @@ type RasState struct {
 // RasConfig declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-config-t
 //
-// RAS error configuration - thresholds used for triggering RAS events (ZES_EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS, ZES_EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS)
+// RAS error configuration - thresholds used for triggering RAS events
+// (ZES_EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS, ZES_EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS)
 //
-// - The driver maintains a total counter which is updated every time a hardware block covered by the corresponding RAS error set notifies that an error has occurred. When this total count goes above the totalThreshold specified below, a RAS event is triggered.
-// - The driver also maintains a counter for each category of RAS error (see zes_ras_state_t for a breakdown). Each time a hardware block of that category notifies that an error has occurred, that corresponding category counter is updated. When it goes above the threshold specified in detailedThresholds, a RAS event is triggered.
+//   - The driver maintains a total counter which is updated every time a hardware
+//     block covered by the corresponding RAS error set notifies that an error has
+//     occurred. When this total count goes above the totalThreshold specified below,
+//     a RAS event is triggered.
+//   - The driver also maintains a counter for each category of RAS error (see
+//     zes_ras_state_t for a breakdown). Each time a hardware block of that category
+//     notifies that an error has occurred, that corresponding category counter is
+//     updated. When it goes above the threshold specified in detailedThresholds, a
+//     RAS event is triggered.
 type RasConfig struct {
 	stype              uint32
 	pnext              *byte
@@ -807,7 +846,8 @@ type TempThreshold struct {
 // TempConfig declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-config-t
 //
-// Temperature configuration - which events should be triggered and the trigger conditions.
+// Temperature configuration - which events should be triggered and the trigger
+// conditions.
 type TempConfig struct {
 	stype          uint32
 	pnext          *byte
@@ -819,7 +859,8 @@ type TempConfig struct {
 // DeviceEccDefaultPropertiesExt declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-t
 //
-// This structure may be passed to zesDeviceGetEccState as pNext member of zes_device_ecc_properties_t.
+// This structure may be passed to zesDeviceGetEccState as pNext member of
+// zes_device_ecc_properties_t.
 type DeviceEccDefaultPropertiesExt struct {
 	stype        uint32
 	pnext        *byte
@@ -851,9 +892,12 @@ type PowerLimitExtDesc struct {
 //
 // Extension properties related to device power settings.
 //
-// - This structure may be returned from zesPowerGetProperties via the  member of zes_power_properties_t.
-// - This structure may also be returned from zesPowerGetProperties via the  member of zes_power_ext_properties_t
-// - Used for determining the power domain level, i.e. card-level v/s package-level v/s stack-level & the factory default power limits.
+//   - This structure may be returned from zesPowerGetProperties via the member of
+//     zes_power_properties_t.
+//   - This structure may also be returned from zesPowerGetProperties via the member
+//     of zes_power_ext_properties_t
+//   - Used for determining the power domain level, i.e. card-level v/s package-level
+//     v/s stack-level & the factory default power limits.
 type PowerExtProperties struct {
 	stype        uint32
 	pnext        *byte
@@ -866,8 +910,9 @@ type PowerExtProperties struct {
 //
 // Extension properties related to Engine Groups.
 //
-// - This structure may be passed to zesEngineGetProperties by having the pNext member of zes_engine_properties_t point at this struct.
-// - Used for SRIOV per Virtual Function device utilization by zes_engine_group_t
+//   - This structure may be passed to zesEngineGetProperties by having the pNext
+//     member of zes_engine_properties_t point at this struct.
+//   - Used for SRIOV per Virtual Function device utilization by zes_engine_group_t
 type EngineExtProperties struct {
 	stype                          uint32
 	pnext                          *byte
