@@ -34,7 +34,8 @@ clean:
 golint:
 	@echo -e "\ngolint: linting Go code...\n"
 	docker run --rm -v $$PWD:/app -w /app --security-opt label=disable \
-	  golangci/golangci-lint:v2.6.2 golangci-lint run
+	  -e PKG_CONFIG_PATH=/app/hack \
+	  golangci/golangci-lint:v2.6.2 golangci-lint run --color=always
 
 # <apt|dnf> install shellcheck
 shellcheck:

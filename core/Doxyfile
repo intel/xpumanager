@@ -1,4 +1,4 @@
-INPUT          = ze_api.h
+INPUT          = ../levelzero/ze_api.h
 HAVE_DOT       = NO
 GENERATE_XML   = YES
 GENERATE_LATEX = NO
