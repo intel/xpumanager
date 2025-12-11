@@ -35,13 +35,16 @@ type sysmanFrequencyState struct {
 }
 
 type frequencyMetrics struct {
-	minimum        metric.Float64ObservableGauge
-	maximum        metric.Float64ObservableGauge
-	request        metric.Float64ObservableGauge
-	actualMin      metric.Float64ObservableGauge
-	actualMax      metric.Float64ObservableGauge
-	actualAvg      metric.Float64ObservableGauge
-	throttleReason metric.Int64ObservableUpDownCounter
+	// TODO: make it possible to disable the debug metrics(?)
+	minimum           metric.Float64ObservableGauge
+	maximum           metric.Float64ObservableGauge
+	request           metric.Float64ObservableGauge
+	actualMin         metric.Float64ObservableGauge
+	actualMax         metric.Float64ObservableGauge
+	actualAvg         metric.Float64ObservableGauge
+	actualSamples     metric.Int64ObservableGauge // debug
+	actualLostSamples metric.Int64ObservableGauge // debug
+	throttleReason    metric.Int64ObservableUpDownCounter
 }
 
 func newSysmanFrequency(freq *l0sysman.Freq, aggregatedMetricsBufferSize int) (*sysmanFrequency, error) {
@@ -131,6 +134,22 @@ func newFrequencyMetrics(meter metric.Meter) (collector, error) {
 	if err != nil {
 		return nil, err
 	}
+	m.actualSamples, err = meter.Int64ObservableGauge(
+		"hw.gpu.frequency.actual.samples",
+		metric.WithDescription("Number of samples used to compute the actual GPU frequency statistics during the last collection interval"),
+		metric.WithUnit("{count}"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	m.actualLostSamples, err = meter.Int64ObservableGauge(
+		"hw.gpu.frequency.actual.samples_lost",
+		metric.WithDescription("Number of the lost actual GPU frequency aggregation samples (from the beginning of the last collection interval)"),
+		metric.WithUnit("{count}"),
+	)
+	if err != nil {
+		return nil, err
+	}
 	m.throttleReason, err = meter.Int64ObservableUpDownCounter(
 		"hw.gpu.frequency.throttle_reason",
 		metric.WithDescription("GPU frequency throttle reason"),
@@ -151,6 +170,8 @@ func (m *frequencyMetrics) getInstruments() []metric.Observable {
 		m.actualMin,
 		m.actualMax,
 		m.actualAvg,
+		m.actualSamples,
+		m.actualLostSamples,
 		m.throttleReason,
 	}
 }
@@ -201,6 +222,9 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice, r
 			o.ObserveFloat64(m.actualMin, actualStats.minValue*1e6, opt)
 			o.ObserveFloat64(m.actualMax, actualStats.maxValue*1e6, opt)
 			o.ObserveFloat64(m.actualAvg, actualStats.avgValue*1e6, opt)
+			o.ObserveInt64(m.actualSamples, int64(actualStats.samples), opt)
+			o.ObserveInt64(m.actualLostSamples, int64(actualStats.lostSamples), opt)
+
 		}
 		if actualStats.lostSamples > 0 {
 			slog.Debug("Lost samples of actual frequency", "count", actualStats.lostSamples, attrsToSlog(attrs))
