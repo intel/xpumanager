@@ -19,16 +19,13 @@ sed -i "$PACKAGE/$PACKAGE.go" \
     -e s'!*C.struct__\(ze_[a-z_]*_handle_t\)!*C.\1!' \
     -e s'!*C.struct__\(zes_[a-z_]*_handle_t\)!*C.\1!'
 
-if [ "$PACKAGE" != "levelzero" ]; then
-    cp levelzero/{ze,zes}_api.h "$PACKAGE"
-fi
-
 cd "$PACKAGE"
 if [ -f Doxyfile ]; then
     doxygen
 fi
 
-go tool cgo -godefs ./types.go > types.go.tmp
+go tool cgo -godefs -- -I../levelzero ./types.go > types.go.tmp
+
 go -C "$ROOT_DIR/hack" run ./types-mangle \
     -in-place \
     -config "$PWD/types-mangle.yaml" \
