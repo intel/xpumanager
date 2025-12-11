@@ -35,7 +35,7 @@ types:
       {{ .Name }} declared in:
       https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-{{ .DocAnchor }}
       {{- with doxygen . }}
-      
+
       {{ . }}
       {{- end -}}
 
