@@ -1,0 +1,22 @@
+#
+# Copyright (C) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+Q := @
+
+IMAGE_REPO ?= registry.local/level-zero-go/list-sysman
+IMAGE_TAG ?= main
+
+# --- Helper targets ---
+
+.PHONY: help
+help:
+	@echo -e "\nTargets:\n$$(grep '^[^#:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+
+# --- Build targets ---
+
+.PHONY: images
+images:
+	$(Q)docker build -t $(IMAGE_REPO):$(IMAGE_TAG) \
+	             -f list-sysman/Dockerfile ..
