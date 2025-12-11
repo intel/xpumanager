@@ -29,6 +29,7 @@ type config struct {
 	Options options               `yaml:"options"`
 	Structs []structRewriteConfig `yaml:"structs"`
 	Types   []typeRewriteConfig   `yaml:"types"`
+	Values  []valueRewriteConfig  `yaml:"values"`
 }
 
 type options struct {
@@ -54,8 +55,17 @@ type fieldRewriteConfig struct {
 }
 
 type typeRewriteConfig struct {
-	Name          string             `yaml:"name"`
-	NewType       string             `yaml:"newType"`
+	commentRewriter `yaml:",inline"`
+	Name            string `yaml:"name"`
+	NewType         string `yaml:"newType"`
+}
+
+type valueRewriteConfig struct {
+	commentRewriter `yaml:",inline"`
+	Name            string `yaml:"name"`
+}
+
+type commentRewriter struct {
 	NewComment    string             `yaml:"newComment"`
 	newCommentTpl *template.Template `yaml:"-"`
 }
@@ -161,9 +171,14 @@ func newTypeRewriter(cfg *config, dox *doxygen, cmap ast.CommentMap) *typeRewrit
 
 func (t *typeRewriter) handleDecl(genDecl *ast.GenDecl) error {
 	for _, spec := range genDecl.Specs {
-		if typeSpec, ok := spec.(*ast.TypeSpec); ok {
-			if err := t.handleType(genDecl, typeSpec); err != nil {
-				return fmt.Errorf("failed to handle type %s: %w", typeSpec.Name.Name, err)
+		switch v := spec.(type) {
+		case *ast.TypeSpec:
+			if err := t.handleType(genDecl, v); err != nil {
+				return fmt.Errorf("failed to handle type %s: %w", v.Name.Name, err)
+			}
+		case *ast.ValueSpec:
+			if err := t.handleValue(genDecl, v); err != nil {
+				return fmt.Errorf("failed to handle value %v: %w", v.Names, err)
 			}
 		}
 	}
@@ -198,6 +213,25 @@ func (t *typeRewriter) handleType(genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) 
 	default:
 	}
 
+	return nil
+}
+
+func (t *typeRewriter) handleValue(genDecl *ast.GenDecl, valueSpec *ast.ValueSpec) error {
+	if len(valueSpec.Names) != 1 {
+		slog.Warn("Skipping value rewrite for identifier list:", "names", valueSpec.Names)
+		return nil
+	}
+	valueName := valueSpec.Names[0].Name
+
+	for _, valueRewrite := range t.config.Values {
+		if matched, err := filepath.Match(valueRewrite.Name, valueName); err != nil {
+			return fmt.Errorf("invalid value name pattern %q: %w", valueRewrite.Name, err)
+		} else if matched {
+			if err := t.rewriteValue(&valueRewrite, genDecl, valueSpec); err != nil {
+				return fmt.Errorf("failed to rewrite value: %w", err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -240,57 +274,103 @@ func (f *fieldRewriteConfig) apply(field *ast.Field) error {
 }
 
 func (t *typeRewriter) rewriteType(tr *typeRewriteConfig, genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) error {
+	// Rewrite comment
 	if tr.NewComment != "" {
-		if tr.newCommentTpl == nil {
-			tpl, err := template.New("type-rewriter").Funcs(template.FuncMap{
-				"doxygen": docFromDoxygen,
-			}).Parse(tr.NewComment)
-			if err != nil {
-				return fmt.Errorf("failed to parse comment template: %w", err)
-			}
-			tr.newCommentTpl = tpl
-		}
-		var commentBuf strings.Builder
 		name := typeSpec.Name.Name
 		vars := map[string]any{
 			"Name":      name,
-			"DocAnchor": typeNameToL0DocsAnchor(typeSpec.Name.Name),
+			"DocAnchor": typeNameToL0DocsAnchor(name),
 		}
 		if t.dox != nil {
 			if m, found := t.dox.getMemberByGoName(name); found {
 				vars["Doxygen"] = m
 			}
 		}
-
-		if err := tr.newCommentTpl.Execute(&commentBuf, vars); err != nil {
-			return fmt.Errorf("failed to execute comment template: %w", err)
-		}
-		// Add comment markers
-		if text := strings.TrimSpace(commentBuf.String()); text != "" {
-			lines := []string{}
-			for _, l := range strings.Split(commentBuf.String(), "\n") {
-				if l == "" {
-					lines = append(lines, "//")
-				} else {
-					lines = append(lines, "// "+l)
-				}
-			}
-			text = strings.Join(lines, "\n")
-
-			if len(genDecl.Specs) > 1 {
-				// For multi-spec declarations, attach comment to the type spec
-				newComment := newCommentGroup(text, typeSpec.Pos()-1)
-				t.cmap[typeSpec] = []*ast.CommentGroup{newComment}
-				return nil
-			} else {
-				// For single-spec declarations, attach comment to the genDecl
-				newComment := newCommentGroup(text, genDecl.Pos()-1)
-				t.cmap[genDecl] = []*ast.CommentGroup{newComment}
-			}
+		if err := tr.rewriteComment(t.cmap, genDecl, typeSpec, vars); err != nil {
+			return err
 		}
 	}
+	// Rewrite type
 	if tr.NewType != "" {
 		typeSpec.Type = ast.NewIdent(tr.NewType)
+	}
+	return nil
+}
+
+func (t *typeRewriter) rewriteValue(tr *valueRewriteConfig, genDecl *ast.GenDecl, valueSpec *ast.ValueSpec) error {
+	if tr.NewComment != "" {
+		names := make([]string, len(valueSpec.Names))
+		for i, n := range valueSpec.Names {
+			names[i] = n.Name
+		}
+		vars := map[string]any{
+			"Name0": names[0],
+			"Names": names,
+		}
+		if t.dox != nil {
+			if m, found := t.dox.getMemberByGoName(names[0]); found {
+				vars["Doxygen"] = m
+			}
+		}
+		return tr.rewriteComment(t.cmap, genDecl, valueSpec, vars)
+	}
+
+	return nil
+}
+
+func (cr *commentRewriter) rewriteComment(cmap ast.CommentMap, genDecl *ast.GenDecl, spec ast.Spec, vars map[string]any) error {
+	if cr.newCommentTpl == nil {
+		tpl, err := template.New("type-rewriter").Funcs(template.FuncMap{
+			"doxygen": docFromDoxygen,
+		}).Parse(cr.NewComment)
+		if err != nil {
+			return fmt.Errorf("failed to parse comment template: %w", err)
+		}
+		cr.newCommentTpl = tpl
+	}
+	var commentBuf strings.Builder
+	if err := cr.newCommentTpl.Execute(&commentBuf, vars); err != nil {
+		return fmt.Errorf("failed to execute comment template: %w", err)
+	}
+	// Add comment markers
+	if text := strings.TrimSpace(commentBuf.String()); text != "" {
+		lines := []string{}
+		for _, l := range strings.Split(commentBuf.String(), "\n") {
+			if l == "" {
+				lines = append(lines, "//")
+			} else {
+				lines = append(lines, "// "+l)
+			}
+		}
+		text = strings.Join(lines, "\n")
+
+		if len(genDecl.Specs) > 1 {
+			// For multi-spec declarations, attach comment to the spec
+			pos := spec.Pos() - 1
+			switch spec := spec.(type) {
+			// Replace existing comment, if exists
+			case *ast.TypeSpec:
+				if spec.Doc != nil {
+					pos = spec.Doc.Pos()
+				}
+			case *ast.ValueSpec:
+				if spec.Doc != nil {
+					pos = spec.Doc.Pos()
+				}
+			}
+			newComment := newCommentGroup(text, pos)
+			cmap[spec] = []*ast.CommentGroup{newComment}
+			return nil
+		} else {
+			// For single-spec declarations, attach comment to the genDecl
+			pos := genDecl.Pos() - 1
+			// Replace existing comment, if exists
+			if genDecl.Doc != nil {
+				pos = genDecl.Doc.Pos()
+			}
+			newComment := newCommentGroup(text, pos)
+			cmap[genDecl] = []*ast.CommentGroup{newComment}
+		}
 	}
 	return nil
 }
@@ -326,7 +406,7 @@ func typeNameToL0DocsAnchor(n string) string {
 }
 
 func docFromDoxygen(vars map[string]any) string {
-	m, ok := vars["Doxygen"].(*memberDef)
+	m, ok := vars["Doxygen"].(*memberBase)
 	if !ok || m == nil {
 		return ""
 	}

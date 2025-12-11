@@ -12,14 +12,14 @@ func _() {
 	_ = x[DEVICE_PROPERTY_FLAG_SUBDEVICE-2]
 	_ = x[DEVICE_PROPERTY_FLAG_ECC-4]
 	_ = x[DEVICE_PROPERTY_FLAG_ONDEMANDPAGING-8]
-	_ = x[DEVICE_PROPERTY_FLAG_END_MARKER-2147483647]
+	_ = x[DEVICE_PROPERTY_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
 	_DevicePropertyFlag_name_0 = "INTEGRATEDSUBDEVICE"
 	_DevicePropertyFlag_name_1 = "ECC"
 	_DevicePropertyFlag_name_2 = "ONDEMANDPAGING"
-	_DevicePropertyFlag_name_3 = "END_MARKER"
+	_DevicePropertyFlag_name_3 = "FORCE_UINT32"
 )
 
 var (

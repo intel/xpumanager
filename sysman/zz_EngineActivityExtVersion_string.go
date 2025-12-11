@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[ENGINE_ACTIVITY_EXT_VERSION_1_0-65536]
 	_ = x[ENGINE_ACTIVITY_EXT_VERSION_CURRENT-65536]
-	_ = x[ENGINE_ACTIVITY_EXT_VERSION_END_MARKER-2147483647]
+	_ = x[ENGINE_ACTIVITY_EXT_VERSION_FORCE_UINT32-2147483647]
 }
 
 const (
 	_EngineActivityExtVersion_name_0 = "1_0"
-	_EngineActivityExtVersion_name_1 = "END_MARKER"
+	_EngineActivityExtVersion_name_1 = "FORCE_UINT32"
 )
 
 func (i EngineActivityExtVersion) String() string {

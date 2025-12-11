@@ -11,12 +11,12 @@ func _() {
 	_ = x[FREQ_DOMAIN_GPU-0]
 	_ = x[FREQ_DOMAIN_MEMORY-1]
 	_ = x[FREQ_DOMAIN_MEDIA-2]
-	_ = x[FREQ_DOMAIN_END_MARKER-2147483647]
+	_ = x[FREQ_DOMAIN_FORCE_UINT32-2147483647]
 }
 
 const (
 	_FreqDomain_name_0 = "GPUMEMORYMEDIA"
-	_FreqDomain_name_1 = "END_MARKER"
+	_FreqDomain_name_1 = "FORCE_UINT32"
 )
 
 var (

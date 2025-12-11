@@ -13,13 +13,13 @@ func _() {
 	_ = x[OVERCLOCK_MODE_MODE_ON-3]
 	_ = x[OVERCLOCK_MODE_MODE_UNAVAILABLE-4]
 	_ = x[OVERCLOCK_MODE_MODE_DISABLED-5]
-	_ = x[OVERCLOCK_MODE_END_MARKER-2147483647]
+	_ = x[OVERCLOCK_MODE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_OverclockMode_name_0 = "MODE_OFF"
 	_OverclockMode_name_1 = "MODE_STOCKMODE_ONMODE_UNAVAILABLEMODE_DISABLED"
-	_OverclockMode_name_2 = "END_MARKER"
+	_OverclockMode_name_2 = "FORCE_UINT32"
 )
 
 var (

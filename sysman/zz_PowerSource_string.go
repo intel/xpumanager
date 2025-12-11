@@ -11,12 +11,12 @@ func _() {
 	_ = x[POWER_SOURCE_ANY-0]
 	_ = x[POWER_SOURCE_MAINS-1]
 	_ = x[POWER_SOURCE_BATTERY-2]
-	_ = x[POWER_SOURCE_END_MARKER-2147483647]
+	_ = x[POWER_SOURCE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_PowerSource_name_0 = "ANYMAINSBATTERY"
-	_PowerSource_name_1 = "END_MARKER"
+	_PowerSource_name_1 = "FORCE_UINT32"
 )
 
 var (

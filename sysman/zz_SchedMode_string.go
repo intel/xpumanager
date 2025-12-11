@@ -11,12 +11,12 @@ func _() {
 	_ = x[SCHED_MODE_TIMEOUT-0]
 	_ = x[SCHED_MODE_TIMESLICE-1]
 	_ = x[SCHED_MODE_EXCLUSIVE-2]
-	_ = x[SCHED_MODE_END_MARKER-2147483647]
+	_ = x[SCHED_MODE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_SchedMode_name_0 = "TIMEOUTTIMESLICEEXCLUSIVE"
-	_SchedMode_name_1 = "END_MARKER"
+	_SchedMode_name_1 = "FORCE_UINT32"
 )
 
 var (

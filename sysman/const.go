@@ -18,31 +18,31 @@ package sysman
 import "C"
 
 const (
-	// MAX_EXTENSION_NAME as defined in levelzero/zes_api.h:665
+	// Maximum extension name string size.
 	MAX_EXTENSION_NAME = 256
-	// STRING_PROPERTY_SIZE as defined in levelzero/zes_api.h:781
+	// Maximum number of characters in string properties.
 	STRING_PROPERTY_SIZE = 64
-	// MAX_UUID_SIZE as defined in levelzero/zes_api.h:787
+	// Maximum device universal unique id (UUID) size in bytes.
 	MAX_UUID_SIZE = 16
-	// DIAG_FIRST_TEST_INDEX as defined in levelzero/zes_api.h:2046
+	// Diagnostic test index to use for the very first test.
 	DIAG_FIRST_TEST_INDEX = 0x0
-	// DIAG_LAST_TEST_INDEX as defined in levelzero/zes_api.h:2052
+	// Diagnostic test index to use for the very last test.
 	DIAG_LAST_TEST_INDEX = 0xFFFFFFFF
-	// MAX_FABRIC_PORT_MODEL_SIZE as defined in levelzero/zes_api.h:2709
+	// Maximum Fabric port model string size.
 	MAX_FABRIC_PORT_MODEL_SIZE = 256
-	// MAX_FABRIC_LINK_TYPE_SIZE as defined in levelzero/zes_api.h:2716
+	// Maximum size of the buffer that will return information about link types.
 	MAX_FABRIC_LINK_TYPE_SIZE = 256
-	// FAN_TEMP_SPEED_PAIR_COUNT as defined in levelzero/zes_api.h:3182
+	// Maximum number of fan temperature/speed pairs in the fan speed table.
 	FAN_TEMP_SPEED_PAIR_COUNT = 32
-	// MAX_RAS_ERROR_CATEGORY_COUNT as defined in levelzero/zes_api.h:5468
+	// The maximum number of categories.
 	MAX_RAS_ERROR_CATEGORY_COUNT = 7
-	// SCHED_WATCHDOG_DISABLE as defined in levelzero/zes_api.h:5743
+	// Disable forward progress guard timeout.
 	SCHED_WATCHDOG_DISABLE = (^(uint64(0)))
-	// DEVICE_ECC_DEFAULT_PROPERTIES_EXT_NAME as defined in levelzero/zes_api.h:6443
+	// Device ECC default properties Extension Name.
 	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_NAME = "ZES_extension_device_ecc_default_properties"
-	// POWER_LIMITS_EXT_NAME as defined in levelzero/zes_api.h:6478
+	// Power Limits Extension Name.
 	POWER_LIMITS_EXT_NAME = "ZES_extension_power_limits"
-	// ENGINE_ACTIVITY_EXT_NAME as defined in levelzero/zes_api.h:6618
+	// Engine Activity Extension Name.
 	ENGINE_ACTIVITY_EXT_NAME = "ZES_extension_engine_activity"
 )
 
@@ -52,8 +52,10 @@ type InitFlag int32
 
 // InitFlag enumeration from levelzero/zes_api.h:592
 const (
+	// placeholder for future use
 	INIT_FLAG_PLACEHOLDER InitFlag = 1
-	INIT_FLAG_END_MARKER  InitFlag = 2147483647
+	// Value marking end of ZES_INIT_FLAG_* ENUMs.
+	INIT_FLAG_FORCE_UINT32 InitFlag = 2147483647
 )
 
 // EngineTypeFlag declared in:
@@ -62,13 +64,20 @@ type EngineTypeFlag int32
 
 // EngineTypeFlag enumeration from levelzero/zes_api.h:803
 const (
-	ENGINE_TYPE_FLAG_OTHER      EngineTypeFlag = 1
-	ENGINE_TYPE_FLAG_COMPUTE    EngineTypeFlag = 2
-	ENGINE_TYPE_FLAG_3D         EngineTypeFlag = 4
-	ENGINE_TYPE_FLAG_MEDIA      EngineTypeFlag = 8
-	ENGINE_TYPE_FLAG_DMA        EngineTypeFlag = 16
-	ENGINE_TYPE_FLAG_RENDER     EngineTypeFlag = 32
-	ENGINE_TYPE_FLAG_END_MARKER EngineTypeFlag = 2147483647
+	// Undefined types of accelerators.
+	ENGINE_TYPE_FLAG_OTHER EngineTypeFlag = 1
+	// Engines that process compute kernels only (no 3D content).
+	ENGINE_TYPE_FLAG_COMPUTE EngineTypeFlag = 2
+	// Engines that process 3D content only (no compute kernels).
+	ENGINE_TYPE_FLAG_3D EngineTypeFlag = 4
+	// Engines that process media workloads.
+	ENGINE_TYPE_FLAG_MEDIA EngineTypeFlag = 8
+	// Engines that copy blocks of data.
+	ENGINE_TYPE_FLAG_DMA EngineTypeFlag = 16
+	// Engines that can process both 3D content and compute kernels.
+	ENGINE_TYPE_FLAG_RENDER EngineTypeFlag = 32
+	// Value marking end of ZES_ENGINE_TYPE_FLAG_* ENUMs.
+	ENGINE_TYPE_FLAG_FORCE_UINT32 EngineTypeFlag = 2147483647
 )
 
 // RepairStatus declared in:
@@ -79,10 +88,14 @@ type RepairStatus int32
 
 // RepairStatus enumeration from levelzero/zes_api.h:814
 const (
-	REPAIR_STATUS_UNSUPPORTED   RepairStatus = iota
+	// The device does not support in-field repairs.
+	REPAIR_STATUS_UNSUPPORTED RepairStatus = iota
+	// The device has never been repaired.
 	REPAIR_STATUS_NOT_PERFORMED RepairStatus = 1
-	REPAIR_STATUS_PERFORMED     RepairStatus = 2
-	REPAIR_STATUS_END_MARKER    RepairStatus = 2147483647
+	// The device has been repaired.
+	REPAIR_STATUS_PERFORMED RepairStatus = 2
+	// Value marking end of ZES_REPAIR_STATUS_* ENUMs.
+	REPAIR_STATUS_FORCE_UINT32 RepairStatus = 2147483647
 )
 
 // ResetReasonFlag declared in:
@@ -91,9 +104,12 @@ type ResetReasonFlag int32
 
 // ResetReasonFlag enumeration from levelzero/zes_api.h:826
 const (
-	RESET_REASON_FLAG_WEDGED     ResetReasonFlag = 1
-	RESET_REASON_FLAG_REPAIR     ResetReasonFlag = 2
-	RESET_REASON_FLAG_END_MARKER ResetReasonFlag = 2147483647
+	// The device needs to be reset because one or more parts of the hardware is wedged
+	RESET_REASON_FLAG_WEDGED ResetReasonFlag = 1
+	// The device needs to be reset in order to complete in-field repairs.
+	RESET_REASON_FLAG_REPAIR ResetReasonFlag = 2
+	// Value marking end of ZES_RESET_REASON_FLAG_* ENUMs.
+	RESET_REASON_FLAG_FORCE_UINT32 ResetReasonFlag = 2147483647
 )
 
 // ResetType declared in:
@@ -104,10 +120,14 @@ type ResetType int32
 
 // ResetType enumeration from levelzero/zes_api.h:837
 const (
-	RESET_TYPE_WARM       ResetType = iota
-	RESET_TYPE_COLD       ResetType = 1
-	RESET_TYPE_FLR        ResetType = 2
-	RESET_TYPE_END_MARKER ResetType = 2147483647
+	// Apply warm reset.
+	RESET_TYPE_WARM ResetType = iota
+	// Apply cold reset.
+	RESET_TYPE_COLD ResetType = 1
+	// Apply FLR reset.
+	RESET_TYPE_FLR ResetType = 2
+	// Value marking end of ZES_RESET_TYPE_* ENUMs.
+	RESET_TYPE_FORCE_UINT32 ResetType = 2147483647
 )
 
 // DeviceType declared in:
@@ -118,12 +138,18 @@ type DeviceType int32
 
 // DeviceType enumeration from levelzero/zes_api.h:884
 const (
-	DEVICE_TYPE_GPU        DeviceType = 1
-	DEVICE_TYPE_CPU        DeviceType = 2
-	DEVICE_TYPE_FPGA       DeviceType = 3
-	DEVICE_TYPE_MCA        DeviceType = 4
-	DEVICE_TYPE_VPU        DeviceType = 5
-	DEVICE_TYPE_END_MARKER DeviceType = 2147483647
+	// Graphics Processing Unit.
+	DEVICE_TYPE_GPU DeviceType = 1
+	// Central Processing Unit.
+	DEVICE_TYPE_CPU DeviceType = 2
+	// Field Programmable Gate Array.
+	DEVICE_TYPE_FPGA DeviceType = 3
+	// Memory Copy Accelerator.
+	DEVICE_TYPE_MCA DeviceType = 4
+	// Vision Processing Unit.
+	DEVICE_TYPE_VPU DeviceType = 5
+	// Value marking end of ZES_DEVICE_TYPE_* ENUMs.
+	DEVICE_TYPE_FORCE_UINT32 DeviceType = 2147483647
 )
 
 // DevicePropertyFlag declared in:
@@ -132,11 +158,16 @@ type DevicePropertyFlag int32
 
 // DevicePropertyFlag enumeration from levelzero/zes_api.h:897
 const (
-	DEVICE_PROPERTY_FLAG_INTEGRATED     DevicePropertyFlag = 1
-	DEVICE_PROPERTY_FLAG_SUBDEVICE      DevicePropertyFlag = 2
-	DEVICE_PROPERTY_FLAG_ECC            DevicePropertyFlag = 4
+	// Device is integrated with the Host.
+	DEVICE_PROPERTY_FLAG_INTEGRATED DevicePropertyFlag = 1
+	// Device handle used for query represents a sub-device.
+	DEVICE_PROPERTY_FLAG_SUBDEVICE DevicePropertyFlag = 2
+	// Device supports error correction memory access.
+	DEVICE_PROPERTY_FLAG_ECC DevicePropertyFlag = 4
+	// Device supports on-demand page-faulting.
 	DEVICE_PROPERTY_FLAG_ONDEMANDPAGING DevicePropertyFlag = 8
-	DEVICE_PROPERTY_FLAG_END_MARKER     DevicePropertyFlag = 2147483647
+	// Value marking end of ZES_DEVICE_PROPERTY_FLAG_* ENUMs.
+	DEVICE_PROPERTY_FLAG_FORCE_UINT32 DevicePropertyFlag = 2147483647
 )
 
 // PciLinkStatus declared in:
@@ -147,11 +178,16 @@ type PciLinkStatus int32
 
 // PciLinkStatus enumeration from levelzero/zes_api.h:1181
 const (
-	PCI_LINK_STATUS_UNKNOWN          PciLinkStatus = iota
-	PCI_LINK_STATUS_GOOD             PciLinkStatus = 1
-	PCI_LINK_STATUS_QUALITY_ISSUES   PciLinkStatus = 2
+	// The link status could not be determined.
+	PCI_LINK_STATUS_UNKNOWN PciLinkStatus = iota
+	// The link is up and operating as expected.
+	PCI_LINK_STATUS_GOOD PciLinkStatus = 1
+	// The link is up but has quality and/or bandwidth degradation.
+	PCI_LINK_STATUS_QUALITY_ISSUES PciLinkStatus = 2
+	// The link has stability issues and preventing workloads making forward progress
 	PCI_LINK_STATUS_STABILITY_ISSUES PciLinkStatus = 3
-	PCI_LINK_STATUS_END_MARKER       PciLinkStatus = 2147483647
+	// Value marking end of ZES_PCI_LINK_STATUS_* ENUMs.
+	PCI_LINK_STATUS_FORCE_UINT32 PciLinkStatus = 2147483647
 )
 
 // PciLinkQualIssueFlag declared in:
@@ -160,9 +196,12 @@ type PciLinkQualIssueFlag int32
 
 // PciLinkQualIssueFlag enumeration from levelzero/zes_api.h:1192
 const (
-	PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS    PciLinkQualIssueFlag = 1
-	PCI_LINK_QUAL_ISSUE_FLAG_SPEED      PciLinkQualIssueFlag = 2
-	PCI_LINK_QUAL_ISSUE_FLAG_END_MARKER PciLinkQualIssueFlag = 2147483647
+	// A significant number of replays are occurring.
+	PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS PciLinkQualIssueFlag = 1
+	// There is a degradation in the maximum bandwidth of the link.
+	PCI_LINK_QUAL_ISSUE_FLAG_SPEED PciLinkQualIssueFlag = 2
+	// Value marking end of ZES_PCI_LINK_QUAL_ISSUE_FLAG_* ENUMs.
+	PCI_LINK_QUAL_ISSUE_FLAG_FORCE_UINT32 PciLinkQualIssueFlag = 2147483647
 )
 
 // PciLinkStabIssueFlag declared in:
@@ -171,8 +210,10 @@ type PciLinkStabIssueFlag int32
 
 // PciLinkStabIssueFlag enumeration from levelzero/zes_api.h:1202
 const (
+	// Link retraining has occurred to deal with quality issues.
 	PCI_LINK_STAB_ISSUE_FLAG_RETRAINING PciLinkStabIssueFlag = 1
-	PCI_LINK_STAB_ISSUE_FLAG_END_MARKER PciLinkStabIssueFlag = 2147483647
+	// Value marking end of ZES_PCI_LINK_STAB_ISSUE_FLAG_* ENUMs.
+	PCI_LINK_STAB_ISSUE_FLAG_FORCE_UINT32 PciLinkStabIssueFlag = 2147483647
 )
 
 // PciBarType declared in:
@@ -183,10 +224,14 @@ type PciBarType int32
 
 // PciBarType enumeration from levelzero/zes_api.h:1235
 const (
-	PCI_BAR_TYPE_MMIO       PciBarType = iota
-	PCI_BAR_TYPE_ROM        PciBarType = 1
-	PCI_BAR_TYPE_MEM        PciBarType = 2
-	PCI_BAR_TYPE_END_MARKER PciBarType = 2147483647
+	// MMIO registers.
+	PCI_BAR_TYPE_MMIO PciBarType = iota
+	// ROM aperture.
+	PCI_BAR_TYPE_ROM PciBarType = 1
+	// Device memory.
+	PCI_BAR_TYPE_MEM PciBarType = 2
+	// Value marking end of ZES_PCI_BAR_TYPE_* ENUMs.
+	PCI_BAR_TYPE_FORCE_UINT32 PciBarType = 2147483647
 )
 
 // OverclockDomain declared in:
@@ -197,16 +242,26 @@ type OverclockDomain int32
 
 // OverclockDomain enumeration from levelzero/zes_api.h:1428
 const (
-	OVERCLOCK_DOMAIN_CARD               OverclockDomain = 1
-	OVERCLOCK_DOMAIN_PACKAGE            OverclockDomain = 2
-	OVERCLOCK_DOMAIN_GPU_ALL            OverclockDomain = 4
+	// Overclocking card level properties such as temperature limits.
+	OVERCLOCK_DOMAIN_CARD OverclockDomain = 1
+	// Overclocking package level properties such as power limits.
+	OVERCLOCK_DOMAIN_PACKAGE OverclockDomain = 2
+	// Overclocking a GPU that has all accelerator assets on the same PLL/VR.
+	OVERCLOCK_DOMAIN_GPU_ALL OverclockDomain = 4
+	// Overclocking a GPU with render and compute assets on the same PLL/VR.
 	OVERCLOCK_DOMAIN_GPU_RENDER_COMPUTE OverclockDomain = 8
-	OVERCLOCK_DOMAIN_GPU_RENDER         OverclockDomain = 16
-	OVERCLOCK_DOMAIN_GPU_COMPUTE        OverclockDomain = 32
-	OVERCLOCK_DOMAIN_GPU_MEDIA          OverclockDomain = 64
-	OVERCLOCK_DOMAIN_VRAM               OverclockDomain = 128
-	OVERCLOCK_DOMAIN_ADM                OverclockDomain = 256
-	OVERCLOCK_DOMAIN_END_MARKER         OverclockDomain = 2147483647
+	// Overclocking a GPU with render assets on its own PLL/VR.
+	OVERCLOCK_DOMAIN_GPU_RENDER OverclockDomain = 16
+	// Overclocking a GPU with compute assets on its own PLL/VR.
+	OVERCLOCK_DOMAIN_GPU_COMPUTE OverclockDomain = 32
+	// Overclocking a GPU with media assets on its own PLL/VR.
+	OVERCLOCK_DOMAIN_GPU_MEDIA OverclockDomain = 64
+	// Overclocking device local memory.
+	OVERCLOCK_DOMAIN_VRAM OverclockDomain = 128
+	// Overclocking LLC/L4 cache.
+	OVERCLOCK_DOMAIN_ADM OverclockDomain = 256
+	// Value marking end of ZES_OVERCLOCK_DOMAIN_* ENUMs.
+	OVERCLOCK_DOMAIN_FORCE_UINT32 OverclockDomain = 2147483647
 )
 
 // OverclockControl declared in:
@@ -217,19 +272,32 @@ type OverclockControl int32
 
 // OverclockControl enumeration from levelzero/zes_api.h:1451
 const (
-	OVERCLOCK_CONTROL_VF                    OverclockControl = 1
-	OVERCLOCK_CONTROL_FREQ_OFFSET           OverclockControl = 2
-	OVERCLOCK_CONTROL_VMAX_OFFSET           OverclockControl = 4
-	OVERCLOCK_CONTROL_FREQ                  OverclockControl = 8
-	OVERCLOCK_CONTROL_VOLT_LIMIT            OverclockControl = 16
+	// This control permits setting a custom V-F curve.
+	OVERCLOCK_CONTROL_VF OverclockControl = 1
+	// The V-F curve of the overclock domain can be shifted up or down using this control.
+	OVERCLOCK_CONTROL_FREQ_OFFSET OverclockControl = 2
+	// This control is used to increase the permitted voltage above the shipped voltage maximum.
+	OVERCLOCK_CONTROL_VMAX_OFFSET OverclockControl = 4
+	// This control permits direct changes to the operating frequency.
+	OVERCLOCK_CONTROL_FREQ OverclockControl = 8
+	// This control prevents frequencies that would push the voltage above this value, typically used by V-F scanners.
+	OVERCLOCK_CONTROL_VOLT_LIMIT OverclockControl = 16
+	// This control changes the sustained power limit (PL1).
 	OVERCLOCK_CONTROL_POWER_SUSTAINED_LIMIT OverclockControl = 32
-	OVERCLOCK_CONTROL_POWER_BURST_LIMIT     OverclockControl = 64
-	OVERCLOCK_CONTROL_POWER_PEAK_LIMIT      OverclockControl = 128
-	OVERCLOCK_CONTROL_ICCMAX_LIMIT          OverclockControl = 256
-	OVERCLOCK_CONTROL_TEMP_LIMIT            OverclockControl = 512
-	OVERCLOCK_CONTROL_ITD_DISABLE           OverclockControl = 1024
-	OVERCLOCK_CONTROL_ACM_DISABLE           OverclockControl = 2048
-	OVERCLOCK_CONTROL_END_MARKER            OverclockControl = 2147483647
+	// This control changes the burst power limit (PL2).
+	OVERCLOCK_CONTROL_POWER_BURST_LIMIT OverclockControl = 64
+	// his control changes the peak power limit (PL4).
+	OVERCLOCK_CONTROL_POWER_PEAK_LIMIT OverclockControl = 128
+	// This control changes the value of IccMax..
+	OVERCLOCK_CONTROL_ICCMAX_LIMIT OverclockControl = 256
+	// This control changes the value of TjMax.
+	OVERCLOCK_CONTROL_TEMP_LIMIT OverclockControl = 512
+	// This control permits disabling the adaptive voltage feature ITD.
+	OVERCLOCK_CONTROL_ITD_DISABLE OverclockControl = 1024
+	// This control permits disabling the adaptive voltage feature ACM.
+	OVERCLOCK_CONTROL_ACM_DISABLE OverclockControl = 2048
+	// Value marking end of ZES_OVERCLOCK_CONTROL_* ENUMs.
+	OVERCLOCK_CONTROL_FORCE_UINT32 OverclockControl = 2147483647
 )
 
 // OverclockMode declared in:
@@ -240,12 +308,18 @@ type OverclockMode int32
 
 // OverclockMode enumeration from levelzero/zes_api.h:1465
 const (
-	OVERCLOCK_MODE_MODE_OFF         OverclockMode = iota
-	OVERCLOCK_MODE_MODE_STOCK       OverclockMode = 2
-	OVERCLOCK_MODE_MODE_ON          OverclockMode = 3
+	// Overclock mode is off.
+	OVERCLOCK_MODE_MODE_OFF OverclockMode = iota
+	// Stock (manufacturing settings) are being used.
+	OVERCLOCK_MODE_MODE_STOCK OverclockMode = 2
+	// Overclock mode is on.
+	OVERCLOCK_MODE_MODE_ON OverclockMode = 3
+	// Overclocking is unavailable at this time since the system is running on battery.
 	OVERCLOCK_MODE_MODE_UNAVAILABLE OverclockMode = 4
-	OVERCLOCK_MODE_MODE_DISABLED    OverclockMode = 5
-	OVERCLOCK_MODE_END_MARKER       OverclockMode = 2147483647
+	// Overclock mode is disabled.
+	OVERCLOCK_MODE_MODE_DISABLED OverclockMode = 5
+	// Value marking end of ZES_OVERCLOCK_MODE_* ENUMs.
+	OVERCLOCK_MODE_FORCE_UINT32 OverclockMode = 2147483647
 )
 
 // ControlState declared in:
@@ -256,10 +330,14 @@ type ControlState int32
 
 // ControlState enumeration from levelzero/zes_api.h:1478
 const (
-	CONTROL_STATE_STATE_UNSET    ControlState = iota
-	CONTROL_STATE_STATE_ACTIVE   ControlState = 2
+	// No overclock control has not been changed by the driver since the last boot/reset.
+	CONTROL_STATE_STATE_UNSET ControlState = iota
+	// The overclock control has been set and it is active.
+	CONTROL_STATE_STATE_ACTIVE ControlState = 2
+	// The overclock control value has been disabled due to the current power configuration (typically when running on DC).
 	CONTROL_STATE_STATE_DISABLED ControlState = 3
-	CONTROL_STATE_END_MARKER     ControlState = 2147483647
+	// Value marking end of ZES_CONTROL_STATE_* ENUMs.
+	CONTROL_STATE_FORCE_UINT32 ControlState = 2147483647
 )
 
 // PendingAction declared in:
@@ -270,11 +348,16 @@ type PendingAction int32
 
 // PendingAction enumeration from levelzero/zes_api.h:1491
 const (
-	PENDING_ACTION_PENDING_NONE       PendingAction = iota
-	PENDING_ACTION_PENDING_IMMINENT   PendingAction = 1
+	// There no pending actions. .
+	PENDING_ACTION_PENDING_NONE PendingAction = iota
+	// The requested change is in progress and should complete soon.
+	PENDING_ACTION_PENDING_IMMINENT PendingAction = 1
+	// The requested change requires a device cold reset (hotplug, system boot).
 	PENDING_ACTION_PENDING_COLD_RESET PendingAction = 2
+	// The requested change requires a device warm reset (PCIe FLR).
 	PENDING_ACTION_PENDING_WARM_RESET PendingAction = 3
-	PENDING_ACTION_END_MARKER         PendingAction = 2147483647
+	// Value marking end of ZES_PENDING_ACTION_* ENUMs.
+	PENDING_ACTION_FORCE_UINT32 PendingAction = 2147483647
 )
 
 // VfProgramType declared in:
@@ -285,10 +368,14 @@ type VfProgramType int32
 
 // VfProgramType enumeration from levelzero/zes_api.h:1506
 const (
-	VF_PROGRAM_TYPE_VF_ARBITRARY  VfProgramType = iota
+	// Can program an arbitrary number of V-F points up to the maximum number and each point can have arbitrary voltage and frequency values within the min/max/step limits
+	VF_PROGRAM_TYPE_VF_ARBITRARY VfProgramType = iota
+	// Can only program the voltage for the V-F points that it reads back - the frequency of those points cannot be changed
 	VF_PROGRAM_TYPE_VF_FREQ_FIXED VfProgramType = 1
+	// Can only program the frequency for the V-F points that is reads back - the voltage of each point cannot be changed.
 	VF_PROGRAM_TYPE_VF_VOLT_FIXED VfProgramType = 2
-	VF_PROGRAM_TYPE_END_MARKER    VfProgramType = 2147483647
+	// Value marking end of ZES_VF_PROGRAM_TYPE_* ENUMs.
+	VF_PROGRAM_TYPE_FORCE_UINT32 VfProgramType = 2147483647
 )
 
 // VfType declared in:
@@ -299,9 +386,12 @@ type VfType int32
 
 // VfType enumeration from levelzero/zes_api.h:1516
 const (
-	VF_TYPE_VOLT       VfType = iota
-	VF_TYPE_FREQ       VfType = 1
-	VF_TYPE_END_MARKER VfType = 2147483647
+	// VF Voltage point.
+	VF_TYPE_VOLT VfType = iota
+	// VF Frequency point.
+	VF_TYPE_FREQ VfType = 1
+	// Value marking end of ZES_VF_TYPE_* ENUMs.
+	VF_TYPE_FORCE_UINT32 VfType = 2147483647
 )
 
 // VfArrayType declared in:
@@ -312,10 +402,14 @@ type VfArrayType int32
 
 // VfArrayType enumeration from levelzero/zes_api.h:1527
 const (
-	VF_ARRAY_TYPE_USER_VF_ARRAY    VfArrayType = iota
+	// User V-F array.
+	VF_ARRAY_TYPE_USER_VF_ARRAY VfArrayType = iota
+	// Default V-F array.
 	VF_ARRAY_TYPE_DEFAULT_VF_ARRAY VfArrayType = 1
-	VF_ARRAY_TYPE_LIVE_VF_ARRAY    VfArrayType = 2
-	VF_ARRAY_TYPE_END_MARKER       VfArrayType = 2147483647
+	// Live V-F array.
+	VF_ARRAY_TYPE_LIVE_VF_ARRAY VfArrayType = 2
+	// Value marking end of ZES_VF_ARRAY_TYPE_* ENUMs.
+	VF_ARRAY_TYPE_FORCE_UINT32 VfArrayType = 2147483647
 )
 
 // DiagResult declared in:
@@ -326,11 +420,16 @@ type DiagResult int32
 
 // DiagResult enumeration from levelzero/zes_api.h:2041
 const (
-	DIAG_RESULT_NO_ERRORS         DiagResult = iota
-	DIAG_RESULT_ABORT             DiagResult = 1
-	DIAG_RESULT_FAIL_CANT_REPAIR  DiagResult = 2
+	// Diagnostic completed without finding errors to repair.
+	DIAG_RESULT_NO_ERRORS DiagResult = iota
+	// Diagnostic had problems running tests.
+	DIAG_RESULT_ABORT DiagResult = 1
+	// Diagnostic had problems setting up repairs.
+	DIAG_RESULT_FAIL_CANT_REPAIR DiagResult = 2
+	// Diagnostics found errors, setup for repair and reboot is required to complete the process
 	DIAG_RESULT_REBOOT_FOR_REPAIR DiagResult = 3
-	DIAG_RESULT_END_MARKER        DiagResult = 2147483647
+	// Value marking end of ZES_DIAG_RESULT_* ENUMs.
+	DIAG_RESULT_FORCE_UINT32 DiagResult = 2147483647
 )
 
 // DeviceEccState declared in:
@@ -341,10 +440,14 @@ type DeviceEccState int32
 
 // DeviceEccState enumeration from levelzero/zes_api.h:2227
 const (
+	// None.
 	DEVICE_ECC_STATE_UNAVAILABLE DeviceEccState = iota
-	DEVICE_ECC_STATE_ENABLED     DeviceEccState = 1
-	DEVICE_ECC_STATE_DISABLED    DeviceEccState = 2
-	DEVICE_ECC_STATE_END_MARKER  DeviceEccState = 2147483647
+	// ECC enabled.
+	DEVICE_ECC_STATE_ENABLED DeviceEccState = 1
+	// ECC disabled.
+	DEVICE_ECC_STATE_DISABLED DeviceEccState = 2
+	// Value marking end of ZES_DEVICE_ECC_STATE_* ENUMs.
+	DEVICE_ECC_STATE_FORCE_UINT32 DeviceEccState = 2147483647
 )
 
 // DeviceAction declared in:
@@ -355,11 +458,16 @@ type DeviceAction int32
 
 // DeviceAction enumeration from levelzero/zes_api.h:2239
 const (
-	DEVICE_ACTION_NONE               DeviceAction = iota
-	DEVICE_ACTION_WARM_CARD_RESET    DeviceAction = 1
-	DEVICE_ACTION_COLD_CARD_RESET    DeviceAction = 2
+	// No action.
+	DEVICE_ACTION_NONE DeviceAction = iota
+	// Warm reset of the card.
+	DEVICE_ACTION_WARM_CARD_RESET DeviceAction = 1
+	// Cold reset of the card.
+	DEVICE_ACTION_COLD_CARD_RESET DeviceAction = 2
+	// Cold reboot of the system.
 	DEVICE_ACTION_COLD_SYSTEM_REBOOT DeviceAction = 3
-	DEVICE_ACTION_END_MARKER         DeviceAction = 2147483647
+	// Value marking end of ZES_DEVICE_ACTION_* ENUMs.
+	DEVICE_ACTION_FORCE_UINT32 DeviceAction = 2147483647
 )
 
 // EngineGroup declared in:
@@ -370,17 +478,28 @@ type EngineGroup int32
 
 // EngineGroup enumeration from levelzero/zes_api.h:2416
 const (
-	ENGINE_GROUP_ALL                      EngineGroup = iota
-	ENGINE_GROUP_COMPUTE_ALL              EngineGroup = 1
-	ENGINE_GROUP_MEDIA_ALL                EngineGroup = 2
-	ENGINE_GROUP_COPY_ALL                 EngineGroup = 3
-	ENGINE_GROUP_COMPUTE_SINGLE           EngineGroup = 4
-	ENGINE_GROUP_RENDER_SINGLE            EngineGroup = 5
-	ENGINE_GROUP_COPY_SINGLE              EngineGroup = 8
+	// Access information about all engines combined.
+	ENGINE_GROUP_ALL EngineGroup = iota
+	// Access information about all compute engines combined. Compute engines can only process compute kernels (no 3D content).
+	ENGINE_GROUP_COMPUTE_ALL EngineGroup = 1
+	// Access information about all media engines combined.
+	ENGINE_GROUP_MEDIA_ALL EngineGroup = 2
+	// Access information about all copy (blitter) engines combined.
+	ENGINE_GROUP_COPY_ALL EngineGroup = 3
+	// Access information about a single compute engine - this is an engine that can process compute kernels. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL for that.
+	ENGINE_GROUP_COMPUTE_SINGLE EngineGroup = 4
+	// Access information about a single render engine - this is an engine that can process both 3D content and compute kernels. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL for that.
+	ENGINE_GROUP_RENDER_SINGLE EngineGroup = 5
+	// Access information about a single media encode engine. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_COPY_ALL for that.
+	ENGINE_GROUP_COPY_SINGLE EngineGroup = 8
+	// Access information about a single media enhancement engine. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_MEDIA_ALL for that.
 	ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE EngineGroup = 9
-	ENGINE_GROUP_RENDER_ALL               EngineGroup = 12
-	ENGINE_GROUP_MEDIA_CODEC_SINGLE       EngineGroup = 14
-	ENGINE_GROUP_END_MARKER               EngineGroup = 2147483647
+	// Access information about all render engines combined. Render engines are those than process both 3D content and compute kernels.
+	ENGINE_GROUP_RENDER_ALL EngineGroup = 12
+	// Access information about a single media engine. Note that single engines may share the same underlying accelerator resources as other engines so activity of such an engine may not be indicative of the underlying resource utilization - use ZES_ENGINE_GROUP_MEDIA_ALL for that.
+	ENGINE_GROUP_MEDIA_CODEC_SINGLE EngineGroup = 14
+	// Value marking end of ZES_ENGINE_GROUP_* ENUMs.
+	ENGINE_GROUP_FORCE_UINT32 EngineGroup = 2147483647
 )
 
 // EventTypeFlag declared in:
@@ -389,23 +508,40 @@ type EventTypeFlag int32
 
 // EventTypeFlag enumeration from levelzero/zes_api.h:2584
 const (
-	EVENT_TYPE_FLAG_DEVICE_DETACH               EventTypeFlag = 1
-	EVENT_TYPE_FLAG_DEVICE_ATTACH               EventTypeFlag = 2
-	EVENT_TYPE_FLAG_DEVICE_SLEEP_STATE_ENTER    EventTypeFlag = 4
-	EVENT_TYPE_FLAG_DEVICE_SLEEP_STATE_EXIT     EventTypeFlag = 8
-	EVENT_TYPE_FLAG_FREQ_THROTTLED              EventTypeFlag = 16
-	EVENT_TYPE_FLAG_ENERGY_THRESHOLD_CROSSED    EventTypeFlag = 32
-	EVENT_TYPE_FLAG_TEMP_CRITICAL               EventTypeFlag = 64
-	EVENT_TYPE_FLAG_TEMP_THRESHOLD1             EventTypeFlag = 128
-	EVENT_TYPE_FLAG_TEMP_THRESHOLD2             EventTypeFlag = 256
-	EVENT_TYPE_FLAG_MEM_HEALTH                  EventTypeFlag = 512
-	EVENT_TYPE_FLAG_FABRIC_PORT_HEALTH          EventTypeFlag = 1024
-	EVENT_TYPE_FLAG_PCI_LINK_HEALTH             EventTypeFlag = 2048
-	EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS      EventTypeFlag = 4096
-	EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS    EventTypeFlag = 8192
-	EVENT_TYPE_FLAG_DEVICE_RESET_REQUIRED       EventTypeFlag = 16384
+	// Event is triggered when the device is no longer available (due to a reset or being disabled).
+	EVENT_TYPE_FLAG_DEVICE_DETACH EventTypeFlag = 1
+	// Event is triggered after the device is available again.
+	EVENT_TYPE_FLAG_DEVICE_ATTACH EventTypeFlag = 2
+	// Event is triggered when the driver is about to put the device into a deep sleep state
+	EVENT_TYPE_FLAG_DEVICE_SLEEP_STATE_ENTER EventTypeFlag = 4
+	// Event is triggered when the driver is waking the device up from a deep sleep state
+	EVENT_TYPE_FLAG_DEVICE_SLEEP_STATE_EXIT EventTypeFlag = 8
+	// Event is triggered when the frequency starts being throttled.
+	EVENT_TYPE_FLAG_FREQ_THROTTLED EventTypeFlag = 16
+	// Event is triggered when the energy consumption threshold is reached (use zesPowerSetEnergyThreshold() to configure).
+	EVENT_TYPE_FLAG_ENERGY_THRESHOLD_CROSSED EventTypeFlag = 32
+	// Event is triggered when the critical temperature is reached (use zesTemperatureSetConfig() to configure - disabled by default).
+	EVENT_TYPE_FLAG_TEMP_CRITICAL EventTypeFlag = 64
+	// Event is triggered when the temperature crosses threshold 1 (use zesTemperatureSetConfig() to configure - disabled by default).
+	EVENT_TYPE_FLAG_TEMP_THRESHOLD1 EventTypeFlag = 128
+	// Event is triggered when the temperature crosses threshold 2 (use zesTemperatureSetConfig() to configure - disabled by default).
+	EVENT_TYPE_FLAG_TEMP_THRESHOLD2 EventTypeFlag = 256
+	// Event is triggered when the health of device memory changes.
+	EVENT_TYPE_FLAG_MEM_HEALTH EventTypeFlag = 512
+	// Event is triggered when the health of fabric ports change.
+	EVENT_TYPE_FLAG_FABRIC_PORT_HEALTH EventTypeFlag = 1024
+	// Event is triggered when the health of the PCI link changes.
+	EVENT_TYPE_FLAG_PCI_LINK_HEALTH EventTypeFlag = 2048
+	// Event is triggered when accelerator RAS correctable errors cross thresholds (use zesRasSetConfig() to configure - disabled by default).
+	EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS EventTypeFlag = 4096
+	// Event is triggered when accelerator RAS uncorrectable errors cross thresholds (use zesRasSetConfig() to configure - disabled by default).
+	EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS EventTypeFlag = 8192
+	// Event is triggered when the device needs to be reset (use zesDeviceGetState() to determine the reasons for the reset).
+	EVENT_TYPE_FLAG_DEVICE_RESET_REQUIRED EventTypeFlag = 16384
+	// Event is triggered when graphics driver encounter an error condition.
 	EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED EventTypeFlag = 32768
-	EVENT_TYPE_FLAG_END_MARKER                  EventTypeFlag = 2147483647
+	// Value marking end of ZES_EVENT_TYPE_FLAG_* ENUMs.
+	EVENT_TYPE_FLAG_FORCE_UINT32 EventTypeFlag = 2147483647
 )
 
 // FabricPortStatus declared in:
@@ -416,12 +552,18 @@ type FabricPortStatus int32
 
 // FabricPortStatus enumeration from levelzero/zes_api.h:2731
 const (
-	FABRIC_PORT_STATUS_UNKNOWN    FabricPortStatus = iota
-	FABRIC_PORT_STATUS_HEALTHY    FabricPortStatus = 1
-	FABRIC_PORT_STATUS_DEGRADED   FabricPortStatus = 2
-	FABRIC_PORT_STATUS_FAILED     FabricPortStatus = 3
-	FABRIC_PORT_STATUS_DISABLED   FabricPortStatus = 4
-	FABRIC_PORT_STATUS_END_MARKER FabricPortStatus = 2147483647
+	// The port status cannot be determined.
+	FABRIC_PORT_STATUS_UNKNOWN FabricPortStatus = iota
+	// The port is up and operating as expected.
+	FABRIC_PORT_STATUS_HEALTHY FabricPortStatus = 1
+	// The port is up but has quality and/or speed degradation.
+	FABRIC_PORT_STATUS_DEGRADED FabricPortStatus = 2
+	// Port connection instabilities are preventing workloads making forward progress
+	FABRIC_PORT_STATUS_FAILED FabricPortStatus = 3
+	// The port is configured down.
+	FABRIC_PORT_STATUS_DISABLED FabricPortStatus = 4
+	// Value marking end of ZES_FABRIC_PORT_STATUS_* ENUMs.
+	FABRIC_PORT_STATUS_FORCE_UINT32 FabricPortStatus = 2147483647
 )
 
 // FabricPortQualIssueFlag declared in:
@@ -430,9 +572,12 @@ type FabricPortQualIssueFlag int32
 
 // FabricPortQualIssueFlag enumeration from levelzero/zes_api.h:2742
 const (
+	// Excessive link errors are occurring.
 	FABRIC_PORT_QUAL_ISSUE_FLAG_LINK_ERRORS FabricPortQualIssueFlag = 1
-	FABRIC_PORT_QUAL_ISSUE_FLAG_SPEED       FabricPortQualIssueFlag = 2
-	FABRIC_PORT_QUAL_ISSUE_FLAG_END_MARKER  FabricPortQualIssueFlag = 2147483647
+	// There is a degradation in the bitrate and/or width of the link.
+	FABRIC_PORT_QUAL_ISSUE_FLAG_SPEED FabricPortQualIssueFlag = 2
+	// Value marking end of ZES_FABRIC_PORT_QUAL_ISSUE_FLAG_* ENUMs.
+	FABRIC_PORT_QUAL_ISSUE_FLAG_FORCE_UINT32 FabricPortQualIssueFlag = 2147483647
 )
 
 // FabricPortFailureFlag declared in:
@@ -441,10 +586,14 @@ type FabricPortFailureFlag int32
 
 // FabricPortFailureFlag enumeration from levelzero/zes_api.h:2762
 const (
-	FABRIC_PORT_FAILURE_FLAG_FAILED           FabricPortFailureFlag = 1
+	// A previously operating link has failed. Hardware will automatically retrain this port. This state will persist until either the physical connection is removed or the link trains successfully.
+	FABRIC_PORT_FAILURE_FLAG_FAILED FabricPortFailureFlag = 1
+	// A connection has not been established within an expected time. Hardware will continue to attempt port training. This status will persist until either the physical connection is removed or the link successfully trains.
 	FABRIC_PORT_FAILURE_FLAG_TRAINING_TIMEOUT FabricPortFailureFlag = 2
-	FABRIC_PORT_FAILURE_FLAG_FLAPPING         FabricPortFailureFlag = 4
-	FABRIC_PORT_FAILURE_FLAG_END_MARKER       FabricPortFailureFlag = 2147483647
+	// Port has excessively trained and then transitioned down for some period of time. Driver will allow port to continue to train, but will not enable the port for use until the port has been disabled and subsequently re-enabled using zesFabricPortSetConfig().
+	FABRIC_PORT_FAILURE_FLAG_FLAPPING FabricPortFailureFlag = 4
+	// Value marking end of ZES_FABRIC_PORT_FAILURE_FLAG_* ENUMs.
+	FABRIC_PORT_FAILURE_FLAG_FORCE_UINT32 FabricPortFailureFlag = 2147483647
 )
 
 // FanSpeedMode declared in:
@@ -455,10 +604,14 @@ type FanSpeedMode int32
 
 // FanSpeedMode enumeration from levelzero/zes_api.h:3147
 const (
-	FAN_SPEED_MODE_DEFAULT    FanSpeedMode = iota
-	FAN_SPEED_MODE_FIXED      FanSpeedMode = 1
-	FAN_SPEED_MODE_TABLE      FanSpeedMode = 2
-	FAN_SPEED_MODE_END_MARKER FanSpeedMode = 2147483647
+	// The fan speed is operating using the hardware default settings.
+	FAN_SPEED_MODE_DEFAULT FanSpeedMode = iota
+	// The fan speed is currently set to a fixed value.
+	FAN_SPEED_MODE_FIXED FanSpeedMode = 1
+	// The fan speed is currently controlled dynamically by hardware based on a temp/speed table
+	FAN_SPEED_MODE_TABLE FanSpeedMode = 2
+	// Value marking end of ZES_FAN_SPEED_MODE_* ENUMs.
+	FAN_SPEED_MODE_FORCE_UINT32 FanSpeedMode = 2147483647
 )
 
 // FanSpeedUnits declared in:
@@ -469,9 +622,12 @@ type FanSpeedUnits int32
 
 // FanSpeedUnits enumeration from levelzero/zes_api.h:3157
 const (
-	FAN_SPEED_UNITS_RPM        FanSpeedUnits = iota
-	FAN_SPEED_UNITS_PERCENT    FanSpeedUnits = 1
-	FAN_SPEED_UNITS_END_MARKER FanSpeedUnits = 2147483647
+	// The fan speed is in units of revolutions per minute (rpm)
+	FAN_SPEED_UNITS_RPM FanSpeedUnits = iota
+	// The fan speed is a percentage of the maximum speed of the fan.
+	FAN_SPEED_UNITS_PERCENT FanSpeedUnits = 1
+	// Value marking end of ZES_FAN_SPEED_UNITS_* ENUMs.
+	FAN_SPEED_UNITS_FORCE_UINT32 FanSpeedUnits = 2147483647
 )
 
 // FreqDomain declared in:
@@ -482,10 +638,14 @@ type FreqDomain int32
 
 // FreqDomain enumeration from levelzero/zes_api.h:3604
 const (
-	FREQ_DOMAIN_GPU        FreqDomain = iota
-	FREQ_DOMAIN_MEMORY     FreqDomain = 1
-	FREQ_DOMAIN_MEDIA      FreqDomain = 2
-	FREQ_DOMAIN_END_MARKER FreqDomain = 2147483647
+	// GPU Core Domain.
+	FREQ_DOMAIN_GPU FreqDomain = iota
+	// Local Memory Domain.
+	FREQ_DOMAIN_MEMORY FreqDomain = 1
+	// GPU Media Domain.
+	FREQ_DOMAIN_MEDIA FreqDomain = 2
+	// Value marking end of ZES_FREQ_DOMAIN_* ENUMs.
+	FREQ_DOMAIN_FORCE_UINT32 FreqDomain = 2147483647
 )
 
 // FreqThrottleReasonFlag declared in:
@@ -494,14 +654,22 @@ type FreqThrottleReasonFlag int32
 
 // FreqThrottleReasonFlag enumeration from levelzero/zes_api.h:3678
 const (
-	FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP   FreqThrottleReasonFlag = 1
+	// frequency throttled due to average power excursion (PL1)
+	FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP FreqThrottleReasonFlag = 1
+	// frequency throttled due to burst power excursion (PL2)
 	FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP FreqThrottleReasonFlag = 2
+	// frequency throttled due to current excursion (PL4)
 	FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT FreqThrottleReasonFlag = 4
+	// frequency throttled due to thermal excursion (T > TjMax)
 	FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT FreqThrottleReasonFlag = 8
-	FREQ_THROTTLE_REASON_FLAG_PSU_ALERT     FreqThrottleReasonFlag = 16
-	FREQ_THROTTLE_REASON_FLAG_SW_RANGE      FreqThrottleReasonFlag = 32
-	FREQ_THROTTLE_REASON_FLAG_HW_RANGE      FreqThrottleReasonFlag = 64
-	FREQ_THROTTLE_REASON_FLAG_END_MARKER    FreqThrottleReasonFlag = 2147483647
+	// frequency throttled due to power supply assertion
+	FREQ_THROTTLE_REASON_FLAG_PSU_ALERT FreqThrottleReasonFlag = 16
+	// frequency throttled due to software supplied frequency range
+	FREQ_THROTTLE_REASON_FLAG_SW_RANGE FreqThrottleReasonFlag = 32
+	// frequency throttled due to a sub block that has a lower frequency range when it receives clocks
+	FREQ_THROTTLE_REASON_FLAG_HW_RANGE FreqThrottleReasonFlag = 64
+	// Value marking end of ZES_FREQ_THROTTLE_REASON_FLAG_* ENUMs.
+	FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32 FreqThrottleReasonFlag = 2147483647
 )
 
 // MemType declared in:
@@ -512,27 +680,48 @@ type MemType int32
 
 // MemType enumeration from levelzero/zes_api.h:4542
 const (
-	MEM_TYPE_HBM        MemType = iota
-	MEM_TYPE_DDR        MemType = 1
-	MEM_TYPE_DDR3       MemType = 2
-	MEM_TYPE_DDR4       MemType = 3
-	MEM_TYPE_DDR5       MemType = 4
-	MEM_TYPE_LPDDR      MemType = 5
-	MEM_TYPE_LPDDR3     MemType = 6
-	MEM_TYPE_LPDDR4     MemType = 7
-	MEM_TYPE_LPDDR5     MemType = 8
-	MEM_TYPE_SRAM       MemType = 9
-	MEM_TYPE_L1         MemType = 10
-	MEM_TYPE_L3         MemType = 11
-	MEM_TYPE_GRF        MemType = 12
-	MEM_TYPE_SLM        MemType = 13
-	MEM_TYPE_GDDR4      MemType = 14
-	MEM_TYPE_GDDR5      MemType = 15
-	MEM_TYPE_GDDR5X     MemType = 16
-	MEM_TYPE_GDDR6      MemType = 17
-	MEM_TYPE_GDDR6X     MemType = 18
-	MEM_TYPE_GDDR7      MemType = 19
-	MEM_TYPE_END_MARKER MemType = 2147483647
+	// HBM memory.
+	MEM_TYPE_HBM MemType = iota
+	// DDR memory.
+	MEM_TYPE_DDR MemType = 1
+	// DDR3 memory.
+	MEM_TYPE_DDR3 MemType = 2
+	// DDR4 memory.
+	MEM_TYPE_DDR4 MemType = 3
+	// DDR5 memory.
+	MEM_TYPE_DDR5 MemType = 4
+	// LPDDR memory.
+	MEM_TYPE_LPDDR MemType = 5
+	// LPDDR3 memory.
+	MEM_TYPE_LPDDR3 MemType = 6
+	// LPDDR4 memory.
+	MEM_TYPE_LPDDR4 MemType = 7
+	// LPDDR5 memory.
+	MEM_TYPE_LPDDR5 MemType = 8
+	// SRAM memory.
+	MEM_TYPE_SRAM MemType = 9
+	// L1 cache.
+	MEM_TYPE_L1 MemType = 10
+	// L3 cache.
+	MEM_TYPE_L3 MemType = 11
+	// Execution unit register file.
+	MEM_TYPE_GRF MemType = 12
+	// Execution unit shared local memory.
+	MEM_TYPE_SLM MemType = 13
+	// GDDR4 memory.
+	MEM_TYPE_GDDR4 MemType = 14
+	// GDDR5 memory.
+	MEM_TYPE_GDDR5 MemType = 15
+	// GDDR5X memory.
+	MEM_TYPE_GDDR5X MemType = 16
+	// GDDR6 memory.
+	MEM_TYPE_GDDR6 MemType = 17
+	// GDDR6X memory.
+	MEM_TYPE_GDDR6X MemType = 18
+	// GDDR7 memory.
+	MEM_TYPE_GDDR7 MemType = 19
+	// Value marking end of ZES_MEM_TYPE_* ENUMs.
+	MEM_TYPE_FORCE_UINT32 MemType = 2147483647
 )
 
 // MemLoc declared in:
@@ -543,9 +732,12 @@ type MemLoc int32
 
 // MemLoc enumeration from levelzero/zes_api.h:4552
 const (
-	MEM_LOC_SYSTEM     MemLoc = iota
-	MEM_LOC_DEVICE     MemLoc = 1
-	MEM_LOC_END_MARKER MemLoc = 2147483647
+	// System memory.
+	MEM_LOC_SYSTEM MemLoc = iota
+	// On board local device memory.
+	MEM_LOC_DEVICE MemLoc = 1
+	// Value marking end of ZES_MEM_LOC_* ENUMs.
+	MEM_LOC_FORCE_UINT32 MemLoc = 2147483647
 )
 
 // MemHealth declared in:
@@ -556,12 +748,18 @@ type MemHealth int32
 
 // MemHealth enumeration from levelzero/zes_api.h:4567
 const (
-	MEM_HEALTH_UNKNOWN    MemHealth = iota
-	MEM_HEALTH_OK         MemHealth = 1
-	MEM_HEALTH_DEGRADED   MemHealth = 2
-	MEM_HEALTH_CRITICAL   MemHealth = 3
-	MEM_HEALTH_REPLACE    MemHealth = 4
-	MEM_HEALTH_END_MARKER MemHealth = 2147483647
+	// The memory health cannot be determined.
+	MEM_HEALTH_UNKNOWN MemHealth = iota
+	// All memory channels are healthy.
+	MEM_HEALTH_OK MemHealth = 1
+	// Excessive correctable errors have been detected on one or more channels. Device should be reset.
+	MEM_HEALTH_DEGRADED MemHealth = 2
+	// Operating with reduced memory to cover banks with too many uncorrectable errors.
+	MEM_HEALTH_CRITICAL MemHealth = 3
+	// Device should be replaced due to excessive uncorrectable errors.
+	MEM_HEALTH_REPLACE MemHealth = 4
+	// Value marking end of ZES_MEM_HEALTH_* ENUMs.
+	MEM_HEALTH_FORCE_UINT32 MemHealth = 2147483647
 )
 
 // PowerDomain declared in:
@@ -572,13 +770,20 @@ type PowerDomain int32
 
 // PowerDomain enumeration from levelzero/zes_api.h:4905
 const (
-	POWER_DOMAIN_UNKNOWN    PowerDomain = iota
-	POWER_DOMAIN_CARD       PowerDomain = 1
-	POWER_DOMAIN_PACKAGE    PowerDomain = 2
-	POWER_DOMAIN_STACK      PowerDomain = 3
-	POWER_DOMAIN_MEMORY     PowerDomain = 4
-	POWER_DOMAIN_GPU        PowerDomain = 5
-	POWER_DOMAIN_END_MARKER PowerDomain = 2147483647
+	// The PUnit power domain level cannot be determined.
+	POWER_DOMAIN_UNKNOWN PowerDomain = iota
+	// The PUnit power domain is a card-level power domain.
+	POWER_DOMAIN_CARD PowerDomain = 1
+	// The PUnit power domain is a package-level power domain.
+	POWER_DOMAIN_PACKAGE PowerDomain = 2
+	// The PUnit power domain is a stack-level power domain.
+	POWER_DOMAIN_STACK PowerDomain = 3
+	// The PUnit power domain is a memory-level power domain.
+	POWER_DOMAIN_MEMORY PowerDomain = 4
+	// The PUnit power domain is a GPU-level power domain.
+	POWER_DOMAIN_GPU PowerDomain = 5
+	// Value marking end of ZES_POWER_DOMAIN_* ENUMs.
+	POWER_DOMAIN_FORCE_UINT32 PowerDomain = 2147483647
 )
 
 // PowerLevel declared in:
@@ -589,12 +794,18 @@ type PowerLevel int32
 
 // PowerLevel enumeration from levelzero/zes_api.h:4925
 const (
-	POWER_LEVEL_UNKNOWN       PowerLevel = iota
-	POWER_LEVEL_SUSTAINED     PowerLevel = 1
-	POWER_LEVEL_BURST         PowerLevel = 2
-	POWER_LEVEL_PEAK          PowerLevel = 3
+	// The PUnit power monitoring duration cannot be determined.
+	POWER_LEVEL_UNKNOWN PowerLevel = iota
+	// The PUnit determines effective power draw by computing a moving average of the actual power draw over a time interval (longer than BURST).
+	POWER_LEVEL_SUSTAINED PowerLevel = 1
+	// The PUnit determines effective power draw by computing a moving average of the actual power draw over a time interval (longer than PEAK).
+	POWER_LEVEL_BURST PowerLevel = 2
+	// The PUnit determines effective power draw by computing a moving average of the actual power draw over a very short time interval.
+	POWER_LEVEL_PEAK PowerLevel = 3
+	// The PUnit predicts effective power draw using the current device configuration (frequency, voltage, etc...) & throttles proactively to stay within the specified limit.
 	POWER_LEVEL_INSTANTANEOUS PowerLevel = 4
-	POWER_LEVEL_END_MARKER    PowerLevel = 2147483647
+	// Value marking end of ZES_POWER_LEVEL_* ENUMs.
+	POWER_LEVEL_FORCE_UINT32 PowerLevel = 2147483647
 )
 
 // PowerSource declared in:
@@ -605,10 +816,14 @@ type PowerSource int32
 
 // PowerSource enumeration from levelzero/zes_api.h:4937
 const (
-	POWER_SOURCE_ANY        PowerSource = iota
-	POWER_SOURCE_MAINS      PowerSource = 1
-	POWER_SOURCE_BATTERY    PowerSource = 2
-	POWER_SOURCE_END_MARKER PowerSource = 2147483647
+	// Limit active no matter whether the power source is mains powered or battery powered.
+	POWER_SOURCE_ANY PowerSource = iota
+	// Limit active only when the device is mains powered.
+	POWER_SOURCE_MAINS PowerSource = 1
+	// Limit active only when the device is battery powered.
+	POWER_SOURCE_BATTERY PowerSource = 2
+	// Value marking end of ZES_POWER_SOURCE_* ENUMs.
+	POWER_SOURCE_FORCE_UINT32 PowerSource = 2147483647
 )
 
 // LimitUnit declared in:
@@ -619,10 +834,14 @@ type LimitUnit int32
 
 // LimitUnit enumeration from levelzero/zes_api.h:4948
 const (
-	LIMIT_UNIT_UNKNOWN    LimitUnit = iota
-	LIMIT_UNIT_CURRENT    LimitUnit = 1
-	LIMIT_UNIT_POWER      LimitUnit = 2
-	LIMIT_UNIT_END_MARKER LimitUnit = 2147483647
+	// The PUnit power monitoring unit cannot be determined.
+	LIMIT_UNIT_UNKNOWN LimitUnit = iota
+	// The limit is specified in milliamperes of current drawn.
+	LIMIT_UNIT_CURRENT LimitUnit = 1
+	// The limit is specified in milliwatts of power generated.
+	LIMIT_UNIT_POWER LimitUnit = 2
+	// Value marking end of ZES_LIMIT_UNIT_* ENUMs.
+	LIMIT_UNIT_FORCE_UINT32 LimitUnit = 2147483647
 )
 
 // PsuVoltageStatus declared in:
@@ -633,11 +852,16 @@ type PsuVoltageStatus int32
 
 // PsuVoltageStatus enumeration from levelzero/zes_api.h:5315
 const (
-	PSU_VOLTAGE_STATUS_UNKNOWN    PsuVoltageStatus = iota
-	PSU_VOLTAGE_STATUS_NORMAL     PsuVoltageStatus = 1
-	PSU_VOLTAGE_STATUS_OVER       PsuVoltageStatus = 2
-	PSU_VOLTAGE_STATUS_UNDER      PsuVoltageStatus = 3
-	PSU_VOLTAGE_STATUS_END_MARKER PsuVoltageStatus = 2147483647
+	// The status of the power supply voltage controllers cannot be determined
+	PSU_VOLTAGE_STATUS_UNKNOWN PsuVoltageStatus = iota
+	// No unusual voltages have been detected.
+	PSU_VOLTAGE_STATUS_NORMAL PsuVoltageStatus = 1
+	// Over-voltage has occurred.
+	PSU_VOLTAGE_STATUS_OVER PsuVoltageStatus = 2
+	// Under-voltage has occurred.
+	PSU_VOLTAGE_STATUS_UNDER PsuVoltageStatus = 3
+	// Value marking end of ZES_PSU_VOLTAGE_STATUS_* ENUMs.
+	PSU_VOLTAGE_STATUS_FORCE_UINT32 PsuVoltageStatus = 2147483647
 )
 
 // RasErrorType declared in:
@@ -648,9 +872,12 @@ type RasErrorType int32
 
 // RasErrorType enumeration from levelzero/zes_api.h:5444
 const (
-	RAS_ERROR_TYPE_CORRECTABLE   RasErrorType = iota
+	// Errors were corrected by hardware.
+	RAS_ERROR_TYPE_CORRECTABLE RasErrorType = iota
+	// Error were not corrected.
 	RAS_ERROR_TYPE_UNCORRECTABLE RasErrorType = 1
-	RAS_ERROR_TYPE_END_MARKER    RasErrorType = 2147483647
+	// Value marking end of ZES_RAS_ERROR_TYPE_* ENUMs.
+	RAS_ERROR_TYPE_FORCE_UINT32 RasErrorType = 2147483647
 )
 
 // RasErrorCat declared in:
@@ -661,14 +888,22 @@ type RasErrorCat int32
 
 // RasErrorCat enumeration from levelzero/zes_api.h:5463
 const (
-	RAS_ERROR_CAT_RESET              RasErrorCat = iota
+	// The number of accelerator engine resets attempted by the driver.
+	RAS_ERROR_CAT_RESET RasErrorCat = iota
+	// The number of hardware exceptions generated by the way workloads have programmed the hardware
 	RAS_ERROR_CAT_PROGRAMMING_ERRORS RasErrorCat = 1
-	RAS_ERROR_CAT_DRIVER_ERRORS      RasErrorCat = 2
-	RAS_ERROR_CAT_COMPUTE_ERRORS     RasErrorCat = 3
+	// The number of low level driver communication errors have occurred.
+	RAS_ERROR_CAT_DRIVER_ERRORS RasErrorCat = 2
+	// The number of errors that have occurred in the compute accelerator hardware
+	RAS_ERROR_CAT_COMPUTE_ERRORS RasErrorCat = 3
+	// The number of errors that have occurred in the fixed-function accelerator hardware
 	RAS_ERROR_CAT_NON_COMPUTE_ERRORS RasErrorCat = 4
-	RAS_ERROR_CAT_CACHE_ERRORS       RasErrorCat = 5
-	RAS_ERROR_CAT_DISPLAY_ERRORS     RasErrorCat = 6
-	RAS_ERROR_CAT_END_MARKER         RasErrorCat = 2147483647
+	// The number of errors that have occurred in caches (L1/L3/register file/shared local memory/sampler)
+	RAS_ERROR_CAT_CACHE_ERRORS RasErrorCat = 5
+	// The number of errors that have occurred in the display.
+	RAS_ERROR_CAT_DISPLAY_ERRORS RasErrorCat = 6
+	// Value marking end of ZES_RAS_ERROR_CAT_* ENUMs.
+	RAS_ERROR_CAT_FORCE_UINT32 RasErrorCat = 2147483647
 )
 
 // SchedMode declared in:
@@ -679,10 +914,14 @@ type SchedMode int32
 
 // SchedMode enumeration from levelzero/zes_api.h:5718
 const (
-	SCHED_MODE_TIMEOUT    SchedMode = iota
-	SCHED_MODE_TIMESLICE  SchedMode = 1
-	SCHED_MODE_EXCLUSIVE  SchedMode = 2
-	SCHED_MODE_END_MARKER SchedMode = 2147483647
+	// Multiple applications or contexts are submitting work to the hardware. When higher priority work arrives, the scheduler attempts to pause the current executing work within some timeout interval, then submits the other work.
+	SCHED_MODE_TIMEOUT SchedMode = iota
+	// The scheduler attempts to fairly timeslice hardware execution time between multiple contexts submitting work to the hardware concurrently.
+	SCHED_MODE_TIMESLICE SchedMode = 1
+	// Any application or context can run indefinitely on the hardware without being preempted or terminated. All pending work for other contexts must wait until the running context completes with no further submitted work.
+	SCHED_MODE_EXCLUSIVE SchedMode = 2
+	// Value marking end of ZES_SCHED_MODE_* ENUMs.
+	SCHED_MODE_FORCE_UINT32 SchedMode = 2147483647
 )
 
 // StandbyType declared in:
@@ -693,8 +932,10 @@ type StandbyType int32
 
 // StandbyType enumeration from levelzero/zes_api.h:6070
 const (
-	STANDBY_TYPE_GLOBAL     StandbyType = iota
-	STANDBY_TYPE_END_MARKER StandbyType = 2147483647
+	// Control the overall standby policy of the device/sub-device.
+	STANDBY_TYPE_GLOBAL StandbyType = iota
+	// Value marking end of ZES_STANDBY_TYPE_* ENUMs.
+	STANDBY_TYPE_FORCE_UINT32 StandbyType = 2147483647
 )
 
 // StandbyPromoMode declared in:
@@ -705,9 +946,12 @@ type StandbyPromoMode int32
 
 // StandbyPromoMode enumeration from levelzero/zes_api.h:6095
 const (
-	STANDBY_PROMO_MODE_DEFAULT    StandbyPromoMode = iota
-	STANDBY_PROMO_MODE_NEVER      StandbyPromoMode = 1
-	STANDBY_PROMO_MODE_END_MARKER StandbyPromoMode = 2147483647
+	// Best compromise between performance and energy savings.
+	STANDBY_PROMO_MODE_DEFAULT StandbyPromoMode = iota
+	// The device/component will never shutdown. This can improve performance but uses more energy.
+	STANDBY_PROMO_MODE_NEVER StandbyPromoMode = 1
+	// Value marking end of ZES_STANDBY_PROMO_MODE_* ENUMs.
+	STANDBY_PROMO_MODE_FORCE_UINT32 StandbyPromoMode = 2147483647
 )
 
 // TempSensors declared in:
@@ -718,16 +962,26 @@ type TempSensors int32
 
 // TempSensors enumeration from levelzero/zes_api.h:6223
 const (
-	TEMP_SENSORS_GLOBAL            TempSensors = iota
-	TEMP_SENSORS_GPU               TempSensors = 1
-	TEMP_SENSORS_MEMORY            TempSensors = 2
-	TEMP_SENSORS_GLOBAL_MIN        TempSensors = 3
-	TEMP_SENSORS_GPU_MIN           TempSensors = 4
-	TEMP_SENSORS_MEMORY_MIN        TempSensors = 5
-	TEMP_SENSORS_GPU_BOARD         TempSensors = 6
-	TEMP_SENSORS_GPU_BOARD_MIN     TempSensors = 7
+	// The maximum temperature across all device sensors.
+	TEMP_SENSORS_GLOBAL TempSensors = iota
+	// The maximum temperature across all sensors in the GPU.
+	TEMP_SENSORS_GPU TempSensors = 1
+	// The maximum temperature across all sensors in the local memory.
+	TEMP_SENSORS_MEMORY TempSensors = 2
+	// The minimum temperature across all device sensors.
+	TEMP_SENSORS_GLOBAL_MIN TempSensors = 3
+	// The minimum temperature across all sensors in the GPU.
+	TEMP_SENSORS_GPU_MIN TempSensors = 4
+	// The minimum temperature across all sensors in the local device memory.
+	TEMP_SENSORS_MEMORY_MIN TempSensors = 5
+	// The maximum temperature across all sensors in the GPU Board.
+	TEMP_SENSORS_GPU_BOARD TempSensors = 6
+	// The minimum temperature across all sensors in the GPU Board.
+	TEMP_SENSORS_GPU_BOARD_MIN TempSensors = 7
+	// The maximum temperature across all sensors in the Voltage Regulator.
 	TEMP_SENSORS_VOLTAGE_REGULATOR TempSensors = 8
-	TEMP_SENSORS_END_MARKER        TempSensors = 2147483647
+	// Value marking end of ZES_TEMP_SENSORS_* ENUMs.
+	TEMP_SENSORS_FORCE_UINT32 TempSensors = 2147483647
 )
 
 // DeviceEccDefaultPropertiesExtVersion declared in:
@@ -738,9 +992,12 @@ type DeviceEccDefaultPropertiesExtVersion int32
 
 // DeviceEccDefaultPropertiesExtVersion enumeration from levelzero/zes_api.h:6454
 const (
-	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_1_0        DeviceEccDefaultPropertiesExtVersion = 65536
-	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_CURRENT    DeviceEccDefaultPropertiesExtVersion = 65536
-	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_END_MARKER DeviceEccDefaultPropertiesExtVersion = 2147483647
+	// version 1.0
+	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_1_0 DeviceEccDefaultPropertiesExtVersion = 65536
+	// latest known version
+	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_CURRENT DeviceEccDefaultPropertiesExtVersion = 65536
+	// Value marking end of ZES_DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_* ENUMs.
+	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_FORCE_UINT32 DeviceEccDefaultPropertiesExtVersion = 2147483647
 )
 
 // PowerLimitsExtVersion declared in:
@@ -751,9 +1008,12 @@ type PowerLimitsExtVersion int32
 
 // PowerLimitsExtVersion enumeration from levelzero/zes_api.h:6489
 const (
-	POWER_LIMITS_EXT_VERSION_1_0        PowerLimitsExtVersion = 65536
-	POWER_LIMITS_EXT_VERSION_CURRENT    PowerLimitsExtVersion = 65536
-	POWER_LIMITS_EXT_VERSION_END_MARKER PowerLimitsExtVersion = 2147483647
+	// version 1.0
+	POWER_LIMITS_EXT_VERSION_1_0 PowerLimitsExtVersion = 65536
+	// latest known version
+	POWER_LIMITS_EXT_VERSION_CURRENT PowerLimitsExtVersion = 65536
+	// Value marking end of ZES_POWER_LIMITS_EXT_VERSION_* ENUMs.
+	POWER_LIMITS_EXT_VERSION_FORCE_UINT32 PowerLimitsExtVersion = 2147483647
 )
 
 // EngineActivityExtVersion declared in:
@@ -764,7 +1024,10 @@ type EngineActivityExtVersion int32
 
 // EngineActivityExtVersion enumeration from levelzero/zes_api.h:6629
 const (
-	ENGINE_ACTIVITY_EXT_VERSION_1_0        EngineActivityExtVersion = 65536
-	ENGINE_ACTIVITY_EXT_VERSION_CURRENT    EngineActivityExtVersion = 65536
-	ENGINE_ACTIVITY_EXT_VERSION_END_MARKER EngineActivityExtVersion = 2147483647
+	// version 1.0
+	ENGINE_ACTIVITY_EXT_VERSION_1_0 EngineActivityExtVersion = 65536
+	// latest known version
+	ENGINE_ACTIVITY_EXT_VERSION_CURRENT EngineActivityExtVersion = 65536
+	// Value marking end of ZES_ENGINE_ACTIVITY_EXT_VERSION_* ENUMs.
+	ENGINE_ACTIVITY_EXT_VERSION_FORCE_UINT32 EngineActivityExtVersion = 2147483647
 )

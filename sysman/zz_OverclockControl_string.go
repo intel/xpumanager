@@ -20,10 +20,10 @@ func _() {
 	_ = x[OVERCLOCK_CONTROL_TEMP_LIMIT-512]
 	_ = x[OVERCLOCK_CONTROL_ITD_DISABLE-1024]
 	_ = x[OVERCLOCK_CONTROL_ACM_DISABLE-2048]
-	_ = x[OVERCLOCK_CONTROL_END_MARKER-2147483647]
+	_ = x[OVERCLOCK_CONTROL_FORCE_UINT32-2147483647]
 }
 
-const _OverclockControl_name = "VFFREQ_OFFSETVMAX_OFFSETFREQVOLT_LIMITPOWER_SUSTAINED_LIMITPOWER_BURST_LIMITPOWER_PEAK_LIMITICCMAX_LIMITTEMP_LIMITITD_DISABLEACM_DISABLEEND_MARKER"
+const _OverclockControl_name = "VFFREQ_OFFSETVMAX_OFFSETFREQVOLT_LIMITPOWER_SUSTAINED_LIMITPOWER_BURST_LIMITPOWER_PEAK_LIMITICCMAX_LIMITTEMP_LIMITITD_DISABLEACM_DISABLEFORCE_UINT32"
 
 var _OverclockControl_map = map[OverclockControl]string{
 	1:          _OverclockControl_name[0:2],
@@ -38,7 +38,7 @@ var _OverclockControl_map = map[OverclockControl]string{
 	512:        _OverclockControl_name[104:114],
 	1024:       _OverclockControl_name[114:125],
 	2048:       _OverclockControl_name[125:136],
-	2147483647: _OverclockControl_name[136:146],
+	2147483647: _OverclockControl_name[136:148],
 }
 
 func (i OverclockControl) String() string {

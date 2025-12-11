@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_1_0-65536]
 	_ = x[DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_CURRENT-65536]
-	_ = x[DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_END_MARKER-2147483647]
+	_ = x[DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_FORCE_UINT32-2147483647]
 }
 
 const (
 	_DeviceEccDefaultPropertiesExtVersion_name_0 = "1_0"
-	_DeviceEccDefaultPropertiesExtVersion_name_1 = "END_MARKER"
+	_DeviceEccDefaultPropertiesExtVersion_name_1 = "FORCE_UINT32"
 )
 
 func (i DeviceEccDefaultPropertiesExtVersion) String() string {

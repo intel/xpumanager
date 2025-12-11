@@ -11,12 +11,12 @@ func _() {
 	_ = x[RESET_TYPE_WARM-0]
 	_ = x[RESET_TYPE_COLD-1]
 	_ = x[RESET_TYPE_FLR-2]
-	_ = x[RESET_TYPE_END_MARKER-2147483647]
+	_ = x[RESET_TYPE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_ResetType_name_0 = "WARMCOLDFLR"
-	_ResetType_name_1 = "END_MARKER"
+	_ResetType_name_1 = "FORCE_UINT32"
 )
 
 var (

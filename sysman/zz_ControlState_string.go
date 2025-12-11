@@ -11,13 +11,13 @@ func _() {
 	_ = x[CONTROL_STATE_STATE_UNSET-0]
 	_ = x[CONTROL_STATE_STATE_ACTIVE-2]
 	_ = x[CONTROL_STATE_STATE_DISABLED-3]
-	_ = x[CONTROL_STATE_END_MARKER-2147483647]
+	_ = x[CONTROL_STATE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_ControlState_name_0 = "STATE_UNSET"
 	_ControlState_name_1 = "STATE_ACTIVESTATE_DISABLED"
-	_ControlState_name_2 = "END_MARKER"
+	_ControlState_name_2 = "FORCE_UINT32"
 )
 
 var (

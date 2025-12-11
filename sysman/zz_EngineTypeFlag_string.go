@@ -14,7 +14,7 @@ func _() {
 	_ = x[ENGINE_TYPE_FLAG_MEDIA-8]
 	_ = x[ENGINE_TYPE_FLAG_DMA-16]
 	_ = x[ENGINE_TYPE_FLAG_RENDER-32]
-	_ = x[ENGINE_TYPE_FLAG_END_MARKER-2147483647]
+	_ = x[ENGINE_TYPE_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
@@ -23,7 +23,7 @@ const (
 	_EngineTypeFlag_name_2 = "MEDIA"
 	_EngineTypeFlag_name_3 = "DMA"
 	_EngineTypeFlag_name_4 = "RENDER"
-	_EngineTypeFlag_name_5 = "END_MARKER"
+	_EngineTypeFlag_name_5 = "FORCE_UINT32"
 )
 
 var (

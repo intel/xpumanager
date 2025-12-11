@@ -38,3 +38,10 @@ types:
       
       {{ . }}
       {{- end -}}
+
+values:
+  - name: "*"
+    newComment: |-
+      {{- with doxygen . -}}
+      {{ . }}
+      {{- end -}}

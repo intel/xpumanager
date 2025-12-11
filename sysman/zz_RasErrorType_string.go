@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[RAS_ERROR_TYPE_CORRECTABLE-0]
 	_ = x[RAS_ERROR_TYPE_UNCORRECTABLE-1]
-	_ = x[RAS_ERROR_TYPE_END_MARKER-2147483647]
+	_ = x[RAS_ERROR_TYPE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_RasErrorType_name_0 = "CORRECTABLEUNCORRECTABLE"
-	_RasErrorType_name_1 = "END_MARKER"
+	_RasErrorType_name_1 = "FORCE_UINT32"
 )
 
 var (

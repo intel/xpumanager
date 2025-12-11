@@ -11,12 +11,12 @@ func _() {
 	_ = x[FAN_SPEED_MODE_DEFAULT-0]
 	_ = x[FAN_SPEED_MODE_FIXED-1]
 	_ = x[FAN_SPEED_MODE_TABLE-2]
-	_ = x[FAN_SPEED_MODE_END_MARKER-2147483647]
+	_ = x[FAN_SPEED_MODE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_FanSpeedMode_name_0 = "DEFAULTFIXEDTABLE"
-	_FanSpeedMode_name_1 = "END_MARKER"
+	_FanSpeedMode_name_1 = "FORCE_UINT32"
 )
 
 var (

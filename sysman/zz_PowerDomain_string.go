@@ -14,12 +14,12 @@ func _() {
 	_ = x[POWER_DOMAIN_STACK-3]
 	_ = x[POWER_DOMAIN_MEMORY-4]
 	_ = x[POWER_DOMAIN_GPU-5]
-	_ = x[POWER_DOMAIN_END_MARKER-2147483647]
+	_ = x[POWER_DOMAIN_FORCE_UINT32-2147483647]
 }
 
 const (
 	_PowerDomain_name_0 = "UNKNOWNCARDPACKAGESTACKMEMORYGPU"
-	_PowerDomain_name_1 = "END_MARKER"
+	_PowerDomain_name_1 = "FORCE_UINT32"
 )
 
 var (

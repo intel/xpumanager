@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[FABRIC_PORT_QUAL_ISSUE_FLAG_LINK_ERRORS-1]
 	_ = x[FABRIC_PORT_QUAL_ISSUE_FLAG_SPEED-2]
-	_ = x[FABRIC_PORT_QUAL_ISSUE_FLAG_END_MARKER-2147483647]
+	_ = x[FABRIC_PORT_QUAL_ISSUE_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
 	_FabricPortQualIssueFlag_name_0 = "LINK_ERRORSSPEED"
-	_FabricPortQualIssueFlag_name_1 = "END_MARKER"
+	_FabricPortQualIssueFlag_name_1 = "FORCE_UINT32"
 )
 
 var (

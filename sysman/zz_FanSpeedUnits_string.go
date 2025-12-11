@@ -10,12 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[FAN_SPEED_UNITS_RPM-0]
 	_ = x[FAN_SPEED_UNITS_PERCENT-1]
-	_ = x[FAN_SPEED_UNITS_END_MARKER-2147483647]
+	_ = x[FAN_SPEED_UNITS_FORCE_UINT32-2147483647]
 }
 
 const (
 	_FanSpeedUnits_name_0 = "RPMPERCENT"
-	_FanSpeedUnits_name_1 = "END_MARKER"
+	_FanSpeedUnits_name_1 = "FORCE_UINT32"
 )
 
 var (

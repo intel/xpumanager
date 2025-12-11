@@ -11,13 +11,13 @@ func _() {
 	_ = x[FABRIC_PORT_FAILURE_FLAG_FAILED-1]
 	_ = x[FABRIC_PORT_FAILURE_FLAG_TRAINING_TIMEOUT-2]
 	_ = x[FABRIC_PORT_FAILURE_FLAG_FLAPPING-4]
-	_ = x[FABRIC_PORT_FAILURE_FLAG_END_MARKER-2147483647]
+	_ = x[FABRIC_PORT_FAILURE_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
 	_FabricPortFailureFlag_name_0 = "FAILEDTRAINING_TIMEOUT"
 	_FabricPortFailureFlag_name_1 = "FLAPPING"
-	_FabricPortFailureFlag_name_2 = "END_MARKER"
+	_FabricPortFailureFlag_name_2 = "FORCE_UINT32"
 )
 
 var (

@@ -11,12 +11,12 @@ func _() {
 	_ = x[PCI_BAR_TYPE_MMIO-0]
 	_ = x[PCI_BAR_TYPE_ROM-1]
 	_ = x[PCI_BAR_TYPE_MEM-2]
-	_ = x[PCI_BAR_TYPE_END_MARKER-2147483647]
+	_ = x[PCI_BAR_TYPE_FORCE_UINT32-2147483647]
 }
 
 const (
 	_PciBarType_name_0 = "MMIOROMMEM"
-	_PciBarType_name_1 = "END_MARKER"
+	_PciBarType_name_1 = "FORCE_UINT32"
 )
 
 var (

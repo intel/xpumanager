@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[PCI_LINK_STAB_ISSUE_FLAG_RETRAINING-1]
-	_ = x[PCI_LINK_STAB_ISSUE_FLAG_END_MARKER-2147483647]
+	_ = x[PCI_LINK_STAB_ISSUE_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
 	_PciLinkStabIssueFlag_name_0 = "RETRAINING"
-	_PciLinkStabIssueFlag_name_1 = "END_MARKER"
+	_PciLinkStabIssueFlag_name_1 = "FORCE_UINT32"
 )
 
 func (i PciLinkStabIssueFlag) String() string {
