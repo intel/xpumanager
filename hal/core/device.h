@@ -99,6 +99,7 @@ private:
 	uint32_t deviceCount;
 	devProps deviceProperties;
 	bool igpu;
+	bool survMode;
 	int amc;
 	char drmDevPath[MAX_PATH];
 
@@ -152,12 +153,14 @@ public:
 	int getAmcIndex() const { return amc; }
 	std::string getDrmDevPath() const { return std::string(drmDevPath); }
 	bool isBDF(const char *bdf);
+	void setSurvivabilityMode(bool mode) { survMode = mode; }
+	bool isInSurvMode() { return survMode; }
 	void addInfo(std::vector<devInfo> *devList, uint32_t devIndex);
 
 	ze_result_t init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_device_handle_t zeHdl,
 					 zes_device_handle_t *totalZesDevices, uint32_t totalZesDeviceCount);
-
 	metric *getMetric() { return &metricInstance; }
+	ze_result_t smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t zesDev);
 	ze_result_t run();
 	ze_context_handle_t getContext() const { return context; }
 	ze_device_handle_t getDeviceHandle() const { return zeDevice; }

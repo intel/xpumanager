@@ -99,6 +99,7 @@ std::string getDisplayName(const std::string &key)
 		{"pci_bdf_address", "PCI BDF Address"},
 		{"drm_device_path", "DRM Device"},
 		{"function_type", "Function Type"},
+		{"survivability_mode", "Survivability mode"},
 		// clang-format on
 	};
 
@@ -207,6 +208,7 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 
 	(*jsonObj)["function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
 
+	(*jsonObj)["survivability_mode"] = device->dev->isInSurvMode() ? "True" : "False";
 	return jsonObj;
 }
 

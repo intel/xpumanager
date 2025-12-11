@@ -60,7 +60,7 @@ private:
 																	zes_device_action_t *pPendingAction);
 
 public:
-	pci() : deviceProperties{} { deviceProperties.fwStatus = "unknown"; }
+	pci() : deviceProperties{}, downgradeState{} { deviceProperties.fwStatus = "unknown"; }
 	~pci() {}
 	ze_result_t init(zes_device_handle_t device);
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);

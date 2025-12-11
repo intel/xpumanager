@@ -24,6 +24,7 @@
 #include "driver.h"
 #include <loader/ze_loader.h>
 #include <vector>
+#include <set>
 
 /**
  * @brief Sets the print/debug level for the driver and synchronizes across modules
@@ -132,7 +133,7 @@ ze_result_t driver::zesInitialize()
 
 	// Discover the number of zes driver instances
 	result = zesDriverGet(&zesDriverCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || driverCount == 0) {
+	if (result != ZE_RESULT_SUCCESS || zesDriverCount == 0) {
 		ERR("Failed to get driver count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -203,94 +204,122 @@ ze_result_t driver::init()
 	// Set ZE_ENABLE_PCI_ID_DEVICE_ORDER to ensure consistent device ordering
 	SETENV("ZE_ENABLE_PCI_ID_DEVICE_ORDER", "1");
 
-	ze_result_t result = zeInitialize();
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
+	ze_result_t result;
+	// Temporary container to store zes devices which are not in survivability mode.
+	std::set<std::string> devBdfs{};
 
 	result = zesInitialize();
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	devs = new devGroup[driverCount];
-	memset(devs, 0, sizeof(devGroup) * driverCount);
+	// In survivability mode, zeInit might fail. However, we should not exit early
+	// because zesInit may still succeed, and the handle is needed for survivability features like
+	// upgrading the firmware of the device.
+	result = zeInitialize();
+	if (result == ZE_RESULT_SUCCESS) {
+		devs = new devGroup[driverCount];
+		memset(devs, 0, sizeof(devGroup) * driverCount);
 
-	for (uint32_t i = 0; i < driverCount; i++) {
-		ze_api_version_t apiVersion = {};
-		result = zeDriverGetApiVersion(zeDrivers[i], &apiVersion);
-		if (result == ZE_RESULT_SUCCESS) {
+		for (uint32_t i = 0; i < driverCount; i++) {
+			ze_api_version_t apiVersion = {};
+			result = zeDriverGetApiVersion(zeDrivers[i], &apiVersion);
+			if (result == ZE_RESULT_SUCCESS) {
 #define PRINT_API_VERSION(i, x)                                                                                        \
 	case x:                                                                                                            \
 		DBG("Driver %u API Version: %s\n", i, #x);                                                                     \
 		break;
 
-			switch (apiVersion) {
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_0);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_1);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_2);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_3);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_4);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_5);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_6);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_7);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_8);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_9);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_10);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_11);
-				PRINT_API_VERSION(i, ZE_API_VERSION_1_12);
-			default:
-				DBG("Unknown version\n");
-				break;
-			}
-		} else {
-			ERR("Failed to get API version for driver %u. Error code: %d\n", i, result);
-			delete[] devs;
-			return result;
-		}
-
-		DBG("\n==============================================\n");
-
-		// Get zeDevices associated with the driver
-		result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, nullptr);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
-			return result;
-		}
-
-		// Allocate memory for zeDevices
-		devs[i].zeDevices = new ze_device_handle_t[devs[i].totalDevicesCount];
-		if (devs[i].zeDevices == nullptr) {
-			ERR("Failed to allocate memory for ze device handles.\n");
-			return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-		}
-
-		// Allocate memory for each dev within the group
-		devs[i].dev = new device[devs[i].totalDevicesCount];
-		if (devs[i].dev == nullptr) {
-			ERR("Failed to allocate memory for device.\n");
-			return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-		}
-
-		// Retrieve zeDevices for the driver
-		result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, devs[i].zeDevices);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
-			return result;
-		}
-
-		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
-			DBG("Driver %u Device %u: %p\n", i, j, (void *)devs[i].zeDevices[j]);
-
-			// Initialize each device in the group
-			result = devs[i].dev[j].init(zeDrivers[i], zesDrivers[0], devs[i].zeDevices[j], totalZesDevices,
-										 +totalZesDevicesCount);
-			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
+				switch (apiVersion) {
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_0);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_1);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_2);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_3);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_4);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_5);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_6);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_7);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_8);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_9);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_10);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_11);
+					PRINT_API_VERSION(i, ZE_API_VERSION_1_12);
+				default:
+					DBG("Unknown version\n");
+					break;
+				}
+			} else {
+				ERR("Failed to get API version for driver %u. Error code: %d\n", i, result);
+				delete[] devs;
 				return result;
+			}
+
+			DBG("\n==============================================\n");
+
+			// Get zeDevices associated with the driver
+			result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, nullptr);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+				return result;
+			}
+
+			// Allocate memory for zeDevices
+			devs[i].zeDevices = new ze_device_handle_t[devs[i].totalDevicesCount];
+			if (devs[i].zeDevices == nullptr) {
+				ERR("Failed to allocate memory for ze device handles.\n");
+				return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+			}
+
+			// Allocate memory for each dev within the group
+			devs[i].dev = new device[devs[i].totalDevicesCount];
+			if (devs[i].dev == nullptr) {
+				ERR("Failed to allocate memory for device.\n");
+				return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+			}
+
+			// Retrieve zeDevices for the driver
+			result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, devs[i].zeDevices);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+				return result;
+			}
+
+			for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
+				DBG("Driver %u Device %u: %p\n", i, j, (void *)devs[i].zeDevices[j]);
+
+				// Initialize each device in the group
+				result = devs[i].dev[j].init(zeDrivers[i], zesDrivers[0], devs[i].zeDevices[j], totalZesDevices,
+											 +totalZesDevicesCount);
+				devBdfs.insert(devs[i].dev[j].getBDFStr());
+				if (result != ZE_RESULT_SUCCESS) {
+					ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
+					return result;
+				}
 			}
 		}
 	}
+
+	// Find zes devices which are in survivability mode.
+	if (devBdfs.size() < totalZesDevicesCount) {
+		svZesDevs.zesDriver = zesDrivers[0];
+		uint32_t survDevCount = static_cast<uint32_t>(totalZesDevicesCount - devBdfs.size());
+		svZesDevs.survDevices = new device[survDevCount];
+		svZesDevs.survDevCount = survDevCount;
+		uint32_t devIndex = 0;
+		for (uint32_t k = 0; k < totalZesDevicesCount; k++) {
+			zes_pci_properties_t pciProps{};
+			result = zesDevicePciGetProperties(totalZesDevices[k], &pciProps);
+			char bdfStr[BDF_STR_LEN];
+			snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus,
+					 pciProps.address.device, pciProps.address.function);
+			if (!devBdfs.contains(bdfStr) && (devIndex < survDevCount)) {
+				svZesDevs.survDevices[devIndex].smDevInit(zesDrivers[0], totalZesDevices[k]);
+				svZesDevs.survDevices[devIndex].setSurvivabilityMode(true);
+				devIndex++;
+			}
+		}
+	}
+
 	initialized = true;
 	return ZE_RESULT_SUCCESS;
 }
@@ -325,6 +354,13 @@ driver::~driver()
 	if (totalZesDevices != nullptr) {
 		delete[] totalZesDevices;
 		totalZesDevices = nullptr;
+	}
+
+	// Clean up survivability devices
+	if (svZesDevs.survDevices != nullptr) {
+		delete[] svZesDevs.survDevices;
+		svZesDevs.survDevices = nullptr;
+		svZesDevs.survDevCount = 0;
 	}
 }
 
@@ -512,34 +548,47 @@ ze_result_t driver::getLogs(UNUSED std::string fileName)
 ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 {
 	uint32_t deviceIndex = 0;
+	auto processDevice = [&](device &dev) -> ze_result_t {
+		if (!bdf || !strlen(bdf)) {
+			// If no BDF is provided, add all devices to the list
+			DBG("No BDF provided, adding all devices.\n");
+			dev.addInfo(devList, deviceIndex);
+		} else {
+			if (dev.isBDF(bdf)) {
+				dev.addInfo(devList, deviceIndex);
+				return ZE_RESULT_SUCCESS;
+			} else if (bdf && strlen(bdf) == 1) {
+				// Maybe the user provided a device index instead of BDF
+				// Check if the index is a digit
+				if (!isdigit(bdf[0])) {
+					ERR("Invalid device index: %s\n", bdf);
+					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+				}
+				uint32_t userIndex = bdf[0] - '0';
+				if (userIndex == deviceIndex) {
+					DBG("Found device with index: %d\n", userIndex);
+					dev.addInfo(devList, deviceIndex);
+					return ZE_RESULT_SUCCESS;
+				}
+			}
+		}
+		deviceIndex++;
+		return ZE_RESULT_NOT_READY;
+	};
 
 	for (uint32_t i = 0; i < driverCount; i++) {
 		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
-			if (!bdf || !strlen(bdf)) {
-				// If no BDF is provided, add all devices to the list
-				DBG("No BDF provided, adding all devices.\n");
-				devs[i].dev[j].addInfo(devList, deviceIndex);
-			} else {
-				if (devs[i].dev[j].isBDF(bdf)) {
-					devs[i].dev[j].addInfo(devList, deviceIndex);
-					return ZE_RESULT_SUCCESS;
-				} else if (bdf && strlen(bdf) == 1) {
-					// Maybe the user provided a device index instead of BDF
-					// Check if the index is a digit
-					if (!isdigit(bdf[0])) {
-						ERR("Invalid device index: %s\n", bdf);
-						return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-					}
-					uint32_t userIndex = bdf[0] - '0';
-					if (userIndex == deviceIndex) {
-						DBG("Found device with index: %d\n", userIndex);
-						devs[i].dev[j].addInfo(devList, deviceIndex);
-						return ZE_RESULT_SUCCESS;
-					}
-				}
-			}
-			deviceIndex++;
+			ze_result_t res = processDevice(devs[i].dev[j]);
+			if (res != ZE_RESULT_NOT_READY)
+				return res;
 		}
+	}
+
+	// If there are any survivability devices add them to the device list
+	for (uint32_t k = 0; k < svZesDevs.survDevCount; k++) {
+		ze_result_t res = processDevice(svZesDevs.survDevices[k]);
+		if (res != ZE_RESULT_NOT_READY)
+			return res;
 	}
 	return ZE_RESULT_SUCCESS;
 }
