@@ -41,8 +41,8 @@
  * and creates an instance of the firmware class.
  */
 device::device()
-	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), igpu(false), amc(0),
-	  drmDevPath(""), firmwareInstance(new firmware())
+	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), deviceProperties{}, igpu(false),
+	  survMode(false), amc(0), drmDevPath(""), firmwareInstance(new firmware())
 {}
 
 /**
@@ -90,6 +90,14 @@ device::~device()
 ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *zeDevProp)
 {
 	TRACING();
+	if (dev == nullptr) {
+		if (isInSurvMode()) {
+			DBG("  - Device in survivability mode: %s\n", getBDFStr().c_str());
+			return ZE_RESULT_ERROR_SURVIVABILITY_MODE_DETECTED;
+		}
+		DBG(" - Device is not initialized\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
 	if (zeDevProp == nullptr) {
 		ERR("Invalid device properties pointer\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -696,7 +704,6 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 	bool found;
 	std::string drmPath;
 	zeDriver = zeD;
-	zesDriver = zesD;
 	zeDevice = zeHdl;
 
 	// Create a context
@@ -736,7 +743,10 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 		// Compare the UUIDs of the devices
 		if (memcmp(tempProperties.core.uuid.id, deviceProperties.zeDeviceProperties.uuid.id, ZE_MAX_DEVICE_UUID_SIZE) ==
 			0) {
-			zesDevice = totalZesDevices[j];
+			result = smDevInit(zesD, totalZesDevices[j]);
+			if (result != ZE_RESULT_SUCCESS) {
+				return result;
+			}
 			found = true;
 			break;
 		}
@@ -746,6 +756,25 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 		ERR("Failed to match zesDevice with zeDevice\n");
 		return ZE_RESULT_ERROR_INVALID_ENUMERATION;
 	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Initializes the device object with sysman device and driver handles.
+ *
+ * This function initializes the device object with sysman handles.
+ *
+ * @param zesDri zesDriver handle for the device.
+ * @param zesDev  zesDevice handle for the device.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t zesDev)
+{
+	TRACING();
+	std::string drmPath;
+	zesDriver = zesDri;
+	zesDevice = zesDev;
 
 	/*
 	 * For whichever inherited classes of sysman that support the init function,
@@ -763,7 +792,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 	}
 
 	// Initialize power module with parent device context for tile support
-	result = powerInstance.init(zesDevice, this);
+	ze_result_t result = powerInstance.init(zesDevice, this);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to initialize power module with device context.\n");
 		// Don't fail initialization, continue with other modules

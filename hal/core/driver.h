@@ -26,6 +26,13 @@
 
 #include "device.h"
 
+struct survivabilityDevices
+{
+	zes_driver_handle_t zesDriver;
+	uint32_t survDevCount;
+	device *survDevices;
+};
+
 struct devGroup
 {
 	uint32_t totalDevicesCount;
@@ -43,11 +50,12 @@ private:
 	zes_driver_handle_t *zesDrivers;
 	zes_device_handle_t *totalZesDevices;
 	devGroup *devs;
+	survivabilityDevices svZesDevs;
 
 public:
 	driver()
 		: initialized(false), driverCount(0), totalZesDevicesCount(0), zeDrivers(nullptr), zesDrivers(nullptr),
-		  totalZesDevices(nullptr), devs(nullptr)
+		  totalZesDevices(nullptr), devs(nullptr), svZesDevs{}
 	{}
 	~driver();
 	void setPrintLvl(int lvl);
