@@ -1,0 +1,6 @@
+# pkg-config file for linting
+Name: Level Zero
+Description: Level Zero
+URL: https://github.com/oneapi-src/level-zero
+Version: 1.26.0
+CFlags: -I${pcfiledir}/../levelzero
