@@ -112,6 +112,8 @@ struct option
 #define VMXSUPPORT() 0
 #define IOMMUSUPPORT() 0
 #define SRIOVSUPPORT(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
+#define CHECKHOSTMEMORYSIZE(hostMemorySize) (UNUSED_VAR(hostMemorySize), 0)
+#define GETDOWNGRADEDPCIEINFO(bdfStr) (UNUSED_VAR(bdfStr), false)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;

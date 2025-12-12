@@ -7,6 +7,7 @@
  */
 
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <fcntl.h>
@@ -49,6 +50,24 @@ bool countDevEntry(const std::string &entryName)
 	return std::all_of(entryName.begin() + prefix.size(), entryName.end(), [](char ch) { return std::isdigit(ch); });
 }
 
+/**
+ * @brief Check host memory size
+ *
+ * This function determines if can read the sysinfo and get the host memory size
+ *
+ * @param[in, out] hostMemorySize Pointer to an uint64_t variable
+ * @return true if can read sysinfo successfully, false otherwise
+ */
+bool checkHostMemorySize(uint64_t *hostMemorySize)
+{
+	struct sysinfo info;
+	if (sysinfo(&info) == 0) {
+		*hostMemorySize = (uint64_t)info.totalram * info.mem_unit;
+		return true;
+	} else {
+		return false;
+	}
+}
 /**
  * @brief check Permission
  *
@@ -264,6 +283,103 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 	finalResult = "Success to pass the media transcode checking in ";
 	finalResult += (functionalCheck) ? "functionalCheck" : "non-functionalCheck";
 	return true;
+}
+
+/* @brief check if path exist
+ *
+ * This function check if path exist.
+ * @param[in] s indicates a file path string
+ * @return true if the path exist, false otherwise
+ */
+bool isPathExist(const std::string &s)
+{
+	struct stat buffer;
+	return (stat(s.c_str(), &buffer) == 0);
+}
+/* @brief get one line of a file content
+ *
+ * This function get one line of a file content.
+ * @param[in] filePath indicates a file path string
+ * @param[in] fileName indicates a file name string
+ * @return one line of a file content if the process successfully, null otherwise
+ */
+std::string getOneLineFileContent(std::string filePath, std::string fileName)
+{
+	std::string line;
+	std::ifstream file(filePath + "/" + fileName);
+	if (file.is_open()) {
+		getline(file, line);
+		file.close();
+	}
+	return line;
+}
+
+/* @brief get Downgraded PCIe info
+ *
+ * This function get Downgraded PCIe info for a specific device based on device bdf.
+ * @param[in] bdfStr indicates a specific device bdf string
+ * @return std::string if the process successfully, null otherwise
+ */
+std::string getDowngradedPCIeInfo(std::string &bdfStr)
+{
+	std::string ret;
+	char linkPath[PATH_MAX];
+	DIR *pdir = NULL;
+	struct dirent *pdirent = NULL;
+	int len = 0;
+	std::string cardFullPath = "";
+
+	pdir = opendir("/sys/class/drm");
+	if (pdir == NULL) {
+		return ret;
+	}
+
+	while ((pdirent = readdir(pdir)) != NULL) {
+		if (pdirent->d_name[0] == '.') {
+			continue;
+		}
+		if (strncmp(pdirent->d_name, "card", 4) != 0) {
+			continue;
+		}
+		if (strstr(pdirent->d_name, "-") != NULL) {
+			continue;
+		}
+		len = snprintf(linkPath, PATH_MAX, "/sys/class/drm/%s", pdirent->d_name);
+		if (len <= 0 || len >= PATH_MAX) {
+			break;
+		}
+		char fullPath[PATH_MAX];
+		ssize_t fullLen = ::readlink(linkPath, fullPath, sizeof(fullPath));
+		if (fullLen < 0) {
+			fullLen = 0;
+		}
+		if (fullLen >= PATH_MAX) {
+			fullLen = PATH_MAX - 1;
+		}
+		fullPath[fullLen] = '\0';
+
+		if (strstr(fullPath, bdfStr.c_str()) != NULL) {
+			cardFullPath = "/sys/class/drm/" + std::string(fullPath);
+			break;
+		}
+	}
+	closedir(pdir);
+	std::string cs = "current_link_speed", cw = "current_link_width", ms = "max_link_speed", mw = "max_link_width";
+	while (cardFullPath != "/sys/class/drm") {
+		if (isPathExist(cardFullPath + "/" + cs) && isPathExist(cardFullPath + "/" + cw) &&
+			isPathExist(cardFullPath + "/" + ms) && isPathExist(cardFullPath + "/" + mw)) {
+			std::string currentBridge = cardFullPath.substr(cardFullPath.find_last_of('/') + 1);
+			if (getOneLineFileContent(cardFullPath, cw) != getOneLineFileContent(cardFullPath, mw)) {
+				ret = "Width on " + currentBridge + " downgraded to x" + getOneLineFileContent(cardFullPath, cw) + ".";
+			}
+		}
+
+		while (cardFullPath.back() != '/')
+			cardFullPath.pop_back();
+		cardFullPath.pop_back();
+	}
+
+	return ret;
 }
 
 /**

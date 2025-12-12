@@ -43,8 +43,15 @@ public:
 	ze_result_t computationTest(devInfo *d, std::size_t flops_per_work_item, void *srcPtr, size_t srcSize,
 								const std::string &fileName, const std::string &moduleName, long double &out_gflops,
 								bool functionalCheck);
+	ze_result_t dispatchKernelsForMemoryTest(devInfo *d, ze_module_handle_t module,
+											 std::vector<uint8_t *> srcAllocations,
+											 std::vector<uint8_t *> dstAllocations,
+											 std::vector<std::vector<uint8_t>> &dataOut,
+											 const std::vector<std::string> &testKernelNames, uint64_t numberOfDispatch,
+											 uint64_t oneCaseAllocationCount, ze_context_handle_t context);
 	ze_result_t calculatePowerConsumption(devInfo *d, int &totalPowerValue);
 	ze_result_t pcieBandwidthTest(devInfo *d, long double &totalBandwidth, long double &totalLatency);
+	ze_result_t peformanceMemoryAllocation(devInfo *d);
 	int getTests(zes_diag_handle_t testSuite);
 
 	ze_result_t kernelCreate(ze_module_handle_t hModule, std::string name, ze_kernel_handle_t *hKernel);
@@ -57,6 +64,8 @@ public:
 	ze_result_t memoryAlloc(const ze_context_handle_t context, ze_device_handle_t ze_device, size_t size,
 							size_t alignment, void **ptr);
 	ze_result_t memoryAllocHost(const ze_context_handle_t context, size_t size, size_t alignment, void **ptr);
+	ze_result_t memoryAllocShared(const ze_context_handle_t &context, ze_device_handle_t ze_device, size_t size,
+								  size_t alignment, void **ptr);
 	ze_result_t memoryFree(const ze_context_handle_t &context, const void *ptr);
 	void commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_kernel_handle_t hKernel,
 									   const ze_group_count_t *pLaunchFuncArgs);
