@@ -428,6 +428,42 @@ ze_result_t diagnostic::memoryAllocHost(const ze_context_handle_t contextHandle,
 }
 
 /**
+ * @brief Allocates shared memory for GPU operations
+ *
+ * This function allocates shared memory on the GPU device for diagnostic operations,
+ * configuring memory allocation parameters and handling both device and host specific
+ * shared memory requirements for compute kernels and data buffers.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] zeDevice Device handle for the target GPU device
+ * @param[in] size Size of memory to allocate in bytes
+ * @param[in] alignment Memory alignment requirement in bytes
+ * @param[out] ptr Pointer to receive the allocated memory address
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful allocation, error code otherwise
+ */
+ze_result_t diagnostic::memoryAllocShared(const ze_context_handle_t &context, ze_device_handle_t zeDevice, size_t size,
+										  size_t alignment, void **ptr)
+{
+	ze_device_mem_alloc_desc_t deviceDescOutput = {};
+	deviceDescOutput.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+	deviceDescOutput.ordinal = 0;
+	deviceDescOutput.flags = 0;
+	deviceDescOutput.pNext = nullptr;
+
+	ze_host_mem_alloc_desc_t hostDescOutput = {};
+	hostDescOutput.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
+	hostDescOutput.flags = 0;
+	hostDescOutput.pNext = nullptr;
+	ze_result_t ret;
+
+	ret = zeMemAllocShared(context, &deviceDescOutput, &hostDescOutput, size, alignment, zeDevice, ptr);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+	}
+	return ret;
+}
+
+/**
  * @brief Creates a Level Zero command list for GPU operations
  *
  * This function creates a command list that will contain GPU commands for
@@ -978,6 +1014,288 @@ ze_result_t diagnostic::pcieBandwidthTest(devInfo *d, long double &totalBandwidt
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Performs a memory test on a device to evaluate memory allocation related features based on the number Of
+ * dispatch This function. It loads and executes a shader program (.spv file) that performs intensive integer
+ * calculations based on each dispatch, then test memory allocation related features.
+ *
+ * The test for each dispatch:
+ * 1. Create the kernel module, group size and arguments
+ * 2. Sets up command lists and queues
+ * 3. Creates necessary memory allocations and fills the values and copy the memory
+ * 4. Executes command lists and queues
+ * 5. Cleans up resources
+ *
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @param[in] module, a specific ze module handle
+ * @param[in] srcAllocations pointer to a source uint8_t vector
+ * @param[in] dstAllocations pointer to a destination uint8_t vector
+ * @param[in] dataOut reference to a data out uint8_t vector
+ * @param[in] testKernelNames, reference to a related kernel module name
+ * @param[in] numberOfDispatch, a uint64_t total dispatch number
+ * @param[in] allocationCount, a uint64_t one Case allocation count
+ * @param[in] context, a device application context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
+ */
+ze_result_t diagnostic::dispatchKernelsForMemoryTest(
+	devInfo *d, ze_module_handle_t module, std::vector<uint8_t *> srcAllocations, std::vector<uint8_t *> dstAllocations,
+	std::vector<std::vector<uint8_t>> &dataOut, const std::vector<std::string> &testKernelNames,
+	uint64_t numberOfDispatch, uint64_t allocationCount, ze_context_handle_t context)
+{
+	ze_result_t ret;
+	std::vector<ze_kernel_handle_t> testFunctions;
+	uint32_t workgroupSizeX = 8;
+	uint8_t initValue2 = 0xAA; // 1010 1010
+	uint8_t initValue3 = 0x55; // 0101 0101
+
+	ze_command_list_handle_t commandList = nullptr;
+	ret = commandListCreate(context, d->deviceHdl, 0, &commandList, 0);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to create command list : %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+	for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
+		uint8_t *srcAllocation = srcAllocations[dispatchId];
+		uint8_t *dstAllocation = dstAllocations[dispatchId];
+
+		ze_kernel_handle_t testFunction = nullptr;
+		kernelCreate(module, testKernelNames[dispatchId], &testFunction);
+		ret = zeKernelSetGroupSize(testFunction, workgroupSizeX, 1, 1);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to set kernel group size: %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+		ret = zeKernelSetArgumentValue(testFunction, 0, sizeof(srcAllocation), &srcAllocation);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to set kernel argument value : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+		ret = zeKernelSetArgumentValue(testFunction, 1, sizeof(dstAllocation), &dstAllocation);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to set kernel argument value : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+		uint32_t groupCountX = static_cast<uint32_t>(allocationCount / workgroupSizeX);
+		ze_group_count_t threadGroupDimensions = {groupCountX, 1, 1};
+
+		ret = zeCommandListAppendMemoryFill(commandList, srcAllocation, &initValue2, sizeof(uint8_t),
+											allocationCount * sizeof(uint8_t), nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to fill command list append memory : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to append command list barrier: %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		ret = zeCommandListAppendMemoryFill(commandList, dstAllocation, &initValue3, sizeof(uint8_t),
+											allocationCount * sizeof(uint8_t), nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to fill command list append memory : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to append command list barrier : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		commandListAppendLaunchKernel(commandList, testFunction, &threadGroupDimensions);
+		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to append command list barrier: %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		ret = zeCommandListAppendMemoryCopy(commandList, dataOut[dispatchId].data(), dstAllocation,
+											dataOut[dispatchId].size() * sizeof(uint8_t), nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to copy command list append memory : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to append command list barrier : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		testFunctions.push_back(testFunction);
+	}
+	ret = zeCommandListClose(commandList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to close command list : %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+
+	ze_command_queue_handle_t commandQueue;
+	ret = commandQueueCreate(context, d->deviceHdl, 0, 0, &commandQueue, ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to create command queue : %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+
+	commandQueueExecuteCommandLists(commandQueue, commandList);
+	commandQueueSynchronize(commandQueue);
+	ret = zeCommandQueueDestroy(commandQueue);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to destroy command queue  : %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+
+	ret = zeCommandListDestroy(commandList);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to destroy command list : %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+
+	for (uint64_t dispatchId = 0; dispatchId < testFunctions.size(); dispatchId++) {
+		ret = zeKernelDestroy(testFunctions[dispatchId]);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to run kernel destroy : %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief performance memory allocation
+ *
+ * This function performance memory allocation test on the specified device using Level Zero APIs.
+ *
+ * The test:
+ * 1. Retrieves target test memory size from device maxMemAllocSize and real host memory size.
+ * 2. based on each memory usage, allocation sizes, and memory Types, calculate the requested allocation size and number
+ * Of dispatch based on max allocation size
+ * 3. allocate the memory for each dispatch's memory Input, memory output and setup the test Kernel name and module.
+ * 4. run the memory test for all the dispatch and settings by using spv file.
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
+ */
+ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
+{
+	ze_result_t ret;
+	uint64_t oneMB = 1024UL * 1024UL;
+	uint64_t oneGB = 1UL * 1024UL * 1024UL * 1024UL;
+	uint32_t numberOfKernelArgs = 2;
+	uint32_t numberOfKernelsInModule = 10;
+
+	std::vector<float> memoryUseLevels = {0.1f, 0.5f, 0.9f, 1.0f};
+	std::vector<uint64_t> allocateSizes = {oneMB, oneGB};
+	std::vector<std::string> memoryTypes = {"DEVICE", "SHARED"};
+	ze_device_properties_t zeDevProp = {};
+	ze_context_handle_t context = d->dev->getContext();
+
+	for (auto &memoryUse : memoryUseLevels)
+		for (auto &allocateSize : allocateSizes)
+			for (auto &memoryType : memoryTypes) {
+				ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+				if (ret != ZE_RESULT_SUCCESS) {
+					ERR("Failed to get device properties : %s\n", l0_error_to_string(ret));
+					return ret;
+				}
+				uint64_t targetTestMemorySize = zeDevProp.maxMemAllocSize;
+				uint64_t hostMemorySize;
+
+				if (CHECKHOSTMEMORYSIZE(&hostMemorySize)) {
+					if (targetTestMemorySize > hostMemorySize) {
+						targetTestMemorySize = hostMemorySize;
+					}
+				}
+				uint64_t maxAllocationSize =
+					static_cast<uint64_t>(static_cast<float>(targetTestMemorySize) * memoryUse);
+				uint64_t oneCaseRequestedAllocationSize = allocateSize * numberOfKernelArgs;
+
+				if (oneCaseRequestedAllocationSize > maxAllocationSize) {
+					oneCaseRequestedAllocationSize = maxAllocationSize;
+				}
+				std::size_t allocationCount = oneCaseRequestedAllocationSize / (numberOfKernelArgs * sizeof(uint8_t));
+				std::uint64_t numberOfDispatch = maxAllocationSize / oneCaseRequestedAllocationSize;
+				std::vector<uint8_t *> inputAllocations;
+				std::vector<uint8_t *> outputAllocations;
+				std::vector<std::vector<uint8_t>> dataOutVector;
+				std::vector<std::string> testKernelNames;
+
+				for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
+					uint8_t *inputAllocation;
+					uint8_t *outputAllocation;
+					if (memoryType == "HOST") {
+						void *memoryInput = nullptr;
+						memoryAllocHost(context, allocationCount, 8, &memoryInput);
+						inputAllocation = (uint8_t *)memoryInput;
+						void *memoryOutput = nullptr;
+						memoryAllocHost(context, allocationCount, 8, &memoryOutput);
+						outputAllocation = (uint8_t *)memoryOutput;
+
+					} else if (memoryType == "DEVICE") {
+						void *memoryInput = nullptr;
+						memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryInput);
+						inputAllocation = (uint8_t *)memoryInput;
+						void *memoryOutput = nullptr;
+						memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
+						outputAllocation = (uint8_t *)memoryOutput;
+					} else {
+						void *memoryInput = nullptr;
+						memoryAllocShared(context, d->deviceHdl, allocationCount, 8, &memoryInput);
+						inputAllocation = (uint8_t *)memoryInput;
+
+						void *memoryOutput = nullptr;
+						memoryAllocShared(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
+						outputAllocation = (uint8_t *)memoryOutput;
+					}
+					inputAllocations.push_back(inputAllocation);
+					outputAllocations.push_back(outputAllocation);
+					std::vector<uint8_t> dataOut(allocationCount, 0);
+					dataOutVector.push_back(dataOut);
+					std::string kernelName;
+					kernelName = "test_device_memory" + std::to_string((dispatchId % numberOfKernelsInModule) + 1);
+					testKernelNames.push_back(kernelName);
+				}
+
+				std::vector<uint8_t> binaryFile;
+				ret = loadBinaryFile("test_multiple_memory_allocations.spv", &binaryFile);
+				ze_module_handle_t moduleHandle = nullptr;
+				ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
+				if (ret != ZE_RESULT_SUCCESS) {
+					ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
+					for (auto eachAllocation : inputAllocations) {
+						memoryFree(context, eachAllocation);
+					}
+					for (auto eachAllocation : outputAllocations) {
+						memoryFree(context, eachAllocation);
+					}
+					moduleDestroy(moduleHandle);
+					return ret;
+				}
+
+				ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
+												   testKernelNames, numberOfDispatch, allocationCount, context);
+				if (ret != ZE_RESULT_SUCCESS) {
+					ERR("Failed to run dispatch kernels for memory test : %s\n", l0_error_to_string(ret));
+					for (auto eachAllocation : inputAllocations) {
+						memoryFree(context, eachAllocation);
+					}
+					for (auto eachAllocation : outputAllocations) {
+						memoryFree(context, eachAllocation);
+					}
+					moduleDestroy(moduleHandle);
+					return ret;
+				}
+				for (auto eachAllocation : inputAllocations) {
+					memoryFree(context, eachAllocation);
+				}
+				for (auto eachAllocation : outputAllocations) {
+					memoryFree(context, eachAllocation);
+				}
+				moduleDestroy(moduleHandle);
+			}
+	return ZE_RESULT_SUCCESS;
+}
 /**
  * @brief Gets available tests within a diagnostic test suite
  *

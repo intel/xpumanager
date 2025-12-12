@@ -39,6 +39,7 @@
 #include <performance.h>
 #include <standby.h>
 #include <stdexcept>
+#include <inttypes.h>
 /*
  * @brief Command structure for diagnostic commands.
  * The way that this structure is defined allows for easy addition of new commands
@@ -332,9 +333,53 @@ ze_result_t cmdDiag::precheck(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if stress tests pass, error code otherwise
  */
-ze_result_t cmdDiag::stress(UNUSED devInfo *d)
+ze_result_t cmdDiag::stress(devInfo *d)
 {
 	TRACING();
+	ze_result_t res;
+	const std::string filename = "ze_int_compute.spv";
+	const std::string moduleName = "compute_int_v1";
+	int inputValue = 4;
+	long double current;
+	uint64_t round = 0;
+	bool featureOnly;
+	std::string outputLine;
+
+	if (diagCmds[diagCmdType::STRESSTIME].enabled) {
+		if (stoi(diagCmds[diagCmdType::STRESSTIME].val) < 0) {
+			ERR("Stress time should be greater than or equal to 0.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	PRINT("Started to stress GPU and would update the status in every minute \n");
+	featureOnly = false;
+	outputLine = std::to_string(d->index);
+	while (true) {
+		std::this_thread::sleep_for(std::chrono::seconds(60));
+		round++;
+		res = diag->computationTest(d, 2048, &inputValue, sizeof(int), filename, moduleName, current, featureOnly);
+		if (res != ZE_RESULT_SUCCESS) {
+			ERR("Failed to run stress: %s\n", l0_error_to_string(res));
+			return res;
+		} else {
+			PRINT("Stress on GPU: %s; Round %" PRIu64 "; Integer compute: %Lf GIOPS.\n", outputLine.c_str(), round,
+				  current);
+			if (diagCmds[diagCmdType::STRESSTIME].enabled) {
+				if ((stoi(diagCmds[diagCmdType::STRESSTIME].val) != 0) &&
+					(round >= static_cast<uint64_t>(stoi(diagCmds[diagCmdType::STRESSTIME].val)))) {
+					PRINT("Finish stressing.\n");
+					return ZE_RESULT_SUCCESS;
+				}
+			}
+		}
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -605,13 +650,42 @@ ze_result_t cmdDiag::memoryError(UNUSED devInfo *d)
  * memory-intensive kernels and calculating throughput metrics. It validates
  * memory subsystem performance and identifies potential bandwidth limitations.
  *
- * @param[in] d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if allocation tests complete, error code otherwise
  */
-ze_result_t cmdDiag::memoryAllocation(UNUSED devInfo *d)
+ze_result_t cmdDiag::memoryAllocation(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (p->getFuncType() == devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
+		ERR("Device does not support this diagnostic feature.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t res = diag->peformanceMemoryAllocation(d);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (res != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check memory allocation.\n");
+			ERR("Memory allocation test failed: %s\n", l0_error_to_string(res));
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to check memory allocation.\n");
+		}
+	}
+	return res;
 }
 
 /**
@@ -644,7 +718,7 @@ ze_result_t cmdDiag::mediaCodec(devInfo *d)
 {
 	TRACING();
 
-	std::string pdfStr;
+	std::string bdfStr;
 	std::string outputLine;
 
 	pci *p = d->dev->getPCI();
@@ -653,8 +727,8 @@ ze_result_t cmdDiag::mediaCodec(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	pdfStr = p->getBDFStr();
-	if (!CHECKMEDIACODEC(pdfStr, true, outputLine)) {
+	bdfStr = p->getBDFStr();
+	if (!CHECKMEDIACODEC(bdfStr, true, outputLine)) {
 		if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 			PRINT("Result:  Fail\n");
 			PRINT("Message: Fail to check Media transcode.\n");
@@ -686,9 +760,18 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
 {
 	TRACING();
 
+	std::string bdfStr;
+	std::string outputLine;
 	long double totalBandwidth;
 	long double totalLatency;
 
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	bdfStr = p->getBDFStr();
 	diagnostic *diag = d->dev->getDiagnostic();
 	if (diag == nullptr) {
 		ERR("Device does not support diagnostics.\n");
@@ -706,6 +789,12 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
 			PRINT("Message: Pass to check PCIe bandwidth.\n");
 			PRINT("Total pcie bandwidth is: %Lf GB/s.\n", totalBandwidth);
 			PRINT("Total pcie latency is: %Lf us.\n", totalLatency);
+			if (p->getFuncType() != devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
+				outputLine = GETDOWNGRADEDPCIEINFO(bdfStr);
+				if (outputLine.size() != 0) {
+					PRINT("%s\n", outputLine.c_str());
+				}
+			}
 		}
 	}
 	return res;
@@ -760,7 +849,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d)
 			PRINT("Result:  Pass\n");
 			PRINT("Message: Pass to check power test.\n");
 			if (!featureOnly) {
-				PRINT("Computation test completed with %Lf GFLOPS.\n", current);
+				PRINT("Computation test completed with %Lf GIOPS.\n", current);
 			}
 			PRINT("update peak power value: %d w\n", totalPowerValue);
 		}

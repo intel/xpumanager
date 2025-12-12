@@ -51,6 +51,8 @@ typedef wchar_t TCHAR;
 #define IOMMUSUPPORT() isIommuSupported()
 #define SRIOVSUPPORT(deviceInfoPtr) isSriovSupported(deviceInfoPtr)
 #define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult) checkMediaCodec(bdfStr, functionalCheck, finalResult)
+#define CHECKHOSTMEMORYSIZE(hostMemorySize) checkHostMemorySize(hostMemorySize)
+#define GETDOWNGRADEDPCIEINFO(bdfStr) getDowngradedPCIeInfo(bdfStr);
 
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
@@ -93,5 +95,6 @@ bool isVmxSupported();
 bool isIommuSupported();
 bool isSriovSupported(DeviceSriovInfo *di);
 bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &finalResult);
-
+bool checkHostMemorySize(uint64_t *hostMemorySize);
+std::string getDowngradedPCIeInfo(std::string &bdfStr);
 #endif
