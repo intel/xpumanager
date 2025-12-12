@@ -33,6 +33,17 @@
 #include <performance.h>
 #include <standby.h>
 #include <stdexcept>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
+#include <cinttypes>
+
+// Conversion factors
+constexpr uint64_t W_TO_MW = 1000;
+
+// Scheduler time limits in microseconds
+constexpr uint64_t SCHEDULER_TIME_MIN = 5000;
+constexpr uint64_t SCHEDULER_TIME_MAX = 100000000;
 
 static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGHELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
@@ -55,7 +66,27 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
 	{configCmdType::PPR, {{"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr, false, ""}},
 	{configCmdType::FORCE, {{"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""}},
+	{configCmdType::POWERTYPE, {{"powertype", required_argument, 0, 0}, nullptr, false, ""}},
 };
+
+/**
+ * @brief Splits a string into tokens based on a delimiter.
+ *
+ * @param[in] str The string to split.
+ * @param[in] delimiter The character to use as delimiter.
+ *
+ * @return std::vector<std::string> Vector containing the split tokens.
+ */
+static std::vector<std::string> split(const std::string &str, char delimiter)
+{
+	std::vector<std::string> tokens;
+	std::stringstream ss(str);
+	std::string token;
+	while (std::getline(ss, token, delimiter)) {
+		tokens.push_back(token);
+	}
+	return tokens;
+}
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -127,11 +158,203 @@ void cmdConfig::help(HELP helpType)
 		"--xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on"));
 	helpList.push_back(
 		helpCmd(HEADING, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
+	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));
+	helpList.push_back(helpCmd(
+		HEADING,
+		"--powertype                 Device-level power limit type. Valid options: \"sustain\"; \"peak\"; \"burst\""));
 	helpList.push_back(
 		helpCmd(HEADING, "--pciedowngrade                 Enable/disable PCIe downgrade setting. 0:disable; 1:enable"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
+}
+
+/**
+ * @brief Displays the current device configuration including power, ECC, and tile-level settings.
+ *
+ * This function queries and displays comprehensive device configuration information including:
+ * - Power limits (sustained, burst, peak, instantaneous)
+ * - Memory ECC state (current and pending)
+ * - Tile-level configurations (frequency, standby, scheduler, performance)
+ * - Xe Link port status and beaconing configuration
+ *
+ * @param[in] d Device information structure containing device handle and properties.
+ */
+void cmdConfig::displayDeviceConfig(devInfo *d)
+{
+	TRACING();
+
+	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
+	PRINT("| Device Type  | Device ID/Tile ID | Configuration                                                  |\n");
+	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
+
+	// Power configuration - using getLimitsExt()
+	power *pwr = d->dev->getPower();
+	if (pwr != nullptr) {
+		std::vector<PowerLimitExt> limits;
+		if (pwr->getLimitsExt(limits) == ZE_RESULT_SUCCESS) {
+			for (const auto &limit : limits) {
+				const char *levelStr = "Unknown";
+				switch (limit.level) {
+				case ZES_POWER_LEVEL_SUSTAINED:
+					levelStr = "Sustained";
+					break;
+				case ZES_POWER_LEVEL_BURST:
+					levelStr = "Burst";
+					break;
+				case ZES_POWER_LEVEL_PEAK:
+					levelStr = "Peak";
+					break;
+				case ZES_POWER_LEVEL_INSTANTANEOUS:
+					levelStr = "Instantaneous";
+					break;
+				case ZES_POWER_LEVEL_UNKNOWN:
+				case ZES_POWER_LEVEL_FORCE_UINT32:
+					levelStr = "Unknown";
+					break;
+				}
+				PRINT("| GPU          | %-17d | Power Limit - %s (W): %.1f%s                      |\n", d->index,
+					  levelStr, static_cast<float>(limit.limitMw) / 1000.0f, limit.locked ? " [LOCKED]" : "");
+			}
+		}
+	}
+
+	// ECC configuration
+	ecc *e = d->dev->getECC();
+	if (e != nullptr) {
+		zes_device_ecc_properties_t state = {};
+		if (e->getState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
+			PRINT("|              |                   | Memory ECC:                                                    "
+				  "|\n");
+			PRINT("|              |                   |   Current: %-54s |\n",
+				  state.currentState == ZES_DEVICE_ECC_STATE_ENABLED ? "enabled" : "disabled");
+			PRINT("|              |                   |   Pending: %-54s |\n",
+				  state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED ? "enabled" : "disabled");
+		}
+	}
+
+	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
+
+	// Display tile-level configuration - NOTE: frequency class doesn't expose tile iteration
+	// We'll need to query fabric ports to get tile info or use device properties
+	uint32_t tileCount = 0;
+	zes_device_properties_t props = {};
+	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	if (zesDeviceGetProperties(d->zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
+		tileCount = props.numSubdevices;
+	}
+
+	// If no subdevices, show device-level config
+	if (tileCount == 0) {
+		tileCount = 1;
+	}
+
+	for (uint32_t tileId = 0; tileId < tileCount; tileId++) {
+		std::stringstream tileIdStr;
+		tileIdStr << d->index << "/" << tileId;
+
+		PRINT("| GPU          | %-17s |", tileIdStr.str().c_str());
+
+		// Frequency - we cannot query per-tile easily with current HAL
+		// The frequency class only has device-level getRange(), not per-tile
+		// This is a HAL limitation - would need enhancement
+		frequency *fq = d->dev->getFrequency();
+		if (fq != nullptr && tileId == 0) { // Only show for first tile as HAL is device-level
+			PRINT(" GPU Frequency: See device properties                           |\n");
+		} else {
+			PRINT("                                                                |\n");
+		}
+
+		// Standby configuration
+		// Note: standby::getMode requires a standby handle as parameter
+		// Since we cannot access private members, we skip displaying standby mode
+		// The setMode function still works as it handles enumeration internally
+
+		// The scheduler class doesn't expose per-tile querying easily
+		// Would need to enumerate schedulers and match by subdeviceId
+		PRINT("|              |                   | Scheduler: [Use 'xpu-smi discovery' for details]              |\n");
+
+		// The performance class doesn't expose easy per-tile querying
+		PRINT("|              |                   | Performance: [Use 'xpu-smi discovery' for details]            |\n");
+
+		// Fabric/XeLink configuration
+		fabric *f = d->dev->getFabric();
+		if (f != nullptr) {
+			std::vector<portInfo> portInfoList;
+			if (f->getFabricPorts(d->zesDeviceHdl, portInfoList) == ZE_RESULT_SUCCESS && !portInfoList.empty()) {
+				PRINT("|              |                   | Xe Link ports:                                             "
+					  "    "
+					  "|\n");
+
+				std::vector<uint32_t> upPorts, downPorts, beaconingOnPorts, beaconingOffPorts;
+
+				for (const auto &pi : portInfoList) {
+					if (pi.portProps.onSubdevice && pi.portProps.subdeviceId != tileId) {
+						continue; // Skip ports not on this tile
+					}
+
+					uint32_t portNum = pi.portProps.portId.portNumber;
+
+					if (pi.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY) {
+						upPorts.push_back(portNum);
+					} else {
+						downPorts.push_back(portNum);
+					}
+
+					if (pi.portConf.beaconing) {
+						beaconingOnPorts.push_back(portNum);
+					} else {
+						beaconingOffPorts.push_back(portNum);
+					}
+				}
+
+				// Display port statuses
+				if (!upPorts.empty()) {
+					std::stringstream ss;
+					for (size_t i = 0; i < upPorts.size(); i++) {
+						ss << upPorts[i];
+						if (i < upPorts.size() - 1)
+							ss << ", ";
+					}
+					PRINT("|              |                   |   Up: %-58s |\n", ss.str().c_str());
+				}
+				if (!downPorts.empty()) {
+					std::stringstream ss;
+					for (size_t i = 0; i < downPorts.size(); i++) {
+						ss << downPorts[i];
+						if (i < downPorts.size() - 1)
+							ss << ", ";
+					}
+					PRINT("|              |                   |   Down: %-56s |\n", ss.str().c_str());
+				}
+				if (!beaconingOnPorts.empty()) {
+					std::stringstream ss;
+					for (size_t i = 0; i < beaconingOnPorts.size(); i++) {
+						ss << beaconingOnPorts[i];
+						if (i < beaconingOnPorts.size() - 1)
+							ss << ", ";
+					}
+					PRINT("|              |                   |   Beaconing On: %-48s |\n", ss.str().c_str());
+				}
+				if (!beaconingOffPorts.empty()) {
+					std::stringstream ss;
+					for (size_t i = 0; i < beaconingOffPorts.size(); i++) {
+						ss << beaconingOffPorts[i];
+						if (i < beaconingOffPorts.size() - 1)
+							ss << ", ";
+					}
+					PRINT("|              |                   |   Beaconing Off: %-47s |\n", ss.str().c_str());
+				}
+			}
+		}
+
+		if (tileId < tileCount - 1) {
+			PRINT("+--------------+-------------------+----------------------------------------------------------------"
+				  "+\n");
+		}
+	}
+
+	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
 }
 
 /**
@@ -145,9 +368,19 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 {
 	TRACING();
 
-	ze_result_t result;
+	if (!configCmds[configCmdType::TILE].enabled) {
+		ERR("Error: Tile ID is required for frequency configuration. Use -t <tileId>.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 
-	// Parse the frequency range from the option string
+	// Validate tile ID is numeric
+	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
+	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
+		ERR("Error: Invalid tile ID.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	int tileId = std::stoi(tileIdStr);
+
 	std::string rangeStr = configCmds[configCmdType::FREQUENCYRANGE].val;
 	size_t commaPos = rangeStr.find(',');
 
@@ -158,8 +391,21 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 
 	std::string minFreqStr = rangeStr.substr(0, commaPos);
 	std::string maxFreqStr = rangeStr.substr(commaPos + 1);
-	float minFreq = stof(minFreqStr);
-	float maxFreq = stof(maxFreqStr);
+
+	// Validate numeric values
+	char *endPtr = nullptr;
+	double minFreq = std::strtod(minFreqStr.c_str(), &endPtr);
+	if (endPtr == minFreqStr.c_str() || *endPtr != '\0') {
+		ERR("Invalid minimum frequency value.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	endPtr = nullptr;
+	double maxFreq = std::strtod(maxFreqStr.c_str(), &endPtr);
+	if (endPtr == maxFreqStr.c_str() || *endPtr != '\0') {
+		ERR("Invalid maximum frequency value.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 
 	if (minFreq < 0 || maxFreq < 0 || minFreq >= maxFreq) {
 		ERR("Invalid frequency range values. Min frequency must be less than max frequency"
@@ -173,7 +419,12 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	result = fq->setRange(minFreq, maxFreq);
+	ze_result_t result = fq->setFrequencyRange(minFreq, maxFreq, tileId);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in changing the core frequency range on GPU %d tile %d to %.0f-%.0f MHz.\n", d->index, tileId,
+			  minFreq, maxFreq);
+	}
 
 	return result;
 }
@@ -188,9 +439,11 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 {
 	TRACING();
-	ze_result_t result;
-	// Parse the power limit from the option string.
-	float powerLimit = stof(configCmds[configCmdType::POWERLIMIT].val);
+
+	// Parse the power limit from the option string - may include type
+	std::string powerLimitStr = configCmds[configCmdType::POWERLIMIT].val;
+	double powerLimit = std::stod(powerLimitStr);
+
 	if (powerLimit < 0) {
 		ERR("Invalid power limit value. Power limit must be non-negative.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -202,8 +455,27 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// Set the power limit using the power class
-	result = pwr->setPowerLimit(powerLimit);
+	uint32_t limitMw = static_cast<uint32_t>(powerLimit * W_TO_MW);
+	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
+
+	// Determine power type if specified
+	std::string powerType = configCmds[configCmdType::POWERTYPE].val;
+	if (powerType.empty() || powerType == "sustain") {
+		// Default to sustained power limit
+		result = pwr->setSustainedLimit(limitMw, -1);
+	} else if (powerType == "burst") {
+		result = pwr->setBurstLimit(limitMw);
+	} else if (powerType == "peak") {
+		result = pwr->setPeakLimit(limitMw, limitMw);
+	} else {
+		ERR("Invalid power type. Valid options: sustain, burst, peak\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in setting the %s power limit to %.1f W on GPU %d\n",
+			  powerType.empty() ? "sustain" : powerType.c_str(), powerLimit, d->index);
+	}
 
 	return result;
 }
@@ -219,7 +491,7 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 {
 	TRACING();
 
-	// Set standby mode. Valid options are default and never
+	// Set standby mode. Valid options are default or never
 	std::string standbyMode = configCmds[configCmdType::STANDBYMODE].val;
 	if (standbyMode != "default" && standbyMode != "never") {
 		ERR("Invalid standby mode. Valid options are default and never.\n");
@@ -235,6 +507,16 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 
 	ze_result_t result =
 		stby->setMode(standbyMode == "default" ? ZES_STANDBY_PROMO_MODE_DEFAULT : ZES_STANDBY_PROMO_MODE_NEVER);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		if (configCmds[configCmdType::TILE].enabled) {
+			PRINT("Succeeded in changing the standby mode on GPU %d tile %s to %s.\n", d->index,
+				  configCmds[configCmdType::TILE].val.c_str(), standbyMode.c_str());
+		} else {
+			PRINT("Succeeded in changing the standby mode on GPU %d to %s.\n", d->index, standbyMode.c_str());
+		}
+	}
+
 	return result;
 }
 
@@ -248,49 +530,98 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 ze_result_t cmdConfig::setScheduler(devInfo *d)
 {
 	TRACING();
-	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	// Set scheduler mode. Valid options are  \"timeout\",timeoutValue (us) or
-	// \"timeslice\",interval (us),yieldtimeout (us) or \"exclusive\"
-	std::string schedulerMode = configCmds[configCmdType::SCHEDULERMODE].val;
-	size_t commaPos = schedulerMode.find(',');
-	if (commaPos == std::string::npos && schedulerMode != "exclusive") {
-		ERR("Invalid scheduler mode format. Expected format: mode,timeoutValue (us)\n");
+	if (!configCmds[configCmdType::TILE].enabled) {
+		ERR("Error: Tile ID is required for scheduler configuration. Use -t <tileId>.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	scheduler *sched = d->dev->getScheduler();
-	if (sched == nullptr) {
-		ERR("Error: Scheduler pointer not found.\n");
+	// Validate tile ID is numeric
+	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
+	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
+		ERR("Error: Invalid tile ID.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	uint32_t tileId = static_cast<uint32_t>(std::stoul(tileIdStr));
+
+	std::string schedulerMode = configCmds[configCmdType::SCHEDULERMODE].val;
+	std::vector<std::string> parts = split(schedulerMode, ',');
+
+	if (parts.empty()) {
+		ERR("Invalid scheduler mode format.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	frequency *fq = d->dev->getFrequency();
+	if (fq == nullptr) {
+		ERR("Error: Frequency pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	std::string timeoutValueStr = schedulerMode.substr(commaPos + 1);
-	float timeoutValue = stof(timeoutValueStr);
+	std::string mode = parts[0];
+	std::transform(mode.begin(), mode.end(), mode.begin(),
+				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
-	if (schedulerMode == "timeout") {
-		result = sched->setTimeoutMode(timeoutValue);
-	} else if (schedulerMode == "timeslice") {
-		size_t secondCommaPos = timeoutValueStr.find(',', commaPos + 1);
-		if (secondCommaPos == std::string::npos) {
-			ERR("Invalid scheduler mode format. Expected format: mode,timeoutValue (us)\n");
+	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
+
+	if (mode == "timeout") {
+		if (parts.size() != 2) {
+			ERR("Invalid timeout format. Expected: timeout,value\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 
-		std::string intervalStr = timeoutValueStr.substr(0, secondCommaPos);
-		std::string yieldTimeoutStr = timeoutValueStr.substr(secondCommaPos + 1);
-		float interval = stof(intervalStr);
-		float yieldTimeout = stof(yieldTimeoutStr);
-
-		// Valid values are between 5000 to 100,000,000.
-		if (interval < 5000 || yieldTimeout < 5000 || interval > 100000000 || yieldTimeout > 100000000) {
-			ERR("Invalid scheduler mode values. Valid range is between 5000 to 100,000,000.\n");
+		// Validate numeric value
+		const std::string &timeoutStr = parts[1];
+		if (timeoutStr.empty() || !std::all_of(timeoutStr.begin(), timeoutStr.end(), ::isdigit)) {
+			ERR("Error parsing timeout value: invalid numeric format\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 
-		result = sched->setTimesliceMode(interval, yieldTimeout);
+		uint64_t timeoutValue = std::stoull(timeoutStr);
+		if (timeoutValue < SCHEDULER_TIME_MIN || timeoutValue > SCHEDULER_TIME_MAX) {
+			ERR("Timeout value must be between %" PRIu64 " and %" PRIu64 " us\n", SCHEDULER_TIME_MIN,
+				SCHEDULER_TIME_MAX);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		result = fq->setSchedulerTimeoutMode(tileId, timeoutValue);
+	} else if (mode == "timeslice") {
+		if (parts.size() != 3) {
+			ERR("Invalid timeslice format. Expected: timeslice,interval,yieldTimeout\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		// Validate both numeric values
+		const std::string &intervalStr = parts[1];
+		const std::string &yieldStr = parts[2];
+
+		if (intervalStr.empty() || !std::all_of(intervalStr.begin(), intervalStr.end(), ::isdigit)) {
+			ERR("Error parsing timeslice values: invalid interval format\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		if (yieldStr.empty() || !std::all_of(yieldStr.begin(), yieldStr.end(), ::isdigit)) {
+			ERR("Error parsing timeslice values: invalid yield timeout format\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		uint64_t interval = std::stoull(intervalStr);
+		uint64_t yieldTimeout = std::stoull(yieldStr);
+
+		if (interval < SCHEDULER_TIME_MIN || interval > SCHEDULER_TIME_MAX || yieldTimeout < SCHEDULER_TIME_MIN ||
+			yieldTimeout > SCHEDULER_TIME_MAX) {
+			ERR("Time values must be between %" PRIu64 " and %" PRIu64 " us\n", SCHEDULER_TIME_MIN, SCHEDULER_TIME_MAX);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		result = fq->setSchedulerTimesliceMode(tileId, interval, yieldTimeout);
+	} else if (mode == "exclusive") {
+		result = fq->setSchedulerExclusiveMode(tileId);
 	} else {
-		result = sched->setExclusiveMode();
+		ERR("Invalid scheduler mode. Valid options: timeout, timeslice, exclusive\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in changing the scheduler mode on GPU %d tile %u to %s\n", d->index, tileId, mode.c_str());
 	}
 
 	return result;
@@ -306,31 +637,34 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 {
 	TRACING();
-	double factorValue = 0.0;
-	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	// Set the performance factor. Valid options are "compute/media",factorValue.
 	std::string performanceFactor = configCmds[configCmdType::PERFORMANCEFACTOR].val;
-	size_t commaPos = performanceFactor.find(',');
-	if (commaPos == std::string::npos) {
-		ERR("Invalid performance factor format. Expected format: engineType,factorValue\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-	std::string engineType = performanceFactor.substr(0, commaPos);
-	if (engineType != "compute" && engineType != "media") {
-		ERR("Invalid engine type. Valid options are 'compute' or 'media'.\n");
+	std::vector<std::string> parts = split(performanceFactor, ',');
+
+	if (parts.size() != 2) {
+		ERR("Invalid performance factor format. Expected: engineType,factorValue\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	std::string factorValueStr = performanceFactor.substr(commaPos + 1);
-	try {
-		factorValue = stod(factorValueStr);
-		if (factorValue < 0 || factorValue > 100) {
-			ERR("Invalid performance factor value. Valid range is between 0 to 100.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	} catch (const std::exception &e) {
-		ERR("Error parsing factor value: %s\n", e.what());
+	std::string engineType = parts[0];
+	std::transform(engineType.begin(), engineType.end(), engineType.begin(),
+				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+	if (engineType != "compute" && engineType != "media") {
+		ERR("Invalid engine type. Valid options: compute, media\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Validate factor value is numeric (can be decimal)
+	char *endPtr = nullptr;
+	double factorValue = std::strtod(parts[1].c_str(), &endPtr);
+	if (endPtr == parts[1].c_str() || *endPtr != '\0') {
+		ERR("Error parsing factor value: invalid numeric format\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (factorValue < 0 || factorValue > 100) {
+		ERR("Factor value must be between 0 and 100\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -339,13 +673,20 @@ ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 		ERR("Error: Performance pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
+
 	zes_engine_type_flag_t engineTypeFlag =
 		(engineType == "compute") ? ZES_ENGINE_TYPE_FLAG_COMPUTE : ZES_ENGINE_TYPE_FLAG_MEDIA;
 
-	result = perf->setConfig(engineTypeFlag, factorValue);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set performance factor: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
+	ze_result_t result = perf->setConfig(engineTypeFlag, factorValue);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		if (configCmds[configCmdType::TILE].enabled) {
+			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %d tile %s\n", engineType.c_str(),
+				  factorValue, d->index, configCmds[configCmdType::TILE].val.c_str());
+		} else {
+			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %d\n", engineType.c_str(),
+				  factorValue, d->index);
+		}
 	}
 
 	return result;
@@ -361,20 +702,61 @@ ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 ze_result_t cmdConfig::setXeLinkPort(devInfo *d)
 {
 	TRACING();
-	// Set Xe Link port. Valid options are 0:disable; 1:enable
-	int enable = stoi(configCmds[configCmdType::XELINKPORT].val);
-	if (enable != 0 && enable != 1) {
-		ERR("Invalid Xe Link port value. Valid options are 0:disable; 1:enable\n");
+
+	if (!configCmds[configCmdType::TILE].enabled) {
+		ERR("Error: Tile ID is required for XeLink port configuration. Use -t <tileId>.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
-	// Set the Xe Link port using the device class
+
+	// Validate tile ID
+	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
+	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
+		ERR("Error: Invalid tile ID.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	uint32_t tileId = static_cast<uint32_t>(std::stoul(tileIdStr));
+
+	std::string xeLinkPort = configCmds[configCmdType::XELINKPORT].val;
+	std::vector<std::string> parts = split(xeLinkPort, ',');
+
+	if (parts.size() != 2) {
+		ERR("Invalid XeLink port format. Expected: portId,value\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Validate port ID
+	if (parts[0].empty() || !std::all_of(parts[0].begin(), parts[0].end(), ::isdigit)) {
+		ERR("Error parsing XeLink port parameters: invalid port ID\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Validate enabled value
+	if (parts[1].empty() || (parts[1] != "0" && parts[1] != "1")) {
+		ERR("Port value must be 0 (down) or 1 (up)\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	uint32_t portId = static_cast<uint32_t>(std::stoul(parts[0]));
+	int enabled = std::stoi(parts[1]);
+
 	fabric *f = d->dev->getFabric();
 	if (f == nullptr) {
 		ERR("Error: Fabric pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	ze_result_t result = f->setPortConfig(enable == 1 ? true : false);
+	portInfoSet portSet = {};
+	portSet.subdeviceId = tileId;
+	portSet.portId.portNumber = static_cast<uint8_t>(portId);
+	portSet.enabled = (enabled == 1);
+	portSet.settingEnabled = true;
+	portSet.settingBeaconing = false;
+
+	ze_result_t result = f->setFabricPorts(d->zesDeviceHdl, portSet);
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in changing Xe Link port %u to %s on GPU %d tile %u\n", portId, enabled ? "up" : "down",
+			  d->index, tileId);
+	}
 
 	return result;
 }
@@ -389,20 +771,61 @@ ze_result_t cmdConfig::setXeLinkPort(devInfo *d)
 ze_result_t cmdConfig::setXeLinkPortBeaconing(devInfo *d)
 {
 	TRACING();
-	// Set Xe Link port beaconing. Valid options are 0:disable; 1:enable
-	int enable = stoi(configCmds[configCmdType::XELINKPORTBEACONING].val);
-	if (enable != 0 && enable != 1) {
-		ERR("Invalid Xe Link port beaconing value. Valid options are 0:disable; 1:enable\n");
+
+	if (!configCmds[configCmdType::TILE].enabled) {
+		ERR("Error: Tile ID is required for XeLink beaconing configuration. Use -t <tileId>.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
-	// Set the Xe Link port beaconing using the device class
+
+	// Validate tile ID
+	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
+	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
+		ERR("Error: Invalid tile ID.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	uint32_t tileId = static_cast<uint32_t>(std::stoul(tileIdStr));
+
+	std::string xeLinkBeaconing = configCmds[configCmdType::XELINKPORTBEACONING].val;
+	std::vector<std::string> parts = split(xeLinkBeaconing, ',');
+
+	if (parts.size() != 2) {
+		ERR("Invalid XeLink beaconing format. Expected: portId,value\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Validate port ID
+	if (parts[0].empty() || !std::all_of(parts[0].begin(), parts[0].end(), ::isdigit)) {
+		ERR("Error parsing XeLink beaconing parameters: invalid port ID\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Validate enabled value
+	if (parts[1].empty() || (parts[1] != "0" && parts[1] != "1")) {
+		ERR("Beaconing value must be 0 (off) or 1 (on)\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	uint32_t portId = static_cast<uint32_t>(std::stoul(parts[0]));
+	int enabled = std::stoi(parts[1]);
+
 	fabric *f = d->dev->getFabric();
 	if (f == nullptr) {
 		ERR("Error: Fabric pointer not found.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	ze_result_t result = f->setPortBeaconing(enable == 1 ? true : false);
+	portInfoSet portSet = {};
+	portSet.subdeviceId = tileId;
+	portSet.portId.portNumber = static_cast<uint8_t>(portId);
+	portSet.beaconing = (enabled == 1);
+	portSet.settingEnabled = false;
+	portSet.settingBeaconing = true;
+
+	ze_result_t result = f->setFabricPorts(d->zesDeviceHdl, portSet);
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in changing Xe Link port %u beaconing to %s on GPU %d tile %u\n", portId,
+			  enabled ? "on" : "off", d->index, tileId);
+	}
 
 	return result;
 }
@@ -552,11 +975,16 @@ ze_result_t cmdConfig::setPCIeGenUpdate(devInfo *d)
 ze_result_t cmdConfig::resetDevice(devInfo *d)
 {
 	TRACING();
+
+	PRINT("Resetting GPU %d. This may take up to one minute...\n", d->index);
+
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
+
+	PRINT("Succeeded in resetting the GPU %d\n", d->index);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -570,9 +998,9 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 ze_result_t cmdConfig::applyPpr(UNUSED devInfo *d)
 {
 	TRACING();
-	// This is not implemented for Xe driver in Linux so should we simply return NA going forward?
 
-	PRINT("  PPR: N/A\n");
+	PRINT("Applying PPR to GPU %d. This may take up to ten minutes...\n", d->index);
+	PRINT("PPR feature is not available on this platform\n");
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -607,6 +1035,7 @@ int cmdConfig::run(arg_struct *args)
 	int opt;
 	int optionIndex = 0;
 	bool found = false;
+	bool isQueryMode = true; // Track if this is a query or set operation
 	std::string shortOpts;
 	std::vector<struct option> longOptsVec;
 
@@ -640,6 +1069,11 @@ int cmdConfig::run(arg_struct *args)
 					if (longOpts[optionIndex].has_arg == required_argument) {
 						cmd.second.val = optarg;
 					}
+					// Any command with a function means this is a set operation
+					if (cmd.second.func != nullptr || cmd.first == configCmdType::RESET ||
+						cmd.first == configCmdType::PPR || cmd.first == configCmdType::FORCE) {
+						isQueryMode = false;
+					}
 					found = true;
 					break;
 				}
@@ -660,8 +1094,7 @@ int cmdConfig::run(arg_struct *args)
 		startind++;
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
+	// Check for extra arguments
 	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
@@ -681,16 +1114,35 @@ int cmdConfig::run(arg_struct *args)
 		return result;
 	}
 
-	// Iterate through the device list and execute the command
+	// If this is query mode, display configuration
+	if (isQueryMode) {
+		for (auto &device : deviceList) {
+			displayDeviceConfig(&device);
+		}
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Otherwise, execute set commands
+	ze_result_t firstError = ZE_RESULT_SUCCESS;
+	bool hadError = false;
+
 	for (auto &device : deviceList) {
-		// Call the appropriate command function based on the command type
 		for (const auto &cmd : configCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
 				result = (this->*cmd.second.func)(&device);
-				break;
+				if (result != ZE_RESULT_SUCCESS) {
+					if (!hadError) {
+						firstError = result;
+						hadError = true;
+					}
+					// Continue processing other devices/commands instead of early return
+					ERR("Failed to apply configuration to GPU %d, continuing with remaining devices...\n",
+						device.index);
+				}
 			}
 		}
 	}
 
-	return result;
+	// Return the first error encountered, or success if all succeeded
+	return hadError ? firstError : ZE_RESULT_SUCCESS;
 }

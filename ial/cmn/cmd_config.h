@@ -38,6 +38,7 @@ enum configCmdType
 	TILE,
 	FREQUENCYRANGE,
 	POWERLIMIT,
+	POWERTYPE,
 	STANDBYMODE,
 	SCHEDULERMODE,
 	PERFORMANCEFACTOR,
@@ -60,6 +61,7 @@ public:
 	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
 	~cmdConfig(){};
 	void help(HELP helpType = FULL_HELP);
+	void displayDeviceConfig(devInfo *d);
 	ze_result_t setFrequencyRange(devInfo *d);
 	ze_result_t setPowerLimit(devInfo *d);
 	ze_result_t setStandby(devInfo *d);
