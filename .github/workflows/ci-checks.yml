@@ -24,7 +24,11 @@ jobs:
         token: ${{ secrets.LEVEL_ZERO_GO_TOKEN }}
 
     - name: Golangci-lint
-      run: docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:latest golangci-lint run
+      run: |
+        docker run --rm -v $(pwd):/app -w /app \
+        golangci/golangci-lint:latest \
+        /bin/sh -c \
+        "apt-get update && apt-get install -y libze-dev && golangci-lint run"
 
     - name: Setup Go
       uses: actions/setup-go@v6
