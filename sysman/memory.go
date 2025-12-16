@@ -28,7 +28,7 @@ type memoryMetrics struct {
 	limit       metric.Int64ObservableGauge
 	usage       metric.Int64ObservableGauge
 	utilization metric.Float64ObservableGauge
-	health      metric.Int64ObservableGauge
+	health      metric.Int64ObservableUpDownCounter
 }
 
 func newSysmanMemory(mem *l0sysman.Mem) (*sysmanMemory, error) {
@@ -94,7 +94,7 @@ func newMemoryMetrics(meter metric.Meter) (collector, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.health, err = meter.Int64ObservableGauge(
+	m.health, err = meter.Int64ObservableUpDownCounter(
 		"hw.gpu.memory.health",
 		metric.WithDescription("Health status of the GPU memory"),
 	)
