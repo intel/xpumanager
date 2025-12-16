@@ -11,7 +11,7 @@ GENERATOR:
 
 PARSER:
   SourcesPaths:
-    - levelzero/ze_api.h
+    - level-zero/ze_api.h
 
 TRANSLATOR:
   ConstRules:

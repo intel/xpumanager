@@ -24,7 +24,7 @@ if [ -f Doxyfile ]; then
     doxygen
 fi
 
-go tool cgo -godefs -- -I../levelzero ./types.go > types.go.tmp
+go tool cgo -godefs -- -I../level-zero ./types.go > types.go.tmp
 
 go -C "$ROOT_DIR/hack" run ./types-mangle \
     -in-place \

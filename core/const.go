@@ -22,7 +22,7 @@ import "C"
 // Defines Return/Error codes.
 type Result int32
 
-// Result enumeration from levelzero/ze_api.h:263
+// Result enumeration from level-zero/ze_api.h:263
 const (
 	// [Core] success
 	RESULT_SUCCESS Result = iota
@@ -193,7 +193,7 @@ const (
 // Supported device types.
 type DeviceType int32
 
-// DeviceType enumeration from levelzero/ze_api.h:1702
+// DeviceType enumeration from level-zero/ze_api.h:1702
 const (
 	// Graphics Processing Unit.
 	DEVICE_TYPE_GPU DeviceType = 1
@@ -213,7 +213,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
 type DevicePropertyFlag int32
 
-// DevicePropertyFlag enumeration from levelzero/ze_api.h:1735
+// DevicePropertyFlag enumeration from level-zero/ze_api.h:1735
 const (
 	// Device is integrated with the Host.
 	DEVICE_PROPERTY_FLAG_INTEGRATED DevicePropertyFlag = 1

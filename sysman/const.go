@@ -50,7 +50,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 type InitFlag int32
 
-// InitFlag enumeration from levelzero/zes_api.h:592
+// InitFlag enumeration from level-zero/zes_api.h:592
 const (
 	// placeholder for future use
 	INIT_FLAG_PLACEHOLDER InitFlag = 1
@@ -62,7 +62,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-type-flags-t
 type EngineTypeFlag int32
 
-// EngineTypeFlag enumeration from levelzero/zes_api.h:803
+// EngineTypeFlag enumeration from level-zero/zes_api.h:803
 const (
 	// Undefined types of accelerators.
 	ENGINE_TYPE_FLAG_OTHER EngineTypeFlag = 1
@@ -86,7 +86,7 @@ const (
 // Device repair status.
 type RepairStatus int32
 
-// RepairStatus enumeration from levelzero/zes_api.h:814
+// RepairStatus enumeration from level-zero/zes_api.h:814
 const (
 	// The device does not support in-field repairs.
 	REPAIR_STATUS_UNSUPPORTED RepairStatus = iota
@@ -102,7 +102,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
 type ResetReasonFlag int32
 
-// ResetReasonFlag enumeration from levelzero/zes_api.h:826
+// ResetReasonFlag enumeration from level-zero/zes_api.h:826
 const (
 	// The device needs to be reset because one or more parts of the hardware is wedged
 	RESET_REASON_FLAG_WEDGED ResetReasonFlag = 1
@@ -118,7 +118,7 @@ const (
 // Device reset type.
 type ResetType int32
 
-// ResetType enumeration from levelzero/zes_api.h:837
+// ResetType enumeration from level-zero/zes_api.h:837
 const (
 	// Apply warm reset.
 	RESET_TYPE_WARM ResetType = iota
@@ -136,7 +136,7 @@ const (
 // Supported device types.
 type DeviceType int32
 
-// DeviceType enumeration from levelzero/zes_api.h:884
+// DeviceType enumeration from level-zero/zes_api.h:884
 const (
 	// Graphics Processing Unit.
 	DEVICE_TYPE_GPU DeviceType = 1
@@ -156,7 +156,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
 type DevicePropertyFlag int32
 
-// DevicePropertyFlag enumeration from levelzero/zes_api.h:897
+// DevicePropertyFlag enumeration from level-zero/zes_api.h:897
 const (
 	// Device is integrated with the Host.
 	DEVICE_PROPERTY_FLAG_INTEGRATED DevicePropertyFlag = 1
@@ -176,7 +176,7 @@ const (
 // PCI link status.
 type PciLinkStatus int32
 
-// PciLinkStatus enumeration from levelzero/zes_api.h:1181
+// PciLinkStatus enumeration from level-zero/zes_api.h:1181
 const (
 	// The link status could not be determined.
 	PCI_LINK_STATUS_UNKNOWN PciLinkStatus = iota
@@ -194,7 +194,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-qual-issue-flags-t
 type PciLinkQualIssueFlag int32
 
-// PciLinkQualIssueFlag enumeration from levelzero/zes_api.h:1192
+// PciLinkQualIssueFlag enumeration from level-zero/zes_api.h:1192
 const (
 	// A significant number of replays are occurring.
 	PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS PciLinkQualIssueFlag = 1
@@ -208,7 +208,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-stab-issue-flags-t
 type PciLinkStabIssueFlag int32
 
-// PciLinkStabIssueFlag enumeration from levelzero/zes_api.h:1202
+// PciLinkStabIssueFlag enumeration from level-zero/zes_api.h:1202
 const (
 	// Link retraining has occurred to deal with quality issues.
 	PCI_LINK_STAB_ISSUE_FLAG_RETRAINING PciLinkStabIssueFlag = 1
@@ -222,7 +222,7 @@ const (
 // PCI bar types.
 type PciBarType int32
 
-// PciBarType enumeration from levelzero/zes_api.h:1235
+// PciBarType enumeration from level-zero/zes_api.h:1235
 const (
 	// MMIO registers.
 	PCI_BAR_TYPE_MMIO PciBarType = iota
@@ -240,7 +240,7 @@ const (
 // Overclock domains.
 type OverclockDomain int32
 
-// OverclockDomain enumeration from levelzero/zes_api.h:1428
+// OverclockDomain enumeration from level-zero/zes_api.h:1428
 const (
 	// Overclocking card level properties such as temperature limits.
 	OVERCLOCK_DOMAIN_CARD OverclockDomain = 1
@@ -270,7 +270,7 @@ const (
 // Overclock controls.
 type OverclockControl int32
 
-// OverclockControl enumeration from levelzero/zes_api.h:1451
+// OverclockControl enumeration from level-zero/zes_api.h:1451
 const (
 	// This control permits setting a custom V-F curve.
 	OVERCLOCK_CONTROL_VF OverclockControl = 1
@@ -308,7 +308,7 @@ const (
 // Overclock modes.
 type OverclockMode int32
 
-// OverclockMode enumeration from levelzero/zes_api.h:1465
+// OverclockMode enumeration from level-zero/zes_api.h:1465
 const (
 	// Overclock mode is off.
 	OVERCLOCK_MODE_MODE_OFF OverclockMode = iota
@@ -330,7 +330,7 @@ const (
 // Overclock control states.
 type ControlState int32
 
-// ControlState enumeration from levelzero/zes_api.h:1478
+// ControlState enumeration from level-zero/zes_api.h:1478
 const (
 	// No overclock control has not been changed by the driver since the last boot/reset.
 	CONTROL_STATE_STATE_UNSET ControlState = iota
@@ -349,7 +349,7 @@ const (
 // Overclock pending actions.
 type PendingAction int32
 
-// PendingAction enumeration from levelzero/zes_api.h:1491
+// PendingAction enumeration from level-zero/zes_api.h:1491
 const (
 	// There no pending actions. .
 	PENDING_ACTION_PENDING_NONE PendingAction = iota
@@ -369,7 +369,7 @@ const (
 // Overclock V-F curve programing.
 type VfProgramType int32
 
-// VfProgramType enumeration from levelzero/zes_api.h:1506
+// VfProgramType enumeration from level-zero/zes_api.h:1506
 const (
 	// Can program an arbitrary number of V-F points up to the maximum number and each
 	// point can have arbitrary voltage and frequency values within the min/max/step
@@ -391,7 +391,7 @@ const (
 // VF type.
 type VfType int32
 
-// VfType enumeration from levelzero/zes_api.h:1516
+// VfType enumeration from level-zero/zes_api.h:1516
 const (
 	// VF Voltage point.
 	VF_TYPE_VOLT VfType = iota
@@ -407,7 +407,7 @@ const (
 // VF type.
 type VfArrayType int32
 
-// VfArrayType enumeration from levelzero/zes_api.h:1527
+// VfArrayType enumeration from level-zero/zes_api.h:1527
 const (
 	// User V-F array.
 	VF_ARRAY_TYPE_USER_VF_ARRAY VfArrayType = iota
@@ -425,7 +425,7 @@ const (
 // Diagnostic results.
 type DiagResult int32
 
-// DiagResult enumeration from levelzero/zes_api.h:2041
+// DiagResult enumeration from level-zero/zes_api.h:2041
 const (
 	// Diagnostic completed without finding errors to repair.
 	DIAG_RESULT_NO_ERRORS DiagResult = iota
@@ -446,7 +446,7 @@ const (
 // ECC State.
 type DeviceEccState int32
 
-// DeviceEccState enumeration from levelzero/zes_api.h:2227
+// DeviceEccState enumeration from level-zero/zes_api.h:2227
 const (
 	// None.
 	DEVICE_ECC_STATE_UNAVAILABLE DeviceEccState = iota
@@ -464,7 +464,7 @@ const (
 // State Change Requirements.
 type DeviceAction int32
 
-// DeviceAction enumeration from levelzero/zes_api.h:2239
+// DeviceAction enumeration from level-zero/zes_api.h:2239
 const (
 	// No action.
 	DEVICE_ACTION_NONE DeviceAction = iota
@@ -484,7 +484,7 @@ const (
 // Accelerator engine groups.
 type EngineGroup int32
 
-// EngineGroup enumeration from levelzero/zes_api.h:2416
+// EngineGroup enumeration from level-zero/zes_api.h:2416
 const (
 	// Access information about all engines combined.
 	ENGINE_GROUP_ALL EngineGroup = iota
@@ -533,7 +533,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t
 type EventTypeFlag int32
 
-// EventTypeFlag enumeration from levelzero/zes_api.h:2584
+// EventTypeFlag enumeration from level-zero/zes_api.h:2584
 const (
 	// Event is triggered when the device is no longer available (due to a reset or being
 	// disabled).
@@ -586,7 +586,7 @@ const (
 // Fabric port status.
 type FabricPortStatus int32
 
-// FabricPortStatus enumeration from levelzero/zes_api.h:2731
+// FabricPortStatus enumeration from level-zero/zes_api.h:2731
 const (
 	// The port status cannot be determined.
 	FABRIC_PORT_STATUS_UNKNOWN FabricPortStatus = iota
@@ -606,7 +606,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-qual-issue-flags-t
 type FabricPortQualIssueFlag int32
 
-// FabricPortQualIssueFlag enumeration from levelzero/zes_api.h:2742
+// FabricPortQualIssueFlag enumeration from level-zero/zes_api.h:2742
 const (
 	// Excessive link errors are occurring.
 	FABRIC_PORT_QUAL_ISSUE_FLAG_LINK_ERRORS FabricPortQualIssueFlag = 1
@@ -620,7 +620,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-failure-flags-t
 type FabricPortFailureFlag int32
 
-// FabricPortFailureFlag enumeration from levelzero/zes_api.h:2762
+// FabricPortFailureFlag enumeration from level-zero/zes_api.h:2762
 const (
 	// A previously operating link has failed. Hardware will automatically retrain this
 	// port. This state will persist until either the physical connection is removed or
@@ -644,7 +644,7 @@ const (
 // Fan resource speed mode.
 type FanSpeedMode int32
 
-// FanSpeedMode enumeration from levelzero/zes_api.h:3147
+// FanSpeedMode enumeration from level-zero/zes_api.h:3147
 const (
 	// The fan speed is operating using the hardware default settings.
 	FAN_SPEED_MODE_DEFAULT FanSpeedMode = iota
@@ -663,7 +663,7 @@ const (
 // Fan speed units.
 type FanSpeedUnits int32
 
-// FanSpeedUnits enumeration from levelzero/zes_api.h:3157
+// FanSpeedUnits enumeration from level-zero/zes_api.h:3157
 const (
 	// The fan speed is in units of revolutions per minute (rpm)
 	FAN_SPEED_UNITS_RPM FanSpeedUnits = iota
@@ -679,7 +679,7 @@ const (
 // Frequency domains.
 type FreqDomain int32
 
-// FreqDomain enumeration from levelzero/zes_api.h:3604
+// FreqDomain enumeration from level-zero/zes_api.h:3604
 const (
 	// GPU Core Domain.
 	FREQ_DOMAIN_GPU FreqDomain = iota
@@ -695,7 +695,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-reason-flags-t
 type FreqThrottleReasonFlag int32
 
-// FreqThrottleReasonFlag enumeration from levelzero/zes_api.h:3678
+// FreqThrottleReasonFlag enumeration from level-zero/zes_api.h:3678
 const (
 	// frequency throttled due to average power excursion (PL1)
 	FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP FreqThrottleReasonFlag = 1
@@ -722,7 +722,7 @@ const (
 // Memory module types.
 type MemType int32
 
-// MemType enumeration from levelzero/zes_api.h:4542
+// MemType enumeration from level-zero/zes_api.h:4542
 const (
 	// HBM memory.
 	MEM_TYPE_HBM MemType = iota
@@ -774,7 +774,7 @@ const (
 // Memory module location.
 type MemLoc int32
 
-// MemLoc enumeration from levelzero/zes_api.h:4552
+// MemLoc enumeration from level-zero/zes_api.h:4552
 const (
 	// System memory.
 	MEM_LOC_SYSTEM MemLoc = iota
@@ -790,7 +790,7 @@ const (
 // Memory health.
 type MemHealth int32
 
-// MemHealth enumeration from levelzero/zes_api.h:4567
+// MemHealth enumeration from level-zero/zes_api.h:4567
 const (
 	// The memory health cannot be determined.
 	MEM_HEALTH_UNKNOWN MemHealth = iota
@@ -813,7 +813,7 @@ const (
 // Power Domain.
 type PowerDomain int32
 
-// PowerDomain enumeration from levelzero/zes_api.h:4905
+// PowerDomain enumeration from level-zero/zes_api.h:4905
 const (
 	// The PUnit power domain level cannot be determined.
 	POWER_DOMAIN_UNKNOWN PowerDomain = iota
@@ -837,7 +837,7 @@ const (
 // Power Level Type.
 type PowerLevel int32
 
-// PowerLevel enumeration from levelzero/zes_api.h:4925
+// PowerLevel enumeration from level-zero/zes_api.h:4925
 const (
 	// The PUnit power monitoring duration cannot be determined.
 	POWER_LEVEL_UNKNOWN PowerLevel = iota
@@ -864,7 +864,7 @@ const (
 // Power Source Type.
 type PowerSource int32
 
-// PowerSource enumeration from levelzero/zes_api.h:4937
+// PowerSource enumeration from level-zero/zes_api.h:4937
 const (
 	// Limit active no matter whether the power source is mains powered or battery
 	// powered.
@@ -883,7 +883,7 @@ const (
 // Limit Unit.
 type LimitUnit int32
 
-// LimitUnit enumeration from levelzero/zes_api.h:4948
+// LimitUnit enumeration from level-zero/zes_api.h:4948
 const (
 	// The PUnit power monitoring unit cannot be determined.
 	LIMIT_UNIT_UNKNOWN LimitUnit = iota
@@ -901,7 +901,7 @@ const (
 // PSU voltage status.
 type PsuVoltageStatus int32
 
-// PsuVoltageStatus enumeration from levelzero/zes_api.h:5315
+// PsuVoltageStatus enumeration from level-zero/zes_api.h:5315
 const (
 	// The status of the power supply voltage controllers cannot be determined
 	PSU_VOLTAGE_STATUS_UNKNOWN PsuVoltageStatus = iota
@@ -921,7 +921,7 @@ const (
 // RAS error type.
 type RasErrorType int32
 
-// RasErrorType enumeration from levelzero/zes_api.h:5444
+// RasErrorType enumeration from level-zero/zes_api.h:5444
 const (
 	// Errors were corrected by hardware.
 	RAS_ERROR_TYPE_CORRECTABLE RasErrorType = iota
@@ -937,7 +937,7 @@ const (
 // RAS error categories.
 type RasErrorCat int32
 
-// RasErrorCat enumeration from levelzero/zes_api.h:5463
+// RasErrorCat enumeration from level-zero/zes_api.h:5463
 const (
 	// The number of accelerator engine resets attempted by the driver.
 	RAS_ERROR_CAT_RESET RasErrorCat = iota
@@ -965,7 +965,7 @@ const (
 // Scheduler mode.
 type SchedMode int32
 
-// SchedMode enumeration from levelzero/zes_api.h:5718
+// SchedMode enumeration from level-zero/zes_api.h:5718
 const (
 	// Multiple applications or contexts are submitting work to the hardware. When higher
 	// priority work arrives, the scheduler attempts to pause the current executing work
@@ -988,7 +988,7 @@ const (
 // Standby hardware components.
 type StandbyType int32
 
-// StandbyType enumeration from levelzero/zes_api.h:6070
+// StandbyType enumeration from level-zero/zes_api.h:6070
 const (
 	// Control the overall standby policy of the device/sub-device.
 	STANDBY_TYPE_GLOBAL StandbyType = iota
@@ -1002,7 +1002,7 @@ const (
 // Standby promotion modes.
 type StandbyPromoMode int32
 
-// StandbyPromoMode enumeration from levelzero/zes_api.h:6095
+// StandbyPromoMode enumeration from level-zero/zes_api.h:6095
 const (
 	// Best compromise between performance and energy savings.
 	STANDBY_PROMO_MODE_DEFAULT StandbyPromoMode = iota
@@ -1019,7 +1019,7 @@ const (
 // Temperature sensors.
 type TempSensors int32
 
-// TempSensors enumeration from levelzero/zes_api.h:6223
+// TempSensors enumeration from level-zero/zes_api.h:6223
 const (
 	// The maximum temperature across all device sensors.
 	TEMP_SENSORS_GLOBAL TempSensors = iota
@@ -1049,7 +1049,7 @@ const (
 // Device ECC default properties Extension Version(s)
 type DeviceEccDefaultPropertiesExtVersion int32
 
-// DeviceEccDefaultPropertiesExtVersion enumeration from levelzero/zes_api.h:6454
+// DeviceEccDefaultPropertiesExtVersion enumeration from level-zero/zes_api.h:6454
 const (
 	// version 1.0
 	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_1_0 DeviceEccDefaultPropertiesExtVersion = 65536
@@ -1065,7 +1065,7 @@ const (
 // Power Limits Extension Version(s)
 type PowerLimitsExtVersion int32
 
-// PowerLimitsExtVersion enumeration from levelzero/zes_api.h:6489
+// PowerLimitsExtVersion enumeration from level-zero/zes_api.h:6489
 const (
 	// version 1.0
 	POWER_LIMITS_EXT_VERSION_1_0 PowerLimitsExtVersion = 65536
@@ -1081,7 +1081,7 @@ const (
 // Engine Activity Extension Version(s)
 type EngineActivityExtVersion int32
 
-// EngineActivityExtVersion enumeration from levelzero/zes_api.h:6629
+// EngineActivityExtVersion enumeration from level-zero/zes_api.h:6629
 const (
 	// version 1.0
 	ENGINE_ACTIVITY_EXT_VERSION_1_0 EngineActivityExtVersion = 65536
