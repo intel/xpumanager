@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 Q := @
-PACKAGES := core levelzero sysman
+PACKAGES := core sysman
 
 help:
 	@echo -e "\nTargets:\n$$(grep '^[-_a-z]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"

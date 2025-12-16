@@ -8,7 +8,7 @@ ARG BASE_DEBIAN_DISTRO="trixie"
 
 FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
 
-ARG PACKAGES="core levelzero sysman"
+ARG PACKAGES="core sysman"
 
 RUN apt-get update && apt-get install -y doxygen
 
