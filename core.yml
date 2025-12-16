@@ -17,6 +17,8 @@ TRANSLATOR:
   ConstRules:
   Rules:
     const:
+      - {action: accept, from: "^ZE_API_VERSION_"}
+      - {action: ignore, from: "^ZE_API_VERSION_CURRENT_M$"} # ignore the macro version
       - {action: accept, from: "^ZE_RESULT_"}
       - {action: accept, from: "^ZE_DEVICE_PROPERTY_FLAG_"}
       - {action: accept, from: "^ZE_DEVICE_TYPE_"}
@@ -24,6 +26,7 @@ TRANSLATOR:
       - {transform: export}
     function:
     type:
+      - {action: accept, from: "^ze_api_version_t$"}
       - {action: accept, from: "^ze_result_t$"}
       - {action: accept, from: "^ze_device_properties_t$"}
       - {action: accept, from: "^ze_device_uuid_t$"}

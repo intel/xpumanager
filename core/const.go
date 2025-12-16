@@ -142,6 +142,51 @@ const (
 	RESULT_FORCE_UINT32 Result = 2147483647
 )
 
+// ApiVersion declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-api-version-t
+//
+//   - API versions contain major and minor attributes, use ZE_MAJOR_VERSION and
+//     ZE_MINOR_VERSION
+type ApiVersion int32
+
+// ApiVersion enumeration from levelzero/ze_api.h:1317
+const (
+	// version 1.0
+	API_VERSION_1_0 ApiVersion = 65536
+	// version 1.1
+	API_VERSION_1_1 ApiVersion = 65537
+	// version 1.2
+	API_VERSION_1_2 ApiVersion = 65538
+	// version 1.3
+	API_VERSION_1_3 ApiVersion = 65539
+	// version 1.4
+	API_VERSION_1_4 ApiVersion = 65540
+	// version 1.5
+	API_VERSION_1_5 ApiVersion = 65541
+	// version 1.6
+	API_VERSION_1_6 ApiVersion = 65542
+	// version 1.7
+	API_VERSION_1_7 ApiVersion = 65543
+	// version 1.8
+	API_VERSION_1_8 ApiVersion = 65544
+	// version 1.9
+	API_VERSION_1_9 ApiVersion = 65545
+	// version 1.10
+	API_VERSION_1_10 ApiVersion = 65546
+	// version 1.11
+	API_VERSION_1_11 ApiVersion = 65547
+	// version 1.12
+	API_VERSION_1_12 ApiVersion = 65548
+	// version 1.13
+	API_VERSION_1_13 ApiVersion = 65549
+	// version 1.14
+	API_VERSION_1_14 ApiVersion = 65550
+	// API version of the L0 headers which the bindings were generated from.
+	API_VERSION_CURRENT ApiVersion = 65550
+	// Value marking end of ZE_API_VERSION_* ENUMs.
+	API_VERSION_FORCE_UINT32 ApiVersion = 2147483647
+)
+
 // DeviceType declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-type-t
 //
