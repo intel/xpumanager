@@ -10,7 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/intel/level-zero-go/levelzero"
+	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
 type createCollectorFunc func(metric.Meter) (collector, error)
@@ -45,7 +45,7 @@ func New() (*sysman, error) {
 }
 
 func (s *sysman) init() error {
-	if err := levelzero.ZesInit(0); err != nil {
+	if err := l0sysman.Init(0); err != nil {
 		return err
 	}
 

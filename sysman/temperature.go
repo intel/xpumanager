@@ -9,9 +9,10 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/intel/level-zero-go/levelzero"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
 func init() {
@@ -19,7 +20,7 @@ func init() {
 }
 
 type sysmanTemperature struct {
-	*levelzero.ZesTemp
+	*l0sysman.Temp
 	attributes []attribute.KeyValue
 }
 
@@ -27,7 +28,7 @@ type temperatureMetrics struct {
 	current metric.Float64ObservableGauge
 }
 
-func newSysmanTemperature(temp *levelzero.ZesTemp) (*sysmanTemperature, error) {
+func newSysmanTemperature(temp *l0sysman.Temp) (*sysmanTemperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
 		return nil, err
@@ -37,12 +38,12 @@ func newSysmanTemperature(temp *levelzero.ZesTemp) (*sysmanTemperature, error) {
 		attribute.String("hw.gpu.temperature.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId)),
 	}
 	return &sysmanTemperature{
-		ZesTemp:    temp,
+		Temp:       temp,
 		attributes: attrs,
 	}, nil
 }
 
-func enumTemperature(d *levelzero.ZeDevice) []*sysmanTemperature {
+func enumTemperature(d *l0sysman.Device) []*sysmanTemperature {
 	temps, err := d.EnumTemperatureSensors()
 	if err != nil {
 		slog.Error("Failed to enumerate temperature sensors", "error", err)

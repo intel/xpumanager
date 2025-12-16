@@ -9,9 +9,10 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/intel/level-zero-go/levelzero"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
 func init() {
@@ -19,7 +20,7 @@ func init() {
 }
 
 type sysmanFrequency struct {
-	*levelzero.ZesFreq
+	*l0sysman.Freq
 
 	state      sysmanFrequencyState
 	attributes []attribute.KeyValue
@@ -27,7 +28,7 @@ type sysmanFrequency struct {
 
 // sysmanFrequencyState holds the dynamic runtime state.
 type sysmanFrequencyState struct {
-	throttleReasonsSeen levelzero.ZesFreqThrottleReasonFlags
+	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
 }
 
 type frequencyMetrics struct {
@@ -38,7 +39,7 @@ type frequencyMetrics struct {
 	throttleReason metric.Int64ObservableUpDownCounter
 }
 
-func newSysmanFrequency(freq *levelzero.ZesFreq) (*sysmanFrequency, error) {
+func newSysmanFrequency(freq *l0sysman.Freq) (*sysmanFrequency, error) {
 	props, err := freq.GetProperties()
 	if err != nil {
 		return nil, err
@@ -49,12 +50,12 @@ func newSysmanFrequency(freq *levelzero.ZesFreq) (*sysmanFrequency, error) {
 	}
 
 	return &sysmanFrequency{
-		ZesFreq:    freq,
+		Freq:       freq,
 		attributes: attrs,
 	}, nil
 }
 
-func enumFrequency(d *levelzero.ZeDevice) []*sysmanFrequency {
+func enumFrequency(d *l0sysman.Device) []*sysmanFrequency {
 	freqs, err := d.EnumFrequencyDomains()
 	if err != nil {
 		slog.Error("Failed to enumerate frequency domains", "error", err)
@@ -156,17 +157,17 @@ func (m *frequencyMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
 				o.ObserveFloat64(m.actual, state.Actual*1e6, opt)
 			}
 
-			for reason := levelzero.ZesFreqThrottleReasonFlag(1); reason <= levelzero.ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
+			for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
 				value := int64(0)
-				if levelzero.ZesFreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
+				if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
 					value = 1
-					freq.state.throttleReasonsSeen |= levelzero.ZesFreqThrottleReasonFlags(reason)
+					freq.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(reason)
 				}
 
 				// Flags may be unset because the driver lacks support for this
 				// throttle reason (does not know the status). Emit the metric
 				// only once support is confirmed.
-				if levelzero.ZesFreqThrottleReasonFlag(freq.state.throttleReasonsSeen)&reason != 0 {
+				if l0sysman.FreqThrottleReasonFlag(freq.state.throttleReasonsSeen)&reason != 0 {
 					reasonAttr := attribute.String("hw.gpu.frequency.throttle_reason.type", strings.ToLower(reason.String()))
 					o.ObserveInt64(m.throttleReason, value, metric.WithAttributes(append(attrs, reasonAttr)...))
 				}
