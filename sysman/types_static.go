@@ -17,192 +17,156 @@ import (
 	"strings"
 )
 
-type zeDriverHandle C.ze_driver_handle_t
-
-type zeDeviceHandle C.ze_device_handle_t
-
-type zesSchedHandle C.zes_sched_handle_t
-
-type zesPerfHandle C.zes_perf_handle_t
-
-type zesPwrHandle C.zes_pwr_handle_t
-
-type zesFreqHandle C.zes_freq_handle_t
-
-type zesEngineHandle C.zes_engine_handle_t
-
-type zesStandbyHandle C.zes_standby_handle_t
-
-type zesFirmwareHandle C.zes_firmware_handle_t
-
-type zesMemHandle C.zes_mem_handle_t
-
-type zesFabricPortHandle C.zes_fabric_port_handle_t
-
-type zesTempHandle C.zes_temp_handle_t
-
-type zesPsuHandle C.zes_psu_handle_t
-
-type zesFanHandle C.zes_fan_handle_t
-
-type zesLedHandle C.zes_led_handle_t
-
-type zesRasHandle C.zes_ras_handle_t
-
-type zesDiagHandle C.zes_diag_handle_t
-
-type zesOverclockHandle C.zes_overclock_handle_t
-
 /* Wrappers for handles */
 type Driver struct {
-	handle zeDriverHandle
+	handle driverHandle
 }
 
-func (w *Driver) setHandle(h zeDriverHandle) {
+func (w *Driver) setHandle(h driverHandle) {
 	w.handle = h
 }
 
 type Device struct {
-	handle zeDeviceHandle
+	handle deviceHandle
 }
 
-func (w *Device) setHandle(h zeDeviceHandle) {
+func (w *Device) setHandle(h deviceHandle) {
 	w.handle = h
 }
 
-func (w *Device) getHandle() zeDeviceHandle {
+func (w *Device) getHandle() deviceHandle {
 	return w.handle
 }
 
 type Overclock struct {
-	handle zesOverclockHandle
+	handle overclockHandle
 }
 
-func (w *Overclock) setHandle(h zesOverclockHandle) {
+func (w *Overclock) setHandle(h overclockHandle) {
 	w.handle = h
 }
 
 type Diagnostics struct {
-	handle zesDiagHandle
+	handle diagHandle
 }
 
-func (w *Diagnostics) setHandle(h zesDiagHandle) {
+func (w *Diagnostics) setHandle(h diagHandle) {
 	w.handle = h
 }
 
 type Engine struct {
-	handle zesEngineHandle
+	handle engineHandle
 }
 
-func (w *Engine) setHandle(h zesEngineHandle) {
+func (w *Engine) setHandle(h engineHandle) {
 	w.handle = h
 }
 
 type FabricPort struct {
-	handle zesFabricPortHandle
+	handle fabricPortHandle
 }
 
-func (w *FabricPort) setHandle(h zesFabricPortHandle) {
+func (w *FabricPort) setHandle(h fabricPortHandle) {
 	w.handle = h
 }
 
-func (w *FabricPort) getHandle() zesFabricPortHandle {
+func (w *FabricPort) getHandle() fabricPortHandle {
 	return w.handle
 }
 
 type Fan struct {
-	handle zesFanHandle
+	handle fanHandle
 }
 
-func (w *Fan) setHandle(h zesFanHandle) {
+func (w *Fan) setHandle(h fanHandle) {
 	w.handle = h
 }
 
 type Firmware struct {
-	handle zesFirmwareHandle
+	handle firmwareHandle
 }
 
-func (w *Firmware) setHandle(h zesFirmwareHandle) {
+func (w *Firmware) setHandle(h firmwareHandle) {
 	w.handle = h
 }
 
 type Freq struct {
-	handle zesFreqHandle
+	handle freqHandle
 }
 
-func (w *Freq) setHandle(h zesFreqHandle) {
+func (w *Freq) setHandle(h freqHandle) {
 	w.handle = h
 }
 
 type Led struct {
-	handle zesLedHandle
+	handle ledHandle
 }
 
-func (w *Led) setHandle(h zesLedHandle) {
+func (w *Led) setHandle(h ledHandle) {
 	w.handle = h
 }
 
 type Mem struct {
-	handle zesMemHandle
+	handle memHandle
 }
 
-func (w *Mem) setHandle(h zesMemHandle) {
+func (w *Mem) setHandle(h memHandle) {
 	w.handle = h
 }
 
 type Perf struct {
-	handle zesPerfHandle
+	handle perfHandle
 }
 
-func (w *Perf) setHandle(h zesPerfHandle) {
+func (w *Perf) setHandle(h perfHandle) {
 	w.handle = h
 }
 
 type Pwr struct {
-	handle zesPwrHandle
+	handle pwrHandle
 }
 
-func (w *Pwr) setHandle(h zesPwrHandle) {
+func (w *Pwr) setHandle(h pwrHandle) {
 	w.handle = h
 }
 
 type Psu struct {
-	handle zesPsuHandle
+	handle psuHandle
 }
 
-func (w *Psu) setHandle(h zesPsuHandle) {
+func (w *Psu) setHandle(h psuHandle) {
 	w.handle = h
 }
 
 type Ras struct {
-	handle zesRasHandle
+	handle rasHandle
 }
 
-func (w *Ras) setHandle(h zesRasHandle) {
+func (w *Ras) setHandle(h rasHandle) {
 	w.handle = h
 }
 
 type Sched struct {
-	handle zesSchedHandle
+	handle schedHandle
 }
 
-func (w *Sched) setHandle(h zesSchedHandle) {
+func (w *Sched) setHandle(h schedHandle) {
 	w.handle = h
 }
 
 type Standby struct {
-	handle zesStandbyHandle
+	handle standbyHandle
 }
 
-func (w *Standby) setHandle(h zesStandbyHandle) {
+func (w *Standby) setHandle(h standbyHandle) {
 	w.handle = h
 }
 
 type Temp struct {
-	handle zesTempHandle
+	handle tempHandle
 }
 
-func (w *Temp) setHandle(h zesTempHandle) {
+func (w *Temp) setHandle(h tempHandle) {
 	w.handle = h
 }
 
