@@ -181,7 +181,7 @@ const (
 	API_VERSION_1_13 ApiVersion = 65549
 	// version 1.14
 	API_VERSION_1_14 ApiVersion = 65550
-	// latest known version
+	// API version of the L0 headers which the bindings were generated from.
 	API_VERSION_CURRENT ApiVersion = 65550
 	// Value marking end of ZE_API_VERSION_* ENUMs.
 	API_VERSION_FORCE_UINT32 ApiVersion = 2147483647

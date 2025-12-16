@@ -45,3 +45,5 @@ values:
       {{- with doxygen . -}}
       {{ . }}
       {{- end -}}
+  - name: API_VERSION_CURRENT
+    newComment: API version of the L0 headers which the bindings were generated from.
