@@ -112,7 +112,7 @@ func run(flags flagsT) (exitCode int) {
 
 	s, err := sysman.New(int(aggregatedSampleCount))
 	if err != nil {
-		slog.Error("failed to initialize sysman API", "error", err)
+		slog.Error("failed to initialize L0 Sysman API (likely a Level-Zero driver / device access issue)", "error", err)
 		return 1
 	}
 
