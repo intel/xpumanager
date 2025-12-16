@@ -19,10 +19,14 @@ import "C"
 
 // Check that the API version of the C headers used for compilation is at least
 // the version that was used to generate the bindings.
-// Will fail with "invalid array length" compiler error if the
-// ZE_API_VERSION_CURRENT from the C headers is less than API_VERSION_CURRENT
-// from the bindings.
-var _ [C.ZE_API_VERSION_CURRENT - API_VERSION_CURRENT]struct{}
+var (
+	// Fails with "cannot use type" compiler error if the major version from the C
+	// headers does not match that from the bindings.
+	_ [1]struct{} = [(C.ZE_API_VERSION_CURRENT >> 16) - (API_VERSION_CURRENT >> 16) + 1]struct{}{}
+	// Fails with "invalid array length" compiler error if the minor version
+	// from the C headers is less than that from the bindings.
+	_ [(C.ZE_API_VERSION_CURRENT & 0xffff) - (API_VERSION_CURRENT & 0xffff)]struct{}
+)
 
 // ToError converts the Result to an error.
 func (r *Result) ToError() error {
