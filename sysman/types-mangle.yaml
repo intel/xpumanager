@@ -224,7 +224,7 @@ types:
       {{ .Name }} declared in:
       https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}
       {{- with doxygen . }}
-      
+
       {{ . }}
       {{- end -}}
   - name: InitFlags

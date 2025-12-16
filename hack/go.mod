@@ -2,7 +2,10 @@ module github.com/intel/level-zero-go/hack
 
 go 1.24.0
 
-require go.yaml.in/yaml/v4 v4.0.0-rc.3
+require (
+	cloudeng.io/text v0.0.13
+	go.yaml.in/yaml/v4 v4.0.0-rc.3
+)
 
 require (
 	github.com/dlclark/regexp2 v1.11.0 // indirect

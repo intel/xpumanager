@@ -50,13 +50,17 @@ const (
 	RESULT_EXP_ERROR_REMOTE_DEVICE Result = 2146435075
 	// [Core, Experimental] operands of comparison are not compatible
 	RESULT_EXP_ERROR_OPERANDS_INCOMPATIBLE Result = 2146435076
-	// [Core, Experimental] ray tracing acceleration structure build operation failed due to insufficient resources, retry with a larger acceleration structure buffer allocation
+	// [Core, Experimental] ray tracing acceleration structure build operation failed
+	// due to insufficient resources, retry with a larger acceleration structure buffer
+	// allocation
 	RESULT_EXP_RTAS_BUILD_RETRY Result = 2146435077
-	// [Core, Experimental] ray tracing acceleration structure build operation deferred to parallel operation join
+	// [Core, Experimental] ray tracing acceleration structure build operation deferred
+	// to parallel operation join
 	RESULT_EXP_RTAS_BUILD_DEFERRED Result = 2146435078
 	// [Sysman] access denied due to permission level
 	RESULT_ERROR_INSUFFICIENT_PERMISSIONS Result = 1879113728
-	// [Sysman] resource already in use and simultaneous access not allowed or resource was removed
+	// [Sysman] resource already in use and simultaneous access not allowed or resource
+	// was removed
 	RESULT_ERROR_NOT_AVAILABLE Result = 1879113729
 	// [Common] external required dependency is unavailable or missing
 	RESULT_ERROR_DEPENDENCY_UNAVAILABLE Result = 1879179264
@@ -108,7 +112,8 @@ const (
 	RESULT_ERROR_INVALID_KERNEL_ARGUMENT_SIZE Result = 2013265942
 	// [Validation] value of kernel attribute is not valid for the kernel or device
 	RESULT_ERROR_INVALID_KERNEL_ATTRIBUTE_VALUE Result = 2013265943
-	// [Validation] module with imports needs to be linked before kernels can be created from it.
+	// [Validation] module with imports needs to be linked before kernels can be created
+	// from it.
 	RESULT_ERROR_INVALID_MODULE_UNLINKED Result = 2013265944
 	// [Validation] command list type does not match command queue type
 	RESULT_ERROR_INVALID_COMMAND_LIST_TYPE Result = 2013265945
@@ -118,9 +123,12 @@ const (
 	RESULT_WARNING_ACTION_REQUIRED Result = 2013265947
 	// [Core, Validation] kernel handle is invalid for the operation
 	RESULT_ERROR_INVALID_KERNEL_HANDLE Result = 2013265948
-	// [Core, Extension] ray tracing acceleration structure build operation failed due to insufficient resources, retry with a larger acceleration structure buffer allocation
+	// [Core, Extension] ray tracing acceleration structure build operation failed due
+	// to insufficient resources, retry with a larger acceleration structure buffer
+	// allocation
 	RESULT_EXT_RTAS_BUILD_RETRY Result = 2013265949
-	// [Core, Extension] ray tracing acceleration structure build operation deferred to parallel operation join
+	// [Core, Extension] ray tracing acceleration structure build operation deferred to
+	// parallel operation join
 	RESULT_EXT_RTAS_BUILD_DEFERRED Result = 2013265950
 	// [Core, Extension] operands of comparison are not compatible
 	RESULT_EXT_ERROR_OPERANDS_INCOMPATIBLE Result = 2013265951

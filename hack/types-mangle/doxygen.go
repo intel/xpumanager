@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"cloudeng.io/text/linewrap"
 )
 
 // doxygen represents a Doxygen XML document.
@@ -125,11 +127,10 @@ func (d *description) String() string {
 
 func (p *para) indentedString(indent int) string {
 	var parts []string
-	indentStr := strings.Repeat("  ", indent)
-
 	// Extract direct text content
 	if t := strings.TrimSpace(p.Text); t != "" {
-		parts = append(parts, indentStr+t)
+		// Wrap given indent+text around 80 cols (not strict limit)
+		parts = append(parts, linewrap.Block(indent*2, 80, t))
 	}
 
 	// Handle itemized lists
