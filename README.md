@@ -19,9 +19,16 @@ for details.
 ## Requirements
 
 - Go 1.24 or later
-- oneAPI [Level-Zero Loader + headers](https://github.com/oneapi-src/level-zero)
+- oneAPI [Level-Zero Loader + headers](https://github.com/oneapi-src/level-zero) v1.25 or later
 - Intel(R) [Graphics Compute Runtime](https://github.com/intel/compute-runtime)
   - Level-Zero backend needed for running the code using the bindings
+
+> [!NOTE]
+> The oneAPI Level-Zero version is checked at build time. Incompatible versions
+> will cause build errors like
+> ```golang
+> ../core/core_static.go:28:5: invalid array length ... (constant -1 of int32 type ApiVersion)
+> ```
 
 ## Development
 
