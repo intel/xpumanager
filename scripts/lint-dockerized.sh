@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 
-LEVEL_ZERO_VERSION=${LEVEL_ZERO_VERSION:-"1.26.0"}
+LEVEL_ZERO_VERSION=${LEVEL_ZERO_VERSION:-"1.26.2"}
 L0_BASE_URL="https://github.com/oneapi-src/level-zero/releases/download"
 
 docker run --rm -v $(pwd):/app -w /app \
