@@ -6,6 +6,7 @@ tool (
 	github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 	github.com/losisin/helm-values-schema-json/v2
 	github.com/norwoodj/helm-docs/cmd/helm-docs
+	go.opentelemetry.io/collector/cmd/builder
 )
 
 require (
@@ -120,7 +121,10 @@ require (
 	github.com/kisielk/errcheck v1.9.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.6 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
+	github.com/knadh/koanf/parsers/yaml v1.1.0 // indirect
+	github.com/knadh/koanf/providers/env/v2 v2.0.0 // indirect
 	github.com/knadh/koanf/providers/file v1.2.0 // indirect
+	github.com/knadh/koanf/providers/fs v1.0.0 // indirect
 	github.com/knadh/koanf/providers/posflag v1.0.1 // indirect
 	github.com/knadh/koanf/providers/structs v1.0.0 // indirect
 	github.com/knadh/koanf/v2 v2.3.0 // indirect
@@ -217,13 +221,14 @@ require (
 	go-simpler.org/sloglint v0.11.1 // indirect
 	go.augendre.info/arangolint v0.3.1 // indirect
 	go.augendre.info/fatcontext v0.9.0 // indirect
+	go.opentelemetry.io/collector/cmd/builder v0.142.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
