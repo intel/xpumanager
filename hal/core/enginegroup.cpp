@@ -367,6 +367,57 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 }
 
 /**
+ * @brief Gets activity statistics per tile for an aggregated engine type
+ *
+ * This function retrieves activity (active time and timestamp) for engine groups
+ * of the specified type, organized by tile (subdevice). Designed for use with
+ * *_ALL engine types (e.g., ZES_ENGINE_GROUP_COMPUTE_ALL) where Level Zero provides
+ * one aggregated handle per tile. For per-engine instance data, use getEngineActivityByType
+ * with *_SINGLE types instead.
+ *
+ * @param [in] type The aggregated engine group type to query (e.g., ZES_ENGINE_GROUP_COMPUTE_ALL)
+ * @param [out] tileActivity Map of tile_id -> (activeTime, timestamp)
+ * @return ze_result_t ZE_RESULT_SUCCESS if activity retrieved successfully, error code otherwise
+ */
+ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
+												  std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileActivity)
+{
+	zes_engine_properties_t engineProperties;
+	zes_engine_stats_t engineStats;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	TRACING();
+
+	tileActivity.clear();
+
+	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+		zes_engine_handle_t engineGroup = engineGroups[i];
+		result = getProperties(engineGroup, &engineProperties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (engineProperties.type == type) {
+			result = getActivity(engineGroup, &engineStats);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+				return result;
+			}
+
+			uint32_t tileId = engineProperties.subdeviceId;
+			auto &entry = tileActivity[tileId];
+			entry.first = engineStats.activeTime;
+			entry.second = engineStats.timestamp;
+
+			DBG("Engine type %d tile %u: activeTime=%" PRIu64 ", timestamp=%" PRIu64 "\n", type, tileId,
+				engineStats.activeTime, engineStats.timestamp);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Initializes the engine group management subsystem for a device
  *
  * This function initializes engine group management by enumerating all

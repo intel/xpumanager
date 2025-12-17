@@ -576,6 +576,67 @@ ze_result_t cmdStats::collectPcieMetrics(pci *pciHandler, zes_device_handle_t de
 }
 
 /**
+ * @brief Collect per-tile engine utilization samples
+ *
+ * This function captures engine activity for a specific engine type aggregated by tile.
+ * It calculates utilization percentage from the delta between baseline and current
+ * activity counters: util% = (deltaActiveTime / deltaTimestamp) * 100.
+ * Each tile gets a single aggregated utilization value representing all engines
+ * of that type on that tile.
+ *
+ * @param [in] engineGroup The HAL enginegroup instance
+ * @param [in] engineType The engine group type to query (e.g., ZES_ENGINE_GROUP_COMPUTE_ALL)
+ * @param [in,out] baseline Previous sample snapshot per tile; updated with current values
+ * @param [out] utilPerTile Map of tile_id -> vector of utilization samples %
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectEngineUtilPerTile(enginegroup *engineGroup, zes_engine_group_t engineType,
+											   TileEngineSnapshot &baseline,
+											   std::map<uint32_t, std::vector<double>> &utilPerTile)
+{
+	TRACING();
+	if (engineGroup == nullptr) {
+		DBG("Engine group handler not available.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileActivity;
+	ze_result_t result = engineGroup->getEngineActivityPerTile(engineType, tileActivity);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	for (const auto &[tileId, activity] : tileActivity) {
+		uint64_t activeTime = activity.first;
+		uint64_t timestamp = activity.second;
+
+		if (baseline.valid && baseline.activeTime.count(tileId) > 0 && baseline.timestamp.count(tileId) > 0) {
+			uint64_t baseActiveTime = baseline.activeTime[tileId];
+			uint64_t baseTimestamp = baseline.timestamp[tileId];
+
+			if (timestamp > baseTimestamp && activeTime >= baseActiveTime) {
+				uint64_t deltaActive = activeTime - baseActiveTime;
+				uint64_t deltaTime = timestamp - baseTimestamp;
+
+				if (deltaTime > 0) {
+					double util = (static_cast<double>(deltaActive) / static_cast<double>(deltaTime)) * 100.0;
+					util = std::clamp(util, 0.0, 100.0);
+					utilPerTile[tileId].push_back(util);
+					DBG("Engine type %d tile %u util: %.2f%%\n", engineType, tileId, util);
+				}
+			}
+		}
+
+		baseline.activeTime[tileId] = activeTime;
+		baseline.timestamp[tileId] = timestamp;
+	}
+
+	baseline.valid = !tileActivity.empty();
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Enumerate and initialize trackers for all engines of a specific type
  *
  * This function queries the HAL layer to determine how many engine instances exist
@@ -756,6 +817,13 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	TileMemoryBandwidthSnapshot memoryBaseline{};
 	PcieBandwidthSnapshot pcieBaseline{};
 
+	// Per-tile engine utilization baselines
+	TileEngineSnapshot allEnginesUtilBaseline{};
+	TileEngineSnapshot computeUtilBaseline{};
+	TileEngineSnapshot renderUtilBaseline{};
+	TileEngineSnapshot mediaUtilBaseline{};
+	TileEngineSnapshot copyUtilBaseline{};
+
 	if (powerHandler != nullptr) {
 		std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
 		ze_result_t result = powerHandler->getEnergyPerTile(tileEnergy);
@@ -825,6 +893,16 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 									metrics.memoryUsedMiBPerTile, metrics.memoryUtilPercentPerTile);
 		collectPcieMetrics(pciHandler, device->zesDeviceHdl, pcieBaseline, metrics.pcieReadKBpsSamples,
 						   metrics.pcieWriteKBpsSamples);
+
+		// Per-tile engine utilization (aggregated)
+		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_ALL, allEnginesUtilBaseline,
+								 metrics.allEnginesUtilPerTile);
+		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_COMPUTE_ALL, computeUtilBaseline,
+								 metrics.computeUtilPerTile);
+		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_RENDER_ALL, renderUtilBaseline,
+								 metrics.renderUtilPerTile);
+		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_MEDIA_ALL, mediaUtilBaseline, metrics.mediaUtilPerTile);
+		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_COPY_ALL, copyUtilBaseline, metrics.copyUtilPerTile);
 	}
 
 	auto endTime = std::chrono::system_clock::now();
@@ -982,6 +1060,46 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		}
 	}
 
+	for (const auto &[tileId, samples] : metrics.allEnginesUtilPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			deviceJson["utilization"]["gpu_percent"][tileKey] = stats.avg;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.computeUtilPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			deviceJson["utilization"]["compute_percent"][tileKey] = stats.avg;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.renderUtilPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			deviceJson["utilization"]["render_percent"][tileKey] = stats.avg;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.mediaUtilPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			deviceJson["utilization"]["media_percent"][tileKey] = stats.avg;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.copyUtilPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			deviceJson["utilization"]["copy_percent"][tileKey] = stats.avg;
+		}
+	}
+
 	if (initialPowerBaseline.valid && !metrics.gpuPowerPerTile.empty()) {
 		std::map<uint32_t, std::pair<uint64_t, uint64_t>> finalTileEnergy;
 		if (powerHandler != nullptr && powerHandler->getEnergyPerTile(finalTileEnergy) == ZE_RESULT_SUCCESS) {
@@ -1113,20 +1231,6 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 		printRow("Energy Consumed (J)", "N/A");
 	}
 
-	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", "/utilization/compute_engines"_json_pointer);
-	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", "/utilization/render_engines"_json_pointer);
-	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", "/utilization/copy_engines"_json_pointer);
-	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)",
-						 "/utilization/media_em_engines"_json_pointer);
-
-	if (deviceJson.contains("ras_errors")) {
-		printSeparator();
-		printRasCounters(deviceJson, printRow);
-	}
-
-	printSeparator();
-
 	auto printPerTileMetric = [&printRow](const nlohmann::ordered_json &json, const std::string &label,
 										  const nlohmann::json::json_pointer &ptr, int precision = 0) {
 		if (!json.contains(ptr)) {
@@ -1165,19 +1269,23 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 		for (uint32_t tileId : tileIds) {
 			std::string tileKey = tilePrefix + std::to_string(tileId);
 			auto &tileMetric = metric[tileKey];
-			if (!tileMetric.is_object()) {
-				continue;
-			}
-
-			double avg = tileMetric.value("avg", 0.0);
-			double min = tileMetric.value("min", 0.0);
-			double max = tileMetric.value("max", 0.0);
-			double current = tileMetric.value("current", 0.0);
 
 			std::ostringstream oss;
 			oss << std::fixed << std::setprecision(precision);
-			oss << "Tile " << tileId << ": avg: " << avg << ", min: " << min << ", max: " << max
-				<< ", current: " << current;
+
+			// Handle scalar value (avg only) vs object (full stats)
+			if (tileMetric.is_number()) {
+				oss << "Tile " << tileId << ": " << tileMetric.get<double>();
+			} else if (tileMetric.is_object()) {
+				double avg = tileMetric.value("avg", 0.0);
+				double min = tileMetric.value("min", 0.0);
+				double max = tileMetric.value("max", 0.0);
+				double current = tileMetric.value("current", 0.0);
+				oss << "Tile " << tileId << ": avg: " << avg << ", min: " << min << ", max: " << max
+					<< ", current: " << current;
+			} else {
+				continue;
+			}
 
 			if (firstTile) {
 				printRow(label, oss.str());
@@ -1187,6 +1295,19 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 			}
 		}
 	};
+
+	printPerTileMetric(deviceJson, "GPU Utilization (%)", "/utilization/gpu_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "Compute Engines Util (%)", "/utilization/compute_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "Render Engines Util (%)", "/utilization/render_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "Media Engines Util (%)", "/utilization/media_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "Copy Engines Util (%)", "/utilization/copy_percent"_json_pointer, 0);
+
+	if (deviceJson.contains("ras_errors")) {
+		printSeparator();
+		printRasCounters(deviceJson, printRow);
+	}
+
+	printSeparator();
 
 	printPerTileMetric(deviceJson, "GPU Power (W)", "/power/gpu_power_w"_json_pointer, 0);
 	printSeparator();
@@ -1223,6 +1344,16 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printMetric(deviceJson, printRow, "PCIe Read (kB/s)", "/pcie/read_kbps"_json_pointer);
 	printSeparator();
 	printMetric(deviceJson, printRow, "PCIe Write (kB/s)", "/pcie/write_kbps"_json_pointer);
+	printSeparator();
+
+	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", "/utilization/compute_engines"_json_pointer);
+	printSeparator();
+	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", "/utilization/render_engines"_json_pointer);
+	printSeparator();
+	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", "/utilization/copy_engines"_json_pointer);
+	printSeparator();
+	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)",
+						 "/utilization/media_em_engines"_json_pointer);
 
 	printSeparator();
 }

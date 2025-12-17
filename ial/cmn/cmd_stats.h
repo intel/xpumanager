@@ -149,6 +149,13 @@ struct PcieBandwidthSnapshot
 	bool valid = false;
 };
 
+struct TileEngineSnapshot
+{
+	std::map<uint32_t, uint64_t> activeTime; // tile_id -> active time
+	std::map<uint32_t, uint64_t> timestamp;	 // tile_id -> timestamp
+	bool valid = false;
+};
+
 struct FabricPortSample
 {
 	uint32_t index = 0;
@@ -197,6 +204,13 @@ struct DeviceMetrics
 	// PCIe throughput samples (device-level, not per-tile)
 	std::vector<double> pcieReadKBpsSamples;  // PCIe read throughput samples in kB/s
 	std::vector<double> pcieWriteKBpsSamples; // PCIe write throughput samples in kB/s
+
+	// Per-tile engine utilization samples (aggregated across all engines of each type per tile)
+	std::map<uint32_t, std::vector<double>> allEnginesUtilPerTile; // tile_id -> all engines utilization samples %
+	std::map<uint32_t, std::vector<double>> computeUtilPerTile;	   // tile_id -> compute engine utilization samples %
+	std::map<uint32_t, std::vector<double>> renderUtilPerTile;	   // tile_id -> render engine utilization samples %
+	std::map<uint32_t, std::vector<double>> mediaUtilPerTile;	   // tile_id -> media engine utilization samples %
+	std::map<uint32_t, std::vector<double>> copyUtilPerTile;	   // tile_id -> copy engine utilization samples %
 
 	SummaryStats gpuCoreTemp;
 	SummaryStats memoryTemp;
@@ -292,6 +306,9 @@ private:
 	static ze_result_t collectPcieMetrics(pci *pciHandler, zes_device_handle_t device, PcieBandwidthSnapshot &baseline,
 										  std::vector<double> &pcieReadKBpsSamples,
 										  std::vector<double> &pcieWriteKBpsSamples);
+	static ze_result_t collectEngineUtilPerTile(enginegroup *engineGroup, zes_engine_group_t engineType,
+												TileEngineSnapshot &baseline,
+												std::map<uint32_t, std::vector<double>> &utilPerTile);
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
 										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas);
 };

@@ -25,6 +25,8 @@
 #define _ENGINEGROUP_H
 
 #include "sysman.h"
+#include <map>
+#include <utility>
 
 class LIBXPUM_API enginegroup : public sysman
 {
@@ -45,6 +47,8 @@ public:
 							   uint64_t *timestamp);
 	ze_result_t getEngineActivityByType(zes_engine_group_t type, uint32_t engineIndex, uint64_t *activeTime,
 										uint64_t *timestamp);
+	ze_result_t getEngineActivityPerTile(zes_engine_group_t type,
+										 std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileActivity);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;
