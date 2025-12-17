@@ -183,6 +183,57 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 }
 
 /**
+ * @brief Gets temperature for a specific sensor type per tile/subdevice
+ *
+ * This function enumerates all temperature sensors and returns the current
+ * temperature for each subdevice/tile that matches the specified sensor type.
+ * Used for per-tile temperature monitoring on multi-tile GPUs.
+ *
+ * @param [in] type The temperature sensor type to query (GPU, Memory, etc.)
+ * @param [out] tileTemperatures Map of tile_id -> current temperature in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful temperature retrieval
+ */
+ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32_t, double> &tileTemperatures)
+{
+	TRACING();
+	tileTemperatures.clear();
+
+	for (uint32_t i = 0; i < temperatureCount; ++i) {
+		zes_temp_properties_t properties = {};
+		ze_result_t result = getProperties(temperatureHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get properties for temperature sensor %d\n", i);
+			continue;
+		}
+
+		if (properties.type != type) {
+			continue;
+		}
+
+		uint32_t tileId = 0;
+		if (properties.onSubdevice) {
+			tileId = properties.subdeviceId;
+		}
+
+		double temp = 0.0;
+		result = getState(temperatureHandles[i], &temp);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get state for temperature sensor %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		// Filter abnormal temperatures
+		if (temp < MAX_REASONABLE_TEMP_CELSIUS) {
+			tileTemperatures[tileId] = temp;
+			DBG("Tile %u %s temperature: %.2f C\n", tileId,
+				type == ZES_TEMP_SENSORS_GPU ? "GPU" : (type == ZES_TEMP_SENSORS_MEMORY ? "Memory" : "Other"), temp);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Gets the current GPU core temperature
  *
  * This function retrieves the current temperature reading from the GPU core
