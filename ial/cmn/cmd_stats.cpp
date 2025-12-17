@@ -25,6 +25,7 @@
 #include "cmd_stats.h"
 #include "debug.h"
 #include "memory.h"
+#include "pci.h"
 #include "printer.h"
 #include <assert.h>
 #include <algorithm>
@@ -506,6 +507,75 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidth
 }
 
 /**
+ * @brief Collect PCIe read/write throughput metrics
+ *
+ * This function captures PCIe bandwidth counters and calculates throughput (kB/s)
+ * from counter deltas between the baseline and current samples. Per the Level Zero
+ * specification, rxCounter represents bytes received and txCounter represents bytes
+ * transmitted - these are separate directional counters (sum of all lanes).
+ *
+ * @param [in] pciHandler The HAL pci instance
+ * @param [in] device The device handle for getting PCI stats
+ * @param [in,out] baseline Previous sample snapshot; updated with current values on each call
+ * @param [out] pcieReadKBpsSamples Vector of PCIe read throughput samples in kB/s
+ * @param [out] pcieWriteKBpsSamples Vector of PCIe write throughput samples in kB/s
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectPcieMetrics(pci *pciHandler, zes_device_handle_t device, PcieBandwidthSnapshot &baseline,
+										 std::vector<double> &pcieReadKBpsSamples,
+										 std::vector<double> &pcieWriteKBpsSamples)
+{
+	TRACING();
+	if (pciHandler == nullptr) {
+		DBG("PCI handler not available.\n");
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	zes_pci_stats_t pciStats = {};
+	ze_result_t result = pciHandler->getStats(device, &pciStats);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get PCIe stats: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return ZE_RESULT_SUCCESS; // Not fatal, device may not support PCIe stats
+	}
+
+	if (baseline.valid && pciStats.timestamp > baseline.timestamp) {
+		uint64_t deltaTime = pciStats.timestamp - baseline.timestamp;
+
+		uint64_t deltaRx = 0;
+		if (pciStats.rxCounter >= baseline.rxCounter) {
+			deltaRx = pciStats.rxCounter - baseline.rxCounter;
+		} else {
+			// Counter wrapped around
+			deltaRx = (UINT64_MAX - baseline.rxCounter) + pciStats.rxCounter + 1;
+		}
+
+		uint64_t deltaTx = 0;
+		if (pciStats.txCounter >= baseline.txCounter) {
+			deltaTx = pciStats.txCounter - baseline.txCounter;
+		} else {
+			// Counter wrapped around
+			deltaTx = (UINT64_MAX - baseline.txCounter) + pciStats.txCounter + 1;
+		}
+
+		double readKBps =
+			static_cast<double>(deltaRx) * MICROSECONDS_PER_SECOND / (static_cast<double>(deltaTime) * BYTES_PER_KB);
+		double writeKBps =
+			static_cast<double>(deltaTx) * MICROSECONDS_PER_SECOND / (static_cast<double>(deltaTime) * BYTES_PER_KB);
+
+		pcieReadKBpsSamples.push_back(readKBps);
+		pcieWriteKBpsSamples.push_back(writeKBps);
+		DBG("PCIe read: %.2f kB/s, write: %.2f kB/s\n", readKBps, writeKBps);
+	}
+
+	baseline.rxCounter = pciStats.rxCounter;
+	baseline.txCounter = pciStats.txCounter;
+	baseline.timestamp = pciStats.timestamp;
+	baseline.valid = true;
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Enumerate and initialize trackers for all engines of a specific type
  *
  * This function queries the HAL layer to determine how many engine instances exist
@@ -678,11 +748,13 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	auto *frequencyHandler = reinterpret_cast<::frequency *>(dev->getFrequency());
 	auto *tempHandler = reinterpret_cast<::temperature *>(dev->getTemperature());
 	auto *memoryHandler = reinterpret_cast<::memory *>(dev->getMemory());
+	auto *pciHandler = reinterpret_cast<::pci *>(dev->getPCI());
 
 	std::vector<EngineInstanceTracker> computeEngines, renderEngines, copyEngines, mediaEmEngines;
 	TilePowerSnapshot powerBaseline{};
 	TilePowerSnapshot initialPowerBaseline{};
 	TileMemoryBandwidthSnapshot memoryBaseline{};
+	PcieBandwidthSnapshot pcieBaseline{};
 
 	if (powerHandler != nullptr) {
 		std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
@@ -751,6 +823,8 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectMemoryMetricsPerTile(memoryHandler, memoryBaseline, metrics.memoryReadKBpsPerTile,
 									metrics.memoryWriteKBpsPerTile, metrics.memoryBandwidthPercentPerTile,
 									metrics.memoryUsedMiBPerTile, metrics.memoryUtilPercentPerTile);
+		collectPcieMetrics(pciHandler, device->zesDeviceHdl, pcieBaseline, metrics.pcieReadKBpsSamples,
+						   metrics.pcieWriteKBpsSamples);
 	}
 
 	auto endTime = std::chrono::system_clock::now();
@@ -883,6 +957,28 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 			tileUtilJson["min"] = stats.min;
 			tileUtilJson["max"] = stats.max;
 			tileUtilJson["current"] = stats.current;
+		}
+	}
+
+	if (!metrics.pcieReadKBpsSamples.empty()) {
+		SummaryStats stats = computeSummaryStats(metrics.pcieReadKBpsSamples);
+		if (stats.valid) {
+			auto &pciJson = deviceJson["pcie"]["read_kbps"];
+			pciJson["avg"] = stats.avg;
+			pciJson["min"] = stats.min;
+			pciJson["max"] = stats.max;
+			pciJson["current"] = stats.current;
+		}
+	}
+
+	if (!metrics.pcieWriteKBpsSamples.empty()) {
+		SummaryStats stats = computeSummaryStats(metrics.pcieWriteKBpsSamples);
+		if (stats.valid) {
+			auto &pciJson = deviceJson["pcie"]["write_kbps"];
+			pciJson["avg"] = stats.avg;
+			pciJson["min"] = stats.min;
+			pciJson["max"] = stats.max;
+			pciJson["current"] = stats.current;
 		}
 	}
 
@@ -1122,6 +1218,11 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printSeparator();
 
 	printPerTileMetric(deviceJson, "GPU Memory Util (%)", "/memory/util_percent"_json_pointer, 0);
+	printSeparator();
+
+	printMetric(deviceJson, printRow, "PCIe Read (kB/s)", "/pcie/read_kbps"_json_pointer);
+	printSeparator();
+	printMetric(deviceJson, printRow, "PCIe Write (kB/s)", "/pcie/write_kbps"_json_pointer);
 
 	printSeparator();
 }
