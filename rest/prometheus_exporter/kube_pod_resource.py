@@ -25,7 +25,7 @@ def get_pod_resources():
             for pod_resource in res.pod_resources:
                 for container in pod_resource.containers:
                     for device in container.devices:
-                        if device.resource_name == 'gpu.intel.com/i915':
+                        if device.resource_name in ('gpu.intel.com/i915', 'gpu.intel.com/xe'):
                             for device_id in device.device_ids:
                                 bdf = get_bdf_address(device_id)
                                 if bdf is not None:
@@ -35,7 +35,7 @@ def get_pod_resources():
                                         'container': container.name,
                                         'device_id': device_id
                                     }
-    except grpc._channel._InactiveRpcError as e:
+    except grpc._channel._InactiveRpcError:
         print('grpc channel is inactive')
     except Exception as e:
         print('failed to get pod resource list due to: ', e)

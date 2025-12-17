@@ -30,6 +30,8 @@ private:
 
     bool createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromConfigFile& attrs, uint32_t numVfs, uint64_t lmem);
     
+    void writeVfAttrToGt0Sysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem);
+    void writeVfAttrToGt1Sysfs(std::string vfDir, AttrFromConfigFile attrs);
     void writeVfAttrToSysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem);
 
     xpum_result_t getVfEngineUtil(xpum_device_id_t deviceId,

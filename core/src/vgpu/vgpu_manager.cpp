@@ -47,6 +47,8 @@ static uint32_t getVFMaxNumberByPciDeviceId(int deviceId) {
         case 0xe211:
         case 0xe212:
             return 24;
+        case 0xe223:
+            return 12;
         default:
             return 0;
     }
@@ -293,14 +295,13 @@ xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
         std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + deviceInfo.bdfAddress;
         int numVfs = std::stoi(numVfsString);
 
-        for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
-            try {
-                for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
-		    writeVfAttrToSysfs(debugfsPath + "/gt" + std::to_string(tile) + "/vf" + std::to_string(functionIndex), zeroAttr, 0);
-                }
-            } catch(std::ios::failure &e) {
-                return XPUM_VGPU_REMOVE_VF_FAILED;
+        try {
+            for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
+                writeVfAttrToGt0Sysfs(debugfsPath + "/gt0/vf" + std::to_string(functionIndex), zeroAttr, 0);
+                writeVfAttrToGt1Sysfs(debugfsPath + "/gt1/vf" + std::to_string(functionIndex), zeroAttr);
             }
+        } catch(std::ios::failure &e) {
+            return XPUM_VGPU_REMOVE_VF_FAILED;
         }
     } else {
         XPUM_LOG_ERROR("Failed to open directory {}", iovPath.str());
@@ -1203,7 +1204,7 @@ static bool caseInsensitiveMatch(std::string s1, std::string s2) {
 
 static void updateVgpuSchedulerConfigParamerters(std::string devicePciId, int numVfs, std::string scheduler, std::map<uint32_t, AttrFromConfigFile>& data) {
     if (devicePciId == "56c0" || devicePciId == "56c1" || devicePciId == "56c2" ||
-        devicePciId == "e211" || devicePciId == "e212") {
+        devicePciId == "e211" || devicePciId == "e212" || devicePciId == "e223") {
         data[numVfs].pfExec = 20;
         data[numVfs].pfPreempt = 20000;
         if (caseInsensitiveMatch(scheduler, "Flexible_BurstableQoS_GPUTimeSlicing")) {
@@ -1395,19 +1396,18 @@ bool VgpuManager::createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromCo
         } else if (deviceInfo.deviceModel >= XPUM_DEVICE_MODEL_BMG) {
             std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + deviceInfo.bdfAddress;
 
-            for (uint32_t tile = 0; tile < deviceInfo.numTiles; tile++) {
-                std::string gtNum = std::to_string(tile);
-                writeFile(debugfsPath + "/gt" + gtNum + "/pf/exec_quantum_ms", std::to_string(attrs.pfExec));
-                writeFile(debugfsPath + "/gt" + gtNum + "/pf/preempt_timeout_us", std::to_string(attrs.pfPreempt));
-                writeFile(debugfsPath + "/gt" + gtNum + "/pf/sched_if_idle", attrs.schedIfIdle ? "1": "0");
+            writeFile(debugfsPath + "/gt0/pf/exec_quantum_ms", std::to_string(attrs.pfExec));
+            writeFile(debugfsPath + "/gt0/pf/preempt_timeout_us", std::to_string(attrs.pfPreempt));
+            writeFile(debugfsPath + "/gt0/pf/sched_if_idle", attrs.schedIfIdle ? "1": "0");
+            writeFile(debugfsPath + "/gt1/pf/exec_quantum_ms", std::to_string(attrs.pfExec));
+            writeFile(debugfsPath + "/gt1/pf/preempt_timeout_us", std::to_string(attrs.pfPreempt));
+            writeFile(debugfsPath + "/gt1/pf/sched_if_idle", attrs.schedIfIdle ? "1": "0");
 
-                for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
-                    std::string vfResPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(vfNum);
-                    attrs.vfGgtt /= deviceInfo.numTiles;
-                    attrs.vfDoorbells /= deviceInfo.numTiles;
-                    attrs.vfContexts /= deviceInfo.numTiles;
-                    writeVfAttrToSysfs(vfResPath, attrs, lmem);
-                }
+            for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+                std::string vfResPath = debugfsPath + "/gt0/vf" + std::to_string(vfNum);
+                writeVfAttrToGt0Sysfs(vfResPath, attrs, lmem);
+                vfResPath = debugfsPath + "/gt1/vf" + std::to_string(vfNum);
+                writeVfAttrToGt1Sysfs(vfResPath, attrs);
             }
         }
         writeFile(devicePathString + "/device/sriov_drivers_autoprobe", attrs.driversAutoprobe ? "1" : "0");
@@ -1416,6 +1416,18 @@ bool VgpuManager::createVfInternal(const DeviceSriovInfo& deviceInfo, AttrFromCo
         return false;
     }
     return true;
+}
+
+
+void VgpuManager::writeVfAttrToGt0Sysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem) {
+    writeVfAttrToSysfs(vfDir, attrs, lmem);
+}
+
+void VgpuManager::writeVfAttrToGt1Sysfs(std::string vfDir, AttrFromConfigFile attrs) {
+    writeFile(vfDir + "/exec_quantum_ms", std::to_string(attrs.vfExec));
+    writeFile(vfDir + "/preempt_timeout_us", std::to_string(attrs.vfPreempt));
+    writeFile(vfDir + "/doorbells_quota", std::to_string(attrs.vfDoorbells));
+    writeFile(vfDir + "/contexts_quota", std::to_string(attrs.vfContexts));
 }
 
 void VgpuManager::writeVfAttrToSysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem) {

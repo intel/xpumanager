@@ -117,7 +117,7 @@ def getDiagnosticsResult(deviceId):
                         processList.append(new_process)
                 if len(processList) > 1:
                     new_component['process_list'] = processList
-                    new_component['message'] = "Warning: " + str(len(processList)) + " processses are using the device.";
+                    new_component['message'] = "Warning: " + str(len(processList)) + " processes are using the device."
                 else:
                     new_component['message'] = "Pass to check the software exclusive."
         if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC and component.result == core_pb2.DIAG_RESULT_PASS:
@@ -206,7 +206,7 @@ def getDiagnosticsResultByGroup(groupId):
                             processList.append(new_process)
                     if len(processList) > 1:
                         new_component['process_list'] = processList
-                        new_component['message'] = "Warning: " + str(len(processList)) + " processses are using the device.";
+                        new_component['message'] = "Warning: " + str(len(processList)) + " processes are using the device."
                     else:
                         new_component['message'] = "Pass to check the software exclusive."
             if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC and component.result == core_pb2.DIAG_RESULT_PASS:
