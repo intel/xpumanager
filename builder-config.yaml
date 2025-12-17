@@ -1,0 +1,21 @@
+dist:
+  name: xpu-exporter
+  description: XPU Manager Daemon
+  output_path: ./dist
+  otelcol_version: 0.142.0
+
+replaces:
+  - github.com/intel/level-zero-go => ../level-zero-go
+  - github.com/intel/xpu-exporter => ../
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.142.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.142.0
+
+receivers:
+  - gomod: github.com/intel/xpu-exporter/sysman/otelreceiver v0.0.0
+    path: ./sysman/otelreceiver
+
+processors:
+
+extensions:
