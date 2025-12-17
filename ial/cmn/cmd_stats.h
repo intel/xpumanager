@@ -132,6 +132,15 @@ struct TilePowerSnapshot
 	bool valid = false;
 };
 
+struct TileMemoryBandwidthSnapshot
+{
+	std::map<uint32_t, uint64_t> readCounter;  // tile_id -> read counter in bytes
+	std::map<uint32_t, uint64_t> writeCounter; // tile_id -> write counter in bytes
+	std::map<uint32_t, uint64_t> maxBandwidth; // tile_id -> max bandwidth in bytes/sec
+	std::map<uint32_t, uint64_t> timestamp;	   // tile_id -> timestamp in microseconds
+	bool valid = false;
+};
+
 struct FabricPortSample
 {
 	uint32_t index = 0;
@@ -170,6 +179,12 @@ struct DeviceMetrics
 	std::map<uint32_t, std::vector<double>> mediaFrequencyPerTile; // tile_id -> media freq samples in MHz
 	std::map<uint32_t, std::vector<double>> gpuCoreTempPerTile;	   // tile_id -> GPU core temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> memoryTempPerTile;	   // tile_id -> memory temp samples in Celsius
+
+	std::map<uint32_t, std::vector<double>> memoryReadKBpsPerTile;	// tile_id -> read throughput samples in kB/s
+	std::map<uint32_t, std::vector<double>> memoryWriteKBpsPerTile; // tile_id -> write throughput samples in kB/s
+	std::map<uint32_t, std::vector<double>> memoryBandwidthPercentPerTile; // tile_id -> bandwidth utilization samples %
+	std::map<uint32_t, std::vector<double>> memoryUsedMiBPerTile;		   // tile_id -> used memory samples in MiB
+	std::map<uint32_t, std::vector<double>> memoryUtilPercentPerTile;	   // tile_id -> memory utilization samples %
 
 	SummaryStats gpuCoreTemp;
 	SummaryStats memoryTemp;
@@ -255,6 +270,13 @@ private:
 	static ze_result_t collectTemperatureMetricsPerTile(temperature *tempHandler,
 														std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
 														std::map<uint32_t, std::vector<double>> &memoryTempPerTile);
+	static ze_result_t
+	collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
+								std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,
+								std::map<uint32_t, std::vector<double>> &memoryWriteKBpsPerTile,
+								std::map<uint32_t, std::vector<double>> &memoryBandwidthPercentPerTile,
+								std::map<uint32_t, std::vector<double>> &memoryUsedMiBPerTile,
+								std::map<uint32_t, std::vector<double>> &memoryUtilPercentPerTile);
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
 										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas);
 };
