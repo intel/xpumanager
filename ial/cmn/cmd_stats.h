@@ -141,6 +141,14 @@ struct TileMemoryBandwidthSnapshot
 	bool valid = false;
 };
 
+struct PcieBandwidthSnapshot
+{
+	uint64_t rxCounter = 0; // received bytes counter
+	uint64_t txCounter = 0; // transmitted bytes counter
+	uint64_t timestamp = 0; // timestamp in microseconds
+	bool valid = false;
+};
+
 struct FabricPortSample
 {
 	uint32_t index = 0;
@@ -185,6 +193,10 @@ struct DeviceMetrics
 	std::map<uint32_t, std::vector<double>> memoryBandwidthPercentPerTile; // tile_id -> bandwidth utilization samples %
 	std::map<uint32_t, std::vector<double>> memoryUsedMiBPerTile;		   // tile_id -> used memory samples in MiB
 	std::map<uint32_t, std::vector<double>> memoryUtilPercentPerTile;	   // tile_id -> memory utilization samples %
+
+	// PCIe throughput samples (device-level, not per-tile)
+	std::vector<double> pcieReadKBpsSamples;  // PCIe read throughput samples in kB/s
+	std::vector<double> pcieWriteKBpsSamples; // PCIe write throughput samples in kB/s
 
 	SummaryStats gpuCoreTemp;
 	SummaryStats memoryTemp;
@@ -277,6 +289,9 @@ private:
 								std::map<uint32_t, std::vector<double>> &memoryBandwidthPercentPerTile,
 								std::map<uint32_t, std::vector<double>> &memoryUsedMiBPerTile,
 								std::map<uint32_t, std::vector<double>> &memoryUtilPercentPerTile);
+	static ze_result_t collectPcieMetrics(pci *pciHandler, zes_device_handle_t device, PcieBandwidthSnapshot &baseline,
+										  std::vector<double> &pcieReadKBpsSamples,
+										  std::vector<double> &pcieWriteKBpsSamples);
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
 										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas);
 };
