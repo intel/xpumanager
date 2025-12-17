@@ -53,8 +53,6 @@ type zesDiagHandle C.zes_diag_handle_t
 
 type zesOverclockHandle C.zes_overclock_handle_t
 
-type zesVfHandle C.zes_vf_handle_t
-
 /* Wrappers for handles */
 type Driver struct {
 	handle zeDriverHandle
@@ -205,14 +203,6 @@ type Temp struct {
 }
 
 func (w *Temp) setHandle(h zesTempHandle) {
-	w.handle = h
-}
-
-type Vf struct {
-	handle zesVfHandle
-}
-
-func (w *Vf) setHandle(h zesVfHandle) {
 	w.handle = h
 }
 
