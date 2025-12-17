@@ -5,8 +5,7 @@
 
 OUT_DIR ?= bin
 
-.PHONY: all
-all: build
+# --- Helper targets ---
 
 .PHONY: help
 help:
@@ -21,6 +20,7 @@ stats:
 		printf " %-5s %5d %8d\n" $$ext $$files $$lines; \
 	done
 
+# --- Build targets ---
 
 .PHONY: build
 build:
@@ -30,13 +30,14 @@ build:
 generate:
 	scripts/generate.sh
 
+# --- Test / lint targets
 
 .PHONY: test
 test:
 	go test ./...
 
-.PHONY: lint
-lint:
+.PHONY: golint
+golint:
 	go tool -modfile tools/go.mod golangci-lint run
 
 .PHONY: shellcheck
