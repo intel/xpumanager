@@ -25,6 +25,7 @@
 #define _FREQUENCY_H
 
 #include "sysman.h"
+#include <map>
 
 class device; // Forward declaration
 class LIBXPUM_API frequency : public sysman
@@ -44,6 +45,7 @@ public:
 	ze_result_t getAvailableClocks(zes_freq_handle_t frequencyHandle);
 	ze_result_t getRange(zes_freq_handle_t frequencyHandle);
 	ze_result_t getCurFreq(double *currentFreq, zes_freq_domain_t domain);
+	ze_result_t getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint32_t, double> &tileFrequencies);
 	ze_result_t setRange(double minFreq, double maxFreq);
 	ze_result_t getState(zes_freq_handle_t frequencyHandle, zes_freq_state_t *state);
 	ze_result_t getThrottleTime(zes_freq_handle_t frequencyHandle);

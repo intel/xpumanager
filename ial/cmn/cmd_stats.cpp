@@ -60,6 +60,14 @@ static const std::vector<RasCategoryInfo> RAS_CATEGORIES = {
 };
 
 /**
+ * @brief Conversion factor from microjoules to joules
+ *
+ * Energy values from the HAL power API are returned in microjoules (µJ).
+ * This constant converts microjoules to joules for user-friendly display.
+ */
+static constexpr double MICROJOULES_TO_JOULES = 1000000.0;
+
+/**
  * @brief Format a time point as ISO 8601 timestamp string with millisecond precision
  *
  * This function converts a std::chrono::system_clock::time_point to an ISO 8601
@@ -203,6 +211,112 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 
 		DBG("RAS Category %s: correctable=%" PRIu64 ", uncorrectable=%" PRIu64 ", total=%" PRIu64 "\n",
 			counter.categoryName, counter.correctableTotal, counter.uncorrectableTotal, counter.total);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Collect power metrics sample per tile
+ *
+ * This function captures power samples by querying the power HAL layer for each tile
+ * and calculating instantaneous power from energy counter deltas. Power is calculated
+ * as deltaEnergy (µJ) / deltaTime (µs), which directly produces watts (W).
+ *
+ * @param [in] powerHandler The HAL power instance
+ * @param [in,out] baseline The baseline power snapshot per tile (updated with current reading)
+ * @param [out] powerSamplesPerTile Map of tile_id -> vector of power samples in watts
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectPowerMetricsPerTile(power *powerHandler, TilePowerSnapshot &baseline,
+												 std::map<uint32_t, std::vector<double>> &powerSamplesPerTile)
+{
+	TRACING();
+	if (powerHandler == nullptr) {
+		DBG("Power handler not available.\n");
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
+	ze_result_t result = powerHandler->getEnergyPerTile(tileEnergy);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get per-tile power energy: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return ZE_RESULT_SUCCESS; // Not fatal, device may not support power monitoring
+	}
+
+	for (const auto &[tileId, energyData] : tileEnergy) {
+		uint64_t energy = energyData.first;
+		uint64_t timestamp = energyData.second;
+
+		if (baseline.valid && baseline.energy.count(tileId) > 0 && baseline.timestamp.count(tileId) > 0) {
+			uint64_t baseEnergy = baseline.energy[tileId];
+			uint64_t baseTimestamp = baseline.timestamp[tileId];
+
+			if (timestamp > baseTimestamp && energy >= baseEnergy) {
+				uint64_t deltaEnergy = energy - baseEnergy;
+				uint64_t deltaTime = timestamp - baseTimestamp;
+
+				if (deltaTime > 0) {
+					double powerWatts = static_cast<double>(deltaEnergy) / static_cast<double>(deltaTime);
+					powerSamplesPerTile[tileId].push_back(powerWatts);
+
+					DBG("Tile %u power sample: %.2f W (deltaEnergy=%" PRIu64 " µJ, deltaTime=%" PRIu64 " µs)\n", tileId,
+						powerWatts, deltaEnergy, deltaTime);
+				}
+			}
+		}
+
+		baseline.energy[tileId] = energy;
+		baseline.timestamp[tileId] = timestamp;
+	}
+
+	baseline.valid = !tileEnergy.empty();
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Collect GPU and media frequency metrics per tile
+ *
+ * This function captures current frequency readings for both GPU compute
+ * and media engine domains per tile. Frequencies are sampled from the HAL frequency
+ * layer and stored in MHz for summary statistics computation.
+ *
+ * @param [in] frequencyHandler The HAL frequency instance
+ * @param [out] gpuFreqSamplesPerTile Map of tile_id -> vector of GPU frequency samples in MHz
+ * @param [out] mediaFreqSamplesPerTile Map of tile_id -> vector of media frequency samples in MHz
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
+													 std::map<uint32_t, std::vector<double>> &gpuFreqSamplesPerTile,
+													 std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile)
+{
+	TRACING();
+	if (frequencyHandler == nullptr) {
+		DBG("Frequency handler not available.\n");
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	std::map<uint32_t, double> gpuTileFreqs;
+	ze_result_t result = frequencyHandler->getCurFreqPerTile(ZES_FREQ_DOMAIN_GPU, gpuTileFreqs);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, freq] : gpuTileFreqs) {
+			if (freq > 0.0) {
+				gpuFreqSamplesPerTile[tileId].push_back(freq);
+				DBG("Tile %u GPU frequency sample: %.2f MHz\n", tileId, freq);
+			}
+		}
+	}
+
+	std::map<uint32_t, double> mediaTileFreqs;
+	result = frequencyHandler->getCurFreqPerTile(ZES_FREQ_DOMAIN_MEDIA, mediaTileFreqs);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, freq] : mediaTileFreqs) {
+			if (freq > 0.0) {
+				mediaFreqSamplesPerTile[tileId].push_back(freq);
+				DBG("Tile %u Media frequency sample: %.2f MHz\n", tileId, freq);
+			}
+		}
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -377,8 +491,27 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	metrics.startTimeIso = formatIso8601Timestamp(startTime);
 
 	auto *engineGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
+	auto *powerHandler = reinterpret_cast<::power *>(dev->getPower());
+	auto *frequencyHandler = reinterpret_cast<::frequency *>(dev->getFrequency());
 
 	std::vector<EngineInstanceTracker> computeEngines, renderEngines, copyEngines, mediaEmEngines;
+	TilePowerSnapshot powerBaseline{};
+	TilePowerSnapshot initialPowerBaseline{};
+
+	if (powerHandler != nullptr) {
+		std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
+		ze_result_t result = powerHandler->getEnergyPerTile(tileEnergy);
+		if (result == ZE_RESULT_SUCCESS && !tileEnergy.empty()) {
+			for (const auto &[tileId, energyData] : tileEnergy) {
+				powerBaseline.energy[tileId] = energyData.first;
+				powerBaseline.timestamp[tileId] = energyData.second;
+				initialPowerBaseline.energy[tileId] = energyData.first;
+				initialPowerBaseline.timestamp[tileId] = energyData.second;
+			}
+			powerBaseline.valid = true;
+			initialPowerBaseline.valid = true;
+		}
+	}
 
 	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_COMPUTE_SINGLE, computeEngines);
 	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_RENDER_SINGLE, renderEngines);
@@ -425,6 +558,9 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		sampleEngineType(ZES_ENGINE_GROUP_RENDER_SINGLE, renderEngines);
 		sampleEngineType(ZES_ENGINE_GROUP_COPY_SINGLE, copyEngines);
 		sampleEngineType(ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, mediaEmEngines);
+
+		collectPowerMetricsPerTile(powerHandler, powerBaseline, metrics.gpuPowerPerTile);
+		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile);
 	}
 
 	auto endTime = std::chrono::system_clock::now();
@@ -439,6 +575,60 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	populateEngineStats(renderEngines, "render_engines", deviceJson, metrics.renderEngineDetails);
 	populateEngineStats(copyEngines, "copy_engines", deviceJson, metrics.copyEngineDetails);
 	populateEngineStats(mediaEmEngines, "media_em_engines", deviceJson, metrics.mediaEmEngineDetails);
+
+	for (const auto &[tileId, samples] : metrics.gpuPowerPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			auto &tilePowerJson = deviceJson["power"]["gpu_power_w"][tileKey];
+			tilePowerJson["avg"] = stats.avg;
+			tilePowerJson["min"] = stats.min;
+			tilePowerJson["max"] = stats.max;
+			tilePowerJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.gpuFrequencyPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			auto &tileFreqJson = deviceJson["frequency"]["gpu_frequency_mhz"][tileKey];
+			tileFreqJson["avg"] = stats.avg;
+			tileFreqJson["min"] = stats.min;
+			tileFreqJson["max"] = stats.max;
+			tileFreqJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.mediaFrequencyPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			auto &tileFreqJson = deviceJson["frequency"]["media_frequency_mhz"][tileKey];
+			tileFreqJson["avg"] = stats.avg;
+			tileFreqJson["min"] = stats.min;
+			tileFreqJson["max"] = stats.max;
+			tileFreqJson["current"] = stats.current;
+		}
+	}
+
+	if (initialPowerBaseline.valid && !metrics.gpuPowerPerTile.empty()) {
+		std::map<uint32_t, std::pair<uint64_t, uint64_t>> finalTileEnergy;
+		if (powerHandler != nullptr && powerHandler->getEnergyPerTile(finalTileEnergy) == ZE_RESULT_SUCCESS) {
+			double totalEnergyJ = 0.0;
+			for (const auto &[tileId, energyData] : finalTileEnergy) {
+				if (initialPowerBaseline.energy.count(tileId) > 0) {
+					uint64_t deltaEnergy = energyData.first - initialPowerBaseline.energy[tileId];
+					totalEnergyJ += static_cast<double>(deltaEnergy) / MICROJOULES_TO_JOULES;
+				}
+			}
+			if (totalEnergyJ > 0.0) {
+				metrics.energyConsumedJ = totalEnergyJ;
+				metrics.energyValid = true;
+				deviceJson["power"]["energy_consumed_j"] = metrics.energyConsumedJ;
+			}
+		}
+	}
 
 	if (collectRas) {
 		ze_result_t rasResult = collectRasCounters(device, metrics);
@@ -544,12 +734,92 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	elapsedStr << std::fixed << std::setprecision(2) << elapsedSeconds;
 	printRow("Elapsed Time (seconds)", elapsedStr.str());
 
+	if (deviceJson.contains("/power/energy_consumed_j"_json_pointer)) {
+		double energyJ = deviceJson["/power/energy_consumed_j"_json_pointer];
+		std::ostringstream oss;
+		oss << std::fixed << std::setprecision(2) << energyJ;
+		printRow("Energy Consumed (J)", oss.str());
+	} else {
+		printRow("Energy Consumed (J)", "N/A");
+	}
+
 	printSeparator();
 	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", "/utilization/compute_engines"_json_pointer);
 	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", "/utilization/render_engines"_json_pointer);
 	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", "/utilization/copy_engines"_json_pointer);
 	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)",
 						 "/utilization/media_em_engines"_json_pointer);
+
+	printSeparator();
+
+	auto printPerTileMetric = [&printRow](const nlohmann::ordered_json &json, const std::string &label,
+										  const nlohmann::json::json_pointer &ptr, int precision = 0) {
+		if (!json.contains(ptr)) {
+			printRow(label, "N/A");
+			return;
+		}
+
+		auto &metric = json[ptr];
+		if (!metric.is_object() || metric.empty()) {
+			printRow(label, "N/A");
+			return;
+		}
+
+		std::vector<uint32_t> tileIds;
+		const std::string tilePrefix = "tile_";
+		for (auto it = metric.begin(); it != metric.end(); ++it) {
+			const std::string &key = it.key();
+			if (key.find(tilePrefix) == 0) {
+				try {
+					uint32_t tileId = static_cast<uint32_t>(std::stoi(key.substr(tilePrefix.length())));
+					tileIds.push_back(tileId);
+				} catch (...) {
+					continue;
+				}
+			}
+		}
+
+		if (tileIds.empty()) {
+			printRow(label, "N/A");
+			return;
+		}
+
+		std::sort(tileIds.begin(), tileIds.end());
+
+		bool firstTile = true;
+		for (uint32_t tileId : tileIds) {
+			std::string tileKey = tilePrefix + std::to_string(tileId);
+			auto &tileMetric = metric[tileKey];
+			if (!tileMetric.is_object()) {
+				continue;
+			}
+
+			double avg = tileMetric.value("avg", 0.0);
+			double min = tileMetric.value("min", 0.0);
+			double max = tileMetric.value("max", 0.0);
+			double current = tileMetric.value("current", 0.0);
+
+			std::ostringstream oss;
+			oss << std::fixed << std::setprecision(precision);
+			oss << "Tile " << tileId << ": avg: " << avg << ", min: " << min << ", max: " << max
+				<< ", current: " << current;
+
+			if (firstTile) {
+				printRow(label, oss.str());
+				firstTile = false;
+			} else {
+				printRow("", oss.str());
+			}
+		}
+	};
+
+	printPerTileMetric(deviceJson, "GPU Power (W)", "/power/gpu_power_w"_json_pointer, 0);
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Frequency (MHz)", "/frequency/gpu_frequency_mhz"_json_pointer, 0);
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "Media Frequency (MHz)", "/frequency/media_frequency_mhz"_json_pointer, 0);
 
 	if (deviceJson.contains("ras_errors")) {
 		printSeparator();

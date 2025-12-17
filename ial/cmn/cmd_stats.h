@@ -125,6 +125,13 @@ struct PowerSnapshot
 	bool valid = false;
 };
 
+struct TilePowerSnapshot
+{
+	std::map<uint32_t, uint64_t> energy;	// tile_id -> energy in microjoules
+	std::map<uint32_t, uint64_t> timestamp; // tile_id -> timestamp in microseconds
+	bool valid = false;
+};
+
 struct FabricPortSample
 {
 	uint32_t index = 0;
@@ -157,6 +164,10 @@ struct DeviceMetrics
 	SummaryStats gpuPower;
 	SummaryStats gpuFrequency;
 	SummaryStats mediaFrequency;
+
+	std::map<uint32_t, std::vector<double>> gpuPowerPerTile;	   // tile_id -> power samples in watts
+	std::map<uint32_t, std::vector<double>> gpuFrequencyPerTile;   // tile_id -> GPU freq samples in MHz
+	std::map<uint32_t, std::vector<double>> mediaFrequencyPerTile; // tile_id -> media freq samples in MHz
 
 	SummaryStats gpuCoreTemp;
 	SummaryStats memoryTemp;
@@ -234,6 +245,11 @@ private:
 									nlohmann::ordered_json &deviceJson, std::vector<std::string> &detailsVector);
 
 	static ze_result_t collectRasCounters(devInfo *device, DeviceMetrics &metrics);
+	static ze_result_t collectPowerMetricsPerTile(power *powerHandler, TilePowerSnapshot &baseline,
+												  std::map<uint32_t, std::vector<double>> &powerSamplesPerTile);
+	static ze_result_t collectFrequencyMetricsPerTile(frequency *frequencyHandler,
+													  std::map<uint32_t, std::vector<double>> &gpuFreqSamplesPerTile,
+													  std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile);
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
 										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas);
 };

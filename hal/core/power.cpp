@@ -323,6 +323,87 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 }
 
 /**
+ * @brief Gets energy counters for each tile/subdevice
+ *
+ * This function enumerates all power domains and returns energy counter data
+ * for each subdevice/tile. It maps subdevice IDs to their corresponding
+ * energy and timestamp values. Used for per-tile power monitoring.
+ *
+ * For multi-tile GPUs with subdevice power domains, returns per-tile data.
+ * For single-tile GPUs or GPUs that only expose CARD-level power, returns
+ * the card-level data as tile 0.
+ *
+ * @param [out] tileEnergy Map of tile_id -> (energy_microjoules, timestamp_microseconds)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful energy retrieval, error code otherwise
+ */
+ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileEnergy)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	tileEnergy.clear();
+
+	// First pass: look for subdevice-level power domains (multi-tile GPUs)
+	bool foundSubdevicePower = false;
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t properties = {};
+		zes_power_ext_properties_t extProps = {};
+		result = getProperties(powerHandles[i], &properties, &extProps);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get properties for power domain %d\n", i);
+			continue;
+		}
+
+		if (properties.onSubdevice) {
+			zes_power_energy_counter_t energyCounter = {};
+			result = getEnergyCounter(powerHandles[i], &energyCounter);
+			if (result != ZE_RESULT_SUCCESS) {
+				DBG("Failed to get energy counter for subdevice power domain %d: 0x%X (%s)\n", i, result,
+					l0_error_to_string(result));
+				continue;
+			}
+
+			uint32_t tileId = properties.subdeviceId;
+			tileEnergy[tileId] = std::make_pair(energyCounter.energy, energyCounter.timestamp);
+			DBG("Tile %u (subdevice) energy: %" PRIu64 " µJ, timestamp: %" PRIu64 " µs\n", tileId, energyCounter.energy,
+				energyCounter.timestamp);
+			foundSubdevicePower = true;
+		}
+	}
+
+	if (foundSubdevicePower) {
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Second pass: look for CARD or PACKAGE level power
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t properties = {};
+		zes_power_ext_properties_t extProps = {};
+		result = getProperties(powerHandles[i], &properties, &extProps);
+		if (result != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+
+		if (extProps.domain == ZES_POWER_DOMAIN_CARD || extProps.domain == ZES_POWER_DOMAIN_PACKAGE ||
+			extProps.domain == ZES_POWER_DOMAIN_GPU) {
+			zes_power_energy_counter_t energyCounter = {};
+			result = getEnergyCounter(powerHandles[i], &energyCounter);
+			if (result != ZE_RESULT_SUCCESS) {
+				DBG("Failed to get energy counter for power domain %d: 0x%X (%s)\n", i, result,
+					l0_error_to_string(result));
+				continue;
+			}
+
+			tileEnergy[0] = std::make_pair(energyCounter.energy, energyCounter.timestamp);
+			DBG("Tile 0 (device-level, domain=%d) energy: %" PRIu64 " µJ, timestamp: %" PRIu64 " µs\n", extProps.domain,
+				energyCounter.energy, energyCounter.timestamp);
+			break; // Only need one device-level reading
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Sets the sustained power limit for a device or specific tile
  *
  * This function configures the sustained power limit, which controls the
