@@ -24,9 +24,11 @@
 
 #include "cmd_stats.h"
 #include "debug.h"
+#include "memory.h"
 #include "printer.h"
 #include <assert.h>
 #include <algorithm>
+#include <cinttypes>
 #include <cmath>
 #include <numeric>
 #include <format>
@@ -66,6 +68,28 @@ static const std::vector<RasCategoryInfo> RAS_CATEGORIES = {
  * This constant converts microjoules to joules for user-friendly display.
  */
 static constexpr double MICROJOULES_TO_JOULES = 1000000.0;
+
+/**
+ * @brief Conversion factor from microseconds to seconds
+ *
+ * Timestamp values from the HAL APIs are returned in microseconds (µs).
+ * This constant converts microseconds to seconds for rate calculations.
+ */
+static constexpr double MICROSECONDS_PER_SECOND = 1000000.0;
+
+/**
+ * @brief Conversion factor from bytes to kilobytes
+ *
+ * Memory bandwidth values are converted to kB/s for display.
+ */
+static constexpr double BYTES_PER_KB = 1024.0;
+
+/**
+ * @brief Conversion factor from bytes to mebibytes (MiB)
+ *
+ * Memory size values are converted to MiB for display.
+ */
+static constexpr double BYTES_PER_MIB = 1024.0 * 1024.0;
 
 /**
  * @brief Format a time point as ISO 8601 timestamp string with millisecond precision
@@ -366,6 +390,122 @@ ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 }
 
 /**
+ * @brief Calculate throughput in kB/s from byte counter delta and time delta
+ *
+ * Helper function to compute throughput rate from counter deltas. Handles division
+ * by zero by returning 0.0.
+ *
+ * @param [in] deltaBytes Number of bytes transferred
+ * @param [in] deltaTimeMicros Time elapsed in microseconds
+ * @return Throughput in kB/s, or 0.0 if deltaTimeMicros is zero
+ */
+static double calculateThroughputKBps(uint64_t deltaBytes, uint64_t deltaTimeMicros)
+{
+	if (deltaTimeMicros == 0) {
+		return 0.0;
+	}
+	return static_cast<double>(deltaBytes) * MICROSECONDS_PER_SECOND /
+		   (static_cast<double>(deltaTimeMicros) * BYTES_PER_KB);
+}
+
+/**
+ * @brief Generate tile key string for JSON output
+ *
+ * Creates a standardized tile key in the format "tile_N" for use in JSON structures.
+ *
+ * @param [in] tileId The tile identifier
+ * @return String in format "tile_N"
+ */
+static std::string makeTileKey(uint32_t tileId) { return std::format("tile_{}", tileId); }
+
+/**
+ * @brief Collect memory bandwidth and usage metrics per tile
+ *
+ * This function captures current memory bandwidth counters and memory usage state
+ * for each tile. Bandwidth throughput (read/write kB/s) and bandwidth utilization %
+ * are calculated from counter deltas between the baseline and current samples.
+ * Memory used (MiB) and utilization % are directly sampled.
+ *
+ * @param [in] memoryHandler The HAL memory instance
+ * @param [in,out] baseline Previous sample snapshot; updated with current values on each call
+ * @param [out] memoryReadKBpsPerTile Map of tile_id -> vector of read throughput samples in kB/s
+ * @param [out] memoryWriteKBpsPerTile Map of tile_id -> vector of write throughput samples in kB/s
+ * @param [out] memoryBandwidthPercentPerTile Map of tile_id -> vector of bandwidth utilization samples %
+ * @param [out] memoryUsedMiBPerTile Map of tile_id -> vector of used memory samples in MiB
+ * @param [out] memoryUtilPercentPerTile Map of tile_id -> vector of memory utilization samples %
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t
+cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
+									  std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,
+									  std::map<uint32_t, std::vector<double>> &memoryWriteKBpsPerTile,
+									  std::map<uint32_t, std::vector<double>> &memoryBandwidthPercentPerTile,
+									  std::map<uint32_t, std::vector<double>> &memoryUsedMiBPerTile,
+									  std::map<uint32_t, std::vector<double>> &memoryUtilPercentPerTile)
+{
+	TRACING();
+	if (memoryHandler == nullptr) {
+		DBG("Memory handler not available.\n");
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	std::map<uint32_t, MemoryBandwidthData> tileBandwidth;
+	ze_result_t result = memoryHandler->getMemoryBandwidthPerTile(tileBandwidth);
+	if (result == ZE_RESULT_SUCCESS && !tileBandwidth.empty()) {
+		for (const auto &[tileId, data] : tileBandwidth) {
+			if (baseline.valid && baseline.timestamp.find(tileId) != baseline.timestamp.end()) {
+				uint64_t deltaTime = data.timestamp - baseline.timestamp[tileId];
+				if (deltaTime > 0) {
+					uint64_t deltaRead = data.readCounter - baseline.readCounter[tileId];
+					uint64_t deltaWrite = data.writeCounter - baseline.writeCounter[tileId];
+
+					double readKBps = calculateThroughputKBps(deltaRead, deltaTime);
+					double writeKBps = calculateThroughputKBps(deltaWrite, deltaTime);
+
+					memoryReadKBpsPerTile[tileId].push_back(readKBps);
+					memoryWriteKBpsPerTile[tileId].push_back(writeKBps);
+					DBG("Tile %u memory read: %.2f kB/s, write: %.2f kB/s\n", tileId, readKBps, writeKBps);
+
+					if (data.maxBandwidth > 0) {
+						double bytesPerSec = (static_cast<double>(deltaRead) + static_cast<double>(deltaWrite)) *
+											 MICROSECONDS_PER_SECOND / static_cast<double>(deltaTime);
+						double bandwidthPercent = (bytesPerSec / static_cast<double>(data.maxBandwidth)) * 100.0;
+
+						if (bandwidthPercent > 100.0) {
+							INFO("Tile %u memory bandwidth %.2f%% exceeds 100%% (bytes/sec: %.0f, max: %" PRIu64
+								 ") - possible counter overflow or measurement error, capping to 100%%\n",
+								 tileId, bandwidthPercent, bytesPerSec, data.maxBandwidth);
+							bandwidthPercent = 100.0;
+						}
+						memoryBandwidthPercentPerTile[tileId].push_back(bandwidthPercent);
+						DBG("Tile %u memory bandwidth: %.2f%%\n", tileId, bandwidthPercent);
+					}
+				}
+			}
+
+			baseline.readCounter[tileId] = data.readCounter;
+			baseline.writeCounter[tileId] = data.writeCounter;
+			baseline.maxBandwidth[tileId] = data.maxBandwidth;
+			baseline.timestamp[tileId] = data.timestamp;
+		}
+		baseline.valid = true;
+	}
+
+	std::map<uint32_t, MemoryUsageData> tileUsage;
+	result = memoryHandler->getMemoryUsagePerTile(tileUsage);
+	if (result == ZE_RESULT_SUCCESS && !tileUsage.empty()) {
+		for (const auto &[tileId, usage] : tileUsage) {
+			double usedMiB = static_cast<double>(usage.usedBytes) / BYTES_PER_MIB;
+			memoryUsedMiBPerTile[tileId].push_back(usedMiB);
+			memoryUtilPercentPerTile[tileId].push_back(usage.utilizationPercent);
+			DBG("Tile %u memory used: %.2f MiB, utilization: %.2f%%\n", tileId, usedMiB, usage.utilizationPercent);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Enumerate and initialize trackers for all engines of a specific type
  *
  * This function queries the HAL layer to determine how many engine instances exist
@@ -537,10 +677,12 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	auto *powerHandler = reinterpret_cast<::power *>(dev->getPower());
 	auto *frequencyHandler = reinterpret_cast<::frequency *>(dev->getFrequency());
 	auto *tempHandler = reinterpret_cast<::temperature *>(dev->getTemperature());
+	auto *memoryHandler = reinterpret_cast<::memory *>(dev->getMemory());
 
 	std::vector<EngineInstanceTracker> computeEngines, renderEngines, copyEngines, mediaEmEngines;
 	TilePowerSnapshot powerBaseline{};
 	TilePowerSnapshot initialPowerBaseline{};
+	TileMemoryBandwidthSnapshot memoryBaseline{};
 
 	if (powerHandler != nullptr) {
 		std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
@@ -606,6 +748,9 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectPowerMetricsPerTile(powerHandler, powerBaseline, metrics.gpuPowerPerTile);
 		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile);
 		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile);
+		collectMemoryMetricsPerTile(memoryHandler, memoryBaseline, metrics.memoryReadKBpsPerTile,
+									metrics.memoryWriteKBpsPerTile, metrics.memoryBandwidthPercentPerTile,
+									metrics.memoryUsedMiBPerTile, metrics.memoryUtilPercentPerTile);
 	}
 
 	auto endTime = std::chrono::system_clock::now();
@@ -624,7 +769,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	for (const auto &[tileId, samples] : metrics.gpuPowerPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
-			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			std::string tileKey = makeTileKey(tileId);
 			auto &tilePowerJson = deviceJson["power"]["gpu_power_w"][tileKey];
 			tilePowerJson["avg"] = stats.avg;
 			tilePowerJson["min"] = stats.min;
@@ -636,7 +781,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	for (const auto &[tileId, samples] : metrics.gpuFrequencyPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
-			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			std::string tileKey = makeTileKey(tileId);
 			auto &tileFreqJson = deviceJson["frequency"]["gpu_frequency_mhz"][tileKey];
 			tileFreqJson["avg"] = stats.avg;
 			tileFreqJson["min"] = stats.min;
@@ -648,7 +793,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	for (const auto &[tileId, samples] : metrics.mediaFrequencyPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
-			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			std::string tileKey = makeTileKey(tileId);
 			auto &tileFreqJson = deviceJson["frequency"]["media_frequency_mhz"][tileKey];
 			tileFreqJson["avg"] = stats.avg;
 			tileFreqJson["min"] = stats.min;
@@ -660,7 +805,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	for (const auto &[tileId, samples] : metrics.gpuCoreTempPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
-			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			std::string tileKey = makeTileKey(tileId);
 			auto &tileTempJson = deviceJson["temperature"]["gpu_core_celsius"][tileKey];
 			tileTempJson["avg"] = stats.avg;
 			tileTempJson["min"] = stats.min;
@@ -672,12 +817,72 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	for (const auto &[tileId, samples] : metrics.memoryTempPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
-			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			std::string tileKey = makeTileKey(tileId);
 			auto &tileTempJson = deviceJson["temperature"]["memory_celsius"][tileKey];
 			tileTempJson["avg"] = stats.avg;
 			tileTempJson["min"] = stats.min;
 			tileTempJson["max"] = stats.max;
 			tileTempJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryReadKBpsPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileReadJson = deviceJson["memory"]["read_kbps"][tileKey];
+			tileReadJson["avg"] = stats.avg;
+			tileReadJson["min"] = stats.min;
+			tileReadJson["max"] = stats.max;
+			tileReadJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryWriteKBpsPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileWriteJson = deviceJson["memory"]["write_kbps"][tileKey];
+			tileWriteJson["avg"] = stats.avg;
+			tileWriteJson["min"] = stats.min;
+			tileWriteJson["max"] = stats.max;
+			tileWriteJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryBandwidthPercentPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileBandwidthJson = deviceJson["memory"]["bandwidth_percent"][tileKey];
+			tileBandwidthJson["avg"] = stats.avg;
+			tileBandwidthJson["min"] = stats.min;
+			tileBandwidthJson["max"] = stats.max;
+			tileBandwidthJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryUsedMiBPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileUsedJson = deviceJson["memory"]["used_mib"][tileKey];
+			tileUsedJson["avg"] = stats.avg;
+			tileUsedJson["min"] = stats.min;
+			tileUsedJson["max"] = stats.max;
+			tileUsedJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryUtilPercentPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileUtilJson = deviceJson["memory"]["util_percent"][tileKey];
+			tileUtilJson["avg"] = stats.avg;
+			tileUtilJson["min"] = stats.min;
+			tileUtilJson["max"] = stats.max;
+			tileUtilJson["current"] = stats.current;
 		}
 	}
 
@@ -714,13 +919,13 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 						auto &tilesJson = categoryJson["tiles"];
 
 						for (const auto &[tileId, count] : counter.correctablePerTile) {
-							std::string tileKey = std::string("tile_") + std::to_string(tileId);
+							std::string tileKey = makeTileKey(tileId);
 							tilesJson[tileKey]["correctable"] = count;
 							tilesJson[tileKey]["total"] = count;
 						}
 
 						for (const auto &[tileId, count] : counter.uncorrectablePerTile) {
-							std::string tileKey = std::string("tile_") + std::to_string(tileId);
+							std::string tileKey = makeTileKey(tileId);
 							auto &tileData = tilesJson[tileKey];
 							tileData["uncorrectable"] = count;
 							tileData["total"] = tileData.value("total", 0) + count;
@@ -902,6 +1107,21 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 
 	printPerTileMetric(deviceJson, "GPU Memory Temperature", "/temperature/memory_celsius"_json_pointer, 0);
 	printRow("(Degrees Celsius)", "");
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Memory Read (kB/s)", "/memory/read_kbps"_json_pointer, 0);
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Memory Write (kB/s)", "/memory/write_kbps"_json_pointer, 0);
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Memory Bandwidth (%)", "/memory/bandwidth_percent"_json_pointer, 0);
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Memory Used (MiB)", "/memory/used_mib"_json_pointer, 0);
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Memory Util (%)", "/memory/util_percent"_json_pointer, 0);
 
 	printSeparator();
 }
@@ -1086,7 +1306,7 @@ void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson
 			std::sort(tileIds.begin(), tileIds.end());
 
 			for (uint32_t tileId : tileIds) {
-				std::string tileKey = std::string("tile_") + std::to_string(tileId);
+				std::string tileKey = makeTileKey(tileId);
 				auto &tileData = tilesJson[tileKey];
 
 				uint64_t tileValue = 0;

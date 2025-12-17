@@ -521,6 +521,135 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBa
 }
 
 /**
+ * @brief Gets memory bandwidth counters and properties per tile
+ *
+ * This function retrieves memory read/write counters, maximum bandwidth, and
+ * timestamp for each tile's device memory. Only device memory (ZES_MEM_LOC_DEVICE)
+ * is included. For tiles with multiple memory modules, values are summed.
+ *
+ * @param [out] tileBandwidth Output map of tile ID to MemoryBandwidthData
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t memory::getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidthData> &tileBandwidth)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	tileBandwidth.clear();
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		zes_mem_properties_t properties = {};
+		result = getProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		if (properties.location != ZES_MEM_LOC_DEVICE) {
+			continue;
+		}
+
+		zes_mem_bandwidth_t bandwidth = {};
+		result = getBandwidth(memoryModules[i], &bandwidth);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory bandwidth for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		uint32_t tileId = properties.onSubdevice ? properties.subdeviceId : 0;
+
+		if (tileBandwidth.find(tileId) == tileBandwidth.end()) {
+			tileBandwidth[tileId] = {.readCounter = 0, .writeCounter = 0, .maxBandwidth = 0, .timestamp = 0};
+		}
+
+		tileBandwidth[tileId].readCounter += bandwidth.readCounter;
+		tileBandwidth[tileId].writeCounter += bandwidth.writeCounter;
+		tileBandwidth[tileId].maxBandwidth += bandwidth.maxBandwidth;
+		// Use the latest (maximum) timestamp across all modules so that any rate calculation
+		// uses a time window that includes all accumulated counter values from every module,
+		// avoiding premature or inconsistent bandwidth rate computations based on earlier samples.
+		if (bandwidth.timestamp > tileBandwidth[tileId].timestamp) {
+			tileBandwidth[tileId].timestamp = bandwidth.timestamp;
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @brief Gets memory used and utilization percentage per tile
+ *
+ * This function retrieves the amount of memory used (in bytes) and the memory
+ * utilization percentage for each tile's device memory. Only device memory
+ * (ZES_MEM_LOC_DEVICE) is included. For tiles with multiple memory modules,
+ * values are summed and utilization is calculated from totals.
+ *
+ * @param [out] tileUsage Output map of tile ID to MemoryUsageData (usedBytes, utilizationPercent)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t memory::getMemoryUsagePerTile(std::map<uint32_t, MemoryUsageData> &tileUsage)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	tileUsage.clear();
+
+	std::map<uint32_t, uint64_t> tileUsed;
+	std::map<uint32_t, uint64_t> tileTotal;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		zes_mem_properties_t properties = {};
+		result = getProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory properties for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		if (properties.location != ZES_MEM_LOC_DEVICE) {
+			continue;
+		}
+
+		zes_mem_state_t state = {};
+		result = getState(memoryModules[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory state for module %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		uint32_t tileId = properties.onSubdevice ? properties.subdeviceId : 0;
+
+		uint64_t used = state.size - state.free;
+
+		// Prefer physicalSize (hardware capacity) over state.size (allocatable memory) for accurate utilization.
+		// physicalSize may be 0 on older drivers or unsupported hardware, in which case fall back to state.size.
+		uint64_t total = (properties.physicalSize > 0) ? properties.physicalSize : state.size;
+
+		if (tileUsed.find(tileId) == tileUsed.end()) {
+			tileUsed[tileId] = 0;
+			tileTotal[tileId] = 0;
+		}
+
+		tileUsed[tileId] += used;
+		tileTotal[tileId] += total;
+	}
+
+	for (const auto &pair : tileUsed) {
+		uint32_t tileId = pair.first;
+		uint64_t used = pair.second;
+		uint64_t total = tileTotal[tileId];
+
+		double utilization = 0.0;
+		if (total > 0) {
+			utilization = (static_cast<double>(used) / static_cast<double>(total)) * 100.0;
+		}
+
+		tileUsage[tileId] = {.usedBytes = used, .utilizationPercent = utilization};
+	}
+
+	return result;
+}
+
+/**
  * @brief Initializes the memory management subsystem
  *
  * This function performs initialization of the memory management system by
