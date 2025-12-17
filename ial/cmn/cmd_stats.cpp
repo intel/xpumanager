@@ -323,6 +323,49 @@ ze_result_t cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler
 }
 
 /**
+ * @brief Collect GPU core and memory temperature metrics per tile
+ *
+ * This function captures current temperature readings for both GPU core
+ * and memory sensors per tile. Temperatures are sampled from the HAL temperature
+ * layer and stored in Celsius for summary statistics computation.
+ *
+ * @param [in] tempHandler The HAL temperature instance
+ * @param [out] gpuCoreTempPerTile Map of tile_id -> vector of GPU core temp samples in Celsius
+ * @param [out] memoryTempPerTile Map of tile_id -> vector of memory temp samples in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
+													   std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
+													   std::map<uint32_t, std::vector<double>> &memoryTempPerTile)
+{
+	TRACING();
+	if (tempHandler == nullptr) {
+		DBG("Temperature handler not available.\n");
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	std::map<uint32_t, double> gpuTileTemps;
+	ze_result_t result = tempHandler->getTempPerTile(ZES_TEMP_SENSORS_GPU, gpuTileTemps);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, temp] : gpuTileTemps) {
+			gpuCoreTempPerTile[tileId].push_back(temp);
+			DBG("Tile %u GPU core temperature sample: %.2f C\n", tileId, temp);
+		}
+	}
+
+	std::map<uint32_t, double> memoryTileTemps;
+	result = tempHandler->getTempPerTile(ZES_TEMP_SENSORS_MEMORY, memoryTileTemps);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, temp] : memoryTileTemps) {
+			memoryTempPerTile[tileId].push_back(temp);
+			DBG("Tile %u memory temperature sample: %.2f C\n", tileId, temp);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Enumerate and initialize trackers for all engines of a specific type
  *
  * This function queries the HAL layer to determine how many engine instances exist
@@ -493,6 +536,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	auto *engineGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
 	auto *powerHandler = reinterpret_cast<::power *>(dev->getPower());
 	auto *frequencyHandler = reinterpret_cast<::frequency *>(dev->getFrequency());
+	auto *tempHandler = reinterpret_cast<::temperature *>(dev->getTemperature());
 
 	std::vector<EngineInstanceTracker> computeEngines, renderEngines, copyEngines, mediaEmEngines;
 	TilePowerSnapshot powerBaseline{};
@@ -561,6 +605,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 
 		collectPowerMetricsPerTile(powerHandler, powerBaseline, metrics.gpuPowerPerTile);
 		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile);
+		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile);
 	}
 
 	auto endTime = std::chrono::system_clock::now();
@@ -609,6 +654,30 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 			tileFreqJson["min"] = stats.min;
 			tileFreqJson["max"] = stats.max;
 			tileFreqJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.gpuCoreTempPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			auto &tileTempJson = deviceJson["temperature"]["gpu_core_celsius"][tileKey];
+			tileTempJson["avg"] = stats.avg;
+			tileTempJson["min"] = stats.min;
+			tileTempJson["max"] = stats.max;
+			tileTempJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryTempPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = std::string("tile_") + std::to_string(tileId);
+			auto &tileTempJson = deviceJson["temperature"]["memory_celsius"][tileKey];
+			tileTempJson["avg"] = stats.avg;
+			tileTempJson["min"] = stats.min;
+			tileTempJson["max"] = stats.max;
+			tileTempJson["current"] = stats.current;
 		}
 	}
 
@@ -750,6 +819,11 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)",
 						 "/utilization/media_em_engines"_json_pointer);
 
+	if (deviceJson.contains("ras_errors")) {
+		printSeparator();
+		printRasCounters(deviceJson, printRow);
+	}
+
 	printSeparator();
 
 	auto printPerTileMetric = [&printRow](const nlohmann::ordered_json &json, const std::string &label,
@@ -820,11 +894,14 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printSeparator();
 
 	printPerTileMetric(deviceJson, "Media Frequency (MHz)", "/frequency/media_frequency_mhz"_json_pointer, 0);
+	printSeparator();
 
-	if (deviceJson.contains("ras_errors")) {
-		printSeparator();
-		printRasCounters(deviceJson, printRow);
-	}
+	printPerTileMetric(deviceJson, "GPU Core Temperature", "/temperature/gpu_core_celsius"_json_pointer, 0);
+	printRow("(Degrees Celsius)", "");
+	printSeparator();
+
+	printPerTileMetric(deviceJson, "GPU Memory Temperature", "/temperature/memory_celsius"_json_pointer, 0);
+	printRow("(Degrees Celsius)", "");
 
 	printSeparator();
 }
