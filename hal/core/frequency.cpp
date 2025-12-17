@@ -221,6 +221,55 @@ ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 }
 
 /**
+ * @brief Gets the current frequency for each tile/subdevice for a specific domain
+ *
+ * This function enumerates all frequency domains and returns the current frequency
+ * for each subdevice/tile that matches the specified domain type (GPU or Media).
+ * Used for per-tile frequency monitoring.
+ *
+ * @param [in] domain The frequency domain type to query (GPU, Media, etc.)
+ * @param [out] tileFrequencies Map of tile_id -> current frequency in MHz
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful frequency retrieval
+ */
+ze_result_t frequency::getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint32_t, double> &tileFrequencies)
+{
+	TRACING();
+	tileFrequencies.clear();
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		zes_freq_properties_t properties = {};
+		ze_result_t result = getProperties(frequencyHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get properties for frequency domain %d\n", i);
+			continue;
+		}
+
+		if (properties.type != domain) {
+			continue;
+		}
+
+		uint32_t tileId = 0;
+		if (properties.onSubdevice) {
+			tileId = properties.subdeviceId;
+		}
+
+		zes_freq_state_t state = {};
+		result = getState(frequencyHandles[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get state for frequency domain %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		tileFrequencies[tileId] = state.actual;
+		DBG("Tile %u %s frequency: %.2f MHz\n", tileId,
+			domain == ZES_FREQ_DOMAIN_GPU ? "GPU" : (domain == ZES_FREQ_DOMAIN_MEDIA ? "Media" : "Other"),
+			state.actual);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Sets the frequency range for all frequency domains
  *
  * This function configures the minimum and maximum frequency limits for

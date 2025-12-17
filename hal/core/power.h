@@ -27,6 +27,7 @@
 #include "sysman.h"
 #include <vector>
 #include <cstdint>
+#include <map>
 
 /**
  * @brief Extended power limit descriptor
@@ -61,6 +62,7 @@ public:
 	ze_result_t getEnergyThreshold(zes_pwr_handle_t powerHandle);
 	ze_result_t getPowerLimits(zes_pwr_handle_t powerHandle);
 	ze_result_t getEnergy(uint64_t *power, uint64_t *timeStamp, bool forGPU);
+	ze_result_t getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileEnergy);
 	ze_result_t setSustainedLimit(uint32_t limit_mw, int32_t tile_id = -1);
 	ze_result_t setBurstLimit(uint32_t limit_mw);
 	ze_result_t setPeakLimit(uint32_t limit_ac_mw, uint32_t limit_dc_mw);
