@@ -149,7 +149,7 @@ const (
 //     ZE_MINOR_VERSION
 type ApiVersion int32
 
-// ApiVersion enumeration from levelzero/ze_api.h:1317
+// ApiVersion enumeration from level-zero/ze_api.h:1317
 const (
 	// version 1.0
 	API_VERSION_1_0 ApiVersion = 65536
