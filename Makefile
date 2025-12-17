@@ -8,9 +8,28 @@ OUT_DIR ?= bin
 .PHONY: all
 all: build
 
+.PHONY: help
+help:
+	@echo -e "\nTargets:\n$$(grep '^[^:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+
+.PHONY: stats
+stats:
+	@echo "Type:  Files:   Lines:"
+	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
+		files=$$(git ls-files "*$$ext" | wc -l); \
+		lines=$$(git ls-files -z "*$$ext" | xargs -0 xargs cat | wc -l); \
+		printf " %-5s %5d %8d\n" $$ext $$files $$lines; \
+	done
+
+
 .PHONY: build
 build:
 	go build -o $(OUT_DIR)/xpu-exporter ./cmd/xpu-exporter
+
+.PHONY: generate
+generate:
+	scripts/generate.sh
+
 
 .PHONY: test
 test:
@@ -20,6 +39,8 @@ test:
 lint:
 	go tool -modfile tools/go.mod golangci-lint run
 
-.PHONY: generate
-generate:
-	scripts/generate.sh
+.PHONY: shellcheck
+# <apt|dnf> install shellcheck
+shellcheck:
+	@echo -e "\nshellcheck: linting shell scripts...\n"
+	git ls-files -z '*.sh' | xargs -0 shellcheck
