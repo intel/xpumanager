@@ -18,7 +18,7 @@ test:
 
 .PHONY: lint
 lint:
-	go tool golangci-lint run
+	go tool -modfile tools/go.mod golangci-lint run
 
 .PHONY: generate
 generate:
