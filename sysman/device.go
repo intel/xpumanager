@@ -27,7 +27,7 @@ type sysmanDevice struct {
 	temperature []*sysmanTemperature
 }
 
-func newDeviceRegistry() (*deviceRegistry, error) {
+func newDeviceRegistry(aggregatedMetricsBufferSize int) (*deviceRegistry, error) {
 	reg := &deviceRegistry{}
 
 	drivers, err := l0sysman.DriverGet()
@@ -35,7 +35,7 @@ func newDeviceRegistry() (*deviceRegistry, error) {
 		return nil, fmt.Errorf("failed to get ZES drivers: %w", err)
 	}
 	for _, driver := range drivers {
-		devs, err := enumDevices(driver)
+		devs, err := enumDevices(driver, aggregatedMetricsBufferSize)
 		if err != nil {
 			return nil, err
 		}
@@ -46,14 +46,20 @@ func newDeviceRegistry() (*deviceRegistry, error) {
 	return reg, nil
 }
 
-func enumDevices(driver *l0sysman.Driver) ([]*sysmanDevice, error) {
+func (r *deviceRegistry) pollAggregatedMetrics() {
+	for _, dev := range r.devices {
+		dev.pollAggregatedMetrics()
+	}
+}
+
+func enumDevices(driver *l0sysman.Driver, aggregatedMetricsBufferSize int) ([]*sysmanDevice, error) {
 	zesDevs, err := driver.DeviceGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES devices: %w", err)
 	}
 	devs := make([]*sysmanDevice, len(zesDevs))
 	for i, d := range zesDevs {
-		dev, err := newSysmanDevice(d)
+		dev, err := newSysmanDevice(d, aggregatedMetricsBufferSize)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +68,7 @@ func enumDevices(driver *l0sysman.Driver) ([]*sysmanDevice, error) {
 	return devs, nil
 }
 
-func newSysmanDevice(device *l0sysman.Device) (*sysmanDevice, error) {
+func newSysmanDevice(device *l0sysman.Device, aggregatedMetricsBufferSize int) (*sysmanDevice, error) {
 	props, err := device.GetProperties()
 	if err != nil {
 		return nil, err
@@ -79,15 +85,15 @@ func newSysmanDevice(device *l0sysman.Device) (*sysmanDevice, error) {
 		attributes: attrs,
 	}
 
-	d.enumFrequency()
+	d.enumFrequency(aggregatedMetricsBufferSize)
 	d.enumMemory()
 	d.enumTemperature()
 
 	return d, nil
 }
 
-func (d *sysmanDevice) enumFrequency() {
-	d.frequency = enumFrequency(d.Device)
+func (d *sysmanDevice) enumFrequency(aggregatedMetricsBufferSize int) {
+	d.frequency = enumFrequency(d.Device, aggregatedMetricsBufferSize)
 }
 
 func (d *sysmanDevice) enumMemory() {
@@ -98,8 +104,14 @@ func (d *sysmanDevice) enumTemperature() {
 	d.temperature = enumTemperature(d.Device)
 }
 
-func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry) {
+func (d *sysmanDevice) observe(o metric.Observer, registry *metricsRegistry, readerIdx int) {
 	for _, c := range registry.collectors {
-		c.observeDevice(o, d)
+		c.observeDevice(o, d, readerIdx)
+	}
+}
+
+func (d *sysmanDevice) pollAggregatedMetrics() {
+	for _, f := range d.frequency {
+		f.pollAggregatedMetrics()
 	}
 }

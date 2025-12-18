@@ -1,8 +1,12 @@
 # Log level (debug, info, warn, error)
 logLevel: info
 
-# Metrics data collection interval
+# Metrics data collection interval.
+# Must be at least twice the sampleInterval.
 collectInterval: 30s
+
+# Sample interval for the high-frequency metrics.
+sampleInterval: 1s
 
 # Configuration for exporters
 # - By default none are enabled, please select a suitable one

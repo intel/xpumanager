@@ -18,6 +18,7 @@ import (
 
 type config struct {
 	CollectInterval time.Duration  `json:"collectInterval" yaml:"collectInterval"`
+	SampleInterval  time.Duration  `json:"sampleInterval"  yaml:"sampleInterval"`
 	LogLevel        logLevel       `json:"logLevel"        yaml:"logLevel"`
 	Exporters       exporterConfig `json:"exporters"       yaml:"exporters"`
 }
@@ -45,6 +46,7 @@ func defaultConfig() *config {
 	return &config{
 		LogLevel:        "info",
 		CollectInterval: 30 * time.Second,
+		SampleInterval:  1 * time.Second,
 		Exporters: exporterConfig{
 			Stdout: basicExporterConfig{
 				Enabled: true,
@@ -56,6 +58,20 @@ func defaultConfig() *config {
 func (c *config) validate() error {
 	if c.CollectInterval < time.Second {
 		return fmt.Errorf("collectInterval too short (%s), must be at least 1 second", c.CollectInterval)
+	}
+	if c.CollectInterval < 2*c.SampleInterval {
+		orig := c.SampleInterval
+		c.SampleInterval = c.CollectInterval / 2
+		slog.Warn("collectInterval must be >= 2 * sampleInterval to guarantee data integrity, sampleInterval adjusted", "collectInterval", c.CollectInterval, "sampleInterval", c.SampleInterval, "oldSampleInterval", orig)
+	}
+	if c.SampleInterval < time.Millisecond {
+		return fmt.Errorf("sampleInterval too short (%s), must be at least 1ms", c.SampleInterval)
+	} else if c.SampleInterval < 100*time.Millisecond {
+		slog.Warn("short sampleInterval may cause high CPU usage", "sampleInterval", c.SampleInterval)
+	}
+	if c.CollectInterval/c.SampleInterval > 1e5 {
+		// Cap to 100k samples per collection cycle to avoid excessive memory use
+		return fmt.Errorf("too many samples per collection cycle (%d), maximum is 1e5", c.CollectInterval/c.SampleInterval)
 	}
 	if err := c.LogLevel.validate(); err != nil {
 		return err

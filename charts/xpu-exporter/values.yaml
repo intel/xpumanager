@@ -82,9 +82,13 @@ config:
   # @section -- XPU Exporter Configuration
   logLevel: info
 
-  # -- Metrics data collection interval
+  # -- Metrics data collection interval. Must be at least twice the sampleInterval.
   # @section -- XPU Exporter Configuration
   collectInterval: 30s
+
+  # -- Sample interval for the high-frequency metrics.
+  # @section -- XPU Exporter Configuration
+  sampleInterval: 1s
 
   # @schema additionalProperties:false
   # -- Configuration for exporters. By default none are enabled, please select a suitable one.

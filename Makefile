@@ -12,6 +12,10 @@ all: build
 build:
 	go build -o $(OUT_DIR)/xpu-exporter ./cmd/xpu-exporter
 
+.PHONY: test
+test:
+	go test ./...
+
 .PHONY: lint
 lint:
 	go tool golangci-lint run

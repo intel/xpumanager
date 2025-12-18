@@ -7,11 +7,23 @@ package sysman
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel/metric"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
 )
+
+const (
+	// Maximum number of independent metric readers for aggregated metrics.
+	maxAggregatedMetricsReaders = 2
+)
+
+// Handle is the interface for Sysman functionality.
+type Handle interface {
+	RegisterMetrics(meter metric.Meter) error
+	PollAggregatedMetrics()
+}
 
 type createCollectorFunc func(metric.Meter) (collector, error)
 
@@ -31,13 +43,16 @@ func registerSubsystem(name string, create createCollectorFunc) {
 }
 
 type sysman struct {
-	metrics *metricsRegistry
-	devices *deviceRegistry
+	aggregatedMetricsBufferSize int
+	metrics                     []*metricsRegistry
+	devices                     *deviceRegistry
 }
 
 // New creates and initializes a new Sysman instance.
-func New() (*sysman, error) {
-	s := &sysman{}
+func New(aggregatedMetricsBufferSize int) (Handle, error) {
+	s := &sysman{
+		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
+	}
 	if err := s.init(); err != nil {
 		return nil, err
 	}
@@ -50,7 +65,7 @@ func (s *sysman) init() error {
 	}
 
 	var err error
-	s.devices, err = newDeviceRegistry()
+	s.devices, err = newDeviceRegistry(s.aggregatedMetricsBufferSize)
 	if err != nil {
 		return err
 	}
@@ -59,25 +74,27 @@ func (s *sysman) init() error {
 
 // RegisterMetrics registers Sysman metrics callbacks with the provided OTEL meter.
 func (s *sysman) RegisterMetrics(meter metric.Meter) error {
-	if err := s.initMetrics(meter); err != nil {
+	idx := len(s.metrics)
+	if idx >= maxAggregatedMetricsReaders {
+		return fmt.Errorf("maximum number of aggregated metric readers (%d) exceeded", maxAggregatedMetricsReaders)
+	}
+
+	m, err := newMetricsRegistry(meter)
+	if err != nil {
 		return err
 	}
-	_, err := meter.RegisterCallback(
+	s.metrics = append(s.metrics, m)
+
+	_, err = meter.RegisterCallback(
 		func(ctx context.Context, o metric.Observer) error {
-			s.metrics.observe(o, s.devices)
+			m.observe(o, s.devices, idx)
 			return nil
 		},
-		s.metrics.getInstruments()...,
+		m.getInstruments()...,
 	)
 	return err
 }
 
-func (s *sysman) initMetrics(meter metric.Meter) error {
-	var err error
-	s.metrics, err = newMetricsRegistry(meter)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (s *sysman) PollAggregatedMetrics() {
+	s.devices.pollAggregatedMetrics()
 }

@@ -114,7 +114,7 @@ func (m *memoryMetrics) getInstruments() []metric.Observable {
 	}
 }
 
-func (m *memoryMetrics) observeDevice(o metric.Observer, dev *sysmanDevice) {
+func (m *memoryMetrics) observeDevice(o metric.Observer, dev *sysmanDevice, readerIdx int) {
 	for _, mem := range dev.memory {
 		attrs := append(dev.attributes, mem.attributes...)
 
