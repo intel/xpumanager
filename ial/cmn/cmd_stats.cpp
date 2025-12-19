@@ -25,6 +25,7 @@
 #include "cmd_stats.h"
 #include "debug.h"
 #include "memory.h"
+#include "metric.h"
 #include "pci.h"
 #include "printer.h"
 #include <assert.h>
@@ -637,6 +638,68 @@ ze_result_t cmdStats::collectEngineUtilPerTile(enginegroup *engineGroup, zes_eng
 }
 
 /**
+ * @brief Collects EU Array metrics (Active/Stall/Idle) per tile using Level Zero metrics API
+ *
+ * This function uses the HAL metric class to collect Execution Unit utilization metrics
+ * from the ComputeBasic metric group. The metrics represent:
+ * - EU Active %: Time EUs spent actively executing instructions
+ * - EU Stall %: Time EUs were stalled waiting for resources
+ * - EU Idle %: Time EUs had no work to execute
+ *
+ * @param [in] metricHandler The HAL metric instance
+ * @param [in] device Level Zero device handle for the GPU
+ * @param [in] driver Level Zero driver handle
+ * @param [out] euMetrics Output structure to store EU metrics samples per tile
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectEuMetricsPerTile(metric *metricHandler, ze_device_handle_t device,
+											  ze_driver_handle_t driver, EuArrayMetrics &euMetrics)
+{
+	TRACING();
+	if (metricHandler == nullptr || device == nullptr || driver == nullptr) {
+		DBG("Metric handler, device, or driver not available.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::vector<EuMetricsData> metricsData;
+	ze_result_t result = metricHandler->getEuActiveStallIdle(device, driver, metricsData);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to collect EU metrics: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (metricsData.empty()) {
+		DBG("No EU metrics data returned.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	for (const auto &data : metricsData) {
+		// Determine tile ID: UINT32_MAX means root device (single tile), otherwise use subdeviceId
+		uint32_t tileId = (data.subdeviceId == UINT32_MAX) ? 0 : data.subdeviceId;
+
+		// Convert raw metric value to percentage (0-100)
+		double scaleFactor = static_cast<double>(data.scaleFactor);
+		double activePercent = static_cast<double>(data.euActive) / scaleFactor;
+		double stallPercent = static_cast<double>(data.euStall) / scaleFactor;
+		double idlePercent = static_cast<double>(data.euIdle) / scaleFactor;
+
+		activePercent = std::clamp(activePercent, 0.0, 100.0);
+		stallPercent = std::clamp(stallPercent, 0.0, 100.0);
+		idlePercent = std::clamp(idlePercent, 0.0, 100.0);
+
+		euMetrics.activePerTile[tileId].push_back(activePercent);
+		euMetrics.stallPerTile[tileId].push_back(stallPercent);
+		euMetrics.idlePerTile[tileId].push_back(idlePercent);
+
+		DBG("EU metrics tile %u: Active=%.2f%%, Stall=%.2f%%, Idle=%.2f%%\n", tileId, activePercent, stallPercent,
+			idlePercent);
+	}
+
+	euMetrics.valid = true;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Enumerate and initialize trackers for all engines of a specific type
  *
  * This function queries the HAL layer to determine how many engine instances exist
@@ -781,10 +844,13 @@ void cmdStats::populateEngineStats(const std::vector<EngineInstanceTracker> &tra
  * @param [in] sampleInterval Interval between samples
  * @param [out] metrics Output structure to store collected metrics
  * @param [out] deviceJson Output JSON object to store device statistics
+ * @param [in] collectRas Whether to collect RAS error counters (requires -r/--ras option)
+ * @param [in] collectEuMetrics Whether to collect EU metrics (requires -e/--eu option)
  * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
  */
 ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
-										 DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas)
+										 DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas,
+										 bool collectEuMetrics)
 {
 	TRACING();
 	if (device == nullptr || device->dev == nullptr) {
@@ -903,6 +969,11 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 								 metrics.renderUtilPerTile);
 		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_MEDIA_ALL, mediaUtilBaseline, metrics.mediaUtilPerTile);
 		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_COPY_ALL, copyUtilBaseline, metrics.copyUtilPerTile);
+
+		if (collectEuMetrics) {
+			auto *metricHandler = dev->getMetric();
+			collectEuMetricsPerTile(metricHandler, dev->getDeviceHandle(), dev->getDriverHandle(), metrics.euMetrics);
+		}
 	}
 
 	auto endTime = std::chrono::system_clock::now();
@@ -1097,6 +1168,32 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		if (stats.valid) {
 			std::string tileKey = makeTileKey(tileId);
 			deviceJson["utilization"]["copy_percent"][tileKey] = stats.avg;
+		}
+	}
+
+	if (metrics.euMetrics.valid) {
+		for (const auto &[tileId, samples] : metrics.euMetrics.activePerTile) {
+			SummaryStats stats = computeSummaryStats(samples);
+			if (stats.valid) {
+				std::string tileKey = makeTileKey(tileId);
+				deviceJson["utilization"]["eu_active_percent"][tileKey] = stats.avg;
+			}
+		}
+
+		for (const auto &[tileId, samples] : metrics.euMetrics.stallPerTile) {
+			SummaryStats stats = computeSummaryStats(samples);
+			if (stats.valid) {
+				std::string tileKey = makeTileKey(tileId);
+				deviceJson["utilization"]["eu_stall_percent"][tileKey] = stats.avg;
+			}
+		}
+
+		for (const auto &[tileId, samples] : metrics.euMetrics.idlePerTile) {
+			SummaryStats stats = computeSummaryStats(samples);
+			if (stats.valid) {
+				std::string tileKey = makeTileKey(tileId);
+				deviceJson["utilization"]["eu_idle_percent"][tileKey] = stats.avg;
+			}
 		}
 	}
 
@@ -1301,6 +1398,12 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printPerTileMetric(deviceJson, "Render Engines Util (%)", "/utilization/render_percent"_json_pointer, 0);
 	printPerTileMetric(deviceJson, "Media Engines Util (%)", "/utilization/media_percent"_json_pointer, 0);
 	printPerTileMetric(deviceJson, "Copy Engines Util (%)", "/utilization/copy_percent"_json_pointer, 0);
+
+	if (deviceJson.contains("/utilization/eu_active_percent"_json_pointer)) {
+		printPerTileMetric(deviceJson, "EU Array Active (%)", "/utilization/eu_active_percent"_json_pointer, 2);
+		printPerTileMetric(deviceJson, "EU Array Stall (%)", "/utilization/eu_stall_percent"_json_pointer, 2);
+		printPerTileMetric(deviceJson, "EU Array Idle (%)", "/utilization/eu_idle_percent"_json_pointer, 2);
+	}
 
 	if (deviceJson.contains("ras_errors")) {
 		printSeparator();
@@ -1857,8 +1960,8 @@ int cmdStats::run(arg_struct *args)
 		DeviceMetrics metrics;
 		nlohmann::ordered_json deviceJson;
 
-		result =
-			collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson, statsCmds[STATS_RAS].enabled);
+		result = collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson,
+									statsCmds[STATS_RAS].enabled, statsCmds[STATS_EU].enabled);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to collect stats for device %d.\n", device.index);
 			continue;

@@ -85,11 +85,18 @@ struct PciCounters
 	bool valid = false;
 };
 
+/**
+ * @brief Per-tile EU Array metrics samples for statistics collection
+ *
+ * Stores EU Active/Stall/Idle percentage samples per tile, collected using
+ * the Level Zero metrics API (ComputeBasic metric group). These metrics
+ * represent the normalized utilization of Execution Units across all tiles.
+ */
 struct EuArrayMetrics
 {
-	SummaryStats active;
-	SummaryStats stall;
-	SummaryStats idle;
+	std::map<uint32_t, std::vector<double>> activePerTile; // tile_id -> EU active % samples
+	std::map<uint32_t, std::vector<double>> stallPerTile;  // tile_id -> EU stall % samples
+	std::map<uint32_t, std::vector<double>> idlePerTile;   // tile_id -> EU idle % samples
 	bool valid = false;
 };
 
@@ -309,8 +316,11 @@ private:
 	static ze_result_t collectEngineUtilPerTile(enginegroup *engineGroup, zes_engine_group_t engineType,
 												TileEngineSnapshot &baseline,
 												std::map<uint32_t, std::vector<double>> &utilPerTile);
+	static ze_result_t collectEuMetricsPerTile(metric *metricHandler, ze_device_handle_t device,
+											   ze_driver_handle_t driver, EuArrayMetrics &euMetrics);
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
-										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas);
+										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas,
+										  bool collectEuMetrics);
 };
 
 using statsSubCmdFunc = ze_result_t (cmdStats::*)(devInfo *d);
