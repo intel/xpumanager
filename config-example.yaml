@@ -1,41 +1,24 @@
-# Log level (debug, info, warn, error)
-logLevel: info
+receivers:
+  # The custom Level-Zero Sysman receiver.
+  sysman:
+    # Log level (debug, info, warn, error)
+    log_level: info
+    # Metrics data collection interval.
+    # Must be at least twice the sample_interval.
+    collect_interval: 30s
+    # Sample interval for the high-frequency metrics.
+    sample_interval: 1s
 
-# Metrics data collection interval.
-# Must be at least twice the sampleInterval.
-collectInterval: 30s
-
-# Sample interval for the high-frequency metrics.
-sampleInterval: 1s
-
-# Configuration for exporters
-# - By default none are enabled, please select a suitable one
 exporters:
-  # Configuration for the stdout exporter
-  stdout:
-    # Enable this exporter
-    enabled: false
-  # Configuration for the Prometheus exporter
   prometheus:
-    # Enable this exporter
-    enabled: false
-  # Configuration for the OTLP gRPC exporter
-  grpc:
-    # Enable this exporter
-    enabled: false
-    # OTLP/gRPC collector endpoint. If empty, taken from
-    # OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-    # environment variable, or localhost:4317 by default.
-    endpoint: ""
-    # Use insecure connection (no TLS)
-    insecure: false
-  # Configuration for the OTLP HTTP exporter
-  http:
-    # Enable this exporter
-    enabled: false
-    # OTLP/HTTP collector endpoint. If empty, taken from
-    # OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-    # environment variable, or localhost:4318 by default.
-    endpoint: ""
-    # Use insecure connection (no TLS)
-    insecure: false
+    endpoint: "0.0.0.0:8080"
+
+processors:
+
+extensions:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [sysman]
+      exporters: [prometheus]

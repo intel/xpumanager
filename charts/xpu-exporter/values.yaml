@@ -46,7 +46,7 @@ securityContext:
 # @schema additionalProperties:false
 service:
   # -- Create service
-  create: true
+  create: false
   # @schema enum: [ClusterIP, NodePort, LoadBalancer, ExternalName]
   # -- Service type
   type: ClusterIP
@@ -77,57 +77,41 @@ affinity: {}
 
 # @schema additionalProperties:false
 config:
-  # @schema enum: [debug, info, warn, error]
-  # -- Log level (debug, info, warn, error)
-  # @section -- XPU Exporter Configuration
-  logLevel: info
-
-  # -- Metrics data collection interval. Must be at least twice the sampleInterval.
-  # @section -- XPU Exporter Configuration
-  collectInterval: 30s
-
-  # -- Sample interval for the high-frequency metrics.
-  # @section -- XPU Exporter Configuration
-  sampleInterval: 1s
-
-  # @schema additionalProperties:false
-  # -- Configuration for exporters. By default none are enabled, please select a suitable one.
+  # -- Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)
   # @default --  
   # @section -- XPU Exporter Configuration
-  exporters:
+  receivers:
     # @schema additionalProperties:false
+    # -- Configuration for the custom Level-Zero Sysman receiver.
+    # @default --  
     # @section -- XPU Exporter Configuration
-    stdout:
-      # -- Enable stdout metrics exporter
+    sysman:
+      # @schema enum: [debug, info, warn, error]
+      # -- Log level (debug, info, warn, error)
       # @section -- XPU Exporter Configuration
-      enabled: false
-    # @schema additionalProperties:false
-    # @section -- XPU Exporter Configuration
-    prometheus:
-      # -- Enable Prometheus metrics exporter
+      log_level: info
+      # -- Metrics data collection interval. Must be at least twice the sample_interval.
       # @section -- XPU Exporter Configuration
-      enabled: false
-    # @schema additionalProperties:false
-    # @section -- XPU Exporter Configuration
-    grpc:
-      # -- Enable OTLP gRPC metrics exporter
+      collect_interval: 30s
+      # -- Sample interval for the high-frequency metrics.
       # @section -- XPU Exporter Configuration
-      enabled: false
-      # -- OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default.
-      # @section -- XPU Exporter Configuration
-      endpoint: ""
-      # -- Use insecure connection (no TLS)
-      # @section -- XPU Exporter Configuration
-      insecure: false
-    # @schema additionalProperties:false
-    # @section -- XPU Exporter Configuration
-    http:
-      # -- Enable OTLP HTTP metrics exporter
-      # @section -- XPU Exporter Configuration
-      enabled: false
-      # -- OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default.
-      # @section -- XPU Exporter Configuration
-      endpoint: ""
-      # -- Use insecure connection (no TLS)
-      # @section -- XPU Exporter Configuration
-      insecure: false
+      sample_interval: 1s
+
+  # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
+  # @section -- XPU Exporter Configuration
+  exporters: {}
+
+  # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
+  # @section -- XPU Exporter Configuration
+  processors: {}
+
+  # -- Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)
+  # @section -- XPU Exporter Configuration
+  extensions: {}
+
+  # -- Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)
+  # @section -- XPU Exporter Configuration
+  service:
+    pipelines:
+      metrics:
+        receivers: [sysman]

@@ -29,10 +29,8 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-        - "xpu-exporter"
         args:
-        - "-config=/etc/xpu-exporter/config.yaml"
+        - "--config=/etc/xpu-exporter/config.yaml"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         ports:

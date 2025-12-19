@@ -12,86 +12,70 @@
         "config": {
             "type": "object",
             "properties": {
-                "collectInterval": {
-                    "description": "Metrics data collection interval. Must be at least twice the sampleInterval.",
-                    "type": "string"
-                },
                 "exporters": {
-                    "description": "Configuration for exporters. By default none are enabled, please select a suitable one.",
+                    "description": "Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)",
+                    "type": "object"
+                },
+                "extensions": {
+                    "description": "Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)",
+                    "type": "object"
+                },
+                "processors": {
+                    "description": "Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)",
+                    "type": "object"
+                },
+                "receivers": {
+                    "description": "Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)",
                     "type": "object",
                     "properties": {
-                        "grpc": {
+                        "sysman": {
+                            "description": "Configuration for the custom Level-Zero Sysman receiver.",
                             "type": "object",
                             "properties": {
-                                "enabled": {
-                                    "description": "Enable OTLP gRPC metrics exporter",
-                                    "type": "boolean"
-                                },
-                                "endpoint": {
-                                    "description": "OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default.",
+                                "collect_interval": {
+                                    "description": "Metrics data collection interval. Must be at least twice the sample_interval.",
                                     "type": "string"
                                 },
-                                "insecure": {
-                                    "description": "Use insecure connection (no TLS)",
-                                    "type": "boolean"
-                                }
-                            },
-                            "additionalProperties": false
-                        },
-                        "http": {
-                            "type": "object",
-                            "properties": {
-                                "enabled": {
-                                    "description": "Enable OTLP HTTP metrics exporter",
-                                    "type": "boolean"
+                                "log_level": {
+                                    "description": "Log level (debug, info, warn, error)",
+                                    "type": "string",
+                                    "enum": [
+                                        "debug",
+                                        "info",
+                                        "warn",
+                                        "error"
+                                    ]
                                 },
-                                "endpoint": {
-                                    "description": "OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default.",
+                                "sample_interval": {
+                                    "description": "Sample interval for the high-frequency metrics.",
                                     "type": "string"
-                                },
-                                "insecure": {
-                                    "description": "Use insecure connection (no TLS)",
-                                    "type": "boolean"
-                                }
-                            },
-                            "additionalProperties": false
-                        },
-                        "prometheus": {
-                            "type": "object",
-                            "properties": {
-                                "enabled": {
-                                    "description": "Enable Prometheus metrics exporter",
-                                    "type": "boolean"
-                                }
-                            },
-                            "additionalProperties": false
-                        },
-                        "stdout": {
-                            "type": "object",
-                            "properties": {
-                                "enabled": {
-                                    "description": "Enable stdout metrics exporter",
-                                    "type": "boolean"
                                 }
                             },
                             "additionalProperties": false
                         }
-                    },
-                    "additionalProperties": false
+                    }
                 },
-                "logLevel": {
-                    "description": "Log level (debug, info, warn, error)",
-                    "type": "string",
-                    "enum": [
-                        "debug",
-                        "info",
-                        "warn",
-                        "error"
-                    ]
-                },
-                "sampleInterval": {
-                    "description": "Sample interval for the high-frequency metrics.",
-                    "type": "string"
+                "service": {
+                    "description": "Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)",
+                    "type": "object",
+                    "properties": {
+                        "pipelines": {
+                            "type": "object",
+                            "properties": {
+                                "metrics": {
+                                    "type": "object",
+                                    "properties": {
+                                        "receivers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             },
             "additionalProperties": false
