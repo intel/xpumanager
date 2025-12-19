@@ -643,16 +643,15 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
  *
  * This function searches through available metric groups to locate the ComputeBasic
  * group that contains EU activity metrics (EuActive, EuStall, GpuTime). The found
- * metric group is cached for subsequent use to avoid repeated searches. Thread-safe
- * through mutex protection.
+ * metric group is cached for subsequent use to avoid repeated searches.
+ *
+ * Note: Caller must hold metricMutex before calling this function.
  *
  * @param [in] device Handle to the Level Zero device
  * @return zet_metric_group_handle_t Handle to the EU metric group, or nullptr if not found
  */
 zet_metric_group_handle_t metric::findEuMetricGroup(ze_device_handle_t device)
 {
-	std::lock_guard<std::mutex> lock(metricMutex);
-
 	// Check cache first
 	if (targetMetricGroups.find(device) != targetMetricGroups.end()) {
 		return targetMetricGroups.at(device);
