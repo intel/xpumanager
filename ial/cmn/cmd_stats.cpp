@@ -80,6 +80,30 @@ static constexpr double MICROJOULES_TO_JOULES = 1000000.0;
 static constexpr double MICROSECONDS_PER_SECOND = 1000000.0;
 
 /**
+ * @brief Safely get a nested JSON object by path
+ *
+ * This helper function navigates through nested JSON objects using a vector
+ * of keys, providing better compatibility across different nlohmann_json
+ * library versions than json_pointer.
+ *
+ * @param [in] json The root JSON object
+ * @param [in] keys Vector of keys representing the path (e.g., {"power", "gpu_power_w"})
+ * @return const nlohmann::ordered_json* Pointer to the nested object, or nullptr if not found
+ */
+static const nlohmann::ordered_json *getNestedJson(const nlohmann::ordered_json &json,
+												   const std::vector<std::string> &keys)
+{
+	const nlohmann::ordered_json *current = &json;
+	for (const auto &key : keys) {
+		if (!current->is_object() || !current->contains(key)) {
+			return nullptr;
+		}
+		current = &(*current)[key];
+	}
+	return current;
+}
+
+/**
  * @brief Conversion factor from bytes to kilobytes
  *
  * Memory bandwidth values are converted to kB/s for display.
@@ -1310,9 +1334,16 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	uint32_t deviceIndex = deviceJson.value("device_index", 0);
 	std::string pciBdf = deviceJson.value("pci_bdf", "N/A");
 	std::string deviceType = deviceJson.value("device_type", "N/A");
-	std::string startTime = deviceJson.value("/timestamps/start"_json_pointer, "N/A");
-	std::string endTime = deviceJson.value("/timestamps/end"_json_pointer, "N/A");
-	double elapsedSeconds = deviceJson.value("/timestamps/elapsed_seconds"_json_pointer, 0.0);
+
+	std::string startTime = "N/A";
+	std::string endTime = "N/A";
+	double elapsedSeconds = 0.0;
+	if (deviceJson.contains("timestamps")) {
+		const auto &ts = deviceJson["timestamps"];
+		startTime = ts.value("start", startTime);
+		endTime = ts.value("end", endTime);
+		elapsedSeconds = ts.value("elapsed_seconds", elapsedSeconds);
+	}
 
 	printSeparator();
 	printRow("Device ID", std::to_string(deviceIndex));
@@ -1328,8 +1359,8 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	elapsedStr << std::fixed << std::setprecision(2) << elapsedSeconds;
 	printRow("Elapsed Time (seconds)", elapsedStr.str());
 
-	if (deviceJson.contains("/power/energy_consumed_j"_json_pointer)) {
-		double energyJ = deviceJson["/power/energy_consumed_j"_json_pointer];
+	if (deviceJson.contains("power") && deviceJson["power"].contains("energy_consumed_j")) {
+		double energyJ = deviceJson["power"]["energy_consumed_j"].get<double>();
 		std::ostringstream oss;
 		oss << std::fixed << std::setprecision(2) << energyJ;
 		printRow("Energy Consumed (J)", oss.str());
@@ -1338,13 +1369,14 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	}
 
 	auto printPerTileMetric = [&printRow](const nlohmann::ordered_json &json, const std::string &label,
-										  const nlohmann::json::json_pointer &ptr, int precision = 0) {
-		if (!json.contains(ptr)) {
+										  const std::vector<std::string> &path, int precision = 0) {
+		const nlohmann::ordered_json *metricPtr = getNestedJson(json, path);
+		if (metricPtr == nullptr) {
 			printRow(label, "N/A");
 			return;
 		}
 
-		auto &metric = json[ptr];
+		const auto &metric = *metricPtr;
 		if (!metric.is_object() || metric.empty()) {
 			printRow(label, "N/A");
 			return;
@@ -1374,7 +1406,7 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 		bool firstTile = true;
 		for (uint32_t tileId : tileIds) {
 			std::string tileKey = tilePrefix + std::to_string(tileId);
-			auto &tileMetric = metric[tileKey];
+			const auto &tileMetric = metric[tileKey];
 
 			std::ostringstream oss;
 			oss << std::fixed << std::setprecision(precision);
@@ -1402,16 +1434,16 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 		}
 	};
 
-	printPerTileMetric(deviceJson, "GPU Utilization (%)", "/utilization/gpu_percent"_json_pointer, 0);
-	printPerTileMetric(deviceJson, "Compute Engines Util (%)", "/utilization/compute_percent"_json_pointer, 0);
-	printPerTileMetric(deviceJson, "Render Engines Util (%)", "/utilization/render_percent"_json_pointer, 0);
-	printPerTileMetric(deviceJson, "Media Engines Util (%)", "/utilization/media_percent"_json_pointer, 0);
-	printPerTileMetric(deviceJson, "Copy Engines Util (%)", "/utilization/copy_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Utilization (%)", {"utilization", "gpu_percent"}, 0);
+	printPerTileMetric(deviceJson, "Compute Engines Util (%)", {"utilization", "compute_percent"}, 0);
+	printPerTileMetric(deviceJson, "Render Engines Util (%)", {"utilization", "render_percent"}, 0);
+	printPerTileMetric(deviceJson, "Media Engines Util (%)", {"utilization", "media_percent"}, 0);
+	printPerTileMetric(deviceJson, "Copy Engines Util (%)", {"utilization", "copy_percent"}, 0);
 
-	if (deviceJson.contains("/utilization/eu_active_percent"_json_pointer)) {
-		printPerTileMetric(deviceJson, "EU Array Active (%)", "/utilization/eu_active_percent"_json_pointer, 2);
-		printPerTileMetric(deviceJson, "EU Array Stall (%)", "/utilization/eu_stall_percent"_json_pointer, 2);
-		printPerTileMetric(deviceJson, "EU Array Idle (%)", "/utilization/eu_idle_percent"_json_pointer, 2);
+	if (deviceJson.contains("utilization") && deviceJson["utilization"].contains("eu_active_percent")) {
+		printPerTileMetric(deviceJson, "EU Array Active (%)", {"utilization", "eu_active_percent"}, 2);
+		printPerTileMetric(deviceJson, "EU Array Stall (%)", {"utilization", "eu_stall_percent"}, 2);
+		printPerTileMetric(deviceJson, "EU Array Idle (%)", {"utilization", "eu_idle_percent"}, 2);
 	}
 
 	if (deviceJson.contains("ras_errors")) {
@@ -1421,55 +1453,54 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Power (W)", "/power/gpu_power_w"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Power (W)", {"power", "gpu_power_w"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Frequency (MHz)", "/frequency/gpu_frequency_mhz"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Frequency (MHz)", {"frequency", "gpu_frequency_mhz"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "Media Frequency (MHz)", "/frequency/media_frequency_mhz"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "Media Frequency (MHz)", {"frequency", "media_frequency_mhz"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Core Temperature", "/temperature/gpu_core_celsius"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Core Temperature", {"temperature", "gpu_core_celsius"}, 0);
 	printRow("(Degrees Celsius)", "");
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Temperature", "/temperature/memory_celsius"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Memory Temperature", {"temperature", "memory_celsius"}, 0);
 	printRow("(Degrees Celsius)", "");
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Read (kB/s)", "/memory/read_kbps"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Memory Read (kB/s)", {"memory", "read_kbps"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Write (kB/s)", "/memory/write_kbps"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Memory Write (kB/s)", {"memory", "write_kbps"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Bandwidth (%)", "/memory/bandwidth_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Memory Bandwidth (%)", {"memory", "bandwidth_percent"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Used (MiB)", "/memory/used_mib"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Memory Used (MiB)", {"memory", "used_mib"}, 0);
 	printSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Util (%)", "/memory/util_percent"_json_pointer, 0);
+	printPerTileMetric(deviceJson, "GPU Memory Util (%)", {"memory", "util_percent"}, 0);
 	printSeparator();
 
-	printMetric(deviceJson, printRow, "PCIe Read (kB/s)", "/pcie/read_kbps"_json_pointer);
+	printMetric(deviceJson, printRow, "PCIe Read (kB/s)", {"pcie", "read_kbps"});
 	printSeparator();
-	printMetric(deviceJson, printRow, "PCIe Write (kB/s)", "/pcie/write_kbps"_json_pointer);
+	printMetric(deviceJson, printRow, "PCIe Write (kB/s)", {"pcie", "write_kbps"});
 	printSeparator();
 
-	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", "/utilization/compute_engines"_json_pointer);
+	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", {"utilization", "compute_engines"});
 	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", "/utilization/render_engines"_json_pointer);
+	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", {"utilization", "render_engines"});
 	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Decoder Engine Util (%)", "/utilization/decoder_engines"_json_pointer);
+	printEngineInstances(deviceJson, printRow, "Decoder Engine Util (%)", {"utilization", "decoder_engines"});
 	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Encoder Engine Util (%)", "/utilization/encoder_engines"_json_pointer);
+	printEngineInstances(deviceJson, printRow, "Encoder Engine Util (%)", {"utilization", "encoder_engines"});
 	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", "/utilization/copy_engines"_json_pointer);
+	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", {"utilization", "copy_engines"});
 	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)",
-						 "/utilization/media_em_engines"_json_pointer);
+	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)", {"utilization", "media_em_engines"});
 
 	printSeparator();
 }
@@ -1486,19 +1517,20 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
  * @param [in] deviceJson JSON object containing device statistics
  * @param [in] printRow Callback function to print a row
  * @param [in] label The label for the metric row
- * @param [in] ptr JSON pointer to the metric data
+ * @param [in] path Vector of keys representing the path to the metric data
  */
 void StatsTextPrinter::printMetric(const nlohmann::ordered_json &deviceJson,
 								   std::function<void(const std::string &, const std::string &)> printRow,
-								   const std::string &label, const nlohmann::json::json_pointer &ptr)
+								   const std::string &label, const std::vector<std::string> &path)
 {
 	TRACING();
-	if (!deviceJson.contains(ptr)) {
+	const nlohmann::ordered_json *metricPtr = getNestedJson(deviceJson, path);
+	if (metricPtr == nullptr) {
 		printRow(label, "N/A");
 		return;
 	}
 
-	auto &metric = deviceJson[ptr];
+	const auto &metric = *metricPtr;
 	if (!metric.is_object()) {
 		printRow(label, "N/A");
 		return;
@@ -1529,19 +1561,20 @@ void StatsTextPrinter::printMetric(const nlohmann::ordered_json &deviceJson,
  * @param [in] deviceJson JSON object containing device statistics
  * @param [in] printRow Callback function to print a row
  * @param [in] label The label for the engine instances row
- * @param [in] ptr JSON pointer to the engine data
+ * @param [in] path Vector of keys representing the path to the engine data
  */
 void StatsTextPrinter::printEngineInstances(const nlohmann::ordered_json &deviceJson,
 											std::function<void(const std::string &, const std::string &)> printRow,
-											const std::string &label, const nlohmann::json::json_pointer &ptr)
+											const std::string &label, const std::vector<std::string> &path)
 {
 	TRACING();
-	if (!deviceJson.contains(ptr)) {
+	const nlohmann::ordered_json *enginesPtr = getNestedJson(deviceJson, path);
+	if (enginesPtr == nullptr) {
 		printRow(label, "N/A");
 		return;
 	}
 
-	auto &enginesJson = deviceJson[ptr];
+	const auto &enginesJson = *enginesPtr;
 	if (!enginesJson.is_object() || enginesJson.empty()) {
 		printRow(label, "N/A");
 		return;
@@ -1553,7 +1586,7 @@ void StatsTextPrinter::printEngineInstances(const nlohmann::ordered_json &device
 
 	for (auto it = enginesJson.begin(); it != enginesJson.end(); ++it) {
 		const std::string &engineKey = it.key();
-		auto &engineMetric = it.value();
+		const auto &engineMetric = it.value();
 
 		if (!engineMetric.is_object()) {
 			continue;
