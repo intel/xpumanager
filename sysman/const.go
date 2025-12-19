@@ -25,9 +25,9 @@ const (
 	// Maximum device universal unique id (UUID) size in bytes.
 	MAX_UUID_SIZE = 16
 	// Diagnostic test index to use for the very first test.
-	DIAG_FIRST_TEST_INDEX = 0x0
+	DIAG_FIRST_TEST_INDEX = 0
 	// Diagnostic test index to use for the very last test.
-	DIAG_LAST_TEST_INDEX = 0xFFFFFFFF
+	DIAG_LAST_TEST_INDEX = 4294967295
 	// Maximum Fabric port model string size.
 	MAX_FABRIC_PORT_MODEL_SIZE = 256
 	// Maximum size of the buffer that will return information about link types.
@@ -37,7 +37,7 @@ const (
 	// The maximum number of categories.
 	MAX_RAS_ERROR_CATEGORY_COUNT = 7
 	// Disable forward progress guard timeout.
-	SCHED_WATCHDOG_DISABLE = (^(uint64(0)))
+	SCHED_WATCHDOG_DISABLE = 18446744073709551615
 	// Device ECC default properties Extension Name.
 	DEVICE_ECC_DEFAULT_PROPERTIES_EXT_NAME = "ZES_extension_device_ecc_default_properties"
 	// Power Limits Extension Name.

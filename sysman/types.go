@@ -5,6 +5,78 @@ package sysman
 
 import "github.com/intel/level-zero-go/core"
 
+// driverHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-handle-t
+type driverHandle *_Ctype_struct__ze_driver_handle_t
+
+// deviceHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-handle-t
+type deviceHandle *_Ctype_struct__ze_device_handle_t
+
+// schedHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-handle-t
+type schedHandle *_Ctype_struct__zes_sched_handle_t
+
+// perfHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-perf-handle-t
+type perfHandle *_Ctype_struct__zes_perf_handle_t
+
+// pwrHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pwr-handle-t
+type pwrHandle *_Ctype_struct__zes_pwr_handle_t
+
+// freqHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-handle-t
+type freqHandle *_Ctype_struct__zes_freq_handle_t
+
+// engineHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-handle-t
+type engineHandle *_Ctype_struct__zes_engine_handle_t
+
+// standbyHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-handle-t
+type standbyHandle *_Ctype_struct__zes_standby_handle_t
+
+// firmwareHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-firmware-handle-t
+type firmwareHandle *_Ctype_struct__zes_firmware_handle_t
+
+// memHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-handle-t
+type memHandle *_Ctype_struct__zes_mem_handle_t
+
+// fabricPortHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-handle-t
+type fabricPortHandle *_Ctype_struct__zes_fabric_port_handle_t
+
+// tempHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-handle-t
+type tempHandle *_Ctype_struct__zes_temp_handle_t
+
+// psuHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-handle-t
+type psuHandle *_Ctype_struct__zes_psu_handle_t
+
+// fanHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-handle-t
+type fanHandle *_Ctype_struct__zes_fan_handle_t
+
+// ledHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-handle-t
+type ledHandle *_Ctype_struct__zes_led_handle_t
+
+// rasHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-handle-t
+type rasHandle *_Ctype_struct__zes_ras_handle_t
+
+// diagHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-handle-t
+type diagHandle *_Ctype_struct__zes_diag_handle_t
+
+// overclockHandle declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-handle-t
+type overclockHandle *_Ctype_struct__zes_overclock_handle_t
+
 // DriverExtensionProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-extension-properties-t
 //
