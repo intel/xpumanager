@@ -260,10 +260,10 @@ private:
 	void printDeviceTable(const nlohmann::ordered_json &deviceJson);
 	void printMetric(const nlohmann::ordered_json &deviceJson,
 					 std::function<void(const std::string &, const std::string &)> printRow, const std::string &label,
-					 const nlohmann::json::json_pointer &ptr);
+					 const std::vector<std::string> &path);
 	void printEngineInstances(const nlohmann::ordered_json &deviceJson,
 							  std::function<void(const std::string &, const std::string &)> printRow,
-							  const std::string &label, const nlohmann::json::json_pointer &ptr);
+							  const std::string &label, const std::vector<std::string> &path);
 	void printRasCounters(const nlohmann::ordered_json &deviceJson,
 						  std::function<void(const std::string &, const std::string &)> printRow);
 };
