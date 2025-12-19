@@ -422,7 +422,7 @@ func zesDriverEventListen(HDriver driverHandle, Timeout uint32, Count uint32, Ph
 }
 
 // zesDriverEventListenEx function as declared in level-zero/zes_api.h:2678
-func zesDriverEventListenEx(HDriver driverHandle, Timeout uint, Count uint32, PhDevices []deviceHandle, PNumDeviceEvents *uint32, PEvents []EventTypeFlags) core.Result {
+func zesDriverEventListenEx(HDriver driverHandle, Timeout uint64, Count uint32, PhDevices []deviceHandle, PNumDeviceEvents *uint32, PEvents []EventTypeFlags) core.Result {
 	cHDriver, _ := *(*C.ze_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cTimeout, _ := (C.uint64_t)(Timeout), cgoAllocsUnknown
 	cCount, _ := (C.uint32_t)(Count), cgoAllocsUnknown
@@ -621,7 +621,7 @@ func zesFirmwareGetFlashProgress(HFirmware firmwareHandle, PCompletionPercent *u
 }
 
 // zesFirmwareGetConsoleLogs function as declared in level-zero/zes_api.h:3582
-func zesFirmwareGetConsoleLogs(HFirmware firmwareHandle, PSize *uint, PFirmwareLog *byte) core.Result {
+func zesFirmwareGetConsoleLogs(HFirmware firmwareHandle, PSize *uint64, PFirmwareLog *byte) core.Result {
 	cHFirmware, _ := *(*C.zes_firmware_handle_t)(unsafe.Pointer(&HFirmware)), cgoAllocsUnknown
 	cPSize, _ := (*C.size_t)(unsafe.Pointer(PSize)), cgoAllocsUnknown
 	cPFirmwareLog, _ := (*C.char)(unsafe.Pointer(PFirmwareLog)), cgoAllocsUnknown

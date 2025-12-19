@@ -29,6 +29,11 @@ go -C "$ROOT_DIR/hack" run ./types-mangle \
 gotool goimports types.go.tmp > types.go
 rm -f types.go.tmp
 
+# Hack to replace uint with uint64 within auto-generated function prototypes.
+# There is a bug in c-for-go (in the version that we're using) that causes it
+# to translate uint64_t function arguments to uint.
+sed -E '/^func / s/\buint\b/uint64/g' -i "$PACKAGE.go"
+
 # Re-format generated files
 gofmt -w types.go const.go
 
