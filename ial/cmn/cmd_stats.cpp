@@ -877,7 +877,8 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	auto *memoryHandler = reinterpret_cast<::memory *>(dev->getMemory());
 	auto *pciHandler = reinterpret_cast<::pci *>(dev->getPCI());
 
-	std::vector<EngineInstanceTracker> computeEngines, renderEngines, copyEngines, mediaEmEngines;
+	std::vector<EngineInstanceTracker> computeEngines, renderEngines, decoderEngines, encoderEngines, copyEngines,
+		mediaEmEngines;
 	TilePowerSnapshot powerBaseline{};
 	TilePowerSnapshot initialPowerBaseline{};
 	TileMemoryBandwidthSnapshot memoryBaseline{};
@@ -907,11 +908,15 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 
 	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_COMPUTE_SINGLE, computeEngines);
 	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_RENDER_SINGLE, renderEngines);
+	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, decoderEngines);
+	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE, encoderEngines);
 	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_COPY_SINGLE, copyEngines);
 	enumerateEnginesByType(engineGroup, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, mediaEmEngines);
 
 	captureEnginesByType(engineGroup, ZES_ENGINE_GROUP_COMPUTE_SINGLE, computeEngines);
 	captureEnginesByType(engineGroup, ZES_ENGINE_GROUP_RENDER_SINGLE, renderEngines);
+	captureEnginesByType(engineGroup, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, decoderEngines);
+	captureEnginesByType(engineGroup, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE, encoderEngines);
 	captureEnginesByType(engineGroup, ZES_ENGINE_GROUP_COPY_SINGLE, copyEngines);
 	captureEnginesByType(engineGroup, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, mediaEmEngines);
 
@@ -948,6 +953,8 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 
 		sampleEngineType(ZES_ENGINE_GROUP_COMPUTE_SINGLE, computeEngines);
 		sampleEngineType(ZES_ENGINE_GROUP_RENDER_SINGLE, renderEngines);
+		sampleEngineType(ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, decoderEngines);
+		sampleEngineType(ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE, encoderEngines);
 		sampleEngineType(ZES_ENGINE_GROUP_COPY_SINGLE, copyEngines);
 		sampleEngineType(ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, mediaEmEngines);
 
@@ -986,6 +993,8 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 
 	populateEngineStats(computeEngines, "compute_engines", deviceJson, metrics.computeEngineDetails);
 	populateEngineStats(renderEngines, "render_engines", deviceJson, metrics.renderEngineDetails);
+	populateEngineStats(decoderEngines, "decoder_engines", deviceJson, metrics.decoderEngineDetails);
+	populateEngineStats(encoderEngines, "encoder_engines", deviceJson, metrics.encoderEngineDetails);
 	populateEngineStats(copyEngines, "copy_engines", deviceJson, metrics.copyEngineDetails);
 	populateEngineStats(mediaEmEngines, "media_em_engines", deviceJson, metrics.mediaEmEngineDetails);
 
@@ -1452,6 +1461,10 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", "/utilization/compute_engines"_json_pointer);
 	printSeparator();
 	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", "/utilization/render_engines"_json_pointer);
+	printSeparator();
+	printEngineInstances(deviceJson, printRow, "Decoder Engine Util (%)", "/utilization/decoder_engines"_json_pointer);
+	printSeparator();
+	printEngineInstances(deviceJson, printRow, "Encoder Engine Util (%)", "/utilization/encoder_engines"_json_pointer);
 	printSeparator();
 	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", "/utilization/copy_engines"_json_pointer);
 	printSeparator();
