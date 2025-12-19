@@ -9,15 +9,15 @@ OUT_DIR ?= bin
 
 .PHONY: help
 help:
-	@echo -e "\nTargets:\n$$(grep '^[^:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+	@echo -e "\nTargets:\n$$(grep '^[#^:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
 
 .PHONY: stats
 stats:
-	@echo "Type:  Files:   Lines:"
+	@echo "Type:       Files:   Lines:"
 	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
 		files=$$(git ls-files "*$$ext" | wc -l); \
 		lines=$$(git ls-files -z "*$$ext" | xargs -0 xargs cat | wc -l); \
-		printf " %-5s %5d %8d\n" $$ext $$files $$lines; \
+		printf " %-10s %5d %8d\n" $$ext $$files $$lines; \
 	done
 
 # --- Build targets ---
