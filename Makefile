@@ -6,8 +6,20 @@
 Q := @
 PACKAGES := core sysman
 
+# --- Helper targets ---
+
 help:
 	@echo -e "\nTargets:\n$$(grep '^[-_a-z]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+
+stats:
+	@echo "Type:  Files:   Lines:"
+	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
+		files=$$(git ls-files "*$$ext" | wc -l); \
+		lines=$$(git ls-files -z "*$$ext" | xargs -0 xargs cat | wc -l); \
+		printf " %-5s %5d %8d\n" $$ext $$files $$lines; \
+	done
+
+# --- Build targets ---
 
 generate: clean
 	go mod download
@@ -29,6 +41,8 @@ clean:
 	    rm -f $$pkg/zz_*; \
 	done
 
+# --- Lint targets ---
+
 # same as in "ci-checks.yml" GH workflow
 # (label=disable is needed on hosts using SELinux)
 golint:
@@ -47,14 +61,7 @@ yamllint:
 	@echo -e "\nyamllint: linting YAML files...\n"
 	git ls-files -z '*.yaml' '*.yml' | xargs -0 yamllint -d relaxed --no-warnings
 
-stats:
-	@echo "Type:  Files:   Lines:"
-	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
-		files=$$(git ls-files "*$$ext" | wc -l); \
-		lines=$$(git ls-files -z "*$$ext" | xargs -0 xargs cat | wc -l); \
-		printf " %-5s %5d %8d\n" $$ext $$files $$lines; \
-	done
-
+# --- Phony targets ---
 
 # Add all Makefile targets to the .PHONY target, after removing current ones.
 # - Assumes all Makefile targets to be phony and in small caps
