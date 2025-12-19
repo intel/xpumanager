@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-OUT_DIR ?= bin
-
 # --- Helper targets ---
 
 .PHONY: help
@@ -24,7 +22,9 @@ stats:
 
 .PHONY: build
 build:
-	go build -o $(OUT_DIR)/xpu-exporter ./cmd/xpu-exporter
+	go tool -modfile tools/go.mod builder --config=builder-config.yaml --skip-compilation
+	# Builder is not able to handle the replace directives correctly, thus build "manually"
+	cd dist && go build -o xpu-exporter .
 
 .PHONY: generate
 generate:
