@@ -44,7 +44,7 @@ func newSysmanReceiver(settings receiver.Settings, cfg *Config, consumer consume
 	const sampleBufferMinExtraSamples = 10
 	aggregatedSampleCount := cfg.CollectInterval/cfg.SampleInterval + max(time.Second/cfg.SampleInterval, sampleBufferMinExtraSamples)
 
-	s, err := sysman.New(int(aggregatedSampleCount))
+	s, err := sysman.New(logger, int(aggregatedSampleCount))
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize L0 Sysman API (likely a Level-Zero driver / device access issue): %w", err)
 	}
@@ -110,7 +110,8 @@ func (r *sysmanReceiver) runScraper(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			r.logger.Info("collecting device metrics")
+			r.logger.Debug("collecting device metrics")
+			r.sysman.Scrape(ctx, r.consumer)
 		case <-ctx.Done():
 			return
 		}

@@ -6,49 +6,100 @@
 package sysman
 
 import (
-	"fmt"
-	"log/slog"
+	"context"
 	"maps"
 	"slices"
+	"time"
 
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.uber.org/zap"
 )
 
-type collector interface {
-	getInstruments() []metric.Observable
-	observeDevice(o metric.Observer, d *sysmanDevice, readerIdx int)
+type scraper interface {
+	scrapeDevice(context.Context, *sysmanDevice)
 }
 
 type metricsRegistry struct {
-	collectors []collector
+	logger   *zap.SugaredLogger
+	scrapers []subsystem
 }
 
-func newMetricsRegistry(meter metric.Meter) (*metricsRegistry, error) {
-	registry := &metricsRegistry{}
+func newMetricsRegistry(logger *zap.SugaredLogger) (*metricsRegistry, error) {
+	registry := &metricsRegistry{logger: logger}
 
 	for _, name := range slices.Sorted(maps.Keys(subsystems)) {
 		s := subsystems[name]
-		c, err := s.createCollector(meter)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create collector for subsystem %s: %w", name, err)
-		}
-		registry.collectors = append(registry.collectors, c)
-		slog.Info("registered sysman subsystem collector", "subsystem", name)
+		registry.scrapers = append(registry.scrapers, s)
+		logger.Infow("registered sysman subsystem scraper", "subsystem", name)
 	}
 
 	return registry, nil
 }
 
-func (r *metricsRegistry) getInstruments() []metric.Observable {
-	instruments := []metric.Observable{}
-	for _, c := range r.collectors {
-		instruments = append(instruments, c.getInstruments()...)
+func (r *metricsRegistry) scrape(ctx context.Context, consumer consumer.Metrics, d *deviceRegistry) {
+	metrics := pmetric.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	sm := rm.ScopeMetrics().AppendEmpty()
+	sm.Scope().SetName("sysman")
+	sm.Scope().SetVersion("0.0.0")
+
+	// Create metric scrapers
+	ts := pcommon.NewTimestampFromTime(time.Now())
+	scrapers := make([]scraper, len(r.scrapers))
+	for i, s := range r.scrapers {
+		scrapers[i] = s.createScraper(sm, ts)
 	}
-	return instruments
+
+	// Scrape devices
+	for _, dev := range d.devices {
+		for _, scraper := range scrapers {
+			scraper.scrapeDevice(ctx, dev)
+		}
+	}
+
+	// Send all metrics
+	if err := consumer.ConsumeMetrics(ctx, metrics); err != nil {
+		r.logger.Errorw("Failed to consume metrics", zap.Error(err))
+	}
 }
 
-func (r *metricsRegistry) observe(o metric.Observer, d *deviceRegistry, readerIdx int) {
-	for _, dev := range d.devices {
-		dev.observe(o, r, readerIdx)
-	}
+func newGauge(sm pmetric.ScopeMetrics, name, unit, description string) pmetric.Gauge {
+	m := sm.Metrics().AppendEmpty()
+	m.SetName(name)
+	m.SetUnit(unit)
+	m.SetDescription(description)
+	return m.SetEmptyGauge()
+}
+
+func newUpDownCounter(sm pmetric.ScopeMetrics, name, unit, description string) pmetric.Sum {
+	m := sm.Metrics().AppendEmpty()
+	m.SetName(name)
+	m.SetUnit(unit)
+	m.SetDescription(description)
+
+	s := m.SetEmptySum()
+	s.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	s.SetIsMonotonic(false)
+
+	return s
+}
+
+func observeInt64[T interface {
+	DataPoints() pmetric.NumberDataPointSlice
+}](m T, value int64, ts pcommon.Timestamp, attrs pcommon.Map) {
+	dp := m.DataPoints().AppendEmpty()
+	dp.SetIntValue(value)
+	dp.SetTimestamp(ts)
+	attrs.CopyTo(dp.Attributes())
+}
+
+func observeFloat64[T interface {
+	DataPoints() pmetric.NumberDataPointSlice
+}](m T, value float64, ts pcommon.Timestamp, attrs pcommon.Map) {
+	dp := m.DataPoints().AppendEmpty()
+	dp.SetDoubleValue(value)
+	dp.SetTimestamp(ts)
+	attrs.CopyTo(dp.Attributes())
 }
