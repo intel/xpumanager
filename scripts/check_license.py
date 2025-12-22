@@ -1,29 +1,20 @@
 #!/usr/bin/env python3
 # Copyright (C) 2025 Intel Corporation
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# SPDX-License-Identifier: MIT
 
 """
-License header management tool for source code files.
+SPDX License header management tool for source code files.
 
-This script provides functionality to add, update, remove, and check license headers
-in source code files across multiple programming languages.
+This script provides functionality to add, update, remove, and check SPDX-style
+license headers in source code files across multiple programming languages.
+
+Supports:
+- Adding licenses to files without them
+- Updating licenses with incorrect format
+- Removing licenses from files
+- Checking license status
+- Automatic copyright year updates (e.g., 2025 -> 2025-2026)
+- SPDX-License-Identifier format
 """
 
 import argparse
@@ -98,19 +89,28 @@ class FileProcessingResult:
 class LicenseConfig:
     """Config for license processing."""
 
-    license_file: Path
-    comment_styles: Dict[str, str]
-    file_patterns: List[str]
-    exclude_patterns: List[str]
+    company: str = "Intel Corporation"
+    spdx_id: str = "MIT"
+    comment_styles: Dict[str, Tuple[str, str, str]] = None
+    file_patterns: List[str] = None
+    exclude_patterns: List[str] = None
     dry_run: bool = False
     backup: bool = True
     verbose: bool = False
     update_year: bool = True
     current_year: int = datetime.now().year
 
+    def __post_init__(self):
+        if self.comment_styles is None:
+            self.comment_styles = SPDXLicenseManager.DEFAULT_COMMENT_STYLES.copy()
+        if self.file_patterns is None:
+            self.file_patterns = SPDXLicenseManager.DEFAULT_FILE_PATTERNS.copy()
+        if self.exclude_patterns is None:
+            self.exclude_patterns = SPDXLicenseManager.DEFAULT_EXCLUDE_PATTERNS.copy()
 
-class LicenseManager:
-    """Manages license headers in source code files."""
+
+class SPDXLicenseManager:
+    """Manages SPDX-style license headers in source code files."""
 
     # Default file patterns to process
     DEFAULT_FILE_PATTERNS = [
@@ -120,6 +120,7 @@ class LicenseManager:
         "*.hpp",
         "*.c",
         "*.cc",
+        "*.cxx",
         "*.go",
         "*.sh",
         "*.js",
@@ -127,9 +128,14 @@ class LicenseManager:
         "*.java",
         "*.rs",
         "*.rb",
+        "*.pl",
+        "*.r",
         "Makefile",
+        "*.mk",
         "*Dockerfile*",
         "*meson.build*",
+        "*.cmake",
+        "CMakeLists.txt",
     ]
 
     # Default directories/files to exclude
@@ -144,83 +150,51 @@ class LicenseManager:
         "*env*",
         "*third_party*",
         "*docs*",
+        "*vendor*",
+        "*.backup",
     ]
 
-    # Comment styles for different file types
+    # Comment styles: (start, middle, end)
+    # For single-line comments, middle is the comment prefix
+    # For block comments, start is opening, middle is continuation, end is closing
     DEFAULT_COMMENT_STYLES = {
-        ".py": "#",
-        ".sh": "#",
-        ".conf": "#",
-        ".yml": "#",
-        ".yaml": "#",
-        ".toml": "#",
-        ".ini": "#",
-        ".cpp": "//",
-        ".h": "//",
-        ".hpp": "//",
-        ".c": "//",
-        ".cc": "//",
-        ".cxx": "//",
-        ".go": "//",
-        ".js": "//",
-        ".ts": "//",
-        ".java": "//",
-        ".rs": "//",
-        ".rb": "#",
-        ".pl": "#",
-        ".r": "#",
-        "Dockerfile": "#",
-        "Makefile": "#",
-        ".mk": "#",
-        ".cmake": "#",
-        "meson.build": "#",
-    }
-
-    # Block comment patterns for detecting old-style licenses
-    BLOCK_COMMENT_PATTERNS = {
-        ".cpp": (r"/\*", r"\*/"),
-        ".h": (r"/\*", r"\*/"),
-        ".hpp": (r"/\*", r"\*/"),
-        ".c": (r"/\*", r"\*/"),
-        ".cc": (r"/\*", r"\*/"),
-        ".cxx": (r"/\*", r"\*/"),
+        # Single-line comment languages (middle is the prefix)
+        ".py": ("", "#", ""),
+        ".sh": ("", "#", ""),
+        ".conf": ("", "#", ""),
+        ".yml": ("", "#", ""),
+        ".yaml": ("", "#", ""),
+        ".toml": ("", "#", ""),
+        ".ini": ("", "#", ""),
+        ".rb": ("", "#", ""),
+        ".pl": ("", "#", ""),
+        ".r": ("", "#", ""),
+        "Dockerfile": ("", "#", ""),
+        "Makefile": ("", "#", ""),
+        ".mk": ("", "#", ""),
+        ".cmake": ("", "#", ""),
+        "CMakeLists.txt": ("", "#", ""),
+        "meson.build": ("", "#", ""),
+        # Block comment languages (C-style)
+        ".cpp": ("/*", " *", " */"),
+        ".h": ("/*", " *", " */"),
+        ".hpp": ("/*", " *", " */"),
+        ".c": ("/*", " *", " */"),
+        ".cc": ("/*", " *", " */"),
+        ".cxx": ("/*", " *", " */"),
+        ".go": ("/*", " *", " */"),
+        ".js": ("/*", " *", " */"),
+        ".ts": ("/*", " *", " */"),
+        ".java": ("/*", " *", " */"),
+        ".rs": ("/*", " *", " */"),
     }
 
     def __init__(self, config: LicenseConfig):
-        """Initialize the LicenseManager with config."""
+        """Initialize the SPDXLicenseManager with config."""
         self.config = config
-        self._validate_config()
-        self._license_content = self._load_license()
 
-    def _validate_config(self) -> None:
-        """Validate the config."""
-        if not self.config.license_file.exists():
-            raise FileNotFoundError(
-                f"License file not found: {self.config.license_file}"
-            )
-
-        if not self.config.license_file.is_file():
-            raise ValueError(f"License path is not a file: {self.config.license_file}")
-
-    def _load_license(self) -> List[str]:
-        """Load and validate the license file content."""
-        try:
-            with open(self.config.license_file, "r", encoding="utf-8") as f:
-                content = f.read().strip().splitlines()
-
-            if not content:
-                raise ValueError("License file is empty")
-
-            logger.info(
-                f"Loaded license from {self.config.license_file} ({len(content)} lines)"
-            )
-            return content
-
-        except UnicodeDecodeError as e:
-            raise ValueError(f"License file contains invalid UTF-8: {e}")
-
-    def _get_comment_style(self, filepath: Path) -> str:
-        """Determine the comment style for a file."""
+    def _get_comment_style(self, filepath: Path) -> Tuple[str, str, str]:
+        """Determine the comment style for a file. Returns (start, middle, end)."""
         # Check files without extensions (e.g. Dockerfile, Makefile)
         if filepath.name in self.config.comment_styles:
             return self.config.comment_styles[filepath.name]
@@ -237,55 +211,36 @@ class LicenseManager:
             f"exclude this file type from processing."
         )
 
-    def _insert_comments_in_license(self, filepath: Path) -> List[str]:
-        """Add comments to the license the proper comment style."""
-        comment_style = self._get_comment_style(filepath)
+    def _create_spdx_license(
+        self, filepath: Path, year: int, original_year: Optional[int] = None
+    ) -> List[str]:
+        """Create SPDX-style license header for a file."""
+        start, middle, end = self._get_comment_style(filepath)
 
-        formatted_lines = []
-        for line in self._license_content:
-            if line.strip():  # Non-empty line
-                formatted_lines.append(f"{comment_style} {line}")
-            else:  # Empty line
-                formatted_lines.append(comment_style)
+        # Determine the year string
+        if original_year and original_year != year:
+            year_str = f"{original_year}-{year}"
+        else:
+            year_str = str(year)
 
-        return formatted_lines
+        # Build the license lines
+        lines = []
+
+        if start:  # Block comment style (e.g., /* */)
+            lines.append(start)
+            lines.append(f"{middle} Copyright (C) {year_str} {self.config.company}")
+            lines.append(f"{middle} SPDX-License-Identifier: {self.config.spdx_id}")
+            lines.append(f"{middle}")
+            lines.append(end)
+        else:  # Single-line comment style (e.g., #)
+            lines.append(f"{middle} Copyright (C) {year_str} {self.config.company}")
+            lines.append(f"{middle} SPDX-License-Identifier: {self.config.spdx_id}")
+
+        return lines
 
     def _has_shebang(self, lines: List[str]) -> bool:
-        """Check if the file starts with a shebang to add the license under it."""
+        """Check if the file starts with a shebang."""
         return len(lines) > 0 and lines[0].startswith("#!")
-
-    def _find_block_comment_license(
-        self, content: str, filepath: Path
-    ) -> Optional[Tuple[int, int]]:
-        """Find license in block comment style (/* */). Returns (start_line, end_line) or None."""
-        suffix = filepath.suffix.lower()
-        if suffix not in self.BLOCK_COMMENT_PATTERNS:
-            return None
-
-        start_pattern, end_pattern = self.BLOCK_COMMENT_PATTERNS[suffix]
-        lines = content.splitlines()
-
-        # Look for copyright in block comments
-        in_block = False
-        block_start = None
-
-        for i, line in enumerate(lines):
-            if re.search(start_pattern, line):
-                in_block = True
-                block_start = i
-
-            if in_block and re.search(r"Copyright", line, re.IGNORECASE):
-                # Found copyright in block comment, now find the end
-                for j in range(i, len(lines)):
-                    if re.search(end_pattern, lines[j]):
-                        return (block_start, j)
-                return None
-
-            if re.search(end_pattern, line):
-                in_block = False
-                block_start = None
-
-        return None
 
     def _get_file_last_modified_year(self, filepath: Path) -> Optional[int]:
         """Get the year when the file was last modified using git if available."""
@@ -296,19 +251,42 @@ class LicenseManager:
             ValueError,
             FileNotFoundError,
         ):
+            # Convert to absolute path and run git from repository root
+            abs_filepath = filepath.resolve()
+            
+            # Find git repository root
+            result = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                capture_output=True,
+                text=True,
+                cwd=filepath.parent if filepath.parent.exists() else Path.cwd(),
+                timeout=5,
+                check=False,
+            )
+            
+            git_root = Path(result.stdout.strip()) if result.returncode == 0 else Path.cwd()
+            
+            # Get the relative path from git root
+            try:
+                rel_path = abs_filepath.relative_to(git_root)
+            except ValueError:
+                # If file is not under git root, use absolute path
+                rel_path = abs_filepath
+            
+            # Get last commit year for this file
             result = subprocess.run(
                 [
                     "git",
                     "log",
                     "-1",
-                    "--format=%cd",
+                    "--format=%ad",  # Use author date, not committer date
                     "--date=format:%Y",
                     "--",
-                    str(filepath),
+                    str(rel_path),
                 ],
                 capture_output=True,
                 text=True,
-                cwd=filepath.parent,
+                cwd=git_root,
                 timeout=10,
                 check=False,
             )
@@ -322,121 +300,140 @@ class LicenseManager:
 
         return None
 
-    def _extract_copyright_year_from_license(
-        self, license_lines: List[str]
-    ) -> Optional[str]:
-        """Extract the copyright year pattern from license lines."""
-        for line in license_lines:
-            # Look for patterns like "Copyright (C) 2025" or "Copyright 2025"
-            match = re.search(r"Copyright\s*\([Cc]\)\s*(\d{4})", line)
-            if not match:
-                match = re.search(r"Copyright\s+(\d{4})", line)
-            if match:
-                return match.group(1)
-        return None
-
-    def _create_license_with_year(
-        self, filepath: Path, year: int, original_year: Optional[int] = None
-    ) -> List[str]:
-        """Create license with specified year, optionally creating a year range."""
-        formatted_license = self._insert_comments_in_license(filepath)
-
-        # Replace the year in the license
-        updated_license = []
-        for line in formatted_license:
-            if original_year and original_year != year:
-                # Create a year range
-                year_range = f"{original_year}-{year}"
-                line = re.sub(
-                    r"(Copyright\s*\([Cc]\)\s*)\d{4}", rf"\g<1>{year_range}", line
-                )
-                line = re.sub(r"(Copyright\s+)\d{4}", rf"\g<1>{year_range}", line)
-            else:
-                # Just use the single year
-                line = re.sub(r"(Copyright\s*\([Cc]\)\s*)\d{4}", rf"\g<1>{year}", line)
-                line = re.sub(r"(Copyright\s+)\d{4}", rf"\g<1>{year}", line)
-            updated_license.append(line)
-
-        return updated_license
-
-    def _find_license_with_flexible_year(
+    def _find_spdx_license(
         self, content: str, filepath: Path
-    ) -> Optional[Tuple[int, int, int]]:
-        """Find license in file, allowing for different years. Returns (start_line, end_line, found_year)."""
-        content_lines = content.splitlines()
+    ) -> Optional[Tuple[int, int, Optional[int]]]:
+        """
+        Find SPDX license in file content.
+        Returns (start_line, end_line, found_year) or None.
+        """
+        lines = content.splitlines()
+        start, middle, end = self._get_comment_style(filepath)
 
-        # Get the template license without year consideration
-        template_license = self._insert_comments_in_license(filepath)
+        # Patterns to match
+        copyright_pattern = re.compile(
+            r"Copyright\s*\([Cc]\)\s*(\d{4}(?:-\d{4})?)\s+" + re.escape(self.config.company)
+        )
+        spdx_pattern = re.compile(
+            r"SPDX-License-Identifier:\s*" + re.escape(self.config.spdx_id)
+        )
 
-        # Search for the license with flexible year matching
-        for i in range(len(content_lines)):
-            potential_end = i + len(template_license)
-            if potential_end <= len(content_lines):
-                found_year = None
-                matches = True
+        found_copyright_line = None
+        found_spdx_line = None
+        found_year = None
+        potential_start = None
+        potential_end = None
 
-                for j, (content_line, template_line) in enumerate(
-                    zip(content_lines[i:potential_end], template_license)
-                ):
-                    # Check if this template line contains a copyright year pattern
-                    if "Copyright" in template_line and re.search(
-                        r"\d{4}", template_line
-                    ):
-                        # Extract year from content line using a simple regex
-                        year_match = re.search(
-                            r"Copyright\s*\([Cc]\)\s*(\d{4}(?:-\d{4})?)|Copyright\s+(\d{4}(?:-\d{4})?)",
-                            content_line,
-                        )
-                        if year_match:
-                            year_text = year_match.group(1) or year_match.group(2)
-
-                            # Extract the first year from the range or single year
-                            if "-" in year_text:
-                                found_year = int(year_text.split("-")[0])
-                            else:
-                                found_year = int(year_text)
-
-                            # Check if the rest of the line matches (without the year)
-                            content_without_year = re.sub(
-                                r"(\d{4}(?:-\d{4})?)", "XXXX", content_line
-                            )
-                            template_without_year = re.sub(
-                                r"\d{4}", "XXXX", template_line
-                            )
-
-                            if content_without_year != template_without_year:
-                                matches = False
-                                break
-                        else:
-                            matches = False
-                            break
+        for i, line in enumerate(lines):
+            # Check for copyright
+            copyright_match = copyright_pattern.search(line)
+            if copyright_match and found_copyright_line is None:
+                found_copyright_line = i
+                if potential_start is None:
+                    # For block comments, check if previous line is the opening
+                    if start and i > 0 and start.strip() in lines[i - 1]:
+                        potential_start = i - 1
                     else:
-                        # Regular line matching (no year pattern)
-                        if content_line != template_line:
-                            matches = False
-                            break
+                        potential_start = i
 
-                if matches and found_year:
-                    return (i, potential_end - 1, found_year)
+                # Extract year (use the end year from range if present)
+                year_str = copyright_match.group(1)
+                if "-" in year_str:
+                    # For ranges like "2021-2023", use the end year (2023)
+                    found_year = int(year_str.split("-")[1])
+                else:
+                    found_year = int(year_str)
+
+            # Check for SPDX identifier
+            if spdx_pattern.search(line) and found_spdx_line is None:
+                found_spdx_line = i
+                if potential_start is None:
+                    potential_start = i
+
+            # If we have both, find the end
+            if found_copyright_line is not None and found_spdx_line is not None:
+                if potential_end is None:
+                    # For block comments, look for closing
+                    if end:
+                        for j in range(max(found_copyright_line, found_spdx_line), len(lines)):
+                            if end in lines[j]:
+                                potential_end = j
+                                break
+                        # Also check for empty comment line before closing
+                        if potential_end and potential_end > 0:
+                            if lines[potential_end - 1].strip() == middle.strip():
+                                pass  # Include empty line before closing
+                    else:
+                        # For single-line comments, end is the SPDX line
+                        potential_end = max(found_copyright_line, found_spdx_line)
+
+                if potential_start is not None and potential_end is not None:
+                    return (potential_start, potential_end, found_year)
 
         return None
 
-    def _find_license_in_file(
-        self, content: str, formatted_license: List[str]
-    ) -> Optional[Tuple[int, int]]:
-        """Find the lines of the license in a file if one exists. Returns (start_line, end_line) or None."""
-        content_lines = content.splitlines()
-        license_text = "\n".join(formatted_license)
+    def _find_any_copyright(self, content: str) -> bool:
+        """Check if file has any copyright notice."""
+        copyright_patterns = [
+            r"Copyright\s*\([Cc]\)",
+            r"Copyright\s*©",
+            r"Copyright\s+\d{4}",
+        ]
+        return any(re.search(pattern, content, re.IGNORECASE) for pattern in copyright_patterns)
 
-        if license_text in content:
-            for i in range(len(content_lines)):
-                potential_end = i + len(formatted_license)
-                if potential_end <= len(content_lines):
-                    section = "\n".join(content_lines[i:potential_end])
-                    if section == license_text:
-                        return (i, potential_end - 1)
+    def _find_old_style_license(self, content: str, filepath: Path) -> Optional[Tuple[int, int]]:
+        """
+        Find old-style MIT license block (non-SPDX).
+        Returns (start_line, end_line) or None.
+        
+        This is simplified since we just need to detect and remove old licenses,
+        not parse them perfectly. SPDX format is much cleaner.
+        """
+        lines = content.splitlines()
 
-        return None
+        # Look for typical full MIT license text (non-SPDX)
+        mit_indicators = [
+            r"Permission is hereby granted",
+            r"THE SOFTWARE IS PROVIDED",
+        ]
+
+        # Find start (copyright line)
+        start_line = None
+        indicator_line = None
+        
+        for i, line in enumerate(lines):
+            if re.search(r"Copyright", line, re.IGNORECASE) and start_line is None:
+                start_line = i
+                # Check if there's a block comment start before it
+                if i > 0 and '/*' in lines[i - 1]:
+                    start_line = i - 1
+            
+            # Check for MIT license indicators
+            if start_line is not None:
+                for indicator in mit_indicators:
+                    if re.search(indicator, line, re.IGNORECASE):
+                        indicator_line = i
+                        break
+                if indicator_line:
+                    break
+
+        if start_line is None or indicator_line is None:
+            return None
+
+        # Find end (look for closing comment or blank line after license text)
+        end_line = indicator_line
+        for i in range(indicator_line, min(indicator_line + 25, len(lines))):
+            if '*/' in lines[i]:
+                end_line = i
+                break
+            # Look for end of license block (blank line or non-comment)
+            if i > indicator_line + 5:  # After sufficient license text
+                line = lines[i].strip()
+                if not line or not any(c in line for c in ['*', '#', '/']):
+                    end_line = i - 1
+                    break
+
+        return (start_line, end_line)
 
     def _determine_license_status(
         self, filepath: Path
@@ -447,42 +444,32 @@ class LicenseManager:
                 content = f.read()
 
             # Check for any copyright notice
-            copyright_patterns = [
-                r"Copyright\s*\([Cc]\)",
-                r"Copyright\s*©",
-                r"Copyright\s+\d{4}",
-                r"Copyright\s+[A-Za-z]+",
-            ]
-
-            has_any_copyright = any(
-                re.search(pattern, content, re.IGNORECASE)
-                for pattern in copyright_patterns
-            )
-
-            if not has_any_copyright:
+            if not self._find_any_copyright(content):
                 return LicenseStatus.NO_LICENSE, None
 
-            # Check for block comment style license (old style)
-            block_license = self._find_block_comment_license(content, filepath)
-            if block_license is not None:
-                return LicenseStatus.HAS_OUTDATED_LICENSE, None
+            # Check for SPDX license
+            spdx_match = self._find_spdx_license(content, filepath)
+            if spdx_match:
+                start_line, end_line, found_year = spdx_match
 
-            # Check if it matches our license template (with flexible year)
-            license_match = self._find_license_with_flexible_year(content, filepath)
-
-            if license_match is not None:
-                start_line, end_line, found_year = license_match
-
-                # Check if the year matches current license year
-                template_year = self._extract_copyright_year_from_license(
-                    self._license_content
-                )
-                if template_year and found_year == int(template_year):
-                    return LicenseStatus.HAS_VALID_LICENSE, found_year
+                # Check if year needs updating
+                if self.config.update_year:
+                    file_year = self._get_file_last_modified_year(filepath)
+                    # Only flag as old if file was modified AFTER the copyright year
+                    if file_year and found_year and file_year > found_year:
+                        return LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR, found_year
+                    else:
+                        # File hasn't been modified since copyright year, so it's valid
+                        return LicenseStatus.HAS_VALID_LICENSE, found_year
                 else:
-                    return LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR, found_year
-            else:
+                    return LicenseStatus.HAS_VALID_LICENSE, found_year
+
+            # Check for old-style license
+            if self._find_old_style_license(content, filepath):
                 return LicenseStatus.HAS_OUTDATED_LICENSE, None
+
+            # Has copyright but not our format
+            return LicenseStatus.HAS_OUTDATED_LICENSE, None
 
         except UnicodeDecodeError:
             logger.warning(f"Cannot read {filepath} as UTF-8, skipping")
@@ -497,16 +484,16 @@ class LicenseManager:
             return None
 
         backup_path = filepath.with_suffix(filepath.suffix + ".backup")
-        with suppress(Exception):
+        try:
             shutil.copy2(filepath, backup_path)
             logger.debug(f"Created backup: {backup_path}")
             return backup_path
-
-        logger.error(f"Failed to create backup for {filepath}")
-        return None
+        except Exception as e:
+            logger.warning(f"Failed to create backup for {filepath}: {e}")
+            return None
 
     def _write_file_atomically(self, filepath: Path, content: str) -> bool:
-        """Write file content atomically using a context manager."""
+        """Write file content atomically."""
         try:
             with atomic_write(filepath) as f:
                 f.write(content)
@@ -514,7 +501,7 @@ class LicenseManager:
         except Exception as e:
             logger.error(f"Failed to write {filepath}: {e}")
             return False
-    
+
     def _cleanup_backup(self, backup_path: Optional[Path]) -> None:
         """Remove backup file if it exists."""
         if backup_path and backup_path.exists():
@@ -523,12 +510,12 @@ class LicenseManager:
                 logger.debug(f"Removed backup: {backup_path}")
 
     def add_license(self, filepath: Path) -> FileProcessingResult:
-        """Add license header to a file."""
+        """Add SPDX license header to a file."""
         status, found_year = self._determine_license_status(filepath)
 
         if status == LicenseStatus.HAS_VALID_LICENSE:
             return FileProcessingResult(
-                filepath=filepath, status=status, message="Already has valid license"
+                filepath=filepath, status=status, message="Already has valid SPDX license"
             )
 
         if status == LicenseStatus.ERROR:
@@ -544,14 +531,15 @@ class LicenseManager:
 
             lines = original_content.splitlines()
 
-            # Determine what year to use
+            # Determine year to use
             if self.config.update_year:
                 file_year = self._get_file_last_modified_year(filepath)
                 license_year = file_year if file_year else self.config.current_year
             else:
                 license_year = self.config.current_year
 
-            formatted_license = self._create_license_with_year(filepath, license_year)
+            # Create license
+            license_lines = self._create_spdx_license(filepath, license_year)
 
             # Determine insertion point
             insert_position = 1 if self._has_shebang(lines) else 0
@@ -559,37 +547,36 @@ class LicenseManager:
             # Insert license
             new_lines = (
                 lines[:insert_position]
-                + formatted_license
+                + license_lines
                 + [""]  # Empty line after license
                 + lines[insert_position:]
             )
 
-            # Preserve trailing newline if original had one
+            # Preserve trailing newline
             new_content = "\n".join(new_lines)
             if original_content.endswith("\n"):
                 new_content += "\n"
 
             if self.config.dry_run:
                 logger.info(
-                    f"[DRY RUN] Would add license to {filepath} (year: {license_year})"
+                    f"[DRY RUN] Would add SPDX license to {filepath} (year: {license_year})"
                 )
                 return FileProcessingResult(
                     filepath=filepath,
                     status=LicenseStatus.NO_LICENSE,
-                    message=f"Would add license with year {license_year} (dry run)",
+                    message=f"Would add SPDX license with year {license_year} (dry run)",
                     modified=True,
                 )
 
-            # Create backup
+            # Create backup and write
             backup_path = self._backup_file(filepath)
 
-            # Write the file
             if self._write_file_atomically(filepath, new_content):
                 self._cleanup_backup(backup_path)
                 return FileProcessingResult(
                     filepath=filepath,
                     status=LicenseStatus.HAS_VALID_LICENSE,
-                    message=f"License added successfully (year: {license_year})",
+                    message=f"SPDX license added successfully (year: {license_year})",
                     modified=True,
                 )
             else:
@@ -627,40 +614,32 @@ class LicenseManager:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # First check for block comment style license
-            block_license = self._find_block_comment_license(content, filepath)
-            if block_license is not None:
-                start_line, end_line = block_license
-            else:
-                # Use the flexible year finder for single-line comment licenses
-                license_match = self._find_license_with_flexible_year(content, filepath)
-
-                if license_match is None:
-                    # Fallback to old method for outdated licenses
-                    formatted_license = self._insert_comments_in_license(filepath)
-                    license_location = self._find_license_in_file(
-                        content, formatted_license
-                    )
-                    if license_location is None:
-                        return FileProcessingResult(
-                            filepath=filepath,
-                            status=LicenseStatus.HAS_OUTDATED_LICENSE,
-                            message="Has copyright but not our exact license format",
-                        )
-                    start_line, end_line = license_location
-                else:
-                    start_line, end_line, _ = license_match
-
             lines = content.splitlines()
 
-            # Remove license and any following empty lines
+            # Try to find SPDX license first
+            spdx_match = self._find_spdx_license(content, filepath)
+            if spdx_match:
+                start_line, end_line, _ = spdx_match
+            else:
+                # Try to find old-style license
+                old_match = self._find_old_style_license(content, filepath)
+                if old_match:
+                    start_line, end_line = old_match
+                else:
+                    return FileProcessingResult(
+                        filepath=filepath,
+                        status=LicenseStatus.HAS_OUTDATED_LICENSE,
+                        message="Has copyright but cannot determine license boundaries",
+                    )
+
+            # Remove license lines
             new_lines = lines[:start_line] + lines[end_line + 1 :]
 
-            # Remove leading empty lines that might be left after license removal
+            # Remove leading empty lines
             while new_lines and not new_lines[0].strip():
                 new_lines.pop(0)
 
-            # Preserve trailing newline if original had one
+            # Preserve trailing newline
             new_content = "\n".join(new_lines)
             if content.endswith("\n"):
                 new_content += "\n"
@@ -674,10 +653,9 @@ class LicenseManager:
                     modified=True,
                 )
 
-            # Create backup
+            # Create backup and write
             backup_path = self._backup_file(filepath)
 
-            # Write the file
             if self._write_file_atomically(filepath, new_content):
                 self._cleanup_backup(backup_path)
                 return FileProcessingResult(
@@ -707,7 +685,7 @@ class LicenseManager:
 
         if status == LicenseStatus.HAS_VALID_LICENSE:
             return FileProcessingResult(
-                filepath=filepath, status=status, message="Already has current license"
+                filepath=filepath, status=status, message="Already has current SPDX license"
             )
 
         if status == LicenseStatus.ERROR:
@@ -721,22 +699,9 @@ class LicenseManager:
             return self.add_license(filepath)
 
         if status == LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR:
-            # Update year if file has been modified since the found year
-            if self.config.update_year:
-                file_year = self._get_file_last_modified_year(filepath)
-                if file_year and file_year > found_year:
-                    return self._update_license_year(filepath, file_year)
-                else:
-                    return FileProcessingResult(
-                        filepath=filepath,
-                        status=LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR,
-                        message=f"License year {found_year} is still current for this file",
-                    )
-            else:
-                # Force update to current year
-                return self._update_license_year(filepath, self.config.current_year)
+            return self._update_license_year(filepath, found_year)
 
-        # For HAS_OUTDATED_LICENSE, remove and re-add
+        # For outdated license, remove and re-add
         remove_result = self.remove_license(filepath)
         if remove_result.status == LicenseStatus.ERROR:
             return remove_result
@@ -744,62 +709,75 @@ class LicenseManager:
         return self.add_license(filepath)
 
     def _update_license_year(
-        self, filepath: Path, new_year: int
+        self, filepath: Path, old_year: Optional[int]
     ) -> FileProcessingResult:
-        """Update just the year in an existing license."""
+        """Update just the year in an existing SPDX license."""
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            license_match = self._find_license_with_flexible_year(content, filepath)
-            if not license_match:
+            spdx_match = self._find_spdx_license(content, filepath)
+            if not spdx_match:
                 return FileProcessingResult(
                     filepath=filepath,
                     status=LicenseStatus.ERROR,
-                    message="Could not locate license to update",
+                    message="Could not locate SPDX license to update",
                 )
 
-            start_line, end_line, old_year = license_match
+            start_line, end_line, found_year = spdx_match
             lines = content.splitlines()
 
-            # Create new license with updated year (creating a year range)
-            new_license = self._create_license_with_year(filepath, new_year, old_year)
+            if self.config.update_year:
+                file_year = self._get_file_last_modified_year(filepath)
+                new_year = file_year if file_year else self.config.current_year
+            else:
+                new_year = self.config.current_year
+
+            # If years are the same, nothing to do
+            if found_year and found_year == new_year:
+                return FileProcessingResult(
+                    filepath=filepath,
+                    status=LicenseStatus.HAS_VALID_LICENSE,
+                    message=f"License year {found_year} is already current",
+                )
+
+            # Create new license with updated year
+            new_license = self._create_spdx_license(filepath, new_year, found_year)
 
             # Replace the license section
             new_lines = lines[:start_line] + new_license + lines[end_line + 1 :]
-            
-            # Preserve trailing newline if original had one
+
+            # Preserve trailing newline
             new_content = "\n".join(new_lines)
             if content.endswith("\n"):
                 new_content += "\n"
 
             if self.config.dry_run:
                 year_display = (
-                    f"{old_year}-{new_year}" if old_year != new_year else str(new_year)
+                    f"{found_year}-{new_year}" if found_year and found_year != new_year else str(new_year)
                 )
                 logger.info(
-                    f"[DRY RUN] Would update license year in {filepath} from {old_year} to {year_display}"
+                    f"[DRY RUN] Would update license year in {filepath} to {year_display}"
                 )
                 return FileProcessingResult(
                     filepath=filepath,
                     status=LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR,
-                    message=f"Would update year from {old_year} to {year_display} (dry run)",
+                    message=f"Would update year to {year_display} (dry run)",
                     modified=True,
                 )
 
-            # Create backup
+            # Create backup and write
             backup_path = self._backup_file(filepath)
 
-            # Write the file
             if self._write_file_atomically(filepath, new_content):
                 self._cleanup_backup(backup_path)
                 year_display = (
-                    f"{old_year}-{new_year}" if old_year != new_year else str(new_year)
+                    f"{found_year}-{new_year}" if found_year and found_year != new_year else str(new_year)
                 )
                 return FileProcessingResult(
                     filepath=filepath,
                     status=LicenseStatus.HAS_VALID_LICENSE,
-                    message=f"License year updated from {old_year} to {year_display}",
+                    message=f"License year updated to {year_display}",
                     modified=True,
                 )
             else:
@@ -822,9 +800,9 @@ class LicenseManager:
         status, found_year = self._determine_license_status(filepath)
 
         messages = {
-            LicenseStatus.HAS_VALID_LICENSE: "Has valid license",
-            LicenseStatus.HAS_OUTDATED_LICENSE: "Has outdated or different license",
-            LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR: f"Has valid license but old year ({found_year or 'unknown'})",
+            LicenseStatus.HAS_VALID_LICENSE: f"Has valid SPDX license (year: {found_year or 'unknown'})",
+            LicenseStatus.HAS_OUTDATED_LICENSE: "Has outdated or non-SPDX license",
+            LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR: f"Has valid SPDX license but old year ({found_year or 'unknown'})",
             LicenseStatus.NO_LICENSE: "Missing license header",
             LicenseStatus.ERROR: "Cannot process file",
         }
@@ -847,7 +825,6 @@ class LicenseManager:
         repo_root = Path.cwd()
         modified_files = set()
 
-        # Helper to process git output
         def add_files_from_output(output: str) -> None:
             for line in output.strip().splitlines():
                 if line.strip():
@@ -875,9 +852,6 @@ class LicenseManager:
                 if result.returncode == 0:
                     add_files_from_output(result.stdout)
 
-        if not modified_files:
-            logger.info("No modified files found in git")
-
         return modified_files
 
     def find_source_files(
@@ -891,19 +865,17 @@ class LicenseManager:
             # Get modified files from git
             modified_files = self._get_git_modified_files(git_base_ref)
             if not modified_files:
-                logger.info("No modified files found in git")
                 return []
 
-            # Filter modified files to only include source files
+            # Filter to only include source files
             source_files = set()
             for filepath in modified_files:
-                # Check if file matches any of our file patterns
                 for pattern in self.config.file_patterns:
                     if filepath.match(pattern):
                         source_files.add(filepath)
                         break
         else:
-            # Original behavior - scan directories
+            # Scan directories
             source_files = set()
 
             for path in paths:
@@ -917,21 +889,16 @@ class LicenseManager:
         filtered_files = []
         for filepath in source_files:
             should_exclude = False
-            # Convert to string and normalize path separators
             filepath_str = str(filepath).replace(os.sep, "/")
 
             for pattern in self.config.exclude_patterns:
-                # Normalize pattern
                 normalized_pattern = pattern.replace(os.sep, "/")
 
-                # Check if the full path matches the pattern
                 if fnmatch.fnmatch(filepath_str, normalized_pattern):
                     should_exclude = True
                     break
 
-                # Also check if any part of the path contains the pattern (for patterns like "*third_party*")
                 if "*" in pattern:
-                    # Remove leading and trailing asterisks for substring matching
                     substring = pattern.strip("*")
                     if substring and substring in filepath_str:
                         should_exclude = True
@@ -943,37 +910,19 @@ class LicenseManager:
         return sorted(filtered_files)
 
 
-def create_config_from_args(args: argparse.Namespace) -> LicenseConfig:
-    """Instantiate LicenseConfig from cli."""
-    comment_styles = LicenseManager.DEFAULT_COMMENT_STYLES.copy()
-
-    return LicenseConfig(
-        license_file=Path(args.license),
-        comment_styles=comment_styles,
-        file_patterns=LicenseManager.DEFAULT_FILE_PATTERNS,
-        exclude_patterns=LicenseManager.DEFAULT_EXCLUDE_PATTERNS,
-        dry_run=args.dry_run,
-        backup=not args.no_backup,
-        verbose=args.verbose,
-        update_year=args.update_year,
-        current_year=args.current_year,
-    )
-
-
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Manage license headers in source code files",
+        description="Manage SPDX-style license headers in source code files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s --check                                    # Check all source files
   %(prog)s --check --git-modified-only                # Check only files modified vs origin/main
-  %(prog)s --check --git-modified-only --git-base-ref origin/dev  # Check vs different branch
   %(prog)s --add --dry-run                            # Preview adding licenses
   %(prog)s --update src/                              # Update licenses in src/ directory
   %(prog)s --remove file.py                           # Remove license from specific file
-  %(prog)s --update --no-update-year                  # Update licenses but keep original years
+  %(prog)s --update --company "My Company" --spdx-id Apache-2.0  # Use different license
         """,
     )
 
@@ -982,27 +931,35 @@ Examples:
     group.add_argument(
         "--add",
         action="store_true",
-        help="Add license headers to files that don't have them",
+        help="Add SPDX license headers to files that don't have them",
     )
     group.add_argument(
         "--update",
         action="store_true",
-        help="Update existing license headers to match the license file",
+        help="Update existing license headers to SPDX format",
     )
     group.add_argument(
         "--remove", action="store_true", help="Remove license headers from files"
     )
     group.add_argument(
-        "--check", action="store_true", help="Check license status of files (default)"
+        "--check", action="store_true", help="Check license status of files"
     )
 
-    # Config options
+    # License configuration
     parser.add_argument(
-        "--license",
+        "--company",
         type=str,
-        default="LICENSE",
-        help="Path to the license file (default: LICENSE)",
+        default="Intel Corporation",
+        help="Company name for copyright (default: Intel Corporation)",
     )
+    parser.add_argument(
+        "--spdx-id",
+        type=str,
+        default="MIT",
+        help="SPDX license identifier (default: MIT)",
+    )
+
+    # Processing options
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -1031,13 +988,13 @@ Examples:
     parser.add_argument(
         "--git-modified-only",
         action="store_true",
-        help="Only process files modified compared to git base reference (default: process all files)",
+        help="Only process files modified compared to git base reference",
     )
     parser.add_argument(
         "--git-base-ref",
         type=str,
         default="origin/main",
-        help="Git reference to compare against when using --git-modified-only (default: origin/main)",
+        help="Git reference to compare against (default: origin/main)",
     )
 
     # Target files/directories
@@ -1055,8 +1012,16 @@ Examples:
 
     try:
         # Create config
-        config = create_config_from_args(args)
-        manager = LicenseManager(config)
+        config = LicenseConfig(
+            company=args.company,
+            spdx_id=args.spdx_id,
+            dry_run=args.dry_run,
+            backup=not args.no_backup,
+            verbose=args.verbose,
+            update_year=args.update_year,
+            current_year=args.current_year,
+        )
+        manager = SPDXLicenseManager(config)
 
         # Determine target paths
         target_paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
@@ -1116,20 +1081,19 @@ Examples:
 
         # Return appropriate exit code
         if args.dry_run:
-            # For dry-run mode, always return 0 since no actual changes were made
-            # Only return 1 if there were actual processing errors (not license problems)
             return 1 if error_count > 0 else 0
         elif args.check:
-            # For check mode, return 1 if any files are missing or have outdated licenses
             problematic_statuses = {
                 LicenseStatus.NO_LICENSE,
                 LicenseStatus.HAS_OUTDATED_LICENSE,
+                LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR, 
             }
             has_problems = any(
                 result.status in problematic_statuses for result in results
             )
             return 1 if has_problems else 0
         else:
+            # Add/update/remove modes
             return 1 if error_count > 0 else 0
 
     except KeyboardInterrupt:
@@ -1139,7 +1103,6 @@ Examples:
         logger.error(f"Fatal error: {e}")
         if args.verbose:
             import traceback
-
             traceback.print_exc()
         return 1
 
