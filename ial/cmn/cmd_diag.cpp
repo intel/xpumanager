@@ -212,9 +212,10 @@ void cmdDiag::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING2, "6. Power"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "7. Computation functional test"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "8. Media Codec functional test"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "9. Xe Link Throughput"));
+	helpList.push_back(helpCmd(SUB_HEADING2, "9. Memory Allocation"));
+	helpList.push_back(helpCmd(SUB_HEADING2, "10. Xe Link Throughput"));
 	helpList.push_back(
-		helpCmd(SUB_HEADING2, "10. Xe Link all-to-all Throughput. It only works for all GPUs (\"-d -1\")"));
+		helpCmd(SUB_HEADING2, "11. Xe Link all-to-all Throughput. It only works for all GPUs (\"-d -1\")"));
 	helpList.push_back(helpCmd(SUB_HEADING, "Note that in a multi NUMA node server, it may need to use numactl to "
 											"specify which node the PCIe bandwidth test runs on"));
 	helpList.push_back(helpCmd(
@@ -566,6 +567,7 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d)
 		{DIAG_SINGLE_POWER, {&cmdDiag::powerTest}},
 		{DIAG_SINGLE_COMPUTATIONFUNCTEST, {&cmdDiag::computationFuncTest}},
 		{DIAG_SINGLE_MEDIAFUNCTEST, {&cmdDiag::mediaFuncTest}},
+		{DIAG_SINGLE_MEMORYALLOCATION, {&cmdDiag::memoryAllocation}},
 		{DIAG_SINGLE_XELINKTHROUGHPUT, {&cmdDiag::xeLinkThroughput}},
 		{DIAG_SINGLE_XELINKALLTOALLTHROUGHPUT, {&cmdDiag::xeLinkAllToAllThroughput}},
 	};
@@ -634,13 +636,46 @@ ze_result_t cmdDiag::computation(devInfo *d)
  * checking for memory corruption, ECC errors, and memory integrity issues.
  * It validates GPU memory subsystem reliability and health.
  *
- * @param[in] d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if memory tests pass, error code otherwise
  */
-ze_result_t cmdDiag::memoryError(UNUSED devInfo *d)
+ze_result_t cmdDiag::memoryError(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	int errorCount;
+
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (p->getFuncType() == devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
+		ERR("Device does not support this diagnostic feature.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t res = diag->memoryErrorTest(d, errorCount);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (res != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to test memory error.\n");
+			ERR("Memory error test failed: %s\n", l0_error_to_string(res));
+			if (errorCount > 0)
+				PRINT("Error count: %d.\n", errorCount);
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to test memory error.\n");
+		}
+	}
+	return res;
 }
 
 /**
@@ -695,13 +730,47 @@ ze_result_t cmdDiag::memoryAllocation(devInfo *d)
  * memory-intensive kernels and calculating throughput metrics. It validates
  * memory subsystem performance and identifies potential bandwidth limitations.
  *
- * @param[in] d Pointer to device information structure (currently unused)
+ * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if bandwidth tests complete, error code otherwise
  */
-ze_result_t cmdDiag::memoryBandwidth(UNUSED devInfo *d)
+ze_result_t cmdDiag::memoryBandwidth(devInfo *d)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+
+	std::vector<long double> totalGbps;
+
+	pci *p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (p->getFuncType() == devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
+		ERR("Device does not support this diagnostic feature.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		ERR("Device does not support diagnostics.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t res = diag->memoryBandwidthTest(d, totalGbps);
+	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
+		if (res != ZE_RESULT_SUCCESS) {
+			PRINT("Result:  Fail\n");
+			PRINT("Message: Fail to check memory bandwidth.\n");
+			ERR("Memory bandwidth test failed: %s\n", l0_error_to_string(res));
+		} else {
+			PRINT("Result:  Pass\n");
+			PRINT("Message: Pass to test memory bandwidth.\n");
+			for (std::size_t i = 0; i < totalGbps.size(); i++) {
+				PRINT("Memory bandwidth on copy engine group %zu is %.3Lf GBPS.\n", i, totalGbps[i]);
+			}
+		}
+	}
+	return res;
 }
 
 /**

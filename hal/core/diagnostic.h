@@ -49,16 +49,24 @@ public:
 											 std::vector<std::vector<uint8_t>> &dataOut,
 											 const std::vector<std::string> &testKernelNames, uint64_t numberOfDispatch,
 											 uint64_t oneCaseAllocationCount, ze_context_handle_t context);
+	long double calculateGbpsForWorkGroups(ze_command_queue_handle_t commandQueue, ze_command_list_handle_t commandList,
+										   ze_kernel_handle_t &function1, ze_kernel_handle_t &function2,
+										   uint64_t numItems, uint64_t factor,
+										   ze_device_compute_properties_t &zeComputeProp,
+										   struct ZeWorkGroups &workgroupInfo);
+
 	ze_result_t calculatePowerConsumption(devInfo *d, int &totalPowerValue);
 	ze_result_t pcieBandwidthTest(devInfo *d, long double &totalBandwidth, long double &totalLatency);
 	ze_result_t peformanceMemoryAllocation(devInfo *d);
+	ze_result_t memoryErrorTest(devInfo *d, int &errorCount);
+	ze_result_t memoryBandwidthTest(devInfo *d, std::vector<long double> &totalGbps);
 	int getTests(zes_diag_handle_t testSuite);
-
 	ze_result_t kernelCreate(ze_module_handle_t hModule, std::string name, ze_kernel_handle_t *hKernel);
 	ze_result_t loadBinaryFile(const std::string &filePath, std::vector<uint8_t> *binary_file);
 	ze_result_t moduleCreate(const ze_context_handle_t &context, ze_device_handle_t ze_device,
 							 std::vector<uint8_t> binary_file, ze_module_handle_t *module_handle);
 	void moduleDestroy(ze_module_handle_t hModule);
+	void freeResource(ze_context_handle_t context, void *inputBuf, void *outputBuf, ze_module_handle_t moduleHandle);
 	uint64_t setWorkgroups(ze_device_compute_properties_t *device_compute_properties,
 						   const uint64_t total_work_items_requested, struct ZeWorkGroups *workgroup_info);
 	ze_result_t memoryAlloc(const ze_context_handle_t context, ze_device_handle_t ze_device, size_t size,

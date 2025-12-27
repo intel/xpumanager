@@ -1296,6 +1296,481 @@ ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
 			}
 	return ZE_RESULT_SUCCESS;
 }
+
+/**
+ * @brief memory error test
+ *
+ * This function run memory error test on the specified device using Level Zero APIs.
+ *
+ * The test:
+ * 1. Retrieves target test memory size from device max mem allocation size and real host memory size.
+ * 2. based on the memory usage, allocation sizes, calculate the requested allocation size and number
+ * Of dispatch based on max allocation size
+ * 3. allocate the memory for each dispatch's memory Input, memory output and setup the test Kernel name and module.
+ * 4. run the memory test for all the dispatch and settings by using spv file.
+ * 5. check if the output memory content correct or not.
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
+ */
+ze_result_t diagnostic::memoryErrorTest(devInfo *d, int &errorCount)
+{
+	ze_result_t ret;
+	constexpr uint64_t oneMB = 1024UL * 1024UL;
+	constexpr uint32_t numberOfKernelArgs = 2;
+	constexpr uint32_t numberOfKernelsInModule = 10;
+	constexpr uint8_t initValue = 0xAA;
+	constexpr float memoryUse = 0.9f;
+
+	ze_device_properties_t zeDevProp = {};
+	ze_context_handle_t context = d->dev->getContext();
+
+	ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties : %s\n", l0_error_to_string(ret));
+		return ret;
+	}
+	// Retrieves target test memory size from device max mem allocation size and real host memory size
+	uint64_t targetTestMemorySize = zeDevProp.maxMemAllocSize;
+	uint64_t hostMemorySize;
+
+	if (CHECKHOSTMEMORYSIZE(&hostMemorySize)) {
+		if (targetTestMemorySize > hostMemorySize) {
+			targetTestMemorySize = hostMemorySize;
+		}
+	}
+	// based on the memory usage, allocation sizes, calculate the requested allocation size and number Of dispatch based
+	// on max allocation size
+	uint64_t maxAllocationSize = static_cast<uint64_t>(static_cast<float>(targetTestMemorySize) * memoryUse);
+
+	uint64_t oneCaseRequestedAllocationSize = oneMB * numberOfKernelArgs;
+
+	if (oneCaseRequestedAllocationSize > maxAllocationSize) {
+		oneCaseRequestedAllocationSize = maxAllocationSize;
+	}
+	// allocate the memory for each dispatch's memory Input, memory output and setup the test Kernel name and module.
+	std::size_t allocationCount =
+		static_cast<std::size_t>(oneCaseRequestedAllocationSize / (numberOfKernelArgs * sizeof(uint8_t)));
+	std::uint64_t numberOfDispatch = maxAllocationSize / oneCaseRequestedAllocationSize;
+	std::vector<uint8_t *> inputAllocations;
+	std::vector<uint8_t *> outputAllocations;
+	std::vector<std::vector<uint8_t>> dataOutVector;
+	std::vector<std::string> testKernelNames;
+
+	for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
+		uint8_t *inputAllocation;
+		uint8_t *outputAllocation;
+		void *memoryInput = nullptr;
+		memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryInput);
+		inputAllocation = (uint8_t *)memoryInput;
+		void *memoryOutput = nullptr;
+		memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
+		outputAllocation = (uint8_t *)memoryOutput;
+
+		inputAllocations.push_back(inputAllocation);
+		outputAllocations.push_back(outputAllocation);
+		std::vector<uint8_t> dataOut(allocationCount, 0);
+		dataOutVector.push_back(dataOut);
+		std::string kernelName;
+		kernelName = "test_device_memory" + std::to_string((dispatchId % numberOfKernelsInModule) + 1);
+		testKernelNames.push_back(kernelName);
+	}
+	// run the memory test for all the dispatch and settings by using spv file
+	std::vector<uint8_t> binaryFile;
+	ret = loadBinaryFile("test_multiple_memory_allocations.spv", &binaryFile);
+	ze_module_handle_t moduleHandle = nullptr;
+	ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
+		for (auto eachAllocation : inputAllocations) {
+			memoryFree(context, eachAllocation);
+		}
+		for (auto eachAllocation : outputAllocations) {
+			memoryFree(context, eachAllocation);
+		}
+		moduleDestroy(moduleHandle);
+		return ret;
+	}
+	ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
+									   testKernelNames, numberOfDispatch, allocationCount, context);
+	if (ret != ZE_RESULT_SUCCESS) {
+		ERR("Failed to run dispatch kernels for memory test : %s\n", l0_error_to_string(ret));
+		for (auto eachAllocation : inputAllocations) {
+			memoryFree(context, eachAllocation);
+		}
+		for (auto eachAllocation : outputAllocations) {
+			memoryFree(context, eachAllocation);
+		}
+		moduleDestroy(moduleHandle);
+		return ret;
+	}
+	for (auto eachAllocation : inputAllocations) {
+		memoryFree(context, eachAllocation);
+	}
+	for (auto eachAllocation : outputAllocations) {
+		memoryFree(context, eachAllocation);
+	}
+	moduleDestroy(moduleHandle);
+
+	// check if the output memory content correct or not
+	errorCount = 0;
+	for (auto eachDataOut : dataOutVector) {
+		for (uint32_t i = 0; i < allocationCount; i++) {
+			if (initValue != eachDataOut[i]) {
+				errorCount += 1;
+			}
+		}
+	}
+	if (errorCount > 0) {
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief  free all buffer and module handle related resources
+ *
+ * This function properly free all buffer and module handle related resources,
+ * and handles. It provides cleanup functionality for diagnostic operations using GPU modules.
+ *
+ * @param[in] moduleHandle Handle to the module to be destroyed
+ * @param[in] inputBuf pointer to the buffer to be freed
+ * @param[in] outputBuf pointer to the buffer to be freed
+ */
+void diagnostic::freeResource(ze_context_handle_t context, void *inputBuf, void *outputBuf,
+							  ze_module_handle_t moduleHandle)
+{
+	memoryFree(context, inputBuf);
+	memoryFree(context, outputBuf);
+	moduleDestroy(moduleHandle);
+}
+
+/**
+ * @brief calculate Gbps for workGroups
+ *
+ * This function calculate Gbps for workGroups by running a GPU kernel with the specified work group configuration,
+ * measures execution time, and optionally performs performance analysis.
+ *
+ * @param[in] commandQueue Handle to the command queue for kernel execution
+ * @param[in] commandList Handle to the command list containing kernel commands
+ * @param[in] function1 Reference to the kernel function1 to execute
+ * @param[in] function2 Reference to the kernel function2 to execute
+ * @param[in] numItems number of work items that will be executed
+ * @param[in] factor  size number that will be executed
+ * @param[in] zeComputeProp Reference to device compute properties structure
+ * @param[in] workgroupInfo Reference to work group configuration parameters
+ * @return long double Execution time in seconds
+ */
+long double diagnostic::calculateGbpsForWorkGroups(ze_command_queue_handle_t commandQueue,
+												   ze_command_list_handle_t commandList, ze_kernel_handle_t &function1,
+												   ze_kernel_handle_t &function2, uint64_t numItems, uint64_t factor,
+												   ze_device_compute_properties_t &zeComputeProp,
+												   struct ZeWorkGroups &workgroupInfo)
+{
+	long double timedLo, timedGo, timed, gbps;
+	uint64_t tempGlobalSize;
+
+	timed = 0;
+	timedLo = 0;
+	timedGo = 0;
+	tempGlobalSize = (numItems / factor / 16);
+	tempGlobalSize = setWorkgroups(&zeComputeProp, tempGlobalSize, &workgroupInfo);
+	timedLo = runKernel(commandQueue, commandList, function1, workgroupInfo, false);
+	timedGo = runKernel(commandQueue, commandList, function2, workgroupInfo, false);
+	timed = (timedLo < timedGo) ? timedLo : timedGo;
+	gbps = calculateGbps(timed, static_cast<long double>(numItems * sizeof(float)));
+	return gbps;
+}
+
+/**
+ * @brief bandwidth test
+ *
+ * This function run memory bandwidth test test on the specified device using Level Zero APIs.
+ *
+ * The test:
+ * 1. Retrieves target copy engine group count.
+ * 2. based on the copy engine group count, setup the command list and command queue to run the computation test using
+ * the ze_global_bw.spv file.
+ * 3. calculate the max the bandwidth for each copy engine group item.
+ * 4. check if the computation test successful or not
+ * 5. calculate and return the final test result
+ * @param[in] d Pointer to the device information structure containing the device handle and context
+ * @param[out] totalGbps reference to the final bandwidth result
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
+ */
+ze_result_t diagnostic::memoryBandwidthTest(devInfo *d, std::vector<long double> &totalGbps)
+{
+	TRACING();
+	uint32_t cmdQueuePropsCount;
+	ze_result_t ret;
+
+	ze_context_handle_t context = d->dev->getContext();
+
+	cmdQueuePropsCount = d->dev->getCmdQueuePropsCount();
+	if (cmdQueuePropsCount == 0) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	for (uint32_t copyEngineGroupId = 0; copyEngineGroupId < cmdQueuePropsCount; ++copyEngineGroupId) {
+
+		struct ZeWorkGroups workgroupInfo;
+		long double gbps, allGbps = 0.0;
+
+		ze_device_properties_t zeDevProp = {};
+		ze_device_compute_properties_t zeComputeProp = {};
+
+		ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get device properties: 0x%X (%s)\n", ret, l0_error_to_string(ret));
+			return ret;
+		}
+
+		ret = d->dev->getComputeProps(d->deviceHdl, &zeComputeProp);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get device properties: 0x%X (%s)\n", ret, l0_error_to_string(ret));
+			return ret;
+		}
+
+		std::vector<uint8_t> binaryFile;
+		ze_module_handle_t moduleHandle;
+		ret = loadBinaryFile("ze_global_bw.spv", &binaryFile);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
+			return ret;
+		}
+
+		moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
+
+		uint64_t maxItems = zeDevProp.maxMemAllocSize / sizeof(float) / 2;
+		uint64_t numItems = std::min(maxItems, (uint64_t)(1 << 29));
+		uint64_t base = (uint64_t)zeComputeProp.maxGroupSizeX * 16 * 16;
+		numItems = (numItems / base) * base;
+
+		std::vector<float> arr(static_cast<uint32_t>(numItems));
+		for (uint32_t i = 0; i < numItems; i++) {
+			arr[i] = static_cast<float>(i);
+		}
+
+		numItems = setWorkgroups(&zeComputeProp, numItems, &workgroupInfo);
+
+		void *inputBuf;
+		ret = memoryAlloc(context, d->deviceHdl, static_cast<size_t>((numItems * sizeof(float))), 1, &inputBuf);
+		if (ret != ZE_RESULT_SUCCESS) {
+			moduleDestroy(moduleHandle);
+			return ret;
+		}
+
+		void *outputBuf;
+		ret = memoryAlloc(context, d->deviceHdl, static_cast<size_t>((numItems * sizeof(float))), 1, &outputBuf);
+		if (ret != ZE_RESULT_SUCCESS) {
+			memoryFree(context, inputBuf);
+			moduleDestroy(moduleHandle);
+			return ret;
+		}
+
+		ze_command_list_handle_t copyCommandList;
+		ret = commandListCreate(context, d->deviceHdl, copyEngineGroupId, &copyCommandList, 0);
+		if (ret != ZE_RESULT_SUCCESS) {
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ze_command_queue_handle_t copyCommandQueue;
+		commandQueueCreate(context, d->deviceHdl, copyEngineGroupId, 0, &copyCommandQueue, 0);
+		if (ret != ZE_RESULT_SUCCESS) {
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandListAppendMemoryCopy(copyCommandList, inputBuf, arr.data(), (arr.size() * sizeof(float)),
+											nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandListAppendBarrier(copyCommandList, nullptr, 0, nullptr);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Couldn't append barrier: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandListClose(copyCommandList);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		commandQueueExecuteCommandLists(copyCommandQueue, copyCommandList);
+		commandQueueSynchronize(copyCommandQueue);
+		commandListReset(copyCommandList);
+
+		ze_command_list_handle_t commandList;
+		ret = commandListCreate(context, d->deviceHdl, 0, &commandList, 0);
+		if (ret != ZE_RESULT_SUCCESS) {
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ze_command_queue_handle_t commandQueue;
+		ret = commandQueueCreate(context, d->deviceHdl, 0, 0, &commandQueue, 0);
+		if (ret != ZE_RESULT_SUCCESS) {
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ze_kernel_handle_t localOffsetV1;
+		ze_kernel_handle_t localOffsetV2;
+		ze_kernel_handle_t localOffsetV4;
+		ze_kernel_handle_t localOffsetV8;
+		ze_kernel_handle_t localOffsetV16;
+		ze_kernel_handle_t globalOffsetV1;
+		ze_kernel_handle_t globalOffsetV2;
+		ze_kernel_handle_t globalOffsetV4;
+		ze_kernel_handle_t globalOffsetV8;
+		ze_kernel_handle_t globalOffsetV16;
+
+		setupFunction(moduleHandle, localOffsetV1, "global_bandwidth_v1_local_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, globalOffsetV1, "global_bandwidth_v1_global_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, localOffsetV2, "global_bandwidth_v2_local_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, globalOffsetV2, "global_bandwidth_v2_global_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, localOffsetV4, "global_bandwidth_v4_local_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, globalOffsetV4, "global_bandwidth_v4_global_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, localOffsetV8, "global_bandwidth_v8_local_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, globalOffsetV8, "global_bandwidth_v8_global_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, localOffsetV16, "global_bandwidth_v16_local_offset", inputBuf, outputBuf);
+		setupFunction(moduleHandle, globalOffsetV16, "global_bandwidth_v16_global_offset", inputBuf, outputBuf);
+
+		gbps = calculateGbpsForWorkGroups(commandQueue, commandList, localOffsetV1, globalOffsetV1, numItems, 1,
+										  zeComputeProp, workgroupInfo);
+		allGbps = std::max(allGbps, gbps);
+
+		gbps = calculateGbpsForWorkGroups(commandQueue, commandList, localOffsetV2, globalOffsetV2, numItems, 2,
+										  zeComputeProp, workgroupInfo);
+		allGbps = std::max(allGbps, gbps);
+
+		gbps = calculateGbpsForWorkGroups(commandQueue, commandList, localOffsetV4, globalOffsetV4, numItems, 4,
+										  zeComputeProp, workgroupInfo);
+		allGbps = std::max(allGbps, gbps);
+
+		gbps = calculateGbpsForWorkGroups(commandQueue, commandList, localOffsetV8, globalOffsetV8, numItems, 8,
+										  zeComputeProp, workgroupInfo);
+		allGbps = std::max(allGbps, gbps);
+
+		gbps = calculateGbpsForWorkGroups(commandQueue, commandList, localOffsetV16, globalOffsetV16, numItems, 16,
+										  zeComputeProp, workgroupInfo);
+		allGbps = std::max(allGbps, gbps);
+
+		ret = zeKernelDestroy(localOffsetV1);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(globalOffsetV1);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(localOffsetV2);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(globalOffsetV2);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(localOffsetV4);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(globalOffsetV4);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(localOffsetV8);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(globalOffsetV8);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(localOffsetV16);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeKernelDestroy(globalOffsetV16);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandListDestroy(commandList);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying command list: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandQueueDestroy(commandQueue);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying command queue: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandListDestroy(copyCommandList);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying copy command list: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+
+		ret = zeCommandQueueDestroy(copyCommandQueue);
+		if (ret != ZE_RESULT_SUCCESS) {
+			ERR("Error destroying copy command queue: %s\n", l0_error_to_string(ret));
+			freeResource(context, inputBuf, outputBuf, moduleHandle);
+			return ret;
+		}
+		freeResource(context, inputBuf, outputBuf, moduleHandle);
+		if (allGbps <= 0) {
+			return ZE_RESULT_ERROR_UNKNOWN;
+		} else {
+			totalGbps.push_back(allGbps);
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
 /**
  * @brief Gets available tests within a diagnostic test suite
  *
