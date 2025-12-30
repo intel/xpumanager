@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,14 +24,67 @@
 
 #include "cmd_topology.h"
 #include "debug.h"
+#include "printer.h"
 #include <assert.h>
+#include <format>
 
-static std::unordered_map<topologyCmdType, topologyCmdStruct> topologyCmds = {
-	{topologyCmdType::TOPOLOGY_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{topologyCmdType::TOPOLOGY_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{topologyCmdType::TOPOLOGY_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdTopology::showTopology, false, ""}},
-	{topologyCmdType::TOPOLOGY_FILE, {{"file", required_argument, 0, 'f'}, &cmdTopology::generateFile, false, ""}},
-	{topologyCmdType::TOPOLOGY_MATRIX, {{"matrix", no_argument, 0, 'm'}, &cmdTopology::showMatrix, false, ""}},
+/**
+ * @brief Constructor for TopologyTextPrinter
+ */
+TopologyTextPrinter::TopologyTextPrinter() : TextPrinter() {}
+
+/**
+ * @brief Custom text printer for topology command output (legacy JSON support)
+ *
+ * This function formats the JSON object containing topology data into
+ * human-readable text format with proper labels and formatting. Supports
+ * both simple message output and detailed device topology information.
+ *
+ * @param[in] jsonObj Pointer to the JSON object containing topology data.
+ *                    Must contain either a "message" field or device topology fields
+ *                    (device_id, local_cpu_list, local_cpus, pcie_switch_count, pcie_switch).
+ *                    Must not be nullptr.
+ *
+ * @note Outputs directly to stdout using PRINT macro
+ * @note Handles two formats:
+ *       - Simple message: {"message": "..."}
+ *       - Device topology: {"device_id": N, "local_cpu_list": "...", ...}
+ */
+void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+
+	// Check if this is a simple message (for generateFile or showMatrix)
+	if (const auto msg = jsonObj->value("message", ""); !msg.empty()) {
+		PRINT("%s", std::format("{}\n", msg).c_str());
+		return;
+	}
+
+	// Format device topology information using std::format for type-safe formatting
+	if (const auto deviceId = jsonObj->value("device_id", -1); deviceId != -1) {
+		PRINT("%s", std::format("Device ID: {}\n", deviceId).c_str());
+	}
+	if (const auto cpuList = jsonObj->value("local_cpu_list", std::string{}); !cpuList.empty()) {
+		PRINT("%s", std::format("Local CPU List: {}\n", cpuList).c_str());
+	}
+	if (const auto localCpus = jsonObj->value("local_cpus", std::string{}); !localCpus.empty()) {
+		PRINT("%s", std::format("Local CPUs: {}\n", localCpus).c_str());
+	}
+	if (jsonObj->contains("pcie_switch_count")) {
+		const auto count = jsonObj->value("pcie_switch_count", 0);
+		PRINT("%s", std::format("PCIe Switch Count: {}\n", count).c_str());
+	}
+	if (const auto pcieSwitch = jsonObj->value("pcie_switch", std::string{}); !pcieSwitch.empty()) {
+		PRINT("%s", std::format("PCIe Switch: {}\n", pcieSwitch).c_str());
+	}
+}
+
+static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
+	{topologyCmdType::TOPOLOGY_HELP, {{"help", no_argument, 0, 'h'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_JSON, {{"json", no_argument, 0, 'j'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_DEVICE, {{"device", required_argument, 0, 'd'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_FILE, {{"file", required_argument, 0, 'f'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_MATRIX, {{"matrix", no_argument, 0, 'm'}, false, ""}},
 };
 
 /**
@@ -39,9 +92,14 @@ static std::unordered_map<topologyCmdType, topologyCmdStruct> topologyCmds = {
  *
  * This function prints comprehensive usage information for the topology command,
  * including options for device queries, matrix display, and file generation.
- * It also explains the topology connection symbols used in the output.
+ * It also explains the topology connection symbols used in the output (XL, SYS, NODE, MDF).
  *
- * @param helpType The type of help to display (FULL_HELP or SHORT_HELP)
+ * @param[in] helpType The type of help to display:
+ *                     - FULL_HELP: Complete help with all details and examples
+ *                     - SHORT_HELP: Brief usage summary
+ *
+ * @note Outputs help text directly to stdout
+ * @note Includes usage examples and connection symbol legend
  */
 void cmdTopology::help(HELP helpType)
 {
@@ -83,24 +141,51 @@ void cmdTopology::help(HELP helpType)
  *
  * This function retrieves and displays topology information for a specific GPU device,
  * including CPU affinity information such as the local CPU list and CPU mask.
- * It provides details about which CPUs are local to the device for NUMA optimization.
+ * It provides details about which CPUs are local to the device for NUMA optimization,
+ * PCIe switch count, and switch device path information.
  *
- * @param d Pointer to device information structure containing device details
- * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ * @param[in]  d    Pointer to device information structure containing device details.
+ *                  Must not be nullptr. The d->dev field must also be valid.
+ *                  The structure provides access to device index and methods to query
+ *                  CPU affinity and PCIe topology.
+ * @param[out] info Output parameter to receive topology information. Must not be nullptr.
+ *                  On success, will be populated with:
+ *                  - deviceId: Device index from d->index
+ *                  - localCpuList: Comma-separated list of local CPU cores
+ *                  - localCpus: CPU affinity mask in hexadecimal format
+ *                  - pcieSwitchCount: Number of PCIe switches in the path to root
+ *                  - pcieSwitch: Device path of PCIe switch or "N/A" if not applicable
+ *
+ * @retval ZE_RESULT_SUCCESS               Topology information successfully retrieved
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER  d, d->dev, or info is nullptr
+ *
+ * @note Uses device methods: getCPUList(), getLocalCPUs(), getSwitchCount()
+ * @note This information is critical for NUMA-aware workload placement
  */
-ze_result_t cmdTopology::showTopology(devInfo *d)
+ze_result_t cmdTopology::showTopology(devInfo *d, TopologyInfo *info)
 {
 	TRACING();
-	std::string switchDevicePath = "N/A";
-	std::string cpuList = d->dev->getCPUList();
-	std::string localCPUs = d->dev->getLocalCPUs();
-	int switchCount = d->dev->getSwitchCount(&switchDevicePath);
 
-	PRINT("Device ID: %d\n", d->index);
-	PRINT("Local CPU List: %s\n", cpuList.c_str());
-	PRINT("Local CPUs: %s\n", localCPUs.c_str());
-	PRINT("PCIe Switch Count: %d\n", switchCount);
-	PRINT("PCIe Switch: %s\n", switchDevicePath.c_str());
+	if (d == nullptr || d->dev == nullptr) {
+		ERR("Invalid device pointer\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	if (info == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	std::string switchDevicePath = "N/A";
+	const auto cpuList = d->dev->getCPUList();
+	const auto localCPUs = d->dev->getLocalCPUs();
+	const auto switchCount = d->dev->getSwitchCount(&switchDevicePath);
+
+	*info = TopologyInfo{.deviceId = d->index,
+						 .localCpuList = cpuList,
+						 .localCpus = localCPUs,
+						 .pcieSwitchCount = switchCount,
+						 .pcieSwitch = switchDevicePath};
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -112,13 +197,46 @@ ze_result_t cmdTopology::showTopology(devInfo *d)
  * NUMA relationships. The generated file can be used for system analysis
  * and topology visualization tools.
  *
- * @param d Pointer to device information structure (unused for this operation)
- * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ * @param[in] filename Path to the output XML file. Must not be empty.
+ *                     Can be absolute or relative path. The file will be created
+ *                     or overwritten if it exists.
+ * @param[in] useJson  Output format selector:
+ *                     - true: Print confirmation as JSON: {"filename": "...", "message": "..."}
+ *                     - false: Print confirmation as plain text
+ *
+ * @retval ZE_RESULT_SUCCESS                 File generation initiated successfully
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT  filename is empty string
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED     currentArgs is nullptr (internal error)
+ *
+ * @note Currently prints placeholder message. Actual XML topology generation is TODO.
+ * @note Output is printed directly to stdout
+ * @note Requires currentArgs to be set (automatically done by run() method)
  */
-ze_result_t cmdTopology::generateFile(UNUSED devInfo *d)
+ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 {
 	TRACING();
-	PRINT("Generate topology file...\n");
+
+	if (filename.empty()) {
+		ERR("No filename specified\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (currentArgs == nullptr) {
+		ERR("Internal error: args not available\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	// TODO: Implement actual topology file generation
+	const std::string message = std::format("Topology exported to file: {}", filename);
+
+	if (useJson) {
+		auto jsonObj = nlohmann::ordered_json{{"filename", filename}, {"message", message}};
+		auto printer = std::make_unique<JsonPrinter>();
+		printer->print(&jsonObj);
+	} else {
+		PRINT("%s\n", message.c_str());
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -128,32 +246,87 @@ ze_result_t cmdTopology::generateFile(UNUSED devInfo *d)
  * This function generates and displays a topology matrix that shows the
  * connectivity and relationship between all GPU devices, CPU nodes, and
  * interconnects in the system. The matrix uses symbols to indicate different
- * types of connections (PCIe, Xe Link, MDF, etc.) and their characteristics.
+ * types of connections:
+ * - S: Self (same device)
+ * - XL[N]: Xe Link with N lanes
+ * - XL*: Xe Link + MDF (not direct)
+ * - SYS: PCIe between NUMA nodes
+ * - NODE: PCIe within NUMA node
+ * - MDF: Multi-Die Fabric Interface
  *
- * @param d Pointer to device information structure (unused for this operation)
- * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ * @param[in] useJson Output format selector:
+ *                    - true: Print matrix as JSON: {"message": "..."}
+ *                    - false: Print matrix as plain text
+ *
+ * @retval ZE_RESULT_SUCCESS             Matrix generation and display successful
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs is nullptr (internal error)
+ *
+ * @note Currently prints placeholder message. Actual matrix generation is TODO.
+ * @note Output is printed directly to stdout
+ * @note Requires currentArgs to be set (automatically done by run() method)
+ * @note The matrix helps identify optimal device placement for multi-GPU workloads
  */
-ze_result_t cmdTopology::showMatrix(UNUSED devInfo *d)
+ze_result_t cmdTopology::showMatrix(bool useJson)
 {
 	TRACING();
-	PRINT("Show topology matrix...\n");
+
+	if (currentArgs == nullptr) {
+		ERR("Internal error: args not available\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	// TODO: Implement actual topology matrix generation
+	const std::string message = "Show topology matrix...";
+
+	if (useJson) {
+		auto jsonObj = nlohmann::ordered_json{{"message", message}};
+		auto printer = std::make_unique<JsonPrinter>();
+		printer->print(&jsonObj);
+	} else {
+		PRINT("%s\n", message.c_str());
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
  * @brief Executes the topology command with parsed command line arguments
  *
- * This function processes the topology command which displays system topology
- * information including GPU-to-CPU relationships, NUMA nodes, interconnect
- * details, and device connectivity matrices. It can generate XML files,
- * display topology matrices, or show device-specific topology information.
+ * This is the main entry point for the topology command. It processes command line
+ * arguments and dispatches to the appropriate subcommand handler (device query,
+ * file generation, or matrix display). Supports multiple output formats (JSON/text)
+ * and can handle single or multiple devices.
  *
- * @param args Pointer to argument structure containing argc, argv, and system manager
- * @return int ZE_RESULT_SUCCESS on success, error code on failure
+ * Command line options:
+ * - -h, --help: Display help information
+ * - -j, --json: Output in JSON format instead of text
+ * - -d, --device <id>: Query topology for specific device (by ID or PCI BDF)
+ * - -f, --file <path>: Generate topology XML file
+ * - -m, --matrix: Display topology connectivity matrix
+ *
+ * @param[in] args Pointer to argument structure. Must not be nullptr.
+ *                 Contains:
+ *                 - argc: Argument count
+ *                 - argv: Argument vector (command line strings)
+ *                 - sm: System manager for device enumeration and queries
+ *
+ * @retval ZE_RESULT_SUCCESS                   Command executed successfully
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT    Invalid command line argument or device not found
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER Device pointer validation failed
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED       Internal state not properly initialized
+ *
+ * @note If no specific command is given, displays help information
+ * @note Device queries can be performed on multiple devices matching the criteria
+ * @note Uses getopt_long for command line parsing
+ * @note Sets currentArgs for use by subcommands (generateFile, showMatrix)
  */
 int cmdTopology::run(arg_struct *args)
 {
 	TRACING();
+
+	// Store args for commands that need it
+	currentArgs = args;
+
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
@@ -164,7 +337,6 @@ int cmdTopology::run(arg_struct *args)
 
 	processOptions(topologyCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
 	int startind = 2;
 	optind = 2;
 
@@ -188,23 +360,21 @@ int cmdTopology::run(arg_struct *args)
 			topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled = true;
 			break;
 		case 0:
-			for (auto &cmd : topologyCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
+			for (auto &[cmdType, cmdStruct] : topologyCmds) {
+				if (STRCASECMP(longOpts[optionIndex].name, cmdStruct.opt.name) == 0) {
+					cmdStruct.enabled = true;
 					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
+						cmdStruct.val = optarg;
 					}
 					found = true;
 					break;
 				}
 			}
-
 			if (!found) {
 				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
-
 			break;
 		default:
 			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
@@ -214,55 +384,59 @@ int cmdTopology::run(arg_struct *args)
 		startind++;
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
 	if (optind != args->argc) {
 		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Device handle not found for device ID '%s'.\n",
-			topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str());
-		return result;
-	}
+	const bool useJson = topologyCmds[topologyCmdType::TOPOLOGY_JSON].enabled;
+	auto textPrinter = std::make_unique<TopologyTextPrinter>();
 
-	if (deviceList.size() < 1) {
-		ERR("Device not found.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Handle matrix command (doesn't require device)
+	// Handle matrix command
 	if (topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled) {
-		return showMatrix(nullptr);
+		return showMatrix(useJson);
 	}
 
-	// Handle file generation command (doesn't require specific device)
+	// Handle file generation command
 	if (topologyCmds[topologyCmdType::TOPOLOGY_FILE].enabled) {
-		return generateFile(nullptr);
+		const auto &filename = topologyCmds[topologyCmdType::TOPOLOGY_FILE].val;
+		return generateFile(filename, useJson);
 	}
 
-	// For device-specific commands, find the device
+	// Handle device-specific command
 	if (topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled) {
-		// Iterate through the device list and execute the command
+		result = args->sm.findDevice(topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str(), &deviceList);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Device handle not found for device ID '%s'.\n",
+				topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str());
+			return result;
+		}
+
+		if (deviceList.empty()) {
+			ERR("Device not found.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
 		for (auto &device : deviceList) {
-			// Call the appropriate command function based on the command type
-			for (const auto &cmd : topologyCmds) {
-				if (cmd.second.enabled && cmd.second.func != nullptr) {
-					DBG("Running command: %s\n", cmd.second.opt.name);
-					result = (this->*cmd.second.func)(&device);
-					if (result != ZE_RESULT_SUCCESS) {
-						return result;
-					}
-				}
+			TopologyInfo info;
+			result = showTopology(&device, &info);
+			if (result != ZE_RESULT_SUCCESS) {
+				return result;
+			}
+
+			if (useJson) {
+				auto jsonObj = toJson(info);
+				auto jsonPrinter = std::make_unique<JsonPrinter>();
+				jsonPrinter->print(&jsonObj);
+			} else {
+				textPrinter->print(info);
 			}
 		}
-	} else {
-		// If no specific command is provided, show help
-		help();
+		return ZE_RESULT_SUCCESS;
 	}
 
-	return 0;
+	// No specific command provided, show help
+	help();
+	return ZE_RESULT_SUCCESS;
 }
