@@ -30,7 +30,6 @@
 #include <os.h>
 #include <string>
 #include <format>
-#include <ranges>
 
 // Forward declarations
 struct portInfo;
@@ -125,13 +124,15 @@ enum class topologyCmdType
 	TOTAL_TOPOLOGY,
 };
 
-class cmdTopology : public cmds
+class cmdTopology : public cmds // NOLINT(readability-identifier-naming) // camelBack for consistency
 {
 private:
 	std::string determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const;
 	ze_result_t buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj);
+	std::string xmlFilename; // Store filename for XML export
 
 public:
+	// NOLINTNEXTLINE(readability-identifier-naming) // camelBack for consistency
 	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
 	void help(HELP helpType = FULL_HELP) final;
 
