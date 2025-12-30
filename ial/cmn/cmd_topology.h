@@ -30,6 +30,19 @@
 #include <os.h>
 #include <string>
 #include <format>
+#include <ranges>
+
+// Forward declarations
+struct portInfo;
+
+// Tile information for topology matrix
+struct TileInfo
+{
+	int deviceId;
+	int tileId;
+	std::string cpuAffinity;
+	std::vector<portInfo> ports;
+};
 
 /**
  * @brief Device topology information structure
@@ -114,6 +127,10 @@ enum class topologyCmdType
 
 class cmdTopology : public cmds
 {
+private:
+	std::string determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const;
+	ze_result_t buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj);
+
 public:
 	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
 	void help(HELP helpType = FULL_HELP) final;
@@ -139,7 +156,7 @@ private:
 	 * @param[out] info Output parameter to receive topology information
 	 * @return ZE_RESULT_SUCCESS on success, error code on failure
 	 */
-	ze_result_t showTopology(devInfo *d, TopologyInfo *info);
+	[[nodiscard]] ze_result_t showTopology(devInfo *d, TopologyInfo *info);
 
 	/**
 	 * @brief Generates an XML topology file with system topology information
@@ -151,7 +168,7 @@ private:
 	 * @param[in] useJson If true, output as JSON; otherwise as text
 	 * @return ZE_RESULT_SUCCESS on success, error code on failure
 	 */
-	ze_result_t generateFile(const std::string &filename, bool useJson);
+	[[nodiscard]] ze_result_t generateFile(const std::string &filename, bool useJson);
 
 	/**
 	 * @brief Generates and displays the system topology matrix
@@ -162,7 +179,7 @@ private:
 	 * @param[in] useJson If true, output as JSON; otherwise as text
 	 * @return ZE_RESULT_SUCCESS on success, error code on failure
 	 */
-	ze_result_t showMatrix(bool useJson);
+	[[nodiscard]] ze_result_t showMatrix(bool useJson);
 };
 
 /**
