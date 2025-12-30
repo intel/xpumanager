@@ -29,38 +29,126 @@
 #include <format>
 
 /**
+ * @defgroup topology_commands Topology Commands
+ * @brief System topology query and analysis commands for GPU devices
+ *
+ * Provides commands to query device topology information including:
+ * - CPU affinity and NUMA node relationships
+ * - PCIe switch topology
+ * - GPU interconnect connectivity (Xe Link, MDF)
+ * - Topology matrix visualization
+ * - Topology export to XML files
+ */
+
+/**
+ * @defgroup topology_matrix Topology Matrix Generation
+ * @ingroup topology_commands
+ * @brief Functions for generating and analyzing GPU interconnect topology matrices
+ *
+ * Matrix generation examines fabric ports, PCIe topology, and CPU affinity
+ * to determine connectivity types between all GPU tiles in the system.
+ * Supports multiple link types: Xe Link, MDF, PCIe (NODE/SYS).
+ */
+
+/**
+ * @defgroup topology_printers Topology Output Formatting
+ * @ingroup topology_commands
+ * @brief Printer classes for formatting topology data in various output formats
+ *
+ * Handles conversion of topology data structures to human-readable text
+ * or JSON format for programmatic consumption.
+ */
+
+/**
  * @brief Constructor for TopologyTextPrinter
+ * @ingroup topology_printers
  */
 TopologyTextPrinter::TopologyTextPrinter() : TextPrinter() {}
 
 /**
  * @brief Custom text printer for topology command output (legacy JSON support)
+ * @ingroup topology_printers
  *
- * This function formats the JSON object containing topology data into
- * human-readable text format with proper labels and formatting. Supports
- * both simple message output and detailed device topology information.
+ * Formats JSON topology data into human-readable text with proper labels and alignment.
+ * Supports multiple output formats: error messages, simple text messages, topology matrix,
+ * and device-specific information.
  *
- * @param[in] jsonObj Pointer to the JSON object containing topology data.
- *                    Must contain either a "message" field or device topology fields
- *                    (device_id, local_cpu_list, local_cpus, pcie_switch_count, pcie_switch).
+ * Supported Formats:
+ * 1. Error: {"error": "message"} → "Error: message"
+ * 2. Message: {"message": "text"} → "text"
+ * 3. Matrix: {"headers": [...], "matrix": [...]} → Formatted table with:
+ *    - Header row with tile labels and "CPU Affinity" column
+ *    - Data rows with connections and affinity per tile
+ *    - Fixed-width columns for alignment (9 chars tile, 7 chars per connection, 15 chars affinity)
+ * 4. Device: {"device_id": N, "local_cpu_list": "...", ...} → Labeled field output
+ *
+ * @param[in] jsonObj Pointer to JSON object containing topology data.
  *                    Must not be nullptr.
+ *                    Expected fields depend on format:
+ *                    - Error format: "error" (string)
+ *                    - Message format: "message" (string)
+ *                    - Matrix format: "headers" (array), "matrix" (array of objects)
+ *                      Matrix objects contain: "tile", "connections" (array), "cpu_affinity"
+ *                    - Device format: "device_id", "local_cpu_list", "local_cpus",
+ *                      "pcie_switch_count", "pcie_switch"
+ *
+ * @pre jsonObj must be a valid pointer to initialized nlohmann::ordered_json
+ * @pre For matrix format: headers and matrix arrays must be same length
+ * @pre For matrix format: each matrix entry connections array must match headers length
+ *
+ * @post Output is printed to stdout via PRINT macro
+ * @post No modification to jsonObj (const behavior despite non-const signature)
  *
  * @note Outputs directly to stdout using PRINT macro
- * @note Handles two formats:
- *       - Simple message: {"message": "..."}
- *       - Device topology: {"device_id": N, "local_cpu_list": "...", ...}
+ * @note Matrix format precedence: error > message > matrix > device fields
+ * @note Matrix table uses pipe separators (|) for visual clarity
+ * @note Empty fields in device format are silently skipped
+ * @note Uses std::format for type-safe string formatting
+ * @note Inherited from TextPrinter base class
+ *
+ * @see showMatrix() for matrix data generation
+ * @see TopologyInfo for device topology structure
  */
 void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
-	// Check if this is a simple message (for generateFile or showMatrix)
+	if (jsonObj->contains("error")) {
+		PRINT("%s", std::format("Error: {}\n", jsonObj->value("error", "")).c_str());
+		return;
+	}
+
 	if (const auto msg = jsonObj->value("message", ""); !msg.empty()) {
 		PRINT("%s", std::format("{}\n", msg).c_str());
 		return;
 	}
 
-	// Format device topology information using std::format for type-safe formatting
+	if (jsonObj->contains("matrix") && jsonObj->contains("headers")) {
+		const auto &headers = (*jsonObj)["headers"];
+		const auto &matrix = (*jsonObj)["matrix"];
+
+		// Print header row
+		PRINT("%9s", " ");
+		for (const auto &header : headers) {
+			PRINT("|%-7s", header.get<std::string>().c_str());
+		}
+		PRINT("|%-15s\n", "CPU Affinity");
+
+		// Print matrix rows
+		for (const auto &row : matrix) {
+			const auto tileName = row["tile"].get<std::string>();
+			PRINT("%-9s", tileName.c_str());
+
+			for (const auto &conn : row["connections"]) {
+				PRINT("|%-7s", conn.get<std::string>().c_str());
+			}
+
+			const auto affinity = row["cpu_affinity"].get<std::string>();
+			PRINT("|%-15s\n", affinity.c_str());
+		}
+		return;
+	}
+
 	if (const auto deviceId = jsonObj->value("device_id", -1); deviceId != -1) {
 		PRINT("%s", std::format("Device ID: {}\n", deviceId).c_str());
 	}
@@ -89,6 +177,7 @@ static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
 
 /**
  * @brief Displays help information for the topology command
+ * @ingroup topology_commands
  *
  * This function prints comprehensive usage information for the topology command,
  * including options for device queries, matrix display, and file generation.
@@ -138,6 +227,7 @@ void cmdTopology::help(HELP helpType)
 
 /**
  * @brief Displays topology information for a specified device
+ * @ingroup topology_commands
  *
  * This function retrieves and displays topology information for a specific GPU device,
  * including CPU affinity information such as the local CPU list and CPU mask.
@@ -160,7 +250,6 @@ void cmdTopology::help(HELP helpType)
  * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER  d, d->dev, or info is nullptr
  *
  * @note Uses device methods: getCPUList(), getLocalCPUs(), getSwitchCount()
- * @note This information is critical for NUMA-aware workload placement
  */
 ze_result_t cmdTopology::showTopology(devInfo *d, TopologyInfo *info)
 {
@@ -191,6 +280,7 @@ ze_result_t cmdTopology::showTopology(devInfo *d, TopologyInfo *info)
 
 /**
  * @brief Generates a topology file containing system topology information
+ * @ingroup topology_commands
  *
  * This function creates an XML file containing comprehensive system topology
  * information including GPU devices, CPU nodes, interconnect details, and
@@ -210,7 +300,7 @@ ze_result_t cmdTopology::showTopology(devInfo *d, TopologyInfo *info)
  *
  * @note Currently prints placeholder message. Actual XML topology generation is TODO.
  * @note Output is printed directly to stdout
- * @note Requires currentArgs to be set (automatically done by run() method)
+ * @note Requires currentArgs to be set
  */
 ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 {
@@ -242,29 +332,57 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 
 /**
  * @brief Displays system topology matrix showing device connectivity
+ * @ingroup topology_matrix
  *
- * This function generates and displays a topology matrix that shows the
- * connectivity and relationship between all GPU devices, CPU nodes, and
- * interconnects in the system. The matrix uses symbols to indicate different
- * types of connections:
- * - S: Self (same device)
- * - XL[N]: Xe Link with N lanes
- * - XL*: Xe Link + MDF (not direct)
+ * Generates and displays a comprehensive topology matrix showing connectivity
+ * between all GPU tiles in the system. Supports both JSON and formatted text output.
+ * The matrix provides critical information for workload placement and multi-GPU
+ * optimization.
+ *
+ * Output Formats:
+ * - JSON: Flat topo_list array for backward compatibility with old xpumanager format
+ * - Text: Formatted table with tile headers, connection symbols, and CPU affinity
+ *
+ * Connection symbols indicate link types:
+ * - S: Self (same tile)
+ * - XL[N]: Xe Link with N lanes (e.g., XL4, XL8)
+ * - XL*: Xe Link + MDF (not direct connection)
  * - SYS: PCIe between NUMA nodes
  * - NODE: PCIe within NUMA node
  * - MDF: Multi-Die Fabric Interface
  *
  * @param[in] useJson Output format selector:
- *                    - true: Print matrix as JSON: {"message": "..."}
- *                    - false: Print matrix as plain text
+ *                    - true: Print as JSON with topo_list array (old format compatibility)
+ *                           Each entry contains: link_type, local/remote device/subdevice IDs,
+ *                           CPU affinity, NUMA index, max_bit_rate
+ *                    - false: Print as formatted text table using TopologyTextPrinter
+ *                             Shows NxN matrix with headers and CPU affinity column
  *
- * @retval ZE_RESULT_SUCCESS             Matrix generation and display successful
- * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs is nullptr (internal error)
+ * @retval ZE_RESULT_SUCCESS             Matrix successfully generated and displayed
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs is nullptr (internal state error)
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST   No devices found in the system
+ * @retval Other                         Error from buildTopologyMatrix()
  *
- * @note Currently prints placeholder message. Actual matrix generation is TODO.
- * @note Output is printed directly to stdout
- * @note Requires currentArgs to be set (automatically done by run() method)
- * @note The matrix helps identify optimal device placement for multi-GPU workloads
+ * @pre currentArgs must be set by run() method before calling
+ * @pre System must have at least one GPU device available
+ *
+ * @post Output is printed directly to stdout via appropriate printer
+ * @post No internal state is modified (const behavior despite non-const signature)
+ *
+ * @note This method creates and owns the jsonObj internally for encapsulation
+ * @note For JSON output, only topo_list is included to maintain old format compatibility
+ * @note For text output, full matrix data (headers, matrix, error fields) is used
+ * @note Text output uses TopologyTextPrinter which formats as aligned table
+ * @note The matrix is NxN where N = total tiles across all devices
+ * @note Helps identify optimal device placement for:
+ *       - Multi-GPU workloads
+ *       - Peer-to-peer transfers
+ *       - NUMA-aware memory allocation
+ *       - Cross-device communication patterns
+ *
+ * @see buildTopologyMatrix() for matrix data generation
+ * @see TopologyTextPrinter::print() for text formatting
+ * @see determineLinkType() for link classification algorithm
  */
 ze_result_t cmdTopology::showMatrix(bool useJson)
 {
@@ -275,22 +393,271 @@ ze_result_t cmdTopology::showMatrix(bool useJson)
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	// TODO: Implement actual topology matrix generation
-	const std::string message = "Show topology matrix...";
+	// Build the matrix data
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+	const auto result = buildTopologyMatrix(currentArgs, jsonObj.get());
+
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
 
 	if (useJson) {
-		auto jsonObj = nlohmann::ordered_json{{"message", message}};
-		auto printer = std::make_unique<JsonPrinter>();
-		printer->print(&jsonObj);
+		// For JSON output, only include topo_list (old format)
+		nlohmann::ordered_json filteredJson;
+		if (jsonObj->contains("topo_list")) {
+			filteredJson["topo_list"] = (*jsonObj)["topo_list"];
+		}
+		auto jsonPrinter = std::make_unique<JsonPrinter>();
+		jsonPrinter->print(&filteredJson);
 	} else {
-		PRINT("%s\n", message.c_str());
+		// For text output, use TopologyTextPrinter with full matrix data
+		auto textPrinter = std::make_unique<TopologyTextPrinter>();
+		textPrinter->print(jsonObj.get());
 	}
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
+ * @brief Builds the topology connectivity matrix for all devices
+ * @ingroup topology_matrix
+ *
+ * Constructs a comprehensive topology matrix showing connectivity between all GPU tiles
+ * in the system. Examines fabric ports, PCIe topology, and CPU affinity to determine
+ * link types (Xe Link, MDF, PCIe). Generates both a flat topology list for JSON output
+ * and a 2D matrix for text display.
+ *
+ * @param[in]  args    Pointer to argument structure containing system manager for device queries.
+ *                     Must not be nullptr. The args->sm field must be valid.
+ * @param[out] jsonObj Pointer to JSON object that will be populated with topology data.
+ *                     Must not be nullptr. On success, contains:
+ *                     - "topo_list": Flat array of topology entries for JSON compatibility
+ *                     - "headers": Array of tile labels (e.g., "GPU 0/0", "GPU 0/1")
+ *                     - "matrix": 2D array of connection data for text printing
+ *                     On error, contains:
+ *                     - "error": Error message string
+ *
+ * @retval ZE_RESULT_SUCCESS           Matrix built successfully
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found in the system
+ * @retval Other                       Device enumeration failed (from findDevice)
+ *
+ * @pre args and args->sm must be initialized and valid
+ * @pre jsonObj must point to valid nlohmann::ordered_json object
+ *
+ * @post On success, jsonObj contains complete topology matrix data
+ * @post allTiles vector contains all tile information with fabric port details
+ *
+ * @note Link type determination:
+ *       - "S": Self (same tile)
+ *       - "MDF": Multi-Die Fabric (same device, different tiles)
+ *       - "XL[N]": Direct Xe Link with N lanes
+ *       - "XL*": Indirect Xe Link through MDF
+ *       - "NODE": PCIe within same NUMA node
+ *       - "SYS": PCIe across NUMA nodes
+ * @note Matrix is NxN where N = total number of tiles across all devices
+ * @note Fabric port information is queried via Level Zero Sysman API
+ * @note CPU affinity determines NUMA node relationships
+ *
+ * @see determineLinkType() for link type determination algorithm
+ * @see TileInfo structure for tile metadata
+ */
+ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj)
+{
+	// Get all devices from system manager
+	std::vector<devInfo> deviceList;
+	const auto result = args->sm.findDevice("", &deviceList);
+	if (result != ZE_RESULT_SUCCESS || deviceList.empty()) {
+		*jsonObj = {{"error", "No devices found or error getting device list"}};
+		return result != ZE_RESULT_SUCCESS ? result : ZE_RESULT_ERROR_DEVICE_LOST;
+	}
+
+	// Collect all tiles across all devices
+	std::vector<TileInfo> allTiles;
+	std::vector<std::string> deviceHeaders;
+	std::map<int, bool> deviceHasSubdevices; // Track which devices have subdevices
+
+	for (auto &device : deviceList) {
+		const auto cpuAffinity = device.dev->getCPUList(); // Use getCPUList() for range format like "0-31"
+		std::map<uint32_t, std::vector<portInfo>> portsByTile;
+
+		// In the old xpumanager code, onSubdevice is always true for tile-level topology entries
+		// It doesn't mean "has multiple tiles", it means "this is a tile-level view"
+		// https://github.com/intel/xpumanager/blob/master/core/src/topology/topology.cpp#L465-L466
+		const bool hasSubdevices = true;
+
+		fabric *f = device.dev->getFabric();
+		if (f != nullptr) {
+			std::vector<portInfo> portInfoList;
+			const auto fabricResult = f->getFabricPorts(device.zesDeviceHdl, portInfoList);
+
+			if (fabricResult == ZE_RESULT_SUCCESS) {
+				// Group ports by subdevice/tile
+				for (const auto &pi : portInfoList) {
+					if (pi.portProps.onSubdevice) {
+						portsByTile[pi.portProps.subdeviceId].push_back(pi);
+					} else {
+						portsByTile[0].push_back(pi);
+					}
+				}
+			}
+		}
+
+		deviceHasSubdevices[device.index] = hasSubdevices;
+
+		// If no fabric ports or fabric not available, add device with single tile
+		if (portsByTile.empty()) {
+			TileInfo tile{
+				.deviceId = static_cast<int>(device.index), .tileId = 0, .cpuAffinity = cpuAffinity, .ports = {}};
+			allTiles.push_back(tile);
+			deviceHeaders.push_back(std::format("GPU {}/0", device.index));
+		} else {
+			// Create tile entries with fabric port information
+			for (const auto &[tileId, ports] : portsByTile) {
+				TileInfo tile{.deviceId = static_cast<int>(device.index),
+							  .tileId = static_cast<int>(tileId),
+							  .cpuAffinity = cpuAffinity,
+							  .ports = ports};
+				allTiles.push_back(tile);
+				deviceHeaders.push_back(std::format("GPU {}/{}", device.index, tileId));
+			}
+		}
+	}
+
+	// Build topology list (for JSON) and matrix (for text display)
+	const auto tileCount = allTiles.size();
+	std::vector<nlohmann::ordered_json> topoList;
+	std::vector<nlohmann::ordered_json> matrixData;
+
+	for (const auto row : std::views::iota(size_t{0}, tileCount)) {
+		nlohmann::ordered_json rowData;
+		rowData["tile"] = deviceHeaders[row];
+		rowData["cpu_affinity"] = allTiles[row].cpuAffinity;
+
+		std::vector<std::string> connections;
+		for (const auto col : std::views::iota(size_t{0}, tileCount)) {
+			std::string linkType;
+			if (row == col) {
+				linkType = "S";
+			} else {
+				linkType = determineLinkType(allTiles[row], allTiles[col]);
+			}
+			connections.push_back(linkType);
+
+			// Add to flat topology list for JSON output
+			nlohmann::ordered_json topoEntry;
+			topoEntry["link_type"] = linkType;
+			topoEntry["local_cpu_affinity"] = allTiles[row].cpuAffinity;
+			topoEntry["local_device_id"] = allTiles[row].deviceId;
+			topoEntry["local_numa_index"] = 0; // Would need proper NUMA detection
+			topoEntry["local_on_subdevice"] = deviceHasSubdevices[allTiles[row].deviceId];
+			topoEntry["local_subdevice_id"] = allTiles[row].tileId;
+			topoEntry["max_bit_rate"] = -1; // Would need to calculate from port info
+			topoEntry["remote_device_id"] = allTiles[col].deviceId;
+			topoEntry["remote_subdevice_id"] = allTiles[col].tileId;
+			topoList.push_back(topoEntry);
+		}
+		rowData["connections"] = connections;
+		matrixData.push_back(rowData);
+	}
+
+	// Build final JSON structure - use old format for compatibility
+	(*jsonObj)["topo_list"] = topoList;
+
+	// Store matrix data for text printer
+	(*jsonObj)["headers"] = deviceHeaders;
+	(*jsonObj)["matrix"] = matrixData;
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Determines the link type between two GPU tiles
+ * @ingroup topology_matrix
+ *
+ * Analyzes the connectivity between two tiles by examining fabric ports,
+ * device topology, and CPU affinity. Uses a hierarchical decision process
+ * to classify the connection type.
+ *
+ * Algorithm:
+ * 1. Check if same device but different tiles → MDF
+ * 2. Examine fabric ports for Xe Link connectivity:
+ *    - Healthy ports with remote fabric ID indicate Xe Link
+ *    - Calculate max lane width from healthy ports
+ * 3. Classify Xe Link as direct (XL[n]) or indirect (XL*)
+ * 4. For PCIe connections, compare CPU affinity:
+ *    - Same affinity → NODE (within NUMA node)
+ *    - Different affinity → SYS (across NUMA nodes)
+ *
+ * @param[in] tile1 First tile information. Contains:
+ *                  - deviceId: Device index
+ *                  - tileId: Tile/subdevice index within device
+ *                  - cpuAffinity: CPU list string (e.g., "0-31")
+ *                  - ports: Vector of fabric port information
+ * @param[in] tile2 Second tile information. Same structure as tile1.
+ *
+ * @return std::string Link type symbol:
+ *         - "MDF": Multi-Die Fabric Interface (same device, different tiles)
+ *         - "XL[n]": Direct Xe Link with n lanes (e.g., "XL4", "XL8")
+ *         - "XL*": Indirect Xe Link through MDF
+ *         - "NODE": PCIe within same NUMA node
+ *         - "SYS": PCIe across NUMA nodes
+ *
+ * @pre tile1 and tile2 must contain valid device and tile IDs
+ * @pre ports vector in tile1 should contain fabric port data if available
+ *
+ * @note Lane width is determined by maxRxSpeed.width of healthy fabric ports
+ * @note CPU affinity comparison is simplified - full NUMA parsing would be more accurate
+ * @note This is a const method as it only reads tile information
+ *
+ * @see buildTopologyMatrix() for usage context
+ * @see TileInfo structure definition
+ * @see ZES_FABRIC_PORT_STATUS_HEALTHY for port status values
+ */
+std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const
+{
+	// Same device, different tiles - MDF (Multi-Die Fabric)
+	if (tile1.deviceId == tile2.deviceId && tile1.tileId != tile2.tileId) {
+		return "MDF";
+	}
+
+	// Check for direct Xe Link connection by examining fabric ports
+	const bool hasXeLink = std::ranges::any_of(tile1.ports, [](const auto &port) {
+		return port.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY && port.portState.remotePortId.fabricId != 0;
+	});
+
+	// Find max lanes
+	auto healthyPorts = tile1.ports | std::views::filter([](const auto &port) {
+							return port.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY;
+						});
+
+	int maxLanes = 0;
+	if (!std::ranges::empty(healthyPorts)) {
+		auto laneWidths =
+			healthyPorts | std::views::transform([](const auto &port) { return port.portProps.maxRxSpeed.width; });
+		maxLanes = std::ranges::max(laneWidths);
+	}
+
+	if (hasXeLink && maxLanes > 0) {
+		return std::format("XL{}", maxLanes);
+	}
+
+	// Check if connection is through Xe Link + MDF (indirect)
+	if (hasXeLink) {
+		return "XL*";
+	}
+
+	// PCIe connections - check if same NUMA node
+	// Simplified: would need to parse CPU affinity to determine NUMA
+	if (tile1.cpuAffinity == tile2.cpuAffinity) {
+		return "NODE";
+	}
+
+	return "SYS";
+}
+
+/**
  * @brief Executes the topology command with parsed command line arguments
+ * @ingroup topology_commands
  *
  * This is the main entry point for the topology command. It processes command line
  * arguments and dispatches to the appropriate subcommand handler (device query,
@@ -324,7 +691,7 @@ int cmdTopology::run(arg_struct *args)
 {
 	TRACING();
 
-	// Store args for commands that need it
+	// Store args for matrix command
 	currentArgs = args;
 
 	std::vector<devInfo> deviceList;
