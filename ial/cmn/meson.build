@@ -26,11 +26,21 @@ ial_cmn_sources = files(
 ial_cmn_inc = include_directories('.')
 
 # Platform-specific dependencies
-ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep]
+# Mark hwloc as system dependency to suppress warnings
+hwloc_dep = dependency('hwloc', required: true, method: 'pkg-config', include_type: 'system')
+ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep, hwloc_dep]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif
 
+# Windows-specific compiler flags
+ial_cmn_cpp_args = []
+if is_windows
+  ial_cmn_cpp_args += [
+    '/wd4100',  # Disable C4100: unreferenced parameter (from hwloc headers)
+    '-D_CRT_SECURE_NO_WARNINGS',  # Disable CRT security warnings
+  ]
+endif
 
 # Common commands static library
 ial_cmn_lib = static_library('ial_cmn',
@@ -44,6 +54,7 @@ ial_cmn_lib = static_library('ial_cmn',
     include_directories('../../hal/amc'),
   ],
   dependencies : ial_cmn_deps,
+  cpp_args : ial_cmn_cpp_args,
   install : false
 )
 

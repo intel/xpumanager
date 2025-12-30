@@ -27,6 +27,66 @@
 #include "printer.h"
 #include <assert.h>
 #include <format>
+#include <algorithm>
+#include <ranges>
+#include <concepts>
+#include <optional>
+#include <hwloc.h>
+
+namespace {
+constexpr int MATRIX_TILE_COL_WIDTH = 9;
+constexpr int MATRIX_CONNECTION_COL_WIDTH = 7;
+constexpr int MATRIX_AFFINITY_COL_WIDTH = 15;
+
+/**
+ * @brief CPU information structure for parsed /proc/cpuinfo data
+ */
+struct CpuInfo
+{
+	std::string model;
+	int family = 0;
+	int modelNumber = 0;
+	int stepping = 0;
+
+	auto operator<=>(const CpuInfo &) const = default;
+};
+
+/**
+ * @brief Safely convert string to integer with error handling
+ * @param[in] str String to convert
+ * @return Optional integer value, empty if conversion fails
+ */
+template <std::integral T = int>
+	requires std::is_same_v<T, int>
+static std::optional<T> safeStoi(const std::string &str)
+{
+	if (str.empty())
+		return std::nullopt;
+	try {
+		return std::stoi(str);
+	} catch (const std::exception &) {
+		return std::nullopt;
+	}
+}
+
+/**
+ * @brief Safely convert string to unsigned 64-bit integer with error handling
+ * @param[in] str String to convert
+ * @return Optional uint64_t value, empty if conversion fails
+ */
+template <std::unsigned_integral T = uint64_t>
+	requires std::is_same_v<T, uint64_t>
+static std::optional<T> safeStoul(const std::string &str)
+{
+	if (str.empty())
+		return std::nullopt;
+	try {
+		return std::stoull(str);
+	} catch (const std::exception &) {
+		return std::nullopt;
+	}
+}
+} // namespace
 
 /**
  * @defgroup topology_commands Topology Commands
@@ -128,23 +188,22 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		const auto &matrix = (*jsonObj)["matrix"];
 
 		// Print header row
-		PRINT("%9s", " ");
+		PRINT("%*s", MATRIX_TILE_COL_WIDTH, " ");
 		for (const auto &header : headers) {
-			PRINT("|%-7s", header.get<std::string>().c_str());
+			PRINT("|%-*s", MATRIX_CONNECTION_COL_WIDTH, header.get<std::string>().c_str());
 		}
-		PRINT("|%-15s\n", "CPU Affinity");
+		PRINT("|%-*s\n", MATRIX_AFFINITY_COL_WIDTH, "CPU Affinity");
 
-		// Print matrix rows
 		for (const auto &row : matrix) {
 			const auto tileName = row["tile"].get<std::string>();
-			PRINT("%-9s", tileName.c_str());
+			PRINT("%-*s", MATRIX_TILE_COL_WIDTH, tileName.c_str());
 
 			for (const auto &conn : row["connections"]) {
-				PRINT("|%-7s", conn.get<std::string>().c_str());
+				PRINT("|%-*s", MATRIX_CONNECTION_COL_WIDTH, conn.get<std::string>().c_str());
 			}
 
 			const auto affinity = row["cpu_affinity"].get<std::string>();
-			PRINT("|%-15s\n", affinity.c_str());
+			PRINT("|%-*s\n", MATRIX_AFFINITY_COL_WIDTH, affinity.c_str());
 		}
 		return;
 	}
@@ -285,7 +344,7 @@ ze_result_t cmdTopology::showTopology(devInfo *d, TopologyInfo *info)
  * This function creates an XML file containing comprehensive system topology
  * information including GPU devices, CPU nodes, interconnect details, and
  * NUMA relationships. The generated file can be used for system analysis
- * and topology visualization tools.
+ * and topology visualization tools. Reads topology directly from sysfs.
  *
  * @param[in] filename Path to the output XML file. Must not be empty.
  *                     Can be absolute or relative path. The file will be created
@@ -298,9 +357,10 @@ ze_result_t cmdTopology::showTopology(devInfo *d, TopologyInfo *info)
  * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT  filename is empty string
  * @retval ZE_RESULT_ERROR_UNINITIALIZED     currentArgs is nullptr (internal error)
  *
- * @note Currently prints placeholder message. Actual XML topology generation is TODO.
- * @note Output is printed directly to stdout
+ * @note Output is written to an xml file via the `-f {filename}` flag
  * @note Requires currentArgs to be set
+ *
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
  */
 ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 {
@@ -313,106 +373,79 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 
 	if (currentArgs == nullptr) {
 		ERR("Internal error: args not available\n");
-		return ZE_RESULT_ERROR_UNINITIALIZED;
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// TODO: Implement actual topology file generation
+	// Initialize hwloc topology
+	hwloc_topology_t topology;
+	if (hwloc_topology_init(&topology) != 0) {
+		ERR("Failed to initialize hwloc topology\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Enable PCI device discovery (bridges, GPUs, NICs, storage, etc.)
+	// Must be called before hwloc_topology_load()
+	if (hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL) != 0) {
+		ERR("Failed to set IO types filter\n");
+		hwloc_topology_destroy(topology);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Also enable all types to ensure we get memory modules and other misc objects
+	if (hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL) != 0) {
+		ERR("Failed to set all types filter\n");
+		hwloc_topology_destroy(topology);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Load the topology
+	if (hwloc_topology_load(topology) != 0) {
+		ERR("Failed to load hwloc topology\n");
+		hwloc_topology_destroy(topology);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Get GPU devices and add them to topology
+	std::vector<devInfo> deviceList;
+	const auto findResult = currentArgs->sm.findDevice("", &deviceList);
+
+	if (findResult == ZE_RESULT_SUCCESS && !deviceList.empty()) {
+		hwloc_obj_t root = hwloc_get_root_obj(topology);
+		for (const auto &device : deviceList) {
+			const auto bdfStr = device.dev->getBDFStr();
+			const auto cpuAffinity = device.dev->getCPUList();
+			const std::string deviceName = std::format("Intel GPU Device {}", device.index);
+
+			// Add GPU as misc object with metadata
+			hwloc_obj_t gpu = hwloc_topology_insert_misc_object(topology, root, deviceName.c_str());
+			if (gpu) {
+				hwloc_obj_add_info(gpu, "Type", "GPU");
+				hwloc_obj_add_info(gpu, "PCIBusID", bdfStr.c_str());
+				hwloc_obj_add_info(gpu, "CPUAffinity", cpuAffinity.c_str());
+				hwloc_obj_add_info(gpu, "Vendor", "Intel Corporation");
+			}
+		}
+	}
+
+	// Export topology to XML using hwloc's native export function
+	if (hwloc_topology_export_xml(topology, filename.c_str(), 0) != 0) {
+		ERR("Failed to export topology to file '%s'\n", filename.c_str());
+		hwloc_topology_destroy(topology);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Clean up hwloc topology
+	hwloc_topology_destroy(topology);
+
 	const std::string message = std::format("Topology exported to file: {}", filename);
 
 	if (useJson) {
-		auto jsonObj = nlohmann::ordered_json{{"filename", filename}, {"message", message}};
+		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+		(*jsonObj)["message"] = message;
 		auto printer = std::make_unique<JsonPrinter>();
-		printer->print(&jsonObj);
+		printer->print(jsonObj.get());
 	} else {
 		PRINT("%s\n", message.c_str());
-	}
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Displays system topology matrix showing device connectivity
- * @ingroup topology_matrix
- *
- * Generates and displays a comprehensive topology matrix showing connectivity
- * between all GPU tiles in the system. Supports both JSON and formatted text output.
- * The matrix provides critical information for workload placement and multi-GPU
- * optimization.
- *
- * Output Formats:
- * - JSON: Flat topo_list array for backward compatibility with old xpumanager format
- * - Text: Formatted table with tile headers, connection symbols, and CPU affinity
- *
- * Connection symbols indicate link types:
- * - S: Self (same tile)
- * - XL[N]: Xe Link with N lanes (e.g., XL4, XL8)
- * - XL*: Xe Link + MDF (not direct connection)
- * - SYS: PCIe between NUMA nodes
- * - NODE: PCIe within NUMA node
- * - MDF: Multi-Die Fabric Interface
- *
- * @param[in] useJson Output format selector:
- *                    - true: Print as JSON with topo_list array (old format compatibility)
- *                           Each entry contains: link_type, local/remote device/subdevice IDs,
- *                           CPU affinity, NUMA index, max_bit_rate
- *                    - false: Print as formatted text table using TopologyTextPrinter
- *                             Shows NxN matrix with headers and CPU affinity column
- *
- * @retval ZE_RESULT_SUCCESS             Matrix successfully generated and displayed
- * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs is nullptr (internal state error)
- * @retval ZE_RESULT_ERROR_DEVICE_LOST   No devices found in the system
- * @retval Other                         Error from buildTopologyMatrix()
- *
- * @pre currentArgs must be set by run() method before calling
- * @pre System must have at least one GPU device available
- *
- * @post Output is printed directly to stdout via appropriate printer
- * @post No internal state is modified (const behavior despite non-const signature)
- *
- * @note This method creates and owns the jsonObj internally for encapsulation
- * @note For JSON output, only topo_list is included to maintain old format compatibility
- * @note For text output, full matrix data (headers, matrix, error fields) is used
- * @note Text output uses TopologyTextPrinter which formats as aligned table
- * @note The matrix is NxN where N = total tiles across all devices
- * @note Helps identify optimal device placement for:
- *       - Multi-GPU workloads
- *       - Peer-to-peer transfers
- *       - NUMA-aware memory allocation
- *       - Cross-device communication patterns
- *
- * @see buildTopologyMatrix() for matrix data generation
- * @see TopologyTextPrinter::print() for text formatting
- * @see determineLinkType() for link classification algorithm
- */
-ze_result_t cmdTopology::showMatrix(bool useJson)
-{
-	TRACING();
-
-	if (currentArgs == nullptr) {
-		ERR("Internal error: args not available\n");
-		return ZE_RESULT_ERROR_UNINITIALIZED;
-	}
-
-	// Build the matrix data
-	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
-	const auto result = buildTopologyMatrix(currentArgs, jsonObj.get());
-
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	if (useJson) {
-		// For JSON output, only include topo_list (old format)
-		nlohmann::ordered_json filteredJson;
-		if (jsonObj->contains("topo_list")) {
-			filteredJson["topo_list"] = (*jsonObj)["topo_list"];
-		}
-		auto jsonPrinter = std::make_unique<JsonPrinter>();
-		jsonPrinter->print(&filteredJson);
-	} else {
-		// For text output, use TopologyTextPrinter with full matrix data
-		auto textPrinter = std::make_unique<TopologyTextPrinter>();
-		textPrinter->print(jsonObj.get());
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -463,6 +496,7 @@ ze_result_t cmdTopology::showMatrix(bool useJson)
  */
 ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj)
 {
+	TRACING();
 	// Get all devices from system manager
 	std::vector<devInfo> deviceList;
 	const auto result = args->sm.findDevice("", &deviceList);
@@ -615,6 +649,7 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
  */
 std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const
 {
+	TRACING();
 	// Same device, different tiles - MDF (Multi-Die Fabric)
 	if (tile1.deviceId == tile2.deviceId && tile1.tileId != tile2.tileId) {
 		return "MDF";
@@ -653,6 +688,69 @@ std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo
 	}
 
 	return "SYS";
+}
+
+/**
+ * @brief Displays the topology connectivity matrix for all GPU devices
+ * @ingroup topology_matrix
+ *
+ * Generates and displays a comprehensive topology matrix showing connectivity
+ * between all GPU tiles in the system. The matrix shows link types between
+ * each pair of tiles, including Xe Link, MDF, and PCIe connections.
+ *
+ * Output format depends on useJson parameter:
+ * - JSON mode: Outputs structured JSON with topo_list and matrix arrays
+ * - Text mode: Displays formatted table with headers and connection symbols
+ *
+ * @param[in] useJson If true, output JSON format; if false, output text table
+ *
+ * @retval ZE_RESULT_SUCCESS           Matrix displayed successfully
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found in system
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs not set (run() must be called first)
+ *
+ * @pre currentArgs must be set by run() before calling this function
+ * @post Matrix is printed to stdout via appropriate printer
+ *
+ * @note Uses buildTopologyMatrix() to generate the topology data
+ * @note Connection symbols: S (self), XL[n] (Xe Link), MDF, NODE, SYS
+ * @note Requires at least one device in the system
+ *
+ * @see buildTopologyMatrix() for matrix generation algorithm
+ * @see determineLinkType() for link type classification
+ */
+ze_result_t cmdTopology::showMatrix(bool useJson)
+{
+	TRACING();
+
+	if (currentArgs == nullptr) {
+		ERR("Internal error: currentArgs not initialized\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	nlohmann::ordered_json jsonObj;
+	const auto result = buildTopologyMatrix(currentArgs, &jsonObj);
+
+	if (result != ZE_RESULT_SUCCESS) {
+		if (useJson) {
+			auto jsonPrinter = std::make_unique<JsonPrinter>();
+			jsonPrinter->print(&jsonObj);
+		} else {
+			auto textPrinter = std::make_unique<TopologyTextPrinter>();
+			textPrinter->print(&jsonObj);
+		}
+		return result;
+	}
+
+	// Output the matrix
+	if (useJson) {
+		auto jsonPrinter = std::make_unique<JsonPrinter>();
+		jsonPrinter->print(&jsonObj);
+	} else {
+		auto textPrinter = std::make_unique<TopologyTextPrinter>();
+		textPrinter->print(&jsonObj);
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -722,6 +820,7 @@ int cmdTopology::run(arg_struct *args)
 		case 'f':
 			topologyCmds[topologyCmdType::TOPOLOGY_FILE].val = optarg;
 			topologyCmds[topologyCmdType::TOPOLOGY_FILE].enabled = true;
+			xmlFilename = optarg; // Store filename for use in generateFile()
 			break;
 		case 'm':
 			topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled = true;
