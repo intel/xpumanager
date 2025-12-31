@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "xpu-exporter.fullname" . }}
+  name: {{ include "xpumd.fullname" . }}
   labels:
-    {{- include "xpu-exporter.labels" . | nindent 4 }}
+    {{- include "xpumd.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -13,5 +13,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "xpu-exporter.selectorLabels" . | nindent 4 }}
+    {{- include "xpumd.selectorLabels" . | nindent 4 }}
 {{- end }}

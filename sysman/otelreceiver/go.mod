@@ -1,9 +1,9 @@
-module github.com/intel/xpu-exporter/sysman/otelreceiver
+module github.com/intel/xpumanager/sysman/otelreceiver
 
 go 1.25.0
 
 require (
-	github.com/intel/xpu-exporter v0.0.0
+	github.com/intel/xpumanager v0.0.0
 	go.opentelemetry.io/collector/component v1.48.0
 	go.opentelemetry.io/collector/consumer v1.48.0
 	go.opentelemetry.io/collector/receiver v1.48.0
@@ -25,4 +25,4 @@ require (
 	go.uber.org/zap v1.27.1 // indirect
 )
 
-replace github.com/intel/xpu-exporter => ../..
+replace github.com/intel/xpumanager => ../..

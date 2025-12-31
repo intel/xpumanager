@@ -1,7 +1,7 @@
 # @schema additionalProperties:false
 image:
   # -- Image repository
-  repository: ghcr.io/marquiz/xpu-exporter/xpu-exporter
+  repository: ghcr.io/marquiz/xpu-exporter/xpumd
   # @schema enum: [Always, IfNotPresent, Never]
   # -- Image pull policy
   pullPolicy: Always
@@ -79,38 +79,38 @@ affinity: {}
 config:
   # -- Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)
   # @default --  
-  # @section -- XPU Exporter Configuration
+  # @section -- XPUM Daemon Configuration
   receivers:
     # @schema additionalProperties:false
     # -- Configuration for the custom Level-Zero Sysman receiver.
     # @default --  
-    # @section -- XPU Exporter Configuration
+    # @section -- XPUM Daemon Configuration
     sysman:
       # @schema enum: [debug, info, warn, error]
       # -- Log level (debug, info, warn, error)
-      # @section -- XPU Exporter Configuration
+      # @section -- XPUM Daemon Configuration
       log_level: info
       # -- Metrics data collection interval. Must be at least twice the sample_interval.
-      # @section -- XPU Exporter Configuration
+      # @section -- XPUM Daemon Configuration
       collect_interval: 30s
       # -- Sample interval for the high-frequency metrics.
-      # @section -- XPU Exporter Configuration
+      # @section -- XPUM Daemon Configuration
       sample_interval: 1s
 
   # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
-  # @section -- XPU Exporter Configuration
+  # @section -- XPUM Daemon Configuration
   exporters: {}
 
   # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
-  # @section -- XPU Exporter Configuration
+  # @section -- XPUM Daemon Configuration
   processors: {}
 
   # -- Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)
-  # @section -- XPU Exporter Configuration
+  # @section -- XPUM Daemon Configuration
   extensions: {}
 
   # -- Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)
-  # @section -- XPU Exporter Configuration
+  # @section -- XPUM Daemon Configuration
   service:
     pipelines:
       metrics:

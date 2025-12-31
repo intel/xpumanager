@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
-	"github.com/intel/xpu-exporter/sysman"
+	"github.com/intel/xpumanager/sysman"
 )
 
 func newSysmanReceiver(settings receiver.Settings, cfg *Config, consumer consumer.Metrics) (receiver.Metrics, error) {

@@ -1,4 +1,4 @@
-module github.com/intel/xpu-exporter/tools
+module github.com/intel/xpumanager/tools
 
 go 1.25.0
 
