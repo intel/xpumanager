@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,8 +30,26 @@
 #include "pldm_fru.h"
 #include "pldm_fwpackage.h"
 #include "pldm_fwupdate.h"
+#include "pldm_platform.h"
+#include "pldm_pdr_manager.h"
 #include <i2c_interface.h>
 #include <mutex>
+
+// Transfer Operation Flags
+enum pldmTransferOpFlag
+{
+	PLDM_GET_FIRSTPART = 0x01,
+	PLDM_GET_NEXTPART = 0x00
+};
+
+// Transfer Flags
+enum pldmTransferFlag
+{
+	PLDM_START = 0x01,
+	PLDM_MIDDLE = 0x02,
+	PLDM_END = 0x04,
+	PLDM_START_AND_END = 0x05
+};
 
 #pragma pack(push, 1)
 struct pldmHdr
@@ -133,6 +151,7 @@ typedef struct i2cdata
 class pldm : public mctp
 {
 private:
+	PdrManager mPdrManager;
 	struct pldmResponseData mPldmRespInfo;
 	struct pldmVersionInfo versionInfo[8];
 	i2cdataPldmInfo *mI2cPldmRead, *mI2cPldmWrite;
@@ -157,6 +176,14 @@ private:
 	uint16_t mFruCurrentDataLength;
 	bool mFruTableInitialized;
 
+	// PLDM Platform datastructures
+	struct pdrRepositoryInfoResp pfPdrRepoInfo;
+	struct pdrReqPayload pfPdrReq;
+	struct pdrRespPayload pfPdrResp;
+	struct pldmGetSensorReadingReq pfSensorReadingReq;
+	struct pldmGetSensorReadingResp pfSensorReadingResp;
+	sensorReadingValue mSensorReading;
+	std::vector<pldmSensorInfo> mSensorInfoList;
 	// pldm Base APIs
 	int pldminit();
 	void cleanup();
@@ -227,8 +254,28 @@ private:
 						  uint8_t fieldLength);
 	void clearFruTableData();
 
+	// PLDM Platform APIs
+	uint8_t pfMonCtrlInitialize();
+	uint8_t pfMonCtrlCmd(uint8_t cmd, uint8_t size);
+	uint8_t processPlatformResponse(uint8_t cmd, uint8_t id);
+	uint8_t pfGetPdrRepositoryInfo();
+	uint8_t pfFillPayload(uint8_t cmd, uint8_t size);
+	uint8_t pfPdrRepoRespPayload();
+	uint8_t pfPdrRespPayload();
+	uint8_t pfSensorReadingRespPayload();
+	uint8_t pfGetTotalPdrs();
+	uint8_t pfGetSensorValuesByUnit(sensorUnits unit);
+	uint8_t pfGetSensorValuesById(uint16_t sensorId);
+	uint8_t pfGetSensorValue(const pldmNumericSensorValuePdr *sensor);
+	void pfBuildPdrSensorCache() { mPdrManager.buildSensorCache(); }
+
 public:
-	pldm(const std::string &devpath, int cardnum) : mctp(devpath), mCardNum(cardnum) { pldminit(); }
+	pldm(const std::string &devpath, int cardnum)
+		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
+		  mI2cMultiResp(false), mCardNum(cardnum), mFruTableInitialized(false)
+	{
+		pldminit();
+	}
 	uint8_t getFruSerialNum(char *serialNumber, size_t *bufferSize);
 	uint8_t getAmcVersion(char *version, size_t *bufferSize);
 	~pldm() { cleanup(); }
@@ -236,6 +283,8 @@ public:
 	// pldm Base APIs
 	int initialize();
 	int fwupd(const char *pkgFilePath);
+	uint8_t getSensorInfo(uint16_t sensorId);
+	std::vector<pldmSensorInfo> &getSensorInfoList() { return mSensorInfoList; }
 	uint8_t oemVrsyncCmd(uint8_t cmd);
 	int fwupdProgress() { return mProgPercent; }
 	int mProgPercent;

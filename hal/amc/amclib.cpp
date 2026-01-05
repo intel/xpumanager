@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -231,7 +231,7 @@ int amclib::amcGetIndex(const std::string &gpuBDF)
 	return -1;
 }
 
-/*
+/**
  * @brief Get AMC card information by GPU BDF
  *
  * Retrieves the serial number and AMC version for the AMC card associated
@@ -274,6 +274,49 @@ int amclib::amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::s
 		}
 	}
 	return -1;
+}
+
+/**
+ * @brief Get sensor information by sensor ID for a specific AMC card
+ *
+ * Retrieves sensor information, including sensor ID and reading,
+ * for the specified sensor ID on the given AMC card.
+ *
+ * @param[in] cardIndex Index of the AMC card to query
+ * @param[in] sensorId Sensor ID to retrieve information for
+ * @param[out] sensorInfo Reference to vector to receive sensor information
+ *
+ * @return Status of the sensor info retrieval operation
+ * @retval 0 Sensor information retrieved successfully
+ * @retval -1 Operation failed due to invalid card index or sensor ID
+ *
+ * @note The function populates the provided vector with matching sensor info
+ *       If multiple sensors share the same ID, all will be included.
+ */
+int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::vector<amcSensorInfo> &sensorInfo)
+{
+	TRACING();
+
+	if (!pldmobj || !pldmobj[cardIndex]) {
+		ERR("PLDM object not initialized for card index: %d\n", cardIndex);
+		return -1;
+	}
+
+	uint8_t ret = pldmobj[cardIndex]->getSensorInfo(sensorId);
+	if (ret != PLDM_SUCCESS) {
+		ERR("Failed to get sensor info for sensor ID %d on card index %d\n", sensorId, cardIndex);
+		return -1;
+	}
+	std::vector<pldmSensorInfo> &sensorInfoList = pldmobj[cardIndex]->getSensorInfoList();
+	for (const auto &sensor : sensorInfoList) {
+		if (sensor.sensorId == sensorId) {
+			amcSensorInfo info;
+			info.sensorId = sensor.sensorId;
+			info.sensorReading = sensor.reading;
+			sensorInfo.push_back(info);
+		}
+	}
+	return 0;
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -48,6 +48,12 @@
 uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
 {
 	TRACING();
+
+	if (mI2cPldmRead == NULL || mI2cPldmWrite == NULL) {
+		ERR("PLDM FRU : PLDM buffers not initialized\n");
+		return PLDM_ERROR;
+	}
+
 	uint8_t pldmCmdLen = size;
 	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
 	uint8_t *rptr = (uint8_t *)mI2cPldmRead;

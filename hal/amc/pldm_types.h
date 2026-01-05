@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025-2026 Intel Corporation
+ * Copyright © 2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,44 +22,45 @@
  *
  */
 
-#ifndef _CMD_AMCSENSOR_H
-#define _CMD_AMCSENSOR_H
+#ifndef __PLDM_TYPES_H
+#define __PLDM_TYPES_H
 
-#include "cmds.h"
-#include "printer.h"
-#include <os.h>
+#include <stdint.h>
 
-enum amcCmdType
+typedef uint8_t bool8_t;
+typedef float real32_t;
+
+// PLDM timestamp structure (104-bit timestamp from PLDM spec)
+#pragma pack(push, 1)
+typedef struct
 {
-	AMCHELP,
-	AMCJSON,
-	AMCINFO,
-	AMCSENSOR,
-	AMCDEVICE,
-};
+	uint8_t timeResolution : 4; /* byte 12 bit 3:0 time resolution */
+	uint8_t utcResolution : 4;	/* byte 12 bit 7:4 UTC resolution */
+	uint16_t year;				/* bytes 11:10 year */
+	uint8_t month;				/* byte 9 month */
+	uint8_t day;				/* byte 8 day */
+	uint8_t hour;				/* byte 7 hour */
+	uint8_t minute;				/* byte 6 minute */
+	uint8_t second;				/* byte 5 second */
+	uint8_t microsecond[3];		/* 24-bit bytes 4:2 microsecond */
+	int16_t utcOffset;			/* bytes 1:0 offset in minutes signed */
+} timestamp104_t;
+#pragma pack(pop)
 
-class AmcTextPrinter : public TextPrinter
+typedef union
 {
-public:
-	AmcTextPrinter();
-	void print(nlohmann::ordered_json *jsonObj) override;
-	void printDeviceInfo(nlohmann::ordered_json *jsonObj);
-};
+	uint8_t byte;
+	struct
+	{
+		uint8_t bit0 : 1;
+		uint8_t bit1 : 1;
+		uint8_t bit2 : 1;
+		uint8_t bit3 : 1;
+		uint8_t bit4 : 1;
+		uint8_t bit5 : 1;
+		uint8_t bit6 : 1;
+		uint8_t bit7 : 1;
+	} bits;
+} bitfield8_t;
 
-class cmdAmcSensor : public cmds
-{
-public:
-	cmdAmcSensor() { STRCPY_S(name, MAX_PATH, "amcsensor"); };
-	~cmdAmcSensor(){};
-	void help(HELP helpType = FULL_HELP);
-	int run(arg_struct *args);
-};
-
-struct amcCmdStruct
-{
-	option opt;
-	bool enabled;
-	std::string val;
-};
-
-#endif
+#endif /* __PLDM_TYPES_H */

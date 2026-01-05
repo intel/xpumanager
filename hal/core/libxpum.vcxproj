@@ -173,6 +173,9 @@
     <ClInclude Include="..\amc\pldm_fwpackage.h" />
     <ClInclude Include="..\amc\pldm_fwupdate.h" />
     <ClInclude Include="..\amc\redfish.h" />
+    <ClInclude Include="..\amc\pldm_platform.h" />
+    <ClInclude Include="..\amc\pldm_pdr_manager.h" />
+    <ClInclude Include="..\amc\pldm_types.h" />
     <ClInclude Include="..\fwupd\amcupd.h" />
     <ClInclude Include="..\fwupd\fwupd.h" />
     <ClInclude Include="..\fwupd\gscupd.h" />
@@ -230,6 +233,8 @@
     <ClCompile Include="..\amc\pldm_init.cpp" />
     <ClCompile Include="..\amc\pldm_protocol.cpp" />
     <ClCompile Include="..\amc\redfish.cpp" />
+    <ClCompile Include="..\amc\pldm_platform.cpp" />
+    <ClCompile Include="..\amc\pldm_pdr_manager.cpp" />
     <ClCompile Include="..\fwupd\amcupd.cpp" />
     <ClCompile Include="..\fwupd\fwupd.cpp" />
     <ClCompile Include="..\fwupd\gscupd.cpp" />
