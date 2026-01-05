@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,27 +26,13 @@
 #define __PLDM_FRU_H
 
 #include <stdint.h>
-
+#include "pldm_types.h"
 #pragma once
 
 enum pldmFruCommandCode
 {
 	PLDM_GET_FRU_RECORD_TABLE_METADATA = 0x01,
 	PLDM_GET_FRU_RECORD_TABLE = 0x02
-};
-
-enum fruRequestTransferFlag
-{
-	PLDM_GET_FIRSTPART = 0x01,
-	PLDM_GET_NEXTPART = 0x00
-};
-
-enum fruResponseTransferFlag
-{
-	PLDM_START = 0x01,
-	PLDM_MIDDLE = 0x02,
-	PLDM_END = 0x04,
-	PLDM_START_AND_END = 0x05
 };
 
 // FRU Record data structure offsets
@@ -99,23 +85,6 @@ enum fruOemRecordFields
 // FRU Data Sizes
 #define FRU_DATA_MAX_LENGTH 255
 #define FRU_MAX_OTHER_INFO_RECORDS 10
-
-// PLDM timestamp structure (104-bit timestamp from PLDM spec)
-#pragma pack(push, 1)
-typedef struct
-{
-	uint8_t timeResolution : 4; /* byte 12 bit 3:0 time resolution */
-	uint8_t utcResolution : 4;	/* byte 12 bit 7:4 UTC resolution */
-	uint16_t year;				/* bytes 11:10 year */
-	uint8_t month;				/* byte 9 month */
-	uint8_t day;				/* byte 8 day */
-	uint8_t hour;				/* byte 7 hour */
-	uint8_t minute;				/* byte 6 minute */
-	uint8_t second;				/* byte 5 second */
-	uint8_t microsecond[3];		/* 24-bit bytes 4:2 microsecond */
-	int16_t utcOffset;			/* bytes 1:0 offset in minutes signed */
-} timestamp104_t;
-#pragma pack(pop)
 
 #pragma pack(push, 1)
 struct fruTableMetadata

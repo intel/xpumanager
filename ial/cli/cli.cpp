@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 		{createInstance<cmdAgentSet>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
-		{createInstance<cmdAmcSensor>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
+		{createInstance<cmdAmcSensor>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 	};
 
 	OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;

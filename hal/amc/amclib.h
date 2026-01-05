@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,6 +36,12 @@ enum oemVrsync
 	OEM_VR_SYNC_RESUME = 0x02
 };
 
+struct amcSensorInfo
+{
+	uint16_t sensorId;
+	double sensorReading;
+};
+
 class LIBXPUM_API amclib
 {
 private:
@@ -53,6 +59,7 @@ public:
 	int amcFirmwareProgress(uint32_t cardNum);
 	int amcGetIndex(const std::string &gpuBDF);
 	int amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::string &versionStr);
+	int amcGetSensorInfoBySensorId(int deviceIndex, uint16_t sensorId, std::vector<amcSensorInfo> &sensorInfo);
 	int oemVrsync(uint8_t cmd);
 	int amcGetSerialNumber(uint8_t card_num, char *serialNumber, size_t *bufferSize);
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
