@@ -15,7 +15,7 @@ Clone required repositories and build the exporter.
 ```bash
 git clone https://github.com/marquiz/xpu-exporter xpu-exporter
 cd xpu-exporter
-git clone https://github.com/marquiz/level-zero-go level-zero-go
+git clone https://github.com/intel/level-zero-go level-zero-go
 make build
 ```
 
