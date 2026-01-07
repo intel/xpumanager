@@ -528,8 +528,8 @@ ze_result_t gscupd::updateLateBinding(firmwareInfo *fwInfo)
 												 (uint8_t *)fwInfo->buffer.data(), fwInfo->buffer.size(),
 												 &lateBindingStatus);
 
-	if (ret) {
-		ERR("GSC late binding update failed on device. %d\n", ret);
+	if (ret || lateBindingStatus) {
+		ERR("GSC late binding update failed. Return Code: %d Late binding Status: %u\n", ret, lateBindingStatus);
 		return ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
 	}
 	return ZE_RESULT_SUCCESS;

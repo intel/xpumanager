@@ -1,6 +1,7 @@
 #include "fwupd.h"
 #include <fstream>
 #include <sys/stat.h>
+#include <thread>
 
 /**
  * @brief Reads firmware image content from a file
@@ -34,6 +35,42 @@ std::vector<char> fwupd::readImageContent(const char *filePath)
 }
 
 /**
+ * @brief query and prints the firmware update progress percentage
+ *
+ * This function fetches the firmware progress update from zesFirmwareGetFlashProgress
+ * and updates the screen with completed percentage of firmware flash
+ *
+ * @param flashData the pointer to structure containing firmware handle and mutex for syncronization
+ */
+static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
+{
+	bool loopContinue = true;
+	constexpr uint32_t sleepTimeInMillisec = 250;
+	uint32_t progressPercent = 0;
+	do {
+		progressPercent = 0;
+		ze_result_t result = zesFirmwareGetFlashProgress(flashData->firmwareHandle, &progressPercent);
+		if (result != ZE_RESULT_SUCCESS) {
+			break;
+		}
+		PRINT("\rFirmware Flash Progress: %d %%", progressPercent);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(sleepTimeInMillisec));
+
+		flashData->firmwareProgressMutex.lock();
+		loopContinue = !flashData->flashComplete;
+		flashData->firmwareProgressMutex.unlock();
+
+	} while (loopContinue);
+	progressPercent = 0;
+	ze_result_t result = zesFirmwareGetFlashProgress(flashData->firmwareHandle, &progressPercent);
+	if (result != ZE_RESULT_SUCCESS) {
+		return;
+	}
+	PRINT("\rFirmware Flash Progress: %d %%\n", progressPercent);
+}
+
+/**
  * @brief Updates firmware using the provided firmware information
  *
  * This function performs the actual firmware update operation by reading
@@ -50,11 +87,30 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 	// read image file
 	fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
 
+	// start progress thread
+	firmwareProgressInfo progressData = {};
+	progressData.flashComplete = false;
+	progressData.firmwareHandle = fwInfo->firmwareHandle;
+	std::thread progressThread(trackFirmwareFlashProgress, &progressData);
+
 	result = zesFirmwareFlash(fwInfo->firmwareHandle, fwInfo->buffer.data(), (uint32_t)fwInfo->buffer.size());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to flash firmware: 0x%X (%s)\n", result, l0_error_to_string(result));
+		// stop progress thread
+		progressData.firmwareProgressMutex.lock();
+		progressData.flashComplete = true;
+		progressData.firmwareProgressMutex.unlock();
+		progressThread.join();
+
 		return result;
 	}
+
+	// stop progress thread
+	progressData.firmwareProgressMutex.lock();
+	progressData.flashComplete = true;
+	progressData.firmwareProgressMutex.unlock();
+	progressThread.join();
+
 	DBG("Firmware flash successful.\n");
 	return ZE_RESULT_SUCCESS;
 };
