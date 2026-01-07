@@ -31,7 +31,7 @@
 #include <ranges>
 #include <concepts>
 #include <optional>
-#include <hwloc.h>
+#include <os.h>
 
 namespace {
 constexpr int MATRIX_TILE_COL_WIDTH = 9;
@@ -50,42 +50,6 @@ struct CpuInfo
 
 	auto operator<=>(const CpuInfo &) const = default;
 };
-
-/**
- * @brief Safely convert string to integer with error handling
- * @param[in] str String to convert
- * @return Optional integer value, empty if conversion fails
- */
-template <std::integral T = int>
-	requires std::is_same_v<T, int>
-static std::optional<T> safeStoi(const std::string &str)
-{
-	if (str.empty())
-		return std::nullopt;
-	try {
-		return std::stoi(str);
-	} catch (const std::exception &) {
-		return std::nullopt;
-	}
-}
-
-/**
- * @brief Safely convert string to unsigned 64-bit integer with error handling
- * @param[in] str String to convert
- * @return Optional uint64_t value, empty if conversion fails
- */
-template <std::unsigned_integral T = uint64_t>
-	requires std::is_same_v<T, uint64_t>
-static std::optional<T> safeStoul(const std::string &str)
-{
-	if (str.empty())
-		return std::nullopt;
-	try {
-		return std::stoull(str);
-	} catch (const std::exception &) {
-		return std::nullopt;
-	}
-}
 } // namespace
 
 /**
@@ -95,7 +59,7 @@ static std::optional<T> safeStoul(const std::string &str)
  * Provides commands to query device topology information including:
  * - CPU affinity and NUMA node relationships
  * - PCIe switch topology
- * - GPU interconnect connectivity (Xe Link, MDF)
+ * - GPU interconnect connectivity (MDF)
  * - Topology matrix visualization
  * - Topology export to XML files
  */
@@ -107,7 +71,7 @@ static std::optional<T> safeStoul(const std::string &str)
  *
  * Matrix generation examines fabric ports, PCIe topology, and CPU affinity
  * to determine connectivity types between all GPU tiles in the system.
- * Supports multiple link types: Xe Link, MDF, PCIe (NODE/SYS).
+ * Supports multiple link types: MDF, PCIe (NODE/SYS).
  */
 
 /**
@@ -272,13 +236,9 @@ void cmdTopology::help(HELP helpType)
 		helpCmd(HEADING, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
 	helpList.push_back(helpCmd(HEADING, "-m,--matrix                 Print the CPU/GPU topology matrix"));
 	helpList.push_back(helpCmd(SUB_HEADING, "S: Self"));
-	helpList.push_back(helpCmd(SUB_HEADING, "XL[laneCount]: Two tiles on the different cards are directly connected by "
-											"Xe Link.  Xe Link LAN count is also provided"));
-	helpList.push_back(helpCmd(SUB_HEADING, "XL*: Two tiles on the different cards are connected by Xe Link + MDF. "
-											"They are not directly connected by Xe Link"));
-	helpList.push_back(helpCmd(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes"));
-	helpList.push_back(helpCmd(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node"));
 	helpList.push_back(helpCmd(SUB_HEADING, "MDF: Connected with Multi-Die Fabric Interface"));
+	helpList.push_back(helpCmd(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node"));
+	helpList.push_back(helpCmd(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -376,66 +336,27 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// Initialize hwloc topology
-	hwloc_topology_t topology;
-	if (hwloc_topology_init(&topology) != 0) {
-		ERR("Failed to initialize hwloc topology\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// Enable PCI device discovery (bridges, GPUs, NICs, storage, etc.)
-	// Must be called before hwloc_topology_load()
-	if (hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL) != 0) {
-		ERR("Failed to set IO types filter\n");
-		hwloc_topology_destroy(topology);
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// Also enable all types to ensure we get memory modules and other misc objects
-	if (hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL) != 0) {
-		ERR("Failed to set all types filter\n");
-		hwloc_topology_destroy(topology);
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// Load the topology
-	if (hwloc_topology_load(topology) != 0) {
-		ERR("Failed to load hwloc topology\n");
-		hwloc_topology_destroy(topology);
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// Get GPU devices and add them to topology
+	// Get GPU devices for topology export
 	std::vector<devInfo> deviceList;
 	const auto findResult = currentArgs->sm.findDevice("", &deviceList);
 
+	std::vector<GpuDeviceInfo> gpuDevices;
 	if (findResult == ZE_RESULT_SUCCESS && !deviceList.empty()) {
-		hwloc_obj_t root = hwloc_get_root_obj(topology);
 		for (const auto &device : deviceList) {
-			const auto bdfStr = device.dev->getBDFStr();
-			const auto cpuAffinity = device.dev->getCPUList();
-			const std::string deviceName = std::format("Intel GPU Device {}", device.index);
-
-			// Add GPU as misc object with metadata
-			hwloc_obj_t gpu = hwloc_topology_insert_misc_object(topology, root, deviceName.c_str());
-			if (gpu) {
-				hwloc_obj_add_info(gpu, "Type", "GPU");
-				hwloc_obj_add_info(gpu, "PCIBusID", bdfStr.c_str());
-				hwloc_obj_add_info(gpu, "CPUAffinity", cpuAffinity.c_str());
-				hwloc_obj_add_info(gpu, "Vendor", "Intel Corporation");
-			}
+			GpuDeviceInfo gpuInfo;
+			gpuInfo.deviceIndex = device.index;
+			gpuInfo.bdfAddress = device.dev->getBDFStr();
+			gpuInfo.cpuAffinity = device.dev->getCPUList();
+			gpuDevices.push_back(gpuInfo);
 		}
 	}
 
-	// Export topology to XML using hwloc's native export function
-	if (hwloc_topology_export_xml(topology, filename.c_str(), 0) != 0) {
+	// Export topology to XML using OAL function (hwloc / linux only)
+	const int exportResult = EXPORT_TOPOLOGY_XML(filename, gpuDevices);
+	if (exportResult != 0) {
 		ERR("Failed to export topology to file '%s'\n", filename.c_str());
-		hwloc_topology_destroy(topology);
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
-
-	// Clean up hwloc topology
-	hwloc_topology_destroy(topology);
 
 	const std::string message = std::format("Topology exported to file: {}", filename);
 
@@ -456,9 +377,8 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
  * @ingroup topology_matrix
  *
  * Constructs a comprehensive topology matrix showing connectivity between all GPU tiles
- * in the system. Examines fabric ports, PCIe topology, and CPU affinity to determine
- * link types (Xe Link, MDF, PCIe). Generates both a flat topology list for JSON output
- * and a 2D matrix for text display.
+ * in the system. Examines PCIe topology and CPU affinity to determine link types (MDF, PCIe).
+ * Generates both a flat topology list for JSON output and a 2D matrix for text display.
  *
  * @param[in]  args    Pointer to argument structure containing system manager for device queries.
  *                     Must not be nullptr. The args->sm field must be valid.
@@ -478,17 +398,14 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
  * @pre jsonObj must point to valid nlohmann::ordered_json object
  *
  * @post On success, jsonObj contains complete topology matrix data
- * @post allTiles vector contains all tile information with fabric port details
+ * @post allTiles vector contains all tile information
  *
  * @note Link type determination:
  *       - "S": Self (same tile)
  *       - "MDF": Multi-Die Fabric (same device, different tiles)
- *       - "XL[N]": Direct Xe Link with N lanes
- *       - "XL*": Indirect Xe Link through MDF
  *       - "NODE": PCIe within same NUMA node
  *       - "SYS": PCIe across NUMA nodes
  * @note Matrix is NxN where N = total number of tiles across all devices
- * @note Fabric port information is queried via Level Zero Sysman API
  * @note CPU affinity determines NUMA node relationships
  *
  * @see determineLinkType() for link type determination algorithm
@@ -514,9 +431,7 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 		const auto cpuAffinity = device.dev->getCPUList(); // Use getCPUList() for range format like "0-31"
 		std::map<uint32_t, std::vector<portInfo>> portsByTile;
 
-		// In the old xpumanager code, onSubdevice is always true for tile-level topology entries
 		// It doesn't mean "has multiple tiles", it means "this is a tile-level view"
-		// https://github.com/intel/xpumanager/blob/master/core/src/topology/topology.cpp#L465-L466
 		const bool hasSubdevices = true;
 
 		fabric *f = device.dev->getFabric();
@@ -608,17 +523,14 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
  * @brief Determines the link type between two GPU tiles
  * @ingroup topology_matrix
  *
- * Analyzes the connectivity between two tiles by examining fabric ports,
- * device topology, and CPU affinity. Uses a hierarchical decision process
- * to classify the connection type.
+ * Analyzes the connectivity between two tiles by examining device topology
+ * and CPU affinity. Uses a hierarchical decision process to classify the
+ * connection type.
  *
  * Algorithm:
- * 1. Check if same device but different tiles → MDF
- * 2. Examine fabric ports for Xe Link connectivity:
- *    - Healthy ports with remote fabric ID indicate Xe Link
- *    - Calculate max lane width from healthy ports
- * 3. Classify Xe Link as direct (XL[n]) or indirect (XL*)
- * 4. For PCIe connections, compare CPU affinity:
+ * 1. Check if same tile → Self (S)
+ * 2. Check if same device but different tiles → MDF
+ * 3. For PCIe connections, compare CPU affinity:
  *    - Same affinity → NODE (within NUMA node)
  *    - Different affinity → SYS (across NUMA nodes)
  *
@@ -626,59 +538,34 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
  *                  - deviceId: Device index
  *                  - tileId: Tile/subdevice index within device
  *                  - cpuAffinity: CPU list string (e.g., "0-31")
- *                  - ports: Vector of fabric port information
+ *                  - ports: Vector of fabric port information (unused)
  * @param[in] tile2 Second tile information. Same structure as tile1.
  *
  * @return std::string Link type symbol:
+ *         - "S": Self (same tile)
  *         - "MDF": Multi-Die Fabric Interface (same device, different tiles)
- *         - "XL[n]": Direct Xe Link with n lanes (e.g., "XL4", "XL8")
- *         - "XL*": Indirect Xe Link through MDF
  *         - "NODE": PCIe within same NUMA node
  *         - "SYS": PCIe across NUMA nodes
  *
  * @pre tile1 and tile2 must contain valid device and tile IDs
- * @pre ports vector in tile1 should contain fabric port data if available
  *
- * @note Lane width is determined by maxRxSpeed.width of healthy fabric ports
  * @note CPU affinity comparison is simplified - full NUMA parsing would be more accurate
  * @note This is a const method as it only reads tile information
  *
  * @see buildTopologyMatrix() for usage context
  * @see TileInfo structure definition
- * @see ZES_FABRIC_PORT_STATUS_HEALTHY for port status values
  */
 std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const
 {
 	TRACING();
+	// Same tile - Self
+	if (tile1.deviceId == tile2.deviceId && tile1.tileId == tile2.tileId) {
+		return "S";
+	}
+
 	// Same device, different tiles - MDF (Multi-Die Fabric)
 	if (tile1.deviceId == tile2.deviceId && tile1.tileId != tile2.tileId) {
 		return "MDF";
-	}
-
-	// Check for direct Xe Link connection by examining fabric ports
-	const bool hasXeLink = std::ranges::any_of(tile1.ports, [](const auto &port) {
-		return port.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY && port.portState.remotePortId.fabricId != 0;
-	});
-
-	// Find max lanes
-	auto healthyPorts = tile1.ports | std::views::filter([](const auto &port) {
-							return port.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY;
-						});
-
-	int maxLanes = 0;
-	if (!std::ranges::empty(healthyPorts)) {
-		auto laneWidths =
-			healthyPorts | std::views::transform([](const auto &port) { return port.portProps.maxRxSpeed.width; });
-		maxLanes = std::ranges::max(laneWidths);
-	}
-
-	if (hasXeLink && maxLanes > 0) {
-		return std::format("XL{}", maxLanes);
-	}
-
-	// Check if connection is through Xe Link + MDF (indirect)
-	if (hasXeLink) {
-		return "XL*";
 	}
 
 	// PCIe connections - check if same NUMA node
@@ -696,7 +583,7 @@ std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo
  *
  * Generates and displays a comprehensive topology matrix showing connectivity
  * between all GPU tiles in the system. The matrix shows link types between
- * each pair of tiles, including Xe Link, MDF, and PCIe connections.
+ * each pair of tiles, including MDF and PCIe connections.
  *
  * Output format depends on useJson parameter:
  * - JSON mode: Outputs structured JSON with topo_list and matrix arrays
@@ -712,7 +599,7 @@ std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo
  * @post Matrix is printed to stdout via appropriate printer
  *
  * @note Uses buildTopologyMatrix() to generate the topology data
- * @note Connection symbols: S (self), XL[n] (Xe Link), MDF, NODE, SYS
+ * @note Connection symbols: S (self), MDF, NODE, SYS
  * @note Requires at least one device in the system
  *
  * @see buildTopologyMatrix() for matrix generation algorithm

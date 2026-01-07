@@ -26,9 +26,7 @@ ial_cmn_sources = files(
 ial_cmn_inc = include_directories('.')
 
 # Platform-specific dependencies
-# Mark hwloc as system dependency to suppress warnings
-hwloc_dep = dependency('hwloc', required: true, method: 'pkg-config', include_type: 'system')
-ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep, hwloc_dep]
+ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif

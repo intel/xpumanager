@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -97,9 +97,10 @@ struct option
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH (char)_getch
-#define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
-#define GET_CPU_LIST(bdf) getCpuList(bdf)
-#define GET_TOPOLOGY(bdf, e) 0
+#define GET_LOCAL_CPUS(bdf) (UNUSED_VAR(bdf), std::string(""))
+#define GET_CPU_LIST(bdf) (UNUSED_VAR(bdf), std::string(""))
+#define GET_TOPOLOGY(bdf, e) (UNUSED_VAR(bdf), UNUSED_VAR(e), 0)
+#define EXPORT_TOPOLOGY_XML(filename, gpuDevices) (UNUSED_VAR(filename), UNUSED_VAR(gpuDevices), 0)
 #define GETLOGS(f) 0
 #define CHECKPERMISSION() 0
 #define CHECKPROCESSEXCLUSIVE(processId) (UNUSED_VAR(processId), false)
@@ -118,6 +119,14 @@ struct option
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;
 extern int optind;
+
+// Forward declaration for topology (command not available on Windows)
+struct GpuDeviceInfo
+{
+	int deviceIndex;
+	std::string bdfAddress;
+	std::string cpuAffinity;
+};
 
 int getopt(int argc, char *argv[], char *optstring);
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);

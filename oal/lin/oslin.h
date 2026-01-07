@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  *
@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <vector>
 #include <osvf.h>
+#include "topology.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
@@ -39,6 +40,7 @@
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY getTopology
+#define EXPORT_TOPOLOGY_XML exportTopologyToXml
 typedef wchar_t TCHAR;
 #define GETLOGS(f) getLinLogs(f)
 #define GETDRMPATH(bdf) getDrmPath(bdf)
