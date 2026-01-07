@@ -19,9 +19,9 @@ jobs:
     - name: Checkout level-zero-go
       uses: actions/checkout@v6
       with:
-        repository: marquiz/level-zero-go
+        repository: intel/level-zero-go
         path: ./level-zero-go
-        token: ${{ secrets.LEVEL_ZERO_GO_TOKEN }}
+        token: ${{ secrets.LEVEL_ZERO_GO_BINDINGS_TOKEN }}
 
     - name: Golangci-lint
       run: ./scripts/make-dockerized.sh golint
