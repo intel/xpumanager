@@ -9,7 +9,7 @@ OUT_DIR ?= bin
 
 .PHONY: help
 help:
-	@echo -e "\nTargets:\n$$(grep '^[#^:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+	@echo -e "\nTargets:\n$$(grep '^[^#:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
 
 .PHONY: stats
 stats:
