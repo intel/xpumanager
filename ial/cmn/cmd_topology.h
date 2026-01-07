@@ -127,7 +127,6 @@ enum class topologyCmdType
 class cmdTopology : public cmds // NOLINT(readability-identifier-naming) // camelBack for consistency
 {
 private:
-	std::string determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const;
 	ze_result_t buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj);
 	std::string xmlFilename; // Store filename for XML export
 
@@ -136,28 +135,8 @@ public:
 	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
 	void help(HELP helpType = FULL_HELP) final;
 
-	/**
-	 * @brief Executes the topology command with parsed command line arguments
-	 *
-	 * @param[in] args Pointer to argument structure containing argc, argv, and system manager
-	 * @return ZE_RESULT_SUCCESS on success, error code on failure
-	 */
-	int run(arg_struct *args) final;
-
-private:
-	arg_struct *currentArgs = nullptr; ///< Cached pointer to command arguments
-
-	/**
-	 * @brief Displays topology information for a specified device
-	 *
-	 * Retrieves CPU affinity, NUMA information, and PCIe topology details
-	 * for the specified GPU device.
-	 *
-	 * @param[in] d Pointer to device information structure
-	 * @param[out] info Output parameter to receive topology information
-	 * @return ZE_RESULT_SUCCESS on success, error code on failure
-	 */
-	[[nodiscard]] ze_result_t showTopology(devInfo *d, TopologyInfo *info);
+	// Public for unit testing
+	std::string determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const;
 
 	/**
 	 * @brief Generates an XML topology file with system topology information
@@ -181,6 +160,29 @@ private:
 	 * @return ZE_RESULT_SUCCESS on success, error code on failure
 	 */
 	[[nodiscard]] ze_result_t showMatrix(bool useJson);
+
+	/**
+	 * @brief Executes the topology command with parsed command line arguments
+	 *
+	 * @param[in] args Pointer to argument structure containing argc, argv, and system manager
+	 * @return ZE_RESULT_SUCCESS on success, error code on failure
+	 */
+	int run(arg_struct *args) final;
+
+private:
+	arg_struct *currentArgs = nullptr; ///< Cached pointer to command arguments
+
+	/**
+	 * @brief Displays topology information for a specified device
+	 *
+	 * Retrieves CPU affinity, NUMA information, and PCIe topology details
+	 * for the specified GPU device.
+	 *
+	 * @param[in] d Pointer to device information structure
+	 * @param[out] info Output parameter to receive topology information
+	 * @return ZE_RESULT_SUCCESS on success, error code on failure
+	 */
+	[[nodiscard]] ze_result_t showTopology(devInfo *d, TopologyInfo *info);
 };
 
 /**

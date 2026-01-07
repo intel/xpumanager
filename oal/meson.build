@@ -26,10 +26,12 @@ elif is_linux
     'lin/diag_lin.cpp',
     'lin/fs_lock.cpp',
     'lin/linvf.cpp',
+    'lin/topology.cpp',
   )
   oal_inc_dirs = [include_directories('lin'), include_directories('.')]
   # Add hwloc dependency for Linux topology functionality
-  hwloc_dep = dependency('hwloc', required: true)
+  # Treat as system dependency to avoid warnings in hwloc headers
+  hwloc_dep = dependency('hwloc', required: true, include_type: 'system')
   oal_deps += [hwloc_dep]
   # Add curl dependency for Linux redfish functionality
   curl_dep = dependency('libcurl', required: true)
