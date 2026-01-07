@@ -30,19 +30,21 @@
 firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr), fwupdArray(nullptr)
 {
 	updateFWCmds = new updateFWCmdStruct[MAX_FW_TYPE]{
-		{GFX, TOSTR(GFX), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx, nullptr,
-		 "", ""},
-		{GFX_DATA, TOSTR(GFX_DATA), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxData, &fwupd::updateGfxData,
+		{GFX, TOSTR(GFX), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateGfx, &fwupd::updateGfx, &fwupd::postUpdateGfx,
+		 nullptr, "", ""},
+		{GFX_DATA, TOSTR(GFX_DATA), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateGfxData, &fwupd::updateGfxData,
 		 &fwupd::postUpdateGfxData, nullptr, "", ""},
-		{OP_CODE, TOSTR(OP_CODE), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateOpCode, &fwupd::updateOpCode,
+		{GFX_CODE_DATA, TOSTR(GFX_CODE_DATA), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateGfxData, &fwupd::updateGfxData,
+		 &fwupd::postUpdateGfxData, nullptr, "", ""},
+		{OP_CODE, TOSTR(OP_CODE), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateOpCode, &fwupd::updateOpCode,
 		 &fwupd::postUpdateOpCode, nullptr, "", ""},
-		{OP_DATA, TOSTR(OP_DATA), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateOpData, &fwupd::updateOpData,
+		{OP_DATA, TOSTR(OP_DATA), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateOpData, &fwupd::updateOpData,
 		 &fwupd::postUpdateOpData, nullptr, "", ""},
-		{GFX_PSCBIN, TOSTR(GFX_PSCBIN), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin,
+		{GFX_PSCBIN, TOSTR(GFX_PSCBIN), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateGfxPscBin, &fwupd::updateGfxPscBin,
 		 &fwupd::postUpdateGfxPscBin, nullptr, "", ""},
-		{FAN_TABLE, TOSTR(FAN_TABLE), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateFanTable, &fwupd::updateFanTable,
+		{FAN_TABLE, TOSTR(FAN_TABLE), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateFanTable, &fwupd::updateFanTable,
 		 &fwupd::postUpdateFanTable, nullptr, "", ""},
-		{VR_CONFIG, TOSTR(VR_CONFIG), FWUPD_PREFERENCE_GSC, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig,
+		{VR_CONFIG, TOSTR(VR_CONFIG), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateVrConfig, &fwupd::updateVrConfig,
 		 &fwupd::postUpdateVrConfig, nullptr, "", ""},
 		{AMC, TOSTR(AMC), FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC, nullptr,
 		 "", ""},
@@ -138,9 +140,11 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 		index = AMC;
 	} else if (STRCASECMP(properties.name, "GFX_DATA") == 0) {
 		index = GFX_DATA;
+	} else if (STRCASECMP(properties.name, "OPTIONROM") == 0) {
+		index = OP_CODE;
 	} else if (STRCASECMP(properties.name, "GFX_PSCBIN") == 0) {
 		index = GFX_PSCBIN;
-	} else if (STRCASECMP(properties.name, "FANCONTROL") == 0) {
+	} else if (STRCASECMP(properties.name, "FANTABLE") == 0) {
 		index = FAN_TABLE;
 	} else if (STRCASECMP(properties.name, "VRCONFIG") == 0) {
 		index = VR_CONFIG;
@@ -153,6 +157,12 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	updateFWCmds[index].firmwareHandle = firmwareHandle;
 	updateFWCmds[index].name = properties.name;
 	updateFWCmds[index].version = properties.version;
+
+	if (index == OP_CODE) {
+		updateFWCmds[OP_DATA].firmwareHandle = firmwareHandle;
+		updateFWCmds[OP_DATA].name = std::string("OP_DATA");
+		updateFWCmds[OP_DATA].version = properties.version;
+	}
 
 	return result;
 }
@@ -231,6 +241,12 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 
 			fwInfo->fwType = updateFWCmds[i].fw;
 			fwInfo->firmwareHandle = updateFWCmds[i].firmwareHandle;
+
+			if (fwInfo->firmwareHandle == nullptr) {
+				ERR("Failed to find firmware handle 0x%X (%s)\n", ZE_RESULT_ERROR_UNKNOWN,
+					l0_error_to_string(ZE_RESULT_ERROR_UNKNOWN));
+				return ZE_RESULT_ERROR_UNKNOWN;
+			}
 
 			// Call the corresponding pre-update, firmware update and post-update functions in the hal
 			result = (fw->*updateFWCmds[i].preUpdateFunc)(fwInfo);

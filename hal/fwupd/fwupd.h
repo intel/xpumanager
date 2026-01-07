@@ -99,6 +99,13 @@ struct firmwareInfo
 	zes_firmware_handle_t firmwareHandle;
 };
 
+struct firmwareProgressInfo
+{
+	zes_firmware_handle_t firmwareHandle;
+	std::mutex firmwareProgressMutex;
+	bool flashComplete;
+};
+
 class fwupd
 {
 
