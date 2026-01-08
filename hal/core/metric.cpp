@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,6 +32,7 @@ namespace {
 std::mutex metricMutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> targetMetricGroups;
 std::map<ze_device_handle_t, ze_context_handle_t> targetMetricContexts;
+std::map<ze_device_handle_t, std::unique_ptr<std::mutex>> deviceEuMetricMutexes;
 std::mutex perfMetricMutex;
 std::map<ze_device_handle_t, PerfMetricTypes::MetricGroupVector> devicePerfGroups;
 
@@ -650,13 +651,14 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
  * @param [in] device Handle to the Level Zero device
  * @return zet_metric_group_handle_t Handle to the EU metric group, or nullptr if not found
  */
-zet_metric_group_handle_t metric::findEuMetricGroup(ze_device_handle_t device)
+static zet_metric_group_handle_t
+findEuMetricGroupLocked(ze_device_handle_t device,
+						std::map<ze_device_handle_t, zet_metric_group_handle_t> &metricGroupsCache)
 {
 	// Check cache first
-	if (targetMetricGroups.find(device) != targetMetricGroups.end()) {
-		return targetMetricGroups.at(device);
+	if (metricGroupsCache.find(device) != metricGroupsCache.end()) {
+		return metricGroupsCache.at(device);
 	}
-
 	uint32_t metricGroupCount = 0;
 	ze_result_t res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
 	if (res != ZE_RESULT_SUCCESS || metricGroupCount == 0) {
@@ -720,7 +722,7 @@ zet_metric_group_handle_t metric::findEuMetricGroup(ze_device_handle_t device)
 			}
 
 			if (hasEuActive && hasEuStall && hasGpuTime) {
-				targetMetricGroups[device] = group;
+				metricGroupsCache[device] = group;
 				return group;
 			}
 		}
@@ -751,6 +753,19 @@ zet_metric_group_handle_t metric::findEuMetricGroup(ze_device_handle_t device)
 ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t subdeviceId, ze_driver_handle_t driver,
 											 EuMetricsData &data)
 {
+	// Get or create per-device mutex to serialize EU metric collection for this device
+	std::mutex *deviceMutex = nullptr;
+	{
+		std::lock_guard<std::mutex> lock(metricMutex);
+		if (deviceEuMetricMutexes.find(device) == deviceEuMetricMutexes.end()) {
+			deviceEuMetricMutexes[device] = std::make_unique<std::mutex>();
+		}
+		deviceMutex = deviceEuMetricMutexes[device].get();
+	}
+
+	// Lock this device for the entire EU metric collection to prevent concurrent access
+	std::lock_guard<std::mutex> deviceLock(*deviceMutex);
+
 	ze_result_t res;
 	zet_metric_group_handle_t hMetricGroup = nullptr;
 	ze_context_handle_t hContext = nullptr;
@@ -760,7 +775,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	{
 		std::lock_guard<std::mutex> lock(metricMutex);
 
-		hMetricGroup = findEuMetricGroup(device);
+		hMetricGroup = findEuMetricGroupLocked(device, targetMetricGroups);
 		if (hMetricGroup == nullptr) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 		}

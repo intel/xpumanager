@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2026 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -720,13 +720,46 @@ ze_result_t cmdDump::gpuEnergyConsumed(devInfo *d, std::string *outputLine, UNUS
  * GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
  * Per tile or device. Device-level is the average value of tiles for multi-tiles.
  *
- * @param d A pointer to the device information structure.
+ * @param[in] d A pointer to the device information structure.
+ * @param[out] outputLine A pointer to store the formatted output string.
+ * @param[in,out] td A pointer to the thread data structure for maintaining state across iterations.
+
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayActive(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
+ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED_VAR(td);
+
+	// Initialize output to N/A in case of early return
+	*outputLine = "N/A";
+
+	metric *m = d->dev->getMetric();
+	if (m == nullptr) {
+		ERR("Failed to get metric handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	// Get EU metrics from the metric class
+	std::vector<EuMetricsData> metricsData;
+	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
+
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("getEuActiveStallIdle failed: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (metricsData.empty()) {
+		ERR("getEuActiveStallIdle returned no data\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// For single device or when requesting device-level data, return the first entry
+	// For multi-tile, the calling code should handle tile iteration
+	double euActivePercent = static_cast<double>(metricsData[0].euActive) / metricsData[0].scaleFactor;
+	*outputLine = std::format("{:.2f}", euActivePercent);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -737,13 +770,37 @@ ze_result_t cmdDump::gpuEuArrayActive(UNUSED devInfo *d, UNUSED std::string *out
  * thread is loaded, but the EU is stalled. Per tile or device. Device-level is the average value of tiles for
  * multi-tiles.
  *
- * @param d A pointer to the device information structure.
+ * @param[in] d A pointer to the device information structure.
+ * @param[out] outputLine A pointer to store the formatted output string
+ * @param[in,out] td A pointer to the thread data structure for maintaining state across iterations
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayStall(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
+ze_result_t cmdDump::gpuEuArrayStall(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED_VAR(td);
+
+	// Initialize output to N/A in case of early return
+	*outputLine = "N/A";
+
+	metric *m = d->dev->getMetric();
+	if (m == nullptr) {
+		ERR("Failed to get metric handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	std::vector<EuMetricsData> metricsData;
+	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
+
+	if (result != ZE_RESULT_SUCCESS || metricsData.empty()) {
+		*outputLine = "N/A";
+		return result;
+	}
+
+	double euStallPercent = static_cast<double>(metricsData[0].euStall) / metricsData[0].scaleFactor;
+	*outputLine = std::format("{:.2f}", euStallPercent);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -753,13 +810,37 @@ ze_result_t cmdDump::gpuEuArrayStall(UNUSED devInfo *d, UNUSED std::string *outp
  * GPU EU Array Idle (%), the normalized sum of all cycles on all EUs during which the EUs were idle. Per tile or
  * device.
  *
- * @param d A pointer to the device information structure.
+ * @param[in] d A pointer to the device information structure.
+ * @param[out] outputLine A pointer to store the formatted output string
+ * @param[in,out] td A pointer to the thread data structure for maintaining state across iterations
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::gpuEuArrayIdle(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
+ze_result_t cmdDump::gpuEuArrayIdle(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
+	UNUSED_VAR(td);
+
+	// Initialize output to N/A in case of early return
+	*outputLine = "N/A";
+
+	metric *m = d->dev->getMetric();
+	if (m == nullptr) {
+		ERR("Failed to get metric handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	std::vector<EuMetricsData> metricsData;
+	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
+
+	if (result != ZE_RESULT_SUCCESS || metricsData.empty()) {
+		*outputLine = "N/A";
+		return result;
+	}
+
+	double euIdlePercent = static_cast<double>(metricsData[0].euIdle) / metricsData[0].scaleFactor;
+	*outputLine = std::format("{:.2f}", euIdlePercent);
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1200,16 +1281,33 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(devInfo *d, std::string *
  * @brief Executes the 3D engine utilization command when user requests dump -m 28.
  *
  * 3D engine utilization (%), per tile.
+ * Note: This metric may not be available on all platforms. If unsupported, "N/A" will be displayed.
  *
- * @param d A pointer to the device information structure.
+ * @param[in] d A pointer to the device information structure.
+ * @param[out] outputLine A pointer to the string that will contain the output.
+ * @param[in,out] td A pointer to the thread data structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::engineUtilization(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
+
+ze_result_t cmdDump::engineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_3D_ALL};
+	ze_result_t result = utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+
+	// If 3D engine is not supported on this platform, return N/A
+	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		*outputLine = "N/A";
+		return ZE_RESULT_SUCCESS;
+	}
+
+	if (result == ZE_RESULT_SUCCESS && outputLine && outputLine->empty()) {
+		*outputLine = "N/A";
+	}
+
+	return result;
 }
 
 /**
@@ -1218,15 +1316,31 @@ ze_result_t cmdDump::engineUtilization(UNUSED devInfo *d, UNUSED std::string *ou
  * GPU Memory Errors Correctable, per tile or device. Other non-compute correctable errors are also included.
  * Device-level is the sum value of tiles for multi-tiles.
  *
- * @param d A pointer to the device information structure.
+ * @param[in] d A pointer to the device information structure.
+ * @param[out] outputLine A pointer to the string that will contain the output.
+ * @param[in] td A pointer to the thread data structure (unused).
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsCorrectable(UNUSED devInfo *d, UNUSED std::string *outputLine,
-												UNUSED threadData *td)
+ze_result_t cmdDump::gpuMemoryErrorsCorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result =
+		r->getErrors(ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS non-compute correctable errors: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	*outputLine = std::to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1236,15 +1350,31 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(UNUSED devInfo *d, UNUSED std::s
  * GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable errors are also included.
  * Device-level is the sum value of tiles for multi-tiles.
  *
- * @param d A pointer to the device information structure.
+ * @param[in] d A pointer to the device information structure.
+ * @param[out] outputLine A pointer to the string that will contain the output.
+ * @param[in] td A pointer to the thread data structure (unused).
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(UNUSED devInfo *d, UNUSED std::string *outputLine,
-												  UNUSED threadData *td)
+ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
+	uint64_t rasCounter;
+	ras *r = (ras *)d->dev->getRAS();
+	if (r == nullptr) {
+		ERR("Failed to get RAS handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result =
+		r->getErrors(ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &rasCounter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get RAS non-compute uncorrectable errors: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	*outputLine = std::to_string(rasCounter);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1495,10 +1625,6 @@ int cmdDump::run(arg_struct *args)
 				dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
-		// We need to add 1 to iter to account for the first iteration where we are getting the initial values
-		// and may not be ready to print the output yet.
-		iter++;
 	}
 
 	// If the user specified an interval with -i / --interval, we need to check if it is a valid positive integer.
@@ -1572,7 +1698,6 @@ int cmdDump::run(arg_struct *args)
 	}
 
 	while (running) {
-
 		total = 0;
 
 		// Iterate through the device list and create a thread called metrics for each device
