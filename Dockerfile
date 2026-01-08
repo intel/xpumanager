@@ -26,8 +26,12 @@ RUN mkdir /debs-devel && \
     apt-get install -y /debs-devel/*.deb
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=src=.,target=.,ro \
-    make build OUT_DIR=/out
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=src=.,target=.,rw \
+    make build && \
+    mkdir /out && \
+    install -D dist/xpu-exporter /out/usr/local/bin/xpu-exporter && \
+    install -D config-example.yaml /out/etc/xpu-exporter/config-example.yaml
 
 
 # The final image
@@ -39,8 +43,8 @@ RUN apt-get update && \
     rm -rf /debs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /out/* /usr/local/bin/
+COPY --from=builder /out/ /
 
 USER 65534:65534
 
-CMD ["/usr/local/bin/xpu-exporter"]
+ENTRYPOINT ["/usr/local/bin/xpu-exporter"]

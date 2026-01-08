@@ -6,11 +6,12 @@
 package sysman
 
 import (
-	"log/slog"
+	"context"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
 )
@@ -21,74 +22,49 @@ func init() {
 
 type sysmanTemperature struct {
 	*l0sysman.Temp
-	attributes []attribute.KeyValue
+	logger     *zap.SugaredLogger
+	attributes pcommon.Map
 }
 
+// temperatureMetrics is a throwaway struct to hold temperature metrics for one scrape cycle.
 type temperatureMetrics struct {
-	current metric.Float64ObservableGauge
+	timestamp pcommon.Timestamp
+
+	current pmetric.Gauge
 }
 
-func newSysmanTemperature(temp *l0sysman.Temp) (*sysmanTemperature, error) {
+func newSysmanTemperature(temp *l0sysman.Temp, logger *zap.SugaredLogger, extraAttrs pcommon.Map) (*sysmanTemperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
 		return nil, err
 	}
-	attrs := []attribute.KeyValue{
-		attribute.String("hw.gpu.temperature.type", strings.ToLower(props.Type.String())),
-		attribute.String("hw.gpu.temperature.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId)),
-	}
+	attrs := pcommon.NewMap()
+	extraAttrs.CopyTo(attrs)
+	attrs.PutStr("hw.gpu.temperature.type", strings.ToLower(props.Type.String()))
+	attrs.PutStr("hw.gpu.temperature.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId))
+
 	return &sysmanTemperature{
 		Temp:       temp,
+		logger:     logger,
 		attributes: attrs,
 	}, nil
 }
 
-func enumTemperature(d *l0sysman.Device) []*sysmanTemperature {
-	temps, err := d.EnumTemperatureSensors()
-	if err != nil {
-		slog.Error("Failed to enumerate temperature sensors", "error", err)
-		return nil
-	}
-	temperature := make([]*sysmanTemperature, len(temps))
-	for i, temp := range temps {
-		t, err := newSysmanTemperature(temp)
-		if err != nil {
-			slog.Error("Failed to create sysman temperature sensor", "error", err)
-			continue
-		}
-		temperature[i] = t
-	}
-	return temperature
-}
+func newTemperatureMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
+	return &temperatureMetrics{
+		timestamp: ts,
 
-func newTemperatureMetrics(meter metric.Meter) (collector, error) {
-	var err error
-	m := &temperatureMetrics{}
-	m.current, err = meter.Float64ObservableGauge(
-		"hw.gpu.temperature.current",
-		metric.WithDescription("Current GPU temperature"),
-		metric.WithUnit("Celsius"),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (m *temperatureMetrics) getInstruments() []metric.Observable {
-	return []metric.Observable{
-		m.current,
+		// Metrics
+		current: newGauge(sm, "hw.gpu.temperature.current", "Celsius", "Current GPU temperature"),
 	}
 }
 
-func (m *temperatureMetrics) observeDevice(o metric.Observer, dev *sysmanDevice, readerIdx int) {
+func (m *temperatureMetrics) scrapeDevice(ctx context.Context, dev *sysmanDevice) {
 	for _, temp := range dev.temperature {
-		attrs := append(dev.attributes, temp.attributes...)
-		opt := metric.WithAttributes(attrs...)
 		if current, err := temp.GetState(); err != nil {
-			slog.Error("Failed to get temperature state", "error", err, attrsToSlog(attrs))
+			temp.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", temp.attributes.AsRaw())
 		} else {
-			o.ObserveFloat64(m.current, current, opt)
+			observeFloat64(m.current, current, m.timestamp, temp.attributes)
 		}
 	}
 }

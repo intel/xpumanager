@@ -6,11 +6,12 @@
 package sysman
 
 import (
-	"log/slog"
+	"context"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
 )
@@ -21,118 +22,68 @@ func init() {
 
 type sysmanMemory struct {
 	*l0sysman.Mem
-	attributes []attribute.KeyValue
+	logger     *zap.SugaredLogger
+	attributes pcommon.Map
 }
 
+// memoryMetrics is a throwaway struct to hold memory metrics for one scrape cycle.
 type memoryMetrics struct {
-	limit       metric.Int64ObservableGauge
-	usage       metric.Int64ObservableGauge
-	utilization metric.Float64ObservableGauge
-	health      metric.Int64ObservableUpDownCounter
+	timestamp pcommon.Timestamp
+
+	limit       pmetric.Gauge
+	usage       pmetric.Gauge
+	utilization pmetric.Gauge
+	health      pmetric.Sum
 }
 
-func newSysmanMemory(mem *l0sysman.Mem) (*sysmanMemory, error) {
+func newSysmanMemory(mem *l0sysman.Mem, logger *zap.SugaredLogger, extraAttrs pcommon.Map) (*sysmanMemory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
 		return nil, err
 	}
-	attrs := []attribute.KeyValue{
-		attribute.String("hw.gpu.memory.type", strings.ToLower(props.Type.String())),
-		attribute.String("hw.gpu.memory.location", strings.ToLower(props.Location.String())),
-		attribute.String("hw.gpu.memory.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId)),
-	}
+	attrs := pcommon.NewMap()
+	extraAttrs.CopyTo(attrs)
+	attrs.PutStr("hw.gpu.memory.type", strings.ToLower(props.Type.String()))
+	attrs.PutStr("hw.gpu.memory.location", strings.ToLower(props.Location.String()))
+	attrs.PutStr("hw.gpu.memory.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId))
 
 	return &sysmanMemory{
 		Mem:        mem,
+		logger:     logger,
 		attributes: attrs,
 	}, nil
 }
 
-func enumMemory(d *l0sysman.Device) []*sysmanMemory {
-	mems, err := d.EnumMemoryModules()
-	if err != nil {
-		slog.Error("Failed to enumerate memory modules", "error", err)
-		return nil
-	}
-	memory := make([]*sysmanMemory, len(mems))
-	for i, mem := range mems {
-		m, err := newSysmanMemory(mem)
-		if err != nil {
-			slog.Error("Failed to create sysman memory", "error", err)
-			continue
-		}
-		memory[i] = m
-	}
-	return memory
-}
+func newMemoryMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
+	return &memoryMetrics{
+		timestamp: ts,
 
-func newMemoryMetrics(meter metric.Meter) (collector, error) {
-	var err error
-	m := &memoryMetrics{}
-
-	m.limit, err = meter.Int64ObservableGauge(
-		"hw.gpu.memory.limit",
-		metric.WithDescription("Size of the GPU memory"),
-		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return nil, err
-	}
-	m.usage, err = meter.Int64ObservableGauge(
-		"hw.gpu.memory.usage",
-		metric.WithDescription("GPU memory used"),
-		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return nil, err
-	}
-	m.utilization, err = meter.Float64ObservableGauge(
-		"hw.gpu.memory.utilization",
-		metric.WithDescription("Fraction of GPU memory used"),
-		metric.WithUnit("1"),
-	)
-	if err != nil {
-		return nil, err
-	}
-	m.health, err = meter.Int64ObservableUpDownCounter(
-		"hw.gpu.memory.health",
-		metric.WithDescription("Health status of the GPU memory"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-func (m *memoryMetrics) getInstruments() []metric.Observable {
-	return []metric.Observable{
-		m.limit,
-		m.usage,
-		m.utilization,
-		m.health,
+		// Metrics
+		limit:       newGauge(sm, "hw.gpu.memory.limit", "By", "Size of the GPU memory"),
+		usage:       newGauge(sm, "hw.gpu.memory.usage", "By", "GPU memory used"),
+		utilization: newGauge(sm, "hw.gpu.memory.utilization", "1", "Fraction of GPU memory used"),
+		health:      newUpDownCounter(sm, "hw.gpu.memory.health", "1", "Health status of the GPU memory"),
 	}
 }
 
-func (m *memoryMetrics) observeDevice(o metric.Observer, dev *sysmanDevice, readerIdx int) {
+func (m *memoryMetrics) scrapeDevice(ctx context.Context, dev *sysmanDevice) {
 	for _, mem := range dev.memory {
-		attrs := append(dev.attributes, mem.attributes...)
-
 		state, err := mem.GetState()
 		if err != nil {
-			slog.Error("Failed to get memory module state", "error", err, attrsToSlog(attrs))
-			return
+			mem.logger.Errorw("Failed to get memory module state", zap.Error(err))
+			continue
 		}
 
-		opt := metric.WithAttributes(attrs...)
-		o.ObserveInt64(m.limit, int64(state.Size), opt)
+		observeInt64(m.limit, int64(state.Size), m.timestamp, mem.attributes)
 
 		usage := int64(state.Size - state.Free)
-		o.ObserveInt64(m.usage, usage, opt)
+		observeInt64(m.usage, usage, m.timestamp, mem.attributes)
 
-		o.ObserveFloat64(m.utilization, float64(usage)/float64(state.Size), opt)
+		observeFloat64(m.utilization, float64(usage)/float64(state.Size), m.timestamp, mem.attributes)
 
-		opt = metric.WithAttributes(append(attrs, attribute.String("hw.gpu.memory.health_status", strings.ToLower(state.Health.String())))...)
-		o.ObserveInt64(m.health, 1, opt)
+		attrs := pcommon.NewMap()
+		mem.attributes.CopyTo(attrs)
+		attrs.PutStr("hw.gpu.memory.health_status", strings.ToLower(state.Health.String()))
+		observeInt64(m.health, 1, m.timestamp, attrs)
 	}
 }

@@ -22,7 +22,7 @@ make build
 Run:
 
 ```bash
-./bin/xpu-exporter
+./dist/xpu-exporter --config config-example.yaml
 ...
 ```
 
@@ -43,7 +43,11 @@ docker build -t registry.local/xpu-exporter:main .
 Test the container image:
 
 ```bash
-docker run --rm -p 8080:8080 --device /dev/dri registry.local/xpu-exporter:main
+docker run --rm -p 8080:8080 --device /dev/dri registry.local/xpu-exporter:main --config /etc/xpu-exporter/config-example.yaml
+```
+
+```bash
+curl http://localhost:8080/metrics
 ```
 
 ### Testing in single-node cluster

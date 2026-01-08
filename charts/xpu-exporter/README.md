@@ -44,18 +44,15 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| config.collectInterval | string | `"30s"` | Metrics data collection interval. Must be at least twice the sampleInterval. |
-| config.exporters | object |   | Configuration for exporters. By default none are enabled, please select a suitable one. |
-| config.exporters.grpc.enabled | bool | `false` | Enable OTLP gRPC metrics exporter |
-| config.exporters.grpc.endpoint | string | `""` | OTLP/gRPC collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4317 by default. |
-| config.exporters.grpc.insecure | bool | `false` | Use insecure connection (no TLS) |
-| config.exporters.http.enabled | bool | `false` | Enable OTLP HTTP metrics exporter |
-| config.exporters.http.endpoint | string | `""` | OTLP/HTTP collector endpoint. If empty, taken from OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT environment variable, or localhost:4318 by default. |
-| config.exporters.http.insecure | bool | `false` | Use insecure connection (no TLS) |
-| config.exporters.prometheus.enabled | bool | `false` | Enable Prometheus metrics exporter |
-| config.exporters.stdout.enabled | bool | `false` | Enable stdout metrics exporter |
-| config.logLevel | string | `"info"` | Log level (debug, info, warn, error) |
-| config.sampleInterval | string | `"1s"` | Sample interval for the high-frequency metrics. |
+| config.exporters | object | `{}` | Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters) |
+| config.extensions | object | `{}` | Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions) |
+| config.processors | object | `{}` | Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors) |
+| config.receivers | object |   | Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers) |
+| config.receivers.sysman | object |   | Configuration for the custom Level-Zero Sysman receiver. |
+| config.receivers.sysman.collect_interval | string | `"30s"` | Metrics data collection interval. Must be at least twice the sample_interval. |
+| config.receivers.sysman.log_level | string | `"info"` | Log level (debug, info, warn, error) |
+| config.receivers.sysman.sample_interval | string | `"1s"` | Sample interval for the high-frequency metrics. |
+| config.service | object | `{"pipelines":{"metrics":{"receivers":["sysman"]}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 
@@ -73,7 +70,7 @@ helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter
 | podSecurityContext | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
 | resources | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container |
 | securityContext | object | `{"privileged":true,"runAsUser":0}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
-| service.create | bool | `true` | Create service |
+| service.create | bool | `false` | Create service |
 | service.port | int | `8080` | Service port |
 | service.type | string | `"ClusterIP"` | Service type |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
