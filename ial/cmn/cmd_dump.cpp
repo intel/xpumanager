@@ -1571,7 +1571,6 @@ int cmdDump::run(arg_struct *args)
 		});
 	}
 
-	first = true;
 	while (running) {
 
 		total = 0;
@@ -1582,13 +1581,13 @@ int cmdDump::run(arg_struct *args)
 				threadData prevThreadData = {};
 				if (argsList[total] != nullptr) {
 					// Copy any previous thread data before we delete the old argsList entry
-					memcpy(&prevThreadData, &argsList[total]->td, sizeof(threadData));
+					prevThreadData = argsList[total]->td;
 					delete argsList[total]; // Clean up any previously allocated memory
 				}
 				argsList[total] = new threadArgs{this, &device, arg, "", {}};
 				// Copy any previous thread data into the new argsList entry just in case the underlying functions
 				// need to access it to do comparison between old and new values
-				memcpy(&argsList[total]->td, &prevThreadData, sizeof(threadData));
+				argsList[total]->td = prevThreadData;
 				tidList[total] = create_thread(metrics, argsList[total]);
 				total++;
 			}
@@ -1602,21 +1601,17 @@ int cmdDump::run(arg_struct *args)
 		}
 
 		// Print the output
-		if (!first) {
-			for (uint32_t i = 0; i < deviceList.size(); i++) {
-				std::string outputLine = "";
-				for (uint32_t j = 0; j < dumpArgs.size(); j++) {
-					// Construct a std::string which has comma separated values of all the output lines
-					outputLine += argsList[i * dumpArgs.size() + j]->outputLine;
-					if (j < dumpArgs.size() - 1) {
-						outputLine += ", ";
-					}
+		for (uint32_t i = 0; i < deviceList.size(); i++) {
+			std::string outputLine = "";
+			for (uint32_t j = 0; j < dumpArgs.size(); j++) {
+				// Construct a std::string which has comma separated values of all the output lines
+				outputLine += argsList[i * dumpArgs.size() + j]->outputLine;
+				if (j < dumpArgs.size() - 1) {
+					outputLine += ", ";
 				}
-				PRINT("%s, %8d, %s\n", TIMESTAMP().c_str(), argsList[i * dumpArgs.size()]->d->index,
-					  outputLine.c_str());
 			}
+			PRINT("%s, %8d, %s\n", TIMESTAMP().c_str(), argsList[i * dumpArgs.size()]->d->index, outputLine.c_str());
 		}
-		first = false;
 		std::this_thread::sleep_for(interval);
 
 		// If the user specified an iteration count, decrement it
