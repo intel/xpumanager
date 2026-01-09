@@ -34,8 +34,8 @@ values must be set. For example, to enable the OTLP gRPC exporter:
 ```bash
 helm install xpu-exporter oci://ghcr.io/marquiz/xpu-exporter/charts/xpu-exporter \
   --set imagePullSecrets[0].name=ghcr-secret \
-  --set config.exporters.grpc.enabled=true \
-  --set config.exporters.grpc.endpoint="otel-collector:4317" \
+  --set config.exporters.otlp.endpoint="otel-collector:4317" \
+  --set config.service.pipelines.metrics.exporters="{otlp}"
 ```
 
 ## Values
