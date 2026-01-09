@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "xpu-exporter.fullname" . }}
+  name: {{ include "xpumd.fullname" . }}
   labels:
-    {{- include "xpu-exporter.labels" . | nindent 4 }}
+    {{- include "xpumd.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "xpu-exporter.selectorLabels" . | nindent 6 }}
+      {{- include "xpumd.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -16,13 +16,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "xpu-exporter.selectorLabels" . | nindent 8 }}
+        {{- include "xpumd.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "xpu-exporter.serviceAccountName" . }}
+      serviceAccountName: {{ include "xpumd.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -30,7 +30,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
-        - "--config=/etc/xpu-exporter/config.yaml"
+        - "--config=/etc/xpumd/config.yaml"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         ports:
@@ -43,7 +43,7 @@ spec:
         {{- end }}
         volumeMounts:
         - name: config
-          mountPath: /etc/xpu-exporter
+          mountPath: /etc/xpumd
           readOnly: true
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -60,4 +60,4 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "xpu-exporter.fullname" . }}-config
+          name: {{ include "xpumd.fullname" . }}-config

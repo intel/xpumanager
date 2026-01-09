@@ -24,7 +24,7 @@ stats:
 build:
 	go tool -modfile tools/go.mod builder --config=builder-config.yaml --skip-compilation
 	# Builder is not able to handle the replace directives correctly, thus build "manually"
-	cd dist && go build -o xpu-exporter .
+	cd dist && go build -o xpumd .
 
 .PHONY: generate
 generate:

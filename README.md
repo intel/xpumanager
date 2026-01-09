@@ -1,10 +1,15 @@
-# XPU Exporter
+# XPUM Daemon
 
-Metrics exporter daemon for Intel GPU devices.
+XPUM daemon is a custom
+[OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) that
+provides:
+
+* Intel GPU metrics
+* GPU topology and health information for Kubernetes Intel GPU resource drivers
 
 ## Deployment
 
-See the [Helm chart](charts/xpu-exporter/README.md) for deployment instructions.
+See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
 
 ## Development
 
@@ -22,7 +27,7 @@ make build
 Run:
 
 ```bash
-./dist/xpu-exporter --config config-example.yaml
+./dist/xpumd --config config-example.yaml
 ...
 ```
 
@@ -37,13 +42,13 @@ curl http://localhost:8080/metrics
 **NOTE:** The level-zero-go repository must be cloned in the same directory as the xpu-exporter repository.
 
 ```bash
-docker build -t registry.local/xpu-exporter:main .
+docker build -t registry.local/xpumd:main .
 ```
 
 Test the container image:
 
 ```bash
-docker run --rm -p 8080:8080 --device /dev/dri registry.local/xpu-exporter:main --config /etc/xpu-exporter/config-example.yaml
+docker run --rm -p 8080:8080 --device /dev/dri registry.local/xpumd:main --config /etc/xpumd/config-example.yaml
 ```
 
 ```bash
@@ -56,7 +61,7 @@ After building the container image, load the image onto the cluster. E.g.
 with containerd:
 
 ```bash
-docker save registry.local/xpu-exporter:main  -o xpum-main.tar
+docker save registry.local/xpumd:main  -o xpum-main.tar
 sudo ctr -n k8s.io images  import xpum-main.tar
 rm xpum-main.tar
 ```
@@ -64,5 +69,5 @@ rm xpum-main.tar
 Deploy the image with the Helm chart:
 
 ```bash
-helm install xpu-exporter charts/xpu-exporter --set image.repository=registry.local/xpu-exporter --set image.pullPolicy=Never
+helm install xpumd charts/xpumd --set image.repository=registry.local/xpumd --set image.pullPolicy=Never
 ```

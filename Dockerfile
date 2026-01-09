@@ -30,8 +30,8 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,rw \
     make build && \
     mkdir /out && \
-    install -D dist/xpu-exporter /out/usr/local/bin/xpu-exporter && \
-    install -D config-example.yaml /out/etc/xpu-exporter/config-example.yaml
+    install -D dist/xpumd /out/usr/local/bin/xpumd && \
+    install -D config-example.yaml /out/etc/xpumd/config-example.yaml
 
 
 # The final image
@@ -47,4 +47,4 @@ COPY --from=builder /out/ /
 
 USER 65534:65534
 
-ENTRYPOINT ["/usr/local/bin/xpu-exporter"]
+ENTRYPOINT ["/usr/local/bin/xpumd"]

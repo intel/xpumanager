@@ -61,7 +61,7 @@ jobs:
           chart_version="0.0.0-${{ github.ref_name }}"
         fi
 
-        echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpu-exporter:${tag}" >> $GITHUB_ENV
+        echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpumd:${tag}" >> $GITHUB_ENV
         echo "CHART_VERSION=${chart_version}" >> $GITHUB_ENV
 
     - name: Build and push image
@@ -87,8 +87,8 @@ jobs:
     - name: Package Helm chart
       if: github.event_name == 'push'
       run: |
-        helm package ./charts/xpu-exporter/ --version ${{ env.CHART_VERSION }} --app-version ${{ github.ref_name }}
+        helm package ./charts/xpumd/ --version ${{ env.CHART_VERSION }} --app-version ${{ github.ref_name }}
 
     - name: Push Helm chart
       if: github.event_name == 'push'
-      run: helm push xpu-exporter-*.tgz oci://ghcr.io/${{ github.repository }}/charts/
+      run: helm push xpumd-*.tgz oci://ghcr.io/${{ github.repository }}/charts/

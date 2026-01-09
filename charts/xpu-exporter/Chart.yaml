@@ -1,6 +1,0 @@
-apiVersion: v2
-name: xpu-exporter
-description: A Helm chart for Intel(R) XPU Exporter
-type: application
-version: 0.1.0
-appVersion: "main"
