@@ -22,31 +22,49 @@ func init() {
 type sysmanTemperature struct {
 	*l0sysman.Temp
 	logger     *zap.SugaredLogger
-	attributes pcommon.Map
+	attributes map[string]string
 }
 
 // temperatureMetrics is a throwaway struct to hold temperature metrics for one scrape cycle.
 type temperatureMetrics struct {
 	timestamp pcommon.Timestamp
 
+	// Metrics
 	current pmetric.Gauge
 }
 
-func newSysmanTemperature(temp *l0sysman.Temp, logger *zap.SugaredLogger, extraAttrs pcommon.Map) (*sysmanTemperature, error) {
+func newSysmanTemperature(name string, temp *l0sysman.Temp, device *sysmanDevice) (*sysmanTemperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
 		return nil, err
 	}
-	attrs := pcommon.NewMap()
-	extraAttrs.CopyTo(attrs)
-	attrs.PutStr("hw.gpu.temperature.type", strings.ToLower(props.Type.String()))
-	attrs.PutStr("hw.gpu.temperature.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId))
+	tempType := strings.ToLower(props.Type.String())
+	location := tempType
+	statistic := "max"
+	if strings.HasSuffix(tempType, "_min") {
+		location = strings.TrimSuffix(tempType, "_min")
+		statistic = "min"
+	}
+
+	attrs := map[string]string{
+		attrHwID:             device.attributes[attrHwID] + "_" + name,
+		attrHwType:           "temperature",
+		attrHwName:           name,
+		attrHwParent:         device.attributes[attrHwID],
+		attrHwSensorLocation: location,
+		attrStatistic:        statistic,
+		attrSubdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+	}
 
 	return &sysmanTemperature{
 		Temp:       temp,
-		logger:     logger,
+		logger:     device.logger,
 		attributes: attrs,
 	}, nil
+}
+
+func (t *sysmanTemperature) pickAttributes(keys ...string) pcommon.Map {
+	return pickAttributes(t.attributes, keys...)
 }
 
 func newTemperatureMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
@@ -54,16 +72,17 @@ func newTemperatureMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scrape
 		timestamp: ts,
 
 		// Metrics
-		current: newGauge(sm, "hw.gpu.temperature.current", "Celsius", "Current GPU temperature"),
+		current: newGauge(sm, "hw.temperature", "Cel", "Current GPU temperature"),
 	}
 }
 
 func (m *temperatureMetrics) scrapeDevice(dev *sysmanDevice) {
 	for _, temp := range dev.temperature {
 		if current, err := temp.GetState(); err != nil {
-			temp.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", temp.attributes.AsRaw())
+			temp.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", temp.attributes)
 		} else {
-			observeFloat64(m.current, current, m.timestamp, temp.attributes)
+			attrs := temp.pickAttributes(attrHwID, attrHwName, attrHwParent, attrHwSensorLocation, attrStatistic, attrSubdeviceId)
+			observeFloat64(m.current, current, m.timestamp, attrs)
 		}
 	}
 }

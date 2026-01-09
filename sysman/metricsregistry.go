@@ -17,6 +17,29 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// Standard semantic convention attributes:
+	// https://opentelemetry.io/docs/specs/semconv/registry/attributes/hardware
+	attrHwID             = "hw.id"
+	attrHwLimitType      = "hw.limit_type"
+	attrHwModel          = "hw.model"
+	attrHwName           = "hw.name"
+	attrHwParent         = "hw.parent"
+	attrHwSerialNumber   = "hw.serial_number"
+	attrHwSensorLocation = "hw.sensor_location"
+	attrHwState          = "hw.state"
+	attrHwType           = "hw.type"
+	attrHwVendor         = "hw.vendor"
+	attrMemoryType       = "hw.memory.type"
+	// NOTE: Non-standard (not specified in semantic conventions) and vendor-specific attributes
+	attrAggregation            = "aggregation"
+	attrStatistic              = "statistic"
+	attrSubdeviceId            = "com.intel.gpu.subdevice_id"
+	attrGpuSpeedThrottleReason = "com.intel.gpu.speed.throttle_reason"
+	attrGpuSpeedType           = "hw.gpu.speed.type"
+	attrSampleStatus           = "sample.status"
+)
+
 type scraper interface {
 	scrapeDevice(*sysmanDevice)
 }
@@ -102,4 +125,20 @@ func observeFloat64[T interface {
 	dp.SetDoubleValue(value)
 	dp.SetTimestamp(ts)
 	attrs.CopyTo(dp.Attributes())
+}
+
+func pickAttributes(attrs map[string]string, keys ...string) pcommon.Map {
+	a := pcommon.NewMap()
+	addAttributes(a, attrs, keys...)
+	return a
+}
+
+func addAttributes(dst pcommon.Map, src map[string]string, keys ...string) {
+	for _, key := range keys {
+		val, ok := src[key]
+		if !ok {
+			panic("attribute key not found: " + key)
+		}
+		dst.PutStr(key, val)
+	}
 }

@@ -20,8 +20,9 @@ type deviceRegistry struct {
 
 type sysmanDevice struct {
 	*l0sysman.Device
-	logger     *zap.SugaredLogger
-	attributes pcommon.Map
+	logger                      *zap.SugaredLogger
+	attributes                  map[string]string
+	aggregatedMetricsBufferSize int
 
 	frequency   []*sysmanFrequency
 	memory      []*sysmanMemory
@@ -60,40 +61,46 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 	}
 	devs := make([]*sysmanDevice, len(zesDevs))
 	for i, d := range zesDevs {
-		dev, err := newSysmanDevice(d, logger, aggregatedMetricsBufferSize)
+		name := fmt.Sprintf("gpu_%d", i)
+		dev, err := newSysmanDevice(name, d, logger, aggregatedMetricsBufferSize)
 		if err != nil {
 			return nil, err
 		}
+
 		devs[i] = dev
 	}
 	return devs, nil
 }
 
-func newSysmanDevice(device *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*sysmanDevice, error) {
+func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*sysmanDevice, error) {
 	props, err := device.GetProperties()
 	if err != nil {
 		return nil, err
 	}
-	attrs := pcommon.NewMap()
-	attrs.PutStr("hw.id", props.Core.Uuid.Id.String())
-	attrs.PutStr("hw.model", props.ModelName.String())
-	attrs.PutStr("hw.serial_number", props.SerialNumber.String())
-	attrs.PutStr("hw.vendor", props.VendorName.String())
 
-	d := &sysmanDevice{
-		Device:     device,
-		logger:     logger,
-		attributes: attrs,
+	attrs := map[string]string{
+		attrHwID:           props.Core.Uuid.Id.String(),
+		attrHwModel:        props.ModelName.String(),
+		attrHwName:         name,
+		attrHwSerialNumber: props.SerialNumber.String(),
+		attrHwVendor:       props.VendorName.String(),
 	}
 
-	d.enumFrequency(aggregatedMetricsBufferSize)
+	d := &sysmanDevice{
+		Device:                      device,
+		logger:                      logger,
+		attributes:                  attrs,
+		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
+	}
+
+	d.enumFrequency()
 	d.enumMemory()
 	d.enumTemperature()
 
 	return d, nil
 }
 
-func (d *sysmanDevice) enumFrequency(aggregatedMetricsBufferSize int) {
+func (d *sysmanDevice) enumFrequency() {
 	freqs, err := d.EnumFrequencyDomains()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate frequency domains", zap.Error(err))
@@ -102,7 +109,8 @@ func (d *sysmanDevice) enumFrequency(aggregatedMetricsBufferSize int) {
 	}
 	frequency := make([]*sysmanFrequency, len(freqs))
 	for i, freq := range freqs {
-		f, err := newSysmanFrequency(freq, d.logger, d.attributes, aggregatedMetricsBufferSize)
+		name := fmt.Sprintf("freq_%d", i)
+		f, err := newSysmanFrequency(name, freq, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create sysman frequency domain", zap.Error(err))
 			continue
@@ -121,7 +129,8 @@ func (d *sysmanDevice) enumMemory() {
 	}
 	memory := make([]*sysmanMemory, len(mems))
 	for i, mem := range mems {
-		m, err := newSysmanMemory(mem, d.logger, d.attributes)
+		name := fmt.Sprintf("mem_%d", i)
+		m, err := newSysmanMemory(name, mem, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create sysman memory module", zap.Error(err))
 			continue
@@ -140,7 +149,8 @@ func (d *sysmanDevice) enumTemperature() {
 	}
 	temperature := make([]*sysmanTemperature, len(temps))
 	for i, temp := range temps {
-		t, err := newSysmanTemperature(temp, d.logger, d.attributes)
+		name := fmt.Sprintf("temp_%d", i)
+		t, err := newSysmanTemperature(name, temp, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create sysman temperature sensor", zap.Error(err))
 			continue
@@ -154,4 +164,8 @@ func (d *sysmanDevice) pollAggregatedMetrics() {
 	for _, f := range d.frequency {
 		f.pollAggregatedMetrics()
 	}
+}
+
+func (d *sysmanDevice) pickAttributes(keys ...string) pcommon.Map {
+	return pickAttributes(d.attributes, keys...)
 }
