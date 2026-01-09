@@ -17,7 +17,8 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: intelsb.prod.amr.dind
+    runs-on:
+      labels: [intel.prod.amr.dind]
     permissions:
       contents: read
       packages: write
