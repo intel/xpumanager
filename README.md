@@ -15,11 +15,11 @@ See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
 
 ### Building
 
-Clone required repositories and build the exporter.
+Clone required repositories and build the daemon.
 
 ```bash
-git clone https://github.com/marquiz/xpu-exporter xpu-exporter
-cd xpu-exporter
+git clone https://github.com/intel/xpumd xpumd
+cd xpumd
 git clone https://github.com/intel/level-zero-go level-zero-go
 make build
 ```
@@ -39,7 +39,7 @@ curl http://localhost:8080/metrics
 
 ### Building container image
 
-**NOTE:** The level-zero-go repository must be cloned in the same directory as the xpu-exporter repository.
+**NOTE:** Level-Zero Go bindings repository must be cloned inside the `xpumd` source tree.
 
 ```bash
 docker build -t registry.local/xpumd:main .

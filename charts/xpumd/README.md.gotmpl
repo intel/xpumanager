@@ -26,7 +26,7 @@ kubectl create secret docker-registry ghcr-secret \
 Install the chart:
 
 ```bash
-helm install xpumd oci://ghcr.io/marquiz/xpu-exporter/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --version 0.0.0-main
 ```
@@ -35,7 +35,7 @@ By default no metrics exporters are enabled. To enable exporters, the correspond
 values must be set. For example, to enable the OTLP gRPC exporter:
 
 ```bash
-helm install xpumd oci://ghcr.io/marquiz/xpu-exporter/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --set config.exporters.otlp.endpoint="otel-collector:4317" \
   --set config.service.pipelines.metrics.exporters="{otlp}"

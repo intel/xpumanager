@@ -23,7 +23,7 @@ kubectl create secret docker-registry ghcr-secret \
 Install the chart:
 
 ```bash
-helm install xpumd oci://ghcr.io/marquiz/xpu-exporter/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --version 0.0.0-main
 ```
@@ -32,7 +32,7 @@ By default no metrics exporters are enabled. To enable exporters, the correspond
 values must be set. For example, to enable the OTLP gRPC exporter:
 
 ```bash
-helm install xpumd oci://ghcr.io/marquiz/xpu-exporter/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --set config.exporters.otlp.endpoint="otel-collector:4317" \
   --set config.service.pipelines.metrics.exporters="{otlp}"
@@ -61,7 +61,7 @@ helm install xpumd oci://ghcr.io/marquiz/xpu-exporter/charts/xpumd \
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
-| image.repository | string | `"ghcr.io/marquiz/xpu-exporter/xpumd"` | Image repository |
+| image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
 | nameOverride | string | `""` | Override the chart name |
