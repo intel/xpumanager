@@ -19,7 +19,7 @@ fwupd_lib = static_library('fwupd',
     include_directories('../core'),
     include_directories('../amc')
   ],
-  dependencies : [levelzero_dep, oal_dep, igsc_dep],
+  dependencies : [levelzero_dep, oal_dep, igsc_dep, nlohmann_json_dep],
   install : false
 )
 

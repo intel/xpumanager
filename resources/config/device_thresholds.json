@@ -1,0 +1,51 @@
+{
+  "temperature_thresholds": {
+    "throttle_core": {
+      "0x56C0": 100,
+      "0x56C1": 95,
+      "0x56C2": 100
+    },
+    "shutdown_core": {
+      "0x56C0": 125,
+      "0x56C1": 125,
+      "0x56C2": 125
+    },
+    "shutdown_memory": {
+      "0x56C0": 105,
+      "0x56C1": 105,
+      "0x56C2": 105
+    }
+  },
+  "power_thresholds": {
+    "tdps": {
+      "0x0205": 150,
+      "0x0203": 150,
+      "0x020A": 300,
+      "0x56C0": 150,
+      "0x56C1": 38,
+      "0x56C2": 150,
+      "0x0BD0": 600,
+      "0x0BD4": 600,
+      "0x0BD5": 600,
+      "0x0BD6": 600,
+      "0x0BD7": 450,
+      "0x0BD8": 450,
+      "0x0BD9": 300,
+      "0x0BDA": 300,
+      "0x0BDB": 300,
+      "0x0B6E": 300,
+      "0x0BE5": 600,
+      "0x4907": 25,
+      "0xE20B": 190,
+      "0xE20C": 150,
+      "0xE210": 190,
+      "0xE216": 75
+    }
+  },
+  "default_thresholds": {
+    "core_throttle": 105,
+    "core_shutdown": 130,
+    "memory_shutdown": 100,
+    "power_tdp": 300
+  }
+}

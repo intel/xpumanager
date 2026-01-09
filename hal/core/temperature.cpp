@@ -5,6 +5,116 @@
  */
 
 #include "temperature.h"
+#include "debug.h"
+#include <map>
+#include <memory>
+
+/**
+ * @brief Helper function to parse device ID from hexadecimal string
+ *
+ * @param hexKey Hexadecimal string representation of device ID
+ * @return uint32_t Parsed device ID
+ */
+uint32_t temperature::parseDeviceId(const std::string &hexKey) { return (uint32_t)std::stoul(hexKey, nullptr, 16); }
+
+/**
+ * @brief Helper function to load threshold data from JSON into a map
+ *
+ * This function checks if the JSON object contains the specified key,
+ * then iterates through the device-specific thresholds and calls the setter function.
+ *
+ * @param thresholdsJson JSON object containing threshold configurations
+ * @param key The key to look for in the JSON (e.g., "throttle_core", "shutdown_core")
+ * @param setter Function to call for each device ID and threshold value pair
+ */
+void temperature::loadThresholdSection(const nlohmann::json &thresholdsJson, const std::string &key,
+									   std::function<void(uint32_t, uint64_t)> setter)
+{
+	if (thresholdsJson.contains(key)) {
+		auto section = thresholdsJson[key];
+		for (auto it = section.begin(); it != section.end(); ++it) {
+			try {
+				uint32_t deviceId = parseDeviceId(it.key());
+				uint64_t threshold = it.value().get<uint64_t>();
+				setter(deviceId, threshold);
+			} catch (const std::exception &e) {
+				ERR("Error parsing %s threshold for device %s: %s\n", key.c_str(), it.key().c_str(), e.what());
+			}
+		}
+	}
+}
+
+/**
+ * @brief Loads temperature threshold configuration from JSON file
+ *
+ * This function reads temperature thresholds from the configuration file
+ * device_thresholds.json and populates the device-specific threshold maps.
+ * If the file cannot be read or parsed, default values are used.
+ */
+void temperature::loadTemperatureThresholds()
+{
+	try {
+		std::ifstream configFile(std::string(XPUM_CONFIG_DIR) + std::string("device_thresholds.json"));
+
+		if (configFile.is_open()) {
+			nlohmann::json configJson;
+			configFile >> configJson;
+			configFile.close();
+
+			if (configJson.contains("default_thresholds")) {
+				auto defaults = configJson["default_thresholds"];
+				if (defaults.contains("core_throttle")) {
+					defaultCoreThrottleThreshold = defaults["core_throttle"].get<uint64_t>();
+				}
+				if (defaults.contains("core_shutdown")) {
+					defaultCoreShutdownThreshold = defaults["core_shutdown"].get<uint64_t>();
+				}
+				if (defaults.contains("memory_shutdown")) {
+					defaultMemoryShutdownThreshold = defaults["memory_shutdown"].get<uint64_t>();
+				}
+			}
+
+			if (configJson.contains("temperature_thresholds")) {
+				auto thresholdsJson = configJson["temperature_thresholds"];
+
+				// Load throttle core temperatures
+				loadThresholdSection(thresholdsJson, "throttle_core", [this](uint32_t deviceId, uint64_t value) {
+					thresholds->setThrottleCoreTemperature(deviceId, value);
+				});
+
+				// Load shutdown core temperatures
+				loadThresholdSection(thresholdsJson, "shutdown_core", [this](uint32_t deviceId, uint64_t value) {
+					thresholds->setShutdownCoreTemperature(deviceId, value);
+				});
+
+				// Load shutdown memory temperatures
+				loadThresholdSection(thresholdsJson, "shutdown_memory", [this](uint32_t deviceId, uint64_t value) {
+					thresholds->setShutdownMemoryTemperature(deviceId, value);
+				});
+			}
+		} else {
+			DBG("Temperature thresholds config file not found, using defaults\n");
+		}
+	} catch (const std::exception &e) {
+		ERR("Error loading temperature thresholds config: %s\n", e.what());
+		DBG("Using default temperature thresholds\n");
+	}
+}
+
+/**
+ * @brief Constructor for the temperature class
+ *
+ * Initializes the temperature management object with default values and
+ * loads temperature thresholds from configuration.
+ */
+temperature::temperature()
+	: temperatureCount(0), temperatureHandles(nullptr), thresholds(new TemperatureThresholds()),
+	  defaultCoreThrottleThreshold(CORE_THROTTLE_THRESHOLD_DEFAULT),
+	  defaultCoreShutdownThreshold(CORE_SHUTDOWN_THRESHOLD_DEFAULT),
+	  defaultMemoryShutdownThreshold(MEMORY_SHUTDOWN_THRESHOLD_DEFAULT)
+{
+	loadTemperatureThresholds();
+}
 
 /**
  * @brief Destructor for the temperature class
@@ -19,6 +129,92 @@ temperature::~temperature()
 		delete[] temperatureHandles;
 		temperatureHandles = nullptr;
 	}
+	delete thresholds;
+	thresholds = nullptr;
+}
+
+/**
+ * @brief TemperatureThresholds getter methods
+ */
+uint64_t TemperatureThresholds::getThrottleCoreTemperature(uint32_t deviceId, uint64_t defaultValue) const
+{
+	auto it = pHealthDeviceToThrottleCoreTemperatures.find(deviceId);
+	return (it != pHealthDeviceToThrottleCoreTemperatures.end()) ? it->second : defaultValue;
+}
+
+uint64_t TemperatureThresholds::getShutdownCoreTemperature(uint32_t deviceId, uint64_t defaultValue) const
+{
+	auto it = pHealthDeviceToShutdownCoreTemperatures.find(deviceId);
+	return (it != pHealthDeviceToShutdownCoreTemperatures.end()) ? it->second : defaultValue;
+}
+
+uint64_t TemperatureThresholds::getShutdownMemoryTemperature(uint32_t deviceId, uint64_t defaultValue) const
+{
+	auto it = pHealthDeviceToShutdownMemoryTemperatures.find(deviceId);
+	return (it != pHealthDeviceToShutdownMemoryTemperatures.end()) ? it->second : defaultValue;
+}
+
+/**
+ * @brief TemperatureThresholds setter methods
+ */
+void TemperatureThresholds::setThrottleCoreTemperature(uint32_t deviceId, uint64_t value)
+{
+	pHealthDeviceToThrottleCoreTemperatures[deviceId] = value;
+}
+
+void TemperatureThresholds::setShutdownCoreTemperature(uint32_t deviceId, uint64_t value)
+{
+	pHealthDeviceToShutdownCoreTemperatures[deviceId] = value;
+}
+
+void TemperatureThresholds::setShutdownMemoryTemperature(uint32_t deviceId, uint64_t value)
+{
+	pHealthDeviceToShutdownMemoryTemperatures[deviceId] = value;
+}
+
+/**
+ * @brief Gets the throttle temperature threshold for GPU core
+ *
+ * This function retrieves the temperature threshold at which GPU core throttling
+ * begins for thermal protection. Returns a device-specific threshold if configured,
+ * otherwise returns the default throttle temperature of 105°C.
+ *
+ * @param pciDeviceId PCI device ID to lookup device-specific threshold
+ * @return uint64_t Throttle temperature threshold in Celsius
+ */
+uint64_t temperature::getThrottleCoreTemperature(uint32_t pciDeviceId)
+{
+	return thresholds->getThrottleCoreTemperature(pciDeviceId, defaultCoreThrottleThreshold);
+}
+
+/**
+ * @brief Gets the shutdown temperature threshold for GPU core
+ *
+ * This function retrieves the critical temperature threshold at which the GPU core
+ * will be shut down for thermal protection. Returns a device-specific threshold
+ * if configured, otherwise returns the default shutdown temperature of 130°C.
+ *
+ * @param pciDeviceId PCI device ID to lookup device-specific threshold
+ * @return uint64_t Shutdown temperature threshold in Celsius
+ */
+uint64_t temperature::getShutdownCoreTemperature(uint32_t pciDeviceId)
+{
+	return thresholds->getShutdownCoreTemperature(pciDeviceId, defaultCoreShutdownThreshold);
+}
+
+/**
+ * @brief Gets the shutdown temperature threshold for memory
+ *
+ * This function retrieves the critical temperature threshold at which the memory
+ * subsystem will be shut down for thermal protection. Returns a device-specific
+ * threshold if configured, otherwise returns the default shutdown temperature of 100°C.
+ *
+ * @param pciDeviceId PCI device ID to lookup device-specific threshold
+ * @return uint64_t Memory shutdown temperature threshold in Celsius
+ */
+uint64_t temperature::getShutdownMemoryTemperature(uint32_t pciDeviceId)
+{
+	return thresholds->getShutdownMemoryTemperature(pciDeviceId, defaultMemoryShutdownThreshold);
 }
 
 /**
@@ -123,7 +319,7 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
 {
 	ze_result_t result = zesTemperatureGetState(temperatureHandle, temp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get state for temperature domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get state for temperature domain 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -150,19 +346,29 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_temp_properties_t properties;
 	*temp = 0.0; // Default value if no temperature found
+	bool sensorFound = false;
 
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		result = getProperties(temperatureHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			return result;
+			DBG("Failed to get properties for temperature sensor %d: 0x%X (%s)\n", i, result,
+				l0_error_to_string(result));
+			continue;
 		}
 
 		if (properties.type == type) {
+			sensorFound = true;
 			result = getState(temperatureHandles[i], temp);
-			return result;
+			if (result == ZE_RESULT_SUCCESS) {
+				return result;
+			} else {
+				DBG("Failed to get state for temperature sensor %d (type %d): 0x%X (%s)\n", i, type, result,
+					l0_error_to_string(result));
+			}
 		}
 	}
-	return result;
+
+	return sensorFound ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**
@@ -255,20 +461,26 @@ ze_result_t temperature::getMemoryTemp(double *memTemp)
  * including throttle and shutdown temperature limits used for thermal protection
  * and performance management.
  *
- * @param device Handle to the device (unused in current implementation)
+ * @param device Handle to the device
  * @param throttleThreshold Pointer to store the throttle temperature threshold
  * @param shutdownThreshold Pointer to store the shutdown temperature threshold
  * @return ze_result_t ZE_RESULT_SUCCESS on successful threshold retrieval, error code otherwise
  */
-ze_result_t temperature::getCoreThreshold(UNUSED zes_device_handle_t device, uint32_t *throttleThreshold,
+ze_result_t temperature::getCoreThreshold(zes_device_handle_t device, uint32_t *throttleThreshold,
 										  uint32_t *shutdownThreshold)
 {
 	TRACING();
 
 	ze_result_t result = ZE_RESULT_SUCCESS;
-
-	*throttleThreshold = CORE_THROTTLE_THRESHOLD_DEFAULT;
-	*shutdownThreshold = CORE_SHUTDOWN_THRESHOLD_DEFAULT;
+	zes_device_properties_t props = {};
+	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	props.pNext = nullptr;
+	if (!(zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS)) {
+		ERR("Failed to get device ID\n");
+		return result;
+	}
+	*throttleThreshold = (uint32_t)getThrottleCoreTemperature(props.core.deviceId);
+	*shutdownThreshold = (uint32_t)getShutdownCoreTemperature(props.core.deviceId);
 	return result;
 }
 
@@ -279,20 +491,27 @@ ze_result_t temperature::getCoreThreshold(UNUSED zes_device_handle_t device, uin
  * including throttle and shutdown temperature limits used for memory thermal
  * protection and system stability management.
  *
- * @param device Handle to the device (unused in current implementation)
+ * @param device Handle to the device
  * @param throttleThreshold Pointer to store the memory throttle temperature threshold
  * @param shutdownThreshold Pointer to store the memory shutdown temperature threshold
  * @return ze_result_t ZE_RESULT_SUCCESS on successful threshold retrieval, error code otherwise
  */
-ze_result_t temperature::getMemoryThreshold(UNUSED zes_device_handle_t device, uint32_t *throttleThreshold,
+ze_result_t temperature::getMemoryThreshold(zes_device_handle_t device, uint32_t *throttleThreshold,
 											uint32_t *shutdownThreshold)
 {
 	TRACING();
 
 	ze_result_t result = ZE_RESULT_SUCCESS;
-
+	zes_device_properties_t props = {};
+	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	props.pNext = nullptr;
+	if (!(zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS)) {
+		ERR("Failed to get device ID\n");
+		return result;
+	}
 	*throttleThreshold = MEMORY_THROTTLE_THRESHOLD_DEFAULT;
-	*shutdownThreshold = MEMORY_SHUTDOWN_THRESHOLD_DEFAULT;
+	*shutdownThreshold = (uint32_t)getShutdownMemoryTemperature(props.core.deviceId);
+
 	return result;
 }
 

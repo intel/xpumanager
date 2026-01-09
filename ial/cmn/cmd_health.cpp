@@ -10,6 +10,10 @@
 #include <assert.h>
 #include <temperature.h>
 #include <memory.h>
+#include <sstream>
+#include <iomanip>
+#include <thread>
+#include <inttypes.h>
 
 static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
 	{healthCmdType::HEALTH_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
@@ -22,7 +26,7 @@ static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
 healthSubCmdStruct componentCmds[] = {
 	{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
 	{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
-	{healthSubCmdType::HEALTH_POWER, &cmdHealth::power},
+	{healthSubCmdType::HEALTH_POWER, &cmdHealth::gpuPower},
 	{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
 	{healthSubCmdType::HEALTH_XELINKPORT, &cmdHealth::xeLinkPort},
 	{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
@@ -230,6 +234,72 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
 }
 
 /**
+ * @brief Common function to handle temperature monitoring for both core and memory
+ *
+ * This function provides common temperature monitoring logic that can be used for
+ * both core and memory temperature measurements. It retrieves thresholds, measures
+ * temperature values, determines health status, and formats results for JSON output.
+ *
+ * @param d Pointer to device information structure containing device handles
+ * @param jsonObj Pointer to a JSON object where results will be stored
+ * @param jsonKey The key name to use in the JSON object (e.g., "core_temperature", "memory_temperature")
+ * @param getThresholdFunc Function pointer to retrieve temperature thresholds
+ * @param getTempFunc Function pointer to retrieve temperature value
+ * @param thresholdErrorMsg Error message for threshold retrieval failure
+ * @param tempErrorMsg Error message for temperature retrieval failure
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code otherwise
+ */
+ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *jsonObj, const std::string &jsonKey,
+											ze_result_t (temperature::*getThresholdFunc)(zes_device_handle_t,
+																						 uint32_t *, uint32_t *),
+											ze_result_t (temperature::*getTempFunc)(double *),
+											const std::string &thresholdErrorMsg, const std::string &tempErrorMsg)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	uint32_t throttleThreshold = 0;
+	uint32_t shutdownThreshold = 0;
+
+	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
+	temperature *t = (temperature *)d->dev->getTemperature();
+	if (t == nullptr) {
+		ERR("Failed to get temperature handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	result = (t->*getThresholdFunc)(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("%s: 0x%X (%s)\n", thresholdErrorMsg.c_str(), result, l0_error_to_string(result));
+		return result;
+	}
+
+	double tempVal = 0;
+	std::string description = "Health cannot be determined for temperature sensors.";
+	result = (t->*getTempFunc)(&tempVal);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("%s: 0x%X (%s)\n", tempErrorMsg.c_str(), result, l0_error_to_string(result));
+		return result;
+	}
+	if (tempVal > 0 && tempVal < throttleThreshold) {
+		status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+		description = "Values for all the temperature sensors are healthy.";
+	}
+	if (tempVal >= throttleThreshold) {
+		status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+		std::stringstream tempBuffer;
+		tempBuffer << std::fixed << std::setprecision(2) << tempVal;
+		description = "Unhealthy temperature sensor value, " + tempBuffer.str() +
+					  " >= " + std::to_string(throttleThreshold) + " (threshold)";
+	}
+	(*jsonObj)[jsonKey] = {{"status", getHealthStatusString(status)},
+						   {"throttle_threshold", throttleThreshold},
+						   {"shutdown_threshold", shutdownThreshold},
+						   {"description", description}};
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Retrieves GPU core temperature thresholds
  *
  * This function queries the device's core temperature monitoring system to
@@ -243,27 +313,9 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
  */
 ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
-	TRACING();
-	ze_result_t result = ZE_RESULT_SUCCESS;
-	uint32_t throttleThreshold = 0;
-	uint32_t shutdownThreshold = 0;
-
-	temperature *t = (temperature *)d->dev->getTemperature();
-	if (t == nullptr) {
-		ERR("Failed to get temperature handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	result = t->getCoreThreshold(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get core temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	(*jsonObj)["core_temperature"] = {{"throttle_threshold", std::to_string(throttleThreshold) + " C"},
-									  {"shutdown_threshold", std::to_string(shutdownThreshold) + " C"}};
-
-	return ZE_RESULT_SUCCESS;
+	return getTemperatureHealth(d, jsonObj, "core_temperature", &temperature::getCoreThreshold,
+								&temperature::getCoreTemp, "Failed to get core temperature thresholds",
+								"Failed to get core temperature");
 }
 
 /**
@@ -281,51 +333,173 @@ ze_result_t cmdHealth::coreTemperature(devInfo *d, nlohmann::ordered_json *jsonO
  */
 ze_result_t cmdHealth::memoryTemperature(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
-	TRACING();
-	ze_result_t result = ZE_RESULT_SUCCESS;
-	uint32_t throttleThreshold = 0;
-	uint32_t shutdownThreshold = 0;
-
-	temperature *t = (temperature *)d->dev->getTemperature();
-	if (t == nullptr) {
-		ERR("Failed to get temperature handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	result = t->getMemoryThreshold(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	(*jsonObj)["memory_temperature"] = {{"throttle_threshold", std::to_string(throttleThreshold) + " C"},
-										{"shutdown_threshold", std::to_string(shutdownThreshold) + " C"}};
-
-	return ZE_RESULT_SUCCESS;
+	return getTemperatureHealth(d, jsonObj, "memory_temperature", &temperature::getMemoryThreshold,
+								&temperature::getMemoryTemp, "Failed to get memory temperature thresholds",
+								"Failed to get memory temperature");
 }
 
 /**
  * @brief Performs GPU power subsystem health assessment
- *
- * This function evaluates the health status of the device's power management
- * subsystem, including power consumption patterns, voltage regulation, and
- * power delivery efficiency. Currently implemented as a placeholder for
- * future power health monitoring capabilities. Results are stored in the provided JSON
- * object under the "power_health" key.
+ * Compares maximum value of all the device power domains (and sum of subdevice
+ * power domain values) against power threshold.  Results in OK state for values
+ * below threshold, and a warning otherwise. Result is stored in the provided JSON
  *
  * @param d Pointer to device information structure (currently unused)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::power(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
+ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
+	std::string pciDeviceId;
 
-	(*jsonObj)["power_health"] = {{"status", "ok"}};
+	std::string description = "Health cannot be determined for the power domains.";
+	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
+	uint32_t powerDomainCount = 0;
+	ze_device_properties_t zeDevProp = {};
+	ze_result_t res;
+
+	power *pwr = d->dev->getPower();
+	res = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (res != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+		return res;
+	}
+
+	auto powerThreshold = pwr->getThrottlePower(zeDevProp.deviceId);
+	if (powerThreshold <= 0) {
+		description = "Health threshold for the power domains is not set";
+		ERR("Power threshold is not set for power domain\n");
+		return ZE_RESULT_NOT_READY;
+	}
+	res = zesDeviceEnumPowerDomains(d->zesDeviceHdl, &powerDomainCount, nullptr);
+	std::vector<zes_pwr_handle_t> powerHandles(powerDomainCount);
+	res = zesDeviceEnumPowerDomains(d->zesDeviceHdl, &powerDomainCount, powerHandles.data());
+	if (res == ZE_RESULT_SUCCESS) {
+		uint64_t currentDeviceMaxDomainValue = 0;
+		uint64_t currentSubDeviceValueSum = 0;
+		for (auto &power : powerHandles) {
+			zes_power_properties_t props = {};
+			props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+			res = zesPowerGetProperties(power, &props);
+			if (res != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+			zes_power_energy_counter_t snap1 = {};
+			zes_power_energy_counter_t snap2 = {};
+			res = zesPowerGetEnergyCounter(power, &snap1);
+			if (res == ZE_RESULT_SUCCESS) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(POWER_MONITOR_INTERNAL_PERIOD));
+				res = zesPowerGetEnergyCounter(power, &snap2);
+				if (res == ZE_RESULT_SUCCESS && snap2.timestamp != snap1.timestamp) {
+					uint64_t value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+					if (props.onSubdevice) {
+						currentSubDeviceValueSum += value;
+					} else if (value > currentDeviceMaxDomainValue) {
+						currentDeviceMaxDomainValue = value;
+					}
+				}
+			}
+		}
+		DBG("health: current device max domain power value: %" PRIu64, currentDeviceMaxDomainValue);
+		DBG("health: current sum of sub-device power values: %" PRIu64, currentSubDeviceValueSum);
+		auto powerVal = std::max(currentDeviceMaxDomainValue, currentSubDeviceValueSum);
+		if (powerVal < powerThreshold && status < xpumHealthStatus::XPUM_HEALTH_STATUS_OK) {
+			status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+			description = "Values for all the power domains are healthy.";
+		}
+		if (powerVal >= powerThreshold && status < xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING) {
+			status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+			description = "Unhealthy power domain value, " + std::to_string(powerVal) +
+						  " >= " + std::to_string(powerThreshold) + " (threshold)";
+		}
+	}
+
+	(*jsonObj)["power_health"] = {{"status", getHealthStatusString(status)}, {"description", description}};
 
 	return ZE_RESULT_SUCCESS;
 }
 
+/**
+ * @brief Converts memory health enum to human-readable string
+ *
+ * This function converts ZES memory health enumeration values to descriptive
+ * string representations for display purposes.
+ *
+ * @param health The ZES memory health enumeration value
+ * @return std::string Human-readable health status string
+ */
+xpumHealthStatus cmdHealth::getHealthStatus(zes_mem_health_t health)
+{
+	if (health == ZES_MEM_HEALTH_OK) {
+		return xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+	} else if (health == ZES_MEM_HEALTH_DEGRADED) {
+		return xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+	} else if (health == ZES_MEM_HEALTH_CRITICAL) {
+		return xpumHealthStatus::XPUM_HEALTH_STATUS_CRITICAL;
+	} else if (health == ZES_MEM_HEALTH_REPLACE) {
+		return xpumHealthStatus::XPUM_HEALTH_STATUS_CRITICAL;
+	} else {
+		return xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
+	}
+}
+
+/**
+ * @brief Converts XPUM health status enum to human-readable string
+ *
+ * This function converts XPUM health status enumeration values to descriptive
+ * string representations suitable for display in user interfaces and reports.
+ * It provides consistent string formatting across the health monitoring system.
+ *
+ * @param status The XPUM health status enumeration value to convert
+ * @return std::string Human-readable health status string ("OK", "WARNING", "CRITICAL", "UNKNOWN")
+ */
+std::string cmdHealth::getHealthStatusString(xpumHealthStatus status)
+{
+	switch (status) {
+	case XPUM_HEALTH_STATUS_OK:
+		return "OK";
+	case XPUM_HEALTH_STATUS_WARNING:
+		return "WARNING";
+	case XPUM_HEALTH_STATUS_CRITICAL:
+		return "CRITICAL";
+	case XPUM_HEALTH_STATUS_UNKNOWN:
+		return "UNKNOWN";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+/**
+ * @brief Converts ZES memory health enum to descriptive text
+ *
+ * This function maps Level Zero Sysman (ZES) memory health enumeration values
+ * to detailed descriptive text strings that explain the specific memory health
+ * condition. These descriptions provide users with actionable information about
+ * memory subsystem status and recommended actions.
+ * link: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/PROG.html#querying-memory-modules
+ *
+ * @param val The ZES memory health enumeration value to describe
+ * @return std::string Detailed description of the memory health condition
+ */
+std::string cmdHealth::getHealthStatusDescription(zes_mem_health_t val)
+{
+	switch (val) {
+	case zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN:
+		return std::string("The memory health cannot be determined.");
+	case zes_mem_health_t::ZES_MEM_HEALTH_OK:
+		return std::string("All memory channels are healthy.");
+	case zes_mem_health_t::ZES_MEM_HEALTH_DEGRADED:
+		return std::string(
+			"Excessive correctable errors have been detected on one or more channels. Device should be reset.");
+	case zes_mem_health_t::ZES_MEM_HEALTH_CRITICAL:
+		return std::string("Operating with reduced memory to cover banks with too many uncorrectable errors.");
+	case zes_mem_health_t::ZES_MEM_HEALTH_REPLACE:
+		return std::string("Device should be replaced due to excessive uncorrectable errors.");
+	default:
+		return std::string("The memory health cannot be determined.");
+	}
+}
 /**
  * @brief Retrieves GPU memory health status
  *
@@ -357,20 +531,10 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
 		return result;
 	}
 
-	std::string healthStatus;
-	if (health == ZES_MEM_HEALTH_OK) {
-		healthStatus = "OK";
-	} else if (health == ZES_MEM_HEALTH_DEGRADED) {
-		healthStatus = "DEGRADED";
-	} else if (health == ZES_MEM_HEALTH_CRITICAL) {
-		healthStatus = "CRITICAL";
-	} else if (health == ZES_MEM_HEALTH_REPLACE) {
-		healthStatus = "REPLACE";
-	} else {
-		healthStatus = "UNKNOWN";
-	}
+	xpumHealthStatus healthStatus = this->getHealthStatus(health);
 
-	(*jsonObj)["memory_health"] = {{"status", healthStatus}};
+	(*jsonObj)["memory_health"] = {{"status", getHealthStatusString(healthStatus)},
+								   {"description", getHealthStatusDescription(health)}};
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -389,13 +553,173 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
  */
-ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
+ze_result_t cmdHealth::xeLinkPort(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
+	std::string description = "Status cannot be determined for all the ports.";
+	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
+	uint32_t fabricPortsCount = 0;
+	ze_result_t res;
+	res = zesDeviceEnumFabricPorts(d->zesDeviceHdl, &fabricPortsCount, nullptr);
+	if (res == ZE_RESULT_SUCCESS && fabricPortsCount > 0) {
+		std::vector<zes_fabric_port_handle_t> fabricPorts(fabricPortsCount);
+		std::vector<std::string> failedFabricPorts, degradedFabricPorts, disabledFabricPorts;
+		res = zesDeviceEnumFabricPorts(d->zesDeviceHdl, &fabricPortsCount, fabricPorts.data());
+		for (auto &fabricPort : fabricPorts) {
+			zes_fabric_port_properties_t fabricPortProperties = {};
+			fabricPortProperties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
+			res = zesFabricPortGetProperties(fabricPort, &fabricPortProperties);
+			if (res != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+			zes_fabric_port_state_t fabricPortState = {};
+			fabricPortState.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
+			res = zesFabricPortGetState(fabricPort, &fabricPortState);
+			if (res != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+			if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_FAILED) {
+				failedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
+											   std::to_string((int)(fabricPortProperties.portId.portNumber)));
+			}
+			if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
+				degradedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
+												 std::to_string((int)(fabricPortProperties.portId.portNumber)));
+			}
+			if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DISABLED) {
+				disabledFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
+												 std::to_string((int)(fabricPortProperties.portId.portNumber)));
+			}
+		}
 
-	(*jsonObj)["xe_link_port_health"] = {{"status", "ok"}};
+		if (failedFabricPorts.empty() && degradedFabricPorts.empty() && disabledFabricPorts.empty()) {
+			status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+			description = "All ports are up and operating as expected.";
+		} else {
+			status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+			std::ostringstream desc;
+			if (!failedFabricPorts.empty()) {
+				status = xpumHealthStatus::XPUM_HEALTH_STATUS_CRITICAL;
+				desc << "Ports ";
+				for (const auto &port : failedFabricPorts) {
+					desc << port << " ";
+				}
+				desc << "connection instabilities are preventing workloads making forward progress. ";
+			}
+			if (!degradedFabricPorts.empty()) {
+				desc << "Ports ";
+				for (const auto &port : degradedFabricPorts) {
+					desc << port << " ";
+				}
+				desc << "are up but have quality and/or speed degradation. ";
+			}
+			if (!disabledFabricPorts.empty()) {
+				desc << "Ports ";
+				for (const auto &port : disabledFabricPorts) {
+					desc << port << " ";
+				}
+				desc << "are configured down. ";
+			}
+			description = desc.str();
+		}
+	} else {
+		description = "Device lacks Xe Link capability.";
+	}
+
+	(*jsonObj)["xe_link_port_health"] = {{"status", getHealthStatusString(status)}, {"description", description}};
 
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Converts frequency throttle reason flags to descriptive string
+ *
+ * This function analyzes frequency throttle reason flags from the ZES API
+ * and converts them into human-readable descriptions. It helps identify why
+ * the GPU frequency is being throttled, which is crucial for performance
+ * analysis and thermal management diagnostics.
+ *
+ * @param flags Bitmask of ZES frequency throttle reason flags
+ * @return std::string Descriptive text explaining (one of) the throttling reason(s)
+ */
+#define THROTTLE_FLAG(flags, flag) ((flags & flag) == flag)
+
+std::string cmdHealth::getFreqThrottleString(zes_freq_throttle_reason_flags_t flags)
+{
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP))
+		return std::string("frequency throttled due to average power excursion.");
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP))
+		return std::string("frequency throttled due to burst power excursion.");
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT))
+		return std::string("frequency throttled due to current excursion.");
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT))
+		return std::string("frequency throttled due to thermal excursion.");
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT))
+		return std::string("frequency throttled due to power supply assertion.");
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE))
+		return std::string("frequency throttled due to software supplied frequency range.");
+	if (THROTTLE_FLAG(flags, ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE))
+		return std::string("frequency throttled due to a sub block that has a lower frequency.");
+
+	return std::string("frequency throttled reason cannot be determined.");
+}
+
+#undef THROTTLE_FLAG
+
+/**
+ * @brief Retrieves the current frequency state and throttling information
+ *
+ * This function queries all frequency domains on the device to determine
+ * if any frequency throttling is occurring. It examines both device-level
+ * and tile-level frequency domains, building a comprehensive message about
+ * any active throttling conditions. The function prioritizes device-level
+ * throttling over tile-level throttling in its reporting.
+ *
+ * @param device Handle to the ZES device to query
+ * @param freqThrottleMessage Reference to string that will contain throttling description
+ * @return bool True if frequency state was successfully retrieved, false on error
+ */
+bool cmdHealth::getFrequencyState(const zes_device_handle_t &device, std::string &freqThrottleMessage)
+{
+	bool ret = false;
+	if (device == nullptr) {
+		return ret;
+	}
+
+	uint32_t freqCount = 0;
+	ze_result_t res;
+	res = zesDeviceEnumFrequencyDomains(device, &freqCount, nullptr);
+	std::vector<zes_freq_handle_t> freqHandles(freqCount);
+	if (res == ZE_RESULT_SUCCESS) {
+		res = zesDeviceEnumFrequencyDomains(device, &freqCount, freqHandles.data());
+		for (auto &phFreq : freqHandles) {
+			zes_freq_properties_t props = {};
+			props.pNext = nullptr;
+			res = zesFrequencyGetProperties(phFreq, &props);
+			if (res == ZE_RESULT_SUCCESS) {
+				zes_freq_state_t freqState = {};
+				res = zesFrequencyGetState(phFreq, &freqState);
+				if (res == ZE_RESULT_SUCCESS) {
+					if (freqState.throttleReasons == 0) {
+						ret = true;
+						continue;
+					}
+					if (props.onSubdevice) {
+						if (!freqThrottleMessage.empty())
+							freqThrottleMessage += " ";
+						freqThrottleMessage += "Tile " + std::to_string(props.subdeviceId) + " " +
+											   this->getFreqThrottleString(freqState.throttleReasons);
+						ret = true;
+					} else {
+						freqThrottleMessage = "Device " + this->getFreqThrottleString(freqState.throttleReasons);
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	return ret;
 }
 
 /**
@@ -415,8 +739,21 @@ ze_result_t cmdHealth::xeLinkPort(UNUSED devInfo *d, nlohmann::ordered_json *jso
 ze_result_t cmdHealth::frequency(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
+	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
+	std::string description = "Device frequency state cannot be determined.";
+	std::string freqThrottleMessage;
+	bool getState = this->getFrequencyState(d->zesDeviceHdl, freqThrottleMessage);
+	if (getState) {
+		if (!freqThrottleMessage.empty()) {
+			status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+			description = freqThrottleMessage;
+		} else {
+			status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+			description = "Device frequency is not throttled";
+		}
+	}
 
-	(*jsonObj)["frequency_health"] = {{"status", "ok"}};
+	(*jsonObj)["frequency_health"] = {{"status", getHealthStatusString(status)}, {"description", description}};
 
 	return ZE_RESULT_SUCCESS;
 }
