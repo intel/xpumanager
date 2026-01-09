@@ -37,7 +37,7 @@ amc_lib = static_library('amc',
     include_directories('../core'),
     include_directories('../fwupd')
   ],
-  dependencies : [levelzero_dep, oal_dep, igsc_dep],
+  dependencies : [levelzero_dep, oal_dep, igsc_dep, nlohmann_json_dep],
   install : false
 )
 

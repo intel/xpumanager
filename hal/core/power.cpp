@@ -6,6 +6,87 @@
 
 #include "power.h"
 #include "device.h"
+#include <map>
+#include <memory>
+
+/**
+ * @brief Helper function to parse device ID from hexadecimal string
+ *
+ * @param hexKey Hexadecimal string representation of device ID
+ * @return uint32_t Parsed device ID
+ */
+uint32_t power::parseDeviceId(const std::string &hexKey) { return (uint32_t)std::stoul(hexKey, nullptr, 16); }
+
+/**
+ * @brief Helper function to load threshold data from JSON into a map
+ *
+ * This function checks if the JSON object contains the specified key,
+ * and if so, iterates through its items to populate the target map
+ * with device ID to threshold value mappings.
+ *
+ * @param thresholdsJson JSON object containing threshold data
+ * @param key Key to look for in the JSON object
+ * @param setter Function to call for each device threshold pair
+ */
+void power::loadThresholdSection(const nlohmann::json &thresholdsJson, const std::string &key,
+								 std::function<void(uint32_t, uint64_t)> setter)
+{
+	if (thresholdsJson.contains(key)) {
+		for (const auto &[deviceKey, value] : thresholdsJson[key].items()) {
+			uint32_t deviceId = parseDeviceId(deviceKey);
+			setter(deviceId, value.get<uint64_t>());
+		}
+	}
+}
+
+/**
+ * @brief Constructor for the power class
+ *
+ * Initializes the power management object with default values and
+ * loads power thresholds from configuration.
+ */
+power::power()
+	: powerCount(0), powerHandles(nullptr), zeDeviceHandle(nullptr), deviceHandle(nullptr),
+	  thresholds(new PowerThresholds()), defaultThrottlePower(DEFAULT_THROTTLE_POWER)
+{
+	loadPowerThresholds();
+}
+
+/**
+ * @brief Loads power thresholds from configuration file
+ *
+ * This function reads power thresholds from the configuration file
+ * device_thresholds.json and populates the device-specific TDP maps.
+ * If the file cannot be read or parsed, default values are used.
+ */
+void power::loadPowerThresholds()
+{
+	try {
+		std::ifstream configFile(std::string(XPUM_CONFIG_DIR) + std::string("device_thresholds.json"));
+
+		if (configFile.is_open()) {
+			nlohmann::json configJson;
+			configFile >> configJson;
+			configFile.close();
+
+			if (configJson.contains("default_thresholds") && configJson["default_thresholds"].contains("power_tdp")) {
+				defaultThrottlePower = configJson["default_thresholds"]["power_tdp"].get<uint64_t>();
+			}
+
+			if (configJson.contains("power_thresholds")) {
+				auto powerThresholdsJson = configJson["power_thresholds"];
+				loadThresholdSection(powerThresholdsJson, "tdps", [this](uint32_t deviceId, uint64_t value) {
+					thresholds->setThrottlePower(deviceId, value);
+				});
+			} else {
+				DBG("Power thresholds config file section not found, using defaults\n");
+			}
+		}
+	} catch (const std::exception &e) {
+		ERR("Error loading power thresholds config: %s\n", e.what());
+		DBG("Using default power thresholds\n");
+	}
+}
 
 /**
  * @brief Destructor for the power class
@@ -20,6 +101,38 @@ power::~power()
 		delete[] powerHandles;
 		powerHandles = nullptr;
 	}
+	delete thresholds;
+	thresholds = nullptr;
+}
+
+/**
+ * @brief PowerThresholds getter method
+ */
+uint64_t PowerThresholds::getThrottlePower(uint32_t deviceId, uint64_t defaultValue) const
+{
+	auto it = healthDeviceToTdps.find(deviceId);
+	return (it != healthDeviceToTdps.end()) ? it->second : defaultValue;
+}
+
+/**
+ * @brief PowerThresholds setter method
+ */
+void PowerThresholds::setThrottlePower(uint32_t deviceId, uint64_t value) { healthDeviceToTdps[deviceId] = value; }
+
+/**
+ * @brief Gets the throttle power limit for a specific device
+ *
+ * This function retrieves the device-specific power throttle threshold that
+ * determines when power-based throttling should begin for thermal and power
+ * management. Returns a device-specific value if configured, otherwise returns
+ * the default throttle power of 300 watts.
+ *
+ * @param pciDeviceId PCI device ID to lookup device-specific threshold
+ * @return uint64_t Throttle power limit in watts
+ */
+uint64_t power::getThrottlePower(uint32_t pciDeviceId)
+{
+	return thresholds->getThrottlePower(pciDeviceId, defaultThrottlePower);
 }
 
 /**
@@ -452,11 +565,7 @@ ze_result_t power::setSustainedLimit(uint32_t limitMw, int32_t tileId)
 		}
 	}
 
-	if (tileId == -1) {
-		ERR("No matching device-level power domain found.\n");
-	} else {
-		ERR("No matching power domain found for tile %d.\n", tileId);
-	}
+	ERR("No matching power domain found for tileId %d.\n", tileId);
 	return ZE_RESULT_ERROR_UNKNOWN;
 }
 
@@ -692,11 +801,7 @@ ze_result_t power::setLimitsExt(int32_t tileId, zes_power_level_t level, uint32_
 		}
 	}
 
-	if (tileId == -1) {
-		ERR("No matching device-level power domain found.\n");
-	} else {
-		ERR("No matching power domain found for tile %d.\n", tileId);
-	}
+	ERR("No matching power domain found for tileId %d.\n", tileId);
 	return ZE_RESULT_ERROR_UNKNOWN;
 }
 
