@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2026 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  *
@@ -16,6 +16,7 @@
 #include <math.h>
 #include <pwd.h>
 #include <sys/mman.h>
+#include <sys/utsname.h>
 #include <vector>
 #include <termios.h>
 #include <unistd.h>
@@ -673,4 +674,38 @@ std::string findResourceFile(const std::string &relativePath)
 
 	// Fall back to the original relative path
 	return relativePath;
+}
+
+/**
+ * @brief Get the kernel version string
+ *
+ * @return std::string Kernel version (e.g., "5.15.0-56-generic") or empty string on failure
+ */
+std::string getKernelVersion()
+{
+	struct utsname unameData;
+	if (uname(&unameData) == 0) {
+		return std::string(unameData.release);
+	}
+	return "";
+}
+
+/**
+ * @brief Get the PCI slot label from sysfs
+ *
+ * @param[in] bdf PCI BDF address string
+ * @return std::string PCI slot label or empty string if not available
+ */
+std::string getPciSlotLabel(const std::string &bdf)
+{
+	std::string labelPath = std::format("/sys/bus/pci/devices/{}/label", bdf);
+	std::ifstream labelFile(labelPath);
+
+	if (!labelFile.is_open()) {
+		return "";
+	}
+
+	std::string label;
+	std::getline(labelFile, label);
+	return label;
 }
