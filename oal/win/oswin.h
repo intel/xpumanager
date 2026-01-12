@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2026 Intel Corporation
+ *
+ * Copyright (C) 2025-2026 Intel Corporation
+ *
  * SPDX-License-Identifier: MIT
  *
  */
@@ -99,6 +101,8 @@ struct option
 #define IOMMUSUPPORT() 0
 #define SRIOVSUPPORT(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define CHECKHOSTMEMORYSIZE(hostMemorySize) (UNUSED_VAR(hostMemorySize), 0)
+#define GETKERNELVERSION() std::string("")
+#define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GETDOWNGRADEDPCIEINFO(bdfStr) (UNUSED_VAR(bdfStr), false)
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);

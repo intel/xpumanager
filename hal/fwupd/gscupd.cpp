@@ -7,6 +7,7 @@
 #include "gscupd.h"
 #include "fwupd.h"
 #include <debug.h>
+#include <format>
 #include <fstream>
 #include <os.h>
 #include <sys/stat.h>
@@ -427,6 +428,64 @@ ze_result_t gscupd::updateOpData(firmwareInfo *fwInfo)
 {
 	TRACING();
 	return updateOprom(fwInfo, IGSC_OPROM_DATA);
+}
+
+/*
+ * @brief Retrieves OPROM version from device
+ *
+ * @param bdfStr BDF string of the device
+ * @param type OPROM type (IGSC_OPROM_CODE or IGSC_OPROM_DATA)
+ * @param version Buffer to store version bytes
+ * @param versionSize Size of version buffer
+ * @return int 0 on success, negative on error
+ */
+int gscupd::getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *version, size_t versionSize)
+{
+	TRACING();
+	int ret;
+
+	// Find the MEI device path for this BDF
+	std::vector<pci_addr_mei_device> devices = getPCIAddrAndMeiDevices();
+	std::string meiPath;
+	for (const auto &dev : devices) {
+		// Compare BDF address
+		auto devBdf = std::format("{:04x}:{:02x}:{:02x}.{:01x}", dev.pciProps.address.domain, dev.pciProps.address.bus,
+								  dev.pciProps.address.device, dev.pciProps.address.function);
+		if (devBdf == bdfStr) {
+			meiPath = dev.meiDevicePath;
+			break;
+		}
+	}
+
+	if (meiPath.empty()) {
+		ERR("MEI device not found for BDF %s\n", bdfStr);
+		return -1;
+	}
+
+	// Initialize device handle
+	struct igsc_device_handle handle = {};
+	ret = igsc_device_init_by_device(&handle, meiPath.c_str());
+	if (ret != IGSC_SUCCESS) {
+		ERR("Failed to initialize device for %s: %d\n", bdfStr, ret);
+		return -1;
+	}
+
+	// Get OPROM version
+	// NOLINTNEXTLINE(readability-identifier-naming) //snake_case required by IGSC
+	struct igsc_oprom_version opromVer = {};
+	ret = igsc_device_oprom_version(&handle, type, &opromVer);
+	if (ret != IGSC_SUCCESS) {
+		ERR("Failed to get OPROM version for %s type %d: %d\n", bdfStr, type, ret);
+		igsc_device_close(&handle);
+		return -1;
+	}
+
+	// Copy version bytes (oprom_ver has version fields)
+	size_t copySize = (versionSize < sizeof(opromVer)) ? versionSize : sizeof(opromVer);
+	memcpy(version, &opromVer, copySize);
+
+	igsc_device_close(&handle);
+	return 0;
 }
 
 /*

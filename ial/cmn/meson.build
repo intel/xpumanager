@@ -26,7 +26,7 @@ ial_cmn_sources = files(
 ial_cmn_inc = include_directories('.')
 
 # Platform-specific dependencies
-ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep]
+ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep, fwupd_dep]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif

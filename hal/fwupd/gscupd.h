@@ -65,6 +65,7 @@ public:
 	ze_result_t updateVrConfig(firmwareInfo *fwInfo) override;
 
 	ze_result_t updateOprom(firmwareInfo *fwInfo, igsc_oprom_type type);
+	int getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *version, size_t versionSize);
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
 	std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
 	GfxFwStatus getGfxFwStatus(std::string meiPath);

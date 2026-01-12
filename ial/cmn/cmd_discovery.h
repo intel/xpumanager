@@ -10,6 +10,7 @@
 #include "cmds.h"
 #include "printer.h"
 #include <os.h>
+#include <map>
 
 /**
  * @brief Discovery-specific text printer that formats discovery output as human-readable text
@@ -61,8 +62,35 @@ enum discDumpType
 	DUMP_GFXFIRMWARESTATUS,
 	DUMP_PCIVENDORID,
 	DUMP_PCIDEVICEID,
+	DUMP_NUMBEROFTILES,
+	DUMP_NUMBEROFSLICES,
+	DUMP_NUMBEROFSUBSLICESPERSLICE,
+	DUMP_NUMBEROFEUS_PERSUBSLICE,
+	DUMP_NUMBEROFTHREADSPEREU,
+	DUMP_PHYSICALEUSIMDWIDTH,
+	DUMP_MAXCOMMANDQUEUEPRIORITY,
+	DUMP_MAXHARDWARECONTEXTS,
+	DUMP_MAXMEMALLOCSIZE,
+	DUMP_MEMORYFREESIZE,
+	DUMP_MEMORYECCSTATE,
+	DUMP_KERNELVERSION,
+	DUMP_DRMDEVICE,
+	DUMP_DEVICETYPE,
+	DUMP_SKUTYPE,
+	DUMP_PCIEMAXBANDWIDTH,
+	DUMP_AMCFIRMWARENAME,
+	DUMP_AMCFIRMWAREVERSION,
+	DUMP_GFXPSCBINFIRMWARENAME,
+	DUMP_GFXPSCBINFIRMWAREVERSION,
+	DUMP_OPROMCODEFIRMWARENAME,
+	DUMP_OPROMCODEFIRMWAREVERSION,
+	DUMP_OPROMDATAFIRMWARENAME,
+	DUMP_OPROMDATAFIRMWAREVERSION,
 	TOTAL_DISC_DUMPS
 };
+
+// Type alias for device properties - decouples from JSON
+using DeviceProperties = std::map<std::string, std::string>;
 
 struct discoveryCmdStruct;
 
@@ -73,10 +101,17 @@ public:
 	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
 	~cmdDiscovery(){};
 	void help(HELP helpType = FULL_HELP);
-	ze_result_t preCheck(std::vector<std::string> *dumpArgs);
+	ze_result_t preCheck(std::vector<int> *dumpArgs);
 	ze_result_t dumpHeading(nlohmann::ordered_json *jsonObj);
 	ze_result_t dump(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj);
+	ze_result_t dumpAllNewFormat(devInfo *d, nlohmann::ordered_json *jsonObj);
+	ze_result_t dumpAllLegacyFormat(devInfo *d, nlohmann::ordered_json *jsonObj);
+
+	// Core data gathering functions (JSON-independent)
+	ze_result_t gatherDeviceProperties(devInfo *d, DeviceProperties &props, bool isAmcCard);
+	void convertToJson(const DeviceProperties &props, nlohmann::ordered_json *jsonObj, bool useIntForDeviceId = true);
+
 	ze_result_t physicalFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t virtualFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t listamcversions(devInfo *d, nlohmann::ordered_json *jsonObj);
@@ -105,6 +140,30 @@ public:
 	ze_result_t gfxFirmwareStatus(devInfo *d, std::string *outputLine);
 	ze_result_t pciVendorID(devInfo *d, std::string *outputLine);
 	ze_result_t pciDeviceID(devInfo *d, std::string *outputLine);
+	ze_result_t numberOfTiles(devInfo *d, std::string *outputLine);
+	ze_result_t numberOfSlices(devInfo *d, std::string *outputLine);
+	ze_result_t numberOfSubslicesPerSlice(devInfo *d, std::string *outputLine);
+	ze_result_t numberOfEUsPerSubslice(devInfo *d, std::string *outputLine);
+	ze_result_t numberOfThreadsPerEU(devInfo *d, std::string *outputLine);
+	ze_result_t physicalEUSimdWidth(devInfo *d, std::string *outputLine);
+	ze_result_t maxCommandQueuePriority(devInfo *d, std::string *outputLine);
+	ze_result_t maxHardwareContexts(devInfo *d, std::string *outputLine);
+	ze_result_t maxMemAllocSize(devInfo *d, std::string *outputLine);
+	ze_result_t memoryFreeSize(devInfo *d, std::string *outputLine);
+	ze_result_t memoryEccState(devInfo *d, std::string *outputLine);
+	ze_result_t kernelVersion(devInfo *d, std::string *outputLine);
+	ze_result_t drmDevice(devInfo *d, std::string *outputLine);
+	ze_result_t deviceType(devInfo *d, std::string *outputLine);
+	ze_result_t skuType(devInfo *d, std::string *outputLine);
+	ze_result_t pcieMaxBandwidth(devInfo *d, std::string *outputLine);
+	ze_result_t amcFirmwareName(devInfo *d, std::string *outputLine);
+	ze_result_t amcFirmwareVersion(devInfo *d, std::string *outputLine);
+	ze_result_t gfxPscBinFirmwareName(devInfo *d, std::string *outputLine);
+	ze_result_t gfxPscBinFirmwareVersion(devInfo *d, std::string *outputLine);
+	ze_result_t opromCodeFirmwareName(devInfo *d, std::string *outputLine);
+	ze_result_t opromCodeFirmwareVersion(devInfo *d, std::string *outputLine);
+	ze_result_t opromDataFirmwareName(devInfo *d, std::string *outputLine);
+	ze_result_t opromDataFirmwareVersion(devInfo *d, std::string *outputLine);
 	ze_result_t printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, devFuncType type);
 
 	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device, devFuncType funcType);

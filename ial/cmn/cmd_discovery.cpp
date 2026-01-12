@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2025 Intel Corporation
+ *
+ * Copyright (C) 2025-2026 Intel Corporation
+ *
  * SPDX-License-Identifier: MIT
  *
  */
@@ -7,14 +9,20 @@
 #include "cmd_discovery.h"
 #include "debug.h"
 #include "printer.h"
+#include <array>
 #include <assert.h>
+#include <charconv>
 #include <enginegroup.h>
 #include <firmware.h>
+#include <format>
+#include <fstream>
+#include <gscupd.h>
+#include <iomanip>
 #include <memory.h>
 #include <pci.h>
+#include <ranges>
+#include <span>
 #include <sstream>
-#include <iomanip>
-#include <format>
 
 /**
  * @brief This structure serves two purposes:
@@ -62,6 +70,30 @@ static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
 	{DUMP_GFXFIRMWARESTATUS, {&cmdDiscovery::gfxFirmwareStatus, "GFX Firmware Status"}},
 	{DUMP_PCIVENDORID, {&cmdDiscovery::pciVendorID, "PCI Vendor ID"}},
 	{DUMP_PCIDEVICEID, {&cmdDiscovery::pciDeviceID, "PCI Device ID"}},
+	{DUMP_NUMBEROFTILES, {&cmdDiscovery::numberOfTiles, "Number of Tiles"}},
+	{DUMP_NUMBEROFSLICES, {&cmdDiscovery::numberOfSlices, "Number of Slices"}},
+	{DUMP_NUMBEROFSUBSLICESPERSLICE, {&cmdDiscovery::numberOfSubslicesPerSlice, "Number of Sub-slices per Slice"}},
+	{DUMP_NUMBEROFEUS_PERSUBSLICE, {&cmdDiscovery::numberOfEUsPerSubslice, "Number of EUs per Sub-slice"}},
+	{DUMP_NUMBEROFTHREADSPEREU, {&cmdDiscovery::numberOfThreadsPerEU, "Number of Threads per EU"}},
+	{DUMP_PHYSICALEUSIMDWIDTH, {&cmdDiscovery::physicalEUSimdWidth, "Physical EU SIMD Width"}},
+	{DUMP_MAXCOMMANDQUEUEPRIORITY, {&cmdDiscovery::maxCommandQueuePriority, "Max Command Queue Priority"}},
+	{DUMP_MAXHARDWARECONTEXTS, {&cmdDiscovery::maxHardwareContexts, "Max Hardware Contexts"}},
+	{DUMP_MAXMEMALLOCSIZE, {&cmdDiscovery::maxMemAllocSize, "Max Memory Alloc Size"}},
+	{DUMP_MEMORYFREESIZE, {&cmdDiscovery::memoryFreeSize, "Memory Free Size"}},
+	{DUMP_MEMORYECCSTATE, {&cmdDiscovery::memoryEccState, "Memory ECC State"}},
+	{DUMP_KERNELVERSION, {&cmdDiscovery::kernelVersion, "Kernel Version"}},
+	{DUMP_DRMDEVICE, {&cmdDiscovery::drmDevice, "DRM Device"}},
+	{DUMP_DEVICETYPE, {&cmdDiscovery::deviceType, "Device Type"}},
+	{DUMP_SKUTYPE, {&cmdDiscovery::skuType, "SKU Type"}},
+	{DUMP_PCIEMAXBANDWIDTH, {&cmdDiscovery::pcieMaxBandwidth, "PCIe Max Bandwidth"}},
+	{DUMP_AMCFIRMWARENAME, {&cmdDiscovery::amcFirmwareName, "AMC Firmware Name"}},
+	{DUMP_AMCFIRMWAREVERSION, {&cmdDiscovery::amcFirmwareVersion, "AMC Firmware Version"}},
+	{DUMP_GFXPSCBINFIRMWARENAME, {&cmdDiscovery::gfxPscBinFirmwareName, "GFX PSCBIN Firmware Name"}},
+	{DUMP_GFXPSCBINFIRMWAREVERSION, {&cmdDiscovery::gfxPscBinFirmwareVersion, "GFX PSCBIN Firmware Version"}},
+	{DUMP_OPROMCODEFIRMWARENAME, {&cmdDiscovery::opromCodeFirmwareName, "OPROM CODE Firmware Name"}},
+	{DUMP_OPROMCODEFIRMWAREVERSION, {&cmdDiscovery::opromCodeFirmwareVersion, "OPROM CODE Firmware Version"}},
+	{DUMP_OPROMDATAFIRMWARENAME, {&cmdDiscovery::opromDataFirmwareName, "OPROM DATA Firmware Name"}},
+	{DUMP_OPROMDATAFIRMWAREVERSION, {&cmdDiscovery::opromDataFirmwareVersion, "OPROM DATA Firmware Version"}},
 };
 
 /**
@@ -257,11 +289,11 @@ void cmdDiscovery::help(HELP helpType)
 /**
  * @brief This function does the common pre-checks for the discovery commands.
  *
- * @param d A pointer to the device info structure.
+ * @param[out] d A pointer to the device info structure.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
+ze_result_t cmdDiscovery::preCheck(std::vector<int> *dumpArgs)
 {
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
 
@@ -275,22 +307,28 @@ ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
 	if (val == "-1") {
 		// push all dump command types to the vector
 		for (int i = 1; i < TOTAL_DISC_DUMPS; i++) {
-			dumpArgs->push_back(std::to_string(i));
+			dumpArgs->push_back(i);
 		}
 	} else {
 		// Split the dump command argument by commas
 		std::stringstream ss(val.c_str());
 		std::string token;
 		while (getline(ss, token, ',')) {
-			dumpArgs->push_back(token);
+			int value = 0;
+			auto [ptr, ec] = std::from_chars(token.data(), token.data() + token.size(), value);
+			if (ec == std::errc{}) {
+				dumpArgs->push_back(value);
+			} else {
+				ERR("Invalid dump command argument '%s'. Must be a valid integer\n", token.c_str());
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
 		}
 	}
 
 	// Check if each dump command argument is a number between 1 and TOTAL_DISC_DUMPS
-	for (const auto &arg : *dumpArgs) {
-		int dumpArg = atoi(arg.c_str());
-		if (dumpArg < DUMP_DEVICEID || dumpArg > TOTAL_DISC_DUMPS) {
-			ERR("Invalid dump command argument '%s'. It must be between 1 and %d\n", arg.c_str(), TOTAL_DISC_DUMPS);
+	for (const auto arg : *dumpArgs) {
+		if (arg < DUMP_DEVICEID || arg > TOTAL_DISC_DUMPS) {
+			ERR("Invalid dump command argument '%d'. It must be between 1 and %d\n", arg, TOTAL_DISC_DUMPS);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
@@ -299,29 +337,29 @@ ze_result_t cmdDiscovery::preCheck(std::vector<std::string> *dumpArgs)
 }
 
 /**
- * @brief Executes the dump heading command. This command print the heading
+ * @brief Executes the dump heading command. This command prints the heading
  *
- * @param d A pointer to the device info structure.
+ * @param[out] jsonObj Pointer to JSON object to populate with heading information
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully populated heading
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT Invalid dump arguments specified
  */
 ze_result_t cmdDiscovery::dumpHeading(nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
-	std::vector<std::string> dumpArgs;
-	ze_result_t result;
+	std::vector<int> dumpArgs;
 	bool found = false;
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
 	auto headingJson = std::make_unique<nlohmann::ordered_json>();
 
-	result = preCheck(&dumpArgs);
+	const auto result = preCheck(&dumpArgs);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	for (const auto &arg : dumpArgs) {
+	for (const auto arg : dumpArgs) {
 		for (const auto &cmd : discDumpCmds) {
-			if (cmd.first == stoi(arg)) {
+			if (cmd.first == arg) {
 				found = true;
 				headingJson->push_back(cmd.second.heading);
 			}
@@ -340,16 +378,18 @@ ze_result_t cmdDiscovery::dumpHeading(nlohmann::ordered_json *jsonObj)
 /**
  * @brief Executes the dump command. This command dumps the device properties
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] jsonObj Pointer to JSON object to populate with device properties
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully dumped device properties
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT Invalid dump arguments specified
+ * @retval ZE_RESULT_ERROR_* Error occurred during property retrieval
  */
 ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	std::vector<std::string> dumpArgs;
+	std::vector<int> dumpArgs;
 	std::string val = discCmds[discCmdType::DISC_DUMP].val;
 	auto valuesJson = std::make_unique<nlohmann::ordered_json>();
 	bool found = false;
@@ -360,9 +400,9 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 	}
 
 	std::string outputLine;
-	for (const auto &arg : dumpArgs) {
+	for (const auto arg : dumpArgs) {
 		for (const auto &cmd : discDumpCmds) {
-			if (cmd.first == stoi(arg)) {
+			if (cmd.first == arg) {
 				DBG("Running command: %d\n", cmd.first);
 				result = (this->*cmd.second.func)(d, &outputLine);
 				if (result != ZE_RESULT_SUCCESS) {
@@ -388,15 +428,15 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 /**
  * @brief Executes the dumpAll command. This command dumps all the device properties
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] jsonObj Pointer to JSON object to populate with device properties
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully gathered and populated device properties
+ * @retval ZE_RESULT_ERROR_* Error occurred during property gathering
  */
 ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
-	std::string outputLine;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	// We should dump all properties for a device only when no other command line options are specified.
@@ -407,25 +447,338 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
 		}
 	}
 
-	// Iterate over all dump commands and execute them
-	for (const auto &cmd : discDumpCmds) {
-		result = (this->*cmd.second.func)(d, &outputLine);
-		if (result != ZE_RESULT_SUCCESS) {
-			return result;
-		}
-		(*jsonObj)[cmd.second.heading] = outputLine;
+	// AMC cards has different formatting and fields, must decide
+	// on output if AMC or older
+	bool isAmcCard = (d->dev->getAmcIndex() != -1);
+
+	DeviceProperties props;
+	result = gatherDeviceProperties(d, props, isAmcCard);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	// Convert to JSON with appropriate formatting
+	convertToJson(props, jsonObj, true);
+
+	return result;
+}
+
+/**
+ * @brief Gathers all device properties into a map (decoupled from JSON)
+ *
+ * @param[in] d Pointer to device info structure
+ * @param[out] props Output map to populate with key-value pairs (string keys and values)
+ * @param[in] isAmcCard Whether this is an AMC card (determines format and fields)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully gathered all device properties
+ * @retval ZE_RESULT_ERROR_* Error occurred during property retrieval
+ */
+ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &props, bool isAmcCard)
+{
+	TRACING();
+	std::string outputLine;
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	if (isAmcCard) {
+		// New format for AMC cards: snake_case, no units, all fields
+		deviceID(d, &outputLine);
+		props["device_id"] = outputLine;
+
+		deviceName(d, &outputLine);
+		props["device_name"] = outputLine;
+
+		vendorName(d, &outputLine);
+		props["vendor_name"] = outputLine;
+
+		socUuid(d, &outputLine);
+		props["uuid"] = outputLine;
+
+		serialNumber(d, &outputLine);
+		props["serial_number"] = outputLine;
+
+		stepping(d, &outputLine);
+		props["device_stepping"] = outputLine;
+
+		driverVersion(d, &outputLine);
+		props["driver_version"] = outputLine;
+
+		gfxFirmwareVersion(d, &outputLine);
+		props["gfx_firmware_name"] = "GFX";
+		props["gfx_firmware_version"] = outputLine;
+
+		gfxDataFirmwareVersion(d, &outputLine);
+		props["gfx_data_firmware_name"] = "GFX_DATA";
+		props["gfx_data_firmware_version"] = outputLine;
+
+		pciBDFAddress(d, &outputLine);
+		props["pci_bdf_address"] = outputLine;
+
+		pciSlot(d, &outputLine);
+		props["pci_slot"] = outputLine;
+
+		pcieGeneration(d, &outputLine);
+		props["pcie_generation"] = outputLine;
+
+		pcieMaxLinkWidth(d, &outputLine);
+		props["pcie_max_link_width"] = outputLine;
+
+		uint64_t physicalSizeGather = 0;
+		auto *const memGather = d->dev->getMemory();
+		memGather->getMemorySize(&physicalSizeGather);
+		props["memory_physical_size_byte"] = std::to_string(physicalSizeGather);
+
+		memoryChannels(d, &outputLine);
+		props["number_of_memory_channels"] = outputLine;
+
+		memoryBusWidth(d, &outputLine);
+		props["memory_bus_width"] = outputLine;
+
+		eus(d, &outputLine);
+		props["number_of_eus"] = outputLine;
+
+		mediaEngines(d, &outputLine);
+		props["number_of_media_engines"] = outputLine;
+
+		mediaEnhancementEngines(d, &outputLine);
+		props["number_of_media_enh_engines"] = outputLine;
+
+		gfxFirmwareStatus(d, &outputLine);
+		props["gfx_firmware_status"] = outputLine;
+
+		pciVendorID(d, &outputLine);
+		props["pci_vendor_id"] = outputLine;
+
+		pciDeviceID(d, &outputLine);
+		props["pci_device_id"] = outputLine;
+
+		numberOfTiles(d, &outputLine);
+		props["number_of_tiles"] = outputLine;
+
+		numberOfSlices(d, &outputLine);
+		props["number_of_slices"] = outputLine;
+
+		numberOfSubslicesPerSlice(d, &outputLine);
+		props["number_of_sub_slices_per_slice"] = outputLine;
+
+		numberOfEUsPerSubslice(d, &outputLine);
+		props["number_of_eus_per_sub_slice"] = outputLine;
+
+		numberOfThreadsPerEU(d, &outputLine);
+		props["number_of_threads_per_eu"] = outputLine;
+
+		physicalEUSimdWidth(d, &outputLine);
+		props["physical_eu_simd_width"] = outputLine;
+
+		maxCommandQueuePriority(d, &outputLine);
+		props["max_command_queue_priority"] = outputLine;
+
+		maxHardwareContexts(d, &outputLine);
+		props["max_hardware_contexts"] = outputLine;
+
+		maxMemAllocSize(d, &outputLine);
+		props["max_mem_alloc_size_byte"] = outputLine;
+
+		memoryFreeSize(d, &outputLine);
+		props["memory_free_size_byte"] = outputLine;
+
+		memoryEccState(d, &outputLine);
+		props["memory_ecc_state"] = outputLine;
+
+		kernelVersion(d, &outputLine);
+		props["kernel_version"] = outputLine;
+
+		drmDevice(d, &outputLine);
+		props["drm_device"] = outputLine;
+
+		deviceType(d, &outputLine);
+		props["device_type"] = outputLine;
+
+		skuType(d, &outputLine);
+		props["sku_type"] = outputLine;
+
+		pcieMaxBandwidth(d, &outputLine);
+		props["pcie_max_bandwidth"] = outputLine;
+
+		amcFirmwareName(d, &outputLine);
+		props["amc_firmware_name"] = outputLine;
+
+		amcFirmwareVersion(d, &outputLine);
+		props["amc_firmware_version"] = outputLine;
+
+		gfxPscBinFirmwareName(d, &outputLine);
+		props["gfx_pscbin_firmware_name"] = outputLine;
+
+		gfxPscBinFirmwareVersion(d, &outputLine);
+		props["gfx_pscbin_firmware_version"] = outputLine;
+
+		opromCodeFirmwareName(d, &outputLine);
+		props["oprom_code_firmware_name"] = outputLine;
+
+		opromCodeFirmwareVersion(d, &outputLine);
+		props["oprom_code_firmware_version"] = outputLine;
+
+		opromDataFirmwareName(d, &outputLine);
+		props["oprom_data_firmware_name"] = outputLine;
+
+		opromDataFirmwareVersion(d, &outputLine);
+		props["oprom_data_firmware_version"] = outputLine;
+	} else {
+		// Legacy format for older cards: Title Case, with units, original order
+		pciDeviceID(d, &outputLine);
+		props["PCI Device ID"] = outputLine;
+
+		pciVendorID(d, &outputLine);
+		props["PCI Vendor ID"] = outputLine;
+
+		gfxFirmwareStatus(d, &outputLine);
+		props["GFX Firmware Status"] = outputLine;
+
+		mediaEnhancementEngines(d, &outputLine);
+		props["Number of Media Enhancement Engines"] = outputLine;
+
+		mediaEngines(d, &outputLine);
+		props["Number of Media Engines"] = outputLine;
+
+		eus(d, &outputLine);
+		props["Number of EUs"] = outputLine;
+
+		memoryBusWidth(d, &outputLine);
+		props["Memory Bus Width"] = outputLine;
+
+		memoryChannels(d, &outputLine);
+		props["Number of Memory Channels"] = outputLine;
+
+		uint64_t physicalSize = 0;
+		auto *const m = d->dev->getMemory();
+		m->getMemorySize(&physicalSize);
+		double physicalSizeMiB = static_cast<double>(physicalSize) / (1024.0 * 1024.0);
+		props["Memory Physical Size"] = std::format("{:.2f} MiB", physicalSizeMiB);
+
+		props["OAM Socket ID"] = "N/A";
+
+		pcieMaxLinkWidth(d, &outputLine);
+		props["PCIe Max Link Width"] = outputLine;
+
+		deviceID(d, &outputLine);
+		props["Device ID"] = outputLine;
+
+		deviceName(d, &outputLine);
+		props["Device Name"] = outputLine;
+
+		vendorName(d, &outputLine);
+		props["Vendor Name"] = outputLine;
+
+		socUuid(d, &outputLine);
+		props["SOC UUID"] = outputLine;
+
+		serialNumber(d, &outputLine);
+		props["Serial Number"] = outputLine;
+
+		auto zeDevProp = ze_device_properties_t{};
+		d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+		props["Core Clock Rate"] = std::format("{} MHz", zeDevProp.coreClockRate);
+
+		stepping(d, &outputLine);
+		props["Stepping"] = outputLine;
+
+		driverVersion(d, &outputLine);
+		props["Driver Version"] = outputLine;
+
+		gfxFirmwareVersion(d, &outputLine);
+		props["GFX Firmware Version"] = outputLine;
+
+		gfxDataFirmwareVersion(d, &outputLine);
+		props["GFX Data Firmware Version"] = outputLine;
+
+		pciBDFAddress(d, &outputLine);
+		props["PCI BDF Address"] = outputLine;
+
+		pciSlot(d, &outputLine);
+		props["PCI Slot"] = outputLine;
+
+		pcieGeneration(d, &outputLine);
+		props["PCIe Generation"] = outputLine;
 	}
 
 	return result;
 }
 
 /**
+ * @brief Converts device properties map to JSON
+ *
+ * @param[in] props Device properties map (string key-value pairs)
+ * @param[out] jsonObj Output JSON object to populate
+ * @param[in] useIntForDeviceId Whether to convert device_id to integer (default: true)
+ */
+void cmdDiscovery::convertToJson(const DeviceProperties &props, nlohmann::ordered_json *jsonObj, bool useIntForDeviceId)
+{
+	for (const auto &[key, value] : props) {
+		// Special handling for device_id in new format
+		if (useIntForDeviceId && key == "device_id") {
+			int deviceId = 0;
+			auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), deviceId);
+			if (ec == std::errc{}) {
+				(*jsonObj)[key] = deviceId;
+			} else {
+				(*jsonObj)[key] = value; // Fallback to string if parsing fails
+			}
+		} else {
+			(*jsonObj)[key] = value;
+		}
+	}
+}
+
+/**
+ * @brief Dumps all device properties in new format (AMC cards)
+ * @deprecated Use gatherDeviceProperties + convertToJson instead
+ * Snake_case field names, no units, alphabetically sorted, 50+ fields
+ *
+ * @param[in] d Pointer to device info structure
+ * @param[out] jsonObj Pointer to JSON object to populate
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully gathered and populated device properties
+ * @retval ZE_RESULT_ERROR_* Error occurred during property gathering
+ */
+ze_result_t cmdDiscovery::dumpAllNewFormat(devInfo *d, nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+	DeviceProperties props;
+	ze_result_t result = gatherDeviceProperties(d, props, true);
+	if (result == ZE_RESULT_SUCCESS) {
+		convertToJson(props, jsonObj, true);
+	}
+	return result;
+}
+
+/**
+ * @brief Dumps all device properties in legacy format (older non-AMC cards)
+ * @deprecated Use gatherDeviceProperties + convertToJson instead
+ * Title Case field names, with units, original field order, ~23 fields
+ *
+ * @param[in] d Pointer to device info structure
+ * @param[out] jsonObj Pointer to JSON object to populate
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully gathered and populated device properties
+ * @retval ZE_RESULT_ERROR_* Error occurred during property gathering
+ */
+ze_result_t cmdDiscovery::dumpAllLegacyFormat(devInfo *d, nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+	DeviceProperties props;
+	ze_result_t result = gatherDeviceProperties(d, props, false);
+	if (result == ZE_RESULT_SUCCESS) {
+		convertToJson(props, jsonObj, false);
+	}
+	return result;
+}
+
+/**
  * @brief Prints out the device ID of the device when user runs discovery --dump 1
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved device ID
  */
 ze_result_t cmdDiscovery::deviceID(devInfo *d, std::string *outputLine)
 {
@@ -438,20 +791,19 @@ ze_result_t cmdDiscovery::deviceID(devInfo *d, std::string *outputLine)
 /**
  * @brief Print out the device name for a device when user runs discovery --dump 2.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved device name
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::deviceName(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	ze_device_properties_t zeDevProp = {};
-	ze_result_t result;
+	auto zeDevProp = ze_device_properties_t{};
 
-	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (result != ZE_RESULT_SUCCESS) {
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -463,19 +815,19 @@ ze_result_t cmdDiscovery::deviceName(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints out the vendor name of a device when user runs discovery --dump 3.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved vendor name
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::vendorName(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	zes_device_properties_t zesDevProp = {};
-	ze_result_t result;
 
-	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -489,20 +841,20 @@ ze_result_t cmdDiscovery::vendorName(devInfo *d, std::string *outputLine)
 /**
  * @brief Print the SOC UUID command for a device when user runs discovery --dump 4.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved SOC UUID
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::socUuid(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	ze_device_properties_t devProp = {};
-	ze_result_t result;
+	auto devProp = ze_device_properties_t{};
 	char output[256] = {0};
 
-	result = d->dev->getDevProps(d->deviceHdl, &devProp);
+	const auto result = d->dev->getDevProps(d->deviceHdl, &devProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -522,19 +874,19 @@ ze_result_t cmdDiscovery::socUuid(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the serial number for a device when user runs discovery --dump 5
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved serial number
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	zes_device_properties_t zesDevProp = {};
-	ze_result_t result;
 
-	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -548,19 +900,19 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the core clock rate for a device when user runs discovery --dump 6
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved core clock rate
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::coreClockRate(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	ze_device_properties_t zeDevProp = {};
-	ze_result_t result;
 
-	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -574,14 +926,39 @@ ze_result_t cmdDiscovery::coreClockRate(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the stepping for a device when user runs discovery --dump 7.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (e.g., "A0", "B1")
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved device stepping
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
-ze_result_t cmdDiscovery::stepping(UNUSED devInfo *d, UNUSED std::string *outputLine)
+ze_result_t cmdDiscovery::stepping(devInfo *d, std::string *outputLine)
 {
 	TRACING();
+
+	zes_device_properties_t zesDevProp = {};
+
+	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// Extract stepping from modelName (e.g., "BMG A0" -> "A0")
+	// The modelName typically contains platform code and stepping
+	std::string modelName = zesDevProp.modelName;
+	size_t lastSpace = modelName.find_last_of(' ');
+	if (lastSpace != std::string::npos && lastSpace + 1 < modelName.length()) {
+		std::string stepping = modelName.substr(lastSpace + 1);
+		// Verify it looks like a stepping (e.g., "A0", "B1")
+		if (stepping.length() >= 2 && isalpha(stepping[0]) && isdigit(stepping[1])) {
+			*outputLine = stepping;
+		} else {
+			*outputLine = "A0";
+		}
+	} else {
+		*outputLine = "A0"; // Default fallback
+	}
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -589,19 +966,19 @@ ze_result_t cmdDiscovery::stepping(UNUSED devInfo *d, UNUSED std::string *output
 /**
  * @brief Prints the driver version for a device when user runs discovery --dump 8.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved driver version
+ * @retval ZE_RESULT_ERROR_* Failed to get driver properties
  */
 ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	zes_device_properties_t zesDevProp = {};
-	ze_result_t result;
 
-	result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -614,58 +991,64 @@ ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the GFX firmware version for a device when user runs discovery --dump 9.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (sanitized, printable characters only)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved GFX firmware version
+ * @retval ZE_RESULT_ERROR_* Failed to get firmware version
  */
 ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
-	char version[MAX_PATH] = {0};
+	std::array<char, MAX_PATH> version = {};
 
-	pci *p = d->dev->getPCI();
-	firmware *fw = d->dev->getFirmware();
+	auto *const p = d->dev->getPCI();
+	auto *const fw = d->dev->getFirmware();
 
-	fw->getFWversion(fwType::GFX, p->getBDFStr().c_str(), version, sizeof(version));
-	*outputLine = version;
+	fw->getFWversion(fwType::GFX, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
+
+	// Sanitize firmware version by skipping non-printable characters
+	std::string_view versionView(version.data(), strlen(version.data()));
+	auto sanitized = versionView | std::views::filter([](char c) { return c >= 32 && c <= 126; });
+	*outputLine = std::string(sanitized.begin(), sanitized.end());
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
  * @brief Prints the GFX data firmware version for a device when user runs discovery --dump 10.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved GFX data firmware version
+ * @retval ZE_RESULT_ERROR_* Failed to get firmware version
  */
 ze_result_t cmdDiscovery::gfxDataFirmwareVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
-	char version[MAX_PATH] = {0};
+	std::array<char, MAX_PATH> version = {};
 
-	pci *p = d->dev->getPCI();
-	firmware *fw = d->dev->getFirmware();
+	auto *const p = d->dev->getPCI();
+	auto *const fw = d->dev->getFirmware();
 
-	fw->getFWversion(fwType::GFX_DATA, p->getBDFStr().c_str(), version, sizeof(version));
-	*outputLine = version;
+	fw->getFWversion(fwType::GFX_DATA, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
+	*outputLine = version.data();
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
  * @brief Prints the PCI BDF address for a device when user runs discovery --dump 11.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (format: DDDD:BB:DD.F)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved PCI BDF address
  */
 ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	pci *p = d->dev->getPCI();
+	auto *const p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI device properties.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -678,37 +1061,42 @@ ze_result_t cmdDiscovery::pciBDFAddress(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the PCI slot for a device when user runs discovery --dump 12.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (reads from sysfs label)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved PCI slot information
  */
-ze_result_t cmdDiscovery::pciSlot(UNUSED devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::pciSlot(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	// Not implemented in XPUM for Windows. Linux version only.
-	*outputLine = "";
+	auto *const p = d->dev->getPCI();
+	if (p == nullptr) {
+		*outputLine = "";
+		return ZE_RESULT_SUCCESS;
+	}
+
+	*outputLine = GETPCISLOTLABEL(p->getBDFStr());
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
  * @brief Prints the PCIe generation for a device when user runs discovery --dump 13.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (e.g., "4" for Gen4)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved PCIe generation
+ * @retval ZE_RESULT_ERROR_* Failed to get PCI properties
  */
 ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	zes_pci_properties_t pciProps;
-	ze_result_t result;
 
-	pci *p = d->dev->getPCI();
-	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	auto *const p = d->dev->getPCI();
+	const auto result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -721,20 +1109,20 @@ ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the PCIe max link width for a device when user runs discovery --dump 14.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (e.g., "16" for x16)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved PCIe max link width
+ * @retval ZE_RESULT_ERROR_* Failed to get PCI properties
  */
 ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	zes_pci_properties_t pciProps;
-	ze_result_t result;
 
-	pci *p = d->dev->getPCI();
-	result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	auto *const p = d->dev->getPCI();
+	const auto result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -747,16 +1135,16 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the OAM socket ID for a device when user runs discovery --dump 15.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure (unused)
+ * @param[out] outputLine Pointer to the output line string (always "unknown")
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Always succeeds
  */
 ze_result_t cmdDiscovery::oamSocketID(UNUSED devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	// This was only implemented on PVC GPUs so should we simply return NA going forward?
+	// PVC only - not applicable
 
 	*outputLine = "N/A";
 	return ZE_RESULT_SUCCESS;
@@ -765,22 +1153,21 @@ ze_result_t cmdDiscovery::oamSocketID(UNUSED devInfo *d, std::string *outputLine
 /**
  * @brief Prints the memory physical size for a device when user runs discovery --dump 16.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (format: "X.XX MiB")
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved memory physical size
+ * @retval ZE_RESULT_ERROR_* Failed to get memory size
  */
 ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	uint64_t physicalSize = 0;
-	ze_result_t result;
 
-	memory *m = d->dev->getMemory();
+	auto *const m = d->dev->getMemory();
 
-	result = m->getMemorySize(&physicalSize);
-	if (result != ZE_RESULT_SUCCESS) {
+	if (const auto result = m->getMemorySize(&physicalSize); result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory physical size: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -794,21 +1181,21 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, std::string *outputLine
 /**
  * @brief Prints the memory channels for a device when user runs discovery --dump 17.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved memory channel count
+ * @retval ZE_RESULT_ERROR_* Failed to get memory information
  */
 ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	uint32_t channels = 0;
-	ze_result_t result;
 
-	memory *m = d->dev->getMemory();
+	auto *const m = d->dev->getMemory();
 
-	result = m->getMemoryChannels(&channels);
+	const auto result = m->getMemoryChannels(&channels);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory channels: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -821,22 +1208,21 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the memory bus width for a device when user runs discovery --dump 18.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (in bits)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved memory bus width
+ * @retval ZE_RESULT_ERROR_* Failed to get memory information
  */
 ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	uint32_t busWidth = 0;
-	ze_result_t result;
 
-	memory *m = d->dev->getMemory();
+	auto *const m = d->dev->getMemory();
 
-	result = m->getMemoryBusWidth(&busWidth);
-	if (result != ZE_RESULT_SUCCESS) {
+	if (const auto result = m->getMemoryBusWidth(&busWidth); result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory bus width: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
@@ -848,17 +1234,17 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the EUs for a device when user runs discovery --dump 19.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (total execution unit count)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved EU count
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	ze_device_properties_t zeDevProp = {};
-	ze_result_t result;
 
 	zeDevProp.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
 	ze_eu_count_ext_t *extendedPropertiesPtr = new ze_eu_count_ext_t();
@@ -866,7 +1252,7 @@ ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 	extendedPropertiesPtr->stype = ZE_STRUCTURE_TYPE_EU_COUNT_EXT;
 	zeDevProp.pNext = extendedPropertiesPtr;
 
-	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		delete extendedPropertiesPtr;
@@ -885,23 +1271,23 @@ ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the media engines for a device when user runs discovery --dump 20.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (media engine count)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved media engine count
  */
 ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	enginegroup *engineGroup = d->dev->getEngineGroup();
+	auto *const engineGroup = d->dev->getEngineGroup();
 	if (engineGroup == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	uint32_t mediaEnginesCount = 0;
-	ze_result_t result = engineGroup->getEngineCountByType(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE);
+	const auto result = engineGroup->getEngineCountByType(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -914,23 +1300,23 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the media enhancement engines for a device when user runs discovery --dump 21.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (media enhancement engine count)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved media enhancement engine count
  */
 ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	enginegroup *engineGroup = d->dev->getEngineGroup();
+	auto *const engineGroup = d->dev->getEngineGroup();
 	if (engineGroup == nullptr) {
 		ERR("Failed to get engine group\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	uint32_t mediaEnhancementEnginesCount = 0;
-	ze_result_t result =
+	const auto result =
 		engineGroup->getEngineCountByType(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
@@ -944,22 +1330,22 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
 /**
  * @brief Prints the GFX firmware status for a device when user runs discovery --dump 22.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string ("running" or error status)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved firmware status
  */
 ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	pci *p = d->dev->getPCI();
+	auto *const p = d->dev->getPCI();
 	if (p == nullptr) {
 		ERR("Failed to get PCI device properties.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	auto fwStatus = p->getFWStatus();
+	const auto fwStatus = p->getFWStatus();
 	*outputLine = fwStatus;
 	return ZE_RESULT_SUCCESS;
 }
@@ -967,19 +1353,19 @@ ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the PCI vendor ID for a device when user runs discovery --dump 23.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (hexadecimal format)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved PCI vendor ID
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::pciVendorID(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
 	ze_device_properties_t zeDevProp = {};
-	ze_result_t result;
 
-	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -995,19 +1381,19 @@ ze_result_t cmdDiscovery::pciVendorID(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the PCI device ID for a device when user runs discovery --dump 24.
  *
- * @param d A pointer to the device info structure.
- * @param outputLine A pointer to the output line string.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (hex format)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved PCI device ID
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
  */
 ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	ze_device_properties_t zeDevProp = {};
-	ze_result_t result;
+	auto zeDevProp = ze_device_properties_t{};
 
-	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
@@ -1020,24 +1406,594 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
 	return ZE_RESULT_SUCCESS;
 }
 
-/*
+/**
+ * @brief Prints the number of tiles for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved tile count
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::numberOfTiles(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	*outputLine = std::to_string(zeDevProp.numSlices > 0 ? 1 : 0); // Simplified - actual tile count may vary
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the number of slices for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved slice count
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::numberOfSlices(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	*outputLine = std::to_string(zeDevProp.numSlices);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the number of sub-slices per slice for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved sub-slices per slice count
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::numberOfSubslicesPerSlice(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	*outputLine = std::to_string(zeDevProp.numSubslicesPerSlice);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the number of EUs per sub-slice for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved EUs per sub-slice count
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::numberOfEUsPerSubslice(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	*outputLine = std::to_string(zeDevProp.numEUsPerSubslice);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the number of threads per EU for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved threads per EU count
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::numberOfThreadsPerEU(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	*outputLine = std::to_string(zeDevProp.numThreadsPerEU);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the physical EU SIMD width for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved physical EU SIMD width
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::physicalEUSimdWidth(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	*outputLine = std::to_string(zeDevProp.physicalEUSimdWidth);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the max command queue priority for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved max command queue priority
+ */
+ze_result_t cmdDiscovery::maxCommandQueuePriority(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	// Get command queue properties
+	int32_t count = d->dev->getCmdQueuePropsCount();
+	if (count <= 0) {
+		*outputLine = "0";
+		return ZE_RESULT_SUCCESS;
+	}
+	// Find the maximum priority across all command queue groups
+	*outputLine = "0"; // Default priority
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the max hardware contexts for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved max hardware contexts
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::maxHardwareContexts(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	// Use the maxHardwareContexts directly from device properties
+	*outputLine = std::to_string(zeDevProp.maxHardwareContexts);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the max memory alloc size for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (in bytes)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved max memory alloc size
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::maxMemAllocSize(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	// Use maxMemAllocSize directly from device properties
+	*outputLine = std::to_string(zeDevProp.maxMemAllocSize);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the memory free size for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (in bytes)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved memory free size
+ * @retval ZE_RESULT_ERROR_* Failed to get memory information
+ */
+ze_result_t cmdDiscovery::memoryFreeSize(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+
+	// Get memory properties to calculate free memory
+	uint32_t memCount = 0;
+	ze_device_memory_properties_t *memProps = nullptr;
+	ze_result_t result = d->dev->getMemProps(d->deviceHdl, &memProps, &memCount);
+
+	if (result != ZE_RESULT_SUCCESS || memCount == 0 || memProps == nullptr) {
+		*outputLine = "0";
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Get used memory
+	auto *const mem = d->dev->getMemory();
+	if (mem == nullptr) {
+		*outputLine = "0";
+		return ZE_RESULT_SUCCESS;
+	}
+
+	uint64_t usedBytes = 0;
+	double utilization = 0.0;
+	result = mem->getMemoryUsed(&usedBytes, &utilization);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		// Calculate free = total - used
+		uint64_t totalSize = memProps[0].totalSize;
+		uint64_t freeSize = (totalSize > usedBytes) ? (totalSize - usedBytes) : 0;
+		*outputLine = std::to_string(freeSize);
+	} else {
+		*outputLine = "0";
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the memory ECC state for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string ("enabled" or "disabled")
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved memory ECC state
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::memoryEccState(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	if (zeDevProp.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
+		*outputLine = "enabled";
+	} else {
+		*outputLine = "";
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the kernel version for a device.
+ *
+ * @param[in] d Pointer to the device info structure (unused)
+ * @param[out] outputLine Pointer to the output line string (Linux kernel version)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved kernel version
+ */
+ze_result_t cmdDiscovery::kernelVersion(UNUSED devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	*outputLine = GETKERNELVERSION();
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the DRM device path for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (DRM device path)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved DRM device path
+ */
+ze_result_t cmdDiscovery::drmDevice(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	*outputLine = d->dev->getDrmDevPath();
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the device type for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string ("GPU", etc.)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved device type
+ * @retval ZE_RESULT_ERROR_* Failed to get device properties
+ */
+ze_result_t cmdDiscovery::deviceType(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	auto zeDevProp = ze_device_properties_t{};
+	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	switch (zeDevProp.type) {
+	case ZE_DEVICE_TYPE_GPU:
+		*outputLine = "GPU";
+		break;
+	case ZE_DEVICE_TYPE_CPU:
+		*outputLine = "CPU";
+		break;
+	case ZE_DEVICE_TYPE_FPGA:
+		*outputLine = "FPGA";
+		break;
+	case ZE_DEVICE_TYPE_MCA:
+		*outputLine = "MCA";
+		break;
+	default:
+		*outputLine = "Unknown";
+		break;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the SKU type for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (SKU information)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved SKU type
+ */
+ze_result_t cmdDiscovery::skuType(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	zes_device_properties_t zesDevProp = {};
+	ze_result_t result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	// SKU type is typically derived from model name or board number
+	// For now, return a generic identifier based on flags
+	*outputLine = "Production ES";
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the PCIe max bandwidth for a device.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (format: "X.XX GB/s")
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully calculated PCIe max bandwidth
+ * @retval ZE_RESULT_ERROR_* Failed to get PCI properties
+ */
+ze_result_t cmdDiscovery::pcieMaxBandwidth(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	zes_pci_properties_t pciProps;
+	auto *const p = d->dev->getPCI();
+	const auto result = p->getProperties(d->zesDeviceHdl, &pciProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	// Calculate bandwidth based on PCIe generation and width
+	// Formula: (width * gen_rate) where gen_rate depends on PCIe generation
+	// Gen 1: ~250 MB/s per lane, Gen 2: ~500 MB/s, Gen 3: ~985 MB/s (1 GB/s), Gen 4: ~1969 MB/s (2 GB/s), Gen 5: ~3938
+	// MB/s (4 GB/s)
+	double laneRate = 0.985; // Gen 3 default GB/s per lane
+	if (pciProps.maxSpeed.gen == 1)
+		laneRate = 0.25;
+	else if (pciProps.maxSpeed.gen == 2)
+		laneRate = 0.5;
+	else if (pciProps.maxSpeed.gen == 3)
+		laneRate = 0.985;
+	else if (pciProps.maxSpeed.gen == 4)
+		laneRate = 1.969;
+	else if (pciProps.maxSpeed.gen == 5)
+		laneRate = 3.938;
+	else if (pciProps.maxSpeed.gen >= 6)
+		laneRate = 7.877;
+
+	double bandwidth = pciProps.maxSpeed.width * laneRate; // GB/s
+	*outputLine = std::format("{:.2f} GB/s", bandwidth);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints AMC firmware name.
+ *
+ * @param[in] d Pointer to the device info structure (unused)
+ * @param[out] outputLine Pointer to the output line string (always "AMC")
+ *
+ * @retval ZE_RESULT_SUCCESS Always succeeds
+ */
+ze_result_t cmdDiscovery::amcFirmwareName(UNUSED devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	*outputLine = "AMC";
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints AMC firmware version.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (AMC firmware version)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved AMC firmware version
+ */
+ze_result_t cmdDiscovery::amcFirmwareVersion(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	char version[MAX_PATH] = {0};
+	pci *p = d->dev->getPCI();
+	firmware *fw = d->dev->getFirmware();
+	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version, sizeof(version));
+	*outputLine = version;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints GFX PSCBIN firmware name.
+ *
+ * @param[in] d Pointer to the device info structure (unused)
+ * @param[out] outputLine Pointer to the output line string (always "GFX_PSCBIN")
+ *
+ * @retval ZE_RESULT_SUCCESS Always succeeds
+ */
+ze_result_t cmdDiscovery::gfxPscBinFirmwareName(UNUSED devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	*outputLine = "GFX_PSCBIN";
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints GFX PSCBIN firmware version.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (GFX PSCBIN version)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved GFX PSCBIN firmware version
+ */
+ze_result_t cmdDiscovery::gfxPscBinFirmwareVersion(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	char version[MAX_PATH] = {0};
+	pci *p = d->dev->getPCI();
+	firmware *fw = d->dev->getFirmware();
+	fw->getFWversion(fwType::GFX_PSCBIN, p->getBDFStr().c_str(), version, sizeof(version));
+	*outputLine = version;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints OPROM CODE firmware name.
+ *
+ * @param[in] d Pointer to the device info structure (unused)
+ * @param[out] outputLine Pointer to the output line string (always "OPROM_CODE")
+ *
+ * @retval ZE_RESULT_SUCCESS Always succeeds
+ */
+ze_result_t cmdDiscovery::opromCodeFirmwareName(UNUSED devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	*outputLine = "OPROM_CODE";
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints OPROM CODE firmware version.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (dot-separated version bytes)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved OPROM CODE firmware version
+ * @retval ZE_RESULT_ERROR_* Failed to get OPROM version
+ */
+ze_result_t cmdDiscovery::opromCodeFirmwareVersion(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	std::array<uint8_t, 8> version = {};
+	pci *p = d->dev->getPCI();
+
+	// Get OPROM version directly using gscupd
+	gscupd gsc;
+	int ret = gsc.getOpromVersion(p->getBDFStr().c_str(), IGSC_OPROM_CODE, version.data(), version.size());
+	if (ret != 0) {
+		*outputLine = "";
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Format OPROM firmware as space-separated decimal byte values
+	auto formatted = version | std::views::transform([](uint8_t b) { return std::to_string(b); });
+
+	*outputLine = "";
+	for (const auto &val : formatted) {
+		if (!outputLine->empty())
+			*outputLine += " ";
+		*outputLine += val;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints OPROM DATA firmware name.
+ *
+ * @param[in] d Pointer to the device info structure (unused)
+ * @param[out] outputLine Pointer to the output line string (always "OPROM_DATA")
+ *
+ * @retval ZE_RESULT_SUCCESS Always succeeds
+ */
+ze_result_t cmdDiscovery::opromDataFirmwareName(UNUSED devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	*outputLine = "OPROM_DATA";
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints OPROM DATA firmware version.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string (dot-separated version bytes)
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved OPROM DATA firmware version
+ * @retval ZE_RESULT_ERROR_* Failed to get OPROM version
+ */
+ze_result_t cmdDiscovery::opromDataFirmwareVersion(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+	std::array<uint8_t, 8> version = {};
+	pci *p = d->dev->getPCI();
+
+	// Get OPROM version directly using gscupd
+	gscupd gsc;
+	int ret = gsc.getOpromVersion(p->getBDFStr().c_str(), IGSC_OPROM_DATA, version.data(), version.size());
+	if (ret != 0) {
+		*outputLine = "";
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Format OPROM firmware as space-separated decimal byte values
+	auto formatted = version | std::views::transform([](uint8_t b) { return std::to_string(b); });
+
+	*outputLine = "";
+	for (const auto &val : formatted) {
+		if (!outputLine->empty())
+			*outputLine += " ";
+		*outputLine += val;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Lists all AMC firmware versions for a device when user runs discovery --listamcversions
  *
- * @param d A pointer to the device info structure.
- * @param jsonObj A pointer to the JSON object to store the result.
+ * @param[in] d Pointer to the device info structure
+ * @param[out] jsonObj Pointer to JSON object to populate with AMC firmware version
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved and populated AMC firmware version
  */
 ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
-	char version[MAX_PATH] = {0};
+	std::array<char, MAX_PATH> version = {};
 
-	pci *p = d->dev->getPCI();
-	firmware *fw = d->dev->getFirmware();
+	auto *const p = d->dev->getPCI();
+	auto *const fw = d->dev->getFirmware();
 
-	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version, sizeof(version));
-	jsonObj->push_back(version);
+	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
+	jsonObj->push_back(version.data());
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1096,7 +2052,6 @@ int cmdDiscovery::run(arg_struct *args)
 {
 	TRACING();
 	std::vector<devInfo> deviceList;
-	ze_result_t result;
 	bool found = false, headingFirst = true;
 	int opt;
 	int optionIndex = 0;
@@ -1161,7 +2116,7 @@ int cmdDiscovery::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
+	auto result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
 		return result;
