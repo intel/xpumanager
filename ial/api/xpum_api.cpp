@@ -1,9 +1,7 @@
 /*
- *  Copyright (C) 2021-2025 Intel Corporation
- *  SPDX-License-Identifier: MIT
- *  @file xpum_c_api.cpp
+ * Copyright (C) 2021-2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
  *
- *  @brief C API implementation for XPUM using modern C++20 and HAL layer
  */
 
 // Include Level Zero headers first (needed for type conversion functions)

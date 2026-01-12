@@ -311,14 +311,13 @@ jobs:
                               -extra-arg=-Wno-sign-conversion \
                               -extra-arg=-Wno-inconsistent-missing-override
       - name: Check license headers
-        continue-on-error: true
         run: |
           echo "Verifying license headers in source files..."
-          python3 check_license.py --check --license LICENSE --dry-run
+          python3 scripts/check_license.py --check -v
+
       - name: Run clang-tidy
         continue-on-error: true
         # clang-tidy currently has millions of errors per file and takes 10+ minutes before finally causing a system OOM error
-
         # restrict it to 1 minute
         timeout-minutes: 1
         run: |

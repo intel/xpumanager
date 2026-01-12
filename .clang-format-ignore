@@ -2,3 +2,5 @@ ial/third_party/**
 ./ial/third_party/**
 **/third_party/**
 **/nlohmann/**
+conanrun.sh
+deactivate_conanrun.sh

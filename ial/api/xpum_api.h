@@ -1,13 +1,7 @@
 /*
- *  Copyright (C) 2021-2025 Intel Corporation
- *  SPDX-License-Identifier: MIT
- *  @file xpum_api.h
+ * Copyright (C) 2025-2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
  *
- *  @brief C API for XPUM - Compatibility layer for legacy applications
- *
- *  This header provides backward compatibility with the original XPUM API
- *  while internally using the modern HAL layer. Designed for use with Go
- *  daemon via cgo and other language bindings.
  */
 
 #ifndef XPUM_api_H
