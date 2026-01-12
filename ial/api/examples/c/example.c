@@ -1,8 +1,7 @@
 /*
- *  Copyright (C) 2025 Intel Corporation
- *  SPDX-License-Identifier: MIT
+ * Copyright (C) 2025-2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
  *
- *  Example C program demonstrating XPUM C API usage
  */
 
 #include <stdio.h>

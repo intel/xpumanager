@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2025-2026 Intel Corporation
 # SPDX-License-Identifier: MIT
 
 """
@@ -152,6 +152,8 @@ class SPDXLicenseManager:
         "*docs*",
         "*vendor*",
         "*.backup",
+        "*conanrun.sh",
+        "*deactivate_conanrun.sh",
     ]
 
     # Comment styles: (start, middle, end)
@@ -279,7 +281,7 @@ class SPDXLicenseManager:
                     "git",
                     "log",
                     "-1",
-                    "--format=%ad",  # Use author date, not committer date
+                    "--format=%cd",  # Use committer date (when committed to repo)
                     "--date=format:%Y",
                     "--",
                     str(rel_path),
@@ -330,17 +332,23 @@ class SPDXLicenseManager:
             if copyright_match and found_copyright_line is None:
                 found_copyright_line = i
                 if potential_start is None:
-                    # For block comments, check if previous line is the opening
-                    if start and i > 0 and start.strip() in lines[i - 1]:
-                        potential_start = i - 1
+                    # For block comments, check if previous lines contain the opening
+                    # Look back up to 3 lines to handle blank lines between /* and Copyright
+                    if start:
+                        for lookback in range(1, min(4, i + 1)):
+                            if i >= lookback and start.strip() in lines[i - lookback]:
+                                potential_start = i - lookback
+                                break
+                        else:
+                            potential_start = i
                     else:
                         potential_start = i
 
-                # Extract year (use the start year from range if present)
+                # Extract year (use the end year from range if present)
                 year_str = copyright_match.group(1)
                 if "-" in year_str:
-                    # For ranges like "2021-2023", use the start year (2021)
-                    found_year = int(year_str.split("-")[0])
+                    # For ranges like "2021-2023", use the end year (2023)
+                    found_year = int(year_str.split("-")[1])
                 else:
                     found_year = int(year_str)
 
@@ -395,8 +403,8 @@ class SPDXLicenseManager:
             if match:
                 year_str = match.group(1)
                 if "-" in year_str:
-                    # For ranges like "2021-2023", use the start year (2021)
-                    return int(year_str.split("-")[0])
+                    # For ranges like "2021-2023", use the end year (2023)
+                    return int(year_str.split("-")[1])
                 else:
                     return int(year_str)
         
@@ -474,13 +482,12 @@ class SPDXLicenseManager:
                 start_line, end_line, found_year = spdx_match
 
                 # Check if year needs updating
-                if self.config.update_year:
-                    file_year = self._get_file_last_modified_year(filepath)
-                    # Only flag as old if file was modified AFTER the copyright year
-                    if file_year and found_year and file_year > found_year:
+                if self.config.update_year and found_year:
+                    # Compare against current year, not git modification year
+                    # This ensures we always flag licenses that don't have current year
+                    if found_year < self.config.current_year:
                         return LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR, found_year
                     else:
-                        # File hasn't been modified since copyright year, so it's valid
                         return LicenseStatus.HAS_VALID_LICENSE, found_year
                 else:
                     return LicenseStatus.HAS_VALID_LICENSE, found_year
@@ -758,11 +765,8 @@ class SPDXLicenseManager:
             start_line, end_line, found_year = spdx_match
             lines = content.splitlines()
 
-            if self.config.update_year:
-                file_year = self._get_file_last_modified_year(filepath)
-                new_year = file_year if file_year else self.config.current_year
-            else:
-                new_year = self.config.current_year
+            # Always use current year for updates to ensure licenses stay current
+            new_year = self.config.current_year
 
             # If years are the same, nothing to do
             if found_year and found_year == new_year:
@@ -839,15 +843,8 @@ class SPDXLicenseManager:
         }
 
         message = messages[status]
-        if (
-            status == LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR
-            and self.config.update_year
-        ):
-            file_year = self._get_file_last_modified_year(filepath)
-            if file_year and found_year and file_year > found_year:
-                message += f" - file modified in {file_year}, should update"
-            else:
-                message += " - but file hasn't been modified since then"
+        if status == LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR and self.config.update_year:
+            message += f" - current year is {self.config.current_year}, should update"
 
         return FileProcessingResult(filepath=filepath, status=status, message=message)
 
