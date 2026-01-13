@@ -3,6 +3,9 @@ dist:
   description: XPUM Daemon
   output_path: ./dist
   otelcol_version: 0.142.0
+  # Enable CGO explicitly, as we are linking against external library
+  # Ref: https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder#cgo-disabled-by-default
+  cgo_enabled: true
 
 replaces:
   - github.com/intel/level-zero-go => ../level-zero-go
