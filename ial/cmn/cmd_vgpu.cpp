@@ -25,6 +25,7 @@
 #include "cmd_vgpu.h"
 #include "debug.h"
 #include <osvf.h>
+#include <algorithm>
 #include <assert.h>
 #include <cinttypes>
 
@@ -252,15 +253,92 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 /**
  * @brief Retrieves statistics for virtual GPU instances
  *
- * This function collects and displays performance statistics for vGPU instances.
- * Currently implemented as a placeholder for future vGPU statistics functionality.
+ * This function collects and displays performance statistics for vGPU instances,
+ * matching the legacy xpum-cli output format with utilization percentages.
  *
- * @param d Pointer to device information structure (currently unused)
+ * @param d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS on successful statistics retrieval
  */
-ze_result_t cmdVgpu::stats(UNUSED devInfo *d)
+ze_result_t cmdVgpu::stats(devInfo *d)
 {
 	TRACING();
+	std::vector<VFStatsInfo> vfStatsList;
+	vf *vfHandle = d->dev->getVF();
+	pci *pciHandle = d->dev->getPCI();
+
+	DeviceSriovInfo deviceInfo = {};
+	deviceInfo.bdfAddress = pciHandle->getBDFStr();
+	deviceInfo.drmPath = d->dev->getDrmDevPath();
+
+	ze_result_t result = vfHandle->getVFStatsList(&deviceInfo, vfStatsList);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get VF statistics.\n");
+		return result;
+	}
+
+	if (vfStatsList.empty()) {
+		PRINT("No virtual GPUs found on device %s.\n", pciHandle->getBDFStr().c_str());
+		return ZE_RESULT_SUCCESS;
+	}
+
+	for (const auto &vfStats : vfStatsList) {
+		static constexpr size_t bdfStringSize = 16; // "DDDD:BB:DD.F" max length
+		char vfBdf[bdfStringSize];
+		snprintf(vfBdf, sizeof(vfBdf), "%04x:%02x:%02x.%x", vfStats.domain, vfStats.bus, vfStats.device,
+				 vfStats.function);
+
+		double memPercent = -1.0;
+		if (vfStats.vfDeviceMemSize > 0) {
+			memPercent =
+				(static_cast<double>(vfStats.memoryUtilized) / static_cast<double>(vfStats.vfDeviceMemSize)) * 100.0;
+			memPercent = std::min(memPercent, 100.0);
+		}
+
+		// Print in legacy format
+		PRINT("+--------------------------------------------------------------------------------------------------+\n");
+		PRINT("| Device Information                                                                               |\n");
+		PRINT("+--------------------------------------------------------------------------------------------------+\n");
+		PRINT("| PCI BDF Address: %-79s |\n", vfBdf);
+
+		if (vfStats.gpuUtilization >= 0.0) {
+			PRINT("| GPU Utilization (%%): %-75.0f |\n", vfStats.gpuUtilization);
+		} else {
+			PRINT("| GPU Utilization (%%): %-75s |\n", "N/A");
+		}
+
+		if (vfStats.computeUtilization >= 0.0) {
+			PRINT("| Compute Engine Util(%%): %-72.0f |\n", vfStats.computeUtilization);
+		} else {
+			PRINT("| Compute Engine Util(%%): %-72s |\n", "N/A");
+		}
+
+		if (vfStats.renderUtilization >= 0.0) {
+			PRINT("| Render Engine Util (%%): %-72.0f |\n", vfStats.renderUtilization);
+		} else {
+			PRINT("| Render Engine Util (%%): %-72s |\n", "N/A");
+		}
+
+		if (vfStats.mediaUtilization >= 0.0) {
+			PRINT("| Media Engine Util (%%): %-73.0f |\n", vfStats.mediaUtilization);
+		} else {
+			PRINT("| Media Engine Util (%%): %-73s |\n", "N/A");
+		}
+
+		if (vfStats.copyUtilization >= 0.0) {
+			PRINT("| Copy Engine Util (%%): %-74.0f |\n", vfStats.copyUtilization);
+		} else {
+			PRINT("| Copy Engine Util (%%): %-74s |\n", "N/A");
+		}
+
+		if (memPercent >= 0.0) {
+			PRINT("| GPU Memory Util (%%): %-75.0f |\n", memPercent);
+		} else {
+			PRINT("| GPU Memory Util (%%): %-75s |\n", "N/A");
+		}
+
+		PRINT("+--------------------------------------------------------------------------------------------------+\n");
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 

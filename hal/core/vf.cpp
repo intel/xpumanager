@@ -23,57 +23,54 @@
  */
 #include "vf.h"
 #include <osvf.h>
+#include <chrono>
+#include <thread>
+#include <algorithm>
+#include <sstream>
+
+// Interval in milliseconds between engine utilization snapshots
+static constexpr int VF_METRICS_INTERVAL_MS = 100;
+
+/**
+ * @brief Internal structure for VF engine snapshot data
+ */
+struct VFEngineSnapshot
+{
+	zes_engine_group_t engineType;
+	uint64_t activeCounterValue;
+	uint64_t samplingCounterValue;
+};
+
+/**
+ * @brief Internal structure for VF snapshot during two-snapshot measurement
+ */
+struct VFSnapshot
+{
+	zes_vf_handle_t vfHandle;
+	uint32_t vfId;
+	uint32_t domain;
+	uint8_t bus;
+	uint8_t device;
+	uint8_t function;
+	uint64_t vfDeviceMemSize;
+	zes_mem_loc_t memLocation;
+	uint64_t memoryUtilized;
+	std::vector<VFEngineSnapshot> engineSnapshots;
+};
 
 /**
  * @brief Destructor for the Virtual Function (VF) class
  *
  * This destructor performs cleanup operations for the VF management object,
- * releasing allocated memory for both active and enabled VF handle arrays
- * and ensuring proper resource deallocation when the VF object is destroyed.
+ * releasing allocated memory for enabled VF handle arrays and ensuring
+ * proper resource deallocation when the VF object is destroyed.
  */
 vf::~vf()
 {
-	if (vfActiveHandles) {
-		delete[] vfActiveHandles;
-		vfActiveHandles = nullptr;
-	}
 	if (vfEnabledHandles) {
 		delete[] vfEnabledHandles;
 		vfEnabledHandles = nullptr;
 	}
-}
-
-/**
- * @brief Enumerates all active Virtual Functions for a device
- *
- * This function discovers and catalogs all currently active VFs on the
- * specified device. Active VFs are those that are currently running and
- * accessible for monitoring and management operations in the SR-IOV environment.
- *
- * @param device Handle to the Level Zero Sysman device
- * @return ze_result_t ZE_RESULT_SUCCESS on successful enumeration, error code otherwise
- */
-ze_result_t vf::enumActiveVF(zes_device_handle_t device)
-{
-	ze_result_t result = zesDeviceEnumActiveVFExp(device, &vfActiveCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get active VF vfActiveCount. 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	if (vfActiveCount == 0) {
-		DBG("No active VFs found.\n");
-		return ZE_RESULT_SUCCESS;
-	}
-
-	vfActiveHandles = new zes_vf_handle_t[vfActiveCount];
-	result = zesDeviceEnumActiveVFExp(device, &vfActiveCount, vfActiveHandles);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate active VFs. 0x%X (%s)\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	return result;
 }
 
 /**
@@ -117,15 +114,20 @@ ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
  * device memory size allocation for virtualization management.
  *
  * @param vfHandle Handle to the specific Virtual Function
+ * @param outCaps Optional pointer to store capabilities data for caller use
  * @return ze_result_t ZE_RESULT_SUCCESS on successful capability retrieval, error code otherwise
  */
-ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle)
+ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle, zes_vf_exp2_capabilities_t *outCaps)
 {
-	zes_vf_exp_capabilities_t capabilities = {};
-	ze_result_t result = zesVFManagementGetVFCapabilitiesExp(vfHandle, &capabilities);
+	zes_vf_exp2_capabilities_t capabilities = {};
+	ze_result_t result = zesVFManagementGetVFCapabilitiesExp2(vfHandle, &capabilities);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get VF capabilities. 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get VF capabilities. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
+	}
+
+	if (outCaps) {
+		*outCaps = capabilities;
 	}
 
 	DBG("Successfully retrieved VF capabilities.\n");
@@ -134,7 +136,7 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle)
 	DBG("  - VF Bus: %d\n", capabilities.address.bus);
 	DBG("  - VF Device: %d\n", capabilities.address.device);
 	DBG("  - VF Function: %d\n", capabilities.address.function);
-	DBG("  - VF vfDeviceMemSize: %d bytes\n", capabilities.vfDeviceMemSize);
+	DBG("  - VF vfDeviceMemSize: %" PRIu64 " bytes\n", capabilities.vfDeviceMemSize);
 
 	return result;
 }
@@ -147,20 +149,24 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle)
  * memory currently utilized by the VF for performance monitoring.
  *
  * @param vfHandle Handle to the specific Virtual Function
+ * @param outMem Optional pointer to store memory utilization data for caller use
  * @return ze_result_t ZE_RESULT_SUCCESS on successful memory utilization retrieval, error code otherwise
  */
-ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle)
+ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle, zes_vf_util_mem_exp2_t *outMem)
 {
 	uint32_t memoryUtilCount = 0;
 	zes_vf_util_mem_exp2_t memoryUtil = {};
 	ze_result_t result = zesVFManagementGetVFMemoryUtilizationExp2(vfHandle, &memoryUtilCount, &memoryUtil);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get VF memory utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get VF memory utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Successfully retrieved VF memory utilization.\n");
 
+	if (outMem) {
+		*outMem = memoryUtil;
+	}
 	switch (memoryUtil.vfMemLocation) {
 	case ZES_MEM_LOC_SYSTEM:
 		DBG("  - VF Memory Location: System\n");
@@ -186,9 +192,10 @@ ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle)
  * active counter values, and sampling counter values for detailed performance analysis.
  *
  * @param vfHandle Handle to the specific Virtual Function
+ * @param outEngine Optional pointer to store engine utilization data for caller use
  * @return ze_result_t ZE_RESULT_SUCCESS on successful engine utilization retrieval, error code otherwise
  */
-ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
+ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle, zes_vf_util_engine_exp2_t *outEngine)
 {
 	uint32_t engineUtilCount = 0;
 	zes_vf_util_engine_exp2_t engineUtil = {};
@@ -200,6 +207,9 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 
 	DBG("Successfully retrieved VF engine utilization.\n");
 
+	if (outEngine) {
+		*outEngine = engineUtil;
+	}
 	switch (engineUtil.vfEngineType) {
 	case ZES_ENGINE_GROUP_ALL:
 		DBG("  - VF Engine Type: All\n");
@@ -255,6 +265,46 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle)
 	DBG("  - VF Sampling counter value: %" PRIu64 "\n", engineUtil.samplingCounterValue);
 
 	return result;
+}
+
+/**
+ * @brief Gets all engine utilization counters for a Virtual Function
+ *
+ * This function retrieves all engine utilization data for a specific VF,
+ * returning a vector of engine snapshots with counters for each engine type.
+ *
+ * @param vfHandle Handle to the specific Virtual Function
+ * @param snapshots Vector to populate with engine snapshot data
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code otherwise
+ */
+static ze_result_t getAllVFEngineUtilization(zes_vf_handle_t vfHandle, std::vector<VFEngineSnapshot> &snapshots)
+{
+	uint32_t engineUtilCount = 0;
+	ze_result_t result = zesVFManagementGetVFEngineUtilizationExp2(vfHandle, &engineUtilCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get VF engine count. 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (engineUtilCount == 0) {
+		DBG("No engine utilization data available.\n");
+		return ZE_RESULT_SUCCESS;
+	}
+
+	std::vector<zes_vf_util_engine_exp2_t> engineUtils(engineUtilCount);
+	result = zesVFManagementGetVFEngineUtilizationExp2(vfHandle, &engineUtilCount, engineUtils.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get VF engine utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	snapshots.clear();
+	snapshots.reserve(engineUtilCount);
+	for (const auto &engine : engineUtils) {
+		snapshots.push_back({engine.vfEngineType, engine.activeCounterValue, engine.samplingCounterValue});
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /*
@@ -322,6 +372,205 @@ ze_result_t vf::listVFs(DeviceSriovInfo *deviceInfo, std::vector<DeviceSriovInfo
 }
 
 /**
+ * @brief Gets comprehensive statistics for all enabled Virtual Functions
+ *
+ * This function collects detailed statistics for all enabled VFs on the device,
+ * using a two-snapshot method to calculate accurate engine utilization percentages.
+ * Engine utilization is aggregated by type (max of each category) and an overall
+ * GPU utilization is calculated as the max of all engine types.
+ *
+ * Note: VFs must be enumerated via init() before calling this function.
+ *
+ * If VF capabilities API is not supported on the device, BDF information
+ * is obtained via LISTVFS OAL call as a fallback.
+ *
+ * @param[in] deviceInfo Pointer to device info (used for LISTVFS fallback)
+ * @param[out] statsList Reference to a vector to populate with VFStatsInfo structures
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful statistics retrieval, error code otherwise
+ */
+ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsInfo> &statsList)
+{
+	TRACING();
+
+	if (vfEnabledCount == 0 || vfEnabledHandles == nullptr) {
+		DBG("No enabled VFs to get stats for. Ensure init() was called.\n");
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Get VF list info via LISTVFS OAL call (used as fallback if capabilities API fails)
+	std::vector<DeviceSriovInfo> vfListInfo;
+	if (deviceInfo != nullptr) {
+		if (LISTVFS(deviceInfo, vfListInfo) != 0) {
+			DBG("Failed to get VF list info via LISTVFS.\n");
+		}
+	}
+
+	std::vector<VFSnapshot> snapshots;
+	snapshots.reserve(vfEnabledCount);
+
+	for (uint32_t i = 0; i < vfEnabledCount; i++) {
+		zes_vf_handle_t vfHandle = vfEnabledHandles[i];
+		VFSnapshot snap = {};
+		snap.vfHandle = vfHandle;
+		snap.vfId = i + 1; // Default VF ID if capabilities not available
+
+		// Try to get VF capabilities via Sysman API
+		zes_vf_exp2_capabilities_t caps = {};
+		if (getVFCapabilities(vfHandle, &caps) == ZE_RESULT_SUCCESS) {
+			snap.vfId = caps.vfID;
+			snap.domain = caps.address.domain;
+			snap.bus = static_cast<uint8_t>(caps.address.bus);
+			snap.device = static_cast<uint8_t>(caps.address.device);
+			snap.function = static_cast<uint8_t>(caps.address.function);
+			snap.vfDeviceMemSize = caps.vfDeviceMemSize;
+		} else {
+			// Fallback: get BDF from vfListInfo (index i+1 since index 0 is PF)
+			DBG("VF capabilities API not supported, using LISTVFS fallback for VF %u.\n", i);
+			uint32_t vfListIndex = i + 1;
+			if (vfListIndex < vfListInfo.size()) {
+				const auto &vfInfo = vfListInfo[vfListIndex];
+				// Parse BDF address string (format: "DDDD:BB:DD.F")
+				unsigned int domain = 0, bus = 0, device = 0, function = 0;
+				char colon1 = 0, colon2 = 0, dot = 0;
+				std::istringstream iss(vfInfo.bdfAddress);
+				iss >> std::hex >> domain >> colon1 >> bus >> colon2 >> device >> dot >> function;
+				if (iss && colon1 == ':' && colon2 == ':' && dot == '.') {
+					snap.domain = domain;
+					snap.bus = static_cast<uint8_t>(bus);
+					snap.device = static_cast<uint8_t>(device);
+					snap.function = static_cast<uint8_t>(function);
+				} else {
+					DBG("Failed to parse BDF address '%s' for VF %u.\n", vfInfo.bdfAddress.c_str(), i);
+				}
+			}
+		}
+
+		// Try to get VF memory utilization
+		zes_vf_util_mem_exp2_t mem = {};
+		if (getVFMemoryUtilization(vfHandle, &mem) == ZE_RESULT_SUCCESS) {
+			snap.memLocation = mem.vfMemLocation;
+			snap.memoryUtilized = mem.vfMemUtilized;
+		} else {
+			snap.memLocation = ZES_MEM_LOC_FORCE_UINT32;
+			snap.memoryUtilized = 0;
+		}
+
+		if (getAllVFEngineUtilization(vfHandle, snap.engineSnapshots) != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get engine utilization for VF %u.\n", i);
+		}
+
+		snapshots.push_back(snap);
+	}
+
+	// Wait for metrics interval between snapshots
+	std::this_thread::sleep_for(std::chrono::milliseconds(VF_METRICS_INTERVAL_MS));
+
+	statsList.clear();
+	statsList.reserve(snapshots.size());
+
+	for (auto &snap : snapshots) {
+		VFStatsInfo stats;
+		stats.vfId = snap.vfId;
+		stats.domain = snap.domain;
+		stats.bus = snap.bus;
+		stats.device = snap.device;
+		stats.function = snap.function;
+		stats.vfDeviceMemSize = snap.vfDeviceMemSize;
+		stats.memLocation = snap.memLocation;
+		stats.memoryUtilized = snap.memoryUtilized;
+
+		stats.gpuUtilization = -1.0;
+		stats.computeUtilization = -1.0;
+		stats.renderUtilization = -1.0;
+		stats.mediaUtilization = -1.0;
+		stats.copyUtilization = -1.0;
+
+		// Get second engine utilization snapshot
+		std::vector<VFEngineSnapshot> secondSnapshot;
+		if (getAllVFEngineUtilization(snap.vfHandle, secondSnapshot) != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get second engine snapshot for VF %u.\n", snap.vfId);
+			statsList.push_back(stats);
+			continue;
+		}
+
+		if (secondSnapshot.size() != snap.engineSnapshots.size()) {
+			DBG("Engine count mismatch for VF %u.\n", snap.vfId);
+			statsList.push_back(stats);
+			continue;
+		}
+
+		double maxMedia = -1.0, maxCompute = -1.0, maxRender = -1.0, maxCopy = -1.0;
+
+		for (size_t j = 0; j < snap.engineSnapshots.size(); j++) {
+			const auto &first = snap.engineSnapshots[j];
+			const auto &second = secondSnapshot[j];
+
+			if (first.engineType != second.engineType) {
+				DBG("Engine type mismatch at index %zu for VF %u.\n", j, snap.vfId);
+				continue;
+			}
+
+			if (second.samplingCounterValue <= first.samplingCounterValue) {
+				DBG("Invalid sampling counter for engine %d on VF %u.\n", first.engineType, snap.vfId);
+				continue;
+			}
+
+			if (second.activeCounterValue < first.activeCounterValue) {
+				DBG("Active counter wrap detected for engine %d on VF %u.\n", first.engineType, snap.vfId);
+				continue;
+			}
+
+			uint64_t activeDelta = second.activeCounterValue - first.activeCounterValue;
+			uint64_t samplingDelta = second.samplingCounterValue - first.samplingCounterValue;
+			double utilPercent = (static_cast<double>(activeDelta) / static_cast<double>(samplingDelta)) * 100.0;
+
+			utilPercent = std::min(utilPercent, 100.0);
+
+			switch (first.engineType) {
+			case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+			case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+			case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+				maxMedia = std::max(maxMedia, utilPercent);
+				break;
+			case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+				maxCompute = std::max(maxCompute, utilPercent);
+				break;
+			case ZES_ENGINE_GROUP_RENDER_SINGLE:
+				maxRender = std::max(maxRender, utilPercent);
+				break;
+			case ZES_ENGINE_GROUP_COPY_SINGLE:
+				maxCopy = std::max(maxCopy, utilPercent);
+				break;
+			default:
+				DBG("Unknown engine type %d for VF %u.\n", first.engineType, snap.vfId);
+				break;
+			}
+		}
+
+		stats.mediaUtilization = maxMedia;
+		stats.computeUtilization = maxCompute;
+		stats.renderUtilization = maxRender;
+		stats.copyUtilization = maxCopy;
+
+		double maxOverall = -1.0;
+		if (maxMedia >= 0.0)
+			maxOverall = std::max(maxOverall, maxMedia);
+		if (maxCompute >= 0.0)
+			maxOverall = std::max(maxOverall, maxCompute);
+		if (maxRender >= 0.0)
+			maxOverall = std::max(maxOverall, maxRender);
+		if (maxCopy >= 0.0)
+			maxOverall = std::max(maxOverall, maxCopy);
+		stats.gpuUtilization = maxOverall;
+
+		statsList.push_back(stats);
+	}
+
+	DBG("Successfully retrieved stats for %zu VFs.\n", statsList.size());
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Checks for VMX support on the system
  *
  * This function determines whether Virtual Machine Extensions (VMX) are
@@ -377,20 +626,15 @@ bool vf::sriovSupport(DeviceSriovInfo *deviceInfo)
  * @brief Initializes the Virtual Function management module for a device
  *
  * This function performs initial setup of VF monitoring capabilities by
- * enumerating both active and enabled Virtual Functions on the specified
- * device for subsequent VF management and monitoring operations.
+ * enumerating enabled Virtual Functions on the specified device for
+ * subsequent VF management and monitoring operations.
  *
  * @param device Handle to the device for VF initialization
  * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
  */
 ze_result_t vf::init(zes_device_handle_t device)
 {
-	ze_result_t result = enumActiveVF(device);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	result = enumEnabledVF(device);
+	ze_result_t result = enumEnabledVF(device);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
@@ -402,7 +646,7 @@ ze_result_t vf::init(zes_device_handle_t device)
 /**
  * @brief Performs comprehensive Virtual Function runtime monitoring operations
  *
- * This function executes a complete VF monitoring cycle for all active VFs,
+ * This function executes a complete VF monitoring cycle for all enabled VFs,
  * including capability retrieval, memory utilization monitoring, and engine
  * utilization tracking for comprehensive SR-IOV performance analysis.
  *
@@ -411,8 +655,8 @@ ze_result_t vf::init(zes_device_handle_t device)
  */
 ze_result_t vf::zesRun(UNUSED zes_device_handle_t device)
 {
-	for (uint32_t i = 0; i < vfActiveCount; i++) {
-		zes_vf_handle_t v = vfActiveHandles[i];
+	for (uint32_t i = 0; i < vfEnabledCount; i++) {
+		zes_vf_handle_t v = vfEnabledHandles[i];
 		getVFCapabilities(v);
 		getVFMemoryUtilization(v);
 		getVFEngineUtilization(v);
