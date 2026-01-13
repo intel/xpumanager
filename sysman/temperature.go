@@ -27,10 +27,7 @@ type sysmanTemperature struct {
 
 // temperatureMetrics is a throwaway struct to hold temperature metrics for one scrape cycle.
 type temperatureMetrics struct {
-	timestamp pcommon.Timestamp
-
-	// Metrics
-	current pmetric.Gauge
+	current gauge
 }
 
 func newSysmanTemperature(name string, temp *l0sysman.Temp, device *sysmanDevice) (*sysmanTemperature, error) {
@@ -67,12 +64,10 @@ func (t *sysmanTemperature) pickAttributes(keys ...string) pcommon.Map {
 	return pickAttributes(t.attributes, keys...)
 }
 
-func newTemperatureMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
+func newTemperatureMetrics(sm pmetric.ScopeMetrics, _ *commonMetrics, ts pcommon.Timestamp) scraper {
 	return &temperatureMetrics{
-		timestamp: ts,
-
 		// Metrics
-		current: newGauge(sm, "hw.temperature", "Cel", "Current GPU temperature"),
+		current: newGauge(sm, ts, "hw.temperature", "Cel", "Current GPU temperature"),
 	}
 }
 
@@ -82,7 +77,7 @@ func (m *temperatureMetrics) scrapeDevice(dev *sysmanDevice) {
 			temp.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", temp.attributes)
 		} else {
 			attrs := temp.pickAttributes(attrHwID, attrHwName, attrHwParent, attrHwSensorLocation, attrStatistic, attrSubdeviceId)
-			observeFloat64(m.current, current, m.timestamp, attrs)
+			m.current.observeFloat64(current, attrs)
 		}
 	}
 }

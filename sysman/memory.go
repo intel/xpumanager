@@ -33,11 +33,9 @@ type sysmanMemoryState struct {
 
 // memoryMetrics is a throwaway struct to hold memory metrics for one scrape cycle.
 type memoryMetrics struct {
-	timestamp pcommon.Timestamp
-
-	usage  pmetric.Sum
-	size   pmetric.Sum
-	status pmetric.Sum
+	*commonMetrics
+	usage sum
+	size  sum
 }
 
 func newSysmanMemory(name string, mem *l0sysman.Mem, device *sysmanDevice) (*sysmanMemory, error) {
@@ -69,16 +67,13 @@ func (m *sysmanMemory) pickAttributes(keys ...string) pcommon.Map {
 	return pickAttributes(m.attributes, keys...)
 }
 
-func newMemoryMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
+func newMemoryMetrics(sm pmetric.ScopeMetrics, cm *commonMetrics, ts pcommon.Timestamp) scraper {
 	return &memoryMetrics{
-		timestamp: ts,
-
-		// Metrics
+		commonMetrics: cm,
 		// NOTE: hw.memory.usage imitates hw.gpu.memory.usage but is not in OTel spec:
 		// https://opentelemetry.io/docs/specs/semconv/hardware/memory
-		usage:  newUpDownCounter(sm, "hw.memory.usage", "By", "GPU memory used"),
-		size:   newUpDownCounter(sm, "hw.memory.size", "By", "Total size of the GPU memory"),
-		status: newUpDownCounter(sm, "hw.status", "1", "Health status of the GPU memory"),
+		usage: newUpDownCounter(sm, ts, "hw.memory.usage", "By", "Memory used"),
+		size:  newUpDownCounter(sm, ts, "hw.memory.size", "By", "Size of the memory"),
 	}
 }
 
@@ -91,8 +86,8 @@ func (m *memoryMetrics) scrapeDevice(dev *sysmanDevice) {
 		}
 
 		attrs := mem.pickAttributes(attrHwID, attrMemoryType, attrHwName, attrHwParent, attrSubdeviceId)
-		observeInt64(m.size, int64(state.Size), m.timestamp, attrs)
-		observeInt64(m.usage, int64(state.Size-state.Free), m.timestamp, attrs)
+		m.size.observeInt64(int64(state.Size), attrs)
+		m.usage.observeInt64(int64(state.Size-state.Free), attrs)
 
 		mem.state.healthStatesSeen[state.Health] = true
 		// TODO: should we filter out "unknown" health state?
@@ -104,7 +99,7 @@ func (m *memoryMetrics) scrapeDevice(dev *sysmanDevice) {
 
 			attrs = mem.pickAttributes(attrHwID, attrHwType, attrHwName, attrHwParent, attrSubdeviceId)
 			attrs.PutStr(attrHwState, strings.ToLower(s.String()))
-			observeInt64(m.status, value, m.timestamp, attrs)
+			m.status.observeInt64(value, attrs)
 		}
 	}
 }

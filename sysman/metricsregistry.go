@@ -49,6 +49,11 @@ type metricsRegistry struct {
 	scrapers []subsystem
 }
 
+// commonMetrics holds common hardware metrics used across subsystems.
+type commonMetrics struct {
+	status sum
+}
+
 func newMetricsRegistry(logger *zap.SugaredLogger) (*metricsRegistry, error) {
 	registry := &metricsRegistry{logger: logger}
 
@@ -70,9 +75,11 @@ func (r *metricsRegistry) scrape(ctx context.Context, consumer consumer.Metrics,
 
 	// Create metric scrapers
 	ts := pcommon.NewTimestampFromTime(time.Now())
+	gm := newGenericMetrics(sm, ts)
+
 	scrapers := make([]scraper, len(r.scrapers))
 	for i, s := range r.scrapers {
-		scrapers[i] = s.createScraper(sm, ts)
+		scrapers[i] = s.createScraper(sm, gm, ts)
 	}
 
 	// Scrape devices
@@ -88,15 +95,34 @@ func (r *metricsRegistry) scrape(ctx context.Context, consumer consumer.Metrics,
 	}
 }
 
-func newGauge(sm pmetric.ScopeMetrics, name, unit, description string) pmetric.Gauge {
+func newGenericMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) *commonMetrics {
+	return &commonMetrics{
+		status: newUpDownCounter(sm, ts, "hw.status", "1", "The operational status of the hardware component"),
+	}
+}
+
+type gauge struct {
+	pmetric.Gauge
+	timestamp pcommon.Timestamp
+}
+
+type sum struct {
+	pmetric.Sum
+	timestamp pcommon.Timestamp
+}
+
+func newGauge(sm pmetric.ScopeMetrics, ts pcommon.Timestamp, name, unit, description string) gauge {
 	m := sm.Metrics().AppendEmpty()
 	m.SetName(name)
 	m.SetUnit(unit)
 	m.SetDescription(description)
-	return m.SetEmptyGauge()
+	return gauge{
+		Gauge:     m.SetEmptyGauge(),
+		timestamp: ts,
+	}
 }
 
-func newUpDownCounter(sm pmetric.ScopeMetrics, name, unit, description string) pmetric.Sum {
+func newUpDownCounter(sm pmetric.ScopeMetrics, ts pcommon.Timestamp, name, unit, description string) sum {
 	m := sm.Metrics().AppendEmpty()
 	m.SetName(name)
 	m.SetUnit(unit)
@@ -106,7 +132,22 @@ func newUpDownCounter(sm pmetric.ScopeMetrics, name, unit, description string) p
 	s.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	s.SetIsMonotonic(false)
 
-	return s
+	return sum{
+		Sum:       s,
+		timestamp: ts,
+	}
+}
+
+func (g *gauge) observeInt64(value int64, attrs pcommon.Map) {
+	observeInt64(g.Gauge, value, g.timestamp, attrs)
+}
+
+func (g *gauge) observeFloat64(value float64, attrs pcommon.Map) {
+	observeFloat64(g.Gauge, value, g.timestamp, attrs)
+}
+
+func (s *sum) observeInt64(value int64, attrs pcommon.Map) {
+	observeInt64(s.Sum, value, s.timestamp, attrs)
 }
 
 func observeInt64[T interface {
