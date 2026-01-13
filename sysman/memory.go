@@ -6,7 +6,6 @@
 package sysman
 
 import (
-	"context"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -66,7 +65,7 @@ func newMemoryMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
 	}
 }
 
-func (m *memoryMetrics) scrapeDevice(ctx context.Context, dev *sysmanDevice) {
+func (m *memoryMetrics) scrapeDevice(dev *sysmanDevice) {
 	for _, mem := range dev.memory {
 		state, err := mem.GetState()
 		if err != nil {
