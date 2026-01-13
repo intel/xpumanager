@@ -91,4 +91,31 @@ struct PciDeviceInfo
 	uint32_t vfBarSize[6];	// VF BAR sizes
 };
 
+/**
+ * @brief Comprehensive VF statistics data
+ *
+ * Contains all statistics information for a single Virtual Function,
+ * including identification, memory usage, and engine utilization percentages.
+ * Utilization values are in percentage (0.0 - 100.0), or -1.0 if not available.
+ */
+struct VFStatsInfo
+{
+	uint32_t vfId = 0;
+	uint32_t domain = 0;
+	uint8_t bus = 0;
+	uint8_t device = 0;
+	uint8_t function = 0;
+
+	uint64_t vfDeviceMemSize = 0;					// Memory quota allocated to VF in bytes
+	zes_mem_loc_t memLocation = ZES_MEM_LOC_SYSTEM; // System or device memory
+	uint64_t memoryUtilized = 0;					// Current memory usage in bytes
+
+	// Engine utilization percentages, value of -1.0 indicates data not available
+	double gpuUtilization = -1.0;	  // Overall GPU utilization (max of all engines)
+	double computeUtilization = -1.0; // Compute engine utilization
+	double renderUtilization = -1.0;  // Render engine utilization
+	double mediaUtilization = -1.0;	  // Media engine utilization (max of decode/encode/enhancement)
+	double copyUtilization = -1.0;	  // Copy engine utilization
+};
+
 #endif
