@@ -6,7 +6,6 @@
 package sysman
 
 import (
-	"context"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -87,7 +86,7 @@ func newFrequencyMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper 
 	}
 }
 
-func (m *frequencyMetrics) scrapeDevice(ctx context.Context, dev *sysmanDevice) {
+func (m *frequencyMetrics) scrapeDevice(dev *sysmanDevice) {
 	for _, freq := range dev.frequency {
 		if rang, err := freq.GetRange(); err != nil {
 			freq.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", freq.attributes.AsRaw())

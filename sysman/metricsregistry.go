@@ -18,7 +18,7 @@ import (
 )
 
 type scraper interface {
-	scrapeDevice(context.Context, *sysmanDevice)
+	scrapeDevice(*sysmanDevice)
 }
 
 type metricsRegistry struct {
@@ -55,7 +55,7 @@ func (r *metricsRegistry) scrape(ctx context.Context, consumer consumer.Metrics,
 	// Scrape devices
 	for _, dev := range d.devices {
 		for _, scraper := range scrapers {
-			scraper.scrapeDevice(ctx, dev)
+			scraper.scrapeDevice(dev)
 		}
 	}
 

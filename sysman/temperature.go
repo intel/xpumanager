@@ -6,7 +6,6 @@
 package sysman
 
 import (
-	"context"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -59,7 +58,7 @@ func newTemperatureMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scrape
 	}
 }
 
-func (m *temperatureMetrics) scrapeDevice(ctx context.Context, dev *sysmanDevice) {
+func (m *temperatureMetrics) scrapeDevice(dev *sysmanDevice) {
 	for _, temp := range dev.temperature {
 		if current, err := temp.GetState(); err != nil {
 			temp.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", temp.attributes.AsRaw())
