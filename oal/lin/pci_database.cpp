@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "os.h"
 #include "pci_database.h"
+#include "lin.h"
 
 /**
  * @brief Constructor for PciDatabase class
@@ -56,16 +57,11 @@ PciDatabase &PciDatabase::instance()
 bool PciDatabase::init()
 {
 	std::ifstream infile;
-	std::string fileName, folder;
-	char cwd[MAX_PATH];
+	std::string fileName;
 	bool ret = true;
-	if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-		folder = std::string(cwd) + "/";
-	} else {
-		folder = "./";
-	}
-	fileName = folder + "/resources/config/" + std::string(PCI_IDS_FILE);
 
+	// Try to find pci.ids file
+	fileName = findResourceFile("resources/config/" + std::string(PCI_IDS_FILE));
 	infile.open(fileName.data());
 
 	if (infile.is_open()) {
@@ -75,30 +71,20 @@ bool PciDatabase::init()
 		}
 		infile.close();
 	} else {
-		DBG("PciDatabase::init()- open file %s error.\n", fileName.c_str());
-		fileName = folder + "/resources/config/" + std::string(PCI_IDS_FILE);
-		infile.open(fileName.data());
-		if (!infile.is_open()) {
-			ERR("PciDatabase::init()- open file %s error.\n", fileName.c_str());
-			ret = false;
-		} else {
-			if (!parsePciDevice(infile)) {
-				ERR("PciDatabase::init()- parsePciDevice error.\n");
-				ret = false;
-			}
-			infile.close();
-		}
+		ERR("PciDatabase::init()- open file %s error.\n", fileName.c_str());
+		ret = false;
 	}
 
-	fileName = folder + "resources/config/" + std::string(PCI_IDS_CONFIG);
+	// Try to find pci.conf file
+	fileName = findResourceFile("resources/config/" + std::string(PCI_IDS_CONFIG));
 	infile.open(fileName.data());
 
 	if (infile.is_open()) {
 		parseDeviceConfig(infile);
 		infile.close();
 	} else {
-		ERR("PciDatabase::init()- open file %s error.\n", fileName.c_str());
 		ret = false;
+		ERR("PciDatabase::init()- open file %s error.\n", fileName.c_str());
 	}
 
 	return ret;

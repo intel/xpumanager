@@ -213,6 +213,22 @@ subdir('oal')
 subdir('hal')
 subdir('ial')
 
+# Create symlink to resources in builddir for development builds
+if is_linux
+  run_command('ln', '-sfn', 
+    meson.project_source_root() / 'resources',
+    meson.project_build_root() / 'resources',
+    check: false)
+elif is_windows
+  # Windows does not require the resources folder
+endif
+
+# Install resources directory next to binaries so they can be found
+# when running from the install location 
+install_subdir('resources',
+  install_dir: get_option('bindir'),
+  strip_directory: false)
+
 # Summary
 summary_info = {
   'Build type' : buildtype,

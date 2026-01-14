@@ -50,5 +50,6 @@ public:
 };
 
 SystemCommandResult execCommand(const std::string &command);
+std::string findResourceFile(const std::string &relativePath);
 
 #endif
