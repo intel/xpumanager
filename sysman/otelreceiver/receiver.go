@@ -24,25 +24,25 @@ func newSysmanReceiver(settings receiver.Settings, cfg *Config) (*sysmanReceiver
 
 	// Warn about potentially config issues.
 	// Cannot do in Config.Validate() as logger is not available there.
-	if cfg.CollectionInterval < 2*cfg.SampleInterval {
-		orig := cfg.SampleInterval
-		cfg.SampleInterval = cfg.CollectionInterval / 2
-		logger.Warnw("collectionInterval must be >= 2 * sampleInterval to guarantee data integrity, sampleInterval adjusted",
+	if cfg.CollectionInterval < 2*cfg.SamplingInterval {
+		orig := cfg.SamplingInterval
+		cfg.SamplingInterval = cfg.CollectionInterval / 2
+		logger.Warnw("collectionInterval must be >= 2 * samplingInterval to guarantee data integrity, samplingInterval adjusted",
 			"collectionInterval", cfg.CollectionInterval,
-			"sampleInterval", cfg.SampleInterval,
-			"oldSampleInterval", orig,
+			"samplingInterval", cfg.SamplingInterval,
+			"oldSamplingInterval", orig,
 		)
 	}
-	if cfg.SampleInterval < 100*time.Millisecond {
-		logger.Warnw("short sampleInterval may cause high CPU usage",
-			"sampleInterval", cfg.SampleInterval,
+	if cfg.SamplingInterval < 100*time.Millisecond {
+		logger.Warnw("short samplingInterval may cause high CPU usage",
+			"samplingInterval", cfg.SamplingInterval,
 		)
 	}
 
 	// Initialize Sysman
 	// Reserve one second (or at least 10 samples) extra for the aggregated sample buffer to mitigate possible jitter to not lose samples
 	const sampleBufferMinExtraSamples = 10
-	aggregatedSampleCount := cfg.CollectionInterval/cfg.SampleInterval + max(time.Second/cfg.SampleInterval, sampleBufferMinExtraSamples)
+	aggregatedSampleCount := cfg.CollectionInterval/cfg.SamplingInterval + max(time.Second/cfg.SamplingInterval, sampleBufferMinExtraSamples)
 
 	s, err := sysman.New(logger, int(aggregatedSampleCount))
 	if err != nil {
@@ -88,7 +88,7 @@ func (r *sysmanReceiver) Shutdown(ctx context.Context) error {
 
 // runSampler samples the aggregated device metrics.
 func (r *sysmanReceiver) runSampler(ctx context.Context) {
-	ticker := time.NewTicker(r.cfg.SampleInterval)
+	ticker := time.NewTicker(r.cfg.SamplingInterval)
 	defer ticker.Stop()
 	for {
 		select {

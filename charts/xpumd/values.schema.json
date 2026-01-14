@@ -33,7 +33,7 @@
                             "type": "object",
                             "properties": {
                                 "collection_interval": {
-                                    "description": "Metrics data collection interval. Must be at least twice the sample_interval.",
+                                    "description": "Metrics data collection interval. Must be at least twice the sampling_interval.",
                                     "type": "string"
                                 },
                                 "initial_delay": {
@@ -50,8 +50,8 @@
                                         "error"
                                     ]
                                 },
-                                "sample_interval": {
-                                    "description": "Sample interval for the high-frequency metrics.",
+                                "sampling_interval": {
+                                    "description": "Sampling interval for the high-frequency metrics.",
                                     "type": "string"
                                 },
                                 "timeout": {
