@@ -32,8 +32,12 @@
                             "description": "Configuration for the custom Level-Zero Sysman receiver.",
                             "type": "object",
                             "properties": {
-                                "collect_interval": {
+                                "collection_interval": {
                                     "description": "Metrics data collection interval. Must be at least twice the sample_interval.",
+                                    "type": "string"
+                                },
+                                "initial_delay": {
+                                    "description": "Initial start delay for metrics collection, any non positive value is assumed to be immediately.",
                                     "type": "string"
                                 },
                                 "log_level": {
@@ -49,6 +53,10 @@
                                 "sample_interval": {
                                     "description": "Sample interval for the high-frequency metrics.",
                                     "type": "string"
+                                },
+                                "timeout": {
+                                    "description": "Metrics collection timeout.",
+                                    "type": "integer"
                                 }
                             },
                             "additionalProperties": false

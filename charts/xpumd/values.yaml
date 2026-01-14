@@ -92,7 +92,13 @@ config:
       log_level: info
       # -- Metrics data collection interval. Must be at least twice the sample_interval.
       # @section -- XPUM Daemon Configuration
-      collect_interval: 30s
+      collection_interval: 30s
+      # -- Initial start delay for metrics collection, any non positive value is assumed to be immediately.
+      # @section -- XPUM Daemon Configuration
+      initial_delay: 1s
+      # -- Metrics collection timeout.
+      # @section -- XPUM Daemon Configuration
+      timeout: 0
       # -- Sample interval for the high-frequency metrics.
       # @section -- XPUM Daemon Configuration
       sample_interval: 1s

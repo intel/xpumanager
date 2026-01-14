@@ -12,13 +12,17 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/scraper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
+
+var componentType = component.MustNewType("sysman")
 
 // NewFactory creates a factory for the sysman receiver
 func NewFactory() receiver.Factory {
 	const stability = component.StabilityLevelDevelopment
 	return receiver.NewFactory(
-		component.MustNewType("sysman"),
+		componentType,
 		defaultConfig,
 		receiver.WithMetrics(createReceiver, stability),
 	)
@@ -29,5 +33,25 @@ func createReceiver(_ context.Context, settings receiver.Settings, cfg component
 	if !ok {
 		return nil, fmt.Errorf("invalid config type: %T", cfg)
 	}
-	return newSysmanReceiver(settings, rcfg, consumer)
+
+	sr, err := newSysmanReceiver(settings, rcfg)
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := scraper.NewMetrics(
+		sr.scrape,
+		scraper.WithStart(sr.Start),
+		scraper.WithShutdown(sr.Shutdown),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return scraperhelper.NewMetricsController(
+		&rcfg.ControllerConfig,
+		settings,
+		consumer,
+		scraperhelper.AddScraper(componentType, s),
+	)
 }
