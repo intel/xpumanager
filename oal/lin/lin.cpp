@@ -618,3 +618,41 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 	syncOut << "\033[u";
 	syncOut.flush();
 }
+
+/**
+ * @brief Find a resource file by searching multiple locations
+ *
+ * This function searches for resource files in the following order:
+ * 1. Relative to current working directory (for development)
+ * 2. Relative to executable location (for installed binaries)
+ *
+ * @param relativePath The relative path to the resource file (e.g., "resources/config/pci.ids")
+ * @return Full path to the resource file if found, or the original relative path if not found
+ *
+ * @note This allows the code to work both during development (cwd-relative) and
+ *       after installation (exe-relative)
+ */
+std::string findResourceFile(const std::string &relativePath)
+{
+	// Try current working directory first (for development)
+	if (std::filesystem::exists(relativePath)) {
+		return relativePath;
+	}
+
+	// Try relative to executable location (for installed binaries)
+	try {
+		std::string exePath = std::filesystem::read_symlink("/proc/self/exe").string();
+		std::string exeDir = std::filesystem::path(exePath).parent_path().string();
+		std::string fullPath = exeDir + "/" + relativePath;
+
+		if (std::filesystem::exists(fullPath)) {
+			return fullPath;
+		}
+	} catch (...) {
+		// If we can't read the exe path, just fall through
+		DBG("Could not read /proc/self/exe to determine executable path\n");
+	}
+
+	// Fall back to the original relative path
+	return relativePath;
+}

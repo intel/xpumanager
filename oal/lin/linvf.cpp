@@ -8,6 +8,7 @@
 #include <osvf.h>
 #include <debug.h>
 #include <fstream>
+#include "lin.h"
 #include <sstream>
 #include <iomanip>
 #include <pciaccess.h>
@@ -498,7 +499,7 @@ static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromCon
 	uint32_t currentNameId = 0;
 	std::string defaultVgpuScheduler;
 
-	std::string fileName = std::string(VGPU_CONF_FILE);
+	std::string fileName = findResourceFile(std::string(VGPU_CONF_FILE));
 	if (!fileExists(fileName)) {
 		ERR("%s file does not exist\n", fileName.c_str());
 		return false;

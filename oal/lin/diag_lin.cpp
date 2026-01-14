@@ -218,7 +218,9 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 		return false;
 	}
 
-	if (!std::filesystem::exists(MEDIA_DATA_PATH, ec) || ec) {
+	// Find media data directory
+	std::string mediaDataPath = findResourceFile(MEDIA_DATA_PATH);
+	if (!std::filesystem::exists(mediaDataPath, ec) || ec) {
 		finalResult = "No media data path.";
 		return false;
 	}
@@ -226,13 +228,13 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 	std::ifstream fileTranscode(MEDIA_CODER_TOOLS);
 	bool sampleMultiTranscodeToolExist = (fileTranscode.good());
 
-	std::ifstream fileH2651080p(std::string(MEDIA_DATA_PATH) + MEDIA_CODER_TOOLS_1080P_FILE);
+	std::ifstream fileH2651080p(mediaDataPath + MEDIA_CODER_TOOLS_1080P_FILE);
 	bool h2651080pFileExist = (fileH2651080p.good());
 
-	std::ifstream fileH2654k(std::string(MEDIA_DATA_PATH) + MEDIA_CODER_TOOLS_4K_FILE);
+	std::ifstream fileH2654k(mediaDataPath + MEDIA_CODER_TOOLS_4K_FILE);
 	bool h2654kFileExist = (fileH2654k.good());
 
-	std::ifstream fileH264Light(std::string(MEDIA_DATA_PATH) + MEDIA_CODEC_TOOLS_LIGHT_FILE);
+	std::ifstream fileH264Light(mediaDataPath + MEDIA_CODEC_TOOLS_LIGHT_FILE);
 	bool h264LightFileExist = (fileH264Light.good());
 
 	if (!sampleMultiTranscodeToolExist) {
@@ -246,7 +248,7 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 	}
 
 	if (functionalCheck && h264LightFileExist) {
-		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h264 " + MEDIA_DATA_PATH +
+		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h264 " + mediaDataPath +
 					  MEDIA_CODEC_TOOLS_LIGHT_FILE + " -o::h264 null -n 2 2>&1";
 		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
@@ -258,7 +260,7 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 
 	if (!functionalCheck && h2651080pFileExist) {
 
-		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h265 " + MEDIA_DATA_PATH +
+		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
 					  MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
 		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
@@ -269,7 +271,7 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 	}
 
 	if (!functionalCheck && h2654kFileExist) {
-		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h265 " + MEDIA_DATA_PATH +
+		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
 					  MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/MEDIA_CODER_TOOLS_4K_FILE 2>&1";
 
 		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
