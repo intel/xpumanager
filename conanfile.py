@@ -1,3 +1,6 @@
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 from conan import ConanFile 
 from conan.tools.meson import MesonToolchain
 from conan.tools.gnu import PkgConfigDeps

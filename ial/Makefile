@@ -1,3 +1,6 @@
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 DIRS = cmn cli daemon
 .PHONY: $(DIRS)
 
