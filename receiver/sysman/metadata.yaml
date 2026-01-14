@@ -1,0 +1,170 @@
+type: sysman
+
+status:
+  class: scraper
+  stability:
+    development: [metrics]
+  codeowners:
+    active: [marquiz]
+
+sem_conv_version: 1.38.0
+
+attributes:
+  aggregation:
+    description: Aggregation type for the metric.
+    type: string
+    enum:
+      - min
+      - max
+      - avg
+  com.intel.gpu.speed.throttle_reason:
+    description: Reason for GPU speed throttling.
+    type: string
+  com.intel.gpu.subdevice_id:
+    description: Subdevice ID of the GPU.
+    type: string
+  hw.gpu.speed.type:
+    description: The hardware block that the speed belongs to (gpu, memory, ...).
+    type: string
+  hw.id:
+    description: Unique identifier for the hardware component.
+    type: string
+  hw.limit_type:
+    description: Type of limit.
+    type: string
+  hw.memory.type:
+    description: Type of the memory.
+    type: string
+  hw.model:
+    description: Model name of the hardware component.
+    type: string
+  hw.name:
+    description: An easily-recognizable name for the hardware component.
+    type: string
+  hw.parent:
+    description: Unique identifier for the parent component.
+    type: string
+  hw.sensor_location:
+    description: Location of the sensor.
+    type: string
+  hw.serial_number:
+    description: Serial number of the hardware component.
+    type: string
+  hw.state:
+    description: Current state of the component.
+    type: string
+  hw.type:
+    description: Type of the hardware component.
+    type: string
+  hw.vendor:
+    description: Vendor name of the hardware component.
+    type: string
+  sample.status:
+    description: Status of the samples.
+    type: string
+    enum:
+      - collected
+      - dropped
+  statistic:
+    description: Statistic type for the metric.
+    type: string
+    enum:
+      - min
+      - max
+
+metrics:
+  hw.gpu.speed:
+    enabled: true
+    description: Current GPU frequency.
+    stability:
+      level: development
+    unit: "Hz"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, aggregation]
+  hw.gpu.speed.limit:
+    enabled: true
+    description: GPU frequency limit.
+    stability:
+      level: development
+    unit: "Hz"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, hw.limit_type]
+  hw.gpu.speed.request:
+    enabled: true
+    description: Requested GPU frequency.
+    stability:
+      level: development
+    unit: "Hz"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id]
+  hw.gpu.speed.samples:
+    enabled: true
+    description: Number of speed samples during the last collection interval.
+    stability:
+      level: development
+    unit: "{count}"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, sample.status]
+  hw.gpu.speed.status:
+    enabled: true
+    description: GPU frequency status.
+    stability:
+      level: development
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, hw.state, com.intel.gpu.speed.throttle_reason]
+  hw.memory.size:
+    enabled: true
+    description: Size of the memory.
+    stability:
+      level: development
+    unit: "By"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.gpu.subdevice_id]
+  hw.memory.usage:
+    enabled: true
+    description: Memory used.
+    stability:
+      level: development
+    unit: "By"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.gpu.subdevice_id]
+  hw.status:
+    enabled: true
+    description: The operational status of the hardware component.
+    stability:
+      level: development
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.state, hw.name, hw.type, hw.parent, com.intel.gpu.subdevice_id]
+  hw.temperature:
+    enabled: true
+    description: Temperature of the hardware component in degrees Celsius.
+    stability:
+      level: development
+    unit: "Cel"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, statistic, com.intel.gpu.subdevice_id]
+
+tests:
+  # TODO: explore using a stub l0 driver for enabling lifecycle tests (for
+  # environment without real target hardware)
+  skip_lifecycle: true
+  skip_shutdown: true
