@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2025 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #ifndef _JSONWRAPPER_H
 #define _JSONWRAPPER_H
 

@@ -1,3 +1,6 @@
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 DIRS = oal hal ial
 .PHONY: $(DIRS) release
 

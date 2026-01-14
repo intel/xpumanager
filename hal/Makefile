@@ -1,3 +1,6 @@
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 DIRS = amc fwupd core
 .PHONY: $(DIRS)
 

@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 
 set -e
 

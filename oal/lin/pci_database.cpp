@@ -1,7 +1,7 @@
 /*
- *  Copyright (C) 2021-2023 Intel Corporation
- *  SPDX-License-Identifier: MIT
- *  @file pci_database.cpp
+ * Copyright (C) 2021-2025 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ *
  */
 
 #include <unistd.h>

@@ -310,9 +310,9 @@ class SPDXLicenseManager:
         lines = content.splitlines()
         start, middle, end = self._get_comment_style(filepath)
 
-        # Patterns to match
+        # Patterns to match - support both (C) and © symbols
         copyright_pattern = re.compile(
-            r"Copyright\s*\([Cc]\)\s*(\d{4}(?:-\d{4})?)\s+" + re.escape(self.config.company)
+            r"Copyright\s*(?:\([Cc]\)|©)\s*(\d{4}(?:-\d{4})?)\s+" + re.escape(self.config.company)
         )
         spdx_pattern = re.compile(
             r"SPDX-License-Identifier:\s*" + re.escape(self.config.spdx_id)
@@ -336,11 +336,11 @@ class SPDXLicenseManager:
                     else:
                         potential_start = i
 
-                # Extract year (use the end year from range if present)
+                # Extract year (use the start year from range if present)
                 year_str = copyright_match.group(1)
                 if "-" in year_str:
-                    # For ranges like "2021-2023", use the end year (2023)
-                    found_year = int(year_str.split("-")[1])
+                    # For ranges like "2021-2023", use the start year (2021)
+                    found_year = int(year_str.split("-")[0])
                 else:
                     found_year = int(year_str)
 
@@ -380,6 +380,27 @@ class SPDXLicenseManager:
             r"Copyright\s+\d{4}",
         ]
         return any(re.search(pattern, content, re.IGNORECASE) for pattern in copyright_patterns)
+
+    def _extract_year_from_copyright(self, content: str) -> Optional[int]:
+        """Extract the copyright year from any copyright notice."""
+        # Match various copyright formats and extract year or year range
+        copyright_patterns = [
+            r"Copyright\s*(?:\([Cc]\)|©)\s*(\d{4}(?:-\d{4})?)\s+" + re.escape(self.config.company),
+            r"Copyright\s*(?:\([Cc]\)|©)\s*(\d{4}(?:-\d{4})?)",
+            r"Copyright\s+(\d{4}(?:-\d{4})?)",
+        ]
+        
+        for pattern in copyright_patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                year_str = match.group(1)
+                if "-" in year_str:
+                    # For ranges like "2021-2023", use the start year (2021)
+                    return int(year_str.split("-")[0])
+                else:
+                    return int(year_str)
+        
+        return None
 
     def _find_old_style_license(self, content: str, filepath: Path) -> Optional[Tuple[int, int]]:
         """
@@ -466,10 +487,13 @@ class SPDXLicenseManager:
 
             # Check for old-style license
             if self._find_old_style_license(content, filepath):
-                return LicenseStatus.HAS_OUTDATED_LICENSE, None
+                # Extract year from the old license
+                old_year = self._extract_year_from_copyright(content)
+                return LicenseStatus.HAS_OUTDATED_LICENSE, old_year
 
             # Has copyright but not our format
-            return LicenseStatus.HAS_OUTDATED_LICENSE, None
+            old_year = self._extract_year_from_copyright(content)
+            return LicenseStatus.HAS_OUTDATED_LICENSE, old_year
 
         except UnicodeDecodeError:
             logger.warning(f"Cannot read {filepath} as UTF-8, skipping")
@@ -509,8 +533,13 @@ class SPDXLicenseManager:
                 backup_path.unlink()
                 logger.debug(f"Removed backup: {backup_path}")
 
-    def add_license(self, filepath: Path) -> FileProcessingResult:
-        """Add SPDX license header to a file."""
+    def add_license(self, filepath: Path, original_year: Optional[int] = None) -> FileProcessingResult:
+        """Add SPDX license header to a file.
+        
+        Args:
+            filepath: Path to the file to add license to
+            original_year: Optional original copyright year to preserve when updating
+        """
         status, found_year = self._determine_license_status(filepath)
 
         if status == LicenseStatus.HAS_VALID_LICENSE:
@@ -538,8 +567,10 @@ class SPDXLicenseManager:
             else:
                 license_year = self.config.current_year
 
-            # Create license
-            license_lines = self._create_spdx_license(filepath, license_year)
+            # Create license (preserve original year if provided)
+            license_lines = self._create_spdx_license(
+                filepath, license_year, original_year=original_year
+            )
 
             # Determine insertion point
             insert_position = 1 if self._has_shebang(lines) else 0
@@ -701,12 +732,12 @@ class SPDXLicenseManager:
         if status == LicenseStatus.HAS_VALID_LICENSE_OLD_YEAR:
             return self._update_license_year(filepath, found_year)
 
-        # For outdated license, remove and re-add
+        # For outdated license, remove and re-add (preserve original year)
         remove_result = self.remove_license(filepath)
         if remove_result.status == LicenseStatus.ERROR:
             return remove_result
 
-        return self.add_license(filepath)
+        return self.add_license(filepath, original_year=found_year)
 
     def _update_license_year(
         self, filepath: Path, old_year: Optional[int]

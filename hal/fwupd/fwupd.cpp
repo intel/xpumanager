@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #include "fwupd.h"
 #include <fstream>
 #include <sys/stat.h>
