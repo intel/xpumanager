@@ -27,14 +27,14 @@ func newSysmanReceiver(settings receiver.Settings, cfg *Config) (*sysmanReceiver
 	if cfg.CollectionInterval < 2*cfg.SamplingInterval {
 		orig := cfg.SamplingInterval
 		cfg.SamplingInterval = cfg.CollectionInterval / 2
-		logger.Warnw("collectionInterval must be >= 2 * samplingInterval to guarantee data integrity, samplingInterval adjusted",
+		logger.Warnw("collection_interval must be >= 2 * sampling_interval to guarantee data integrity, sampling_interval adjusted",
 			"collectionInterval", cfg.CollectionInterval,
 			"samplingInterval", cfg.SamplingInterval,
 			"oldSamplingInterval", orig,
 		)
 	}
 	if cfg.SamplingInterval < 100*time.Millisecond {
-		logger.Warnw("short samplingInterval may cause high CPU usage",
+		logger.Warnw("short sampling_interval may cause high CPU usage",
 			"samplingInterval", cfg.SamplingInterval,
 		)
 	}

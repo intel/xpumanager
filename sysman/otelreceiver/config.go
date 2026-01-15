@@ -36,10 +36,10 @@ func (c *Config) Validate() error {
 	}
 
 	if c.CollectionInterval < time.Second {
-		return fmt.Errorf("collectionInterval too short (%s), must be at least 1 second", c.CollectionInterval)
+		return fmt.Errorf("collection_interval too short (%s), must be at least 1 second", c.CollectionInterval)
 	}
 	if c.SamplingInterval < time.Millisecond {
-		return fmt.Errorf("samplingInterval too short (%s), must be at least 1ms", c.SamplingInterval)
+		return fmt.Errorf("sampling_interval too short (%s), must be at least 1ms", c.SamplingInterval)
 	}
 	if c.CollectionInterval/c.SamplingInterval > 1e5 {
 		// Cap to 100k samples per collection cycle to avoid excessive memory use
