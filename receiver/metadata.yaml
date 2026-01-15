@@ -1,0 +1,14 @@
+type: sysman
+
+status:
+  class: receiver
+  stability:
+    alpha: [metrics]
+  codeowners:
+    active: [marquiz]
+
+tests:
+  # TODO: explore using a stub l0 driver for enabling lifecycle tests (for
+  # environment without real target hardware)
+  skip_lifecycle: true
+  skip_shutdown: true
