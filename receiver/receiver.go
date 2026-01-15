@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package otelreceiver
+package receiver
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
-	"github.com/intel/xpumanager/sysman"
+	"github.com/intel/xpumanager/receiver/sysman"
 )
 
 func newSysmanReceiver(settings receiver.Settings, cfg *Config) (*sysmanReceiver, error) {

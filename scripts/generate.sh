@@ -1,8 +1,7 @@
 #!/bin/bash -ex
 
-# We assume this script is run from within the main module
-ROOT_DIR=$(dirname "$(go env GOMOD)")
+# We assume this script is run from the root of the repository
+ROOT_DIR=$(pwd)
 
-cd charts/xpumd
-go tool -modfile "$ROOT_DIR/tools/go.mod" helm-docs
-go tool -modfile "$ROOT_DIR/tools/go.mod" helm-values-schema-json
+go -C charts/xpumd tool -modfile "$ROOT_DIR/tools/go.mod" helm-docs
+go -C charts/xpumd tool -modfile "$ROOT_DIR/tools/go.mod" helm-values-schema-json

@@ -16,8 +16,9 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.142.0
 
 receivers:
-  - gomod: github.com/intel/xpumanager/sysman/otelreceiver v0.0.0
-    path: ./sysman/otelreceiver
+  - gomod: github.com/intel/xpumanager/receiver v0.0.0
+    path: ./receiver
+    name: sysmanreceiver
 
 processors:
 

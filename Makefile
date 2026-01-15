@@ -32,11 +32,11 @@ generate:
 
 .PHONY: test
 test:
-	go test ./...
+	go -C receiver test ./...
 
 .PHONY: golint
 golint:
-	go tool -modfile tools/go.mod golangci-lint run
+	go -C receiver tool -modfile ../tools/go.mod golangci-lint run
 
 .PHONY: shellcheck
 # <apt|dnf> install shellcheck
