@@ -82,8 +82,7 @@ func (r *xpuReceiver) Shutdown(ctx context.Context) error {
 		r.stop()
 	}
 	r.wg.Wait()
-	r.logger.Sync()
-	return nil
+	return r.logger.Sync()
 }
 
 // runSampler samples the aggregated device metrics.
