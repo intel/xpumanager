@@ -90,12 +90,18 @@ config:
       # -- Log level (debug, info, warn, error)
       # @section -- XPUM Daemon Configuration
       log_level: info
-      # -- Metrics data collection interval. Must be at least twice the sample_interval.
+      # -- Metrics data collection interval. Must be at least twice the sampling_interval.
       # @section -- XPUM Daemon Configuration
-      collect_interval: 30s
-      # -- Sample interval for the high-frequency metrics.
+      collection_interval: 30s
+      # -- Initial start delay for metrics collection, any non positive value is assumed to be immediately.
       # @section -- XPUM Daemon Configuration
-      sample_interval: 1s
+      initial_delay: 1s
+      # -- Metrics collection timeout.
+      # @section -- XPUM Daemon Configuration
+      timeout: 0
+      # -- Sampling interval for the high-frequency metrics.
+      # @section -- XPUM Daemon Configuration
+      sampling_interval: 1s
 
   # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
   # @section -- XPUM Daemon Configuration

@@ -6,9 +6,6 @@
 package sysman
 
 import (
-	"context"
-
-	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -24,7 +21,7 @@ const (
 // Handle is the interface for Sysman functionality.
 type Handle interface {
 	PollAggregatedMetrics()
-	Scrape(context.Context, consumer.Metrics)
+	Scrape() pmetric.Metrics
 }
 
 type createScraperFunc func(pmetric.ScopeMetrics, *commonMetrics, pcommon.Timestamp) scraper
@@ -70,6 +67,6 @@ func (s *sysman) PollAggregatedMetrics() {
 	s.devices.pollAggregatedMetrics()
 }
 
-func (s *sysman) Scrape(ctx context.Context, consumer consumer.Metrics) {
-	s.metrics.scrape(ctx, consumer, s.devices)
+func (s *sysman) Scrape() pmetric.Metrics {
+	return s.metrics.scrape(s.devices)
 }

@@ -49,9 +49,11 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | config.processors | object | `{}` | Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors) |
 | config.receivers | object |   | Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers) |
 | config.receivers.sysman | object |   | Configuration for the custom Level-Zero Sysman receiver. |
-| config.receivers.sysman.collect_interval | string | `"30s"` | Metrics data collection interval. Must be at least twice the sample_interval. |
+| config.receivers.sysman.collection_interval | string | `"30s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
+| config.receivers.sysman.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
 | config.receivers.sysman.log_level | string | `"info"` | Log level (debug, info, warn, error) |
-| config.receivers.sysman.sample_interval | string | `"1s"` | Sample interval for the high-frequency metrics. |
+| config.receivers.sysman.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
+| config.receivers.sysman.timeout | int | `0` | Metrics collection timeout. |
 | config.service | object | `{"pipelines":{"metrics":{"receivers":["sysman"]}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values

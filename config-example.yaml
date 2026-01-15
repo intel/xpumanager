@@ -4,10 +4,14 @@ receivers:
     # Log level (debug, info, warn, error)
     log_level: info
     # Metrics data collection interval.
-    # Must be at least twice the sample_interval.
-    collect_interval: 30s
-    # Sample interval for the high-frequency metrics.
-    sample_interval: 1s
+    # Must be at least twice the sampling_interval.
+    collection_interval: 30s
+    # Initial start delay for metrics collection, any non positive value is assumed to be immediately.
+    initial_delay: 1s
+    # Metrics collection timeout.
+    timeout: 0
+    # Sampling interval for the high-frequency metrics.
+    sampling_interval: 1s
 
 exporters:
   prometheus:

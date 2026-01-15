@@ -6,12 +6,10 @@
 package sysman
 
 import (
-	"context"
 	"maps"
 	"slices"
 	"time"
 
-	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -66,7 +64,7 @@ func newMetricsRegistry(logger *zap.SugaredLogger) (*metricsRegistry, error) {
 	return registry, nil
 }
 
-func (r *metricsRegistry) scrape(ctx context.Context, consumer consumer.Metrics, d *deviceRegistry) {
+func (r *metricsRegistry) scrape(d *deviceRegistry) pmetric.Metrics {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	sm := rm.ScopeMetrics().AppendEmpty()
@@ -89,10 +87,7 @@ func (r *metricsRegistry) scrape(ctx context.Context, consumer consumer.Metrics,
 		}
 	}
 
-	// Send all metrics
-	if err := consumer.ConsumeMetrics(ctx, metrics); err != nil {
-		r.logger.Errorw("Failed to consume metrics", zap.Error(err))
-	}
+	return metrics
 }
 
 func newGenericMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) *commonMetrics {
