@@ -213,14 +213,46 @@ subdir('oal')
 subdir('hal')
 subdir('ial')
 
-# Create symlink to resources in builddir for development builds
+# Copy resources to builddir for development builds
 if is_linux
-  run_command('ln', '-sfn', 
+  run_command('cp', '-r',
     meson.project_source_root() / 'resources',
-    meson.project_build_root() / 'resources',
+    meson.project_build_root(),
     check: false)
 elif is_windows
-  # Windows does not require the resources folder
+  run_command('xcopy', 
+    meson.project_source_root() / 'resources',
+    meson.project_build_root() / 'resources',
+    '/E', '/I', '/Y', '/Q',
+    check: false)
+endif
+
+# Copy resources to build dir / ial / cli for development builds
+if is_linux
+  run_command('cp', '-r',
+    meson.project_source_root() / 'resources',
+    meson.project_build_root() / 'ial' / 'cli'/ 'resources',
+    check: false)
+elif is_windows
+  run_command('xcopy', 
+    meson.project_source_root() / 'resources',
+    meson.project_build_root() / 'ial' / 'cli' / 'resources',
+    '/E', '/I', '/Y', '/Q',
+    check: false)
+endif
+
+# Copy test scripts to build dir / ial / cli 
+if is_linux
+  run_command('cp', '-r',
+    meson.project_source_root() / 'scripts' / 'test_LinuxXpum.sh',
+    meson.project_build_root() / 'ial' / 'cli' ,
+    check: false)
+elif is_windows
+  run_command('xcopy', 
+    meson.project_source_root() / 'scripts' / 'test_WinXpum.ps1',
+    meson.project_build_root() / 'ial' / 'cli' ,
+    '/E', '/I', '/Y', '/Q',
+    check: false)
 endif
 
 # Install resources directory next to binaries so they can be found
