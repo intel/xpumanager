@@ -27,7 +27,7 @@ type Handle interface {
 	Scrape(context.Context, consumer.Metrics)
 }
 
-type createScraperFunc func(pmetric.ScopeMetrics, pcommon.Timestamp) scraper
+type createScraperFunc func(pmetric.ScopeMetrics, *commonMetrics, pcommon.Timestamp) scraper
 
 type subsystem struct {
 	createScraper createScraperFunc

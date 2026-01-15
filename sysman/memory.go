@@ -22,46 +22,58 @@ func init() {
 type sysmanMemory struct {
 	*l0sysman.Mem
 	logger     *zap.SugaredLogger
-	attributes pcommon.Map
+	state      sysmanMemoryState
+	attributes map[string]string
+}
+
+// sysmanMemoryState holds the dynamic runtime state of the memory instance.
+type sysmanMemoryState struct {
+	healthStatesSeen map[l0sysman.MemHealth]bool
 }
 
 // memoryMetrics is a throwaway struct to hold memory metrics for one scrape cycle.
 type memoryMetrics struct {
-	timestamp pcommon.Timestamp
-
-	limit       pmetric.Gauge
-	usage       pmetric.Gauge
-	utilization pmetric.Gauge
-	health      pmetric.Sum
+	*commonMetrics
+	usage sum
+	size  sum
 }
 
-func newSysmanMemory(mem *l0sysman.Mem, logger *zap.SugaredLogger, extraAttrs pcommon.Map) (*sysmanMemory, error) {
+func newSysmanMemory(name string, mem *l0sysman.Mem, device *sysmanDevice) (*sysmanMemory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
 		return nil, err
 	}
-	attrs := pcommon.NewMap()
-	extraAttrs.CopyTo(attrs)
-	attrs.PutStr("hw.gpu.memory.type", strings.ToLower(props.Type.String()))
-	attrs.PutStr("hw.gpu.memory.location", strings.ToLower(props.Location.String()))
-	attrs.PutStr("hw.gpu.memory.subdevice_id", subDeviceIdString(props.OnSubdevice, props.SubdeviceId))
+	attrs := map[string]string{
+		attrHwID:             device.attributes[attrHwID] + "_" + name,
+		attrHwType:           "memory",
+		attrHwName:           name,
+		attrHwParent:         device.attributes[attrHwID],
+		attrMemoryType:       strings.ToLower(props.Type.String()),
+		attrHwSensorLocation: strings.ToLower(props.Location.String()),
+		attrSubdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+	}
 
 	return &sysmanMemory{
-		Mem:        mem,
-		logger:     logger,
+		Mem:    mem,
+		logger: device.logger,
+		state: sysmanMemoryState{
+			healthStatesSeen: make(map[l0sysman.MemHealth]bool),
+		},
 		attributes: attrs,
 	}, nil
 }
 
-func newMemoryMetrics(sm pmetric.ScopeMetrics, ts pcommon.Timestamp) scraper {
-	return &memoryMetrics{
-		timestamp: ts,
+func (m *sysmanMemory) pickAttributes(keys ...string) pcommon.Map {
+	return pickAttributes(m.attributes, keys...)
+}
 
-		// Metrics
-		limit:       newGauge(sm, "hw.gpu.memory.limit", "By", "Size of the GPU memory"),
-		usage:       newGauge(sm, "hw.gpu.memory.usage", "By", "GPU memory used"),
-		utilization: newGauge(sm, "hw.gpu.memory.utilization", "1", "Fraction of GPU memory used"),
-		health:      newUpDownCounter(sm, "hw.gpu.memory.health", "1", "Health status of the GPU memory"),
+func newMemoryMetrics(sm pmetric.ScopeMetrics, cm *commonMetrics, ts pcommon.Timestamp) scraper {
+	return &memoryMetrics{
+		commonMetrics: cm,
+		// NOTE: hw.memory.usage imitates hw.gpu.memory.usage but is not in OTel spec:
+		// https://opentelemetry.io/docs/specs/semconv/hardware/memory
+		usage: newUpDownCounter(sm, ts, "hw.memory.usage", "By", "Memory used"),
+		size:  newUpDownCounter(sm, ts, "hw.memory.size", "By", "Size of the memory"),
 	}
 }
 
@@ -69,20 +81,25 @@ func (m *memoryMetrics) scrapeDevice(dev *sysmanDevice) {
 	for _, mem := range dev.memory {
 		state, err := mem.GetState()
 		if err != nil {
-			mem.logger.Errorw("Failed to get memory module state", zap.Error(err))
+			mem.logger.Errorw("Failed to get memory module state", zap.Error(err), "attributes", mem.attributes)
 			continue
 		}
 
-		observeInt64(m.limit, int64(state.Size), m.timestamp, mem.attributes)
+		attrs := mem.pickAttributes(attrHwID, attrMemoryType, attrHwName, attrHwParent, attrSubdeviceId)
+		m.size.observeInt64(int64(state.Size), attrs)
+		m.usage.observeInt64(int64(state.Size-state.Free), attrs)
 
-		usage := int64(state.Size - state.Free)
-		observeInt64(m.usage, usage, m.timestamp, mem.attributes)
+		mem.state.healthStatesSeen[state.Health] = true
+		// TODO: should we filter out "unknown" health state?
+		for s := range mem.state.healthStatesSeen {
+			value := int64(0)
+			if s == state.Health {
+				value = 1
+			}
 
-		observeFloat64(m.utilization, float64(usage)/float64(state.Size), m.timestamp, mem.attributes)
-
-		attrs := pcommon.NewMap()
-		mem.attributes.CopyTo(attrs)
-		attrs.PutStr("hw.gpu.memory.health_status", strings.ToLower(state.Health.String()))
-		observeInt64(m.health, 1, m.timestamp, attrs)
+			attrs = mem.pickAttributes(attrHwID, attrHwType, attrHwName, attrHwParent, attrSubdeviceId)
+			attrs.PutStr(attrHwState, strings.ToLower(s.String()))
+			m.status.observeInt64(value, attrs)
+		}
 	}
 }
