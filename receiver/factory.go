@@ -14,17 +14,16 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/scraper"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
-)
 
-var componentType = component.MustNewType("sysman")
+	"github.com/intel/xpumanager/receiver/internal/metadata"
+)
 
 // NewFactory creates a factory for the sysman receiver
 func NewFactory() receiver.Factory {
-	const stability = component.StabilityLevelDevelopment
 	return receiver.NewFactory(
-		componentType,
+		metadata.Type,
 		defaultConfig,
-		receiver.WithMetrics(createReceiver, stability),
+		receiver.WithMetrics(createReceiver, metadata.MetricsStability),
 	)
 }
 
@@ -52,6 +51,6 @@ func createReceiver(_ context.Context, settings receiver.Settings, cfg component
 		&rcfg.ControllerConfig,
 		settings,
 		consumer,
-		scraperhelper.AddScraper(componentType, s),
+		scraperhelper.AddScraper(metadata.Type, s),
 	)
 }
