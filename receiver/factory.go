@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package otelreceiver
+package receiver
 
 import (
 	"context"
@@ -14,17 +14,16 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/scraper"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
+
+	"github.com/intel/xpumanager/receiver/internal/metadata"
 )
 
-var componentType = component.MustNewType("sysman")
-
-// NewFactory creates a factory for the sysman receiver
+// NewFactory creates a factory for the receiver.
 func NewFactory() receiver.Factory {
-	const stability = component.StabilityLevelDevelopment
 	return receiver.NewFactory(
-		componentType,
+		metadata.Type,
 		defaultConfig,
-		receiver.WithMetrics(createReceiver, stability),
+		receiver.WithMetrics(createReceiver, metadata.MetricsStability),
 	)
 }
 
@@ -34,7 +33,7 @@ func createReceiver(_ context.Context, settings receiver.Settings, cfg component
 		return nil, fmt.Errorf("invalid config type: %T", cfg)
 	}
 
-	sr, err := newSysmanReceiver(settings, rcfg)
+	sr, err := newXpuReceiver(settings, rcfg)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +51,6 @@ func createReceiver(_ context.Context, settings receiver.Settings, cfg component
 		&rcfg.ControllerConfig,
 		settings,
 		consumer,
-		scraperhelper.AddScraper(componentType, s),
+		scraperhelper.AddScraper(metadata.Type, s),
 	)
 }

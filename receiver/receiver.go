@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package otelreceiver
+package receiver
 
 import (
 	"context"
@@ -16,10 +16,10 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
-	"github.com/intel/xpumanager/sysman"
+	"github.com/intel/xpumanager/receiver/sysman"
 )
 
-func newSysmanReceiver(settings receiver.Settings, cfg *Config) (*sysmanReceiver, error) {
+func newXpuReceiver(settings receiver.Settings, cfg *Config) (*xpuReceiver, error) {
 	logger := settings.Logger.WithOptions(zap.IncreaseLevel(cfg.LogLevel)).Sugar()
 
 	// Warn about potentially config issues.
@@ -49,7 +49,7 @@ func newSysmanReceiver(settings receiver.Settings, cfg *Config) (*sysmanReceiver
 		return nil, fmt.Errorf("failed to initialize L0 Sysman API (likely a Level-Zero driver / device access issue): %w", err)
 	}
 
-	return &sysmanReceiver{
+	return &xpuReceiver{
 		cfg:      cfg,
 		settings: settings,
 		logger:   logger,
@@ -57,8 +57,8 @@ func newSysmanReceiver(settings receiver.Settings, cfg *Config) (*sysmanReceiver
 	}, nil
 }
 
-// sysmanReceiver is a no-op receiver implementation
-type sysmanReceiver struct {
+// xpuReceiver is a no-op receiver implementation
+type xpuReceiver struct {
 	cfg      *Config
 	wg       sync.WaitGroup
 	settings receiver.Settings
@@ -68,7 +68,7 @@ type sysmanReceiver struct {
 }
 
 // Start starts the receiver.
-func (r *sysmanReceiver) Start(ctx context.Context, host component.Host) error {
+func (r *xpuReceiver) Start(ctx context.Context, host component.Host) error {
 	ctx, r.stop = context.WithCancel(ctx)
 
 	r.wg.Go(func() { r.runSampler(ctx) })
@@ -77,17 +77,16 @@ func (r *sysmanReceiver) Start(ctx context.Context, host component.Host) error {
 }
 
 // Shutdown stops the receiver.
-func (r *sysmanReceiver) Shutdown(ctx context.Context) error {
+func (r *xpuReceiver) Shutdown(ctx context.Context) error {
 	if r.stop != nil {
 		r.stop()
 	}
 	r.wg.Wait()
-	r.logger.Sync()
-	return nil
+	return r.logger.Sync()
 }
 
 // runSampler samples the aggregated device metrics.
-func (r *sysmanReceiver) runSampler(ctx context.Context) {
+func (r *xpuReceiver) runSampler(ctx context.Context) {
 	ticker := time.NewTicker(r.cfg.SamplingInterval)
 	defer ticker.Stop()
 	for {
@@ -101,6 +100,6 @@ func (r *sysmanReceiver) runSampler(ctx context.Context) {
 }
 
 // scrape scrapes the device metrics and sends them to the consumer.
-func (r *sysmanReceiver) scrape(_ context.Context) (pmetric.Metrics, error) {
+func (r *xpuReceiver) scrape(_ context.Context) (pmetric.Metrics, error) {
 	return r.sysman.Scrape(), nil
 }

@@ -1,6 +1,6 @@
 receivers:
-  # The custom Level-Zero Sysman receiver.
-  sysman:
+  # The Intel XPU receiver.
+  intelxpu:
     # Log level (debug, info, warn, error)
     log_level: info
     # Metrics data collection interval.
@@ -24,5 +24,5 @@ extensions:
 service:
   pipelines:
     metrics:
-      receivers: [sysman]
+      receivers: [intelxpu]
       exporters: [prometheus]

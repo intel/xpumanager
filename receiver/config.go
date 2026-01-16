@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package otelreceiver
+package receiver
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Config defines configuration for the sysman receiver
+// Config defines configuration for the receiver.
 type Config struct {
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	SamplingInterval               time.Duration `mapstructure:"sampling_interval"`
@@ -29,7 +29,7 @@ func defaultConfig() component.Config {
 	}
 }
 
-// Validate checks if the receiver configuration is valid
+// Validate checks if the receiver configuration is valid.
 func (c *Config) Validate() error {
 	if err := c.ControllerConfig.Validate(); err != nil {
 		return err
