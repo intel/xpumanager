@@ -452,7 +452,11 @@ ze_result_t power::setSustainedLimit(uint32_t limitMw, int32_t tileId)
 		}
 	}
 
-	ERR("No matching power domain found for tileId %d.\n", tileId);
+	if (tileId == -1) {
+		ERR("No matching device-level power domain found.\n");
+	} else {
+		ERR("No matching power domain found for tile %d.\n", tileId);
+	}
 	return ZE_RESULT_ERROR_UNKNOWN;
 }
 
@@ -688,7 +692,11 @@ ze_result_t power::setLimitsExt(int32_t tileId, zes_power_level_t level, uint32_
 		}
 	}
 
-	ERR("No matching power domain found for tileId %d.\n", tileId);
+	if (tileId == -1) {
+		ERR("No matching device-level power domain found.\n");
+	} else {
+		ERR("No matching power domain found for tile %d.\n", tileId);
+	}
 	return ZE_RESULT_ERROR_UNKNOWN;
 }
 

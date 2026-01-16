@@ -711,6 +711,7 @@ ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_
 	}
 
 	// Find the scheduler for the specified subdevice
+	zes_sched_handle_t deviceLevelScheduler = nullptr;
 	for (const auto &sched : schedulers) {
 		zes_sched_properties_t props = {};
 		result = zesSchedulerGetProperties(sched, &props);
@@ -724,6 +725,18 @@ ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_
 			DBG("Found scheduler for tile %u (subdeviceId %u)\n", subdeviceId, targetSubdeviceId);
 			return ZE_RESULT_SUCCESS;
 		}
+
+		// For client GPUs without per-tile schedulers, save device-level scheduler
+		if (!props.onSubdevice && deviceLevelScheduler == nullptr) {
+			deviceLevelScheduler = sched;
+		}
+	}
+
+	// If no tile-specific scheduler found, use device-level scheduler for client GPUs
+	if (deviceLevelScheduler != nullptr) {
+		schedulerHandle = deviceLevelScheduler;
+		DBG("Using device-level scheduler for tile %u (client GPU)\n", subdeviceId);
+		return ZE_RESULT_SUCCESS;
 	}
 
 	ERR("No scheduler found for tile %u (subdeviceId %u)\n", subdeviceId, targetSubdeviceId);

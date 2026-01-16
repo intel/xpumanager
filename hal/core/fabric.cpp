@@ -206,7 +206,7 @@ ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet
 
 	if (portCount == 0) {
 		ERR("No fabric ports found\n");
-		return ZE_RESULT_SUCCESS;
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	// Use the cached port handles
