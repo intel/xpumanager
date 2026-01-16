@@ -117,8 +117,27 @@ std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevel
  */
 static void printPretty()
 {
-	PRINT("+------------+-----------------------------------+----------------------+----------------+\n");
+	PRINT("+-------------------------------------------------------------------------------------------------+\n");
 }
+
+/**
+ * @brief Prints a line with two input column values.
+ *
+ */
+static void printValue(const std::string &value1, const std::string &value2)
+{
+	PRINT("| %-30s | %-63s |\n", value1.c_str(), value2.c_str());
+};
+
+/**
+* @brief Prints a line with four input column values.
+t *
+*/
+static void printValues(const std::string &value1, const std::string &value2, const std::string &value3,
+						const std::string &value4)
+{
+	PRINT("| %-10s | %-35s | %-25s| %-20s\n", value1.c_str(), value2.c_str(), value3.c_str(), value4.c_str());
+};
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -287,7 +306,7 @@ ze_result_t cmdDiag::printPrecheckInfo(devInfo *d, bool gpuOnly)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
  */
-ze_result_t cmdDiag::precheck(devInfo *d)
+ze_result_t cmdDiag::precheck(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -316,7 +335,7 @@ ze_result_t cmdDiag::precheck(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if stress tests pass, error code otherwise
  */
-ze_result_t cmdDiag::stress(devInfo *d)
+ze_result_t cmdDiag::stress(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t res;
@@ -378,7 +397,7 @@ ze_result_t cmdDiag::stress(devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
  */
-ze_result_t cmdDiag::checkLibrary(devInfo *d)
+ze_result_t cmdDiag::checkLibrary(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	std::string fwStatus;
 
@@ -408,7 +427,7 @@ ze_result_t cmdDiag::checkLibrary(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
  */
-ze_result_t cmdDiag::checkAccessPermission(UNUSED devInfo *d)
+ze_result_t cmdDiag::checkAccessPermission(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	if (!CHECKPERMISSION()) {
 		return ZE_RESULT_ERROR_UNKNOWN;
@@ -430,7 +449,7 @@ ze_result_t cmdDiag::checkAccessPermission(UNUSED devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS on success, or an error code on failure
  */
-ze_result_t cmdDiag::checkExclusive(devInfo *d)
+ze_result_t cmdDiag::checkExclusive(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	ze_result_t ret;
 	std::vector<zes_process_state_t> processList;
@@ -456,6 +475,50 @@ ze_result_t cmdDiag::checkExclusive(devInfo *d)
 	return ZE_RESULT_SUCCESS;
 }
 
+std::unique_ptr<nlohmann::ordered_json> cmdDiag::printDiagDetail(std::string componentType, std::string componentMsg,
+																 std::string componentResult)
+{
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+
+	// Get string values first, then assign to JSON
+	(*jsonObj)["component_type"] = componentType;
+	(*jsonObj)["message"] = componentMsg;
+	(*jsonObj)["result"] = componentResult;
+
+	return jsonObj;
+}
+
+std::unique_ptr<nlohmann::ordered_json> cmdDiag::printErrorDetail(std::string errCategory, std::string errID,
+																  std::string errSeverity, std::string errType)
+{
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+
+	// Get string values first, then assign to JSON
+	(*jsonObj)["error_category"] = errCategory;
+	(*jsonObj)["error_id"] = errID;
+	(*jsonObj)["error_severity"] = errSeverity;
+	(*jsonObj)["error_type"] = errType;
+
+	return jsonObj;
+}
+
+void cmdDiag::printErrorInfo(nlohmann::ordered_json *errListJson, std::string errCategory, std::string errID,
+							 std::string errSeverity, std::string errType)
+{
+	auto errJson = printErrorDetail(errCategory, errID, errSeverity, errType);
+	errListJson->push_back(*errJson);
+}
+
+void cmdDiag::printSingleDiagInfo(devInfo *d, nlohmann::ordered_json *jsonObj, std::string type, std::string msg,
+								  std::string result)
+{
+	(*jsonObj)["device_id"] = std::to_string(d->index);
+	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
+	auto componentJson = printDiagDetail(type, msg, result);
+	componentListJson->push_back(*componentJson);
+	(*jsonObj)["component_list"] = *componentListJson;
+}
+
 /**
  * @brief Validates and processes diagnostic level parameter
  *
@@ -466,15 +529,13 @@ ze_result_t cmdDiag::checkExclusive(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if level is valid, error code otherwise
  */
-ze_result_t cmdDiag::level(UNUSED devInfo *d)
+ze_result_t cmdDiag::level(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	bool finalResult = true;
 	int totalCount = 0;
-	std::string itemStr;
-	std::string outputLine;
-
+	std::string msgLine, resultLine;
 	// Check if the level is valid
 	if (diagCmds[diagCmdType::LEVEL].val.empty()) {
 		ERR("Level is required.\n");
@@ -492,7 +553,7 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
 		for (auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
 
 			DBG("Preparing to run test for level %d\n", le);
-			result = (this->*test.second.func)(d);
+			result = (this->*test.second.func)(d, jsonObj);
 			if (result != ZE_RESULT_SUCCESS) {
 				finalResult = false;
 				test.second.result = false;
@@ -501,28 +562,24 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
 		}
 	}
 
-	outputLine = std::to_string(d->index);
-	printPretty();
-	PRINT("| Device ID                     |   %s                                                    |\n",
-		  outputLine.c_str());
-	printPretty();
-	PRINT("| Level                         |   %d                                                    |\n", level);
-	PRINT("| Final result                  |   %s                                                 |\n",
-		  (finalResult) ? "Pass" : "Fail");
-	PRINT("| Items                         |   %d                                                    |\n", totalCount);
-	printPretty();
-
+	(*jsonObj)["device_id"] = std::to_string(d->index);
+	(*jsonObj)["level"] = std::to_string(level);
+	(*jsonObj)["result"] = (finalResult) ? "Pass" : "Fail";
+	(*jsonObj)["component_count"] = std::to_string(totalCount);
+	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
 	for (int le = 1; le <= level; le++) {
 		for (const auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
 			DBG("Preparing to run test for level %d\n", le);
-			PRINT("| %s           | Result: %s                                             |\n",
-				  test.second.showString.c_str(), (test.second.result) ? "Pass" : "Fail");
+			resultLine = (test.second.result) ? "Pass" : "Fail";
+			msgLine = std::format("Message: {} to check {}.", resultLine, test.second.showString);
 
-			PRINT("|                               | Message: %s to check %s                     |\n",
-				  (test.second.result) ? "Pass" : "Fail", test.second.showString.c_str());
+			auto componentJson = printDiagDetail(test.second.showString, msgLine, resultLine);
+			componentListJson->push_back(*componentJson);
 		}
-		printPretty();
 	}
+
+	(*jsonObj)["component_list"] = *componentListJson;
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -536,7 +593,8 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d)
  * @param[in] d Pointer to device information structure containing device context
  * @return ze_result_t ZE_RESULT_SUCCESS if test completes successfully, error code otherwise
  */
-ze_result_t cmdDiag::runSingleTest(devInfo *d)
+ze_result_t cmdDiag::runSingleTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -557,7 +615,7 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d)
 	for (const auto &test : diagSingleTests) {
 		if (test.first == stoi(diagCmds[diagCmdType::SINGLETEST].val)) {
 			DBG("Running test: %d\n", test.first);
-			result = (this->*test.second.func)(d);
+			result = (this->*test.second.func)(d, jsonObj);
 			break;
 		}
 	}
@@ -575,7 +633,7 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d)
  * @param[in] d Pointer to the device information structure.
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success, or an appropriate error code on failure.
  */
-ze_result_t cmdDiag::computation(devInfo *d)
+ze_result_t cmdDiag::computation(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -584,6 +642,7 @@ ze_result_t cmdDiag::computation(devInfo *d)
 	float inputValue = 1.3f;
 	bool featureOnly;
 	long double current;
+	std::string msg;
 
 	// Call into HAL to perform computation test
 	diagnostic *diag = d->dev->getDiagnostic();
@@ -597,15 +656,14 @@ ze_result_t cmdDiag::computation(devInfo *d)
 		diag->computationTest(d, 4096, &inputValue, sizeof(float), fileName, moduleName, current, featureOnly);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check computation.\n");
-			ERR("Computation test failed: %s\n", l0_error_to_string(res));
+			msg = std::format("Fail to check computation. Test failed:{}", l0_error_to_string(res));
+			printSingleDiagInfo(d, jsonObj, "Computation", msg, "Fail");
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to check computation.\n");
+			msg = "Pass to check computation.";
 			if (!featureOnly) {
-				PRINT("Computation test completed with %Lf GFLOPS.\n", current);
+				msg = msg + std::format("Computation test completed with {} GFLOPS.", current);
 			}
+			printSingleDiagInfo(d, jsonObj, "Computation", msg, "Pass");
 		}
 	}
 	return res;
@@ -621,11 +679,12 @@ ze_result_t cmdDiag::computation(devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if memory tests pass, error code otherwise
  */
-ze_result_t cmdDiag::memoryError(devInfo *d)
+ze_result_t cmdDiag::memoryError(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
 	int errorCount;
+	std::string msg;
 
 	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
@@ -647,14 +706,14 @@ ze_result_t cmdDiag::memoryError(devInfo *d)
 	ze_result_t res = diag->memoryErrorTest(d, errorCount);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to test memory error.\n");
-			ERR("Memory error test failed: %s\n", l0_error_to_string(res));
+			msg = std::format("Fail to test memory error.Test failed:{}", l0_error_to_string(res));
 			if (errorCount > 0)
-				PRINT("Error count: %d.\n", errorCount);
+				msg = msg + std::format("Error count: {}.", errorCount);
+			printSingleDiagInfo(d, jsonObj, "Memory error", msg, "Fail");
+
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to test memory error.\n");
+			msg = "Pass to test memory error.";
+			printSingleDiagInfo(d, jsonObj, "Memory error", msg, "Pass");
 		}
 	}
 	return res;
@@ -670,9 +729,10 @@ ze_result_t cmdDiag::memoryError(devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if allocation tests complete, error code otherwise
  */
-ze_result_t cmdDiag::memoryAllocation(devInfo *d)
+ze_result_t cmdDiag::memoryAllocation(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
+	std::string msg;
 
 	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
@@ -694,12 +754,11 @@ ze_result_t cmdDiag::memoryAllocation(devInfo *d)
 	ze_result_t res = diag->peformanceMemoryAllocation(d);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check memory allocation.\n");
-			ERR("Memory allocation test failed: %s\n", l0_error_to_string(res));
+			msg = std::format("Fail to check memory allocation. Test failed:{}", l0_error_to_string(res));
+			printSingleDiagInfo(d, jsonObj, "Memory allocation", msg, "Fail");
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to check memory allocation.\n");
+			msg = "Pass to check memory allocation.";
+			printSingleDiagInfo(d, jsonObj, "Memory allocation", msg, "Pass");
 		}
 	}
 	return res;
@@ -715,11 +774,12 @@ ze_result_t cmdDiag::memoryAllocation(devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if bandwidth tests complete, error code otherwise
  */
-ze_result_t cmdDiag::memoryBandwidth(devInfo *d)
+ze_result_t cmdDiag::memoryBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
 	std::vector<long double> totalGbps;
+	std::string msg;
 
 	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
@@ -741,15 +801,14 @@ ze_result_t cmdDiag::memoryBandwidth(devInfo *d)
 	ze_result_t res = diag->memoryBandwidthTest(d, totalGbps);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check memory bandwidth.\n");
-			ERR("Memory bandwidth test failed: %s\n", l0_error_to_string(res));
+			msg = std::format("Fail to check memory bandwidth. Test failed:{}", l0_error_to_string(res));
+			printSingleDiagInfo(d, jsonObj, "Memory bandwidth", msg, "Fail");
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to test memory bandwidth.\n");
+			msg = "Pass to test memory bandwidth.";
 			for (std::size_t i = 0; i < totalGbps.size(); i++) {
-				PRINT("Memory bandwidth on copy engine group %zu is %.3Lf GBPS.\n", i, totalGbps[i]);
+				msg = msg + std::format("Memory bandwidth on copy engine group {} is {} GBPS.", i, totalGbps[i]);
 			}
+			printSingleDiagInfo(d, jsonObj, "Memory bandwidth", msg, "Pass");
 		}
 	}
 	return res;
@@ -765,12 +824,13 @@ ze_result_t cmdDiag::memoryBandwidth(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if media tests pass, error code otherwise
  */
-ze_result_t cmdDiag::mediaCodec(devInfo *d)
+ze_result_t cmdDiag::mediaCodec(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
 	std::string bdfStr;
 	std::string outputLine;
+	std::string msg;
 
 	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
@@ -781,17 +841,15 @@ ze_result_t cmdDiag::mediaCodec(devInfo *d)
 	bdfStr = p->getBDFStr();
 	if (!CHECKMEDIACODEC(bdfStr, true, outputLine)) {
 		if (diagCmds[diagCmdType::SINGLETEST].enabled) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check Media transcode.\n");
-			ERR("Media codec test failed: %s\n", outputLine.c_str());
+			msg = std::format("Fail to check media transcode. Test failed:{}", outputLine);
+			printSingleDiagInfo(d, jsonObj, "Media transcode", msg, "Fail");
 		}
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
-		PRINT("Result:  Pass\n");
-		PRINT("Message: Pass to check Media transcode.\n");
-		PRINT("%s.\n", outputLine.c_str());
+		msg = std::format("Pass to check media transcode.{}", outputLine);
+		printSingleDiagInfo(d, jsonObj, "Media transcode", msg, "Pass");
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -807,7 +865,7 @@ ze_result_t cmdDiag::mediaCodec(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if PCIe tests complete, error code otherwise
  */
-ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
+ze_result_t cmdDiag::pcieBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -815,6 +873,7 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
 	std::string outputLine;
 	long double totalBandwidth;
 	long double totalLatency;
+	std::string msg;
 
 	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
@@ -832,20 +891,19 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
 	ze_result_t res = diag->pcieBandwidthTest(d, totalBandwidth, totalLatency);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check PCIe bandwidth.\n");
-			ERR("PCIe bandwidth test failed: %s\n", l0_error_to_string(res));
+			msg = std::format("Fail to check PCIe bandwidth. Test failed:{}", l0_error_to_string(res));
+			printSingleDiagInfo(d, jsonObj, "PCIe bandwidth", msg, "Fail");
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to check PCIe bandwidth.\n");
-			PRINT("Total pcie bandwidth is: %Lf GB/s.\n", totalBandwidth);
-			PRINT("Total pcie latency is: %Lf us.\n", totalLatency);
+			msg = "Pass to check PCIe bandwidth.";
+			msg = msg + std::format("Total pcie bandwidth is: {} GB/s. Total pcie latency is: {} us.", totalBandwidth,
+									totalLatency);
 			if (p->getFuncType() != devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
 				outputLine = GETDOWNGRADEDPCIEINFO(bdfStr);
 				if (outputLine.size() != 0) {
-					PRINT("%s\n", outputLine.c_str());
+					msg = msg + outputLine;
 				}
 			}
+			printSingleDiagInfo(d, jsonObj, "PCIe bandwidth", msg, "Pass");
 		}
 	}
 	return res;
@@ -865,7 +923,7 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d)
  * @param[in] d Pointer to the device information structure containing the device handle and context
  * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
  */
-ze_result_t cmdDiag::powerTest(devInfo *d)
+ze_result_t cmdDiag::powerTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -876,6 +934,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d)
 	bool featureOnly;
 	long double current;
 	int totalPowerValue;
+	std::string msg;
 
 	diagnostic *diag = d->dev->getDiagnostic();
 	if (diag == nullptr) {
@@ -893,16 +952,15 @@ ze_result_t cmdDiag::powerTest(devInfo *d)
 	ret = diag->calculatePowerConsumption(d, totalPowerValue);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (ret != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check power test.\n");
-			ERR("Power test failed: %s\n", l0_error_to_string(ret));
+			msg = std::format("Fail to check power test. Test failed:{}", l0_error_to_string(ret));
+			printSingleDiagInfo(d, jsonObj, "Power test", msg, "Fail");
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to check power test.\n");
+			msg = "Pass to check power test.";
 			if (!featureOnly) {
-				PRINT("Computation test completed with %Lf GIOPS.\n", current);
+				msg = msg + std::format("Computation test completed with {} GFLOPS.", current);
 			}
-			PRINT("update peak power value: %d w\n", totalPowerValue);
+			msg = msg + std::format("Update peak power value: {} w.", totalPowerValue);
+			printSingleDiagInfo(d, jsonObj, "Power test", msg, "Pass");
 		}
 	}
 	return ret;
@@ -918,7 +976,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if functional tests pass, error code otherwise
  */
-ze_result_t cmdDiag::computationFuncTest(devInfo *d)
+ze_result_t cmdDiag::computationFuncTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -927,6 +985,7 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d)
 	float inputValue = 1.3f;
 	bool featureOnly;
 	long double current;
+	std::string msg;
 
 	diagnostic *diag = d->dev->getDiagnostic();
 	if (diag == nullptr) {
@@ -939,15 +998,15 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d)
 		diag->computationTest(d, 4096, &inputValue, sizeof(float), fileName, moduleName, current, featureOnly);
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
 		if (res != ZE_RESULT_SUCCESS) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check computation.\n");
-			ERR("Computation test failed: %s\n", l0_error_to_string(res));
+			msg = std::format("Fail to check computation. Test failed:{}", l0_error_to_string(res));
+			printSingleDiagInfo(d, jsonObj, "Computation feature", msg, "Fail");
+
 		} else {
-			PRINT("Result:  Pass\n");
-			PRINT("Message: Pass to check computation.\n");
+			msg = "Pass to check computation feature.";
 			if (!featureOnly) {
-				PRINT("Computation test completed with %Lf GFLOPS.\n", current);
+				msg = msg + std::format("Computation test completed with {} GFLOPS.", current);
 			}
+			printSingleDiagInfo(d, jsonObj, "Computation feature", msg, "Pass");
 		}
 	}
 	return res;
@@ -963,12 +1022,13 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if media functional tests pass, error code otherwise
  */
-ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d)
+ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
 	std::string pdfStr;
 	std::string outputLine;
+	std::string msg;
 
 	pci *p = d->dev->getPCI();
 	if (p == nullptr) {
@@ -979,17 +1039,15 @@ ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d)
 	pdfStr = p->getBDFStr();
 	if (!CHECKMEDIACODEC(pdfStr, true, outputLine)) {
 		if (diagCmds[diagCmdType::SINGLETEST].enabled) {
-			PRINT("Result:  Fail\n");
-			PRINT("Message: Fail to check Media transcode.\n");
-			ERR("Media codec test failed: %s\n", outputLine.c_str());
+			msg = std::format("Fail to check media transcode. Test failed:{}", outputLine);
+			printSingleDiagInfo(d, jsonObj, "Media transcode feature", msg, "Fail");
 		}
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
 	if (diagCmds[diagCmdType::SINGLETEST].enabled) {
-		PRINT("Result:  Pass\n");
-		PRINT("Message: Pass to check Media transcode.\n");
-		PRINT("%s.\n", outputLine.c_str());
+		msg = std::format("Pass to check media transcode.{}", outputLine);
+		printSingleDiagInfo(d, jsonObj, "Media transcode feature", msg, "Pass");
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1004,7 +1062,7 @@ ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if Xe Link tests complete, error code otherwise
  */
-ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d)
+ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -1020,7 +1078,7 @@ ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if all-to-all tests complete, error code otherwise
  */
-ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d)
+ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -1034,7 +1092,7 @@ ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d)
  * diagnostic results and error type listings.
  */
 
-ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
+ze_result_t cmdDiag::listTypes(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -1044,43 +1102,27 @@ ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	printPretty();
-	PRINT("| Error ID   | Error Type                        | Error Category       | Error Severity |\n");
-	printPretty();
-	PRINT("| 1          | GuC Not Running                   | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 2          | GuC Error                         | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 3          | GuC Initialization Failed         | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 4          | IOMMU Catastrophic Error          | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 5          | LMEM Not Initialized By Firmware  | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 6          | PCIe Error                        | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 7          | DRM Error                         | Kernel Mode Driver   | Critical       |\n");
-	printPretty();
-	PRINT("| 8          | GPU Hang                          | Kernel Mode Driver   | Critical       |\n");
-	printPretty();
-	PRINT("| 9          | Xe Error                          | Kernel Mode Driver   | Critical       |\n");
-	printPretty();
-	PRINT("| 10         | Xe Not Loaded                     | Kernel Mode Driver   | Critical       |\n");
-	printPretty();
-	PRINT("| 11         | Level Zero Init Error             | Kernel Mode Driver   | Critical       |\n");
-	printPretty();
-	PRINT("| 12         | HuC Disabled                      | Hardware             | High           |\n");
-	printPretty();
-	PRINT("| 13         | HuC Not Running                   | Hardware             | High           |\n");
-	printPretty();
-	PRINT("| 14         | Level Zero Metrics Init Error     | User Mode Driver     | High           |\n");
-	printPretty();
-	PRINT("| 15         | Memory Error                      | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 16         | GPU Initialization Failed         | Hardware             | Critical       |\n");
-	printPretty();
-	PRINT("| 17         | MEI Error                         | Kernel Mode Driver   | High           |\n");
-	printPretty();
+	auto errListJson = std::make_unique<nlohmann::ordered_json>();
+	printErrorInfo(errListJson.get(), "Hardware", "1", "Critical", "GuC Not Running");
+	printErrorInfo(errListJson.get(), "Hardware", "2", "Critical", "GuC Error");
+	printErrorInfo(errListJson.get(), "Hardware", "3", "Critical", "GuC Initialization Failed");
+	printErrorInfo(errListJson.get(), "Hardware", "4", "Critical", "IOMMU Catastrophic Error");
+	printErrorInfo(errListJson.get(), "Hardware", "5", "Critical", "LMEM Not Initialized By Firmware");
+	printErrorInfo(errListJson.get(), "Hardware", "6", "Critical", "PCIe Error");
+	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "7", "Critical", "DRM Error");
+	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "8", "Critical", "GPU Hang");
+	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "9", "Critical", "Xe Error");
+	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "10", "Critical", "Xe Not Loaded");
+	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "11", "Critical", "Level Zero Init Error");
+	printErrorInfo(errListJson.get(), "Hardware", "12", "High", "HuC Disabled");
+	printErrorInfo(errListJson.get(), "Hardware", "13", "High", "HuC Not Running");
+	printErrorInfo(errListJson.get(), "User Mode Driver", "14", "High", "Level Zero Metrics Init Error");
+	printErrorInfo(errListJson.get(), "Hardware", "15", "Critical", "Memory Error");
+	printErrorInfo(errListJson.get(), "Hardware", "16", "Critical", "GPU Initialization Failed");
+	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "17", "High", "MEI Error");
+
+	(*jsonObj)["error_type_list"] = *errListJson;
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1094,7 +1136,7 @@ ze_result_t cmdDiag::listTypes(UNUSED devInfo *d)
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if GPU status retrieval completes, error code otherwise
  */
-ze_result_t cmdDiag::gpu(devInfo *d)
+ze_result_t cmdDiag::gpu(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	if (!diagCmds[diagCmdType::PRECHECK].enabled) {
@@ -1105,6 +1147,68 @@ ze_result_t cmdDiag::gpu(devInfo *d)
 	return printPrecheckInfo(d, true);
 }
 
+std::string getKeyDisplayName(const std::string &key)
+{
+	static const std::unordered_map<std::string, std::string> keyDisplayMap = {
+		{"device_id", "Device ID"},
+		{"level", "Level"},
+		{"result", "Result"},
+		{"component_count", "Items"},
+	};
+
+	auto it = keyDisplayMap.find(key);
+	if (it != keyDisplayMap.end()) {
+		return it->second;
+	}
+	return key;
+}
+
+void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+
+	bool firstItem = true;
+	if (jsonObj->contains("level")) {
+		printPretty();
+		for (auto &item : (*jsonObj).items()) {
+			if (item.key() != "component_list") {
+				std::string displayKey = getKeyDisplayName(item.key());
+				printValue(displayKey, item.value().get<std::string>());
+				if (firstItem) {
+					printPretty();
+					firstItem = false;
+				}
+			}
+		}
+
+		printPretty();
+		// Handle JSON object with device_list field - print device information in a formatted table-like structure
+		for (auto &component : (*jsonObj)["component_list"]) {
+			// For the first item, print it as the main device identifier
+			std::string resultInfo = "Result: " + component["result"].get<std::string>();
+			printValue(component["component_type"].get<std::string>(), resultInfo);
+			std::string messageInfo = "Message: " + component["message"].get<std::string>();
+			printValue("", messageInfo);
+			printPretty();
+		}
+	} else if (jsonObj->contains("device_id")) {
+		for (auto &component : (*jsonObj)["component_list"]) {
+			std::string resultInfo = "Result: " + component["result"].get<std::string>();
+			std::string messageInfo = "Message: " + component["message"].get<std::string>();
+			PRINT("%-90s\n", resultInfo.c_str());
+			PRINT("%-90s\n", messageInfo.c_str());
+		}
+	} else if (jsonObj->contains("error_type_list")) {
+		printValues("Error ID", "Error Type", "Error Category", "Error Severity");
+		printPretty();
+		for (auto &component : (*jsonObj)["error_type_list"]) {
+			printValues(component["error_id"].get<std::string>(), component["error_type"].get<std::string>(),
+						component["error_category"].get<std::string>(), component["error_severity"].get<std::string>());
+
+			printPretty();
+		}
+	}
+}
 /**
  * @brief Executes time-based log scanning for diagnostic precheck
  *
@@ -1115,7 +1219,7 @@ ze_result_t cmdDiag::gpu(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if log scanning completes, error code otherwise
  */
-ze_result_t cmdDiag::runSince(UNUSED devInfo *d)
+ze_result_t cmdDiag::runSince(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -1134,6 +1238,7 @@ int cmdDiag::run(arg_struct *args)
 	bool found = false;
 	int opt;
 	int optionIndex = 0;
+	std::unique_ptr<Printer> printer;
 	std::string shortOpts;
 	std::vector<struct option> longOptsVec;
 
@@ -1189,6 +1294,12 @@ int cmdDiag::run(arg_struct *args)
 		startind++;
 	}
 
+	if (diagCmds[diagCmdType::DIAGJSON].enabled == true) {
+		printer = std::make_unique<JsonPrinter>();
+	} else {
+		printer = std::make_unique<DiagTextPrinter>();
+	}
+
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
@@ -1208,6 +1319,8 @@ int cmdDiag::run(arg_struct *args)
 
 	INFO("Running diagnostics can take several minutes to complete.\n");
 	// Iterate through the device list and execute the command
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+	// JSON object to collect diagnostic results for all devices and commands
 	for (auto &device : deviceList) {
 		if (device.dev->isIGPU()) {
 			DBG("Diagnostics are only supported on discrete GPUs so skipping device %d.\n", device.index);
@@ -1218,7 +1331,7 @@ int cmdDiag::run(arg_struct *args)
 		for (const auto &cmd : diagCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
 				DBG("Running command: %s\n", cmd.second.opt.name);
-				result = (this->*cmd.second.func)(&device);
+				result = (this->*cmd.second.func)(&device, jsonObj.get());
 				if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
 					DBG("Exiting command: %s\n", cmd.second.opt.name);
 					break;
@@ -1227,5 +1340,6 @@ int cmdDiag::run(arg_struct *args)
 		}
 	}
 
+	printer->print(jsonObj.get());
 	return result;
 }
