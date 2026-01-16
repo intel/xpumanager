@@ -13,6 +13,9 @@
 
 constexpr auto DEFAULT_INTERVAL = std::chrono::seconds{1};
 constexpr auto MAX_INTERVAL = std::chrono::seconds{20};
+// Maximum duration for time-based dump operations (100 million seconds, approximately 3.17 years)
+// This limit prevents extremely long-running dump tasks that could consume excessive resources
+constexpr int64_t MAX_DUMP_TIME_SECONDS = 100000000;
 
 enum dumpCmdType
 {

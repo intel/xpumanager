@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2025-2026 Intel Corporation
+ * Copyright (C) 2026 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  *
@@ -37,6 +37,8 @@
 #define SETENV(name, value) setenv(name, value, 1)
 #define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
 #define GETCH getch
+#define RESTORE_TERMINAL() restoreTerminal()
+#define STDIN_ISATTY() isatty(STDIN_FILENO)
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY getTopology
@@ -81,6 +83,7 @@ thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 bool privilegeCheck();
 char getch();
+void restoreTerminal();
 std::string timestamp();
 std::string getLocalCpus(const std::string &bdf);
 std::string getCpuList(const std::string &bdf);

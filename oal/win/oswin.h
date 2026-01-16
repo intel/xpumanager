@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2026 Intel Corporation
+ * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
  */
@@ -12,6 +12,7 @@
 #include <windows.h>
 #include <process.h>
 #include <conio.h>
+#include <io.h>
 #include <vector>
 
 #ifdef LIBXPUM_EXPORTS
@@ -79,6 +80,8 @@ struct option
 #define SETENV(name, value) _putenv_s(name, value)
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH (char)_getch
+#define RESTORE_TERMINAL()
+#define STDIN_ISATTY() _isatty(_fileno(stdin))
 #define GET_LOCAL_CPUS(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GET_CPU_LIST(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GET_TOPOLOGY(bdf, e) (UNUSED_VAR(bdf), UNUSED_VAR(e), 0)

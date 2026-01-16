@@ -16,6 +16,8 @@
 #include <pci.h>
 #include <format>
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 #include <thread>
 #include <atomic>
 #include <chrono>
@@ -27,9 +29,9 @@ static std::unordered_map<dumpCmdType, dumpCmdStruct> dumpCmds = {
 	{dumpCmdType::DUMP_TILE, {{"tile", required_argument, 0, 't'}, nullptr, false, ""}},
 	{dumpCmdType::DUMP_METRICS, {{"metrics", required_argument, 0, 'm'}, nullptr, false, ""}},
 	{dumpCmdType::DUMP_FILE, {{"file", required_argument, 0, 'f'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_IMS, {{"ims", no_argument, 0, 'i'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_TIME, {{"time", no_argument, 0, 'T'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_DATE, {{"date", no_argument, 0, 'D'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_IMS, {{"ims", required_argument, 0, 0}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_TIME, {{"time", required_argument, 0, 0}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_DATE, {{"date", no_argument, 0, 0}, nullptr, false, ""}},
 	{dumpCmdType::DUMP_INTERVAL, {{"interval", required_argument, 0, 'i'}, nullptr, false, ""}},
 	{dumpCmdType::DUMP_NUMBER, {{"number", required_argument, 0, 'n'}, nullptr, false, ""}},
 };
@@ -114,6 +116,9 @@ void cmdDump::help(HELP helpType)
 				progName.c_str()));
 	helpList.push_back(helpCmd(
 		HEADING, "%s dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
+		progName.c_str()));
+	helpList.push_back(helpCmd(
+		HEADING, "%s dump -d [deviceIds] -m [metricsIds] --file [filename] --ims [milliseconds] --time [seconds]",
 		progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
@@ -203,8 +208,9 @@ void cmdDump::help(HELP helpType)
 		"%d. GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Read (kB/s), per device", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Write (kB/s), per device", i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING, "%d. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput", i++));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"%d. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput (Not supported - returns N/A)", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Compute engine utilizations (%), per tile", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Render engine utilizations (%), per tile", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Media decoder engine utilizations (%), per tile", i++));
@@ -251,8 +257,9 @@ void cmdDump::help(HELP helpType)
 										"The dump will never be ended if this parameter is not specified"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--file                      Dump the raw statistics to the file"));
-	helpList.push_back(helpCmd(HEADING, "--ims                       The interval (in milliseconds) to dump the device "
-										"statistics to file for high-frequency monitoring"));
+	helpList.push_back(helpCmd(HEADING,
+							   "--ims                       The interval (in milliseconds) to dump the device "
+							   "statistics to file for high-frequency monitoring. Its value should be 10 to 1000"));
 	helpList.push_back(helpCmd(SUB_HEADING, "The recommended metrics types for high-frequency sampling: GPU "
 											"power, GPU frequency, GPU utilization"));
 	helpList.push_back(helpCmd(SUB_HEADING, "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, "
@@ -298,7 +305,7 @@ THREAD_RET cmdDump::metrics(void *args)
 	}
 
 	if (!found) {
-		ERR("The following argument was not expected: '%s'.\n", dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
+		ERR("The following metric ID was not expected: '%s'.\n", metricArgs->cmdName.c_str());
 		ERR("Run with --help for more information.\n");
 	}
 
@@ -1151,9 +1158,10 @@ ze_result_t cmdDump::pcieWrite(devInfo *d, std::string *outputLine, threadData *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
  * code.
  */
-ze_result_t cmdDump::xeLinkThroughput(UNUSED devInfo *d, UNUSED std::string *outputLine, UNUSED threadData *td)
+ze_result_t cmdDump::xeLinkThroughput(UNUSED devInfo *d, std::string *outputLine, UNUSED threadData *td)
 {
 	TRACING();
+	*outputLine = "N/A";
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1497,6 +1505,26 @@ ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, U
 }
 
 /**
+ * @brief Generates a timestamp string with optional date prefix
+ *
+ * @param showDate If true, includes date in YYYY-MM-DD format before time
+ * @return std::string Formatted timestamp in ISO 8601 format with milliseconds
+ */
+static std::string getTimestamp(bool showDate)
+{
+	auto now = std::chrono::system_clock::now();
+	auto nowMs = std::chrono::floor<std::chrono::milliseconds>(now);
+
+	if (showDate) {
+		// Format: YYYY-MM-DDTHH:MM:%S (with milliseconds)
+		return std::format("{:%Y-%m-%dT%H:%M:%S}", nowMs);
+	} else {
+		// Format: HH:MM:%S (with milliseconds)
+		return std::format("{:%H:%M:%S}", nowMs);
+	}
+}
+
+/**
  * @brief Executes the dump run. It processes command-line arguments, finds devices, and runs the specified dump
  * commands.
  *
@@ -1520,6 +1548,7 @@ int cmdDump::run(arg_struct *args)
 	int total = 0, iter = -1;
 	std::chrono::milliseconds interval = DEFAULT_INTERVAL;
 	std::thread inputThread;
+	bool showDate = false;
 
 	// If the user didn't provide any arguments, show help
 	if (args->argc == 2) {
@@ -1534,6 +1563,7 @@ int cmdDump::run(arg_struct *args)
 	optind = 2;
 
 	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
+		found = false;
 		switch (opt) {
 		case 'h':
 			help();
@@ -1563,6 +1593,10 @@ int cmdDump::run(arg_struct *args)
 		case 'n':
 			dumpCmds[dumpCmdType::DUMP_NUMBER].enabled = true;
 			dumpCmds[dumpCmdType::DUMP_NUMBER].val = optarg;
+			break;
+		case 'f':
+			dumpCmds[dumpCmdType::DUMP_FILE].enabled = true;
+			dumpCmds[dumpCmdType::DUMP_FILE].val = optarg;
 			break;
 		case 0:
 			for (auto &cmd : dumpCmds) {
@@ -1629,6 +1663,62 @@ int cmdDump::run(arg_struct *args)
 		}
 	}
 
+	// If the user specified --ims option, we need to check if it is a valid integer between 10 and 1000
+	if (dumpCmds[dumpCmdType::DUMP_IMS].enabled) {
+		try {
+			int msIntervalValue = stoi(dumpCmds[dumpCmdType::DUMP_IMS].val);
+
+			if (msIntervalValue < 10 || msIntervalValue > 1000) {
+				ERR("Invalid value for --ims: '%s'. Must be an integer between 10 and 1000.\n",
+					dumpCmds[dumpCmdType::DUMP_IMS].val.c_str());
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			interval = std::chrono::milliseconds{msIntervalValue};
+
+			// --ims requires --file option
+			if (!dumpCmds[dumpCmdType::DUMP_FILE].enabled) {
+				ERR("Error: --ims option requires --file option to be specified.\n");
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+		} catch (const std::exception &) {
+			ERR("Invalid value for --ims: '%s'. Must be an integer between 10 and 1000.\n",
+				dumpCmds[dumpCmdType::DUMP_IMS].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	// If the user specified --time option, we need to check if it is a valid positive integer
+	int64_t dumpTotalTime = -1;
+	if (dumpCmds[dumpCmdType::DUMP_TIME].enabled) {
+		try {
+			dumpTotalTime = stoll(dumpCmds[dumpCmdType::DUMP_TIME].val);
+
+			if (dumpTotalTime < 1 || dumpTotalTime > MAX_DUMP_TIME_SECONDS) {
+				ERR("Invalid value for --time: '%s'. Must be an integer between 1 and %lld.\n",
+					dumpCmds[dumpCmdType::DUMP_TIME].val.c_str(), (long long)MAX_DUMP_TIME_SECONDS);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			// --time requires --ims option
+			if (!dumpCmds[dumpCmdType::DUMP_IMS].enabled) {
+				ERR("Error: --time option requires --ims option to be specified.\n");
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			// --time and -n/--number cannot be used together
+			if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
+				ERR("Error: --time and -n/--number options cannot be used together.\n");
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+		} catch (const std::exception &) {
+			ERR("Invalid value for --time: '%s'. Must be an integer between 1 and %lld.\n",
+				dumpCmds[dumpCmdType::DUMP_TIME].val.c_str(), (long long)MAX_DUMP_TIME_SECONDS);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	showDate = dumpCmds[dumpCmdType::DUMP_DATE].enabled;
+
 	result = args->sm.findDevice(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
@@ -1643,6 +1733,19 @@ int cmdDump::run(arg_struct *args)
 		dumpArgs.push_back(token);
 	}
 
+	// Check if only metric 21 is requested (not supported when used alone)
+	if (dumpArgs.size() == 1) {
+		try {
+			if (stoi(dumpArgs[0]) == 21) {
+				ERR("Error: Metric not supported\n");
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+		} catch (const std::exception &) {
+			// Not metric 21, continue normal processing
+		}
+	}
+	// If metric 21 is mixed with other metrics, it will return N/A continuously via xeLinkThroughput()
+
 	header = "Timestamp,    DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
 	for (const auto &cmd : dumpMetrics) {
@@ -1656,7 +1759,28 @@ int cmdDump::run(arg_struct *args)
 			}
 		}
 	}
-	PRINT("%s\n", header.c_str());
+
+	// Open file for writing if --file option is specified
+	std::ofstream dumpFile;
+	bool useFile = dumpCmds[dumpCmdType::DUMP_FILE].enabled;
+	if (useFile) {
+		dumpFile.open(dumpCmds[dumpCmdType::DUMP_FILE].val, std::ios::out | std::ios::trunc);
+		if (!dumpFile.is_open()) {
+			ERR("Failed to open file '%s' for writing.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		// Write header to file
+		dumpFile << header << std::endl;
+		if (!dumpCmds[dumpCmdType::DUMP_TIME].enabled && STDIN_ISATTY()) {
+			PRINT("Dump data to file %s. Press 'q' or ESC to stop dumping.\n",
+				  dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
+		} else {
+			PRINT("Dump data to file %s.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
+		}
+	} else {
+		// Print header to screen
+		PRINT("%s\n", header.c_str());
+	}
 
 	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()] {};
 	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()] {};
@@ -1665,19 +1789,33 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
-	// Start a thread to check for key presses only if iter was not provided
-	if (iter < 0) {
+	// Start a thread to check for key presses to stop dumping
+	// Only start if: 1) no iteration count specified, 2) stdin is a terminal, and
+	// 3) not using --time option (which auto-terminates)
+	bool shouldStartInputThread =
+		STDIN_ISATTY() && ((iter < 0 && !useFile) || (useFile && !dumpCmds[dumpCmdType::DUMP_TIME].enabled));
+
+	if (shouldStartInputThread) {
 		inputThread = std::thread([&running]() {
 			char ch;
 			while (running) {
-				ch = GETCH(); // Get the character without waiting for Enter
-				if (ch == 'q' || ch == 'Q') {
+				ch = GETCH();
+				// Accept 'q', 'Q', or ESC key to stop dumping
+				if (ch == 'q' || ch == 'Q' || ch == 27) {
 					running = false;
-					break; // Exit the loop
+					break;
 				}
 			}
 		});
 	}
+
+	// Track start time for --time option
+	auto startTime = std::chrono::steady_clock::now();
+
+	// Perform an initial "warm-up" iteration to initialize baseline data for metrics that need two samples
+	// This prevents empty values in the first real iteration
+	// Always do warm-up except when user specified -n 1 (single iteration mode)
+	bool skipOutput = (iter != 1);
 
 	while (running) {
 		total = 0;
@@ -1707,32 +1845,74 @@ int cmdDump::run(arg_struct *args)
 			}
 		}
 
-		// Print the output
-		for (uint32_t i = 0; i < deviceList.size(); i++) {
-			std::string outputLine = "";
-			for (uint32_t j = 0; j < dumpArgs.size(); j++) {
-				// Construct a std::string which has comma separated values of all the output lines
-				outputLine += argsList[i * dumpArgs.size() + j]->outputLine;
-				if (j < dumpArgs.size() - 1) {
-					outputLine += ", ";
+		// Skip printing output for the first (warm-up) iteration
+		if (!skipOutput) {
+			// Print the output
+			for (uint32_t i = 0; i < deviceList.size(); i++) {
+				std::string outputLine = "";
+				for (uint32_t j = 0; j < dumpArgs.size(); j++) {
+					// Construct a std::string which has comma separated values of all the output lines
+					outputLine += argsList[i * dumpArgs.size() + j]->outputLine;
+					if (j < dumpArgs.size() - 1) {
+						outputLine += ", ";
+					}
+				}
+				std::string timestampStr = getTimestamp(showDate);
+				if (useFile) {
+					// Write to file
+					dumpFile << timestampStr << ", " << std::setw(8) << argsList[i * dumpArgs.size()]->d->index << ", "
+							 << outputLine << std::endl;
+					dumpFile.flush(); // Ensure data is written immediately
+				} else {
+					// Print to screen
+					PRINT("%s, %8d, %s\n", timestampStr.c_str(), argsList[i * dumpArgs.size()]->d->index,
+						  outputLine.c_str());
 				}
 			}
-			PRINT("%s, %8d, %s\n", TIMESTAMP().c_str(), argsList[i * dumpArgs.size()]->d->index, outputLine.c_str());
+
+			// If the user specified an iteration count, decrement it only after printing actual data
+			if (iter > 0) {
+				iter--;
+				if (iter == 0) {
+					running = false; // Stop the loop after the specified number of iterations
+				}
+			}
+		} else {
+			// Mark that we've completed the warm-up iteration
+			skipOutput = false;
 		}
+
 		std::this_thread::sleep_for(interval);
 
-		// If the user specified an iteration count, decrement it
-		if (iter > 0) {
-			iter--;
-			if (iter == 0) {
-				running = false; // Stop the loop after the specified number of iterations
+		// Check if we've exceeded the total time limit
+		if (dumpTotalTime > 0) {
+			auto currentTime = std::chrono::steady_clock::now();
+			auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+			if (elapsedSeconds >= dumpTotalTime) {
+				running = false; // Stop the loop after the specified time
 			}
 		}
 	}
 
-	// Clean up
-	if (iter < 0 && inputThread.joinable()) {
-		inputThread.join();
+	// Close the file if it was opened
+	if (useFile) {
+		dumpFile.close();
+		PRINT("\nDumping is stopped.\n");
+	}
+
+	// Clean up input thread
+	// Note: If the thread is still blocked on GETCH() (time limit or iteration count reached),
+	// we must detach it as joining would block indefinitely. The thread will terminate when
+	// the process exits, which is acceptable since this is the final cleanup before program termination.
+	if (inputThread.joinable()) {
+		if (!running) {
+			// Loop stopped by time limit or iteration count - thread may still be blocked on GETCH()
+			// Detaching is necessary to avoid blocking indefinitely on join()
+			inputThread.detach();
+		} else {
+			// User pressed ESC key - thread has exited, safe to join
+			inputThread.join();
+		}
 	}
 
 	for (int i = 0; i < total; i++) {
@@ -1744,6 +1924,10 @@ int cmdDump::run(arg_struct *args)
 	// Clean up allocated memory
 	delete[] tidList;
 	delete[] argsList;
+
+	// Restore terminal settings to ensure echo is re-enabled
+	// This is necessary when the input thread is detached and may have left the terminal in raw mode
+	RESTORE_TERMINAL();
 
 	return result;
 }
