@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("sysman")
+	Type      = component.MustNewType("intelxpu")
 	ScopeName = "github.com/intel/xpumanager/receiver"
 )
 

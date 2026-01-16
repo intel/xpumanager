@@ -28,8 +28,8 @@
                     "description": "Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)",
                     "type": "object",
                     "properties": {
-                        "sysman": {
-                            "description": "Configuration for the custom Level-Zero Sysman receiver.",
+                        "intelxpu": {
+                            "description": "Configuration for the Intel XPU receiver.",
                             "type": "object",
                             "properties": {
                                 "collection_interval": {

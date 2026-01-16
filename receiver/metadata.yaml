@@ -1,4 +1,4 @@
-type: sysman
+type: intelxpu
 
 status:
   class: receiver

@@ -18,7 +18,7 @@ import (
 	"github.com/intel/xpumanager/receiver/internal/metadata"
 )
 
-// NewFactory creates a factory for the sysman receiver
+// NewFactory creates a factory for the receiver.
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -33,7 +33,7 @@ func createReceiver(_ context.Context, settings receiver.Settings, cfg component
 		return nil, fmt.Errorf("invalid config type: %T", cfg)
 	}
 
-	sr, err := newSysmanReceiver(settings, rcfg)
+	sr, err := newXpuReceiver(settings, rcfg)
 	if err != nil {
 		return nil, err
 	}

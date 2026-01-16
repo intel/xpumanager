@@ -18,7 +18,7 @@ exporters:
 receivers:
   - gomod: github.com/intel/xpumanager/receiver v0.0.0
     path: ./receiver
-    name: sysmanreceiver
+    name: intelxpureceiver
 
 processors:
 

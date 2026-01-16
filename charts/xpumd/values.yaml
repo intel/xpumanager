@@ -82,10 +82,10 @@ config:
   # @section -- XPUM Daemon Configuration
   receivers:
     # @schema additionalProperties:false
-    # -- Configuration for the custom Level-Zero Sysman receiver.
+    # -- Configuration for the Intel XPU receiver.
     # @default --  
     # @section -- XPUM Daemon Configuration
-    sysman:
+    intelxpu:
       # @schema enum: [debug, info, warn, error]
       # -- Log level (debug, info, warn, error)
       # @section -- XPUM Daemon Configuration
@@ -120,4 +120,4 @@ config:
   service:
     pipelines:
       metrics:
-        receivers: [sysman]
+        receivers: [intelxpu]
