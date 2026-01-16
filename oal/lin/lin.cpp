@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2026 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  *
@@ -126,6 +126,24 @@ char getch()
 	if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old) < 0)
 		perror("tcsetattr ~ICANON");
 	return buf;
+}
+
+/**
+ * @brief Restores terminal settings to canonical mode with echo enabled
+ *
+ * This function ensures the terminal is returned to its normal state,
+ * particularly useful after detaching input threads that may have left
+ * the terminal in raw mode. Only operates on TTY devices.
+ */
+void restoreTerminal()
+{
+	if (isatty(STDIN_FILENO)) {
+		struct termios term;
+		if (tcgetattr(STDIN_FILENO, &term) == 0) {
+			term.c_lflag |= ICANON | ECHO;
+			tcsetattr(STDIN_FILENO, TCSANOW, &term);
+		}
+	}
 }
 
 /**
