@@ -11,6 +11,11 @@ provides:
 
 See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
 
+## Metrics
+
+See the [`intelxpu` receiver documentation](receiver/sysman/documentation.md)
+for the list of available GPU metrics and attributes.
+
 ## Development
 
 ### Building

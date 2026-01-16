@@ -102,6 +102,9 @@ config:
       # -- Sampling interval for the high-frequency metrics.
       # @section -- XPUM Daemon Configuration
       sampling_interval: 1s
+      # -- Configuration for enabling/disabling individual metrics.
+      # @section -- XPUM Daemon Configuration
+      metrics: {}
 
   # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
   # @section -- XPUM Daemon Configuration
