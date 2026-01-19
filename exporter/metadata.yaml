@@ -1,0 +1,33 @@
+type: intelxpuinfo
+
+status:
+  class: exporter
+  stability:
+    development: [metrics]
+  codeowners:
+    active: [marquiz]
+
+telemetry:
+  metrics:
+    exporter_request_errors:
+      enabled: true
+      stability:
+        level: development
+      description: Number of transmission errors encountered when sending updates to the endpoint(s).
+      unit: "{error}"
+      sum:
+        value_type: int
+        monotonic: true
+    exporter_requests_sent:
+      enabled: true
+      stability:
+        level: development
+      description: Number of updates sent to the endpoint(s).
+      unit: "{request}"
+      sum:
+        value_type: int
+        monotonic: true
+
+tests:
+  config:
+    endpoint: /tmp/intelxpuinfo_test_run/intelxpuinfo.sock
