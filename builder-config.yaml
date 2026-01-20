@@ -2,7 +2,7 @@ dist:
   name: xpumd
   description: XPUM Daemon
   output_path: ./dist
-  otelcol_version: 0.142.0
+  otelcol_version: 0.143.0
   # Enable CGO explicitly, as we are linking against external library
   # Ref: https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder#cgo-disabled-by-default
   cgo_enabled: true
@@ -12,8 +12,8 @@ replaces:
   - github.com/intel/xpumanager => ../
 
 exporters:
-  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.142.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.142.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.143.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.143.0
 
 receivers:
   - gomod: github.com/intel/xpumanager/receiver v0.0.0
