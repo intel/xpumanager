@@ -68,20 +68,9 @@ func (s *deviceInfoServer) stop() {
 func (s *deviceInfoServer) updateHealthData(md pmetric.Metrics) {
 	s.healthDataLock.Lock()
 	defer s.healthDataLock.Unlock()
-	s.healthData = []*pb.DeviceHealthResponse{
-		{
-			Info: &pb.DeviceInformation{
-				Uuid: "device-uuid-1234",
-			},
-			Health: []*pb.HealthStatus{
-				{
-					Name:     "memory",
-					Severity: pb.SeverityLevel_SEVERITY_LEVEL_OK,
-					Reason:   "healthy",
-				},
-			},
-		},
-	}
+
+	mt := newMetricsTranslator(s.logger)
+	s.healthData = mt.translate(md)
 
 	s.broadcastHealthData()
 }
