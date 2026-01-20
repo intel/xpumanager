@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/collector/scraper"
 )
 
-// NewFactory for sysman scraper.
+// NewFactory for Sysman scraper.
 func NewFactory() scraper.Factory {
 	return scraper.NewFactory(metadata.Type, defaultConfig, scraper.WithMetrics(createMetricsScraper, metadata.MetricsStability))
 }

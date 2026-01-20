@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Config defines configuration for the sysman scraper.
+// Config defines configuration for the Sysman scraper.
 type Config struct {
 	metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	SamplingInterval              time.Duration `mapstructure:"sampling_interval"`
