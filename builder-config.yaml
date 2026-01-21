@@ -25,5 +25,8 @@ receivers:
     name: intelxpureceiver
 
 processors:
+  - gomod: github.com/intel/xpumanager/processor v0.0.0
+    path: ./processor
+    name: intelxpustatus
 
 extensions:
