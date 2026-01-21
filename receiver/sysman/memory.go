@@ -34,7 +34,7 @@ type sysmanMemoryState struct {
 
 type memoryAttributes struct {
 	hwID           string
-	hwType         string
+	hwType         metadata.AttributeHwType
 	hwName         string
 	hwParent       string
 	memoryType     string
@@ -75,7 +75,7 @@ func newSysmanMemory(name string, mem *l0sysman.Mem, device *sysmanDevice) (*sys
 		},
 		attributes: memoryAttributes{
 			hwID:           device.attributes.hwID + "_" + name,
-			hwType:         "memory",
+			hwType:         metadata.AttributeHwTypeMemory,
 			hwName:         name,
 			hwParent:       device.attributes.hwID,
 			memoryType:     strings.ToLower(props.Type.String()),

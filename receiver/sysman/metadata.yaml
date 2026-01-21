@@ -56,6 +56,9 @@ attributes:
   hw.type:
     description: Type of the hardware component.
     type: string
+    enum:
+      - memory
+      - temperature
   hw.vendor:
     description: Vendor name of the hardware component.
     type: string
