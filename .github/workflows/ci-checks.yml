@@ -24,6 +24,9 @@ jobs:
         path: ./level-zero-go
         token: ${{ secrets.LEVEL_ZERO_GO_BINDINGS_TOKEN }}
 
+    - name: Check modfiles
+      run: ./scripts/make-dockerized.sh check-modfiles
+
     - name: Golangci-lint
       run: ./scripts/make-dockerized.sh golint
 
