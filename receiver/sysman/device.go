@@ -111,6 +111,14 @@ func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLo
 }
 
 func (d *sysmanDevice) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	mb.RecordHwGpuInfoDataPoint(ts, 1,
+		d.attributes.hwID,
+		d.attributes.hwModel,
+		d.attributes.hwName,
+		d.attributes.hwSerialNumber,
+		d.attributes.hwVendor,
+	)
+
 	for _, s := range d.scrapers {
 		s.scrape(mb, ts)
 	}
