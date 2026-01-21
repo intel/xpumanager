@@ -122,7 +122,7 @@ public:
 	ze_result_t printPrecheckInfo(devInfo *d, bool gpuOnly);
 	ze_result_t runSince(devInfo *d, nlohmann::ordered_json *jsonObj);
 	std::unique_ptr<nlohmann::ordered_json> printDiagDetail(std::string componentType, std::string componentMsg,
-															std::string componentResult);
+															std::string componentResult, bool finished);
 	void printSingleDiagInfo(devInfo *d, nlohmann::ordered_json *jsonObj, std::string type, std::string msg,
 							 std::string result);
 	std::unique_ptr<nlohmann::ordered_json> printErrorDetail(std::string errCategory, std::string errID,
