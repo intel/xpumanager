@@ -60,53 +60,53 @@ std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevel
 		 {
 			 {
 				 DIAG_LEVEL_SW_LIBRARY,
-				 {&cmdDiag::checkLibrary, "Software Library", true},
+				 {&cmdDiag::checkLibrary, "XPUM_DIAG_SOFTWARE_LIBRARY", true},
 			 },
 			 {
 				 DIAG_LEVEL_SW_PERMISSION,
-				 {&cmdDiag::checkAccessPermission, "Software Permission", true},
+				 {&cmdDiag::checkAccessPermission, "XPUM_DIAG_SOFTWARE_PERMISSION", true},
 			 },
 			 {
 				 DIAG_LEVEL_SW_EXCLUSIVE,
-				 {&cmdDiag::checkExclusive, "Software Exclusive", true},
+				 {&cmdDiag::checkExclusive, "XPUM_DIAG_SOFTWARE_EXCLUSIVE", true},
 			 },
 			 {
 				 DIAG_LEVEL_COMPUTATIONFUNCTEST,
-				 {&cmdDiag::computationFuncTest, "Computation Check", true},
+				 {&cmdDiag::computationFuncTest, "XPUM_DIAG_LIGHT_COMPUTATION", true},
 			 },
 		 }},
 		{diagLevel::LEVEL_2,
 		 {
 			 {
 				 DIAG_LEVEL_PCIEBANDWIDTH,
-				 {&cmdDiag::pcieBandwidth, "Integration PCIe", true},
+				 {&cmdDiag::pcieBandwidth, "XPUM_DIAG_INTEGRATION_PCIE", true},
 			 },
 			 {
 				 DIAG_LEVEL_MEDIA,
-				 {&cmdDiag::mediaFuncTest, "Media Codec", true},
+				 {&cmdDiag::mediaFuncTest, "XPUM_DIAG_MEDIA_CODEC", true},
 			 },
 		 }},
 		{diagLevel::LEVEL_3,
 		 {
 			 {
 				 DIAG_LEVEL_COMPUTATION,
-				 {&cmdDiag::computation, "Performance Computation", true},
+				 {&cmdDiag::computation, "XPUM_DIAG_PERFORMANCE_COMPUTATION", true},
 			 },
 			 {
 				 DIAG_LEVEL_POWER,
-				 {&cmdDiag::powerTest, "Performance Power", true},
+				 {&cmdDiag::powerTest, "XPUM_DIAG_PERFORMANCE_POWER", true},
 			 },
 			 {
 				 DIAG_LEVEL_MEMORYBANDWIDTH,
-				 {&cmdDiag::memoryBandwidth, "Performance Memory Bandwidth", true},
+				 {&cmdDiag::memoryBandwidth, "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH", true},
 			 },
 			 {
 				 DIAG_LEVEL_MEMORYALLOCATION,
-				 {&cmdDiag::memoryAllocation, "Performance Memory Allocation", true},
+				 {&cmdDiag::memoryAllocation, "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION", true},
 			 },
 			 {
 				 DIAG_LEVEL_MEMORYERROR,
-				 {&cmdDiag::memoryError, "Memory Error", true},
+				 {&cmdDiag::memoryError, "XPUM_DIAG_MEMORY_ERROR", true},
 			 },
 		 }},
 };
@@ -476,12 +476,13 @@ ze_result_t cmdDiag::checkExclusive(devInfo *d, UNUSED nlohmann::ordered_json *j
 }
 
 std::unique_ptr<nlohmann::ordered_json> cmdDiag::printDiagDetail(std::string componentType, std::string componentMsg,
-																 std::string componentResult)
+																 std::string componentResult, bool finished)
 {
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 
 	// Get string values first, then assign to JSON
 	(*jsonObj)["component_type"] = componentType;
+	(*jsonObj)["finished"] = finished;
 	(*jsonObj)["message"] = componentMsg;
 	(*jsonObj)["result"] = componentResult;
 
@@ -514,7 +515,8 @@ void cmdDiag::printSingleDiagInfo(devInfo *d, nlohmann::ordered_json *jsonObj, s
 {
 	(*jsonObj)["device_id"] = std::to_string(d->index);
 	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
-	auto componentJson = printDiagDetail(type, msg, result);
+	bool finished = (result == "Pass" || result == "Fail");
+	auto componentJson = printDiagDetail(type, msg, result, finished);
 	componentListJson->push_back(*componentJson);
 	(*jsonObj)["component_list"] = *componentListJson;
 }
@@ -529,7 +531,7 @@ void cmdDiag::printSingleDiagInfo(devInfo *d, nlohmann::ordered_json *jsonObj, s
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if level is valid, error code otherwise
  */
-ze_result_t cmdDiag::level(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::level(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -549,6 +551,11 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jso
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	auto startTime = std::chrono::system_clock::now();
+	auto startTimeS = std::chrono::floor<std::chrono::seconds>(startTime);
+	auto startTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - startTimeS);
+	std::string startTimeStr = std::format("{:%Y-%m-%dT%H:%M:%S}.{:03d}", startTimeS, startTimeMs.count());
+
 	for (int le = 1; le <= level; le++) {
 		for (auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
 
@@ -562,23 +569,36 @@ ze_result_t cmdDiag::level(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jso
 		}
 	}
 
-	(*jsonObj)["device_id"] = std::to_string(d->index);
-	(*jsonObj)["level"] = std::to_string(level);
-	(*jsonObj)["result"] = (finalResult) ? "Pass" : "Fail";
-	(*jsonObj)["component_count"] = std::to_string(totalCount);
+	auto endTime = std::chrono::system_clock::now();
+	auto endTimeS = std::chrono::floor<std::chrono::seconds>(endTime);
+	auto endTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - endTimeS);
+	std::string endTimeStr = std::format("{:%Y-%m-%dT%H:%M:%S}.{:03d}", endTimeS, endTimeMs.count());
+
 	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
 	for (int le = 1; le <= level; le++) {
 		for (const auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
 			DBG("Preparing to run test for level %d\n", le);
-			resultLine = (test.second.result) ? "Pass" : "Fail";
-			msgLine = std::format("Message: {} to check {}.", resultLine, test.second.showString);
+			bool testFinished = test.second.result;
+			resultLine = testFinished ? "Pass" : "Fail";
+			msgLine = std::format("Pass to check {}.", test.second.showString);
+			if (!testFinished) {
+				msgLine = std::format("Fail to check {}.", test.second.showString);
+			}
 
-			auto componentJson = printDiagDetail(test.second.showString, msgLine, resultLine);
+			auto componentJson = printDiagDetail(test.second.showString, msgLine, resultLine, testFinished);
 			componentListJson->push_back(*componentJson);
 		}
 	}
 
+	(*jsonObj)["component_count"] = totalCount;
 	(*jsonObj)["component_list"] = *componentListJson;
+	(*jsonObj)["device_id"] = std::to_string(d->index);
+	(*jsonObj)["end_time"] = endTimeStr;
+	(*jsonObj)["finished"] = finalResult;
+	(*jsonObj)["level"] = level;
+	(*jsonObj)["message"] = finalResult ? "All diagnostics done" : "Some diagnostics failed";
+	(*jsonObj)["result"] = (finalResult) ? "Pass" : "Fail";
+	(*jsonObj)["start_time"] = startTimeStr;
 
 	return ZE_RESULT_SUCCESS;
 }
