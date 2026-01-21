@@ -1746,17 +1746,22 @@ int cmdDump::run(arg_struct *args)
 	}
 	// If metric 21 is mixed with other metrics, it will return N/A continuously via xeLinkThroughput()
 
-	header = "Timestamp,    DeviceId, ";
+	header = "Timestamp, DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
-	for (const auto &cmd : dumpMetrics) {
-		for (const auto &arg : dumpArgs) {
-			if (cmd.first == stoi(arg) && cmd.second.func != nullptr) {
-				if (!first) {
-					header += ", ";
-				}
-				header += cmd.second.heading;
-				first = false;
+	// Parse metric IDs once and then use direct lookup in dumpMetrics to maintain user-specified order
+	std::vector<int> metricIds;
+	metricIds.reserve(dumpArgs.size());
+	for (const auto &arg : dumpArgs) {
+		metricIds.push_back(stoi(arg));
+	}
+	for (const auto metricId : metricIds) {
+		auto it = dumpMetrics.find(metricId);
+		if (it != dumpMetrics.end() && it->second.func != nullptr) {
+			if (!first) {
+				header += ", ";
 			}
+			header += it->second.heading;
+			first = false;
 		}
 	}
 
