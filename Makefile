@@ -5,6 +5,8 @@
 
 # --- Helper targets ---
 
+GO_MODULES := $(shell git ls-files '*/go.mod' 'go.mod' | xargs dirname)
+
 .PHONY: help
 help:
 	@echo -e "\nTargets:\n$$(grep '^[^#:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
@@ -43,3 +45,18 @@ golint:
 shellcheck:
 	@echo -e "\nshellcheck: linting shell scripts...\n"
 	git ls-files -z '*.sh' | xargs -0 shellcheck
+
+.PHONY: check-modfiles
+check-modfiles:
+	@echo "Verifying go.mod files..."
+	@error=""; for module in $(GO_MODULES); do \
+		echo "Checking module '$$module'"; \
+		if ! (cd $$module && go mod tidy -diff 2> /dev/null); then \
+			echo "ERROR: go.mod file in '$$module' is out of sync. Run 'go mod tidy' in that directory to fix it."; \
+			error=1; \
+		fi; \
+	done; \
+	if [ -n "$$error" ]; then \
+		exit 1; \
+	fi; \
+	echo "✓ All go.mod files are in sync"
