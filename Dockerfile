@@ -31,6 +31,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     make build && \
     mkdir /out && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
+    install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
     install -D config-example.yaml /out/etc/xpumd/config-example.yaml
 
 
