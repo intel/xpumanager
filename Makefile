@@ -5,7 +5,8 @@
 
 # --- Helper targets ---
 
-GO_MODULES := $(shell git ls-files '*/go.mod' 'go.mod' | xargs dirname)
+# Skip the main module at the repo root as it's currently empty and makes some checks to fail.
+GO_MODULES := $(shell git ls-files '*/go.mod' | xargs dirname)
 
 .PHONY: help
 help:
@@ -34,11 +35,25 @@ generate:
 
 .PHONY: test
 test:
-	go -C receiver test ./...
+	@error=""; for module in $(GO_MODULES); do \
+		echo "Running tests in module '$$module'..."; \
+		go -C $$module test ./... || error=1; \
+	done; \
+	if [ -n "$$error" ]; then \
+		exit 1; \
+	fi; \
+	echo "✓ All tests passed"
 
 .PHONY: golint
 golint:
-	go -C receiver tool -modfile ../tools/go.mod golangci-lint run
+	@error=""; for module in $(GO_MODULES); do \
+		echo "Running golangci-lint in module '$$module'..."; \
+		go -C $$module tool -modfile $(PWD)/tools/go.mod golangci-lint run || error=1; \
+	done; \
+	if [ -n "$$error" ]; then \
+		exit 1; \
+	fi; \
+	echo "✓ No linter issues found"
 
 .PHONY: shellcheck
 # <apt|dnf> install shellcheck
