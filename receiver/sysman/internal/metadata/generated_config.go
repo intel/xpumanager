@@ -27,6 +27,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for sysman metrics.
 type MetricsConfig struct {
+	HwGpuInfo         MetricConfig `mapstructure:"hw.gpu.info"`
 	HwGpuSpeed        MetricConfig `mapstructure:"hw.gpu.speed"`
 	HwGpuSpeedLimit   MetricConfig `mapstructure:"hw.gpu.speed.limit"`
 	HwGpuSpeedRequest MetricConfig `mapstructure:"hw.gpu.speed.request"`
@@ -40,6 +41,9 @@ type MetricsConfig struct {
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
+		HwGpuInfo: MetricConfig{
+			Enabled: true,
+		},
 		HwGpuSpeed: MetricConfig{
 			Enabled: true,
 		},

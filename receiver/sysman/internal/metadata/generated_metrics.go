@@ -121,6 +121,9 @@ var MapAttributeStatistic = map[string]AttributeStatistic{
 }
 
 var MetricsInfo = metricsInfo{
+	HwGpuInfo: metricInfo{
+		Name: "hw.gpu.info",
+	},
 	HwGpuSpeed: metricInfo{
 		Name: "hw.gpu.speed",
 	},
@@ -151,6 +154,7 @@ var MetricsInfo = metricsInfo{
 }
 
 type metricsInfo struct {
+	HwGpuInfo         metricInfo
 	HwGpuSpeed        metricInfo
 	HwGpuSpeedLimit   metricInfo
 	HwGpuSpeedRequest metricInfo
@@ -164,6 +168,63 @@ type metricsInfo struct {
 
 type metricInfo struct {
 	Name string
+}
+
+type metricHwGpuInfo struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.gpu.info metric with initial data.
+func (m *metricHwGpuInfo) init() {
+	m.data.SetName("hw.gpu.info")
+	m.data.SetDescription("Information about the GPU device.")
+	m.data.SetUnit("1")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.model", hwModelAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("hw.serial_number", hwSerialNumberAttributeValue)
+	dp.Attributes().PutStr("hw.vendor", hwVendorAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuInfo) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuInfo) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuInfo(cfg MetricConfig) metricHwGpuInfo {
+	m := metricHwGpuInfo{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
 }
 
 type metricHwGpuSpeed struct {
@@ -694,6 +755,7 @@ type MetricsBuilder struct {
 	metricsCapacity         int                  // maximum observed number of metrics per resource.
 	metricsBuffer           pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo               component.BuildInfo  // contains version information.
+	metricHwGpuInfo         metricHwGpuInfo
 	metricHwGpuSpeed        metricHwGpuSpeed
 	metricHwGpuSpeedLimit   metricHwGpuSpeedLimit
 	metricHwGpuSpeedRequest metricHwGpuSpeedRequest
@@ -728,6 +790,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		startTime:               pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:           pmetric.NewMetrics(),
 		buildInfo:               settings.BuildInfo,
+		metricHwGpuInfo:         newMetricHwGpuInfo(mbc.Metrics.HwGpuInfo),
 		metricHwGpuSpeed:        newMetricHwGpuSpeed(mbc.Metrics.HwGpuSpeed),
 		metricHwGpuSpeedLimit:   newMetricHwGpuSpeedLimit(mbc.Metrics.HwGpuSpeedLimit),
 		metricHwGpuSpeedRequest: newMetricHwGpuSpeedRequest(mbc.Metrics.HwGpuSpeedRequest),
@@ -803,6 +866,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
+	mb.metricHwGpuInfo.emit(ils.Metrics())
 	mb.metricHwGpuSpeed.emit(ils.Metrics())
 	mb.metricHwGpuSpeedLimit.emit(ils.Metrics())
 	mb.metricHwGpuSpeedRequest.emit(ils.Metrics())
@@ -831,6 +895,11 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	metrics := mb.metricsBuffer
 	mb.metricsBuffer = pmetric.NewMetrics()
 	return metrics
+}
+
+// RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.
+func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string) {
+	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwModelAttributeValue, hwNameAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue)
 }
 
 // RecordHwGpuSpeedDataPoint adds a data point to hw.gpu.speed metric.

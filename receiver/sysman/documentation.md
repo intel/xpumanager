@@ -12,6 +12,24 @@ metrics:
     enabled: false
 ```
 
+### hw.gpu.info
+
+Information about the GPU device.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| 1 | Sum | Int | Cumulative | false | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.model | Model name of the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.serial_number | Serial number of the hardware component. | Any Str | Recommended |
+| hw.vendor | Vendor name of the hardware component. | Any Str | Recommended |
+
 ### hw.gpu.speed
 
 Current GPU frequency.

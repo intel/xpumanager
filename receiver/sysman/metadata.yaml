@@ -76,6 +76,17 @@ attributes:
       - max
 
 metrics:
+  hw.gpu.info:
+    enabled: true
+    description: Information about the GPU device.
+    stability:
+      level: development
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor]
   hw.gpu.speed:
     enabled: true
     description: Current GPU frequency.
