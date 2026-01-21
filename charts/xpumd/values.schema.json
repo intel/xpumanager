@@ -50,6 +50,10 @@
                                         "error"
                                     ]
                                 },
+                                "metrics": {
+                                    "description": "Configuration for enabling/disabling individual metrics.",
+                                    "type": "object"
+                                },
                                 "sampling_interval": {
                                     "description": "Sampling interval for the high-frequency metrics.",
                                     "type": "string"

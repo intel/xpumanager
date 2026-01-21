@@ -7,10 +7,8 @@ package sysman
 
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.uber.org/zap"
 
-	l0sysman "github.com/intel/level-zero-go/sysman"
+	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
 )
 
 const (
@@ -18,55 +16,24 @@ const (
 	maxAggregatedMetricsReaders = 1
 )
 
-// Handle is the interface for Sysman functionality.
-type Handle interface {
-	PollAggregatedMetrics()
-	Scrape() pmetric.Metrics
+type instanceScraper interface {
+	scrape(*metadata.MetricsBuilder, pcommon.Timestamp)
+	pollAggregatedMetrics()
 }
 
-type createScraperFunc func(pmetric.ScopeMetrics, *commonMetrics, pcommon.Timestamp) scraper
+type enumDeviceFunc func(*sysmanDevice) []instanceScraper
 
 type subsystem struct {
-	createScraper createScraperFunc
+	enumDevice enumDeviceFunc
 }
 
 var subsystems = map[string]subsystem{}
 
-func registerSubsystem(name string, create createScraperFunc) {
+func registerSubsystem(name string, enumDevice enumDeviceFunc) {
 	if _, exists := subsystems[name]; exists {
 		panic("subsystem already registered: " + name)
 	}
 	subsystems[name] = subsystem{
-		createScraper: create,
+		enumDevice: enumDevice,
 	}
-}
-
-type sysman struct {
-	metrics *metricsRegistry
-	devices *deviceRegistry
-}
-
-// New creates and initializes a new Sysman instance.
-func New(logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (Handle, error) {
-	s := &sysman{}
-
-	err := l0sysman.Init(0)
-	if err != nil {
-		return nil, err
-	}
-
-	s.devices, err = newDeviceRegistry(logger, aggregatedMetricsBufferSize)
-	if err != nil {
-		return nil, err
-	}
-	s.metrics, err = newMetricsRegistry(logger)
-	return s, err
-}
-
-func (s *sysman) PollAggregatedMetrics() {
-	s.devices.pollAggregatedMetrics()
-}
-
-func (s *sysman) Scrape() pmetric.Metrics {
-	return s.metrics.scrape(s.devices)
 }

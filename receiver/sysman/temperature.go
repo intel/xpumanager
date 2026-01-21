@@ -6,28 +6,53 @@
 package sysman
 
 import (
+	"fmt"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
+	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
 )
 
 func init() {
-	registerSubsystem("temperature", newTemperatureMetrics)
+	registerSubsystem("temperature", enumTemperature)
 }
 
 type sysmanTemperature struct {
 	*l0sysman.Temp
 	logger     *zap.SugaredLogger
-	attributes map[string]string
+	attributes temperatureAttributes
 }
 
-// temperatureMetrics is a throwaway struct to hold temperature metrics for one scrape cycle.
-type temperatureMetrics struct {
-	current gauge
+type temperatureAttributes struct {
+	hwID           string
+	hwType         string
+	hwName         string
+	hwParent       string
+	sensorLocation string
+	statistic      metadata.AttributeStatistic
+	subdeviceId    string
+}
+
+func enumTemperature(d *sysmanDevice) []instanceScraper {
+	temps, err := d.EnumTemperatureSensors()
+	if err != nil {
+		d.logger.Errorw("Failed to enumerate temperature sensors", zap.Error(err))
+		return nil
+	}
+	scrapers := make([]instanceScraper, 0, len(temps))
+	for i, temp := range temps {
+		name := fmt.Sprintf("temp_%d", i)
+		t, err := newSysmanTemperature(name, temp, d)
+		if err != nil {
+			d.logger.Errorw("Failed to create Sysman temperature sensor", zap.Error(err))
+			continue
+		}
+		scrapers = append(scrapers, t)
+	}
+	return scrapers
 }
 
 func newSysmanTemperature(name string, temp *l0sysman.Temp, device *sysmanDevice) (*sysmanTemperature, error) {
@@ -37,47 +62,41 @@ func newSysmanTemperature(name string, temp *l0sysman.Temp, device *sysmanDevice
 	}
 	tempType := strings.ToLower(props.Type.String())
 	location := tempType
-	statistic := "max"
+	statistic := metadata.AttributeStatisticMax
 	if strings.HasSuffix(tempType, "_min") {
 		location = strings.TrimSuffix(tempType, "_min")
-		statistic = "min"
-	}
-
-	attrs := map[string]string{
-		attrHwID:             device.attributes[attrHwID] + "_" + name,
-		attrHwType:           "temperature",
-		attrHwName:           name,
-		attrHwParent:         device.attributes[attrHwID],
-		attrHwSensorLocation: location,
-		attrStatistic:        statistic,
-		attrSubdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+		statistic = metadata.AttributeStatisticMin
 	}
 
 	return &sysmanTemperature{
-		Temp:       temp,
-		logger:     device.logger,
-		attributes: attrs,
+		Temp:   temp,
+		logger: device.logger,
+		attributes: temperatureAttributes{
+			hwID:           device.attributes.hwID + "_" + name,
+			hwType:         "temperature",
+			hwName:         name,
+			hwParent:       device.attributes.hwID,
+			sensorLocation: location,
+			statistic:      statistic,
+			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+		},
 	}, nil
 }
 
-func (t *sysmanTemperature) pickAttributes(keys ...string) pcommon.Map {
-	return pickAttributes(t.attributes, keys...)
-}
-
-func newTemperatureMetrics(sm pmetric.ScopeMetrics, _ *commonMetrics, ts pcommon.Timestamp) scraper {
-	return &temperatureMetrics{
-		// Metrics
-		current: newGauge(sm, ts, "hw.temperature", "Cel", "Current GPU temperature"),
+func (t *sysmanTemperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if current, err := t.GetState(); err != nil {
+		t.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", t.attributes)
+	} else {
+		mb.RecordHwTemperatureDataPoint(ts,
+			current,
+			t.attributes.hwID,
+			t.attributes.hwName,
+			t.attributes.hwParent,
+			t.attributes.sensorLocation,
+			t.attributes.statistic,
+			t.attributes.subdeviceId,
+		)
 	}
 }
 
-func (m *temperatureMetrics) scrapeDevice(dev *sysmanDevice) {
-	for _, temp := range dev.temperature {
-		if current, err := temp.GetState(); err != nil {
-			temp.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", temp.attributes)
-		} else {
-			attrs := temp.pickAttributes(attrHwID, attrHwName, attrHwParent, attrHwSensorLocation, attrStatistic, attrSubdeviceId)
-			m.current.observeFloat64(current, attrs)
-		}
-	}
-}
+func (m *sysmanTemperature) pollAggregatedMetrics() {}

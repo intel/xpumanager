@@ -11,21 +11,21 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
-	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap"
+
+	"github.com/intel/xpumanager/receiver/sysman"
 )
 
 // Config defines configuration for the receiver.
 type Config struct {
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
-	SamplingInterval               time.Duration `mapstructure:"sampling_interval"`
-	LogLevel                       zapcore.Level `mapstructure:"log_level"`
+	*sysman.Config                 `mapstructure:",squash"`
 }
 
 func defaultConfig() component.Config {
 	return &Config{
 		ControllerConfig: scraperhelper.NewDefaultControllerConfig(),
-		LogLevel:         zapcore.InfoLevel,
-		SamplingInterval: 1 * time.Second,
+		Config:           sysmanFactory.CreateDefaultConfig().(*sysman.Config),
 	}
 }
 
@@ -38,12 +38,24 @@ func (c *Config) Validate() error {
 	if c.CollectionInterval < time.Second {
 		return fmt.Errorf("collection_interval too short (%s), must be at least 1 second", c.CollectionInterval)
 	}
-	if c.SamplingInterval < time.Millisecond {
-		return fmt.Errorf("sampling_interval too short (%s), must be at least 1ms", c.SamplingInterval)
-	}
+
 	if c.CollectionInterval/c.SamplingInterval > 1e5 {
 		// Cap to 100k samples per collection cycle to avoid excessive memory use
 		return fmt.Errorf("too many samples per collection cycle (%d), maximum is 1e5", c.CollectionInterval/c.SamplingInterval)
 	}
 	return nil
+}
+
+func (c *Config) lint(logger *zap.SugaredLogger) {
+	// Warn about potentially config issues.
+	// Cannot do in Config.Validate() as logger is not available there.
+	if c.CollectionInterval < 2*c.SamplingInterval {
+		orig := c.SamplingInterval
+		c.SamplingInterval = c.CollectionInterval / 2
+		logger.Warnw("collection_interval must be >= 2 * sampling_interval to guarantee data integrity, sampling_interval adjusted",
+			"collectionInterval", c.CollectionInterval,
+			"samplingInterval", c.SamplingInterval,
+			"oldSamplingInterval", orig,
+		)
+	}
 }

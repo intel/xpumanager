@@ -1,0 +1,45 @@
+//
+// Copyright (C) 2026 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package sysman
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
+	"go.opentelemetry.io/collector/component"
+	"go.uber.org/zap/zapcore"
+)
+
+// Config defines configuration for the Sysman scraper.
+type Config struct {
+	metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	SamplingInterval              time.Duration `mapstructure:"sampling_interval"`
+	LogLevel                      zapcore.Level `mapstructure:"log_level"`
+
+	aggregatedMetricsBufferSize int
+}
+
+// defaultConfig creates the default configuration for the scraper.
+func defaultConfig() component.Config {
+	return &Config{
+		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		LogLevel:             zapcore.InfoLevel,
+		SamplingInterval:     1 * time.Second,
+	}
+}
+
+// Validate checks if the receiver configuration is valid.
+func (c *Config) Validate() error {
+	if c.SamplingInterval < time.Millisecond {
+		return fmt.Errorf("sampling_interval too short (%s), must be at least 1ms", c.SamplingInterval)
+	}
+	return nil
+}
+
+func (c *Config) SetAggregatedMetricsBufferSize(size int) {
+	c.aggregatedMetricsBufferSize = size
+}

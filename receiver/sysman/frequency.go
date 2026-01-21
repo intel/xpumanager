@@ -6,17 +6,18 @@
 package sysman
 
 import (
+	"fmt"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
+	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
 )
 
 func init() {
-	registerSubsystem("frequency", newFrequencyMetrics)
+	registerSubsystem("frequency", enumFrequency)
 }
 
 type sysmanFrequency struct {
@@ -24,10 +25,16 @@ type sysmanFrequency struct {
 	logger *zap.SugaredLogger
 
 	state      sysmanFrequencyState
-	attributes map[string]string
+	attributes frequencyAttributes
 
 	// Aggregated metrics
 	actual *aggregatedMetric[float64]
+}
+
+type frequencyAttributes struct {
+	deviceAttributes
+	gpuSpeedType string
+	subdeviceId  string
 }
 
 // sysmanFrequencyState holds the dynamic runtime state.
@@ -35,14 +42,23 @@ type sysmanFrequencyState struct {
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
 }
 
-// frequencyMetrics is a throwaway struct to hold frequency metrics for one scrape cycle.
-type frequencyMetrics struct {
-	// TODO: make it possible to disable the debug metrics(?)
-	speed   gauge
-	limit   gauge
-	request gauge
-	samples gauge // debug
-	status  sum
+func enumFrequency(d *sysmanDevice) []instanceScraper {
+	freqs, err := d.EnumFrequencyDomains()
+	if err != nil {
+		d.logger.Errorw("Failed to enumerate frequency domains", zap.Error(err))
+		return nil
+	}
+	scrapers := make([]instanceScraper, 0, len(freqs))
+	for i, freq := range freqs {
+		name := fmt.Sprintf("freq_%d", i)
+		f, err := newSysmanFrequency(name, freq, d)
+		if err != nil {
+			d.logger.Errorw("Failed to create Sysman frequency domain", zap.Error(err))
+			continue
+		}
+		scrapers = append(scrapers, f)
+	}
+	return scrapers
 }
 
 func newSysmanFrequency(name string, freq *l0sysman.Freq, device *sysmanDevice) (*sysmanFrequency, error) {
@@ -51,122 +67,160 @@ func newSysmanFrequency(name string, freq *l0sysman.Freq, device *sysmanDevice) 
 		return nil, err
 	}
 
-	attrs := map[string]string{
-		attrGpuSpeedType: strings.ToLower(props.Type.String()),
-		attrSubdeviceId:  subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
-	}
-
 	return &sysmanFrequency{
-		Freq:       freq,
-		logger:     device.logger,
-		attributes: attrs,
-		actual:     newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
+		Freq:   freq,
+		logger: device.logger,
+		attributes: frequencyAttributes{
+			deviceAttributes: device.attributes,
+			gpuSpeedType:     strings.ToLower(props.Type.String()),
+			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+		},
+		// Aggregated metrics
+		actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
 	}, nil
 }
 
-func (t *sysmanFrequency) addAttributes(attrs pcommon.Map, keys ...string) {
-	addAttributes(attrs, t.attributes, keys...)
-}
-
-func newFrequencyMetrics(sm pmetric.ScopeMetrics, _ *commonMetrics, ts pcommon.Timestamp) scraper {
-	return &frequencyMetrics{
-		// NOTE: hw.gpu.speed imitates hw.cpu.speed, but is not in OTel spec:
-		// https://opentelemetry.io/docs/specs/semconv/hardware/gpu/
-		speed:   newGauge(sm, ts, "hw.gpu.speed", "Hz", "Current GPU frequency"),
-		limit:   newGauge(sm, ts, "hw.gpu.speed.limit", "Hz", "GPU frequency limit"),
-		request: newGauge(sm, ts, "hw.gpu.speed.request", "Hz", "Requested GPU frequency"),
-		samples: newGauge(sm, ts, "hw.gpu.speed.samples", "{count}", "Number of speed samples during the last collection interval"),
-		status:  newUpDownCounter(sm, ts, "hw.gpu.speed.status", "1", "GPU frequency status"),
+func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	// Handle instantaneous metrics
+	if rang, err := f.GetRange(); err != nil {
+		f.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", f.attributes)
+	} else {
+		if rang.Min >= 0 {
+			mb.RecordHwGpuSpeedLimitDataPoint(ts, rang.Min*1e6,
+				f.attributes.hwID,
+				f.attributes.hwModel,
+				f.attributes.hwName,
+				f.attributes.hwSerialNumber,
+				f.attributes.hwVendor,
+				f.attributes.gpuSpeedType,
+				f.attributes.subdeviceId,
+				"min")
+		}
+		if rang.Max >= 0 {
+			mb.RecordHwGpuSpeedLimitDataPoint(ts, rang.Max*1e6,
+				f.attributes.hwID,
+				f.attributes.hwModel,
+				f.attributes.hwName,
+				f.attributes.hwSerialNumber,
+				f.attributes.hwVendor,
+				f.attributes.gpuSpeedType,
+				f.attributes.subdeviceId,
+				"max")
+		}
 	}
-}
 
-func (m *frequencyMetrics) scrapeDevice(dev *sysmanDevice) {
-	for _, freq := range dev.frequency {
-		// Helper functions for attribute handling
-		baseAttrs := func() pcommon.Map {
-			attrs := dev.pickAttributes(attrHwID, attrHwModel, attrHwName, attrHwSerialNumber, attrHwVendor)
-			freq.addAttributes(attrs, attrGpuSpeedType, attrSubdeviceId)
-			return attrs
+	if state, err := f.GetState(); err != nil {
+		f.logger.Errorw("Failed to get frequency state", zap.Error(err), "attributes", f.attributes)
+	} else {
+		if state.Request >= 0 {
+			mb.RecordHwGpuSpeedRequestDataPoint(ts, state.Request*1e6,
+				f.attributes.hwID,
+				f.attributes.hwModel,
+				f.attributes.hwName,
+				f.attributes.hwSerialNumber,
+				f.attributes.hwVendor,
+				f.attributes.gpuSpeedType,
+				f.attributes.subdeviceId)
 		}
 
-		// Handle instantaneous metrics
-		if rang, err := freq.GetRange(); err != nil {
-			freq.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", freq.attributes)
-		} else {
-			if rang.Min >= 0 {
-				attrs := baseAttrs()
-				attrs.PutStr(attrHwLimitType, "min")
-				m.limit.observeFloat64(rang.Min*1e6, attrs)
+		stateOK := int64(1)
+		if state.ThrottleReasons != 0 {
+			stateOK = 0
+		}
+		mb.RecordHwGpuSpeedStatusDataPoint(ts, stateOK,
+			f.attributes.hwID,
+			f.attributes.hwModel,
+			f.attributes.hwName,
+			f.attributes.hwSerialNumber,
+			f.attributes.hwVendor,
+			f.attributes.gpuSpeedType,
+			f.attributes.subdeviceId,
+			"ok",
+			"")
+
+		for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
+			value := int64(0)
+			if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
+				value = 1
+				f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(reason)
 			}
-			if rang.Max >= 0 {
-				attrs := baseAttrs()
-				attrs.PutStr(attrHwLimitType, "max")
-				m.limit.observeFloat64(rang.Max*1e6, attrs)
+
+			// Flags may be unset because the driver lacks support for this
+			// throttle reason (does not know the status). Emit the metric
+			// only once support is confirmed.
+			if l0sysman.FreqThrottleReasonFlag(f.state.throttleReasonsSeen)&reason != 0 {
+				mb.RecordHwGpuSpeedStatusDataPoint(ts, value,
+					f.attributes.hwID,
+					f.attributes.hwModel,
+					f.attributes.hwName,
+					f.attributes.hwSerialNumber,
+					f.attributes.hwVendor,
+					f.attributes.gpuSpeedType,
+					f.attributes.subdeviceId,
+					"throttled",
+					strings.ToLower(reason.String()))
 			}
 		}
+	}
 
-		if state, err := freq.GetState(); err != nil {
-			freq.logger.Errorw("Failed to get frequency state", zap.Error(err), "attributes", freq.attributes)
-		} else {
-			if state.Request >= 0 {
-				attrs := baseAttrs()
-				m.request.observeFloat64(state.Request*1e6, attrs)
-			}
+	// Handle aggregated metrics
+	actualStats := f.actual.collect(0)
 
-			stateOK := int64(1)
-			if state.ThrottleReasons != 0 {
-				stateOK = 0
-			}
-			attrs := baseAttrs()
-			attrs.PutStr(attrHwState, "ok")
-			m.status.observeInt64(stateOK, attrs)
+	if actualStats.samples > 0 {
+		mb.RecordHwGpuSpeedDataPoint(ts, actualStats.minValue*1e6,
+			f.attributes.hwID,
+			f.attributes.hwModel,
+			f.attributes.hwName,
+			f.attributes.hwSerialNumber,
+			f.attributes.hwVendor,
+			f.attributes.gpuSpeedType,
+			f.attributes.subdeviceId,
+			metadata.AttributeAggregationMin)
 
-			for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
-				value := int64(0)
-				if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
-					value = 1
-					freq.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(reason)
-				}
+		mb.RecordHwGpuSpeedDataPoint(ts, actualStats.maxValue*1e6,
+			f.attributes.hwID,
+			f.attributes.hwModel,
+			f.attributes.hwName,
+			f.attributes.hwSerialNumber,
+			f.attributes.hwVendor,
+			f.attributes.gpuSpeedType,
+			f.attributes.subdeviceId,
+			metadata.AttributeAggregationMax)
 
-				// Flags may be unset because the driver lacks support for this
-				// throttle reason (does not know the status). Emit the metric
-				// only once support is confirmed.
-				if l0sysman.FreqThrottleReasonFlag(freq.state.throttleReasonsSeen)&reason != 0 {
-					attrs := baseAttrs()
-					attrs.PutStr(attrHwState, "throttled")
-					attrs.PutStr(attrGpuSpeedThrottleReason, strings.ToLower(reason.String()))
-					m.status.observeInt64(value, attrs)
-				}
-			}
-		}
+		mb.RecordHwGpuSpeedDataPoint(ts, actualStats.avgValue*1e6,
+			f.attributes.hwID,
+			f.attributes.hwModel,
+			f.attributes.hwName,
+			f.attributes.hwSerialNumber,
+			f.attributes.hwVendor,
+			f.attributes.gpuSpeedType,
+			f.attributes.subdeviceId,
+			metadata.AttributeAggregationAvg)
 
-		// Handle aggregated metrics
-		actualStats := freq.actual.collect(0)
-		if actualStats.samples > 0 {
-			attrs := baseAttrs()
-			attrs.PutStr(attrAggregation, "min")
-			m.speed.observeFloat64(actualStats.minValue*1e6, attrs)
+		// Sample debug metrics
+		mb.RecordHwGpuSpeedSamplesDataPoint(ts, int64(actualStats.samples),
+			f.attributes.hwID,
+			f.attributes.hwModel,
+			f.attributes.hwName,
+			f.attributes.hwSerialNumber,
+			f.attributes.hwVendor,
+			f.attributes.gpuSpeedType,
+			f.attributes.subdeviceId,
+			metadata.AttributeSampleStatusCollected)
 
-			attrs = baseAttrs()
-			attrs.PutStr(attrAggregation, "max")
-			m.speed.observeFloat64(actualStats.maxValue*1e6, attrs)
+		mb.RecordHwGpuSpeedSamplesDataPoint(ts, int64(actualStats.lostSamples),
+			f.attributes.hwID,
+			f.attributes.hwModel,
+			f.attributes.hwName,
+			f.attributes.hwSerialNumber,
+			f.attributes.hwVendor,
+			f.attributes.gpuSpeedType,
+			f.attributes.subdeviceId,
+			metadata.AttributeSampleStatusDropped)
+	}
 
-			attrs = baseAttrs()
-			attrs.PutStr(attrAggregation, "avg")
-			m.speed.observeFloat64(actualStats.avgValue*1e6, attrs)
-
-			// Sample debug metrics
-			attrs = baseAttrs()
-			attrs.PutStr(attrSampleStatus, "collected")
-			m.samples.observeInt64(int64(actualStats.samples), attrs)
-
-			attrs = baseAttrs()
-			attrs.PutStr(attrSampleStatus, "dropped")
-			m.samples.observeInt64(int64(actualStats.lostSamples), attrs)
-		}
-		if actualStats.lostSamples > 0 {
-			freq.logger.Debugw("Lost samples of actual frequency", "count", actualStats.lostSamples, "attributes", freq.attributes)
-		}
+	if actualStats.lostSamples > 0 {
+		f.logger.Debugw("Lost samples of actual frequency", "count", actualStats.lostSamples, "attributes", f.attributes)
 	}
 }
 
