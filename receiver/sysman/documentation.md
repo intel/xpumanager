@@ -168,7 +168,7 @@ The operational status of the hardware component.
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.state | Current state of the component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.type | Type of the hardware component. | Any Str | Recommended |
+| hw.type | Type of the hardware component. | Str: ``memory``, ``temperature`` | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
 | com.intel.gpu.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
 

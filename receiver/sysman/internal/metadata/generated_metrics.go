@@ -42,6 +42,32 @@ var MapAttributeAggregation = map[string]AttributeAggregation{
 	"avg": AttributeAggregationAvg,
 }
 
+// AttributeHwType specifies the value hw.type attribute.
+type AttributeHwType int
+
+const (
+	_ AttributeHwType = iota
+	AttributeHwTypeMemory
+	AttributeHwTypeTemperature
+)
+
+// String returns the string representation of the AttributeHwType.
+func (av AttributeHwType) String() string {
+	switch av {
+	case AttributeHwTypeMemory:
+		return "memory"
+	case AttributeHwTypeTemperature:
+		return "temperature"
+	}
+	return ""
+}
+
+// MapAttributeHwType is a helper map of string to AttributeHwType attribute value.
+var MapAttributeHwType = map[string]AttributeHwType{
+	"memory":      AttributeHwTypeMemory,
+	"temperature": AttributeHwTypeTemperature,
+}
+
 // AttributeSampleStatus specifies the value sample.status attribute.
 type AttributeSampleStatus int
 
@@ -843,8 +869,8 @@ func (mb *MetricsBuilder) RecordHwMemoryUsageDataPoint(ts pcommon.Timestamp, val
 }
 
 // RecordHwStatusDataPoint adds a data point to hw.status metric.
-func (mb *MetricsBuilder) RecordHwStatusDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwStateAttributeValue string, hwNameAttributeValue string, hwTypeAttributeValue string, hwParentAttributeValue string, comIntelGpuSubdeviceIDAttributeValue string) {
-	mb.metricHwStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwStateAttributeValue, hwNameAttributeValue, hwTypeAttributeValue, hwParentAttributeValue, comIntelGpuSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwStatusDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwStateAttributeValue string, hwNameAttributeValue string, hwTypeAttributeValue AttributeHwType, hwParentAttributeValue string, comIntelGpuSubdeviceIDAttributeValue string) {
+	mb.metricHwStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwStateAttributeValue, hwNameAttributeValue, hwTypeAttributeValue.String(), hwParentAttributeValue, comIntelGpuSubdeviceIDAttributeValue)
 }
 
 // RecordHwTemperatureDataPoint adds a data point to hw.temperature metric.

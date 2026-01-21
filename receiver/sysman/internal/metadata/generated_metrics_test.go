@@ -89,7 +89,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.state-val", "hw.name-val", "hw.type-val", "hw.parent-val", "com.intel.gpu.subdevice_id-val")
+			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.state-val", "hw.name-val", AttributeHwTypeMemory, "hw.parent-val", "com.intel.gpu.subdevice_id-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -382,7 +382,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, "hw.name-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.type")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.type-val", attrVal.Str())
+					assert.Equal(t, "memory", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
