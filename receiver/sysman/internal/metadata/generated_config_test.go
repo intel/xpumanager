@@ -27,6 +27,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					HwGpuInfo:         MetricConfig{Enabled: true},
 					HwGpuSpeed:        MetricConfig{Enabled: true},
 					HwGpuSpeedLimit:   MetricConfig{Enabled: true},
 					HwGpuSpeedRequest: MetricConfig{Enabled: true},
@@ -43,6 +44,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					HwGpuInfo:         MetricConfig{Enabled: false},
 					HwGpuSpeed:        MetricConfig{Enabled: false},
 					HwGpuSpeedLimit:   MetricConfig{Enabled: false},
 					HwGpuSpeedRequest: MetricConfig{Enabled: false},

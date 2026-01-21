@@ -1,6 +1,8 @@
 default:
 all_set:
   metrics:
+    hw.gpu.info:
+      enabled: true
     hw.gpu.speed:
       enabled: true
     hw.gpu.speed.limit:
@@ -21,6 +23,8 @@ all_set:
       enabled: true
 none_set:
   metrics:
+    hw.gpu.info:
+      enabled: false
     hw.gpu.speed:
       enabled: false
     hw.gpu.speed.limit:

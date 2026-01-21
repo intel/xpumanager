@@ -61,6 +61,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwGpuSpeedDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val", "hw.gpu.speed.type-val", "com.intel.gpu.subdevice_id-val", AttributeAggregationMin)
 
 			defaultMetricsCount++
@@ -117,6 +121,35 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
+				case "hw.gpu.info":
+					assert.False(t, validatedMetrics["hw.gpu.info"], "Found a duplicate in the metrics slice: hw.gpu.info")
+					validatedMetrics["hw.gpu.info"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Information about the GPU device.", ms.At(i).Description())
+					assert.Equal(t, "1", ms.At(i).Unit())
+					assert.False(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.model")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.model-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.serial_number")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.serial_number-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.vendor")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.vendor-val", attrVal.Str())
 				case "hw.gpu.speed":
 					assert.False(t, validatedMetrics["hw.gpu.speed"], "Found a duplicate in the metrics slice: hw.gpu.speed")
 					validatedMetrics["hw.gpu.speed"] = true
