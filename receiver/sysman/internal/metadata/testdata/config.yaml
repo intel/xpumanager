@@ -1,17 +1,17 @@
 default:
 all_set:
   metrics:
+    hw.frequency:
+      enabled: true
+    hw.frequency.limit:
+      enabled: true
+    hw.frequency.request:
+      enabled: true
+    hw.frequency.samples:
+      enabled: true
+    hw.frequency.throttle_status:
+      enabled: true
     hw.gpu.info:
-      enabled: true
-    hw.gpu.speed:
-      enabled: true
-    hw.gpu.speed.limit:
-      enabled: true
-    hw.gpu.speed.request:
-      enabled: true
-    hw.gpu.speed.samples:
-      enabled: true
-    hw.gpu.speed.status:
       enabled: true
     hw.memory.size:
       enabled: true
@@ -23,17 +23,17 @@ all_set:
       enabled: true
 none_set:
   metrics:
+    hw.frequency:
+      enabled: false
+    hw.frequency.limit:
+      enabled: false
+    hw.frequency.request:
+      enabled: false
+    hw.frequency.samples:
+      enabled: false
+    hw.frequency.throttle_status:
+      enabled: false
     hw.gpu.info:
-      enabled: false
-    hw.gpu.speed:
-      enabled: false
-    hw.gpu.speed.limit:
-      enabled: false
-    hw.gpu.speed.request:
-      enabled: false
-    hw.gpu.speed.samples:
-      enabled: false
-    hw.gpu.speed.status:
       enabled: false
     hw.memory.size:
       enabled: false
