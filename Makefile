@@ -28,7 +28,7 @@ build:
 
 .PHONY: generate
 generate:
-	scripts/generate.sh
+	scripts/generate.sh $(GO_MODULES)
 
 # --- Test / lint targets
 
