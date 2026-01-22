@@ -109,11 +109,57 @@ std::string getDisplayName(const std::string &key)
 		{"device_id", "Device ID"},
 		{"device_name", "Device Name"},
 		{"vendor_name", "Vendor Name"},
-		{"soc_uuid", "SOC UUID"},
+		{"uuid", "UUID"},
 		{"pci_bdf_address", "PCI BDF Address"},
 		{"drm_device_path", "DRM Device"},
 		{"function_type", "Function Type"},
 		{"survivability_mode", "Survivability mode"},
+		{"serial_number", "Serial Number"},
+		{"core_clock_rate", "Core Clock Rate"},
+		{"device_stepping", "Stepping"},
+		{"driver_version", "Driver Version"},
+		{"gfx_firmware_version", "GFX Firmware Version"},
+		{"gfx_data_firmware_version", "GFX Data Firmware Version"},
+		{"pci_slot", "PCI Slot"},
+		{"pcie_generation", "PCIe Generation"},
+		{"pcie_max_link_width", "PCIe Max Link Width"},
+		{"oam_socket_id", "OAM Socket ID"},
+		{"memory_physical_size", "Memory Physical Size"},
+		{"memory_physical_size_byte", "Memory Physical Size"},
+		{"number_of_memory_channels", "Number of Memory Channels"},
+		{"memory_bus_width", "Memory Bus Width"},
+		{"number_of_eus", "Number of EUs"},
+		{"number_of_media_engines", "Number of Media Engines"},
+		{"number_of_media_enh_engines", "Number of Media Enhancement Engines"},
+		{"gfx_firmware_status", "GFX Firmware Status"},
+		{"pci_vendor_id", "PCI Vendor ID"},
+		{"pci_device_id", "PCI Device ID"},
+		{"number_of_tiles", "Number of Tiles"},
+		{"number_of_slices", "Number of Slices"},
+		{"number_of_sub_slices_per_slice", "Number of Sub-slices per Slice"},
+		{"number_of_eus_per_sub_slice", "Number of EUs per Sub-slice"},
+		{"number_of_threads_per_eu", "Number of Threads per EU"},
+		{"physical_eu_simd_width", "Physical EU SIMD Width"},
+		{"max_command_queue_priority", "Max Command Queue Priority"},
+		{"max_hardware_contexts", "Max Hardware Contexts"},
+		{"max_mem_alloc_size_byte", "Max Memory Alloc Size"},
+		{"memory_free_size_byte", "Memory Free Size"},
+		{"memory_ecc_state", "Memory ECC State"},
+		{"kernel_version", "Kernel Version"},
+		{"drm_device", "DRM Device"},
+		{"device_type", "Device Type"},
+		{"sku_type", "SKU Type"},
+		{"pcie_max_bandwidth", "PCIe Max Bandwidth"},
+		{"amc_firmware_name", "AMC Firmware Name"},
+		{"amc_firmware_version", "AMC Firmware Version"},
+		{"gfx_pscbin_firmware_name", "GFX PSCBIN Firmware Name"},
+		{"gfx_pscbin_firmware_version", "GFX PSCBIN Firmware Version"},
+		{"oprom_code_firmware_name", "OPROM CODE Firmware Name"},
+		{"oprom_code_firmware_version", "OPROM CODE Firmware Version"},
+		{"oprom_data_firmware_name", "OPROM DATA Firmware Name"},
+		{"oprom_data_firmware_version", "OPROM DATA Firmware Version"},
+		{"gfx_firmware_name", "GFX Firmware Name"},
+		{"gfx_data_firmware_name", "GFX Data Firmware Name"},
 		// clang-format on
 	};
 
@@ -137,12 +183,19 @@ DiscoveryTextPrinter::DiscoveryTextPrinter() : TextPrinter() {}
  */
 void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
+	auto valueToString = [](const nlohmann::ordered_json &val) -> std::string {
+		if (val.is_string()) {
+			return val.get<std::string>();
+		}
+		return val.dump();
+	};
+
 	// Custom formatting for discovery text output
 	if (jsonObj->contains("heading")) {
 		// Print CSV-style headers for dump command
 		const auto &headers = (*jsonObj)["heading"];
 		for (size_t i = 0; i < headers.size(); ++i) {
-			PRINT("%s", headers[i].get<std::string>().c_str());
+			PRINT("%s", valueToString(headers[i]).c_str());
 			if (i < headers.size() - 1) {
 				PRINT(", ");
 			}
@@ -154,7 +207,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			if (deviceItem.key() != "heading") {
 				const auto &values = deviceItem.value();
 				for (size_t i = 0; i < values.size(); ++i) {
-					PRINT("%s", values[i].get<std::string>().c_str());
+					PRINT("%s", valueToString(values[i]).c_str());
 					if (i < values.size() - 1) {
 						PRINT(", ");
 					}
@@ -169,14 +222,14 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			for (auto &item : device.items()) {
 				if (firstItem) {
 					// For the first item, print it as the main device identifier
-					std::string deviceLine = "| " + item.value().get<std::string>();
+					std::string deviceLine = "| " + valueToString(item.value());
 					PRINT("%-70s|\n", deviceLine.c_str());
 
 					firstItem = false;
 				} else {
 					// For subsequent items, print them indented with display names
 					std::string displayKey = getDisplayName(item.key());
-					std::string detailLine = "      | " + displayKey + ": " + item.value().get<std::string>();
+					std::string detailLine = "      | " + displayKey + ": " + valueToString(item.value());
 					PRINT("%-70s|\n", detailLine.c_str());
 				}
 			}
@@ -186,7 +239,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		// Handle single device or key-value pairs
 		for (auto &item : jsonObj->items()) {
 			std::string displayKey = getDisplayName(item.key());
-			std::string detailLine = "| " + displayKey + ": " + item.value().get<std::string>();
+			std::string detailLine = "| " + displayKey + ": " + valueToString(item.value());
 			PRINT("%-70s |\n", detailLine.c_str());
 		}
 	}
@@ -213,7 +266,10 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 	(*jsonObj)["vendor_name"] = outputLine;
 
 	socUuid(device, &outputLine);
-	(*jsonObj)["soc_uuid"] = outputLine;
+	(*jsonObj)["uuid"] = outputLine;
+
+	pciDeviceID(device, &outputLine);
+	(*jsonObj)["pci_device_id"] = outputLine;
 
 	pciBDFAddress(device, &outputLine);
 	(*jsonObj)["pci_bdf_address"] = outputLine;
@@ -480,225 +536,156 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	if (isAmcCard) {
-		// New format for AMC cards: snake_case, no units, all fields
-		deviceID(d, &outputLine);
-		props["device_id"] = outputLine;
-
-		deviceName(d, &outputLine);
-		props["device_name"] = outputLine;
-
-		vendorName(d, &outputLine);
-		props["vendor_name"] = outputLine;
-
-		socUuid(d, &outputLine);
-		props["uuid"] = outputLine;
-
-		serialNumber(d, &outputLine);
-		props["serial_number"] = outputLine;
-
-		stepping(d, &outputLine);
-		props["device_stepping"] = outputLine;
-
-		driverVersion(d, &outputLine);
-		props["driver_version"] = outputLine;
-
-		gfxFirmwareVersion(d, &outputLine);
-		props["gfx_firmware_name"] = "GFX";
-		props["gfx_firmware_version"] = outputLine;
-
-		gfxDataFirmwareVersion(d, &outputLine);
-		props["gfx_data_firmware_name"] = "GFX_DATA";
-		props["gfx_data_firmware_version"] = outputLine;
-
-		pciBDFAddress(d, &outputLine);
-		props["pci_bdf_address"] = outputLine;
-
-		pciSlot(d, &outputLine);
-		props["pci_slot"] = outputLine;
-
-		pcieGeneration(d, &outputLine);
-		props["pcie_generation"] = outputLine;
-
-		pcieMaxLinkWidth(d, &outputLine);
-		props["pcie_max_link_width"] = outputLine;
-
-		uint64_t physicalSizeGather = 0;
-		auto *const memGather = d->dev->getMemory();
-		memGather->getMemorySize(&physicalSizeGather);
-		props["memory_physical_size_byte"] = std::to_string(physicalSizeGather);
-
-		memoryChannels(d, &outputLine);
-		props["number_of_memory_channels"] = outputLine;
-
-		memoryBusWidth(d, &outputLine);
-		props["memory_bus_width"] = outputLine;
-
-		eus(d, &outputLine);
-		props["number_of_eus"] = outputLine;
-
-		mediaEngines(d, &outputLine);
-		props["number_of_media_engines"] = outputLine;
-
-		mediaEnhancementEngines(d, &outputLine);
-		props["number_of_media_enh_engines"] = outputLine;
-
-		gfxFirmwareStatus(d, &outputLine);
-		props["gfx_firmware_status"] = outputLine;
-
-		pciVendorID(d, &outputLine);
-		props["pci_vendor_id"] = outputLine;
-
-		pciDeviceID(d, &outputLine);
-		props["pci_device_id"] = outputLine;
-
-		numberOfTiles(d, &outputLine);
-		props["number_of_tiles"] = outputLine;
-
-		numberOfSlices(d, &outputLine);
-		props["number_of_slices"] = outputLine;
-
-		numberOfSubslicesPerSlice(d, &outputLine);
-		props["number_of_sub_slices_per_slice"] = outputLine;
-
-		numberOfEUsPerSubslice(d, &outputLine);
-		props["number_of_eus_per_sub_slice"] = outputLine;
-
-		numberOfThreadsPerEU(d, &outputLine);
-		props["number_of_threads_per_eu"] = outputLine;
-
-		physicalEUSimdWidth(d, &outputLine);
-		props["physical_eu_simd_width"] = outputLine;
-
-		maxCommandQueuePriority(d, &outputLine);
-		props["max_command_queue_priority"] = outputLine;
-
-		maxHardwareContexts(d, &outputLine);
-		props["max_hardware_contexts"] = outputLine;
-
-		maxMemAllocSize(d, &outputLine);
-		props["max_mem_alloc_size_byte"] = outputLine;
-
-		memoryFreeSize(d, &outputLine);
-		props["memory_free_size_byte"] = outputLine;
-
-		memoryEccState(d, &outputLine);
-		props["memory_ecc_state"] = outputLine;
-
-		kernelVersion(d, &outputLine);
-		props["kernel_version"] = outputLine;
-
-		drmDevice(d, &outputLine);
-		props["drm_device"] = outputLine;
-
-		deviceType(d, &outputLine);
-		props["device_type"] = outputLine;
-
-		skuType(d, &outputLine);
-		props["sku_type"] = outputLine;
-
-		pcieMaxBandwidth(d, &outputLine);
-		props["pcie_max_bandwidth"] = outputLine;
-
 		amcFirmwareName(d, &outputLine);
 		props["amc_firmware_name"] = outputLine;
 
 		amcFirmwareVersion(d, &outputLine);
 		props["amc_firmware_version"] = outputLine;
-
-		gfxPscBinFirmwareName(d, &outputLine);
-		props["gfx_pscbin_firmware_name"] = outputLine;
-
-		gfxPscBinFirmwareVersion(d, &outputLine);
-		props["gfx_pscbin_firmware_version"] = outputLine;
-
-		opromCodeFirmwareName(d, &outputLine);
-		props["oprom_code_firmware_name"] = outputLine;
-
-		opromCodeFirmwareVersion(d, &outputLine);
-		props["oprom_code_firmware_version"] = outputLine;
-
-		opromDataFirmwareName(d, &outputLine);
-		props["oprom_data_firmware_name"] = outputLine;
-
-		opromDataFirmwareVersion(d, &outputLine);
-		props["oprom_data_firmware_version"] = outputLine;
-	} else {
-		// Legacy format for older cards: Title Case, with units, original order
-		pciDeviceID(d, &outputLine);
-		props["PCI Device ID"] = outputLine;
-
-		pciVendorID(d, &outputLine);
-		props["PCI Vendor ID"] = outputLine;
-
-		gfxFirmwareStatus(d, &outputLine);
-		props["GFX Firmware Status"] = outputLine;
-
-		mediaEnhancementEngines(d, &outputLine);
-		props["Number of Media Enhancement Engines"] = outputLine;
-
-		mediaEngines(d, &outputLine);
-		props["Number of Media Engines"] = outputLine;
-
-		eus(d, &outputLine);
-		props["Number of EUs"] = outputLine;
-
-		memoryBusWidth(d, &outputLine);
-		props["Memory Bus Width"] = outputLine;
-
-		memoryChannels(d, &outputLine);
-		props["Number of Memory Channels"] = outputLine;
-
-		uint64_t physicalSize = 0;
-		auto *const m = d->dev->getMemory();
-		m->getMemorySize(&physicalSize);
-		double physicalSizeMiB = static_cast<double>(physicalSize) / (1024.0 * 1024.0);
-		props["Memory Physical Size"] = std::format("{:.2f} MiB", physicalSizeMiB);
-
-		props["OAM Socket ID"] = "N/A";
-
-		pcieMaxLinkWidth(d, &outputLine);
-		props["PCIe Max Link Width"] = outputLine;
-
-		deviceID(d, &outputLine);
-		props["Device ID"] = outputLine;
-
-		deviceName(d, &outputLine);
-		props["Device Name"] = outputLine;
-
-		vendorName(d, &outputLine);
-		props["Vendor Name"] = outputLine;
-
-		socUuid(d, &outputLine);
-		props["SOC UUID"] = outputLine;
-
-		serialNumber(d, &outputLine);
-		props["Serial Number"] = outputLine;
-
-		auto zeDevProp = ze_device_properties_t{};
-		d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-		props["Core Clock Rate"] = std::format("{} MHz", zeDevProp.coreClockRate);
-
-		stepping(d, &outputLine);
-		props["Stepping"] = outputLine;
-
-		driverVersion(d, &outputLine);
-		props["Driver Version"] = outputLine;
-
-		gfxFirmwareVersion(d, &outputLine);
-		props["GFX Firmware Version"] = outputLine;
-
-		gfxDataFirmwareVersion(d, &outputLine);
-		props["GFX Data Firmware Version"] = outputLine;
-
-		pciBDFAddress(d, &outputLine);
-		props["PCI BDF Address"] = outputLine;
-
-		pciSlot(d, &outputLine);
-		props["PCI Slot"] = outputLine;
-
-		pcieGeneration(d, &outputLine);
-		props["PCIe Generation"] = outputLine;
 	}
+	deviceID(d, &outputLine);
+	props["device_id"] = outputLine;
+
+	deviceName(d, &outputLine);
+	props["device_name"] = outputLine;
+
+	vendorName(d, &outputLine);
+	props["vendor_name"] = outputLine;
+
+	socUuid(d, &outputLine);
+	props["uuid"] = outputLine;
+
+	serialNumber(d, &outputLine);
+	props["serial_number"] = outputLine;
+
+	stepping(d, &outputLine);
+	props["device_stepping"] = outputLine;
+
+	driverVersion(d, &outputLine);
+	props["driver_version"] = outputLine;
+
+	gfxFirmwareVersion(d, &outputLine);
+	props["gfx_firmware_version"] = outputLine;
+
+	gfxDataFirmwareVersion(d, &outputLine);
+	props["gfx_data_firmware_version"] = outputLine;
+
+	pciBDFAddress(d, &outputLine);
+	props["pci_bdf_address"] = outputLine;
+
+	pciSlot(d, &outputLine);
+	props["pci_slot"] = outputLine;
+
+	pcieGeneration(d, &outputLine);
+	props["pcie_generation"] = outputLine;
+
+	pcieMaxLinkWidth(d, &outputLine);
+	props["pcie_max_link_width"] = outputLine;
+
+	memoryChannels(d, &outputLine);
+	props["number_of_memory_channels"] = outputLine;
+
+	memoryBusWidth(d, &outputLine);
+	props["memory_bus_width"] = outputLine;
+
+	eus(d, &outputLine);
+	props["number_of_eus"] = outputLine;
+
+	mediaEngines(d, &outputLine);
+	props["number_of_media_engines"] = outputLine;
+
+	mediaEnhancementEngines(d, &outputLine);
+	props["number_of_media_enh_engines"] = outputLine;
+
+	props["gfx_firmware_name"] = "GFX";
+	props["gfx_data_firmware_name"] = "GFX_DATA";
+
+	gfxFirmwareStatus(d, &outputLine);
+	props["gfx_firmware_status"] = outputLine;
+
+	gfxPscBinFirmwareName(d, &outputLine);
+	props["gfx_pscbin_firmware_name"] = outputLine;
+
+	gfxPscBinFirmwareVersion(d, &outputLine);
+	props["gfx_pscbin_firmware_version"] = outputLine;
+
+	opromCodeFirmwareName(d, &outputLine);
+	props["oprom_code_firmware_name"] = outputLine;
+
+	opromCodeFirmwareVersion(d, &outputLine);
+	props["oprom_code_firmware_version"] = outputLine;
+
+	opromDataFirmwareName(d, &outputLine);
+	props["oprom_data_firmware_name"] = outputLine;
+
+	opromDataFirmwareVersion(d, &outputLine);
+	props["oprom_data_firmware_version"] = outputLine;
+
+	uint64_t physicalSize = 0;
+	auto *const m = d->dev->getMemory();
+	m->getMemorySize(&physicalSize);
+	double physicalSizeMiB = static_cast<double>(physicalSize) / (1024.0 * 1024.0);
+	props["memory_physical_size"] = std::format("{:.2f} MiB", physicalSizeMiB);
+	props["memory_physical_size_byte"] = std::to_string(physicalSize);
+
+	pciVendorID(d, &outputLine);
+	props["pci_vendor_id"] = outputLine;
+
+	pciDeviceID(d, &outputLine);
+	props["pci_device_id"] = outputLine;
+
+	numberOfTiles(d, &outputLine);
+	props["number_of_tiles"] = outputLine;
+
+	numberOfSlices(d, &outputLine);
+	props["number_of_slices"] = outputLine;
+
+	numberOfSubslicesPerSlice(d, &outputLine);
+	props["number_of_sub_slices_per_slice"] = outputLine;
+
+	numberOfEUsPerSubslice(d, &outputLine);
+	props["number_of_eus_per_sub_slice"] = outputLine;
+
+	numberOfThreadsPerEU(d, &outputLine);
+	props["number_of_threads_per_eu"] = outputLine;
+
+	physicalEUSimdWidth(d, &outputLine);
+	props["physical_eu_simd_width"] = outputLine;
+
+	maxCommandQueuePriority(d, &outputLine);
+	props["max_command_queue_priority"] = outputLine;
+
+	maxHardwareContexts(d, &outputLine);
+	props["max_hardware_contexts"] = outputLine;
+
+	maxMemAllocSize(d, &outputLine);
+	props["max_mem_alloc_size_byte"] = outputLine;
+
+	memoryFreeSize(d, &outputLine);
+	props["memory_free_size_byte"] = outputLine;
+
+	memoryEccState(d, &outputLine);
+	props["memory_ecc_state"] = outputLine;
+
+	kernelVersion(d, &outputLine);
+	props["kernel_version"] = outputLine;
+
+	drmDevice(d, &outputLine);
+	props["drm_device"] = outputLine;
+
+	deviceType(d, &outputLine);
+	props["device_type"] = outputLine;
+
+	skuType(d, &outputLine);
+	props["sku_type"] = outputLine;
+
+	pcieMaxBandwidth(d, &outputLine);
+	props["pcie_max_bandwidth"] = outputLine;
+
+	props["oam_socket_id"] = "N/A";
+
+	auto zeDevProp = ze_device_properties_t{};
+	d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	props["core_clock_rate"] = std::format("{} MHz", zeDevProp.coreClockRate);
 
 	return result;
 }
