@@ -32,6 +32,8 @@ func createMetricsProcessor(ctx context.Context, settings processor.Settings, pc
 		return nil, fmt.Errorf("invalid config type: %T", pcfg)
 	}
 
+	cfg.setDefaults()
+
 	p := newXpuHealthProcessor(cfg, settings)
 
 	return processorhelper.NewMetrics(

@@ -10,6 +10,7 @@ import (
 	"math"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
 // Config defines configuration for the processor.
@@ -175,4 +176,29 @@ func (f *AttributeFilter) validate() error {
 		}
 	}
 	return nil
+}
+
+func (f *AttributeFilter) match(attrs pcommon.Map) bool {
+	val, ok := attrs.Get(f.Key)
+	if !ok {
+		return false
+	}
+	for _, v := range f.Values {
+		if val.Str() == v {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *ConditionRule) match(value float64, parentAttrs pcommon.Map) bool {
+	if value < r.Value {
+		return false
+	}
+	for _, filter := range r.ParentFilters {
+		if !filter.match(parentAttrs) {
+			return false
+		}
+	}
+	return true
 }
