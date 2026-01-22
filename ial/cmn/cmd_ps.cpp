@@ -100,8 +100,15 @@ void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
 // NOLINTNEXTLINE (readability-identifier-naming) // nlohmann_json requires to_json for ADL
 void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
 {
+	// Clean process name by truncating at first null character
+	std::string cleanProcessName = procInfo.commandName;
+	size_t nullPos = cleanProcessName.find('\0');
+	if (nullPos != std::string::npos) {
+		cleanProcessName = cleanProcessName.substr(0, nullPos);
+	}
+
 	jsonObj = nlohmann::ordered_json{{"process_id", procInfo.processId},
-									 {"process_name", procInfo.commandName},
+									 {"process_name", cleanProcessName},
 									 {"device_id", procInfo.devId},
 									 {"shared_mem_size", procInfo.sharedSize},
 									 {"mem_size", procInfo.memSize}};
@@ -202,7 +209,8 @@ int cmdPs::run(arg_struct *args)
 		DBG("Failed to get process information. Returned with error: %d\n", result);
 		return result;
 	}
-	auto jsonObj = std::make_unique<nlohmann::ordered_json>(psInfoList);
+	auto jsonObj =
+		std::make_unique<nlohmann::ordered_json>(nlohmann::ordered_json{{"device_util_by_proc_list", psInfoList}});
 
 	if (psCmds[psCmdType::PS_JSON].enabled == true) {
 		printer = std::make_unique<JsonPrinter>();
