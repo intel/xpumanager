@@ -48,6 +48,7 @@ typedef wchar_t TCHAR;
 #define GETDRMPATH(bdf) getDrmPath(bdf)
 #define CHECKPERMISSION() checkPermission()
 #define CHECKPROCESSEXCLUSIVE(processId) checkProcessExclusive(processId)
+#define CHECKCPUSTATUS() checkCPUStatus()
 #define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
 #define REMOVEVFS(deviceInfoPtr) removeAllVFs(deviceInfoPtr)
 #define LISTVFS(deviceInfoPtr, result) linListVFs(deviceInfoPtr, result)
@@ -56,10 +57,10 @@ typedef wchar_t TCHAR;
 #define SRIOVSUPPORT(deviceInfoPtr) isSriovSupported(deviceInfoPtr)
 #define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult) checkMediaCodec(bdfStr, functionalCheck, finalResult)
 #define CHECKHOSTMEMORYSIZE(hostMemorySize) checkHostMemorySize(hostMemorySize)
+#define CHECKPCIELINKSTATUS(bdf) checkPCIeLinkStatus(bdf)
 #define GETDOWNGRADEDPCIEINFO(bdfStr) getDowngradedPCIeInfo(bdfStr);
 #define GETKERNELVERSION() getKernelVersion()
 #define GETPCISLOTLABEL(bdf) getPciSlotLabel(bdf)
-
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
 	*(pFile) = fopen(filename, mode);
@@ -93,6 +94,7 @@ int getTopology(bdfID bdf, std::string *switchDevicePath);
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 int getLinLogs(const std::string &fileName);
 bool checkPermission();
+std::string checkCPUStatus();
 bool checkProcessExclusive(uint32_t processId);
 std::string getDrmPath(const std::string &bdf);
 int linCreateVFs(DeviceSriovInfo *di);
@@ -103,6 +105,7 @@ bool isIommuSupported();
 bool isSriovSupported(DeviceSriovInfo *di);
 bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &finalResult);
 bool checkHostMemorySize(uint64_t *hostMemorySize);
+bool checkPCIeLinkStatus(std::string &bdf);
 std::string getKernelVersion();
 std::string getPciSlotLabel(const std::string &bdf);
 std::string getDowngradedPCIeInfo(std::string &bdfStr);

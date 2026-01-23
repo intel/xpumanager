@@ -47,11 +47,11 @@ static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
 	{diagCmdType::DIAGJSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
 	{diagCmdType::DIAGDEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
 	{diagCmdType::LEVEL, {{"level", required_argument, 0, 'l'}, &cmdDiag::level, false, ""}},
-	{diagCmdType::PRECHECK, {{"precheck", no_argument, 0, 0}, &cmdDiag::precheck, false, ""}},
+	{diagCmdType::PRECHECK, {{"precheck", no_argument, 0, 0}, nullptr, false, ""}},
 	{diagCmdType::STRESS, {{"stress", no_argument, 0, 's'}, &cmdDiag::stress, false, ""}},
 	{diagCmdType::SINGLETEST, {{"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest, false, ""}},
-	{diagCmdType::LISTTYPES, {{"listtypes", no_argument, 0, 0}, &cmdDiag::listTypes, false, ""}},
-	{diagCmdType::GPU, {{"gpu", no_argument, 0, 0}, &cmdDiag::gpu, false, ""}},
+	{diagCmdType::LISTTYPES, {{"listtypes", no_argument, 0, 0}, nullptr, false, ""}},
+	{diagCmdType::GPU, {{"gpu", no_argument, 0, 0}, nullptr, false, ""}},
 	{diagCmdType::SINCE, {{"since", required_argument, 0, 0}, &cmdDiag::runSince, false, ""}},
 	{diagCmdType::STRESSTIME, {{"stresstime", required_argument, 0, 0}, nullptr, false, ""}},
 };
@@ -192,22 +192,13 @@ static void printWrappedValue(std::string_view value1, std::string_view value2, 
 }
 
 /**
- * @brief Prints a dashed line.
- *
- */
-static void printPretty()
-{
-	PRINT("+------------------------------+-------------------------------------------------------------------+\n");
-}
-
-/**
 * @brief Prints a line with four input column values.
 t *
 */
 static void printErrorValues(const std::string &value1, const std::string &value2, const std::string &value3,
 							 const std::string &value4)
 {
-	PRINT("| %-10s | %-35s | %-25s| %-20s\n", value1.c_str(), value2.c_str(), value3.c_str(), value4.c_str());
+	PRINT("| %-10s | %-35s | %-25s| %-21s|\n", value1.c_str(), value2.c_str(), value3.c_str(), value4.c_str());
 };
 
 /**
@@ -297,98 +288,52 @@ void cmdDiag::help(HELP helpType)
 }
 
 /**
- * @brief Print pre-diagnostic check info
+ * @brief Prints Precheck information.
  *
- * This function prints preliminary validation and system check info
- * It validates prerequisites and system state before running intensive tests.
- *
- * @param[in] d Pointer to device information structure
- * @param[in] gpuOnly bool to indicate if GPU only or not
- * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
+ * @param[in] deviceList A list of device information structures.
+ * @param[in] gpuOnly A flag of GPU display.
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
  */
-ze_result_t cmdDiag::printPrecheckInfo(devInfo *d, bool gpuOnly)
+ze_result_t cmdDiag::printPrecheckInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, bool gpuOnly)
 {
 	TRACING();
-
-	zes_pci_link_status_t pciLinkStatus;
-	std::string fwStatus;
-	ze_result_t result;
 	std::string outputLine;
+	std::string resultLine;
+	std::string fwStatus;
 
-	pci *p = d->dev->getPCI();
-	if (p == nullptr) {
-		ERR("Failed to get PCI device properties.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
+	if (gpuOnly && !diagCmds[diagCmdType::PRECHECK].enabled) {
+		ERR("--gpu requires --precheck.\n");
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	outputLine = p->getBDFStr();
-	printPretty();
+	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
+	outputLine = (driverLoaded) ? "Pass" : "Fail";
+	auto componentJson = printPreCheckDetail("", "", outputLine, "Driver");
+	componentListJson->push_back(*componentJson);
 
-	if (!sysInfoShown) {
-		PRINT("| Component        |  Details                                                            |\n");
-		printPretty();
-
-		if (driverLoaded) {
-			PRINT("| Driver           |  Status: Pass                                                       |\n");
-		} else {
-			PRINT("| Driver           |  Status: Fail                                                       |\n");
-		}
-		printPretty();
-		if (!gpuOnly) {
-			PRINT("| CPU              |  CPU ID: 0                                                          |\n");
-			PRINT("|                  |  Status:                                                            |\n");
-			printPretty();
-		}
-		sysInfoShown = true;
+	if (!gpuOnly) {
+		auto componentCPUJson = printPreCheckDetail("0", "", CHECKCPUSTATUS(), "CPU");
+		componentListJson->push_back(*componentCPUJson);
 	}
 
-	PRINT("| GPU              |  BDF:                 %s                                  |\n", outputLine.c_str());
-
-	fwStatus = p->getFWStatus();
-	if (fwStatus != "normal") {
-		PRINT("|                  |  Status: Unknown                                                    |\n");
-	} else {
-		result = p->getState(d->zesDeviceHdl, pciLinkStatus);
-		if (result != ZE_RESULT_SUCCESS) {
-			pciLinkStatus = ZES_PCI_LINK_STATUS_UNKNOWN;
+	for (auto &device : deviceList) {
+		pci *p = device.dev->getPCI();
+		if (p == nullptr) {
+			ERR("Failed to get PCI device properties.\n");
+			return ZE_RESULT_ERROR_UNKNOWN;
 		}
-
-		if (pciLinkStatus != ZES_PCI_LINK_STATUS_GOOD) {
-			PRINT("|                  |  Status: Unknown                                                    |\n");
-		} else {
-			PRINT("|                  |  Status: Pass                                                       |\n");
-		}
+		outputLine = p->getBDFStr();
+		fwStatus = p->getFWStatus();
+		resultLine = ((fwStatus == "normal") && CHECKPCIELINKSTATUS(outputLine)) ? "Pass" : "Unknown";
+		auto componentGPUJson = printPreCheckDetail("", outputLine, resultLine, "GPU");
+		componentListJson->push_back(*componentGPUJson);
 	}
-	printPretty();
 
-	return ZE_RESULT_SUCCESS;
-}
+	auto devicesJson = std::make_unique<nlohmann::ordered_json>();
+	(*devicesJson)["component_list"] = *componentListJson;
 
-/**
- * @brief Performs pre-diagnostic checks before running full diagnostics
- *
- * This function executes preliminary validation and system checks to ensure
- * the device and system are ready for comprehensive diagnostic testing.
- * It validates prerequisites and system state before running intensive tests.
- *
- * @param[in] d Pointer to device information structure
- * @return ze_result_t ZE_RESULT_SUCCESS if pre-checks pass, error code otherwise
- */
-ze_result_t cmdDiag::precheck(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-
-	/*
-	 * Only run the precheck with CPU information if neither the GPU nor LISTTYPES flags are enabled.
-	 * - If the user has not requested GPU diagnostics (GPU flag) and has not requested a list of test types (LISTTYPES
-	 * flag), we perform a precheck using CPU/system information.
-	 * - If either GPU or LISTTYPES is enabled, we skip the CPU/system precheck, as those commands handle their own
-	 * checks. This logic ensures that precheck is only run in the context of a general system check, not when specific
-	 * GPU or test type diagnostics are requested.
-	 */
-	if (!diagCmds[diagCmdType::GPU].enabled && !diagCmds[diagCmdType::LISTTYPES].enabled) {
-		return printPrecheckInfo(d, false);
-	}
+	printer->print(devicesJson.get());
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -557,6 +502,45 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiag::printDiagDetail(std::string com
 	return jsonObj;
 }
 
+/**
+ * @brief Prints detailed precheck component information in JSON format
+ *
+ * @param[in] preId string for the CPU id info
+ * @param[in] preBdf string for the GPU BDF info
+ * @param[in] preStatus string for the component status info
+ * @param[in] preType string for the component type info
+ * @return std::unique_ptr<nlohmann::ordered_json> JSON object containing device details
+ */
+std::unique_ptr<nlohmann::ordered_json> cmdDiag::printPreCheckDetail(std::string preId, std::string preBdf,
+																	 std::string preStatus, std::string preType)
+{
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+
+	// Get string values first, then assign to JSON
+	if (preId != "") {
+		(*jsonObj)["id"] = preId;
+	}
+	if (preBdf != "") {
+		(*jsonObj)["bdf"] = preBdf;
+	}
+	if (preStatus != "") {
+		(*jsonObj)["status"] = preStatus;
+	}
+	if (preType != "") {
+		(*jsonObj)["type"] = preType;
+	}
+	return jsonObj;
+}
+
+/**
+ * @brief prints detailed precheck error component information in JSON format
+ *
+ * @param[in] errCategory string for the error Category info
+ * @param[in] errID string for the error id info
+ * @param[in] errSeverity string for the error Severity info
+ * @param[in] errType string for the error type info
+ * @return std::unique_ptr<nlohmann::ordered_json> JSON object containing error component details
+ */
 std::unique_ptr<nlohmann::ordered_json> cmdDiag::printErrorDetail(std::string errCategory, std::string errID,
 																  std::string errSeverity, std::string errType)
 {
@@ -571,6 +555,15 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiag::printErrorDetail(std::string er
 	return jsonObj;
 }
 
+/**
+ * @brief prints precheck error information in JSON format
+ *
+ * @param[in][out] errListJson nlohmann::ordered_json for the error info
+ * @param[in] errCategory string for the error Category info
+ * @param[in] errID string for the error id info
+ * @param[in] errSeverity string for the error Severity info
+ * @param[in] preType string for the error type info
+ */
 void cmdDiag::printErrorInfo(nlohmann::ordered_json *errListJson, std::string errCategory, std::string errID,
 							 std::string errSeverity, std::string errType)
 {
@@ -578,6 +571,14 @@ void cmdDiag::printErrorInfo(nlohmann::ordered_json *errListJson, std::string er
 	errListJson->push_back(*errJson);
 }
 
+/**
+ * @brief prints single diagnostic test information in JSON format
+ * @param[in] d pointer to device information structure
+ * @param[in] jsonObj nlohmann::ordered_json pointer
+ * @param[in] type string for the test type info
+ * @param[in] msg string for the test message info
+ * @param[in] result string for the test result info
+ */
 void cmdDiag::printSingleDiagInfo(devInfo *d, nlohmann::ordered_json *jsonObj, std::string type, std::string msg,
 								  std::string result)
 {
@@ -701,7 +702,7 @@ ze_result_t cmdDiag::level(devInfo *d, nlohmann::ordered_json *jsonObj)
  * @param[in] d Pointer to device information structure containing device context
  * @return ze_result_t ZE_RESULT_SUCCESS if test completes successfully, error code otherwise
  */
-ze_result_t cmdDiag::runSingleTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::runSingleTest(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 {
 	TRACING();
@@ -805,7 +806,7 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d, UNUSED nlohmann::ordered_json *js
  * @param[in] d Pointer to the device information structure.
  * @return ze_result_t Returns ZE_RESULT_SUCCESS on success, or an appropriate error code on failure.
  */
-ze_result_t cmdDiag::computation(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::computation(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -851,7 +852,7 @@ ze_result_t cmdDiag::computation(devInfo *d, UNUSED nlohmann::ordered_json *json
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if memory tests pass, error code otherwise
  */
-ze_result_t cmdDiag::memoryError(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::memoryError(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -901,7 +902,7 @@ ze_result_t cmdDiag::memoryError(devInfo *d, UNUSED nlohmann::ordered_json *json
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if allocation tests complete, error code otherwise
  */
-ze_result_t cmdDiag::memoryAllocation(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::memoryAllocation(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 	std::string msg;
@@ -946,7 +947,7 @@ ze_result_t cmdDiag::memoryAllocation(devInfo *d, UNUSED nlohmann::ordered_json 
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if bandwidth tests complete, error code otherwise
  */
-ze_result_t cmdDiag::memoryBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::memoryBandwidth(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -996,7 +997,7 @@ ze_result_t cmdDiag::memoryBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if media tests pass, error code otherwise
  */
-ze_result_t cmdDiag::mediaCodec(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::mediaCodec(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -1037,7 +1038,7 @@ ze_result_t cmdDiag::mediaCodec(devInfo *d, UNUSED nlohmann::ordered_json *jsonO
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if PCIe tests complete, error code otherwise
  */
-ze_result_t cmdDiag::pcieBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::pcieBandwidth(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -1095,7 +1096,7 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *js
  * @param[in] d Pointer to the device information structure containing the device handle and context
  * @return ze_result_t ZE_RESULT_SUCCESS on successful test completion, or an error code on failure
  */
-ze_result_t cmdDiag::powerTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::powerTest(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -1148,7 +1149,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonOb
  * @param[in] d Pointer to device information structure
  * @return ze_result_t ZE_RESULT_SUCCESS if functional tests pass, error code otherwise
  */
-ze_result_t cmdDiag::computationFuncTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::computationFuncTest(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -1194,7 +1195,7 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d, UNUSED nlohmann::ordered_js
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS if media functional tests pass, error code otherwise
  */
-ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
@@ -1263,8 +1264,7 @@ ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d, UNUSED nlohmann
  * output displays, providing consistent visual formatting for tabular
  * diagnostic results and error type listings.
  */
-
-ze_result_t cmdDiag::listTypes(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
+ze_result_t cmdDiag::printListTypes(std::unique_ptr<Printer> &printer)
 {
 	TRACING();
 
@@ -1293,32 +1293,20 @@ ze_result_t cmdDiag::listTypes(UNUSED devInfo *d, nlohmann::ordered_json *jsonOb
 	printErrorInfo(errListJson.get(), "Hardware", "16", "Critical", "GPU Initialization Failed");
 	printErrorInfo(errListJson.get(), "Kernel Mode Driver", "17", "High", "MEI Error");
 
-	(*jsonObj)["error_type_list"] = *errListJson;
+	auto errsJson = std::make_unique<nlohmann::ordered_json>();
+	(*errsJson)["error_type_list"] = *errListJson;
+	printer->print(errsJson.get());
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Displays GPU status information for diagnostics
+ * @brief get key display name for an input key
  *
- * This function shows current GPU status and health information as part
- * of the diagnostic precheck process. It provides system state validation
- * and GPU operational status reporting.
- *
- * @param[in] d Pointer to device information structure
- * @return ze_result_t ZE_RESULT_SUCCESS if GPU status retrieval completes, error code otherwise
+ * This utility function provides key display name for an input key used in diagnostic
+ * output displays
+ * @param[in] key reference to std::string &key
  */
-ze_result_t cmdDiag::gpu(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-	if (!diagCmds[diagCmdType::PRECHECK].enabled) {
-		ERR("--gpu requires --precheck.\n");
-		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-	return printPrecheckInfo(d, true);
-}
-
 std::string getKeyDisplayName(const std::string &key)
 {
 	static const std::unordered_map<std::string, std::string> keyDisplayMap = {
@@ -1346,6 +1334,13 @@ std::string getKeyDisplayName(const std::string &key)
 	return key;
 }
 
+/**
+ * @brief Prints test format for diagnostic output
+ *
+ * This utility function prints formatted text info used in diagnostic
+ * output displays
+ * @param[in] jsonObj Pointer to nlohmann::ordered_json object structure
+ */
 void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
@@ -1435,16 +1430,39 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			printPretty(maxCol1Width, col2Width);
 		}
 	} else if (jsonObj->contains("error_type_list")) {
+		const size_t col2Width = totalWidth - maxCol1Width;
+		printPretty(maxCol1Width - 5, col2Width);
 		printErrorValues("Error ID", "Error Type", "Error Category", "Error Severity");
-		printPretty();
+		printPretty(maxCol1Width - 5, col2Width);
 		for (const auto &component : (*jsonObj)["error_type_list"]) {
 			printErrorValues(valueToString(component["error_id"]), valueToString(component["error_type"]),
 							 valueToString(component["error_category"]), valueToString(component["error_severity"]));
+			printPretty(maxCol1Width - 5, col2Width);
+		}
 
-			printPretty();
+	} else if (jsonObj->contains("component_list")) {
+		const size_t col2Width = totalWidth - maxCol1Width - 25;
+		printPretty(maxCol1Width, col2Width);
+		printValue("Component", "Details", maxCol1Width, col2Width);
+		printPretty(maxCol1Width, col2Width);
+		for (auto &component : (*jsonObj)["component_list"]) {
+			if (component["type"].get<std::string>() == "Driver") {
+				printValue(component["type"].get<std::string>(), "Status: " + component["status"].get<std::string>(),
+						   maxCol1Width, col2Width);
+			} else if (component["type"].get<std::string>() == "CPU") {
+				printValue(component["type"].get<std::string>(), "CPU ID: " + component["id"].get<std::string>(),
+						   maxCol1Width, col2Width);
+				printValue("", "Status: " + component["status"].get<std::string>(), maxCol1Width, col2Width);
+			} else if (component["type"].get<std::string>() == "GPU") {
+				printValue(component["type"].get<std::string>(), "BDF: " + component["bdf"].get<std::string>(),
+						   maxCol1Width, col2Width);
+				printValue("", "Status: " + component["status"].get<std::string>(), maxCol1Width, col2Width);
+			}
+			printPretty(maxCol1Width, col2Width);
 		}
 	}
 }
+
 /**
  * @brief Executes time-based log scanning for diagnostic precheck
  *
@@ -1569,31 +1587,38 @@ int cmdDiag::run(arg_struct *args)
 	}
 
 	driverLoaded = args->sm.isDriverLoaded();
-	sysInfoShown = false;
+	if (diagCmds[diagCmdType::LISTTYPES].enabled) {
+		printListTypes(printer);
+	} else if (diagCmds[diagCmdType::GPU].enabled) {
+		printPrecheckInfo(deviceList, printer, true);
+	} else if (diagCmds[diagCmdType::PRECHECK].enabled && !diagCmds[diagCmdType::GPU].enabled &&
+			   !diagCmds[diagCmdType::LISTTYPES].enabled) {
+		printPrecheckInfo(deviceList, printer, false);
+	} else {
+		INFO("Running diagnostics can take several minutes to complete.\n");
+		// Iterate through the device list and execute the command
+		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+		// JSON object to collect diagnostic results for all devices and commands
+		for (auto &device : deviceList) {
+			if (device.dev->isIGPU()) {
+				DBG("Diagnostics are only supported on discrete GPUs so skipping device %d.\n", device.index);
+				continue;
+			}
 
-	INFO("Running diagnostics can take several minutes to complete.\n");
-	// Iterate through the device list and execute the command
-	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
-	// JSON object to collect diagnostic results for all devices and commands
-	for (auto &device : deviceList) {
-		if (device.dev->isIGPU()) {
-			DBG("Diagnostics are only supported on discrete GPUs so skipping device %d.\n", device.index);
-			continue;
-		}
-
-		// Call the appropriate command function based on the command type
-		for (const auto &cmd : diagCmds) {
-			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: %s\n", cmd.second.opt.name);
-				result = (this->*cmd.second.func)(&device, jsonObj.get());
-				if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
-					DBG("Exiting command: %s\n", cmd.second.opt.name);
-					break;
+			// Call the appropriate command function based on the command type
+			for (const auto &cmd : diagCmds) {
+				if (cmd.second.enabled && cmd.second.func != nullptr) {
+					DBG("Running command: %s\n", cmd.second.opt.name);
+					result = (this->*cmd.second.func)(&device, jsonObj.get());
+					if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
+						DBG("Exiting command: %s\n", cmd.second.opt.name);
+						break;
+					}
 				}
 			}
 		}
-	}
 
-	printer->print(jsonObj.get());
+		printer->print(jsonObj.get());
+	}
 	return result;
 }
