@@ -220,6 +220,7 @@ func (m *metricHwGpuInfo) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuInfo(cfg MetricConfig) metricHwGpuInfo {
 	m := metricHwGpuInfo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -278,6 +279,7 @@ func (m *metricHwGpuSpeed) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuSpeed(cfg MetricConfig) metricHwGpuSpeed {
 	m := metricHwGpuSpeed{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -336,6 +338,7 @@ func (m *metricHwGpuSpeedLimit) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuSpeedLimit(cfg MetricConfig) metricHwGpuSpeedLimit {
 	m := metricHwGpuSpeedLimit{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -393,6 +396,7 @@ func (m *metricHwGpuSpeedRequest) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuSpeedRequest(cfg MetricConfig) metricHwGpuSpeedRequest {
 	m := metricHwGpuSpeedRequest{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -451,6 +455,7 @@ func (m *metricHwGpuSpeedSamples) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuSpeedSamples(cfg MetricConfig) metricHwGpuSpeedSamples {
 	m := metricHwGpuSpeedSamples{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -512,6 +517,7 @@ func (m *metricHwGpuSpeedStatus) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuSpeedStatus(cfg MetricConfig) metricHwGpuSpeedStatus {
 	m := metricHwGpuSpeedStatus{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -569,6 +575,7 @@ func (m *metricHwMemorySize) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwMemorySize(cfg MetricConfig) metricHwMemorySize {
 	m := metricHwMemorySize{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -626,6 +633,7 @@ func (m *metricHwMemoryUsage) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwMemoryUsage(cfg MetricConfig) metricHwMemoryUsage {
 	m := metricHwMemoryUsage{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -684,6 +692,7 @@ func (m *metricHwStatus) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwStatus(cfg MetricConfig) metricHwStatus {
 	m := metricHwStatus{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -740,6 +749,7 @@ func (m *metricHwTemperature) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwTemperature(cfg MetricConfig) metricHwTemperature {
 	m := metricHwTemperature{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
