@@ -1819,8 +1819,8 @@ int cmdDump::run(arg_struct *args)
 
 	// Perform an initial "warm-up" iteration to initialize baseline data for metrics that need two samples
 	// This prevents empty values in the first real iteration
-	// Always do warm-up except when user specified -n 1 (single iteration mode)
-	bool skipOutput = (iter != 1);
+	// Always do warm-up iteration for all cases including -n 1
+	bool skipOutput = true;
 
 	while (running) {
 		total = 0;
