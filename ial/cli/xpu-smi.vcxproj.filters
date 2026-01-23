@@ -60,7 +60,7 @@
     <ClCompile Include="..\cmn\cmd_agentset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\cmn\cmd_amcsensor.cpp">
+    <ClCompile Include="..\cmn\cmd_amc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\cmn\cmd_oob.cpp">
@@ -137,7 +137,7 @@
     <ClInclude Include="..\cmn\cmd_agentset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\cmn\cmd_amcsensor.h">
+    <ClInclude Include="..\cmn\cmd_amc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\cmn\cmd_oob.h">

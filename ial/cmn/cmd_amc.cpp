@@ -7,18 +7,65 @@
 #include "cmd_amc.h"
 #include "debug.h"
 #include "amclib.h"
+#include "printer.h"
 #include <atomic>
 #include <thread>
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <algorithm>
+#include <nlohmann/json.hpp>
 
 static std::unordered_map<amcSubCmdType, amcSubCmdStruct> amcCmds = {
 	{AMC_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
 	{AMC_GPURESET, {{"gpureset", no_argument, 0, 0}, &cmdAmc::gpuReset, false, ""}},
+	{AMC_SENSOR, {{"sensor", no_argument, 0, 0}, &cmdAmc::readSensor, false, ""}},
+	{AMC_SENSORID, {{"sensorid", required_argument, 0, 's'}, nullptr, false, ""}},
 	{AMC_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
 	{AMC_YES, {{"yes", no_argument, 0, 'y'}, nullptr, false, ""}},
+	{AMC_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
 };
+
+AmcTextPrinter::AmcTextPrinter() : TextPrinter() {}
+
+/**
+ * @brief Prints detailed AMC sensor device information
+ *
+ * This function formats and prints detailed information about the AMC sensor
+ * device, including device identifier, sensor ID, and various sensor readings.
+ *
+ * @param[in] jsonObj Pointer to the JSON object containing AMC sensor data
+ */
+void AmcTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
+{
+	PRINT("| Device: %s\n", (*jsonObj)["device"].get<std::string>().c_str());
+	if (jsonObj->contains("sensor_id")) {
+		PRINT("| Sensor ID: %d\n", (*jsonObj)["sensor_id"].get<int>());
+	}
+	for (auto &item : jsonObj->items()) {
+		if (item.key() == "device" || item.key() == "sensor_id") {
+			continue;
+		}
+		std::string value;
+		if (item.value().is_string()) {
+			value = item.value().get<std::string>();
+		} else {
+			value = item.value().dump();
+		}
+		PRINT("| %s: %s\n", item.key().c_str(), value.c_str());
+	}
+	PRINT("\n");
+}
+
+/**
+ * @brief Prints the AMC sensor information in text format
+ *
+ * This function overrides the base class print method to format and display
+ * AMC sensor information in a human-readable text format.
+ *
+ * @param[in] jsonObj Pointer to the JSON object containing AMC sensor data
+ */
+void AmcTextPrinter::print(nlohmann::ordered_json *jsonObj) { printDeviceInfo(jsonObj); }
 /**
  * @brief Displays help information for the AMC command
  *
@@ -39,17 +86,30 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -y", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId] -y", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId] -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "--gpureset                  Reset GPU(s) via AMC"));
-	helpList.push_back(helpCmd(
-		HEADING,
-		"-d,--device                 Specify the device ID. If not specified, operation applies to all devices"));
+	helpList.push_back(helpCmd(HEADING, "--sensor                    Read AMC real-time sensor readings"));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 Specify the device ID or PCI BDF address"));
+	helpList.push_back(
+		helpCmd(HEADING, "-s,--sensorid               Specify the sensor ID (Sensor IDs are listed below)"));
 	helpList.push_back(helpCmd(HEADING, "-y,--yes                    Skip confirmation prompt"));
+	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "Sensor IDs (used with -s/--sensorid):"));
+	helpList.push_back(helpCmd(SUB_HEADING, "1. Temperature Sensor 0 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "2. Temperature Sensor 1 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "3. VR Voltage from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "4. VR Current from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "5. VR Power from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "6. VR Temperature Sensor"));
+	helpList.push_back(helpCmd(SUB_HEADING, "7. Total Board Power"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "WARNING:"));
-	helpList.push_back(helpCmd(HEADING, "  - This operation may require root/administrator privileges"));
+	helpList.push_back(helpCmd(HEADING, "  - The operation may require root/administrator privileges"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -97,6 +157,13 @@ int cmdAmc::run(arg_struct *args)
 			break;
 		case 'y':
 			amcCmds[AMC_YES].enabled = true;
+			break;
+		case 'j':
+			amcCmds[AMC_JSON].enabled = true;
+			break;
+		case 's':
+			amcCmds[AMC_SENSORID].enabled = true;
+			amcCmds[AMC_SENSORID].val = optarg;
 			break;
 		case 0: {
 			bool found = false;
@@ -191,6 +258,7 @@ int cmdAmc::run(arg_struct *args)
  */
 ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 {
+	TRACING();
 	int deviceId = -1;
 	if (amcCmds[AMC_DEVICE].enabled) {
 		try {
@@ -279,6 +347,95 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		PRINT("\nGPU reset successfully completed on all devices via AMC\n");
 	} else {
 		PRINT("\nGPU reset successfully completed on device %d via AMC\n", deviceId);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Executes the AMC sensor monitoring command
+ *
+ * This function implements the main execution logic for the AMC sensor command,
+ * parsing command line arguments and retrieving real-time sensor readings from
+ * the Advanced Management Controller. It supports both standard and JSON output
+ * formats for sensor data presentation.
+ *
+ * @param[in] amc Pointer to initialized AMC library instance
+ * @param[in] numCards Number of available AMC devices
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ */
+ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
+{
+	TRACING();
+	if (!amcCmds[AMC_DEVICE].enabled || amcCmds[AMC_DEVICE].val.empty()) {
+		ERR("Device ID must be specified with --device option.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!amcCmds[AMC_SENSORID].enabled || amcCmds[AMC_SENSORID].val.empty()) {
+		ERR("Sensor ID must be specified with --sensorid option.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	int deviceIndex = -1;
+	if (std::all_of(amcCmds[AMC_DEVICE].val.begin(), amcCmds[AMC_DEVICE].val.end(), ::isdigit)) {
+		try {
+			deviceIndex = std::stoi(amcCmds[AMC_DEVICE].val);
+		} catch (const std::exception &) {
+			ERR("Device index '%s' is out of range.\n", amcCmds[AMC_DEVICE].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (deviceIndex < 0 || deviceIndex >= numCards) {
+			ERR("Device index %d is out of range. Valid range is 0 to %d.\n", deviceIndex, numCards - 1);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	} else {
+		deviceIndex = amc->amcGetIndex(amcCmds[AMC_DEVICE].val);
+		if (deviceIndex < 0) {
+			ERR("No AMC card found for GPU BDF: %s\n", amcCmds[AMC_DEVICE].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	nlohmann::ordered_json outputJson;
+	if (amcCmds[AMC_SENSORID].enabled) {
+		if (!std::all_of(amcCmds[AMC_SENSORID].val.begin(), amcCmds[AMC_SENSORID].val.end(), ::isdigit)) {
+			ERR("Invalid sensor ID: %s. Sensor ID must be a numeric value.\n", amcCmds[AMC_SENSORID].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		int sensorId;
+		try {
+			sensorId = std::stoi(amcCmds[AMC_SENSORID].val);
+			if (sensorId > UINT16_MAX) {
+				throw std::out_of_range("Sensor ID exceeds 16-bit limit");
+			}
+		} catch (const std::exception &) {
+			ERR("Sensor ID '%s' is out of range (0-65535).\n", amcCmds[AMC_SENSORID].val.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		std::vector<amcSensorInfo> sensorInfo;
+		int ret = amc->amcGetSensorInfoBySensorId(deviceIndex, static_cast<uint16_t>(sensorId), sensorInfo);
+		if (ret != 0) {
+			ERR("Failed to get AMC sensor info for sensor ID %d on device %s.\n", sensorId,
+				amcCmds[AMC_DEVICE].val.c_str());
+			return ZE_RESULT_ERROR_UNINITIALIZED;
+		}
+
+		outputJson["device"] = amcCmds[AMC_DEVICE].val;
+		outputJson["sensor_id"] = sensorInfo[0].sensorId;
+		outputJson["sensor_value"] = sensorInfo[0].sensorReading;
+	}
+
+	std::unique_ptr<Printer> printer;
+	if (amcCmds[AMC_JSON].enabled) {
+		printer = std::make_unique<JsonPrinter>();
+	} else {
+		printer = std::make_unique<AmcTextPrinter>();
+	}
+	if (!outputJson.empty()) {
+		printer->print(&outputJson);
 	}
 
 	return ZE_RESULT_SUCCESS;
