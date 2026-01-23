@@ -426,6 +426,43 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 }
 
 /**
+ * @brief Perform AMC reset via PLDM Platform Monitoring & Control
+ *
+ * Resets the Add-in Card Management Controller (AMC) for the specified card.
+ *
+ * @param [in] cardNum Zero-based card number to reset (0 to numCards-1)
+ *
+ * @return Status of reset operation
+ * @retval 0 Reset command sent successfully
+ * @retval -1 Invalid card number or reset command failed
+ *
+ */
+int amclib::amcGpuReset(uint32_t cardNum)
+{
+	TRACING();
+
+	if (cardNum >= static_cast<uint32_t>(numCards)) {
+		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
+		return -1;
+	}
+
+	if (pldmobj[cardNum] == nullptr) {
+		ERR("PLDM object not initialized for card %d\n", cardNum);
+		return -1;
+	}
+
+	DBG("Initiating AMC reset for card %d\n", cardNum);
+
+	// Execute the AMC reset command
+	if (pldmobj[cardNum]->amcGpuReset() != PLDM_SUCCESS) {
+		ERR("Failed to reset AMC for card %d\n", cardNum);
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Initialize Redfish connection with manual configuration
  *
  * Initializes a Redfish connection using provided credentials and IP address.
