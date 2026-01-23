@@ -20,6 +20,9 @@
 #include <unistd.h>
 #include <cerrno>
 #include <algorithm>
+#include <thread>
+#include <chrono>
+#include <numeric>
 #include "lin.h"
 
 #define MEDIA_CODER_TOOLS "/usr/bin/sample_multi_transcode"
@@ -27,6 +30,14 @@
 #define MEDIA_CODER_TOOLS_1080P_FILE "test_stream_1080p.265"
 #define MEDIA_CODER_TOOLS_4K_FILE "test_stream_4K.265"
 #define MEDIA_CODEC_TOOLS_LIGHT_FILE "test_stream.264"
+
+struct CpuData
+{
+	bool isLoaded = false;
+	long long user, nice, system, idle, ioWait, irq, softIrq, steal;
+	long long total() const { return user + nice + system + idle + ioWait + irq + softIrq + steal; }
+	long long active() const { return total() - idle; }
+};
 
 /**
  * @brief Checks if the entry name is a renderD related device entry
@@ -46,6 +57,31 @@ bool countDevEntry(const std::string &entryName)
 	}
 
 	return std::all_of(entryName.begin() + prefix.size(), entryName.end(), [](char ch) { return std::isdigit(ch); });
+}
+
+/**
+ * @brief get CPU stats
+ *
+ * This function gets the CPU stats from /proc/stat
+ * @param null
+ * @return CPU stats data
+ */
+CpuData getCpuStats()
+{
+	CpuData data;
+	std::ifstream file("/proc/stat");
+	if (file.is_open()) {
+		std::string line;
+		std::getline(file, line); // Read first line
+		data.isLoaded = true;
+		// Format: cpu user nice system idle ioWait irq softIrq steal
+		int result = std::sscanf(line.c_str(), "cpu %lld %lld %lld %lld %lld %lld %lld %lld", &data.user, &data.nice,
+								 &data.system, &data.idle, &data.ioWait, &data.irq, &data.softIrq, &data.steal);
+		if (result == 8) {
+			data.isLoaded = true;
+		}
+	}
+	return data;
 }
 
 /**
@@ -397,4 +433,141 @@ bool checkProcessExclusive(uint32_t processId)
 	} else {
 		return true;
 	}
+}
+
+/**
+ * @brief check CPU status
+ *
+ * This function checks CPU status, including checks CPU temperature under /sys/class/thermal first, then checks
+ * working state from /proc/stat.
+ * @param null
+ * @return Pass if temperature is less than threshold and in working state, return Fail or Unknown otherwise
+ */
+std::string checkCPUStatus()
+{
+	char thermalType[1024];
+	char thermalValue[1024];
+	char path[PATH_MAX];
+	DIR *pdir = NULL;
+	struct dirent *pdirent = NULL;
+	int val = 0;
+	constexpr int cpuTempThreshold = 85;
+
+	pdir = opendir("/sys/class/thermal");
+	if (pdir == NULL) {
+		return "Unknown";
+	}
+
+	while ((pdirent = readdir(pdir)) != NULL) {
+		if (pdirent->d_name[0] == '.') {
+			continue;
+		}
+		if (strncmp(pdirent->d_name, "thermal_zone", 12) != 0) {
+			continue;
+		}
+		snprintf(path, PATH_MAX, "/sys/class/thermal/%s/type", pdirent->d_name);
+		int fd = open(path, O_RDONLY);
+		if (fd < 0) {
+			continue;
+		}
+		int cntType = static_cast<int>(read(fd, thermalType, 1024));
+		if (cntType < 0 || cntType >= 1024) {
+			close(fd);
+			continue;
+		}
+		close(fd);
+		thermalType[cntType] = 0;
+		if (strncmp(thermalType, "x86_pkg_temp", 12) == 0) {
+			snprintf(path, PATH_MAX, "/sys/class/thermal/%s/temp", pdirent->d_name);
+			fd = open(path, O_RDONLY);
+			if (fd < 0) {
+				continue;
+			}
+			int cnt = static_cast<int>(read(fd, thermalValue, 1024));
+			if (cnt < 0 || cnt >= 1024) {
+				close(fd);
+				continue;
+			}
+			thermalValue[cnt] = 0;
+			close(fd);
+			closedir(pdir);
+			val = std::stoi(thermalValue) / 1000;
+			if (val >= cpuTempThreshold) {
+				return "Fail";
+			} else {
+				// Get initial stats
+				CpuData t1 = getCpuStats();
+				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+				// Get stats after delay
+				CpuData t2 = getCpuStats();
+				if ((t1.isLoaded != true) || (t2.isLoaded != true)) {
+					return "Unknown";
+				}
+				long long totalDiff = t2.total() - t1.total();
+				long long idleDiff = t2.idle - t1.idle;
+
+				if (totalDiff > 0) {
+					//  Calculate percentage
+					float cpuPercentage =
+						100.0f * (1.0f - static_cast<float>(idleDiff) / static_cast<float>(totalDiff));
+					if (cpuPercentage >= 0) {
+						return "Pass";
+					} else {
+						return "Fail";
+					}
+				} else {
+					return "Fail";
+				}
+			}
+		}
+	}
+
+	closedir(pdir);
+	return "Unknown";
+}
+
+/* @brief check PCIe link status
+ *
+ * This function checks PCIe link status for a specific device based on device bdf
+ * @param[in] bdf references to a specific device bdf address string
+ * @return true if the link status in good condition, false otherwise
+ */
+bool checkPCIeLinkStatus(std::string &bdf)
+{
+	std::error_code ec;
+	// PCI Status Info bits (offset 0x06, 16-bit)
+	constexpr uint16_t statusDetectedParityError = 0x8000;
+	constexpr uint16_t statusSignaledSystemError = 0x4000;
+	constexpr uint16_t statusReceivedMasterAbort = 0x2000;
+	constexpr uint16_t statusReceivedTargetAbort = 0x1000;
+	constexpr uint16_t statusSignaledTargetAbort = 0x0800;
+	constexpr uint16_t statusMasterDataParityError = 0x0100;
+	constexpr uint16_t errorMask = statusDetectedParityError | statusSignaledSystemError | statusReceivedMasterAbort |
+								   statusReceivedTargetAbort | statusSignaledTargetAbort | statusMasterDataParityError;
+
+	std::string configPath = std::string("/sys/bus/pci/devices/") + bdf + std::string("/config");
+
+	if (!std::filesystem::exists(configPath, ec) || ec) {
+		return false;
+	}
+
+	// Read PCI config space status info(offset 0x06, 2 bytes)
+	std::ifstream configFile(configPath, std::ios::binary);
+	uint16_t statusInfo = 0;
+
+	if (!configFile) {
+		return false;
+	}
+	configFile.seekg(0x06);
+	configFile.read(reinterpret_cast<char *>(&statusInfo), sizeof(statusInfo));
+
+	if (!configFile) {
+		return false;
+	}
+
+	// Check if any error
+	if (statusInfo & errorMask) {
+		return false;
+	}
+	return true;
 }

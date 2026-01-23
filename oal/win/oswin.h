@@ -89,6 +89,7 @@ struct option
 #define GETLOGS(f) 0
 #define CHECKPERMISSION() 0
 #define CHECKPROCESSEXCLUSIVE(processId) (UNUSED_VAR(processId), false)
+#define CHECKCPUSTATUS() 0
 #define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult)                                                          \
 	(UNUSED_VAR(bdfStr), UNUSED_VAR(functionalCheck), UNUSED_VAR(finalResult), false)
 #define GETDRMPATH(bdf) ""
@@ -99,6 +100,7 @@ struct option
 #define IOMMUSUPPORT() 0
 #define SRIOVSUPPORT(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define CHECKHOSTMEMORYSIZE(hostMemorySize) (UNUSED_VAR(hostMemorySize), 0)
+#define CHECKPCIELINKSTATUS(bdf) (UNUSED_VAR(bdf), false)
 #define GETKERNELVERSION() std::string("")
 #define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GETDOWNGRADEDPCIEINFO(bdfStr) (UNUSED_VAR(bdfStr), false)

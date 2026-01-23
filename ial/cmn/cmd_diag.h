@@ -104,22 +104,20 @@ class cmdDiag : public cmds
 {
 private:
 	bool driverLoaded;
-	bool sysInfoShown;
 
 	static std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevelCmdStruct>>>
 		levelToDiagTests;
 
 public:
-	cmdDiag() : driverLoaded(false), sysInfoShown(false) { STRCPY_S(name, MAX_PATH, "diag"); };
+	cmdDiag() : driverLoaded(false) { STRCPY_S(name, MAX_PATH, "diag"); };
 	~cmdDiag(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t stress(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t level(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t runSingleTest(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t listTypes(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t gpu(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t printPrecheckInfo(devInfo *d, bool gpuOnly);
+	ze_result_t printListTypes(std::unique_ptr<Printer> &printer);
+	ze_result_t printPrecheckInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, bool gpuOnly);
 	ze_result_t runSince(devInfo *d, nlohmann::ordered_json *jsonObj);
 	std::unique_ptr<nlohmann::ordered_json> printDiagDetail(std::string componentType, std::string componentMsg,
 															std::string componentResult, bool finished);
@@ -129,6 +127,8 @@ public:
 															 std::string errSeverity, std::string errType);
 	void printErrorInfo(nlohmann::ordered_json *errListJson, std::string errCategory, std::string errID,
 						std::string errSeverity, std::string errType);
+	std::unique_ptr<nlohmann::ordered_json> printPreCheckDetail(std::string preId, std::string preBdf,
+																std::string preStatus, std::string preType);
 	ze_result_t checkLibrary(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t checkExclusive(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t checkAccessPermission(devInfo *d, nlohmann::ordered_json *jsonObj);
