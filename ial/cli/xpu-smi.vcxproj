@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\oal\win\win.cpp" />
     <ClCompile Include="..\cmn\cmds.cpp" />
     <ClCompile Include="..\cmn\cmd_agentset.cpp" />
+    <ClCompile Include="..\cmn\cmd_amc.cpp" />
     <ClCompile Include="..\cmn\cmd_amcsensor.cpp" />
     <ClCompile Include="..\cmn\cmd_config.cpp" />
     <ClCompile Include="..\cmn\cmd_diag.cpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\oal\fs_lock.h" />
     <ClInclude Include="..\cmn\cmds.h" />
     <ClInclude Include="..\cmn\cmd_agentset.h" />
+    <ClInclude Include="..\cmn\cmd_amc.h" />
     <ClInclude Include="..\cmn\cmd_amcsensor.h" />
     <ClInclude Include="..\cmn\cmd_config.h" />
     <ClInclude Include="..\cmn\cmd_diag.h" />

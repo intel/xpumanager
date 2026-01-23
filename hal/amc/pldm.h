@@ -14,6 +14,7 @@
 #include "pldm_fwupdate.h"
 #include "pldm_platform.h"
 #include "pldm_pdr_manager.h"
+#include "pldm_amc_gpu_reset.h"
 #include <i2c_interface.h>
 #include <mutex>
 
@@ -270,6 +271,7 @@ public:
 	uint8_t oemVrsyncCmd(uint8_t cmd);
 	int fwupdProgress() { return mProgPercent; }
 	int mProgPercent;
+	uint8_t amcGpuReset();
 };
 
 #endif // __PLDM_H

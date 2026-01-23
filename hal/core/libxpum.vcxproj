@@ -172,6 +172,7 @@
     <ClInclude Include="..\amc\pldm_fru.h" />
     <ClInclude Include="..\amc\pldm_fwpackage.h" />
     <ClInclude Include="..\amc\pldm_fwupdate.h" />
+    <ClInclude Include="..\amc\pldm_amc_gpu_reset.h" />
     <ClInclude Include="..\amc\redfish.h" />
     <ClInclude Include="..\amc\pldm_platform.h" />
     <ClInclude Include="..\amc\pldm_pdr_manager.h" />
@@ -232,6 +233,7 @@
     <ClCompile Include="..\amc\pldm_fwupdate_resp.cpp" />
     <ClCompile Include="..\amc\pldm_init.cpp" />
     <ClCompile Include="..\amc\pldm_protocol.cpp" />
+    <ClCompile Include="..\amc\pldm_amc_gpu_reset.cpp" />
     <ClCompile Include="..\amc\redfish.cpp" />
     <ClCompile Include="..\amc\pldm_platform.cpp" />
     <ClCompile Include="..\amc\pldm_pdr_manager.cpp" />
