@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
  */
 
 #include <cmd_agentset.h>
-#include <cmd_amcsensor.h>
 #include <cmd_config.h>
 #include <cmd_diag.h>
 #include <cmd_discovery.h>
