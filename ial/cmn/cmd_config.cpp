@@ -157,8 +157,7 @@ void cmdConfig::help(HELP helpType)
  * This function queries and displays comprehensive device configuration information including:
  * - Power limits (sustained, burst, peak, instantaneous)
  * - Memory ECC state (current and pending)
- * - Tile-level configurations (frequency, standby, scheduler, performance)
- * - Xe Link port status and beaconing configuration
+ * - Tile-level configurations (frequency, standby, scheduler)
  *
  * @param[in] d Device information structure containing device handle and properties.
  */
@@ -166,59 +165,133 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 {
 	TRACING();
 
-	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
-	PRINT("| Device Type  | Device ID/Tile ID | Configuration                                                  |\n");
-	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
+	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
+	PRINT("| Device Type | Device ID/Tile ID | Configuration                                                  |\n");
+	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
 
-	// Power configuration - using getLimitsExt()
+	// Power configuration - using getLimitsExt() with domain granularity
+	std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> domainLimits;
 	power *pwr = d->dev->getPower();
 	if (pwr != nullptr) {
-		std::vector<PowerLimitExt> limits;
-		if (pwr->getLimitsExt(limits) == ZE_RESULT_SUCCESS) {
-			for (const auto &limit : limits) {
-				const char *levelStr = "Unknown";
-				switch (limit.level) {
-				case ZES_POWER_LEVEL_SUSTAINED:
-					levelStr = "Sustained";
-					break;
-				case ZES_POWER_LEVEL_BURST:
-					levelStr = "Burst";
-					break;
-				case ZES_POWER_LEVEL_PEAK:
-					levelStr = "Peak";
-					break;
-				case ZES_POWER_LEVEL_INSTANTANEOUS:
-					levelStr = "Instantaneous";
-					break;
-				case ZES_POWER_LEVEL_UNKNOWN:
-				case ZES_POWER_LEVEL_FORCE_UINT32:
-					levelStr = "Unknown";
-					break;
+		uint32_t powerCount = pwr->getPowerCount();
+		zes_pwr_handle_t *powerHandles = pwr->getPowerHandles();
+
+		for (uint32_t i = 0; i < powerCount; ++i) {
+			zes_power_properties_t props = {};
+			zes_power_ext_properties_t extProps = {};
+			zes_power_limit_ext_desc_t defaultLimit = {};
+
+			extProps.defaultLimit = &defaultLimit;
+			extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+			props.pNext = &extProps;
+			props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+
+			if (zesPowerGetProperties(powerHandles[i], &props) == ZE_RESULT_SUCCESS) {
+				if (!props.onSubdevice) {
+					uint32_t limitCount = 0;
+					if (zesPowerGetLimitsExt(powerHandles[i], &limitCount, nullptr) == ZE_RESULT_SUCCESS) {
+						std::vector<zes_power_limit_ext_desc_t> powerExtDescs(limitCount);
+						if (zesPowerGetLimitsExt(powerHandles[i], &limitCount, powerExtDescs.data()) ==
+							ZE_RESULT_SUCCESS) {
+							for (uint32_t j = 0; j < limitCount; j++) {
+								zes_power_level_t level = static_cast<zes_power_level_t>(powerExtDescs[j].level);
+								domainLimits[extProps.domain][level] = powerExtDescs[j].limit;
+							}
+						}
+					}
 				}
-				PRINT("| GPU          | %-17d | Power Limit - %s (W): %.1f%s                      |\n", d->index,
-					  levelStr, static_cast<float>(limit.limitMw) / 1000.0f, limit.locked ? " [LOCKED]" : "");
 			}
 		}
 	}
 
-	// ECC configuration
-	ecc *e = d->dev->getECC();
-	if (e != nullptr) {
-		zes_device_ecc_properties_t state = {};
-		if (e->getState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
-			PRINT("|              |                   | Memory ECC:                                                    "
-				  "|\n");
-			PRINT("|              |                   |   Current: %-54s |\n",
-				  state.currentState == ZES_DEVICE_ECC_STATE_ENABLED ? "enabled" : "disabled");
-			PRINT("|              |                   |   Pending: %-54s |\n",
-				  state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED ? "enabled" : "disabled");
+	// Display power limits by domain (fixed order: card, package)
+	auto printPowerDomain = [&](bool showDeviceId, const char *domainStr,
+								const std::map<zes_power_level_t, uint32_t> *limits) {
+		std::string domainLabel = " Power domain " + std::string(domainStr) + ":";
+		int domainPad = 64 - static_cast<int>(domainLabel.length());
+		if (domainPad < 0) {
+			domainPad = 0;
 		}
+		if (showDeviceId) {
+			PRINT("| GPU         | %-17d |%s%*s|\n", d->index, domainLabel.c_str(), domainPad, "");
+		} else {
+			PRINT("|             |                   |%s%*s|\n", domainLabel.c_str(), domainPad, "");
+		}
+		bool found = false;
+		uint32_t value = 0;
+		if (limits != nullptr) {
+			auto it = limits->find(ZES_POWER_LEVEL_SUSTAINED);
+			if (it != limits->end()) {
+				found = true;
+				value = it->second;
+			}
+		}
+		std::string sustainStr = found ? std::to_string(value / 1000) : "N/A";
+		PRINT("|             |                   |   sustain(w): %-48s |\n", sustainStr.c_str());
+		found = false;
+		value = 0;
+		if (limits != nullptr) {
+			auto it = limits->find(ZES_POWER_LEVEL_BURST);
+			if (it != limits->end()) {
+				found = true;
+				value = it->second;
+			}
+		}
+		std::string burstStr = found ? std::to_string(value / 1000) : "N/A";
+		PRINT("|             |                   |   burst(w): %-50s |\n", burstStr.c_str());
+		found = false;
+		value = 0;
+		if (limits != nullptr) {
+			auto it = limits->find(ZES_POWER_LEVEL_PEAK);
+			if (it != limits->end()) {
+				found = true;
+				value = it->second;
+			}
+		}
+		std::string peakStr = found ? std::to_string(value / 1000) : "N/A";
+		PRINT("|             |                   |   peak(w): %-51s |\n", peakStr.c_str());
+	};
+
+	const std::map<zes_power_level_t, uint32_t> *cardLimits = nullptr;
+	const std::map<zes_power_level_t, uint32_t> *packageLimits = nullptr;
+	auto cardIt = domainLimits.find(ZES_POWER_DOMAIN_CARD);
+	if (cardIt != domainLimits.end()) {
+		cardLimits = &cardIt->second;
+	}
+	auto packageIt = domainLimits.find(ZES_POWER_DOMAIN_PACKAGE);
+	if (packageIt != domainLimits.end()) {
+		packageLimits = &packageIt->second;
 	}
 
-	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
+	printPowerDomain(true, "card", cardLimits);
+	printPowerDomain(false, "package", packageLimits);
 
-	// Display tile-level configuration - NOTE: frequency class doesn't expose tile iteration
-	// We'll need to query fabric ports to get tile info or use device properties
+	// Memory ECC configuration (avoid logging errors on unsupported devices)
+	PRINT("|             |                   |                                                                |\n");
+	PRINT("|             |                   | Memory ECC:                                                    |\n");
+	std::string eccCurrent = "N/A";
+	std::string eccPending = "N/A";
+	ze_bool_t eccAvailable = false;
+	ze_result_t eccAvailRes = zesDeviceEccAvailable(d->zesDeviceHdl, &eccAvailable);
+	if (eccAvailRes == ZE_RESULT_SUCCESS && eccAvailable) {
+		zes_device_ecc_properties_t state = {};
+		if (zesDeviceGetEccState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
+			eccCurrent = (state.currentState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
+			eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
+		}
+	}
+	PRINT("|             |                   |   Current: %-51s |\n", eccCurrent.c_str());
+	PRINT("|             |                   |   Pending: %-51s |\n", eccPending.c_str());
+
+	// PCIe Gen4 Downgrade (if available - this may not be available on all platforms)
+	// TODO: Check if there's a sysman API for this
+	PRINT("|             |                   |                                                                |\n");
+	PRINT("|             |                   | PCIe Gen4 Downgrade:                                           |\n");
+	PRINT("|             |                   |   Current: N/A%48s |\n", "");
+
+	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
+
+	// Display tile-level configuration
 	uint32_t tileCount = 0;
 	zes_device_properties_t props = {};
 	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
@@ -235,117 +308,243 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 		std::stringstream tileIdStr;
 		tileIdStr << d->index << "/" << tileId;
 
-		PRINT("| GPU          | %-17s |", tileIdStr.str().c_str());
+		PRINT("| GPU         | %-17s |", tileIdStr.str().c_str());
 
-		// Frequency - we cannot query per-tile easily with current HAL
-		// The frequency class only has device-level getRange(), not per-tile
-		// This is a HAL limitation - would need enhancement
+		// GPU Frequency
 		frequency *fq = d->dev->getFrequency();
-		if (fq != nullptr && tileId == 0) { // Only show for first tile as HAL is device-level
-			PRINT(" GPU Frequency: See device properties                           |\n");
-		} else {
-			PRINT("                                                                |\n");
+		if (fq != nullptr) {
+			std::vector<double> clocks;
+			double minFreq = 0, maxFreq = 0;
+
+			// Try to get frequency range and available clocks for this tile
+			bool gotClocks = false;
+			ze_result_t result = fq->getFreqAvailableClocks(tileId, clocks);
+			if (result == ZE_RESULT_SUCCESS && !clocks.empty()) {
+				gotClocks = true;
+			}
+
+			// Get current range - we'll query each frequency handle for this tile
+			uint32_t freqCount = 0;
+			if (zesDeviceEnumFrequencyDomains(d->zesDeviceHdl, &freqCount, nullptr) == ZE_RESULT_SUCCESS &&
+				freqCount > 0) {
+				std::vector<zes_freq_handle_t> freqHandles(freqCount);
+				if (zesDeviceEnumFrequencyDomains(d->zesDeviceHdl, &freqCount, freqHandles.data()) ==
+					ZE_RESULT_SUCCESS) {
+					// Find the GPU frequency domain for this tile
+					for (uint32_t i = 0; i < freqCount; i++) {
+						zes_freq_properties_t freqProps = {};
+						if (zesFrequencyGetProperties(freqHandles[i], &freqProps) == ZE_RESULT_SUCCESS) {
+							if (freqProps.type == ZES_FREQ_DOMAIN_GPU &&
+								(!freqProps.onSubdevice || freqProps.subdeviceId == tileId)) {
+								zes_freq_range_t range = {};
+								if (zesFrequencyGetRange(freqHandles[i], &range) == ZE_RESULT_SUCCESS) {
+									minFreq = range.min;
+									maxFreq = range.max;
+								}
+								if (!gotClocks) {
+									uint32_t count = 0;
+									if (zesFrequencyGetAvailableClocks(freqHandles[i], &count, nullptr) ==
+											ZE_RESULT_SUCCESS &&
+										count > 0) {
+										clocks.resize(count);
+										if (zesFrequencyGetAvailableClocks(freqHandles[i], &count, clocks.data()) ==
+											ZE_RESULT_SUCCESS) {
+											gotClocks = true;
+										}
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			if (minFreq > 0 || maxFreq > 0) {
+				PRINT(" GPU Min Frequency (MHz): %-37.0f |\n", minFreq);
+				PRINT("|             |                   | GPU Max Frequency (MHz): %-37.0f |\n", maxFreq);
+			} else {
+				PRINT(" GPU Min Frequency (MHz): %-37s |\n", "N/A");
+				PRINT("|             |                   | GPU Max Frequency (MHz): %-37s |\n", "N/A");
+			}
+
+			// Display valid options
+			const int firstLineBreakWidth = 43;
+			const int firstLinePrintWidth = 46;
+			const int firstContinuationBreakWidth = 55;
+			const int nextLineBreakWidth = 52;
+			const int nextLinePrintWidth = 59;
+			if (gotClocks && !clocks.empty()) {
+				bool firstLine = true;
+				int continuationLineIndex = 0;
+				std::string currentLine;
+
+				for (size_t i = 0; i < clocks.size(); i++) {
+					std::string token = std::to_string(static_cast<int>(clocks[i]));
+					std::string toAdd = currentLine.empty() ? token : ", " + token;
+					int maxWidth =
+						firstLine ? firstLineBreakWidth
+								  : (continuationLineIndex == 0 ? firstContinuationBreakWidth : nextLineBreakWidth);
+					if (static_cast<int>(currentLine.length() + toAdd.length()) > maxWidth) {
+						std::string lineOut = currentLine;
+						if (!lineOut.empty() && i < clocks.size()) {
+							lineOut += ",";
+						}
+						if (firstLine) {
+							PRINT("|             |                   |   Valid Options: %-*s|\n", firstLinePrintWidth,
+								  lineOut.c_str());
+						} else {
+							PRINT("|             |                   |     %-*s|\n", nextLinePrintWidth,
+								  lineOut.c_str());
+						}
+						if (firstLine) {
+							firstLine = false;
+						} else {
+							continuationLineIndex++;
+						}
+						currentLine = token;
+					} else {
+						currentLine += toAdd;
+					}
+				}
+
+				if (!currentLine.empty()) {
+					if (firstLine) {
+						PRINT("|             |                   |   Valid Options: %-*s|\n", firstLinePrintWidth,
+							  currentLine.c_str());
+					} else {
+						PRINT("|             |                   |     %-*s|\n", nextLinePrintWidth,
+							  currentLine.c_str());
+					}
+				}
+			} else {
+				PRINT("|             |                   |   Valid Options: %-*s|\n", firstLinePrintWidth, "N/A");
+			}
 		}
 
-		// Standby configuration
-		// Note: standby::getMode requires a standby handle as parameter
-		// Since we cannot access private members, we skip displaying standby mode
-		// The setMode function still works as it handles enumeration internally
+		PRINT("|             |                   |                                                                |\n");
 
-		// The scheduler class doesn't expose per-tile querying easily
-		// Would need to enumerate schedulers and match by subdeviceId
-		PRINT("|              |                   | Scheduler: [Use 'xpu-smi discovery' for details]              |\n");
-
-		// The performance class doesn't expose easy per-tile querying
-		PRINT("|              |                   | Performance: [Use 'xpu-smi discovery' for details]            |\n");
-
-		// Fabric/XeLink configuration
-		fabric *f = d->dev->getFabric();
-		if (f != nullptr) {
-			std::vector<portInfo> portInfoList;
-			if (f->getFabricPorts(d->zesDeviceHdl, portInfoList) == ZE_RESULT_SUCCESS && !portInfoList.empty()) {
-				PRINT("|              |                   | Xe Link ports:                                             "
-					  "    "
-					  "|\n");
-
-				std::vector<uint32_t> upPorts, downPorts, beaconingOnPorts, beaconingOffPorts;
-
-				for (const auto &pi : portInfoList) {
-					if (pi.portProps.onSubdevice && pi.portProps.subdeviceId != tileId) {
-						continue; // Skip ports not on this tile
+		// Standby Mode
+		standby *sb = d->dev->getStandby();
+		if (sb != nullptr) {
+			// Try to get standby mode for this tile
+			uint32_t standbyCount = 0;
+			if (zesDeviceEnumStandbyDomains(d->zesDeviceHdl, &standbyCount, nullptr) == ZE_RESULT_SUCCESS &&
+				standbyCount > 0) {
+				std::vector<zes_standby_handle_t> standbyHandles(standbyCount);
+				if (zesDeviceEnumStandbyDomains(d->zesDeviceHdl, &standbyCount, standbyHandles.data()) ==
+					ZE_RESULT_SUCCESS) {
+					zes_standby_promo_mode_t mode = ZES_STANDBY_PROMO_MODE_DEFAULT;
+					for (uint32_t i = 0; i < standbyCount; i++) {
+						zes_standby_properties_t sbProps = {};
+						if (zesStandbyGetProperties(standbyHandles[i], &sbProps) == ZE_RESULT_SUCCESS) {
+							if (!sbProps.onSubdevice || sbProps.subdeviceId == tileId) {
+								if (zesStandbyGetMode(standbyHandles[i], &mode) == ZE_RESULT_SUCCESS) {
+									break;
+								}
+							}
+						}
 					}
-
-					uint32_t portNum = pi.portProps.portId.portNumber;
-
-					if (pi.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY) {
-						upPorts.push_back(portNum);
-					} else {
-						downPorts.push_back(portNum);
-					}
-
-					if (pi.portConf.beaconing) {
-						beaconingOnPorts.push_back(portNum);
-					} else {
-						beaconingOffPorts.push_back(portNum);
-					}
+					const char *modeStr = (mode == ZES_STANDBY_PROMO_MODE_NEVER) ? "never" : "default";
+					PRINT("|             |                   | Standby Mode: %-48s |\n", modeStr);
 				}
+			} else {
+				PRINT("|             |                   | Standby Mode: %-48s |\n", "N/A");
+			}
+		}
+		PRINT("|             |                   |   Valid Options: %-45s |\n", "default, never");
 
-				// Display port statuses
-				if (!upPorts.empty()) {
-					std::stringstream ss;
-					for (size_t i = 0; i < upPorts.size(); i++) {
-						ss << upPorts[i];
-						if (i < upPorts.size() - 1)
-							ss << ", ";
+		PRINT("|             |                   |                                                                |\n");
+
+		// Scheduler Mode
+		scheduler *sched = d->dev->getScheduler();
+		if (sched != nullptr) {
+			uint32_t schedCount = 0;
+			if (zesDeviceEnumSchedulers(d->zesDeviceHdl, &schedCount, nullptr) == ZE_RESULT_SUCCESS && schedCount > 0) {
+				std::vector<zes_sched_handle_t> schedHandles(schedCount);
+				if (zesDeviceEnumSchedulers(d->zesDeviceHdl, &schedCount, schedHandles.data()) == ZE_RESULT_SUCCESS) {
+					for (uint32_t i = 0; i < schedCount; i++) {
+						zes_sched_properties_t schedProps = {};
+						if (zesSchedulerGetProperties(schedHandles[i], &schedProps) == ZE_RESULT_SUCCESS) {
+							if (!schedProps.onSubdevice || schedProps.subdeviceId == tileId) {
+								zes_sched_mode_t mode = {};
+								if (zesSchedulerGetCurrentMode(schedHandles[i], &mode) == ZE_RESULT_SUCCESS) {
+									const char *modeStr = "unknown";
+									switch (mode) {
+									case ZES_SCHED_MODE_TIMEOUT:
+										modeStr = "timeout";
+										break;
+									case ZES_SCHED_MODE_TIMESLICE:
+										modeStr = "timeslice";
+										break;
+									case ZES_SCHED_MODE_EXCLUSIVE:
+										modeStr = "exclusive";
+										break;
+									case ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG:
+										modeStr = "debug";
+										break;
+									default:
+										modeStr = "unknown";
+										break;
+									}
+									PRINT("|             |                   | Scheduler Mode: %-46s |\n", modeStr);
+
+									// Get mode-specific properties
+									if (mode == ZES_SCHED_MODE_TIMEOUT) {
+										zes_sched_timeout_properties_t timeoutProps = {};
+										if (zesSchedulerGetTimeoutModeProperties(schedHandles[i], 0, &timeoutProps) ==
+											ZE_RESULT_SUCCESS) {
+											PRINT("|             |                   |   Timeout (us): %-46" PRIu64
+												  " |\n",
+												  timeoutProps.watchdogTimeout);
+										} else {
+											PRINT("|             |                   |   Timeout (us): %-46s |\n",
+												  "N/A");
+										}
+									} else if (mode == ZES_SCHED_MODE_TIMESLICE) {
+										zes_sched_timeslice_properties_t timesliceProps = {};
+										if (zesSchedulerGetTimesliceModeProperties(
+												schedHandles[i], 0, &timesliceProps) == ZE_RESULT_SUCCESS) {
+											PRINT("|             |                   |   Timeout (us): %-46s |\n",
+												  "N/A");
+											PRINT("|             |                   |   Interval (us): %-45" PRIu64
+												  " |\n",
+												  timesliceProps.interval);
+											PRINT(
+												"|             |                   |   Yield Timeout (us): %-40" PRIu64
+												" |\n",
+												timesliceProps.yieldTimeout);
+										} else {
+											PRINT("|             |                   |   Timeout (us): %-46s |\n",
+												  "N/A");
+											PRINT("|             |                   |   Interval (us): %-45s |\n",
+												  "N/A");
+											PRINT("|             |                   |   Yield Timeout (us): %-40s |\n",
+												  "N/A");
+										}
+									} else {
+										PRINT("|             |                   |   Timeout (us): %-46s |\n", "N/A");
+									}
+								}
+								break;
+							}
+						}
 					}
-					PRINT("|              |                   |   Up: %-58s |\n", ss.str().c_str());
-				}
-				if (!downPorts.empty()) {
-					std::stringstream ss;
-					for (size_t i = 0; i < downPorts.size(); i++) {
-						ss << downPorts[i];
-						if (i < downPorts.size() - 1)
-							ss << ", ";
-					}
-					PRINT("|              |                   |   Down: %-56s |\n", ss.str().c_str());
-				}
-				if (!beaconingOnPorts.empty()) {
-					std::stringstream ss;
-					for (size_t i = 0; i < beaconingOnPorts.size(); i++) {
-						ss << beaconingOnPorts[i];
-						if (i < beaconingOnPorts.size() - 1)
-							ss << ", ";
-					}
-					PRINT("|              |                   |   Beaconing On: %-48s |\n", ss.str().c_str());
-				}
-				if (!beaconingOffPorts.empty()) {
-					std::stringstream ss;
-					for (size_t i = 0; i < beaconingOffPorts.size(); i++) {
-						ss << beaconingOffPorts[i];
-						if (i < beaconingOffPorts.size() - 1)
-							ss << ", ";
-					}
-					PRINT("|              |                   |   Beaconing Off: %-47s |\n", ss.str().c_str());
 				}
 			}
 		}
 
+		PRINT("|             |                   |                                                                |\n");
+
 		if (tileId < tileCount - 1) {
-			PRINT("+--------------+-------------------+----------------------------------------------------------------"
-				  "+\n");
+			PRINT("+-------------+-------------------+----------------------------------------------------------------+"
+				  "\n");
 		}
 	}
 
-	PRINT("+--------------+-------------------+----------------------------------------------------------------+\n");
+	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
 }
 
-/**
- * @brief Sets the frequency range for the device.
- *
- * @param d Device information structure.
- *
- * @return ze_result_t Result of the operation.
- */
 ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 {
 	TRACING();

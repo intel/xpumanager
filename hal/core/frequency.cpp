@@ -483,23 +483,41 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 	zes_freq_range_t range = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	bool anySuccess = false;
+	bool foundDomain = false;
 	ze_result_t lastError = ZE_RESULT_SUCCESS;
 	bool setAll = (subdeviceId == -1);
 
+	// Detect if device exposes subdevices
+	bool hasSubdevices = false;
+	uint32_t subdeviceCount = 0;
+	if (deviceHandle != nullptr) {
+		ze_result_t subDevRes = zesDeviceGetSubDevicePropertiesExp(deviceHandle, &subdeviceCount, nullptr);
+		hasSubdevices = (subDevRes == ZE_RESULT_SUCCESS && subdeviceCount > 0);
+	}
+
 	// Get subdevice mapping if tileId is specified
 	uint32_t targetSubdeviceId = 0;
+	bool useDeviceLevel = false;
 	if (!setAll) {
-		if (parentDevice == nullptr) {
-			ERR("Parent device not set. Cannot map tile to subdevice.\n");
-			return ZE_RESULT_ERROR_UNINITIALIZED;
-		}
+		if (!hasSubdevices) {
+			if (subdeviceId != 0) {
+				ERR("Invalid tileId %d. Device exposes no subdevices.\n", subdeviceId);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			useDeviceLevel = true;
+		} else {
+			if (parentDevice == nullptr) {
+				ERR("Parent device not set. Cannot map tile to subdevice.\n");
+				return ZE_RESULT_ERROR_UNINITIALIZED;
+			}
 
-		zes_subdevice_exp_properties_t subdeviceProps = {};
-		result = parentDevice->getSubdeviceProperties(static_cast<uint32_t>(subdeviceId), subdeviceProps);
-		if (result != ZE_RESULT_SUCCESS) {
-			return result;
+			zes_subdevice_exp_properties_t subdeviceProps = {};
+			result = parentDevice->getSubdeviceProperties(static_cast<uint32_t>(subdeviceId), subdeviceProps);
+			if (result != ZE_RESULT_SUCCESS) {
+				return result;
+			}
+			targetSubdeviceId = subdeviceProps.subdeviceId;
 		}
-		targetSubdeviceId = subdeviceProps.subdeviceId;
 	}
 
 	range.min = minFreq;
@@ -522,12 +540,16 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 		if (setAll) {
 			// Set all GPU domains
 			shouldSet = true;
+		} else if (useDeviceLevel) {
+			// Device exposes no subdevices; use device-level GPU domain
+			shouldSet = (!props.onSubdevice);
 		} else {
 			// Set specific subdevice only - must check onSubdevice per L0 spec
 			shouldSet = (props.onSubdevice && props.subdeviceId == targetSubdeviceId);
 		}
 
 		if (shouldSet) {
+			foundDomain = true;
 			result = zesFrequencySetRange(frequencyHandles[i], &range);
 			if (result == ZE_RESULT_SUCCESS) {
 				anySuccess = true;
@@ -561,9 +583,18 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 		return anySuccess ? ZE_RESULT_SUCCESS : lastError;
 	}
 
-	// If setting specific subdevice and we got here, we didn't find it
-	ERR("No matching GPU frequency domain found for subdevice %d\n", subdeviceId);
-	return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	// If setting specific subdevice/device-level and we got here, determine if domain was found
+	if (!foundDomain) {
+		if (useDeviceLevel) {
+			ERR("No matching device-level GPU frequency domain found.\n");
+		} else {
+			ERR("No matching GPU frequency domain found for subdevice %d\n", subdeviceId);
+		}
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	// Domain found but failed to set
+	return lastError;
 }
 
 /**
@@ -601,18 +632,36 @@ ze_result_t frequency::getFreqAvailableClocks(uint32_t subdeviceId, std::vector<
 	zes_freq_properties_t props = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	if (parentDevice == nullptr) {
-		ERR("Parent device not set. Cannot map tile to subdevice.\n");
-		return ZE_RESULT_ERROR_UNINITIALIZED;
+	// Detect if device exposes subdevices
+	bool hasSubdevices = false;
+	uint32_t subdeviceCount = 0;
+	if (deviceHandle != nullptr) {
+		ze_result_t subDevRes = zesDeviceGetSubDevicePropertiesExp(deviceHandle, &subdeviceCount, nullptr);
+		hasSubdevices = (subDevRes == ZE_RESULT_SUCCESS && subdeviceCount > 0);
 	}
 
-	// Get subdevice mapping
-	zes_subdevice_exp_properties_t subdeviceProps = {};
-	result = parentDevice->getSubdeviceProperties(subdeviceId, subdeviceProps);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
+	uint32_t targetSubdeviceId = 0;
+	bool useDeviceLevel = false;
+	if (!hasSubdevices) {
+		if (subdeviceId != 0) {
+			ERR("Invalid tileId %u. Device exposes no subdevices.\n", subdeviceId);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		useDeviceLevel = true;
+	} else {
+		if (parentDevice == nullptr) {
+			ERR("Parent device not set. Cannot map tile to subdevice.\n");
+			return ZE_RESULT_ERROR_UNINITIALIZED;
+		}
+
+		// Get subdevice mapping
+		zes_subdevice_exp_properties_t subdeviceProps = {};
+		result = parentDevice->getSubdeviceProperties(subdeviceId, subdeviceProps);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		targetSubdeviceId = subdeviceProps.subdeviceId;
 	}
-	uint32_t targetSubdeviceId = subdeviceProps.subdeviceId;
 
 	for (uint32_t i = 0; i < frequencyCount; ++i) {
 		result = getProperties(frequencyHandles[i], &props);
@@ -621,7 +670,9 @@ ze_result_t frequency::getFreqAvailableClocks(uint32_t subdeviceId, std::vector<
 		}
 
 		// Check onSubdevice flag before accessing subdeviceId per L0 spec
-		if (props.type == ZES_FREQ_DOMAIN_GPU && props.onSubdevice && props.subdeviceId == targetSubdeviceId) {
+		if (props.type == ZES_FREQ_DOMAIN_GPU &&
+			((useDeviceLevel && !props.onSubdevice) ||
+			 (!useDeviceLevel && props.onSubdevice && props.subdeviceId == targetSubdeviceId))) {
 			uint32_t count = 0;
 			result = zesFrequencyGetAvailableClocks(frequencyHandles[i], &count, nullptr);
 			if (result != ZE_RESULT_SUCCESS) {
