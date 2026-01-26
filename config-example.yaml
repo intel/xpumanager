@@ -27,6 +27,57 @@ exporters:
     endpoint: "0.0.0.0:8080"
 
 processors:
+  intelxpustatus:
+    rules:
+      - name: "Intel GPU core temperature health"
+        source_metric: "hw.temperature"
+        parent_metric: "hw.gpu.info"
+        parent_filters:
+          - key: "pci.vendor_id"
+            values: ["8086"]
+        component_filters:
+          - key: "hw.sensor_location"
+            values: ["gpu"]
+        copy_attributes: ["hw.id", "hw.name", "hw.parent", "hw.sensor_location"]
+        add_attributes:
+          hw.type: "temperature.core"
+        # Ordered list of state rules. The rules should be ordered by increasing severity.
+        # All rules are evaluated, the last matching one will be active.
+        states:
+          # Default state
+          - state_name: "ok"
+          - state_name: "warning"
+            conditions:
+              - value: 95.0
+                parent_filters:
+                  - key: "pci.device_id"
+                    values: ["56c1"]
+              - value: 100.0
+                parent_filters:
+                  - key: "pci.device_id"
+                    values: ["56c0", "56c2"]
+              # Default threshold for other device IDs
+              - value: 105.0
+      - name: "Intel GPU memory temperature health"
+        source_metric: "hw.temperature"
+        parent_metric: "hw.gpu.info"
+        parent_filters:
+          - key: "pci.vendor_id"
+            values: ["8086"]
+        component_filters:
+          - key: "hw.sensor_location"
+            values: ["memory"]
+        copy_attributes: ["hw.id", "hw.name", "hw.parent", "hw.sensor_location"]
+        add_attributes:
+          hw.type: "temperature.memory"
+        # Ordered list of state rules. The rules should be ordered by increasing severity.
+        # All rules are evaluated, the last matching one will be active.
+        states:
+          # Default state
+          - state_name: "ok"
+          - state_name: "warning"
+            conditions:
+              - value: 85.0
 
 extensions:
 
@@ -34,4 +85,5 @@ service:
   pipelines:
     metrics:
       receivers: [intelxpu]
+      processors: [intelxpustatus]
       exporters: [intelxpuinfo,prometheus]
