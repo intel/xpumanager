@@ -763,8 +763,8 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	 * call it so that their data can be used later.
 	 */
 	for (auto func : zesFunctionTable()) {
-		// Skip power - we'll initialize it separately with parent context
-		if (func == &powerInstance) {
+		// Skip power and frequency - we'll initialize them separately with parent context
+		if (func == &powerInstance || func == &frequencyInstance) {
 			continue;
 		}
 		// Don't check the return value of init, as they may not all return success
@@ -777,6 +777,13 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	ze_result_t result = powerInstance.init(zesDevice, this);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to initialize power module with device context.\n");
+		// Don't fail initialization, continue with other modules
+	}
+
+	// Initialize frequency module with parent device context for tile support
+	result = frequencyInstance.init(zesDevice, this);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize frequency module with device context.\n");
 		// Don't fail initialization, continue with other modules
 	}
 
@@ -917,9 +924,23 @@ ze_result_t device::getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_pr
 
 	// Get count of subdevices
 	ze_result_t res = zesDeviceGetSubDevicePropertiesExp(zesDevice, &subdeviceCount, nullptr);
-	if (res != ZE_RESULT_SUCCESS || subdeviceCount == 0) {
+	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate subdevices. 0x%X (%s)\n", res, l0_error_to_string(res));
 		return res;
+	}
+
+	// If no subdevices are exposed, treat device as a single tile (tileId must be 0)
+	if (subdeviceCount == 0) {
+		if (tileId != 0) {
+			ERR("Invalid tileId %u. Device exposes no subdevices.\n", tileId);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		subdeviceProps = {};
+		subdeviceProps.stype = ZES_STRUCTURE_TYPE_SUBDEVICE_EXP_PROPERTIES;
+		subdeviceProps.pNext = nullptr;
+		subdeviceProps.subdeviceId = 0;
+		DBG("Device has no subdevices; using device-level subdeviceId 0 for tile %u\n", tileId);
+		return ZE_RESULT_SUCCESS;
 	}
 
 	// Validate tileId is in range
