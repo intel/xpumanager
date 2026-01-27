@@ -105,11 +105,9 @@ public:
 	ze_result_t dumpHeading(nlohmann::ordered_json *jsonObj);
 	ze_result_t dump(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t dumpAllNewFormat(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t dumpAllLegacyFormat(devInfo *d, nlohmann::ordered_json *jsonObj);
 
 	// Core data gathering functions (JSON-independent)
-	ze_result_t gatherDeviceProperties(devInfo *d, DeviceProperties &props, bool isAmcCard);
+	ze_result_t gatherDeviceProperties(devInfo *d, DeviceProperties &props);
 	void convertToJson(const DeviceProperties &props, nlohmann::ordered_json *jsonObj, bool useIntForDeviceId = true);
 
 	ze_result_t physicalFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
