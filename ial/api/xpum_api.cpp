@@ -104,8 +104,11 @@ template <size_t N> void toCstr(char (&dest)[N], std::string_view src)
 	dest[len] = '\0';
 }
 
+//clang-format off
+// This got merged while failing and seems to continue to fail
 template <size_t N, typename... Args>
-requires(sizeof...(Args) > 0) 
+	requires(sizeof...(Args) > 0)
+//clang-format on
 void toCstr(char (&dest)[N], std::format_string<Args...> fmt, Args &&...args)
 {
 	auto result = std::format_to_n(dest, N - 1, fmt, std::forward<Args>(args)...);

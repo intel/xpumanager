@@ -22,6 +22,8 @@
 #include <standby.h>
 #include <stdexcept>
 #include <inttypes.h>
+#include <ranges>
+#include <charconv>
 /*
  * @brief Command structure for diagnostic commands.
  * The way that this structure is defined allows for easy addition of new commands
@@ -112,29 +114,98 @@ std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevel
 };
 
 /**
+ * @brief Prints a dashed line with dynamic column widths.
+ *
+ */
+static void printPretty(size_t col1Width, size_t col2Width)
+{
+	PRINT("+%s+%s+\n", std::string(col1Width + 2, '-').c_str(), std::string(col2Width + 2, '-').c_str());
+}
+
+/**
+ * @brief Prints a line with two input column values using dynamic widths.
+ *
+ */
+static void printValue(const std::string &value1, const std::string &value2, size_t col1Width, size_t col2Width)
+{
+	PRINT("| %-*s | %-*s |\n", static_cast<int>(col1Width), value1.c_str(), static_cast<int>(col2Width),
+		  value2.c_str());
+}
+
+/**
+ * @brief Wraps text to fit within specified width and prints multiple lines with dynamic column widths.
+ *
+ */
+static void printWrappedValue(std::string_view value1, std::string_view value2, size_t col1Width, size_t col2Width)
+{
+	constexpr size_t indentSize = 2;
+
+	if (value2.length() <= col2Width) {
+		printValue(std::string(value1), std::string(value2), col1Width, col2Width);
+		return;
+	}
+
+	// Wrap text at word boundaries
+	std::vector<std::string> lines;
+	std::string_view remaining = value2;
+	bool firstLine = true;
+
+	while (!remaining.empty()) {
+		const size_t lineWidth = firstLine ? col2Width : (col2Width - indentSize);
+
+		if (remaining.length() <= lineWidth) {
+			// Remaining text fits
+			lines.push_back(std::format("{}{}", firstLine ? "" : "  ", remaining));
+			break;
+		}
+
+		// Find last space before width limit
+		size_t breakPos = remaining.rfind(' ', lineWidth);
+		if (breakPos == std::string_view::npos || breakPos == 0) {
+			breakPos = lineWidth; // Force break if no space found
+		}
+
+		auto line = remaining.substr(0, breakPos);
+		// Trim trailing spaces from the line
+		if (auto lastNonSpace = line.find_last_not_of(' '); lastNonSpace != std::string_view::npos) {
+			line = line.substr(0, lastNonSpace + 1);
+		}
+		lines.push_back(std::format("{}{}", firstLine ? "" : "  ", line));
+
+		// Move past the break point and trim leading spaces
+		remaining = remaining.substr(breakPos);
+		if (auto firstNonSpace = remaining.find_first_not_of(' '); firstNonSpace != std::string_view::npos) {
+			remaining = remaining.substr(firstNonSpace);
+		} else {
+			remaining = {};
+		}
+
+		firstLine = false;
+	}
+
+	if (!lines.empty()) {
+		printValue(std::string(value1), lines[0], col1Width, col2Width);
+		for (const auto &line : lines | std::views::drop(1)) {
+			printValue("", line, col1Width, col2Width);
+		}
+	}
+}
+
+/**
  * @brief Prints a dashed line.
  *
  */
 static void printPretty()
 {
-	PRINT("+-------------------------------------------------------------------------------------------------+\n");
+	PRINT("+------------------------------+-------------------------------------------------------------------+\n");
 }
-
-/**
- * @brief Prints a line with two input column values.
- *
- */
-static void printValue(const std::string &value1, const std::string &value2)
-{
-	PRINT("| %-30s | %-63s |\n", value1.c_str(), value2.c_str());
-};
 
 /**
 * @brief Prints a line with four input column values.
 t *
 */
-static void printValues(const std::string &value1, const std::string &value2, const std::string &value3,
-						const std::string &value4)
+static void printErrorValues(const std::string &value1, const std::string &value2, const std::string &value3,
+							 const std::string &value4)
 {
 	PRINT("| %-10s | %-35s | %-25s| %-20s\n", value1.c_str(), value2.c_str(), value3.c_str(), value4.c_str());
 };
@@ -214,9 +285,6 @@ void cmdDiag::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING2, "7. Computation functional test"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "8. Media Codec functional test"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "9. Memory Allocation"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "10. Xe Link Throughput"));
-	helpList.push_back(
-		helpCmd(SUB_HEADING2, "11. Xe Link all-to-all Throughput. It only works for all GPUs (\"-d -1\")"));
 	helpList.push_back(helpCmd(SUB_HEADING, "Note that in a multi NUMA node server, it may need to use numactl to "
 											"specify which node the PCIe bandwidth test runs on"));
 	helpList.push_back(helpCmd(
@@ -513,12 +581,20 @@ void cmdDiag::printErrorInfo(nlohmann::ordered_json *errListJson, std::string er
 void cmdDiag::printSingleDiagInfo(devInfo *d, nlohmann::ordered_json *jsonObj, std::string type, std::string msg,
 								  std::string result)
 {
-	(*jsonObj)["device_id"] = std::to_string(d->index);
-	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
+	// Set device_id if not already set
+	if (!jsonObj->contains("device_id")) {
+		(*jsonObj)["device_id"] = d->index;
+	}
+
+	// Initialize component_list if not already present
+	if (!jsonObj->contains("component_list")) {
+		(*jsonObj)["component_list"] = nlohmann::ordered_json::array();
+	}
+
+	// Append new component
 	bool finished = (result == "Pass" || result == "Fail");
 	auto componentJson = printDiagDetail(type, msg, result, finished);
-	componentListJson->push_back(*componentJson);
-	(*jsonObj)["component_list"] = *componentListJson;
+	(*jsonObj)["component_list"].push_back(*componentJson);
 }
 
 /**
@@ -580,19 +656,31 @@ ze_result_t cmdDiag::level(devInfo *d, nlohmann::ordered_json *jsonObj)
 			DBG("Preparing to run test for level %d\n", le);
 			bool testFinished = test.second.result;
 			resultLine = testFinished ? "Pass" : "Fail";
-			msgLine = std::format("Pass to check {}.", test.second.showString);
-			if (!testFinished) {
-				msgLine = std::format("Fail to check {}.", test.second.showString);
+
+			// Create user-friendly messages based on test type
+			const auto userFriendlyName = test.second.showString;
+			if (userFriendlyName == "XPUM_DIAG_SOFTWARE_LIBRARY") {
+				msgLine = testFinished ? "Pass to check libraries." : "Fail to check libraries.";
+			} else if (userFriendlyName == "XPUM_DIAG_SOFTWARE_PERMISSION") {
+				msgLine = testFinished ? "Pass to check permission." : "Fail to check permission.";
+			} else if (userFriendlyName == "XPUM_DIAG_SOFTWARE_EXCLUSIVE") {
+				msgLine =
+					testFinished ? "Pass to check the software exclusive." : "Fail to check the software exclusive.";
+			} else if (userFriendlyName == "XPUM_DIAG_LIGHT_COMPUTATION") {
+				msgLine = testFinished ? "Pass to check computation functionality."
+									   : "Fail to check computation functionality.";
+			} else {
+				msgLine = std::format("{} to check {}.", testFinished ? "Pass" : "Fail", userFriendlyName);
 			}
 
-			auto componentJson = printDiagDetail(test.second.showString, msgLine, resultLine, testFinished);
+			auto componentJson = printDiagDetail(userFriendlyName, msgLine, resultLine, testFinished);
 			componentListJson->push_back(*componentJson);
 		}
 	}
 
 	(*jsonObj)["component_count"] = totalCount;
 	(*jsonObj)["component_list"] = *componentListJson;
-	(*jsonObj)["device_id"] = std::to_string(d->index);
+	(*jsonObj)["device_id"] = d->index;
 	(*jsonObj)["end_time"] = endTimeStr;
 	(*jsonObj)["finished"] = finalResult;
 	(*jsonObj)["level"] = level;
@@ -618,6 +706,16 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d, UNUSED nlohmann::ordered_json *js
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	// Map user-facing test numbers to enum values (matching help text order)
+	static std::unordered_map<int, diagSubSingleCmdType> testIdMap = {
+		{1, DIAG_SINGLE_COMPUTATION},		  {2, DIAG_SINGLE_MEMORYERROR},
+		{3, DIAG_SINGLE_MEMORYBANDWIDTH},	  {4, DIAG_SINGLE_MEDIA},
+		{5, DIAG_SINGLE_PCIEBANDWIDTH},		  {6, DIAG_SINGLE_POWER},
+		{7, DIAG_SINGLE_COMPUTATIONFUNCTEST}, {8, DIAG_SINGLE_MEDIAFUNCTEST},
+		{9, DIAG_SINGLE_MEMORYALLOCATION},
+	};
+
 	static std::unordered_map<diagSubSingleCmdType, diagSubSingleCmdStruct> diagSingleTests = {
 		{DIAG_SINGLE_COMPUTATION, {&cmdDiag::computation}},
 		{DIAG_SINGLE_MEMORYERROR, {&cmdDiag::memoryError}},
@@ -628,17 +726,71 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d, UNUSED nlohmann::ordered_json *js
 		{DIAG_SINGLE_COMPUTATIONFUNCTEST, {&cmdDiag::computationFuncTest}},
 		{DIAG_SINGLE_MEDIAFUNCTEST, {&cmdDiag::mediaFuncTest}},
 		{DIAG_SINGLE_MEMORYALLOCATION, {&cmdDiag::memoryAllocation}},
-		{DIAG_SINGLE_XELINKTHROUGHPUT, {&cmdDiag::xeLinkThroughput}},
-		{DIAG_SINGLE_XELINKALLTOALLTHROUGHPUT, {&cmdDiag::xeLinkAllToAllThroughput}},
 	};
 
-	for (const auto &test : diagSingleTests) {
-		if (test.first == stoi(diagCmds[diagCmdType::SINGLETEST].val)) {
-			DBG("Running test: %d\n", test.first);
-			result = (this->*test.second.func)(d, jsonObj);
-			break;
+	// Parse comma-separated test IDs
+	const std::string_view testIds = diagCmds[diagCmdType::SINGLETEST].val;
+	std::vector<int> testList;
+
+	for (const auto token : testIds | std::views::split(',')) {
+		const std::string_view tokenView(token.begin(), token.end());
+		int testId = 0;
+		const auto [ptr, ec] = std::from_chars(tokenView.data(), tokenView.data() + tokenView.size(), testId);
+		if (ec != std::errc{}) {
+			ERR("Invalid test ID: '%.*s'\n", static_cast<int>(tokenView.size()), tokenView.data());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		testList.push_back(testId);
+	}
+
+	auto startTime = std::chrono::system_clock::now();
+	auto startTimeS = std::chrono::floor<std::chrono::seconds>(startTime);
+	auto startTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - startTimeS);
+	std::string startTimeStr = std::format("{:%Y-%m-%dT%H:%M:%S}.{:03d}", startTimeS, startTimeMs.count());
+
+	// Set up device_id once if not already set
+	if (!jsonObj->contains("device_id")) {
+		(*jsonObj)["device_id"] = d->index;
+		(*jsonObj)["component_list"] = nlohmann::ordered_json::array();
+	}
+
+	// Run each test and track if any fail
+	bool anyFailed = false;
+	for (const int testId : testList) {
+		if (const auto testTypeIt = testIdMap.find(testId); testTypeIt != testIdMap.end()) {
+			if (const auto testIt = diagSingleTests.find(testTypeIt->second); testIt != diagSingleTests.end()) {
+				INFO("Running test: %d\n", testId);
+				const ze_result_t testResult = (this->*testIt->second.func)(d, jsonObj);
+				if (testResult != ZE_RESULT_SUCCESS) {
+					anyFailed = true;
+				}
+			}
+		} else {
+			ERR("Invalid test ID: %d. Valid test IDs are 1-9.\n", testId);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
+
+	// Return generic error if any test failed; specific errors are in JSON
+	if (anyFailed) {
+		result = ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	const auto endTime = std::chrono::system_clock::now();
+	const auto endTimeS = std::chrono::floor<std::chrono::seconds>(endTime);
+	const auto endTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - endTimeS);
+	const std::string endTimeStr = std::format("{:%Y-%m-%dT%H:%M:%S}.{:03d}", endTimeS, endTimeMs.count());
+
+	// Add summary fields to match expected format
+	const bool allPassed = (result == ZE_RESULT_SUCCESS);
+	(*jsonObj)["component_count"] = static_cast<int>(testList.size());
+	(*jsonObj)["device_id"] = d->index;
+	(*jsonObj)["end_time"] = endTimeStr;
+	(*jsonObj)["errno"] = static_cast<int>(result);
+	(*jsonObj)["finished"] = true;
+	(*jsonObj)["message"] = allPassed ? "All diagnostics done" : "Some diagnostics failed";
+	(*jsonObj)["result"] = allPassed ? "Pass" : "Fail";
+	(*jsonObj)["start_time"] = startTimeStr;
 
 	return result;
 }
@@ -681,7 +833,7 @@ ze_result_t cmdDiag::computation(devInfo *d, UNUSED nlohmann::ordered_json *json
 		} else {
 			msg = "Pass to check computation.";
 			if (!featureOnly) {
-				msg = msg + std::format("Computation test completed with {} GFLOPS.", current);
+				msg = msg + std::format(" Computation test completed with {:.3Lf} GFLOPS. ", current);
 			}
 			printSingleDiagInfo(d, jsonObj, "Computation", msg, "Pass");
 		}
@@ -826,7 +978,7 @@ ze_result_t cmdDiag::memoryBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *
 		} else {
 			msg = "Pass to test memory bandwidth.";
 			for (std::size_t i = 0; i < totalGbps.size(); i++) {
-				msg = msg + std::format("Memory bandwidth on copy engine group {} is {} GBPS.", i, totalGbps[i]);
+				msg = msg + std::format(" Memory bandwidth on copy engine group {} is {:.3Lf} GBPS.", i, totalGbps[i]);
 			}
 			printSingleDiagInfo(d, jsonObj, "Memory bandwidth", msg, "Pass");
 		}
@@ -914,7 +1066,7 @@ ze_result_t cmdDiag::pcieBandwidth(devInfo *d, UNUSED nlohmann::ordered_json *js
 			msg = std::format("Fail to check PCIe bandwidth. Test failed:{}", l0_error_to_string(res));
 			printSingleDiagInfo(d, jsonObj, "PCIe bandwidth", msg, "Fail");
 		} else {
-			msg = "Pass to check PCIe bandwidth.";
+			msg = "Pass to check PCIe bandwidth. ";
 			msg = msg + std::format("Total pcie bandwidth is: {} GB/s. Total pcie latency is: {} us.", totalBandwidth,
 									totalLatency);
 			if (p->getFuncType() != devFuncType::DEVICE_FUNCTION_TYPE_VIRTUAL) {
@@ -977,9 +1129,9 @@ ze_result_t cmdDiag::powerTest(devInfo *d, UNUSED nlohmann::ordered_json *jsonOb
 		} else {
 			msg = "Pass to check power test.";
 			if (!featureOnly) {
-				msg = msg + std::format("Computation test completed with {} GFLOPS.", current);
+				msg = msg + std::format("Computation test completed with {} GFLOPS. ", current);
 			}
-			msg = msg + std::format("Update peak power value: {} w.", totalPowerValue);
+			msg = msg + std::format(" Update peak power value: {} w.", totalPowerValue);
 			printSingleDiagInfo(d, jsonObj, "Power test", msg, "Pass");
 		}
 	}
@@ -1024,7 +1176,7 @@ ze_result_t cmdDiag::computationFuncTest(devInfo *d, UNUSED nlohmann::ordered_js
 		} else {
 			msg = "Pass to check computation feature.";
 			if (!featureOnly) {
-				msg = msg + std::format("Computation test completed with {} GFLOPS.", current);
+				msg = msg + std::format(" Computation test completed with {} GFLOPS. ", current);
 			}
 			printSingleDiagInfo(d, jsonObj, "Computation feature", msg, "Pass");
 		}
@@ -1080,12 +1232,12 @@ ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d, UNUSED nlohmann::ordered_j
  * fabric link performance and connectivity.
  *
  * @param[in] d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS if Xe Link tests complete, error code otherwise
+ * @return ze_result_t ZE_RESULT_ERROR_UNSUPPORTED_FEATURE as Xe Link is not supported
  */
 ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**
@@ -1096,12 +1248,12 @@ ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordere
  * and validating complete multi-GPU interconnect performance.
  *
  * @param[in] d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS if all-to-all tests complete, error code otherwise
+ * @return ze_result_t ZE_RESULT_ERROR_UNSUPPORTED_FEATURE as Xe Link is not supported
  */
 ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
-	return ZE_RESULT_SUCCESS;
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**
@@ -1174,9 +1326,20 @@ std::string getKeyDisplayName(const std::string &key)
 		{"level", "Level"},
 		{"result", "Result"},
 		{"component_count", "Items"},
+		{"XPUM_DIAG_SOFTWARE_LIBRARY", "Software Library"},
+		{"XPUM_DIAG_SOFTWARE_PERMISSION", "Software Permission"},
+		{"XPUM_DIAG_SOFTWARE_EXCLUSIVE", "Software Exclusive"},
+		{"XPUM_DIAG_LIGHT_COMPUTATION", "Computation Check"},
+		{"XPUM_DIAG_INTEGRATION_PCIE", "PCIe Bandwidth"},
+		{"XPUM_DIAG_MEDIA_CODEC", "Media Codec"},
+		{"XPUM_DIAG_PERFORMANCE_COMPUTATION", "Computation"},
+		{"XPUM_DIAG_PERFORMANCE_POWER", "Power"},
+		{"XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH", "Memory Bandwidth"},
+		{"XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION", "Memory Allocation"},
+		{"XPUM_DIAG_MEMORY_ERROR", "Memory Error"},
 	};
 
-	auto it = keyDisplayMap.find(key);
+	const auto it = keyDisplayMap.find(key);
 	if (it != keyDisplayMap.end()) {
 		return it->second;
 	}
@@ -1187,43 +1350,96 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
 
-	bool firstItem = true;
+	auto valueToString = [](const nlohmann::ordered_json &val) -> std::string {
+		if (val.is_string()) {
+			return val.get<std::string>();
+		}
+		return val.dump();
+	};
+
+	// Calculate required column widths based on content
+	size_t maxCol1Width = 15;		   // Minimum width
+	constexpr size_t totalWidth = 100; // Total table width
+
 	if (jsonObj->contains("level")) {
-		printPretty();
-		for (auto &item : (*jsonObj).items()) {
-			if (item.key() != "component_list") {
-				std::string displayKey = getKeyDisplayName(item.key());
-				printValue(displayKey, item.value().get<std::string>());
-				if (firstItem) {
-					printPretty();
-					firstItem = false;
+		// Check header field names
+		static const std::vector<std::string> headerFields = {"device_id", "level", "result", "component_count"};
+		for (const auto &field : headerFields) {
+			if (jsonObj->contains(field)) {
+				maxCol1Width = std::max(maxCol1Width, getKeyDisplayName(field).length());
+			}
+		}
+
+		// Check component type names
+		for (const auto &component : (*jsonObj)["component_list"]) {
+			const std::string componentType = valueToString(component["component_type"]);
+			const std::string friendlyName = getKeyDisplayName(componentType);
+			maxCol1Width = std::max(maxCol1Width, friendlyName.length());
+		}
+
+		const size_t col2Width = totalWidth - maxCol1Width - 5; // 5 for borders and spaces
+
+		printPretty(maxCol1Width, col2Width);
+		// Print only specific header fields in order
+		bool firstField = true;
+		for (const auto &field : headerFields) {
+			if (jsonObj->contains(field)) {
+				const std::string displayKey = getKeyDisplayName(field);
+				printValue(displayKey, valueToString((*jsonObj)[field]), maxCol1Width, col2Width);
+				if (firstField) {
+					printPretty(maxCol1Width, col2Width);
+					firstField = false;
 				}
 			}
 		}
 
-		printPretty();
+		printPretty(maxCol1Width, col2Width);
 		// Handle JSON object with device_list field - print device information in a formatted table-like structure
-		for (auto &component : (*jsonObj)["component_list"]) {
+		for (const auto &component : (*jsonObj)["component_list"]) {
 			// For the first item, print it as the main device identifier
-			std::string resultInfo = "Result: " + component["result"].get<std::string>();
-			printValue(component["component_type"].get<std::string>(), resultInfo);
-			std::string messageInfo = "Message: " + component["message"].get<std::string>();
-			printValue("", messageInfo);
-			printPretty();
+			const std::string componentType = valueToString(component["component_type"]);
+			const std::string friendlyName = getKeyDisplayName(componentType);
+			const std::string resultInfo = "Result: " + valueToString(component["result"]);
+			printValue(friendlyName, resultInfo, maxCol1Width, col2Width);
+			const std::string messageInfo = "Message: " + valueToString(component["message"]);
+			printWrappedValue("", messageInfo, maxCol1Width, col2Width);
+			printPretty(maxCol1Width, col2Width);
 		}
 	} else if (jsonObj->contains("device_id")) {
-		for (auto &component : (*jsonObj)["component_list"]) {
-			std::string resultInfo = "Result: " + component["result"].get<std::string>();
-			std::string messageInfo = "Message: " + component["message"].get<std::string>();
-			PRINT("%-90s\n", resultInfo.c_str());
-			PRINT("%-90s\n", messageInfo.c_str());
+		// Check device_id field name
+		maxCol1Width = std::max(maxCol1Width, getKeyDisplayName("device_id").length());
+
+		// Check component type names
+		for (const auto &component : (*jsonObj)["component_list"]) {
+			const std::string componentType = valueToString(component["component_type"]);
+			const std::string friendlyName = getKeyDisplayName(componentType);
+			maxCol1Width = std::max(maxCol1Width, friendlyName.length());
+		}
+
+		const size_t col2Width = totalWidth - maxCol1Width - 5;
+
+		printPretty(maxCol1Width, col2Width);
+		// Print Device ID header
+		const std::string displayKey = getKeyDisplayName("device_id");
+		printValue(displayKey, valueToString((*jsonObj)["device_id"]), maxCol1Width, col2Width);
+		printPretty(maxCol1Width, col2Width);
+
+		// Print each component in table format
+		for (const auto &component : (*jsonObj)["component_list"]) {
+			const std::string componentType = valueToString(component["component_type"]);
+			const std::string friendlyName = getKeyDisplayName(componentType);
+			const std::string resultInfo = "Result: " + valueToString(component["result"]);
+			printValue(friendlyName, resultInfo, maxCol1Width, col2Width);
+			const std::string messageInfo = "Message: " + valueToString(component["message"]);
+			printWrappedValue("", messageInfo, maxCol1Width, col2Width);
+			printPretty(maxCol1Width, col2Width);
 		}
 	} else if (jsonObj->contains("error_type_list")) {
-		printValues("Error ID", "Error Type", "Error Category", "Error Severity");
+		printErrorValues("Error ID", "Error Type", "Error Category", "Error Severity");
 		printPretty();
-		for (auto &component : (*jsonObj)["error_type_list"]) {
-			printValues(component["error_id"].get<std::string>(), component["error_type"].get<std::string>(),
-						component["error_category"].get<std::string>(), component["error_severity"].get<std::string>());
+		for (const auto &component : (*jsonObj)["error_type_list"]) {
+			printErrorValues(valueToString(component["error_id"]), valueToString(component["error_type"]),
+							 valueToString(component["error_category"]), valueToString(component["error_severity"]));
 
 			printPretty();
 		}
@@ -1312,6 +1528,24 @@ int cmdDiag::run(arg_struct *args)
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 		startind++;
+	}
+
+	// Check if any actual diagnostic command was specified
+	bool hasCommand = false;
+	for (const auto &cmd : diagCmds) {
+		// Skip help and json flags - they're modifiers, not commands
+		if (cmd.first != diagCmdType::DIAGHELP && cmd.first != diagCmdType::DIAGJSON) {
+			if (cmd.second.enabled) {
+				hasCommand = true;
+				break;
+			}
+		}
+	}
+
+	// If no command was specified, show help
+	if (!hasCommand) {
+		help();
+		return 0;
 	}
 
 	if (diagCmds[diagCmdType::DIAGJSON].enabled == true) {
