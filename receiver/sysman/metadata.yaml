@@ -63,6 +63,12 @@ attributes:
   hw.vendor:
     description: Vendor name of the hardware component.
     type: string
+  pci.device_id:
+    description: PCI device ID of the device.
+    type: string
+  pci.vendor_id:
+    description: PCI vendor ID of the device.
+    type: string
   sample.status:
     description: Status of the samples.
     type: string
@@ -134,7 +140,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor]
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, pci.device_id, pci.vendor_id]
   hw.memory.size:
     enabled: true
     description: Size of the memory.

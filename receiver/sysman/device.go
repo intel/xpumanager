@@ -33,6 +33,8 @@ type deviceAttributes struct {
 	hwName         string
 	hwSerialNumber string
 	hwVendor       string
+	pciDeviceID    string
+	pciVendorID    string
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*deviceRegistry, error) {
@@ -99,6 +101,8 @@ func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLo
 			hwName:         name,
 			hwSerialNumber: props.SerialNumber.String(),
 			hwVendor:       props.VendorName.String(),
+			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
+			pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
 		},
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}
@@ -117,6 +121,8 @@ func (d *sysmanDevice) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 		d.attributes.hwName,
 		d.attributes.hwSerialNumber,
 		d.attributes.hwVendor,
+		d.attributes.pciDeviceID,
+		d.attributes.pciVendorID,
 	)
 
 	for _, s := range d.scrapers {
