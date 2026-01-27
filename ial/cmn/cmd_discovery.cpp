@@ -190,7 +190,18 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		return val.dump();
 	};
 
-	// Custom formatting for discovery text output
+	auto printRow = [](const std::string &col1, const std::string &col2) {
+		PRINT("| %-9s | %-84s |\n", col1.c_str(), col2.c_str());
+	};
+
+	auto printBlankRow = []() { PRINT("| %-9s | %-84s |\n", "", ""); };
+
+	auto printTableHeader = []() {
+		PRINT("+-----------+--------------------------------------------------------------------------------------+\n");
+		PRINT("| Device ID | Device Information                                                                   |\n");
+		PRINT("+-----------+--------------------------------------------------------------------------------------+\n");
+	};
+
 	if (jsonObj->contains("heading")) {
 		// Print CSV-style headers for dump command
 		const auto &headers = (*jsonObj)["heading"];
@@ -202,7 +213,6 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		}
 		PRINT("\n");
 
-		// Print values for each device
 		for (auto &deviceItem : jsonObj->items()) {
 			if (deviceItem.key() != "heading") {
 				const auto &values = deviceItem.value();
@@ -215,33 +225,107 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 				PRINT("\n");
 			}
 		}
-	} else if (jsonObj->contains("device_list")) {
-		// Handle JSON object with device_list field - print device information in a formatted table-like structure
-		for (auto &device : (*jsonObj)["device_list"]) {
-			bool firstItem = true;
-			for (auto &item : device.items()) {
-				if (firstItem) {
-					// For the first item, print it as the main device identifier
-					std::string deviceLine = "| " + valueToString(item.value());
-					PRINT("%-70s|\n", deviceLine.c_str());
+		return;
+	}
 
-					firstItem = false;
-				} else {
-					// For subsequent items, print them indented with display names
-					std::string displayKey = getDisplayName(item.key());
-					std::string detailLine = "      | " + displayKey + ": " + valueToString(item.value());
-					PRINT("%-70s|\n", detailLine.c_str());
+	// Table-based output for device list or single device
+	printTableHeader();
+
+	if (jsonObj->contains("device_list")) {
+		for (auto &device : (*jsonObj)["device_list"]) {
+			std::string deviceId = device.contains("device_id") ? valueToString(device["device_id"]) : "";
+
+			auto printField = [&](const char *key, const char *label) {
+				if (device.contains(key)) {
+					printRow(deviceId, std::string(label) + ": " + valueToString(device[key]));
+					deviceId = ""; // Only show device ID once
 				}
-			}
-			PRINT("\n");
+			};
+
+			printField("device_name", "Device Name");
+			printField("vendor_name", "Vendor Name");
+			printField("uuid", "SOC UUID");
+			printField("pci_bdf_address", "PCI BDF Address");
+			printField("drm_device", "DRM Device");
+			printField("device_function_type", "Function Type");
+
+			PRINT("+-----------+--------------------------------------------------------------------------------------+"
+				  "\n");
 		}
 	} else {
-		// Handle single device or key-value pairs
-		for (auto &item : jsonObj->items()) {
-			std::string displayKey = getDisplayName(item.key());
-			std::string detailLine = "| " + displayKey + ": " + valueToString(item.value());
-			PRINT("%-70s |\n", detailLine.c_str());
+		std::string deviceId = jsonObj->contains("device_id") ? valueToString((*jsonObj)["device_id"]) : "";
+
+		auto printField = [&](const char *key, const char *label) {
+			if (jsonObj->contains(key)) {
+				printRow(deviceId, std::string(label) + ": " + valueToString((*jsonObj)[key]));
+				deviceId = ""; // Only show device ID once
+			}
+		};
+
+		// Group 1: Basic Device Information
+		printField("device_type", "Device Type");
+		printField("device_name", "Device Name");
+		printField("pci_device_id", "PCI Device ID");
+		printField("vendor_name", "Vendor Name");
+		printField("uuid", "SOC UUID");
+		printField("serial_number", "Serial Number");
+		printField("core_clock_rate", "Core Clock Rate");
+		printField("device_stepping", "Stepping");
+		printField("sku_type", "SKU Type");
+		printBlankRow();
+
+		// Group 2: Driver and Firmware
+		printField("driver_version", "Driver Version");
+		printField("kernel_version", "Kernel Version");
+		printField("gfx_firmware_name", "GFX Firmware Name");
+		printField("gfx_firmware_version", "GFX Firmware Version");
+		printField("gfx_firmware_status", "GFX Firmware Status");
+		printBlankRow();
+
+		// Group 3: PCIe Information
+		printField("pci_bdf_address", "PCI BDF Address");
+		if (jsonObj->contains("pci_slot")) {
+			std::string pciSlot = valueToString((*jsonObj)["pci_slot"]);
+			printRow("", std::string("PCI Slot: ") + (pciSlot.empty() ? "N/A" : pciSlot));
 		}
+		printField("pcie_generation", "PCIe Generation");
+		printField("pcie_max_link_width", "PCIe Max Link Width");
+		printField("pcie_max_bandwidth", "PCIe Max Bandwidth");
+		printBlankRow();
+
+		// Group 4: Memory Information
+		printField("memory_physical_size", "Memory Physical Size");
+		if (jsonObj->contains("max_mem_alloc_size_byte")) {
+			uint64_t maxAllocBytes = 0;
+			std::string bytesStr = valueToString((*jsonObj)["max_mem_alloc_size_byte"]);
+			auto [ptr, ec] = std::from_chars(bytesStr.data(), bytesStr.data() + bytesStr.size(), maxAllocBytes);
+			if (ec == std::errc{}) {
+				double maxAllocMiB = static_cast<double>(maxAllocBytes) / (1024.0 * 1024.0);
+				printRow("", std::format("Max Mem Alloc Size: {:.2f} MiB", maxAllocMiB));
+			}
+		}
+		if (jsonObj->contains("memory_ecc_state")) {
+			std::string eccState = valueToString((*jsonObj)["memory_ecc_state"]);
+			printRow("", std::string("ECC State: ") + (eccState.empty() ? "N/A" : eccState));
+		}
+		printField("number_of_memory_channels", "Number of Memory Channels");
+		printField("memory_bus_width", "Memory Bus Width");
+		printField("max_hardware_contexts", "Max Hardware Contexts");
+		printField("max_command_queue_priority", "Max Command Queue Priority");
+		printBlankRow();
+
+		// Group 5: EU and Architecture Information
+		printField("number_of_eus", "Number of EUs");
+		printField("number_of_tiles", "Number of Tiles");
+		printField("number_of_slices", "Number of Slices");
+		printField("number_of_sub_slices_per_slice", "Number of Sub Slices per Slice");
+		printField("number_of_threads_per_eu", "Number of Threads per EU");
+		printField("physical_eu_simd_width", "Physical EU SIMD Width");
+		printField("number_of_media_engines", "Number of Media Engines");
+		printField("number_of_media_enh_engines", "Number of Media Enhancement Engines");
+		printBlankRow();
+
+		PRINT("+-----------+--------------------------------------------------------------------------------------+\n");
 	}
 }
 
@@ -258,27 +342,29 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 	std::string outputLine;
 
 	// Get string values first, then assign to JSON (simple format for JSON output)
-	(*jsonObj)["device_id"] = std::to_string(device->index);
+	(*jsonObj)["device_function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
+	(*jsonObj)["device_id"] = device->index;
+
 	deviceName(device, &outputLine);
 	(*jsonObj)["device_name"] = outputLine;
 
-	vendorName(device, &outputLine);
-	(*jsonObj)["vendor_name"] = outputLine;
+	deviceType(device, &outputLine);
+	(*jsonObj)["device_type"] = outputLine;
 
-	socUuid(device, &outputLine);
-	(*jsonObj)["uuid"] = outputLine;
-
-	pciDeviceID(device, &outputLine);
-	(*jsonObj)["pci_device_id"] = outputLine;
+	(*jsonObj)["drm_device"] = device->dev->getDrmDevPath();
 
 	pciBDFAddress(device, &outputLine);
 	(*jsonObj)["pci_bdf_address"] = outputLine;
 
-	(*jsonObj)["drm_device_path"] = device->dev->getDrmDevPath();
+	pciDeviceID(device, &outputLine);
+	(*jsonObj)["pci_device_id"] = outputLine;
 
-	(*jsonObj)["function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
+	socUuid(device, &outputLine);
+	(*jsonObj)["uuid"] = outputLine;
 
-	(*jsonObj)["survivability_mode"] = device->dev->isInSurvMode() ? "True" : "False";
+	vendorName(device, &outputLine);
+	(*jsonObj)["vendor_name"] = outputLine;
+
 	return jsonObj;
 }
 
@@ -503,18 +589,13 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
 		}
 	}
 
-	// AMC cards has different formatting and fields, must decide
-	// on output if AMC or older
-	bool isAmcCard = (d->dev->getAmcIndex() != -1);
-
 	DeviceProperties props;
-	result = gatherDeviceProperties(d, props, isAmcCard);
+	result = gatherDeviceProperties(d, props);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	// Convert to JSON with appropriate formatting
-	convertToJson(props, jsonObj, true);
+	convertToJson(props, jsonObj);
 
 	return result;
 }
@@ -524,24 +605,22 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
  *
  * @param[in] d Pointer to device info structure
  * @param[out] props Output map to populate with key-value pairs (string keys and values)
- * @param[in] isAmcCard Whether this is an AMC card (determines format and fields)
  *
  * @retval ZE_RESULT_SUCCESS Successfully gathered all device properties
  * @retval ZE_RESULT_ERROR_* Error occurred during property retrieval
  */
-ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &props, bool isAmcCard)
+ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &props)
 {
 	TRACING();
 	std::string outputLine;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	if (isAmcCard) {
-		amcFirmwareName(d, &outputLine);
-		props["amc_firmware_name"] = outputLine;
+	amcFirmwareName(d, &outputLine);
+	props["amc_firmware_name"] = outputLine;
 
-		amcFirmwareVersion(d, &outputLine);
-		props["amc_firmware_version"] = outputLine;
-	}
+	amcFirmwareVersion(d, &outputLine);
+	props["amc_firmware_version"] = outputLine;
+
 	deviceID(d, &outputLine);
 	props["device_id"] = outputLine;
 
@@ -713,50 +792,6 @@ void cmdDiscovery::convertToJson(const DeviceProperties &props, nlohmann::ordere
 			(*jsonObj)[key] = value;
 		}
 	}
-}
-
-/**
- * @brief Dumps all device properties in new format (AMC cards)
- * @deprecated Use gatherDeviceProperties + convertToJson instead
- * Snake_case field names, no units, alphabetically sorted, 50+ fields
- *
- * @param[in] d Pointer to device info structure
- * @param[out] jsonObj Pointer to JSON object to populate
- *
- * @retval ZE_RESULT_SUCCESS Successfully gathered and populated device properties
- * @retval ZE_RESULT_ERROR_* Error occurred during property gathering
- */
-ze_result_t cmdDiscovery::dumpAllNewFormat(devInfo *d, nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-	DeviceProperties props;
-	ze_result_t result = gatherDeviceProperties(d, props, true);
-	if (result == ZE_RESULT_SUCCESS) {
-		convertToJson(props, jsonObj, true);
-	}
-	return result;
-}
-
-/**
- * @brief Dumps all device properties in legacy format (older non-AMC cards)
- * @deprecated Use gatherDeviceProperties + convertToJson instead
- * Title Case field names, with units, original field order, ~23 fields
- *
- * @param[in] d Pointer to device info structure
- * @param[out] jsonObj Pointer to JSON object to populate
- *
- * @retval ZE_RESULT_SUCCESS Successfully gathered and populated device properties
- * @retval ZE_RESULT_ERROR_* Error occurred during property gathering
- */
-ze_result_t cmdDiscovery::dumpAllLegacyFormat(devInfo *d, nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-	DeviceProperties props;
-	ze_result_t result = gatherDeviceProperties(d, props, false);
-	if (result == ZE_RESULT_SUCCESS) {
-		convertToJson(props, jsonObj, false);
-	}
-	return result;
 }
 
 /**
