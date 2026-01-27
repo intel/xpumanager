@@ -12,6 +12,7 @@
 
 #include "xpum_api.h"
 #include "xpum_structs.h"
+#include "ial/cli/version.h"
 #include "hal/core/debug.h"
 #include "hal/core/device.h"
 #include "hal/core/driver.h"
@@ -104,7 +105,7 @@ template <size_t N> void toCstr(char (&dest)[N], std::string_view src)
 }
 
 template <size_t N, typename... Args>
-	requires(sizeof...(Args) > 0)
+requires(sizeof...(Args) > 0) 
 void toCstr(char (&dest)[N], std::format_string<Args...> fmt, Args &&...args)
 {
 	auto result = std::format_to_n(dest, N - 1, fmt, std::forward<Args>(args)...);
@@ -358,7 +359,7 @@ XPUM_API xpum_result_t xpumVersionInfo(XpumVersionInfo versionInfoList[], int *c
 
 		// XPUM IAL library version
 		versionInfoList[0].version = XPUM_VERSION;
-		toCstr(versionInfoList[0].versionString, "1.0.0");
+		toCstr(versionInfoList[0].versionString, XPUM_VERSION_STRING);
 
 		// Level Zero version
 		versionInfoList[1].version = XPUM_VERSION_LEVEL_ZERO;

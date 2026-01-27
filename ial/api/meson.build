@@ -36,8 +36,8 @@ libxpum_api = shared_library(
   ],
   install: true,
   install_dir: get_option('libdir'),
-  version: '1.0.0',
-  soversion: '1',
+  version: xpum_version,
+  soversion: xpum_version.split('.')[0],
   gnu_symbol_visibility: 'default',
   cpp_args: ['-DXPUM_api_EXPORTS'],
 )

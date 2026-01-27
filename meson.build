@@ -8,7 +8,6 @@
 #   - https://mesonbuild.com/Builtin-options.html#details-for-buildtype
 #   - https://mesonbuild.com/Builtin-options.html#details-for-warning_level
 project('xpum', 'c', 'cpp',
-  version : '1.0.0',
   license : 'MIT',
   default_options : [
     'cpp_std=c++20',
@@ -17,6 +16,12 @@ project('xpum', 'c', 'cpp',
     'werror=true'
     ]
 )
+
+# File system module
+fs = import('fs')
+
+# Read version from file
+xpum_version = fs.read('VERSION').strip()
 
 # Project information
 project_description = 'Intel(R) XPU Manager and XPU System Management Interface'
@@ -32,6 +37,22 @@ cpp = meson.get_compiler('cpp')
 compile_args = []
 # Common link arguments
 link_args = []
+
+# Parse version
+ver_arr = xpum_version.split('.')
+if ver_arr.length() != 3
+  error('Invalid VERSION format: "' + xpum_version + '". Expected format: MAJOR.MINOR.PATCH')
+endif
+major = ver_arr[0]
+minor = ver_arr[1]
+patch = ver_arr[2]
+
+# Add version definitions
+compile_args += [
+  '-DXPUM_VERSION_MAJOR=' + major,
+  '-DXPUM_VERSION_MINOR=' + minor,
+  '-DXPUM_VERSION_PATCH=' + patch,
+]
 
 # Add _DEBUG flag
 if is_debug

@@ -46,7 +46,8 @@ libxpum_shared = shared_library('xpum',
     fwupd_dep,
     nlohmann_json_dep
   ] + windows_deps,
-  version : meson.project_version(),
+  version : xpum_version,
+  soversion : xpum_version.split('.')[0],
   install : true,
   install_dir : get_option('libdir'),
 )
