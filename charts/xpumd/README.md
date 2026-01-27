@@ -44,7 +44,8 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| config.exporters | object | `{}` | Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters) |
+| config.exporters | object |   | Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters) |
+| config.exporters.intelxpuinfo | object |   | Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. |
 | config.extensions | object | `{}` | Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions) |
 | config.processors | object | `{}` | Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors) |
 | config.receivers | object |   | Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers) |
@@ -55,7 +56,7 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"metrics":{"receivers":["intelxpu"]}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service | object | `{"pipelines":{"metrics":{"exporters":["intelxpuinfo"],"receivers":["intelxpu"]}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 

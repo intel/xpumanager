@@ -20,6 +20,9 @@ receivers:
 
 
 exporters:
+  intelxpuinfo:
+    # Only unix domain socket is allowed.
+    endpoint: "/run/xpumd/intelxpuinfo.sock"
   prometheus:
     endpoint: "0.0.0.0:8080"
 
@@ -31,4 +34,4 @@ service:
   pipelines:
     metrics:
       receivers: [intelxpu]
-      exporters: [prometheus]
+      exporters: [intelxpuinfo,prometheus]

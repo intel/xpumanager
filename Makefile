@@ -25,11 +25,22 @@ stats:
 
 .PHONY: build
 build:
-	go tool -modfile tools/go.mod builder --config=builder-config.yaml 
+	go tool -modfile tools/go.mod builder --config=builder-config.yaml
+	go -C dist build github.com/intel/xpumanager/exporter/xpuinfo-cli
 
 .PHONY: generate
-generate:
+generate: generate-proto
 	scripts/generate.sh $(GO_MODULES)
+
+.PHONY: generate-proto
+generate-proto: install-protoc
+	PATH=tools/bin/ protoc --go_out=. --go_opt=paths=source_relative \
+	                       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	                       exporter/api/deviceinfo/v1alpha1/deviceinfo.proto
+
+.PHONY: install-protoc
+install-protoc:
+	scripts/install-protoc.sh
 
 # --- Test / lint targets
 

@@ -107,8 +107,14 @@ config:
       metrics: {}
 
   # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
+  # @default --  
   # @section -- XPUM Daemon Configuration
-  exporters: {}
+  exporters:
+    # -- Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported.
+    # @default --  
+    # @section -- XPUM Daemon Configuration
+    intelxpuinfo:
+      endpoint: "/run/xpumd/intelxpuinfo.sock"
 
   # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
   # @section -- XPUM Daemon Configuration
@@ -124,3 +130,4 @@ config:
     pipelines:
       metrics:
         receivers: [intelxpu]
+        exporters: [intelxpuinfo]
