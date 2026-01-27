@@ -24,8 +24,6 @@ enum configCmdType
 	STANDBYMODE,
 	SCHEDULERMODE,
 	PERFORMANCEFACTOR,
-	XELINKPORT,
-	XELINKPORTBEACONING,
 	MEMORYECC,
 	RESET,
 	PPR,
@@ -49,8 +47,6 @@ public:
 	ze_result_t setStandby(devInfo *d);
 	ze_result_t setScheduler(devInfo *d);
 	ze_result_t setPerformanceFactor(devInfo *d);
-	ze_result_t setXeLinkPort(devInfo *d);
-	ze_result_t setXeLinkPortBeaconing(devInfo *d);
 	ze_result_t setMemoryEcc(devInfo *d);
 	ze_result_t setPCIeGenUpdate(devInfo *d);
 	ze_result_t resetDevice(devInfo *d);

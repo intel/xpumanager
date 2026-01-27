@@ -10,6 +10,7 @@
 #include <ecc.h>
 #include <fabric.h>
 #include <frequency.h>
+#include <nlohmann/json.hpp>
 #include <power.h>
 #include <scheduler.h>
 #include <performance.h>
@@ -19,6 +20,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cinttypes>
+#include <cmath>
 
 // Conversion factors
 constexpr uint64_t W_TO_MW = 1000;
@@ -39,9 +41,6 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::SCHEDULERMODE, {{"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler, false, ""}},
 	{configCmdType::PERFORMANCEFACTOR,
 	 {{"performancefactor", required_argument, 0, 0}, &cmdConfig::setPerformanceFactor, false, ""}},
-	{configCmdType::XELINKPORT, {{"xelinkport", required_argument, 0, 0}, &cmdConfig::setXeLinkPort, false, ""}},
-	{configCmdType::XELINKPORTBEACONING,
-	 {{"xelinkportbeaconing", required_argument, 0, 0}, &cmdConfig::setXeLinkPortBeaconing, false, ""}},
 	{configCmdType::MEMORYECC, {{"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc, false, ""}},
 	{configCmdType::PCIEDOWNGRADE,
 	 {{"pciedowngrade", required_argument, 0, 0}, &cmdConfig::setPCIeGenUpdate, false, ""}},
@@ -50,6 +49,439 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::FORCE, {{"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""}},
 	{configCmdType::POWERTYPE, {{"powertype", required_argument, 0, 0}, nullptr, false, ""}},
 };
+
+/**
+ * @brief Joins a vector of integers into a comma-separated string.
+ *
+ * @param[in] values Vector of integer values.
+ * @return std::string Comma-separated list.
+ */
+static std::string joinUint32(const std::vector<uint32_t> &values)
+{
+	if (values.empty()) {
+		return "";
+	}
+	std::ostringstream oss;
+	for (size_t i = 0; i < values.size(); ++i) {
+		oss << values[i];
+		if (i + 1 < values.size()) {
+			oss << ", ";
+		}
+	}
+	return oss.str();
+}
+
+/**
+ * @brief Joins frequency values into a rounded, deduplicated list.
+ *
+ * @param[in] values Frequency values in MHz.
+ * @return std::string Comma-separated list of rounded frequencies.
+ */
+static std::string joinRoundedClocks(const std::vector<double> &values)
+{
+	if (values.empty()) {
+		return "";
+	}
+	std::vector<uint32_t> rounded;
+	rounded.reserve(values.size());
+	for (double v : values) {
+		if (v < 0) {
+			continue;
+		}
+		rounded.push_back(static_cast<uint32_t>(std::llround(v)));
+	}
+	std::sort(rounded.begin(), rounded.end());
+	rounded.erase(std::unique(rounded.begin(), rounded.end()), rounded.end());
+	return joinUint32(rounded);
+}
+
+/**
+ * @brief Gets the device power valid range string.
+ *
+ * @param[in] device Level Zero device handle.
+ * @return std::string Power range in the format "min to max".
+ */
+static std::string getPowerValidRange(zes_device_handle_t device)
+{
+	uint32_t powerCount = 0;
+	ze_result_t result = zesDeviceEnumPowerDomains(device, &powerCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || powerCount == 0) {
+		return "";
+	}
+
+	std::vector<zes_pwr_handle_t> powerHandles(powerCount);
+	result = zesDeviceEnumPowerDomains(device, &powerCount, powerHandles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return "";
+	}
+
+	std::string range;
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		zes_power_ext_properties_t extProps = {};
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+		props.pNext = &extProps;
+		extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+		if (zesPowerGetProperties(powerHandles[i], &props) != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (props.maxLimit > 0) {
+			std::ostringstream os;
+			uint32_t maxLimitW = props.maxLimit / 1000;
+			os << 1 << " to " << maxLimitW;
+			range = os.str();
+			if (extProps.domain == ZES_POWER_DOMAIN_PACKAGE) {
+				break;
+			}
+		}
+	}
+
+	return range;
+}
+
+/**
+ * @brief Gets available GPU frequency options and range for a tile.
+ *
+ * @param[in] device Level Zero device handle.
+ * @param[in] tileId Tile identifier.
+ * @param[out] options Comma-separated frequency list.
+ * @param[out] minFreq Minimum frequency in MHz.
+ * @param[out] maxFreq Maximum frequency in MHz.
+ */
+static void getGpuFrequencyOptions(zes_device_handle_t device, uint32_t tileId, std::string &options, uint32_t &minFreq,
+								   uint32_t &maxFreq)
+{
+	options.clear();
+	minFreq = 0;
+	maxFreq = 0;
+
+	uint32_t freqCount = 0;
+	ze_result_t result = zesDeviceEnumFrequencyDomains(device, &freqCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || freqCount == 0) {
+		return;
+	}
+
+	std::vector<zes_freq_handle_t> freqHandles(freqCount);
+	result = zesDeviceEnumFrequencyDomains(device, &freqCount, freqHandles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return;
+	}
+
+	zes_freq_handle_t selected = nullptr;
+	for (uint32_t i = 0; i < freqCount; ++i) {
+		zes_freq_properties_t props = {};
+		if (zesFrequencyGetProperties(freqHandles[i], &props) != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (props.type != ZES_FREQ_DOMAIN_GPU) {
+			continue;
+		}
+		if (props.onSubdevice) {
+			if (props.subdeviceId == tileId) {
+				selected = freqHandles[i];
+				break;
+			}
+		} else if (tileId == 0 && selected == nullptr) {
+			selected = freqHandles[i];
+		}
+	}
+
+	if (selected == nullptr) {
+		return;
+	}
+
+	uint32_t count = 0;
+	result = zesFrequencyGetAvailableClocks(selected, &count, nullptr);
+	if (result != ZE_RESULT_SUCCESS || count == 0) {
+		return;
+	}
+
+	std::vector<double> clocks(count);
+	result = zesFrequencyGetAvailableClocks(selected, &count, clocks.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return;
+	}
+
+	options = joinRoundedClocks(clocks);
+	if (!clocks.empty()) {
+		double minVal = *std::min_element(clocks.begin(), clocks.end());
+		double maxVal = *std::max_element(clocks.begin(), clocks.end());
+		minFreq = static_cast<uint32_t>(std::llround(minVal));
+		maxFreq = static_cast<uint32_t>(std::llround(maxVal));
+	}
+}
+
+/**
+ * @brief Maps a tile id to a subdevice id if supported.
+ *
+ * @param[in] d Device information.
+ * @param[in] tileId Tile identifier.
+ * @return uint32_t Subdevice identifier (or tileId if mapping unavailable).
+ */
+static uint32_t mapTileToSubdevice(devInfo *d, uint32_t tileId)
+{
+	zes_device_properties_t props = {};
+	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	if (zesDeviceGetProperties(d->zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
+		if (props.numSubdevices == 0) {
+			return tileId;
+		}
+	}
+	zes_subdevice_exp_properties_t subdeviceProps = {};
+	ze_result_t result = d->dev->getSubdeviceProperties(tileId, subdeviceProps);
+	if (result == ZE_RESULT_SUCCESS) {
+		return subdeviceProps.subdeviceId;
+	}
+	return tileId;
+}
+
+/**
+ * @brief Gets scheduler mode and parameters for a tile.
+ *
+ * @param[in] d Device information.
+ * @param[in] tileId Tile identifier.
+ * @param[out] mode Scheduler mode string.
+ * @param[out] interval Timeslice/timeout interval in microseconds.
+ * @param[out] yieldTimeout Timeslice yield timeout in microseconds.
+ */
+static void getSchedulerInfo(devInfo *d, uint32_t tileId, std::string &mode, uint64_t &interval, uint64_t &yieldTimeout)
+{
+	mode.clear();
+	interval = 0;
+	yieldTimeout = 0;
+
+	uint32_t schedCount = 0;
+	ze_result_t result = zesDeviceEnumSchedulers(d->zesDeviceHdl, &schedCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || schedCount == 0) {
+		return;
+	}
+
+	std::vector<zes_sched_handle_t> schedHandles(schedCount);
+	result = zesDeviceEnumSchedulers(d->zesDeviceHdl, &schedCount, schedHandles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return;
+	}
+
+	uint32_t targetSubdeviceId = mapTileToSubdevice(d, tileId);
+	zes_sched_handle_t selected = nullptr;
+
+	for (const auto &handle : schedHandles) {
+		zes_sched_properties_t props = {};
+		if (zesSchedulerGetProperties(handle, &props) != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (props.onSubdevice) {
+			if (props.subdeviceId == targetSubdeviceId) {
+				selected = handle;
+				break;
+			}
+		} else if (tileId == 0) {
+			selected = handle;
+			break;
+		}
+	}
+
+	if (selected == nullptr) {
+		return;
+	}
+
+	zes_sched_mode_t schedMode = {};
+	if (zesSchedulerGetCurrentMode(selected, &schedMode) != ZE_RESULT_SUCCESS) {
+		return;
+	}
+
+	if (schedMode == ZES_SCHED_MODE_TIMEOUT) {
+		mode = "timeout";
+		zes_sched_timeout_properties_t timeoutProps = {};
+		if (zesSchedulerGetTimeoutModeProperties(selected, 0, &timeoutProps) == ZE_RESULT_SUCCESS) {
+			interval = timeoutProps.watchdogTimeout;
+		}
+	} else if (schedMode == ZES_SCHED_MODE_TIMESLICE) {
+		mode = "timeslice";
+		zes_sched_timeslice_properties_t timesliceProps = {};
+		if (zesSchedulerGetTimesliceModeProperties(selected, 0, &timesliceProps) == ZE_RESULT_SUCCESS) {
+			interval = timesliceProps.interval;
+			yieldTimeout = timesliceProps.yieldTimeout;
+		}
+	} else if (schedMode == ZES_SCHED_MODE_EXCLUSIVE) {
+		mode = "exclusive";
+	} else {
+		mode = "unknown";
+	}
+}
+
+/**
+ * @brief Gets standby mode for a tile.
+ *
+ * @param[in] d Device information.
+ * @param[in] tileId Tile identifier.
+ * @return std::string Standby mode string.
+ */
+static std::string getStandbyMode(devInfo *d, uint32_t tileId)
+{
+	uint32_t standbyCount = 0;
+	ze_result_t result = zesDeviceEnumStandbyDomains(d->zesDeviceHdl, &standbyCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || standbyCount == 0) {
+		return "";
+	}
+
+	std::vector<zes_standby_handle_t> standbyHandles(standbyCount);
+	result = zesDeviceEnumStandbyDomains(d->zesDeviceHdl, &standbyCount, standbyHandles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return "";
+	}
+
+	uint32_t targetSubdeviceId = mapTileToSubdevice(d, tileId);
+	zes_standby_handle_t selected = nullptr;
+
+	for (const auto &handle : standbyHandles) {
+		zes_standby_properties_t props = {};
+		if (zesStandbyGetProperties(handle, &props) != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (props.onSubdevice) {
+			if (props.subdeviceId == targetSubdeviceId) {
+				selected = handle;
+				break;
+			}
+		} else if (tileId == 0) {
+			selected = handle;
+			break;
+		}
+	}
+
+	if (selected == nullptr) {
+		return "";
+	}
+
+	zes_standby_promo_mode_t mode = {};
+	if (zesStandbyGetMode(selected, &mode) != ZE_RESULT_SUCCESS) {
+		return "";
+	}
+
+	if (mode == ZES_STANDBY_PROMO_MODE_DEFAULT) {
+		return "default";
+	}
+	if (mode == ZES_STANDBY_PROMO_MODE_NEVER) {
+		return "never";
+	}
+	return "";
+}
+
+/**
+ * @brief Builds JSON string for device configuration output.
+ *
+ * @param[in] d Device information.
+ * @param[in] indent Base indentation size.
+ * @return std::string JSON-formatted configuration.
+ */
+static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
+{
+	std::string eccCurrent;
+	std::string eccPending;
+	ze_device_properties_t zeProps = {};
+	if (d->dev->getDevProps(d->deviceHdl, &zeProps) == ZE_RESULT_SUCCESS) {
+		if (zeProps.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
+			ecc *e = d->dev->getECC();
+			if (e != nullptr) {
+				zes_device_ecc_properties_t state = {};
+				if (e->getState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
+					eccCurrent = (state.currentState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
+					eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
+				}
+			}
+		}
+	}
+
+	int plPackageSustain = 0;
+	std::string powerValidRange;
+	power *pwr = d->dev->getPower();
+	if (pwr != nullptr) {
+		std::vector<PowerLimitExt> limits;
+		if (pwr->getLimitsExt(limits) == ZE_RESULT_SUCCESS) {
+			for (const auto &limit : limits) {
+				if (limit.level == ZES_POWER_LEVEL_SUSTAINED) {
+					plPackageSustain = static_cast<int>(limit.limitMw / 1000);
+					break;
+				}
+			}
+		}
+	}
+	if (powerValidRange.empty()) {
+		powerValidRange = getPowerValidRange(d->zesDeviceHdl);
+	}
+
+	uint32_t tileCount = 0;
+	zes_device_properties_t props = {};
+	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	if (zesDeviceGetProperties(d->zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
+		tileCount = props.numSubdevices;
+	}
+	if (tileCount == 0) {
+		tileCount = 1;
+	}
+
+	nlohmann::ordered_json deviceJson;
+	deviceJson["device_id"] = d->index;
+	deviceJson["memory_ecc_current_state"] = eccCurrent;
+	deviceJson["memory_ecc_pending_state"] = eccPending;
+	deviceJson["pl_package_sustain"] = plPackageSustain;
+	deviceJson["power_valid_range"] = powerValidRange;
+
+	nlohmann::ordered_json tileConfigArray = nlohmann::ordered_json::array();
+
+	for (uint32_t tileId = 0; tileId < tileCount; ++tileId) {
+		std::string tileIdStr = std::to_string(d->index) + "/" + std::to_string(tileId);
+
+		std::string freqOptions;
+		uint32_t minFreq = 0;
+		uint32_t maxFreq = 0;
+		getGpuFrequencyOptions(d->zesDeviceHdl, tileId, freqOptions, minFreq, maxFreq);
+
+		std::string schedulerMode;
+		uint64_t schedInterval = 0;
+		uint64_t schedYieldTimeout = 0;
+		getSchedulerInfo(d, tileId, schedulerMode, schedInterval, schedYieldTimeout);
+
+		std::string standbyMode = getStandbyMode(d, tileId);
+
+		nlohmann::ordered_json tileJson;
+		tileJson["compute_engine"] = "compute";
+		tileJson["gpu_frequency_valid_options"] = freqOptions;
+		tileJson["max_frequency"] = maxFreq;
+		tileJson["media_engine"] = "media";
+		tileJson["min_frequency"] = minFreq;
+		tileJson["scheduler_mode"] = schedulerMode;
+		uint64_t outInterval = (schedulerMode == "timeslice") ? schedInterval : 0;
+		uint64_t outYieldTimeout = (schedulerMode == "timeslice") ? schedYieldTimeout : 0;
+		tileJson["scheduler_timeslice_interval"] = outInterval;
+		tileJson["scheduler_timeslice_yield_timeout"] = outYieldTimeout;
+		tileJson["standby_mode"] = standbyMode;
+		tileJson["standby_mode_valid_options"] = "default, never";
+		tileJson["tile_id"] = tileIdStr;
+
+		tileConfigArray.push_back(tileJson);
+	}
+
+	deviceJson["tile_config_data"] = tileConfigArray;
+
+	std::string jsonOut = deviceJson.dump(4);
+	if (indent == 0) {
+		return jsonOut;
+	}
+
+	std::string indentStr(indent, ' ');
+	std::ostringstream out;
+	std::istringstream in(jsonOut);
+	std::string line;
+	while (std::getline(in, line)) {
+		out << indentStr << line;
+		if (!in.eof()) {
+			out << "\n";
+		}
+	}
+	return out.str();
+}
 
 /**
  * @brief Splits a string into tokens based on a delimiter.
@@ -874,144 +1306,6 @@ ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 }
 
 /**
- * @brief Sets the Xe Link port configuration for the device.
- *
- * @param d Device information structure.
- *
- * @return ze_result_t Result of the operation.
- */
-ze_result_t cmdConfig::setXeLinkPort(devInfo *d)
-{
-	TRACING();
-
-	if (!configCmds[configCmdType::TILE].enabled) {
-		ERR("Error: Tile ID is required for XeLink port configuration. Use -t <tileId>.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate tile ID
-	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
-	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
-		ERR("Error: Invalid tile ID.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-	uint32_t tileId = static_cast<uint32_t>(std::stoul(tileIdStr));
-
-	std::string xeLinkPort = configCmds[configCmdType::XELINKPORT].val;
-	std::vector<std::string> parts = split(xeLinkPort, ',');
-
-	if (parts.size() != 2) {
-		ERR("Invalid XeLink port format. Expected: portId,value\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate port ID
-	if (parts[0].empty() || !std::all_of(parts[0].begin(), parts[0].end(), ::isdigit)) {
-		ERR("Error parsing XeLink port parameters: invalid port ID\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate enabled value
-	if (parts[1].empty() || (parts[1] != "0" && parts[1] != "1")) {
-		ERR("Port value must be 0 (down) or 1 (up)\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	uint32_t portId = static_cast<uint32_t>(std::stoul(parts[0]));
-	int enabled = std::stoi(parts[1]);
-
-	fabric *f = d->dev->getFabric();
-	if (f == nullptr) {
-		ERR("Error: Fabric pointer not found.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	portInfoSet portSet = {};
-	portSet.subdeviceId = tileId;
-	portSet.portId.portNumber = static_cast<uint8_t>(portId);
-	portSet.enabled = (enabled == 1);
-	portSet.settingEnabled = true;
-	portSet.settingBeaconing = false;
-
-	ze_result_t result = f->setFabricPorts(d->zesDeviceHdl, portSet);
-	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing Xe Link port %u to %s on GPU %d tile %u\n", portId, enabled ? "up" : "down",
-			  d->index, tileId);
-	}
-
-	return result;
-}
-
-/**
- * @brief Sets the Xe Link port beaconing configuration for the device.
- *
- * @param d Device information structure.
- *
- * @return ze_result_t Result of the operation.
- */
-ze_result_t cmdConfig::setXeLinkPortBeaconing(devInfo *d)
-{
-	TRACING();
-
-	if (!configCmds[configCmdType::TILE].enabled) {
-		ERR("Error: Tile ID is required for XeLink beaconing configuration. Use -t <tileId>.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate tile ID
-	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
-	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
-		ERR("Error: Invalid tile ID.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-	uint32_t tileId = static_cast<uint32_t>(std::stoul(tileIdStr));
-
-	std::string xeLinkBeaconing = configCmds[configCmdType::XELINKPORTBEACONING].val;
-	std::vector<std::string> parts = split(xeLinkBeaconing, ',');
-
-	if (parts.size() != 2) {
-		ERR("Invalid XeLink beaconing format. Expected: portId,value\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate port ID
-	if (parts[0].empty() || !std::all_of(parts[0].begin(), parts[0].end(), ::isdigit)) {
-		ERR("Error parsing XeLink beaconing parameters: invalid port ID\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate enabled value
-	if (parts[1].empty() || (parts[1] != "0" && parts[1] != "1")) {
-		ERR("Beaconing value must be 0 (off) or 1 (on)\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	uint32_t portId = static_cast<uint32_t>(std::stoul(parts[0]));
-	int enabled = std::stoi(parts[1]);
-
-	fabric *f = d->dev->getFabric();
-	if (f == nullptr) {
-		ERR("Error: Fabric pointer not found.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	portInfoSet portSet = {};
-	portSet.subdeviceId = tileId;
-	portSet.portId.portNumber = static_cast<uint8_t>(portId);
-	portSet.beaconing = (enabled == 1);
-	portSet.settingEnabled = false;
-	portSet.settingBeaconing = true;
-
-	ze_result_t result = f->setFabricPorts(d->zesDeviceHdl, portSet);
-	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing Xe Link port %u beaconing to %s on GPU %d tile %u\n", portId,
-			  enabled ? "on" : "off", d->index, tileId);
-	}
-
-	return result;
-}
-
-/**
  * @brief Sets the memory ECC configuration for the device.
  *
  * @param d Device information structure.
@@ -1297,8 +1591,27 @@ int cmdConfig::run(arg_struct *args)
 
 	// If this is query mode, display configuration
 	if (isQueryMode) {
-		for (auto &device : deviceList) {
-			displayDeviceConfig(&device);
+		if (configCmds[configCmdType::CONFIGJSON].enabled) {
+			if (deviceList.size() == 1) {
+				std::string jsonOut = buildDeviceConfigJson(&deviceList[0], 0);
+				PRINT("%s\n", jsonOut.c_str());
+			} else {
+				std::ostringstream out;
+				out << "[\n";
+				for (size_t i = 0; i < deviceList.size(); ++i) {
+					out << buildDeviceConfigJson(&deviceList[i], 4);
+					if (i + 1 < deviceList.size()) {
+						out << ",";
+					}
+					out << "\n";
+				}
+				out << "]\n";
+				PRINT("%s", out.str().c_str());
+			}
+		} else {
+			for (auto &device : deviceList) {
+				displayDeviceConfig(&device);
+			}
 		}
 		return ZE_RESULT_SUCCESS;
 	}
