@@ -534,7 +534,6 @@ int redfish::discoverIntelGpusHttpScan(const std::string &systemId, RedfishGPUDe
 	// Use dynamic array to collect all device paths
 	std::vector<std::string> devicePaths;
 	size_t currentPos = arrayStartPos + 1;
-	int parseIndex = 0;
 
 	// Parse each PCIe device reference in the Members array
 	while (currentPos < pcieDevicesCollection.length() && pcieDevicesCollection[currentPos] != ']') {
@@ -566,7 +565,6 @@ int redfish::discoverIntelGpusHttpScan(const std::string &systemId, RedfishGPUDe
 				   pcieDevicesCollection[currentPos] != '}' && pcieDevicesCollection[currentPos] != ']') {
 				currentPos++;
 			}
-			parseIndex++;
 			continue;
 		}
 
@@ -601,8 +599,6 @@ int redfish::discoverIntelGpusHttpScan(const std::string &systemId, RedfishGPUDe
 		if (currentPos < pcieDevicesCollection.length() && pcieDevicesCollection[currentPos] == '}') {
 			currentPos++;
 		}
-
-		parseIndex++;
 	}
 
 	int deviceCount = static_cast<int>(devicePaths.size());
