@@ -99,7 +99,7 @@ func (t *metricsTranslator) updateMetadata(metricName string, dps pmetric.Number
 		id := hwIDVal.Str()
 		if id == "" {
 			// Missing hardware ID
-			t.logger.Errorw("missing or empty hw.id attribute", "metric", metricName, "attributes", attrs)
+			t.logger.Errorw("missing or empty hw.id attribute", "metric", metricName, "attributes", attrs.AsRaw())
 			continue
 		}
 
@@ -125,13 +125,13 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 		hwTypeVal, _ := attrs.Get("hw.type")
 		hwType := hwTypeVal.Str()
 		if hwType == "" {
-			t.logger.Errorw("missing or empty hw.type attribute", "metric", metricName, "attributes", attrs)
+			t.logger.Errorw("missing or empty hw.type attribute", "metric", metricName, "attributes", attrs.AsRaw())
 			continue
 		}
 
 		if dp.ValueType() != pmetric.NumberDataPointValueTypeInt {
 			// Value should be integer
-			t.logger.Errorw("unexpected data point value type for health status metric", "valueType", dp.ValueType(), "metric", metricName, "attributes", attrs)
+			t.logger.Errorw("unexpected data point value type for health status metric", "valueType", dp.ValueType(), "metric", metricName, "attributes", attrs.AsRaw())
 			continue
 		}
 		if dp.IntValue() == 0 {
@@ -142,7 +142,7 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 		hwParentVal, _ := attrs.Get("hw.parent")
 		id := hwParentVal.Str()
 		if id == "" {
-			t.logger.Errorw("missing or empty hw.parent attribute", "metric", metricName, "attributes", attrs)
+			t.logger.Errorw("missing or empty hw.parent attribute", "metric", metricName, "attributes", attrs.AsRaw())
 			continue
 		}
 		// TODO: should we handle hw.status{hw.type="gpu", hw.id=<gpu-id>} metrics too?
