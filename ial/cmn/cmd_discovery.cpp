@@ -1059,7 +1059,7 @@ ze_result_t cmdDiscovery::pciSlot(devInfo *d, std::string *outputLine)
 
 	auto *const p = d->dev->getPCI();
 	if (p == nullptr) {
-		*outputLine = "";
+		*outputLine = "N/A";
 		return ZE_RESULT_SUCCESS;
 	}
 
@@ -1655,7 +1655,7 @@ ze_result_t cmdDiscovery::memoryEccState(devInfo *d, std::string *outputLine)
 	if (zeDevProp.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
 		*outputLine = "enabled";
 	} else {
-		*outputLine = "";
+		*outputLine = "N/A";
 	}
 	return ZE_RESULT_SUCCESS;
 }
