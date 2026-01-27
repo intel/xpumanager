@@ -471,7 +471,6 @@ std::string getDevicePath(const std::string &bdfAddress)
 void getSwitchDevicePath(hwloc_obj_t parObj, std::string *switchDevicePath)
 {
 	hwloc_obj_t obj = parObj->parent;
-	int count = 0;
 	uint32_t preVendorId = -1, preDeviceId = -1;
 	while (obj != nullptr) {
 		if (obj->type == HWLOC_OBJ_BRIDGE) {
@@ -497,7 +496,6 @@ void getSwitchDevicePath(hwloc_obj_t parObj, std::string *switchDevicePath)
 						if (path.length() > 0) {
 							*switchDevicePath = path;
 						}
-						count++;
 					}
 				}
 			}
