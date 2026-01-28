@@ -141,11 +141,17 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 
 		hwParentVal, _ := attrs.Get("hw.parent")
 		id := hwParentVal.Str()
+
 		if id == "" {
-			t.logger.Errorw("missing or empty hw.parent attribute", "metric", metricName, "attributes", attrs.AsRaw())
-			continue
+			// Missing or empty hw.parent -> fallback to hw.id
+			hwIDVal, _ := attrs.Get("hw.id")
+			id = hwIDVal.Str()
+			if id == "" {
+				// Missing hardware ID
+				t.logger.Errorw("missing or empty hw.id attribute", "metric", metricName, "attributes", attrs.AsRaw())
+				continue
+			}
 		}
-		// TODO: should we handle hw.status{hw.type="gpu", hw.id=<gpu-id>} metrics too?
 
 		health := t.health[id]
 		if health == nil {
