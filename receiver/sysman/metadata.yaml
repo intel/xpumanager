@@ -23,8 +23,8 @@ attributes:
   com.intel.gpu.subdevice_id:
     description: Subdevice ID of the GPU.
     type: string
-  hw.gpu.speed.type:
-    description: The hardware block that the speed belongs to (gpu, memory, ...).
+  hw.frequency.domain:
+    description: The frequency domain (gpu, memory, media...).
     type: string
   hw.id:
     description: Unique identifier for the hardware component.
@@ -57,6 +57,7 @@ attributes:
     description: Type of the hardware component.
     type: string
     enum:
+      - frequency
       - memory
       - temperature
   hw.vendor:
@@ -76,6 +77,53 @@ attributes:
       - max
 
 metrics:
+  hw.frequency:
+    enabled: true
+    description: Operating frequency of the hardware component.
+    stability:
+      level: development
+    unit: "Hz"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, aggregation]
+  hw.frequency.limit:
+    enabled: true
+    description: Frequency limit in Hertz.
+    stability:
+      level: development
+    unit: "Hz"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, hw.limit_type]
+  hw.frequency.request:
+    enabled: true
+    description: Requested operating frequency.
+    stability:
+      level: development
+    unit: "Hz"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id]
+  hw.frequency.samples:
+    enabled: true
+    description: Number of frequency samples during the last collection interval.
+    stability:
+      level: development
+    unit: "{count}"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, sample.status]
+  hw.frequency.throttle_status:
+    enabled: true
+    description: GPU frequency throttle status.
+    stability:
+      level: development
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, com.intel.gpu.speed.throttle_reason]
   hw.gpu.info:
     enabled: true
     description: Information about the GPU device.
@@ -87,53 +135,6 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor]
-  hw.gpu.speed:
-    enabled: true
-    description: Current GPU frequency.
-    stability:
-      level: development
-    unit: "Hz"
-    gauge:
-      value_type: double
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, aggregation]
-  hw.gpu.speed.limit:
-    enabled: true
-    description: GPU frequency limit.
-    stability:
-      level: development
-    unit: "Hz"
-    gauge:
-      value_type: double
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, hw.limit_type]
-  hw.gpu.speed.request:
-    enabled: true
-    description: Requested GPU frequency.
-    stability:
-      level: development
-    unit: "Hz"
-    gauge:
-      value_type: double
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id]
-  hw.gpu.speed.samples:
-    enabled: true
-    description: Number of speed samples during the last collection interval.
-    stability:
-      level: development
-    unit: "{count}"
-    gauge:
-      value_type: int
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, sample.status]
-  hw.gpu.speed.status:
-    enabled: true
-    description: GPU frequency status.
-    stability:
-      level: development
-    unit: "1"
-    sum:
-      value_type: int
-      monotonic: false
-      aggregation_temporality: cumulative
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.gpu.speed.type, com.intel.gpu.subdevice_id, hw.state, com.intel.gpu.speed.throttle_reason]
   hw.memory.size:
     enabled: true
     description: Size of the memory.

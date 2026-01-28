@@ -28,36 +28,36 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for sysman metrics.
 type MetricsConfig struct {
-	HwGpuInfo         MetricConfig `mapstructure:"hw.gpu.info"`
-	HwGpuSpeed        MetricConfig `mapstructure:"hw.gpu.speed"`
-	HwGpuSpeedLimit   MetricConfig `mapstructure:"hw.gpu.speed.limit"`
-	HwGpuSpeedRequest MetricConfig `mapstructure:"hw.gpu.speed.request"`
-	HwGpuSpeedSamples MetricConfig `mapstructure:"hw.gpu.speed.samples"`
-	HwGpuSpeedStatus  MetricConfig `mapstructure:"hw.gpu.speed.status"`
-	HwMemorySize      MetricConfig `mapstructure:"hw.memory.size"`
-	HwMemoryUsage     MetricConfig `mapstructure:"hw.memory.usage"`
-	HwStatus          MetricConfig `mapstructure:"hw.status"`
-	HwTemperature     MetricConfig `mapstructure:"hw.temperature"`
+	HwFrequency               MetricConfig `mapstructure:"hw.frequency"`
+	HwFrequencyLimit          MetricConfig `mapstructure:"hw.frequency.limit"`
+	HwFrequencyRequest        MetricConfig `mapstructure:"hw.frequency.request"`
+	HwFrequencySamples        MetricConfig `mapstructure:"hw.frequency.samples"`
+	HwFrequencyThrottleStatus MetricConfig `mapstructure:"hw.frequency.throttle_status"`
+	HwGpuInfo                 MetricConfig `mapstructure:"hw.gpu.info"`
+	HwMemorySize              MetricConfig `mapstructure:"hw.memory.size"`
+	HwMemoryUsage             MetricConfig `mapstructure:"hw.memory.usage"`
+	HwStatus                  MetricConfig `mapstructure:"hw.status"`
+	HwTemperature             MetricConfig `mapstructure:"hw.temperature"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
+		HwFrequency: MetricConfig{
+			Enabled: true,
+		},
+		HwFrequencyLimit: MetricConfig{
+			Enabled: true,
+		},
+		HwFrequencyRequest: MetricConfig{
+			Enabled: true,
+		},
+		HwFrequencySamples: MetricConfig{
+			Enabled: true,
+		},
+		HwFrequencyThrottleStatus: MetricConfig{
+			Enabled: true,
+		},
 		HwGpuInfo: MetricConfig{
-			Enabled: true,
-		},
-		HwGpuSpeed: MetricConfig{
-			Enabled: true,
-		},
-		HwGpuSpeedLimit: MetricConfig{
-			Enabled: true,
-		},
-		HwGpuSpeedRequest: MetricConfig{
-			Enabled: true,
-		},
-		HwGpuSpeedSamples: MetricConfig{
-			Enabled: true,
-		},
-		HwGpuSpeedStatus: MetricConfig{
 			Enabled: true,
 		},
 		HwMemorySize: MetricConfig{

@@ -32,9 +32,12 @@ type sysmanFrequency struct {
 }
 
 type frequencyAttributes struct {
-	deviceAttributes
-	gpuSpeedType string
-	subdeviceId  string
+	hwID            string
+	hwType          metadata.AttributeHwType
+	hwName          string
+	hwParent        string
+	hwFrequencyType string
+	subdeviceId     string
 }
 
 // sysmanFrequencyState holds the dynamic runtime state.
@@ -71,9 +74,12 @@ func newSysmanFrequency(name string, freq *l0sysman.Freq, device *sysmanDevice) 
 		Freq:   freq,
 		logger: device.logger,
 		attributes: frequencyAttributes{
-			deviceAttributes: device.attributes,
-			gpuSpeedType:     strings.ToLower(props.Type.String()),
-			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			hwID:            device.attributes.hwID + "_" + name,
+			hwType:          metadata.AttributeHwTypeFrequency,
+			hwName:          name,
+			hwParent:        device.attributes.hwID,
+			hwFrequencyType: strings.ToLower(props.Type.String()),
+			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		// Aggregated metrics
 		actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
@@ -86,24 +92,20 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 		f.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", f.attributes)
 	} else {
 		if rang.Min >= 0 {
-			mb.RecordHwGpuSpeedLimitDataPoint(ts, rang.Min*1e6,
+			mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
 				f.attributes.hwID,
-				f.attributes.hwModel,
+				f.attributes.hwFrequencyType,
 				f.attributes.hwName,
-				f.attributes.hwSerialNumber,
-				f.attributes.hwVendor,
-				f.attributes.gpuSpeedType,
+				f.attributes.hwParent,
 				f.attributes.subdeviceId,
 				"min")
 		}
 		if rang.Max >= 0 {
-			mb.RecordHwGpuSpeedLimitDataPoint(ts, rang.Max*1e6,
+			mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
 				f.attributes.hwID,
-				f.attributes.hwModel,
+				f.attributes.hwFrequencyType,
 				f.attributes.hwName,
-				f.attributes.hwSerialNumber,
-				f.attributes.hwVendor,
-				f.attributes.gpuSpeedType,
+				f.attributes.hwParent,
 				f.attributes.subdeviceId,
 				"max")
 		}
@@ -113,30 +115,31 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 		f.logger.Errorw("Failed to get frequency state", zap.Error(err), "attributes", f.attributes)
 	} else {
 		if state.Request >= 0 {
-			mb.RecordHwGpuSpeedRequestDataPoint(ts, state.Request*1e6,
+			mb.RecordHwFrequencyRequestDataPoint(ts, int64(state.Request*1e6),
 				f.attributes.hwID,
-				f.attributes.hwModel,
+				f.attributes.hwFrequencyType,
 				f.attributes.hwName,
-				f.attributes.hwSerialNumber,
-				f.attributes.hwVendor,
-				f.attributes.gpuSpeedType,
+				f.attributes.hwParent,
 				f.attributes.subdeviceId)
 		}
 
-		stateOK := int64(1)
-		if state.ThrottleReasons != 0 {
-			stateOK = 0
+		states := map[string]int64{}
+		if state.ThrottleReasons == 0 {
+			states["ok"] = 1
+			states["throttled"] = 0
+		} else {
+			states["ok"] = 0
+			states["throttled"] = 1
 		}
-		mb.RecordHwGpuSpeedStatusDataPoint(ts, stateOK,
-			f.attributes.hwID,
-			f.attributes.hwModel,
-			f.attributes.hwName,
-			f.attributes.hwSerialNumber,
-			f.attributes.hwVendor,
-			f.attributes.gpuSpeedType,
-			f.attributes.subdeviceId,
-			"ok",
-			"")
+		for state, value := range states {
+			mb.RecordHwStatusDataPoint(ts, value,
+				f.attributes.hwID,
+				state,
+				f.attributes.hwName,
+				f.attributes.hwType,
+				f.attributes.hwParent,
+				f.attributes.subdeviceId)
+		}
 
 		for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
 			value := int64(0)
@@ -149,15 +152,12 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 			// throttle reason (does not know the status). Emit the metric
 			// only once support is confirmed.
 			if l0sysman.FreqThrottleReasonFlag(f.state.throttleReasonsSeen)&reason != 0 {
-				mb.RecordHwGpuSpeedStatusDataPoint(ts, value,
+				mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
 					f.attributes.hwID,
-					f.attributes.hwModel,
+					f.attributes.hwFrequencyType,
 					f.attributes.hwName,
-					f.attributes.hwSerialNumber,
-					f.attributes.hwVendor,
-					f.attributes.gpuSpeedType,
+					f.attributes.hwParent,
 					f.attributes.subdeviceId,
-					"throttled",
 					strings.ToLower(reason.String()))
 			}
 		}
@@ -167,54 +167,44 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 	actualStats := f.actual.collect(0)
 
 	if actualStats.samples > 0 {
-		mb.RecordHwGpuSpeedDataPoint(ts, actualStats.minValue*1e6,
+		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.minValue*1e6),
 			f.attributes.hwID,
-			f.attributes.hwModel,
+			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
-			f.attributes.hwSerialNumber,
-			f.attributes.hwVendor,
-			f.attributes.gpuSpeedType,
+			f.attributes.hwParent,
 			f.attributes.subdeviceId,
 			metadata.AttributeAggregationMin)
 
-		mb.RecordHwGpuSpeedDataPoint(ts, actualStats.maxValue*1e6,
+		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.maxValue*1e6),
 			f.attributes.hwID,
-			f.attributes.hwModel,
+			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
-			f.attributes.hwSerialNumber,
-			f.attributes.hwVendor,
-			f.attributes.gpuSpeedType,
+			f.attributes.hwParent,
 			f.attributes.subdeviceId,
 			metadata.AttributeAggregationMax)
 
-		mb.RecordHwGpuSpeedDataPoint(ts, actualStats.avgValue*1e6,
+		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.avgValue*1e6),
 			f.attributes.hwID,
-			f.attributes.hwModel,
+			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
-			f.attributes.hwSerialNumber,
-			f.attributes.hwVendor,
-			f.attributes.gpuSpeedType,
+			f.attributes.hwParent,
 			f.attributes.subdeviceId,
 			metadata.AttributeAggregationAvg)
 
 		// Sample debug metrics
-		mb.RecordHwGpuSpeedSamplesDataPoint(ts, int64(actualStats.samples),
+		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.samples),
 			f.attributes.hwID,
-			f.attributes.hwModel,
+			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
-			f.attributes.hwSerialNumber,
-			f.attributes.hwVendor,
-			f.attributes.gpuSpeedType,
+			f.attributes.hwParent,
 			f.attributes.subdeviceId,
 			metadata.AttributeSampleStatusCollected)
 
-		mb.RecordHwGpuSpeedSamplesDataPoint(ts, int64(actualStats.lostSamples),
+		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.lostSamples),
 			f.attributes.hwID,
-			f.attributes.hwModel,
+			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
-			f.attributes.hwSerialNumber,
-			f.attributes.hwVendor,
-			f.attributes.gpuSpeedType,
+			f.attributes.hwParent,
 			f.attributes.subdeviceId,
 			metadata.AttributeSampleStatusDropped)
 	}
