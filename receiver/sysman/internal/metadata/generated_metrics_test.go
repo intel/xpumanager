@@ -80,7 +80,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val")
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val", "pci.device_id-val", "pci.vendor_id-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -298,6 +298,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.vendor")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.vendor-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.device_id")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.device_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.vendor_id")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.vendor_id-val", attrVal.Str())
 				case "hw.memory.size":
 					assert.False(t, validatedMetrics["hw.memory.size"], "Found a duplicate in the metrics slice: hw.memory.size")
 					validatedMetrics["hw.memory.size"] = true

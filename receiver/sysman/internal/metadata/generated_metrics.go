@@ -477,7 +477,7 @@ func (m *metricHwGpuInfo) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string) {
+func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -490,6 +490,8 @@ func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Ti
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.serial_number", hwSerialNumberAttributeValue)
 	dp.Attributes().PutStr("hw.vendor", hwVendorAttributeValue)
+	dp.Attributes().PutStr("pci.device_id", pciDeviceIDAttributeValue)
+	dp.Attributes().PutStr("pci.vendor_id", pciVendorIDAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -926,8 +928,8 @@ func (mb *MetricsBuilder) RecordHwFrequencyThrottleStatusDataPoint(ts pcommon.Ti
 }
 
 // RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.
-func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string) {
-	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwModelAttributeValue, hwNameAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue)
+func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
+	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwModelAttributeValue, hwNameAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, pciDeviceIDAttributeValue, pciVendorIDAttributeValue)
 }
 
 // RecordHwMemorySizeDataPoint adds a data point to hw.memory.size metric.
