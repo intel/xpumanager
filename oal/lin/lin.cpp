@@ -25,6 +25,7 @@
 
 #include "lin.h"
 #include "pci_database.h"
+#include "dmi_reader.h"
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
@@ -687,21 +688,46 @@ std::string getKernelVersion()
 }
 
 /**
- * @brief Get the PCI slot label from sysfs
+ * @brief Get the PCI slot label/designation for a device
  *
- * @param[in] bdf PCI BDF address string
- * @return std::string PCI slot label or empty string if not available
+ * This function attempts to retrieve the physical slot designation for a PCI device
+ * using multiple fallback strategies:
+ * 1. Read from sysfs /label attribute (fast path, rarely populated)
+ * 2. Query SMBIOS/DMI tables via DmiReader (more reliable, works on most systems)
+ *
+ * @param[in] bdf PCI BDF address string in format "SSSS:BB:DD.F"
+ * @return std::string PCI slot designation/label or empty string if not available
+ *
+ * @note SMBIOS lookup provides slot information on most systems where sysfs label is absent
+ * @note DMI reader is instantiated on-demand and may require elevated permissions
  */
 std::string getPciSlotLabel(const std::string &bdf)
 {
+	// Try sysfs label first (fast path but rarely populated)
 	std::string labelPath = std::format("/sys/bus/pci/devices/{}/label", bdf);
 	std::ifstream labelFile(labelPath);
 
-	if (!labelFile.is_open()) {
-		return "";
+	if (labelFile.is_open()) {
+		std::string label;
+		std::getline(labelFile, label);
+		if (!label.empty()) {
+			return label;
+		}
 	}
 
-	std::string label;
-	std::getline(labelFile, label);
-	return label;
+	// Fallback to SMBIOS/DMI tables
+	try {
+		static DmiReader dmiReader; // Only read tables once
+
+		if (dmiReader.isValid()) {
+			if (auto slot = dmiReader.findSlotForDevice(bdf)) {
+				return slot->designation;
+			}
+		}
+	} catch (const std::exception &e) {
+		// DMI reader initialization failed, continue with empty result
+		ERR("DMI reader failed for %s: %s\n", bdf.c_str(), e.what());
+	}
+
+	return "";
 }

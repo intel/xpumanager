@@ -613,8 +613,16 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	std::string outputLine;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	amcFirmwareName(d, &outputLine);
-	props["amc_firmware_name"] = outputLine;
+	firmware *fw = d->dev->getFirmware();
+	bool hasAmc = (fw && fw->hasAmcFirmware());
+
+	if (hasAmc) {
+		amcFirmwareName(d, &outputLine);
+		props["amc_firmware_name"] = outputLine;
+
+		amcFirmwareVersion(d, &outputLine);
+		props["amc_firmware_version"] = outputLine;
+	}
 
 	deviceID(d, &outputLine);
 	props["device_id"] = outputLine;
@@ -676,23 +684,26 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	gfxFirmwareStatus(d, &outputLine);
 	props["gfx_firmware_status"] = outputLine;
 
-	gfxPscBinFirmwareName(d, &outputLine);
-	props["gfx_pscbin_firmware_name"] = outputLine;
+	// OPROM and GFX_PSCBIN are also only on devices with AMC
+	if (hasAmc) {
+		gfxPscBinFirmwareName(d, &outputLine);
+		props["gfx_pscbin_firmware_name"] = outputLine;
 
-	gfxPscBinFirmwareVersion(d, &outputLine);
-	props["gfx_pscbin_firmware_version"] = outputLine;
+		gfxPscBinFirmwareVersion(d, &outputLine);
+		props["gfx_pscbin_firmware_version"] = outputLine;
 
-	opromCodeFirmwareName(d, &outputLine);
-	props["oprom_code_firmware_name"] = outputLine;
+		opromCodeFirmwareName(d, &outputLine);
+		props["oprom_code_firmware_name"] = outputLine;
 
-	opromCodeFirmwareVersion(d, &outputLine);
-	props["oprom_code_firmware_version"] = outputLine;
+		opromCodeFirmwareVersion(d, &outputLine);
+		props["oprom_code_firmware_version"] = outputLine;
 
-	opromDataFirmwareName(d, &outputLine);
-	props["oprom_data_firmware_name"] = outputLine;
+		opromDataFirmwareName(d, &outputLine);
+		props["oprom_data_firmware_name"] = outputLine;
 
-	opromDataFirmwareVersion(d, &outputLine);
-	props["oprom_data_firmware_version"] = outputLine;
+		opromDataFirmwareVersion(d, &outputLine);
+		props["oprom_data_firmware_version"] = outputLine;
+	}
 
 	uint64_t physicalSize = 0;
 	auto *const m = d->dev->getMemory();
