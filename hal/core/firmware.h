@@ -30,6 +30,7 @@ public:
 	ze_result_t updateFW(firmwareInfo *fwInfo);
 	ze_result_t getFWversion(fwType type, const char *bdfStr, char *version, uint32_t size);
 	int getAmcIndex(std::string gpuBdfStr);
+	bool hasAmcFirmware();
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

@@ -282,6 +282,30 @@ int firmware::getAmcIndex(std::string gpuBdfStr)
 }
 
 /**
+ * @brief Checks if AMC firmware was enumerated by Level Zero
+ *
+ * This function checks whether the device has AMC firmware by examining
+ * the firmware handles that were enumerated by Level Zero. This is a
+ * reliable way to detect AMC capability without hardcoding device IDs.
+ *
+ * @return bool True if AMC firmware is available, false otherwise
+ */
+bool firmware::hasAmcFirmware()
+{
+	if (!propertiesList || firmwareCount == 0) {
+		return false;
+	}
+
+	// Check if any enumerated firmware has "AMC" in its name
+	for (uint32_t i = 0; i < firmwareCount; i++) {
+		if (strstr(propertiesList[i].name, "AMC")) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * @brief Initializes the firmware management subsystem for a device
  *
  * This function initializes firmware management capabilities for the
