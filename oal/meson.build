@@ -27,6 +27,7 @@ elif is_linux
     'lin/http_client.cpp',
     'lin/dbg_log.cpp',
     'lin/diag_lin.cpp',
+    'lin/dmi_reader.cpp',
     'lin/fs_lock.cpp',
     'lin/linvf.cpp',
     'lin/topology.cpp',
