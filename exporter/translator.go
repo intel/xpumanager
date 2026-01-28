@@ -153,19 +153,24 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 			t.health[id] = health
 		}
 
+		hwSensorLocationVal, _ := attrs.Get("hw.sensor_location")
 		hwStateVal, _ := attrs.Get("hw.state")
-		hwState := hwStateVal.Str()
 
-		health.updateStatus(hwType, hwState)
+		health.updateStatus(hwType, hwSensorLocationVal.Str(), hwStateVal.Str())
 	}
 }
 
-func (d *domainHealth) updateStatus(hwType, state string) {
+func (d *domainHealth) updateStatus(hwType, sensorLocation, state string) {
 	hs := hwStatusToHealthStatus(hwType, state)
 
-	if status, exists := (*d)[hwType]; !exists {
-		(*d)[hwType] = &pb.HealthStatus{
-			Name:     hwType,
+	healthDomain := hwType
+	if sensorLocation != "" {
+		healthDomain += "." + sensorLocation
+	}
+
+	if status, exists := (*d)[healthDomain]; !exists {
+		(*d)[healthDomain] = &pb.HealthStatus{
+			Name:     healthDomain,
 			Severity: hs.severity,
 			Reason:   hs.reason,
 			Message:  hs.message,
@@ -173,9 +178,9 @@ func (d *domainHealth) updateStatus(hwType, state string) {
 	} else if hs.severity != pb.SeverityLevel_SEVERITY_LEVEL_OK {
 		// Update only if new status is worse than existing
 		if hs.severity > status.Severity {
-			(*d)[hwType].Severity = hs.severity
-			(*d)[hwType].Reason = hs.reason
-			(*d)[hwType].Message = hs.message
+			(*d)[healthDomain].Severity = hs.severity
+			(*d)[healthDomain].Reason = hs.reason
+			(*d)[healthDomain].Message = hs.message
 		}
 	}
 }
