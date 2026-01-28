@@ -616,9 +616,6 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	amcFirmwareName(d, &outputLine);
 	props["amc_firmware_name"] = outputLine;
 
-	amcFirmwareVersion(d, &outputLine);
-	props["amc_firmware_version"] = outputLine;
-
 	deviceID(d, &outputLine);
 	props["device_id"] = outputLine;
 
@@ -760,6 +757,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 
 	props["oam_socket_id"] = "N/A";
 
+	// Get device properties for core clock rate
 	auto zeDevProp = ze_device_properties_t{};
 	d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	props["core_clock_rate"] = std::format("{} MHz", zeDevProp.coreClockRate);
