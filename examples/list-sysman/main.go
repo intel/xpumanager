@@ -43,15 +43,15 @@ func main() {
 
 			printDevice(device)
 
-			printPCI(device)
-
-			printECC(device)
-
 			printProcs(device)
 
-			printOverock(device)
+			printPCI(device)
+
+			printOverclock(device)
 
 			printDiags(device)
+
+			printECC(device)
 
 			printEngineGroups(device)
 
@@ -61,7 +61,7 @@ func main() {
 
 			printFirmwares(device)
 
-			printFrequencyDomains(device)
+			printFrequency(device)
 
 			printLeds(device)
 
@@ -102,6 +102,16 @@ func printDevice(device *sysman.Device) {
 	common.Dump(state, 2)
 }
 
+func printProcs(device *sysman.Device) {
+	procs, err := device.ProcessesGetState()
+	if err != nil {
+		log.Printf("ERROR: Failed to get processes state: %v", err)
+		return
+	}
+	fmt.Printf("## Processes State:\n")
+	common.Dump(procs, 2)
+}
+
 func printPCI(device *sysman.Device) {
 	props, err := device.PciGetProperties()
 	if err != nil {
@@ -137,43 +147,7 @@ func printPCI(device *sysman.Device) {
 	common.Dump(pciStats, 4)
 }
 
-func printECC(device *sysman.Device) {
-	eccAvailable, err := device.EccAvailable()
-	if err != nil {
-		log.Printf("ERROR: Failed to check ECC availability: %v", err)
-		return
-	}
-	fmt.Printf("## ECC:\n  Available: %v\n", eccAvailable)
-	if !eccAvailable {
-		return
-	}
-
-	eccConfigurable, err := device.EccConfigurable()
-	if err != nil {
-		log.Printf("ERROR: Failed to check ECC configurability: %v", err)
-	} else {
-		fmt.Printf("  Configurable: %v\n", eccConfigurable)
-	}
-
-	eccState, err := device.GetEccState()
-	if err != nil {
-		log.Printf("ERROR: Failed to get ECC state: %v", err)
-	} else {
-		fmt.Printf("  State: %+v\n", eccState)
-	}
-}
-
-func printProcs(device *sysman.Device) {
-	procs, err := device.ProcessesGetState()
-	if err != nil {
-		log.Printf("ERROR: Failed to get processes state: %v", err)
-		return
-	}
-	fmt.Printf("## Processes State:\n")
-	common.Dump(procs, 2)
-}
-
-func printOverock(device *sysman.Device) {
+func printOverclock(device *sysman.Device) {
 	domainBitmask, err := device.GetOverclockDomains()
 	if err != nil {
 		log.Printf("ERROR: Failed to get overclocking domains bitmask: %v", err)
@@ -243,6 +217,32 @@ func printDiags(device *sysman.Device) {
 			fmt.Printf("  Tests:\n")
 			common.Dump(tests, 4)
 		}
+	}
+}
+
+func printECC(device *sysman.Device) {
+	eccAvailable, err := device.EccAvailable()
+	if err != nil {
+		log.Printf("ERROR: Failed to check ECC availability: %v", err)
+		return
+	}
+	fmt.Printf("## ECC:\n  Available: %v\n", eccAvailable)
+	if !eccAvailable {
+		return
+	}
+
+	eccConfigurable, err := device.EccConfigurable()
+	if err != nil {
+		log.Printf("ERROR: Failed to check ECC configurability: %v", err)
+	} else {
+		fmt.Printf("  Configurable: %v\n", eccConfigurable)
+	}
+
+	eccState, err := device.GetEccState()
+	if err != nil {
+		log.Printf("ERROR: Failed to get ECC state: %v", err)
+	} else {
+		fmt.Printf("  State: %+v\n", eccState)
 	}
 }
 
@@ -387,7 +387,7 @@ func printFirmwares(device *sysman.Device) {
 	fmt.Printf("## Found %d firmwares\n", len(firmwares))
 }
 
-func printFrequencyDomains(device *sysman.Device) {
+func printFrequency(device *sysman.Device) {
 	freqDomains, err := device.EnumFrequencyDomains()
 	if err != nil {
 		log.Printf("ERROR: Failed to enumerate frequency domains: %v", err)
