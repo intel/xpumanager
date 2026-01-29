@@ -115,6 +115,14 @@ func (t *metricsTranslator) updateMetadata(metricName string, dps pmetric.Number
 
 		resp.Info.Uuid = id
 		resp.Info.Model = modelVal.Str()
+
+		pciDeviceIDVal, _ := attrs.Get("pci.device_id")
+		pciVendorIDVal, _ := attrs.Get("pci.vendor_id")
+
+		resp.Info.Pci = &pb.PciInfo{
+			DeviceId: pciDeviceIDVal.Str(),
+			VendorId: pciVendorIDVal.Str(),
+		}
 	}
 }
 

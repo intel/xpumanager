@@ -237,6 +237,8 @@ func (x *DeviceInformation) GetPci() *PciInfo {
 type PciInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Bdf           string                 `protobuf:"bytes,1,opt,name=bdf,proto3" json:"bdf,omitempty"`
+	DeviceId      string                 `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	VendorId      string                 `protobuf:"bytes,3,opt,name=vendor_id,json=vendorId,proto3" json:"vendor_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -274,6 +276,20 @@ func (*PciInfo) Descriptor() ([]byte, []int) {
 func (x *PciInfo) GetBdf() string {
 	if x != nil {
 		return x.Bdf
+	}
+	return ""
+}
+
+func (x *PciInfo) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *PciInfo) GetVendorId() string {
+	if x != nil {
+		return x.VendorId
 	}
 	return ""
 }
@@ -364,9 +380,11 @@ const file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc = "" +
 	"\x11DeviceInformation\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x12%\n" +
-	"\x03pci\x18\x03 \x01(\v2\x13.deviceinfo.PciInfoR\x03pci\"\x1b\n" +
+	"\x03pci\x18\x03 \x01(\v2\x13.deviceinfo.PciInfoR\x03pci\"U\n" +
 	"\aPciInfo\x12\x10\n" +
-	"\x03bdf\x18\x01 \x01(\tR\x03bdf\"\x8b\x01\n" +
+	"\x03bdf\x18\x01 \x01(\tR\x03bdf\x12\x1b\n" +
+	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\x12\x1b\n" +
+	"\tvendor_id\x18\x03 \x01(\tR\bvendorId\"\x8b\x01\n" +
 	"\fHealthStatus\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
 	"\bseverity\x18\x02 \x01(\x0e2\x19.deviceinfo.SeverityLevelR\bseverity\x12\x16\n" +

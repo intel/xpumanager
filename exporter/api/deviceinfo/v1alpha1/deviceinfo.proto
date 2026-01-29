@@ -34,6 +34,8 @@ message DeviceInformation {
 // PCI information of the device.
 message PciInfo {
   string bdf = 1;
+  string device_id = 2;
+  string vendor_id = 3;
 }
 
 // Status of a health domain.
