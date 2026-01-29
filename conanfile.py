@@ -43,6 +43,7 @@ class XpumConan(ConanFile):
         # Development tools
         if self.options.with_tests:
             self.tool_requires("cmake/3.25.3")  # For some test dependencies
+            self.test_requires("boost-ext-ut/2.1.0")  # boost-ext/ut testing framework
 
     def configure(self):
         # Configure fPIC based on shared option

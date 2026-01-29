@@ -918,18 +918,25 @@ class SPDXLicenseManager:
         for filepath in source_files:
             should_exclude = False
             filepath_str = str(filepath).replace(os.sep, "/")
+            filepath_parts = filepath_str.split("/")
 
             for pattern in self.config.exclude_patterns:
                 normalized_pattern = pattern.replace(os.sep, "/")
 
+                # Full path glob matching
                 if fnmatch.fnmatch(filepath_str, normalized_pattern):
                     should_exclude = True
                     break
 
+                # Check if pattern matches any path component
                 if "*" in pattern:
-                    substring = pattern.strip("*")
-                    if substring and substring in filepath_str:
-                        should_exclude = True
+                    pattern_stripped = pattern.strip("*")
+                    if pattern_stripped:
+                        for part in filepath_parts:
+                            if fnmatch.fnmatch(part, pattern):
+                                should_exclude = True
+                                break
+                    if should_exclude:
                         break
 
             if not should_exclude:

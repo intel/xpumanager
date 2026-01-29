@@ -230,6 +230,7 @@ add_project_arguments(compile_args, language : 'cpp')
 add_project_link_arguments(link_args, language: 'cpp')
 
 # Build subdirectories
+subdir('utility')
 subdir('oal')
 subdir('hal')
 subdir('ial')
