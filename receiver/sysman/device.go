@@ -33,6 +33,7 @@ type deviceAttributes struct {
 	hwName         string
 	hwSerialNumber string
 	hwVendor       string
+	pciBDF         string
 	pciDeviceID    string
 	pciVendorID    string
 }
@@ -107,6 +108,12 @@ func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLo
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}
 
+	if pci, err := device.PciGetProperties(); err != nil {
+		logger.Errorw("failed to get PCI properties", "error", err, "deviceAttributes", d.attributes)
+	} else {
+		d.attributes.pciBDF = fmt.Sprintf("%04x:%02x:%02x.%x", pci.Address.Domain, pci.Address.Bus, pci.Address.Device, pci.Address.Function)
+	}
+
 	for _, s := range subsystems {
 		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
 	}
@@ -121,6 +128,7 @@ func (d *sysmanDevice) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 		d.attributes.hwName,
 		d.attributes.hwSerialNumber,
 		d.attributes.hwVendor,
+		d.attributes.pciBDF,
 		d.attributes.pciDeviceID,
 		d.attributes.pciVendorID,
 	)
