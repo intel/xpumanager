@@ -7,8 +7,6 @@
 
 package core
 
-import "errors"
-
 /*
 #cgo pkg-config: level-zero
 #include "ze_api.h"
@@ -28,10 +26,14 @@ var (
 	_ [(C.ZE_API_VERSION_CURRENT & 0xffff) - (API_VERSION_CURRENT & 0xffff)]struct{}
 )
 
+func (r Result) Error() string {
+	return r.String()
+}
+
 // ToError converts the Result to an error.
 func (r *Result) ToError() error {
 	if *r == RESULT_SUCCESS {
 		return nil
 	}
-	return errors.New(r.String())
+	return *r
 }
