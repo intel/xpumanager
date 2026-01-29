@@ -8,7 +8,7 @@ export PWD=$(shell pwd)
 MAKE += --no-print-directory
 export CC=g++
 export DBG_FLAGS?=-Ofast
-export INCLUDES=-I. -I$(OALROOTDIR) -I$(OALDIR) -I../core -I../amc -I$(LEVELZERO)/include -I$(IGSC)/include
+export INCLUDES=-I. -I$(OALROOTDIR) -I$(OALDIR) -I../core -I../amc -I$(LEVELZERO)/include -I$(IGSC)/include -I../../ial/third_party
 export CFLAGS=-c -Wall -Wextra -Werror -pedantic -fPIC -std=c++20
 SRCDIR := .
 OBJDIR := obj
