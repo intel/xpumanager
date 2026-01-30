@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 //
@@ -6,34 +6,41 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"reflect"
-	"strings"
 
-	"go.yaml.in/yaml/v4"
+	"gopkg.in/yaml.v3"
 )
 
-// Dump prints an object in human-readable YAML format with the specified
-// indentation.
-func Dump(obj interface{}, indent int) {
-	prefix := strings.Repeat(" ", indent)
-
+// DumpJSON prints an object in JSON format with with human-readable string
+// representation for all types that implement fmt.Stringer.
+func DumpJSON(obj interface{}) {
 	transformed, err := stringify(reflect.ValueOf(obj))
 	if err != nil {
-		log.Printf("ERROR: Failed to transform object: %v", err)
-		return
+		log.Fatalf("Failed to transform object: %v", err)
 	}
-	data, err := yaml.Marshal(transformed)
+
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(transformed); err != nil {
+		log.Fatalf("Failed to encode JSON: %v", err)
+	}
+}
+
+// DumpYAML prints an object in YAML format with human-readable string
+// representation for all types that implement fmt.Stringer.
+func DumpYAML(obj interface{}) {
+	transformed, err := stringify(reflect.ValueOf(obj))
 	if err != nil {
-		log.Printf("ERROR: Failed to marshal object: %v", err)
-		return
+		log.Fatalf("Failed to transform object: %v", err)
 	}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		if line != "" {
-			fmt.Printf("%s%s\n", prefix, line)
-		}
+
+	encoder := yaml.NewEncoder(os.Stdout)
+	if err := encoder.Encode(transformed); err != nil {
+		log.Fatalf("Failed to encode YAML: %v", err)
 	}
 }
 
@@ -70,6 +77,22 @@ func stringify(v reflect.Value) (any, error) {
 				// Skip unexported fields
 				continue
 			}
+
+			// Handle anonymous (embedded) fields by promoting their fields
+			if f.Anonymous {
+				cv, err := stringify(v.Field(i))
+				if err != nil {
+					return nil, err
+				}
+				// Merge embedded struct fields into parent
+				if embeddedMap, ok := cv.(map[string]any); ok {
+					for k, v := range embeddedMap {
+						m[k] = v
+					}
+				}
+				continue
+			}
+
 			// Transform recursively. Value will be string if the type
 			// implements Stringer.
 			cv, err := stringify(v.Field(i))
