@@ -20,7 +20,13 @@ func (b *BaseInfo) recordError(context string, err error) {
 		return
 	}
 	if errors.Is(err, core.RESULT_ERROR_UNSUPPORTED_FEATURE) {
-		b.UnsupportedFeatures = append(b.UnsupportedFeatures, context)
+		if b.unsupportedFeaturesMap == nil {
+			b.unsupportedFeaturesMap = make(map[string]bool)
+		}
+		if !b.unsupportedFeaturesMap[context] {
+			b.unsupportedFeaturesMap[context] = true
+			b.UnsupportedFeatures = append(b.UnsupportedFeatures, context)
+		}
 	} else {
 		b.Errors = append(b.Errors, fmt.Sprintf("%s: %v", context, err))
 	}

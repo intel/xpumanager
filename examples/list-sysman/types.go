@@ -10,8 +10,9 @@ import (
 )
 
 type BaseInfo struct {
-	Errors              []string
-	UnsupportedFeatures []string
+	Errors                 []string
+	UnsupportedFeatures    []string
+	unsupportedFeaturesMap map[string]bool // private map for tracking duplicates
 }
 
 type SystemInfo struct {
