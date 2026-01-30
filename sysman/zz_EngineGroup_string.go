@@ -14,39 +14,33 @@ func _() {
 	_ = x[ENGINE_GROUP_COPY_ALL-3]
 	_ = x[ENGINE_GROUP_COMPUTE_SINGLE-4]
 	_ = x[ENGINE_GROUP_RENDER_SINGLE-5]
+	_ = x[ENGINE_GROUP_MEDIA_DECODE_SINGLE-6]
+	_ = x[ENGINE_GROUP_MEDIA_ENCODE_SINGLE-7]
 	_ = x[ENGINE_GROUP_COPY_SINGLE-8]
 	_ = x[ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE-9]
+	_ = x[ENGINE_GROUP_3D_SINGLE-10]
+	_ = x[ENGINE_GROUP_3D_RENDER_COMPUTE_ALL-11]
 	_ = x[ENGINE_GROUP_RENDER_ALL-12]
+	_ = x[ENGINE_GROUP_3D_ALL-13]
 	_ = x[ENGINE_GROUP_MEDIA_CODEC_SINGLE-14]
 	_ = x[ENGINE_GROUP_FORCE_UINT32-2147483647]
 }
 
 const (
-	_EngineGroup_name_0 = "ALLCOMPUTE_ALLMEDIA_ALLCOPY_ALLCOMPUTE_SINGLERENDER_SINGLE"
-	_EngineGroup_name_1 = "COPY_SINGLEMEDIA_ENHANCEMENT_SINGLE"
-	_EngineGroup_name_2 = "RENDER_ALL"
-	_EngineGroup_name_3 = "MEDIA_CODEC_SINGLE"
-	_EngineGroup_name_4 = "FORCE_UINT32"
+	_EngineGroup_name_0 = "ALLCOMPUTE_ALLMEDIA_ALLCOPY_ALLCOMPUTE_SINGLERENDER_SINGLEMEDIA_DECODE_SINGLEMEDIA_ENCODE_SINGLECOPY_SINGLEMEDIA_ENHANCEMENT_SINGLE3D_SINGLE3D_RENDER_COMPUTE_ALLRENDER_ALL3D_ALLMEDIA_CODEC_SINGLE"
+	_EngineGroup_name_1 = "FORCE_UINT32"
 )
 
 var (
-	_EngineGroup_index_0 = [...]uint8{0, 3, 14, 23, 31, 45, 58}
-	_EngineGroup_index_1 = [...]uint8{0, 11, 35}
+	_EngineGroup_index_0 = [...]uint8{0, 3, 14, 23, 31, 45, 58, 77, 96, 107, 131, 140, 161, 171, 177, 195}
 )
 
 func (i EngineGroup) String() string {
 	switch {
-	case 0 <= i && i <= 5:
+	case 0 <= i && i <= 14:
 		return _EngineGroup_name_0[_EngineGroup_index_0[i]:_EngineGroup_index_0[i+1]]
-	case 8 <= i && i <= 9:
-		i -= 8
-		return _EngineGroup_name_1[_EngineGroup_index_1[i]:_EngineGroup_index_1[i+1]]
-	case i == 12:
-		return _EngineGroup_name_2
-	case i == 14:
-		return _EngineGroup_name_3
 	case i == 2147483647:
-		return _EngineGroup_name_4
+		return _EngineGroup_name_1
 	default:
 		return "EngineGroup(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
