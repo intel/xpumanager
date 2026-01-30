@@ -77,6 +77,22 @@ func stringify(v reflect.Value) (any, error) {
 				// Skip unexported fields
 				continue
 			}
+
+			// Handle anonymous (embedded) fields by promoting their fields
+			if f.Anonymous {
+				cv, err := stringify(v.Field(i))
+				if err != nil {
+					return nil, err
+				}
+				// Merge embedded struct fields into parent
+				if embeddedMap, ok := cv.(map[string]any); ok {
+					for k, v := range embeddedMap {
+						m[k] = v
+					}
+				}
+				continue
+			}
+
 			// Transform recursively. Value will be string if the type
 			// implements Stringer.
 			cv, err := stringify(v.Field(i))

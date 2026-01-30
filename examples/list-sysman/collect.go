@@ -7,17 +7,22 @@ package main
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"math/bits"
 
 	"github.com/intel/level-zero-go/core"
 	"github.com/intel/level-zero-go/sysman"
 )
 
-// logError logs an error if it's not an UNSUPPORTED_FEATURE error
-func logError(context string, err error) {
-	if err != nil && !errors.Is(err, core.RESULT_ERROR_UNSUPPORTED_FEATURE) {
-		log.Printf("ERROR: %s: %v", context, err)
+// recordError records an error into the appropriate list
+func (b *BaseInfo) recordError(context string, err error) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, core.RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		b.UnsupportedFeatures = append(b.UnsupportedFeatures, context)
+	} else {
+		b.Errors = append(b.Errors, fmt.Sprintf("%s: %v", context, err))
 	}
 }
 
@@ -43,598 +48,597 @@ func collectDriverInfo(driver *sysman.Driver) *DriverInfo {
 
 	extProps, err := driver.GetExtensionProperties()
 	if err != nil {
-		logError("Driver.GetExtensionProperties", err)
+		driverInfo.recordError("GetExtensionProperties", err)
 	} else {
 		driverInfo.ExtensionProperties = extProps
 	}
 
 	devices, err := driver.DeviceGet()
 	if err != nil {
-		logError("Driver.DeviceGet", err)
-	} else {
-		for _, device := range devices {
-			driverInfo.Devices = append(driverInfo.Devices, collectDeviceInfo(device))
-		}
+		driverInfo.recordError("Driver.DeviceGet", err)
+		return driverInfo
+	}
+
+	for _, device := range devices {
+		deviceInfo := &DeviceInfo{}
+		deviceInfo.collect(device)
+		driverInfo.Devices = append(driverInfo.Devices, *deviceInfo)
 	}
 
 	return driverInfo
 }
 
-func collectDeviceInfo(device *sysman.Device) *DeviceInfo {
-	deviceInfo := &DeviceInfo{}
-
+func (d *DeviceInfo) collect(device *sysman.Device) {
 	if props, err := device.GetProperties(); err != nil {
-		logError("Device.GetProperties", err)
+		d.recordError("Device.GetProperties", err)
 	} else {
-		deviceInfo.Properties = &props
+		d.Properties = &props
 	}
 
 	if state, err := device.GetState(); err != nil {
-		logError("Device.GetState", err)
+		d.recordError("Device.GetState", err)
 	} else {
-		deviceInfo.State = &state
+		d.State = &state
 	}
 
 	if procs, err := device.ProcessesGetState(); err != nil {
-		logError("Device.ProcessesGetState", err)
+		d.recordError("Device.ProcessesGetState", err)
 	} else {
-		deviceInfo.Processes = procs
+		d.Processes = procs
 	}
 
-	deviceInfo.PCI = collectPCIInfo(device)
-	deviceInfo.Overclock = collectOverclockInfo(device)
-	deviceInfo.Diagnostics = collectDiagnosticsInfo(device)
-	deviceInfo.ECC = collectECCInfo(device)
-	deviceInfo.EngineGroups = collectEngineInfo(device)
-	deviceInfo.FabricPorts = collectFabricPortInfo(device)
-	deviceInfo.Fans = collectFanInfo(device)
-	deviceInfo.Firmwares = collectFirmwareInfo(device)
-	deviceInfo.FrequencyDomains = collectFrequencyInfo(device)
-	deviceInfo.Leds = collectLedInfo(device)
-	deviceInfo.MemoryModules = collectMemoryInfo(device)
-	deviceInfo.PerformanceDomains = collectPerformanceInfo(device)
-	deviceInfo.PowerDomains = collectPowerInfo(device)
-	deviceInfo.Psus = collectPsuInfo(device)
-	deviceInfo.RasErrorSets = collectRasInfo(device)
-	deviceInfo.Schedulers = collectSchedulerInfo(device)
-	deviceInfo.StandbyDomains = collectStandbyInfo(device)
-	deviceInfo.TemperatureSensors = collectTemperatureInfo(device)
-
-	return deviceInfo
+	d.collectPCIInfo(device)
+	d.collectOverclockInfo(device)
+	d.collectDiagnosticsInfo(device)
+	d.collectECCInfo(device)
+	d.collectEngineInfo(device)
+	d.collectFabricPortInfo(device)
+	d.collectFanInfo(device)
+	d.collectFirmwareInfo(device)
+	d.collectFrequencyInfo(device)
+	d.collectLedInfo(device)
+	d.collectMemoryInfo(device)
+	d.collectPerformanceInfo(device)
+	d.collectPowerInfo(device)
+	d.collectPsuInfo(device)
+	d.collectRasInfo(device)
+	d.collectSchedulerInfo(device)
+	d.collectStandbyInfo(device)
+	d.collectTemperatureInfo(device)
 }
 
-func collectPCIInfo(device *sysman.Device) *PCIInfo {
+func (d *DeviceInfo) collectPCIInfo(device *sysman.Device) {
 	pciInfo := &PCIInfo{}
 
 	if props, err := device.PciGetProperties(); err != nil {
-		logError("PCI.GetProperties", err)
+		d.recordError("PCI.GetProperties", err)
 	} else {
 		pciInfo.Properties = &props
 	}
 
 	if state, err := device.PciGetState(); err != nil {
-		logError("PCI.GetState", err)
+		d.recordError("PCI.GetState", err)
 	} else {
 		pciInfo.State = state
 	}
 
 	if bars, err := device.PciGetBars(); err != nil {
-		logError("PCI.GetBars", err)
+		d.recordError("PCI.GetBars", err)
 	} else {
 		pciInfo.Bars = bars
 	}
 
 	if stats, err := device.PciGetStats(); err != nil {
-		logError("PCI.GetStats", err)
+		d.recordError("PCI.GetStats", err)
 	} else {
 		pciInfo.Stats = stats
 	}
 
-	return pciInfo
+	d.PCI = pciInfo
 }
 
-func collectOverclockInfo(device *sysman.Device) *OverclockInfo {
+func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 	ocInfo := &OverclockInfo{}
 
 	domainFlags, err := device.GetOverclockDomains()
 	if err != nil {
-		logError("Overclock.GetDomains", err)
-		return nil
+		d.recordError("OverclockDomains", err)
+		return
 	}
 	ocInfo.DomainsBitmask = domainFlags
 
 	if state, err := device.ReadOverclockState(); err != nil {
-		logError("Overclock.ReadState", err)
+		d.recordError("Overclock.ReadState", err)
 	} else {
 		ocInfo.State = &state
 	}
 
 	domains, err := device.EnumOverclockDomains()
 	if err != nil {
-		logError("Overclock.EnumDomains", err)
+		d.recordError("Overclock.EnumDomains", err)
 	} else if len(domains) > 0 {
 		ocInfo.Domains = make([]OverclockDomainInfo, len(domains))
 		for i, domain := range domains {
 			if props, err := domain.GetDomainProperties(); err != nil {
-				logError("OverclockDomain.GetProperties", err)
+				d.recordError("OverclockDomain.GetProperties", err)
 			} else {
 				ocInfo.Domains[i].Properties = &props
 			}
 			if vfProps, err := domain.GetDomainVFProperties(); err != nil {
-				logError("OverclockDomain.GetVFProperties", err)
+				d.recordError("OverclockDomain.GetVFProperties", err)
 			} else {
 				ocInfo.Domains[i].VFProperties = &vfProps
 			}
 		}
 	}
 
-	return ocInfo
+	d.Overclock = ocInfo
 }
 
-func collectDiagnosticsInfo(device *sysman.Device) []DiagnosticsInfo {
+func (d *DeviceInfo) collectDiagnosticsInfo(device *sysman.Device) {
 	diags, err := device.EnumDiagnosticTestSuites()
 	if err != nil {
-		logError("Diagnostics.EnumTestSuites", err)
-		return nil
+		d.recordError("DiagnosticsTestSuites", err)
+		return
 	}
 
 	result := make([]DiagnosticsInfo, len(diags))
 	for i, diag := range diags {
 		if props, err := diag.GetProperties(); err != nil {
-			logError("Diagnostic.GetProperties", err)
+			d.recordError("Diagnostic.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if tests, err := diag.GetTests(); err != nil {
-			logError("Diagnostic.GetTests", err)
+			d.recordError("Diagnostic.GetTests", err)
 		} else {
 			result[i].Tests = tests
 		}
 	}
 
-	return result
+	d.Diagnostics = result
 }
 
-func collectECCInfo(device *sysman.Device) *ECCInfo {
+func (d *DeviceInfo) collectECCInfo(device *sysman.Device) {
 	eccInfo := &ECCInfo{}
 
 	available, err := device.EccAvailable()
 	if err != nil {
-		logError("ECC.Available", err)
-		return nil
+		d.recordError("ECC", err)
+		return
 	}
 	eccInfo.Available = available
 
 	if available {
 		if configurable, err := device.EccConfigurable(); err != nil {
-			logError("ECC.Configurable", err)
+			d.recordError("ECC.Configurable", err)
 		} else {
 			eccInfo.Configurable = configurable
 		}
 
 		if state, err := device.GetEccState(); err != nil {
-			logError("ECC.GetState", err)
+			d.recordError("ECC.GetState", err)
 		} else {
 			eccInfo.State = &state
 		}
 	}
 
-	return eccInfo
+	d.ECC = eccInfo
 }
 
-func collectEngineInfo(device *sysman.Device) []EngineGroupInfo {
+func (d *DeviceInfo) collectEngineInfo(device *sysman.Device) {
 	engines, err := device.EnumEngineGroups()
 	if err != nil {
-		logError("Engine.EnumGroups", err)
-		return nil
+		d.recordError("EngineGroups", err)
+		return
 	}
 
 	result := make([]EngineGroupInfo, len(engines))
 	for i, engine := range engines {
 		if props, err := engine.GetProperties(); err != nil {
-			logError("EngineGroup.GetProperties", err)
+			d.recordError("EngineGroup.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if activity, err := engine.GetActivity(); err != nil {
-			logError("EngineGroup.GetActivity", err)
+			d.recordError("EngineGroup.GetActivity", err)
 		} else {
 			result[i].Activity = &activity
 		}
 		if activityExt, err := engine.GetActivityExt(); err != nil {
-			logError("EngineGroup.GetActivityExt", err)
+			d.recordError("EngineGroup.GetActivityExt", err)
 		} else {
 			result[i].ActivityExt = activityExt
 		}
 	}
 
-	return result
+	d.EngineGroups = result
 }
 
-func collectFabricPortInfo(device *sysman.Device) []FabricPortInfo {
+func (d *DeviceInfo) collectFabricPortInfo(device *sysman.Device) {
 	ports, err := device.EnumFabricPorts()
 	if err != nil {
-		logError("Fabric.EnumPorts", err)
-		return nil
+		d.recordError("FabricPorts", err)
+		return
 	}
 
 	result := make([]FabricPortInfo, len(ports))
 	for i, port := range ports {
 		if props, err := port.GetProperties(); err != nil {
-			logError("FabricPort.GetProperties", err)
+			d.recordError("FabricPort.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if linkType, err := port.GetLinkType(); err != nil {
-			logError("FabricPort.GetLinkType", err)
+			d.recordError("FabricPort.GetLinkType", err)
 		} else {
 			result[i].LinkType = &linkType
 		}
 		if config, err := port.GetConfig(); err != nil {
-			logError("FabricPort.GetConfig", err)
+			d.recordError("FabricPort.GetConfig", err)
 		} else {
 			result[i].Config = &config
 		}
 		if state, err := port.GetState(); err != nil {
-			logError("FabricPort.GetState", err)
+			d.recordError("FabricPort.GetState", err)
 		} else {
 			result[i].State = &state
 		}
 		if throughput, err := port.GetThroughput(); err != nil {
-			logError("FabricPort.GetThroughput", err)
+			d.recordError("FabricPort.GetThroughput", err)
 		} else {
 			result[i].Throughput = &throughput
 		}
 		if errCounters, err := port.GetFabricErrorCounters(); err != nil {
-			logError("FabricPort.GetErrorCounters", err)
+			d.recordError("FabricPort.GetErrorCounters", err)
 		} else {
 			result[i].ErrorCounters = &errCounters
 		}
 	}
 
-	return result
+	d.FabricPorts = result
 }
 
-func collectFanInfo(device *sysman.Device) []FanInfo {
+func (d *DeviceInfo) collectFanInfo(device *sysman.Device) {
 	fans, err := device.EnumFans()
 	if err != nil {
-		logError("Fan.EnumFans", err)
-		return nil
+		d.recordError("Fans", err)
+		return
 	}
 
 	result := make([]FanInfo, len(fans))
 	for i, fan := range fans {
 		if props, err := fan.GetProperties(); err != nil {
-			logError("Fan.GetProperties", err)
+			d.recordError("Fan.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 
 			// Return speed in the first supported unit
 			if unit := bits.TrailingZeros32(props.SupportedUnits); unit < 32 {
 				if speed, err := fan.GetState(sysman.FanSpeedUnits(unit)); err != nil {
-					logError("Fan.GetState", err)
+					d.recordError("Fan.GetState", err)
 				} else {
 					result[i].Speed = speed
 				}
 			} else {
-				logError("Fan.GetState", errors.New("no supported speed units"))
+				d.recordError("Fan.GetState", errors.New("no supported speed units"))
 			}
 		}
 		if config, err := fan.GetConfig(); err != nil {
-			logError("Fan.GetConfig", err)
+			d.recordError("Fan.GetConfig", err)
 		} else {
 			result[i].Config = &config
 		}
 	}
 
-	return result
+	d.Fans = result
 }
 
-func collectFirmwareInfo(device *sysman.Device) []FirmwareInfo {
+func (d *DeviceInfo) collectFirmwareInfo(device *sysman.Device) {
 	firmwares, err := device.EnumFirmwares()
 	if err != nil {
-		logError("Firmware.EnumFirmwares", err)
-		return nil
+		d.recordError("Firmwares", err)
+		return
 	}
 
 	result := make([]FirmwareInfo, len(firmwares))
 	for i, firmware := range firmwares {
 		if props, err := firmware.GetProperties(); err != nil {
-			logError("Firmware.GetProperties", err)
+			d.recordError("Firmware.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 	}
 
-	return result
+	d.Firmwares = result
 }
 
-func collectFrequencyInfo(device *sysman.Device) []FrequencyDomainInfo {
+func (d *DeviceInfo) collectFrequencyInfo(device *sysman.Device) {
 	domains, err := device.EnumFrequencyDomains()
 	if err != nil {
-		logError("Frequency.EnumDomains", err)
-		return nil
+		d.recordError("FrequencyDomains", err)
+		return
 	}
 
 	result := make([]FrequencyDomainInfo, len(domains))
 	for i, domain := range domains {
 		if props, err := domain.GetProperties(); err != nil {
-			logError("FrequencyDomain.GetProperties", err)
+			d.recordError("FrequencyDomain.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if clocks, err := domain.GetAvailableClocks(); err != nil {
-			logError("FrequencyDomain.GetAvailableClocks", err)
+			d.recordError("FrequencyDomain.GetAvailableClocks", err)
 		} else {
 			result[i].AvailableClocks = clocks
 		}
 		if freqRange, err := domain.GetRange(); err != nil {
-			logError("FrequencyDomain.GetRange", err)
+			d.recordError("FrequencyDomain.GetRange", err)
 		} else {
 			result[i].Range = &freqRange
 		}
 		if state, err := domain.GetState(); err != nil {
-			logError("FrequencyDomain.GetState", err)
+			d.recordError("FrequencyDomain.GetState", err)
 		} else {
 			result[i].State = &state
 		}
 		if throttleTime, err := domain.GetThrottleTime(); err != nil {
-			logError("FrequencyDomain.GetThrottleTime", err)
+			d.recordError("FrequencyDomain.GetThrottleTime", err)
 		} else {
 			result[i].ThrottleTime = &throttleTime
 		}
 	}
 
-	return result
+	d.FrequencyDomains = result
 }
 
-func collectLedInfo(device *sysman.Device) []LedInfo {
+func (d *DeviceInfo) collectLedInfo(device *sysman.Device) {
 	leds, err := device.EnumLeds()
 	if err != nil {
-		logError("Led.EnumLeds", err)
-		return nil
+		d.recordError("Leds", err)
+		return
 	}
 
 	result := make([]LedInfo, len(leds))
 	for i, led := range leds {
 		if props, err := led.GetProperties(); err != nil {
-			logError("Led.GetProperties", err)
+			d.recordError("Led.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if state, err := led.GetState(); err != nil {
-			logError("Led.GetState", err)
+			d.recordError("Led.GetState", err)
 		} else {
 			result[i].State = &state
 		}
 	}
 
-	return result
+	d.Leds = result
 }
 
-func collectMemoryInfo(device *sysman.Device) []MemoryModuleInfo {
+func (d *DeviceInfo) collectMemoryInfo(device *sysman.Device) {
 	modules, err := device.EnumMemoryModules()
 	if err != nil {
-		logError("Memory.EnumModules", err)
-		return nil
+		d.recordError("MemoryModules", err)
+		return
 	}
 
 	result := make([]MemoryModuleInfo, len(modules))
 	for i, module := range modules {
 		if props, err := module.GetProperties(); err != nil {
-			logError("MemoryModule.GetProperties", err)
+			d.recordError("MemoryModule.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if state, err := module.GetState(); err != nil {
-			logError("MemoryModule.GetState", err)
+			d.recordError("MemoryModule.GetState", err)
 		} else {
 			result[i].State = &state
 		}
 		if bandwidth, err := module.GetBandwidth(); err != nil {
-			logError("MemoryModule.GetBandwidth", err)
+			d.recordError("MemoryModule.GetBandwidth", err)
 		} else {
 			result[i].Bandwidth = &bandwidth
 		}
 	}
 
-	return result
+	d.MemoryModules = result
 }
 
-func collectPerformanceInfo(device *sysman.Device) []PerformanceDomainInfo {
+func (d *DeviceInfo) collectPerformanceInfo(device *sysman.Device) {
 	domains, err := device.EnumPerformanceFactorDomains()
 	if err != nil {
-		logError("Performance.EnumDomains", err)
-		return nil
+		d.recordError("PerformanceDomains", err)
+		return
 	}
 
 	result := make([]PerformanceDomainInfo, len(domains))
 	for i, domain := range domains {
 		if props, err := domain.GetProperties(); err != nil {
-			logError("PerformanceDomain.GetProperties", err)
+			d.recordError("PerformanceDomain.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if config, err := domain.GetConfig(); err != nil {
-			logError("PerformanceDomain.GetConfig", err)
+			d.recordError("PerformanceDomain.GetConfig", err)
 		} else {
 			result[i].Config = config
 		}
 	}
 
-	return result
+	d.PerformanceDomains = result
 }
 
-func collectPowerInfo(device *sysman.Device) []PowerDomainInfo {
+func (d *DeviceInfo) collectPowerInfo(device *sysman.Device) {
 	domains, err := device.EnumPowerDomains()
 	if err != nil {
-		logError("Power.EnumDomains", err)
-		return nil
+		d.recordError("PowerDomains", err)
+		return
 	}
 
 	result := make([]PowerDomainInfo, len(domains))
 	for i, domain := range domains {
 		if props, err := domain.GetProperties(); err != nil {
-			logError("PowerDomain.GetProperties", err)
+			d.recordError("PowerDomain.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if energyCounter, err := domain.GetEnergyCounter(); err != nil {
-			logError("PowerDomain.GetEnergyCounter", err)
+			d.recordError("PowerDomain.GetEnergyCounter", err)
 		} else {
 			result[i].EnergyCounter = &energyCounter
 		}
 		if energyThreshold, err := domain.GetEnergyThreshold(); err != nil {
-			logError("PowerDomain.GetEnergyThreshold", err)
+			d.recordError("PowerDomain.GetEnergyThreshold", err)
 		} else {
 			result[i].EnergyThreshold = &energyThreshold
 		}
 		if limits, err := domain.GetLimitsExt(); err != nil {
-			logError("PowerDomain.GetLimitsExt", err)
+			d.recordError("PowerDomain.GetLimitsExt", err)
 		} else {
 			result[i].Limits = limits
 		}
 	}
 
-	return result
+	d.PowerDomains = result
 }
 
-func collectPsuInfo(device *sysman.Device) []PsuInfo {
+func (d *DeviceInfo) collectPsuInfo(device *sysman.Device) {
 	psus, err := device.EnumPsus()
 	if err != nil {
-		logError("Psu.EnumPsus", err)
-		return nil
+		d.recordError("Psus", err)
+		return
 	}
 
 	result := make([]PsuInfo, len(psus))
 	for i, psu := range psus {
 		if props, err := psu.GetProperties(); err != nil {
-			logError("Psu.GetProperties", err)
+			d.recordError("Psu.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if state, err := psu.GetState(); err != nil {
-			logError("Psu.GetState", err)
+			d.recordError("Psu.GetState", err)
 		} else {
 			result[i].State = &state
 		}
 	}
 
-	return result
+	d.Psus = result
 }
 
-func collectRasInfo(device *sysman.Device) []RasInfo {
+func (d *DeviceInfo) collectRasInfo(device *sysman.Device) {
 	rasSets, err := device.EnumRasErrorSets()
 	if err != nil {
-		logError("Ras.EnumErrorSets", err)
-		return nil
+		d.recordError("RasErrorSets", err)
+		return
 	}
 
 	result := make([]RasInfo, len(rasSets))
 	for i, ras := range rasSets {
 		if props, err := ras.GetProperties(); err != nil {
-			logError("RasErrorSet.GetProperties", err)
+			d.recordError("RasErrorSet.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if config, err := ras.GetConfig(); err != nil {
-			logError("RasErrorSet.GetConfig", err)
+			d.recordError("RasErrorSet.GetConfig", err)
 		} else {
 			result[i].Config = &config
 		}
 		if state, err := ras.GetState(false); err != nil {
-			logError("RasErrorSet.GetState", err)
+			d.recordError("RasErrorSet.GetState", err)
 		} else {
 			result[i].State = &state
 		}
 	}
 
-	return result
+	d.RasErrorSets = result
 }
 
-func collectSchedulerInfo(device *sysman.Device) []SchedulerInfo {
+func (d *DeviceInfo) collectSchedulerInfo(device *sysman.Device) {
 	scheds, err := device.EnumSchedulers()
 	if err != nil {
-		logError("Scheduler.EnumSchedulers", err)
-		return nil
+		d.recordError("Schedulers", err)
+		return
 	}
 
 	result := make([]SchedulerInfo, len(scheds))
 	for i, sched := range scheds {
 		if props, err := sched.GetProperties(); err != nil {
-			logError("Scheduler.GetProperties", err)
+			d.recordError("Scheduler.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if mode, err := sched.GetCurrentMode(); err != nil {
-			logError("Scheduler.GetCurrentMode", err)
+			d.recordError("Scheduler.GetCurrentMode", err)
 		} else {
 			result[i].CurrentMode = mode
 		}
 		if timeoutProps, err := sched.GetTimeoutModeProperties(false); err != nil {
-			logError("Scheduler.GetTimeoutModeProperties", err)
+			d.recordError("Scheduler.GetTimeoutModeProperties", err)
 		} else {
 			result[i].TimeoutModeProperties = &timeoutProps
 		}
 		if timesliceProps, err := sched.GetTimesliceModeProperties(false); err != nil {
-			logError("Scheduler.GetTimesliceModeProperties", err)
+			d.recordError("Scheduler.GetTimesliceModeProperties", err)
 		} else {
 			result[i].TimesliceModeProperties = &timesliceProps
 		}
 	}
 
-	return result
+	d.Schedulers = result
 }
 
-func collectStandbyInfo(device *sysman.Device) []StandbyDomainInfo {
+func (d *DeviceInfo) collectStandbyInfo(device *sysman.Device) {
 	domains, err := device.EnumStandbyDomains()
 	if err != nil {
-		logError("Standby.EnumDomains", err)
-		return nil
+		d.recordError("StandbyDomains", err)
+		return
 	}
 
 	result := make([]StandbyDomainInfo, len(domains))
 	for i, domain := range domains {
 		if props, err := domain.GetProperties(); err != nil {
-			logError("StandbyDomain.GetProperties", err)
+			d.recordError("StandbyDomain.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if mode, err := domain.GetMode(); err != nil {
-			logError("StandbyDomain.GetMode", err)
+			d.recordError("StandbyDomain.GetMode", err)
 		} else {
 			result[i].Mode = sysman.StandbyType(mode)
 		}
 	}
 
-	return result
+	d.StandbyDomains = result
 }
 
-func collectTemperatureInfo(device *sysman.Device) []TemperatureSensorInfo {
+func (d *DeviceInfo) collectTemperatureInfo(device *sysman.Device) {
 	sensors, err := device.EnumTemperatureSensors()
 	if err != nil {
-		logError("Temperature.EnumSensors", err)
-		return nil
+		d.recordError("TemperatureSensors", err)
+		return
 	}
 
 	result := make([]TemperatureSensorInfo, len(sensors))
 	for i, sensor := range sensors {
 		if props, err := sensor.GetProperties(); err != nil {
-			logError("TemperatureSensor.GetProperties", err)
+			d.recordError("TemperatureSensor.GetProperties", err)
 		} else {
 			result[i].Properties = &props
 		}
 		if config, err := sensor.GetConfig(); err != nil {
-			logError("TemperatureSensor.GetConfig", err)
+			d.recordError("TemperatureSensor.GetConfig", err)
 		} else {
 			result[i].Config = &config
 		}
 		if temp, err := sensor.GetState(); err != nil {
-			logError("TemperatureSensor.GetState", err)
+			d.recordError("TemperatureSensor.GetState", err)
 		} else {
 			result[i].Temperature = temp
 		}
 	}
 
-	return result
+	d.TemperatureSensors = result
 }

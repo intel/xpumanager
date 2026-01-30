@@ -9,16 +9,23 @@ import (
 	"github.com/intel/level-zero-go/sysman"
 )
 
+type BaseInfo struct {
+	Errors              []string
+	UnsupportedFeatures []string
+}
+
 type SystemInfo struct {
 	Drivers []DriverInfo
 }
 
 type DriverInfo struct {
+	BaseInfo
 	ExtensionProperties []sysman.DriverExtensionProperties
 	Devices             []DeviceInfo
 }
 
 type DeviceInfo struct {
+	BaseInfo
 	Properties         *sysman.DeviceProperties
 	State              *sysman.DeviceState
 	Processes          []sysman.ProcessState
