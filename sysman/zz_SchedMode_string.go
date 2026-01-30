@@ -11,21 +11,22 @@ func _() {
 	_ = x[SCHED_MODE_TIMEOUT-0]
 	_ = x[SCHED_MODE_TIMESLICE-1]
 	_ = x[SCHED_MODE_EXCLUSIVE-2]
+	_ = x[SCHED_MODE_COMPUTE_UNIT_DEBUG-3]
 	_ = x[SCHED_MODE_FORCE_UINT32-2147483647]
 }
 
 const (
-	_SchedMode_name_0 = "TIMEOUTTIMESLICEEXCLUSIVE"
+	_SchedMode_name_0 = "TIMEOUTTIMESLICEEXCLUSIVECOMPUTE_UNIT_DEBUG"
 	_SchedMode_name_1 = "FORCE_UINT32"
 )
 
 var (
-	_SchedMode_index_0 = [...]uint8{0, 7, 16, 25}
+	_SchedMode_index_0 = [...]uint8{0, 7, 16, 25, 43}
 )
 
 func (i SchedMode) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case 0 <= i && i <= 3:
 		return _SchedMode_name_0[_SchedMode_index_0[i]:_SchedMode_index_0[i+1]]
 	case i == 2147483647:
 		return _SchedMode_name_1

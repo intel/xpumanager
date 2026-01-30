@@ -507,6 +507,10 @@ const (
 	// an engine may not be indicative of the underlying resource utilization - use
 	// ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL for that.
 	ENGINE_GROUP_RENDER_SINGLE EngineGroup = 5
+	// [DEPRECATED] No longer supported.
+	ENGINE_GROUP_MEDIA_DECODE_SINGLE EngineGroup = 6
+	// [DEPRECATED] No longer supported.
+	ENGINE_GROUP_MEDIA_ENCODE_SINGLE EngineGroup = 7
 	// Access information about a single media encode engine. Note that single engines
 	// may share the same underlying accelerator resources as other engines so activity
 	// of such an engine may not be indicative of the underlying resource utilization -
@@ -517,9 +521,15 @@ const (
 	// activity of such an engine may not be indicative of the underlying resource
 	// utilization - use ZES_ENGINE_GROUP_MEDIA_ALL for that.
 	ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE EngineGroup = 9
+	// [DEPRECATED] No longer supported.
+	ENGINE_GROUP_3D_SINGLE EngineGroup = 10
+	// [DEPRECATED] No longer supported.
+	ENGINE_GROUP_3D_RENDER_COMPUTE_ALL EngineGroup = 11
 	// Access information about all render engines combined. Render engines are those
 	// than process both 3D content and compute kernels.
 	ENGINE_GROUP_RENDER_ALL EngineGroup = 12
+	// [DEPRECATED] No longer supported.
+	ENGINE_GROUP_3D_ALL EngineGroup = 13
 	// Access information about a single media engine. Note that single engines may share
 	// the same underlying accelerator resources as other engines so activity of such
 	// an engine may not be indicative of the underlying resource utilization - use
@@ -978,6 +988,8 @@ const (
 	// preempted or terminated. All pending work for other contexts must wait until the
 	// running context completes with no further submitted work.
 	SCHED_MODE_EXCLUSIVE SchedMode = 2
+	// [DEPRECATED] No longer supported.
+	SCHED_MODE_COMPUTE_UNIT_DEBUG SchedMode = 3
 	// Value marking end of ZES_SCHED_MODE_* ENUMs.
 	SCHED_MODE_FORCE_UINT32 SchedMode = 2147483647
 )
