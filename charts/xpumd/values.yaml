@@ -118,7 +118,10 @@ config:
 
   # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
   # @section -- XPUM Daemon Configuration
-  processors: {}
+  processors:
+    # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
+    # @section -- XPUM Daemon Configuration
+    intelxpustatus: {}
 
   # -- Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)
   # @section -- XPUM Daemon Configuration
@@ -130,4 +133,5 @@ config:
     pipelines:
       metrics:
         receivers: [intelxpu]
+        processors: [intelxpustatus]
         exporters: [intelxpuinfo]

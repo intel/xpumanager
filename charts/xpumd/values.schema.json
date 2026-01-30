@@ -33,7 +33,13 @@
                 },
                 "processors": {
                     "description": "Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "intelxpustatus": {
+                            "description": "Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.",
+                            "type": "object"
+                        }
+                    }
                 },
                 "receivers": {
                     "description": "Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)",
@@ -89,6 +95,12 @@
                                     "type": "object",
                                     "properties": {
                                         "exporters": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "processors": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"

@@ -1,0 +1,8 @@
+type: intelxpustatus
+
+status:
+  class: processor
+  stability:
+    development: [metrics]
+  codeowners:
+    active: [marquiz]
