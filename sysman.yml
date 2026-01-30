@@ -25,11 +25,6 @@ TRANSLATOR:
       - {transform: export}
       # Ignore experimental
       - {action: ignore, from: "_EXP_"}
-      # Ignore deprecated
-      - {action: ignore, from: "^ZES_ENGINE_GROUP_MEDIA_(DE|EN)CODE_SINGLE$"}
-      - {action: ignore, from: "^ZES_ENGINE_GROUP_3D_(SINGLE|RENDER_COMPUTE_ALL|ALL)$"}
-      - {action: ignore, from: "^ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG$"}
-      - {action: ignore, from: "^ZES_VF_MANAGEMENT_EXP_VERSION_1_[01]$"}
     function:
       - {action: accept, from: "^zes[A-Z]"}
       - {transform: unexport}
