@@ -13,23 +13,23 @@ ARG LEVEL_ZERO_VERSION=1.26.3
 
 WORKDIR /go/src/work
 
-RUN mkdir /debs && \
+RUN mkdir /debs /out && \
     IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
-    curl -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb --output-dir /debs/ && \
-    curl -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb --output-dir /debs/ && \
-    curl -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb --output-dir /debs/ && \
-    curl -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb --output-dir /debs/ && \
-    apt-get update && apt-get install -y /debs/*.deb
+    curl -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
+         -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb \
+         -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
+         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb --output-dir /debs/ && \
+    for deb in /debs/*.deb; do \
+        dpkg-deb -x "$deb" /out; \
+    done
 
-RUN mkdir /debs-devel && \
-    curl -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb --output-dir /debs-devel/ && \
-    apt-get install -y /debs-devel/*.deb
+RUN curl -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb --output-dir /debs && \
+    dpkg -i /debs/*.deb
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \
     make build && \
-    mkdir /out && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
     install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
     install -D config-example.yaml /out/etc/xpumd/config-example.yaml
@@ -37,12 +37,6 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 
 # The final image
 FROM ubuntu:24.04 AS final
-
-COPY --from=builder /debs /debs
-RUN apt-get update && \
-    apt-get install -y /debs/*.deb && \
-    rm -rf /debs && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /out/ /
 
