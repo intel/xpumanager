@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+ARG BASE_IMAGE=ubuntu:24.04
+
 # The build stage
 FROM golang:1.25-trixie AS builder
 
@@ -36,7 +38,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 
 
 # The final image
-FROM ubuntu:24.04 AS final
+FROM ${BASE_IMAGE} AS minimal
 
 COPY --from=builder /out/ /
 
