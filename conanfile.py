@@ -32,7 +32,7 @@ class XpumConan(ConanFile):
     }
     
     def requirements(self):
-        self.requires("level-zero/1.23.1")
+        self.requires("level-zero/1.27.0")
         self.requires("igsc/0.9.6")
         self.requires("nlohmann_json/3.10.2")
         self.requires("hwloc/2.9.3")  # Cross-platform topology library

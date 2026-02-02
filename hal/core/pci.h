@@ -8,7 +8,6 @@
 #define PCI_H
 
 #include "sysman.h"
-#include "include/zes_intel_gpu_sysman.h"
 #include <string>
 #include <osvf.h>
 

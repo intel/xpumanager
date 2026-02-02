@@ -189,9 +189,9 @@ ze_result_t pci::getPciDowngradeState(const zes_device_handle_t &device, PciDown
 	TRACING();
 	ze_result_t res;
 	zes_pci_properties_t pciProps = {};
-	zes_intel_pci_link_speed_downgrade_exp_properties_t downProps = {};
+	zes_pci_link_speed_downgrade_ext_properties_t downProps = {};
 
-	downProps.stype = ZES_INTEL_PCI_LINK_SPEED_DOWNGRADE_EXP_PROPERTIES;
+	downProps.stype = ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES;
 	pciProps.pNext = &downProps;
 	res = zesDevicePciGetProperties(device, &pciProps);
 	if (res != ZE_RESULT_SUCCESS) {
@@ -206,9 +206,9 @@ ze_result_t pci::getPciDowngradeState(const zes_device_handle_t &device, PciDown
 	}
 
 	zes_pci_state_t pciState = {};
-	zes_intel_pci_link_speed_downgrade_exp_state_t downState = {};
+	zes_pci_link_speed_downgrade_ext_state_t downState = {};
 
-	downState.stype = ZES_INTEL_PCI_LINK_SPEED_DOWNGRADE_EXP_STATE;
+	downState.stype = ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE;
 	pciState.pNext = &downState;
 	res = zesDevicePciGetState(device, &pciState);
 	if (res != ZE_RESULT_SUCCESS) {
@@ -255,21 +255,9 @@ ze_result_t pci::setPciDowngradeState(const zes_device_handle_t &device, bool en
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	// Set the PCIe downgrade state
-	void *extFunction = nullptr;
-
-	res = zesDriverGetExtensionFunctionAddress(zesDriver, "zesIntelDevicePciLinkSpeedUpdateExp", &extFunction);
-	if (res != ZE_RESULT_SUCCESS || extFunction == nullptr) {
-		ERR("PCIe Downgrade extension function not available\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	pfnZesIntelDevicePciLinkSpeedUpdateExp_t pfnZesIntelDevicePciLinkSpeedUpdateExp =
-		reinterpret_cast<pfnZesIntelDevicePciLinkSpeedUpdateExp_t>(extFunction);
 	ze_bool_t downState = (enabled == true) ? true : false;
 	zes_device_action_t pendingAction = {};
-
-	res = pfnZesIntelDevicePciLinkSpeedUpdateExp(device, downState, &pendingAction);
+	res = zesDevicePciLinkSpeedUpdateExt(device, downState, &pendingAction);
 	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", res, l0_error_to_string(res));
 		return res;
