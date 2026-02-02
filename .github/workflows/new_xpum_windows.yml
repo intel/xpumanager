@@ -85,7 +85,7 @@ jobs:
           # Detect profile - force it to use the new location
           conan profile detect --force
           # Create custom packages
-          conan create recipes/level-zero --name=level-zero --version=1.23.1 `
+          conan create recipes/level-zero --name=level-zero --version=1.27.0 `
             -s arch=x86_64 `
             -s build_type=${{ matrix.build_type }} `
             -s compiler=msvc `

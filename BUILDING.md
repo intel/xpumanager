@@ -87,7 +87,7 @@ os=Windows
 ### Build Steps (first build)
 Optionally, when using Conan to manage our build dependencies (recommended), the recipes must be created via:
 ```sh
-conan create recipes/level-zero --name=level-zero --version=1.23.1
+conan create recipes/level-zero --name=level-zero --version=1.27.0
 conan create recipes/metee --name=metee --version=6.0.0
 conan create recipes/igsc --name=igsc --version=0.9.6
 ```

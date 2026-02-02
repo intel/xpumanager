@@ -9,7 +9,7 @@ import os
 
 class LevelZeroConan(ConanFile):
     name = "level-zero"
-    version = "1.23.1"
+    version = "1.27.0"
     
     # Package metadata
     license = "MIT"
