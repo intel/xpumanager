@@ -31,8 +31,7 @@ TRANSLATOR:
       # Ignore experimental
       - {action: ignore, from: "Exp[2]?$"}
       - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
-      # Ignore deprecated
-      - {action: ignore, from: "^zesDeviceEnumActiveVFExp$"}
+      # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zesDeviceGetCardPowerDomain$"}
       - {action: ignore, from: "^zesFrequencyOcGetCapabilities$"}
       - {action: ignore, from: "^zesFrequencyOc(Get|Set)FrequencyTarget$"}
@@ -42,12 +41,6 @@ TRANSLATOR:
       - {action: ignore, from: "^zesFrequencyOc(Get|Set)TjMax$"}
       - {action: ignore, from: "^zesPower(Get|Set)Limits$"}
       - {action: ignore, from: "^zesSchedulerSetComputeUnitDebugMode$"}
-      - {action: ignore, from: "^zesVFManagementGetVFCapabilitiesExp$"}
-      - {action: ignore, from: "^zesVFManagementGetVFEngineUtilizationExp$"}
-      - {action: ignore, from: "^zesVFManagementGetVFMemoryUtilizationExp$"}
-      - {action: ignore, from: "^zesVFManagementGetVFPropertiesExp$"}
-      - {action: ignore, from: "^zesVFManagementSetVFTelemetryModeExp$"}
-      - {action: ignore, from: "^zesVFManagementSetVFTelemetrySamplingIntervalExp$"}
     type:
       - {action: accept, from: "^zes_[a-z0-9_]*_t$"}
       - {action: ignore, from: "^zes_base_[a-z_]*_t$"}
@@ -63,19 +56,13 @@ TRANSLATOR:
       # Ignore experimental
       - {action: ignore, from: "^zes_vf_handle_t$"}
       - {action: ignore, from: "_exp[2]?_"}
-      # Ignore deprecated
+      # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zes_oc_mode_t$"}
       - {action: ignore, from: "^zes_oc_capabilities_t$"}
       - {action: ignore, from: "^zes_mem_ext_bandwidth_t$"}
       - {action: ignore, from: "^zes_power_sustained_limit_t$"}
       - {action: ignore, from: "^zes_power_burst_limit_t$"}
       - {action: ignore, from: "^zes_power_peak_limit_t$"}
-      - {action: ignore, from: "^zes_vf_info_mem_type_exp_flag[s]?_t$"}
-      - {action: ignore, from: "^zes_vf_info_util_exp_flag[s]?_t$"}
-      - {action: ignore, from: "^zes_vf_exp_properties_t$"}
-      - {action: ignore, from: "^zes_vf_util_mem_exp_t$"}
-      - {action: ignore, from: "^zes_vf_util_engine_exp_t$"}
-      - {action: ignore, from: "^zes_vf_exp_capabilities_t$"}
   PtrTips:
     function:
       # Specific tips
@@ -91,10 +78,7 @@ TRANSLATOR:
       - {target: "^zesFabricPortGetMultiPortThroughput$", tips: [ref, ref, arr, ref]}
       - {target: "^zesFrequencyGetAvailableClocks$", tips: [ref, ref, arr]}
       - {target: "^zesPower(Get|Set)LimitsExt$", tips: [ref, ref, arr]}
-      - {target: "^zesRasGetStateExp$", tips: [ref, ref, arr]}
       - {target: "^zesEngineGetActivityExt$", tips: [ref, ref, arr]}
-      - {target: "^zesDeviceGetSubDevicePropertiesExp$", tips: [ref, ref, arr]}
-      - {target: "^zesVFManagementGetVF(Engine|Memory)UtilizationExp2$", tips: [ref, ref, arr]}
       # Default tip, everything is ref
       - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
   TypeTips:
