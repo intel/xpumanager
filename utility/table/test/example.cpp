@@ -100,7 +100,7 @@ void exampleJsonOutput()
 
 void exampleFilteredData()
 {
-	std::cout << "Example 6: High Temperature GPUs (Temperature > 45°C)\n";
+	std::cout << "Example 5: High Temperature GPUs (Temperature > 45°C)\n";
 	std::cout << "---------------------------------------------------------------------------\n";
 
 	TableBuilder tb;
@@ -131,7 +131,7 @@ void exampleFilteredData()
 
 void exampleEmptyTable()
 {
-	std::cout << "Example 7: Empty Table (No GPUs Found)\n";
+	std::cout << "Example 6: Empty Table (No GPUs Found)\n";
 	std::cout << "---------------------------------------------------------------------------\n";
 
 	TableBuilder()
@@ -147,7 +147,7 @@ void exampleEmptyTable()
 
 void exampleTableStatistics()
 {
-	std::cout << "Example 8: Table Statistics\n";
+	std::cout << "Example 7: Table Statistics\n";
 	std::cout << "---------------------------------------------------------------------------\n";
 
 	TableBuilder statsTable;
@@ -173,7 +173,7 @@ void exampleTableStatistics()
 
 void exampleGpuMonitoringStyle()
 {
-	std::cout << "Example 9: Full GPU Monitoring Layout\n";
+	std::cout << "Example 8: Full GPU Monitoring Layout\n";
 	std::cout << "---------------------------------------------------------------------------\n";
 
 	TableBuilder table;
@@ -238,7 +238,7 @@ void exampleGpuMonitoringStyle()
 
 void exampleLiveMonitoring()
 {
-	std::cout << "Example 10: Live GPU Monitoring (Streaming Updates)\n";
+	std::cout << "Example 9: Live GPU Monitoring (Streaming Updates)\n";
 	std::cout << "---------------------------------------------------------------------------\n";
 	std::cout << "This example demonstrates live table updates. Press Ctrl+C to stop.\n";
 	std::cout << "Starting in 2 seconds...\n\n";
@@ -298,7 +298,7 @@ void exampleLiveMonitoring()
 
 void exampleIncrementalRows()
 {
-	std::cout << "Example 11: Incremental Row Addition (Streaming)\n";
+	std::cout << "Example 10: Incremental Row Addition (Streaming)\n";
 	std::cout << "---------------------------------------------------------------------------\n";
 	std::cout << "Demonstrating adding rows one at a time with live updates.\n\n";
 

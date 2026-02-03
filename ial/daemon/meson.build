@@ -1,3 +1,6 @@
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 # IAL daemon build
 
 daemon_sources = files('daemon.cpp')

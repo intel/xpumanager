@@ -1,3 +1,6 @@
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 # IAL common (Command implementations) build
 
 ial_cmn_sources = files(

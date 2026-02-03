@@ -1,3 +1,6 @@
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 # HAL amc (add-in-card management controller) build
 
 amc_sources = files(
