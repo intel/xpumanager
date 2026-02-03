@@ -154,6 +154,7 @@ class SPDXLicenseManager:
         "*.backup",
         "*conanrun.sh",
         "*deactivate_conanrun.sh",
+        "*conanbuild*",
     ]
 
     # Comment styles: (start, middle, end)
@@ -886,7 +887,7 @@ class SPDXLicenseManager:
         self,
         paths: List[Path],
         git_modified_only: bool = False,
-        git_base_ref: str = "origin/main",
+        git_base_ref: str = "origin/new_xpum",
     ) -> List[Path]:
         """Find all source files matching the configured patterns."""
         if git_modified_only:
@@ -894,7 +895,7 @@ class SPDXLicenseManager:
             modified_files = self._get_git_modified_files(git_base_ref)
             if not modified_files:
                 return []
-
+            
             # Filter to only include source files
             source_files = set()
             for filepath in modified_files:

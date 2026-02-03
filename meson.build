@@ -1,3 +1,6 @@
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 # Compilers' C++20 support is experimental / partial:
 # - https://en.cppreference.com/w/cpp/compiler_support/20.html
 # - https://gcc.gnu.org/projects/cxx-status.html

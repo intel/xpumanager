@@ -1,5 +1,5 @@
-#Copyright © 2025 Intel Corporation
-#SPDX - License - Identifier : MIT
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
 
 #C API compatibility layer for legacy XPUM applications
 #This layer provides backward compatibility with the original XPUM API

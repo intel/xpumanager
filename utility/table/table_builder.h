@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2025-2026 Intel Corporation
+ * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
  */
 
-#ifndef _TABLE_BUILDER_H
+#ifndef TABLE_BUILDER_H
 #define TABLE_BUILDER_H
 
 #include "nlohmann/json_fwd.hpp"
@@ -604,4 +604,4 @@ public:
 	static void clearScreen();
 };
 
-#endif // IAL_CMN_TABLE_BUILDER_H
+#endif // TABLE_BUILDER_H

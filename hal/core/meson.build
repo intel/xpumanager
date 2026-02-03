@@ -1,3 +1,6 @@
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 # HAL core (Hardware Abstraction Layer Core) build
 
 hal_core_sources = files(

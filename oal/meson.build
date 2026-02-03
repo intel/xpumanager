@@ -1,3 +1,6 @@
+# Copyright (C) 2025-2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
 # OAL (OS Abstraction Layer) build
 
 # Platform-specific source files
