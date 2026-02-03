@@ -59,7 +59,21 @@ func stringify(v reflect.Value) (any, error) {
 		v = v.Elem()
 	}
 
-	// Return string if type implements fmt.Stringer
+	// Return _unaliased_ basic types as-is without string conversion
+	// Aliased types (like type FreqDomain int32) have a non-empty PkgPath and should be converted to strings
+	switch v.Kind() {
+	case reflect.Bool, reflect.String,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64,
+		reflect.Complex64, reflect.Complex128:
+		// Only return as-is if it's truly a basic type (no package path = not aliased)
+		if v.Type().PkgPath() == "" {
+			return v.Interface(), nil
+		}
+	}
+
+	// Return string if type implements fmt.Stringer (includes aliased types)
 	if v.Type().Implements(reflect.TypeOf((*fmt.Stringer)(nil)).Elem()) {
 		s := v.Interface().(fmt.Stringer)
 		return s.String(), nil
