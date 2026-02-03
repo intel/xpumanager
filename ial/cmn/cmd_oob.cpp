@@ -138,14 +138,14 @@ int cmdOOB::run(UNUSED arg_struct *args)
 	}
 
 	if (amcobj.redfishInitialize(oobCmds[oobCmdType::OOB_IP].val, oobCmds[oobCmdType::OOB_USERNAME].val,
-								 oobCmds[oobCmdType::OOB_PASSWORD].val, portNum)) {
+								 oobCmds[oobCmdType::OOB_PASSWORD].val, portNum) != AMC_SUCCESS) {
 		// Clear the "OOB discovery" message
 		PRINT("\r%*s\r", 80, "");
 		ERR("Failed to initialize Redfish.\n");
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	if (amcobj.redfishDiscovery(&gpuDevices, &foundCount)) {
+	if (amcobj.redfishDiscovery(&gpuDevices, &foundCount) != AMC_SUCCESS) {
 		// Clear the "OOB discovery" message
 		PRINT("\r%*s\r", 80, "");
 		ERR("Failed to discover GPU devices.\n");

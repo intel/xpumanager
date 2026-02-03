@@ -14,8 +14,8 @@
  * communication.
  *
  * @return int Status of initialization
- * @retval 0 pldm initialization successful
- * @retval -1 Memory allocation failed or initialization error
+ * @retval PLDM_SUCCESS pldm initialization successful
+ * @retval PLDM_ERROR Memory allocation failed or initialization error
  *
  * @note Memory buffers include space for mctp headers, pldm headers, and payload
  * @note Calls cleanup() automatically on failure to prevent memory leaks
@@ -29,7 +29,7 @@ int pldm::pldminit()
 	if (mI2cPldmRead == NULL) {
 		cleanup();
 		ERR("Memory allocation failed for i2crespinfo\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	mI2cPldmWrite = (i2cdataPldmInfo *)malloc(sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
@@ -37,14 +37,14 @@ int pldm::pldminit()
 	if (mI2cPldmWrite == NULL) {
 		cleanup();
 		ERR("Memory allocation failed for i2cwriteinfo\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	progMutex = new std::mutex();
 	if (progMutex == NULL) {
 		cleanup();
 		ERR("Memory allocation failed for progMutex\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	// Initialize pldm Instance ID to "1"
@@ -54,7 +54,7 @@ int pldm::pldminit()
 
 	DBG("pldm Init Success!!\n");
 
-	return 0;
+	return PLDM_SUCCESS;
 }
 
 /**
@@ -97,8 +97,8 @@ void pldm::cleanup()
  * 3. Performing pldm device discovery
  *
  * @return int Status of initialization
- * @retval 0 All initialization steps completed successfully
- * @retval -1 One or more initialization steps failed
+ * @retval PLDM_SUCCESS All initialization steps completed successfully
+ * @retval PLDM_ERROR One or more initialization steps failed
  *
  * @note This function must be called before any pldm operations
  */
@@ -107,21 +107,21 @@ int pldm::initialize()
 	TRACING();
 	if (!i2cobj->isInit()) {
 		ERR("Failed to initialize I2C interface\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	if (mctp::initialize() != MCTP_SUCCESS) {
 		ERR("Failed to initialization mctp init sequence\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	if (pldmDiscInitialize() != PLDM_SUCCESS) {
 		ERR("Failed to initialization pldm discovery sequence\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	DBG("mctp - pldm initialization completed successfully for card : %02d\n", mCardNum);
-	return 0;
+	return PLDM_SUCCESS;
 }
 
 /**
@@ -133,8 +133,8 @@ int pldm::initialize()
  * @param pkgFilePath Path to the firmware package file to flash
  *
  * @return int Status of firmware update operation
- * @retval 0 Firmware update completed successfully
- * @retval -1 I2C interface not initialized or update failed
+ * @retval PLDM_SUCCESS Firmware update completed successfully
+ * @retval PLDM_ERROR I2C interface not initialized or update failed
  *
  * @note The device must be properly initialized before calling this function
  */
@@ -143,12 +143,12 @@ int pldm::fwupd(const char *pkgFilePath)
 	TRACING();
 	if (!i2cobj->isInit()) {
 		ERR("Failed to initialize I2C interface\n");
-		return -1;
+		return PLDM_ERROR;
 	}
 
 	if (fwUpdInitialize(pkgFilePath) != PLDM_SUCCESS) {
 		ERR("Firmware update failed\n");
-		return -1;
+		return PLDM_ERROR;
 	}
-	return 0;
+	return PLDM_SUCCESS;
 }

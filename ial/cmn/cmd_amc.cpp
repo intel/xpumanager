@@ -225,7 +225,7 @@ int cmdAmc::run(arg_struct *args)
 	}
 
 	int ret = amc.amcInitialize();
-	if (ret != 0) {
+	if (ret != AMC_SUCCESS) {
 		ERR("Failed to initialize AMC devices (error code: %d)\n", ret);
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
@@ -308,7 +308,7 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		for (int i = 0; i < numCards; i++) {
 			workers.emplace_back([amc, i, &failureCount, &successCount]() {
 				DBG("Resetting GPU device %d via AMC...\n", i);
-				if (amc->amcGpuReset(i) != 0) {
+				if (amc->amcGpuReset(i) != AMC_SUCCESS) {
 					ERR("Failed to reset GPU device %d via AMC\n", i);
 					failureCount.fetch_add(1, std::memory_order_relaxed);
 				} else {
@@ -320,7 +320,7 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	} else {
 		DBG("Executing GPU reset via AMC for device %d...\n", deviceId);
 		workers.emplace_back([amc, deviceId, &failureCount, &successCount]() {
-			if (amc->amcGpuReset(deviceId) != 0) {
+			if (amc->amcGpuReset(deviceId) != AMC_SUCCESS) {
 				ERR("Failed to reset GPU device %d via AMC\n", deviceId);
 				failureCount.fetch_add(1, std::memory_order_relaxed);
 			} else {
@@ -417,7 +417,7 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 
 		std::vector<amcSensorInfo> sensorInfo;
 		int ret = amc->amcGetSensorInfoBySensorId(deviceIndex, static_cast<uint16_t>(sensorId), sensorInfo);
-		if (ret != 0) {
+		if (ret != AMC_SUCCESS) {
 			ERR("Failed to get AMC sensor info for sensor ID %d on device %s.\n", sensorId,
 				amcCmds[AMC_DEVICE].val.c_str());
 			return ZE_RESULT_ERROR_UNINITIALIZED;
