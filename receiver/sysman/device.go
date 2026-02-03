@@ -7,6 +7,8 @@ package sysman
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
@@ -28,14 +30,15 @@ type sysmanDevice struct {
 }
 
 type deviceAttributes struct {
-	hwID           string
-	hwModel        string
-	hwName         string
-	hwSerialNumber string
-	hwVendor       string
-	pciBDF         string
-	pciDeviceID    string
-	pciVendorID    string
+	hwID              string
+	hwModel           string
+	hwName            string
+	hwSerialNumber    string
+	hwVendor          string
+	hwFirmwareVersion string
+	pciBDF            string
+	pciDeviceID       string
+	pciVendorID       string
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*deviceRegistry, error) {
@@ -108,6 +111,13 @@ func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLo
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}
 
+	// Get firmware info
+	fwInfos := []string{}
+	for i, fw := range enumFirmwares(d) {
+		fwInfos = append(fwInfos, fmt.Sprintf("%d:%s:%s:%s", i, fw.attributes.firmwareName, fw.attributes.subdeviceId, url.QueryEscape(fw.attributes.firmwareVersion)))
+	}
+	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
+
 	if pci, err := device.PciGetProperties(); err != nil {
 		logger.Errorw("failed to get PCI properties", "error", err, "deviceAttributes", d.attributes)
 	} else {
@@ -128,6 +138,7 @@ func (d *sysmanDevice) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 		d.attributes.hwName,
 		d.attributes.hwSerialNumber,
 		d.attributes.hwVendor,
+		d.attributes.hwFirmwareVersion,
 		d.attributes.pciBDF,
 		d.attributes.pciDeviceID,
 		d.attributes.pciVendorID,

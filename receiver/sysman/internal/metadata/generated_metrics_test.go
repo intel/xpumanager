@@ -80,7 +80,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val")
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -298,6 +298,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.vendor")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.vendor-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.firmware_version")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.firmware_version-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
 					assert.Equal(t, "pci.bdf-val", attrVal.Str())
