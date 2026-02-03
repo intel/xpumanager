@@ -48,6 +48,7 @@ type AttributeHwType int
 const (
 	_ AttributeHwType = iota
 	AttributeHwTypeFrequency
+	AttributeHwTypeGpu
 	AttributeHwTypeMemory
 	AttributeHwTypeTemperature
 )
@@ -57,6 +58,8 @@ func (av AttributeHwType) String() string {
 	switch av {
 	case AttributeHwTypeFrequency:
 		return "frequency"
+	case AttributeHwTypeGpu:
+		return "gpu"
 	case AttributeHwTypeMemory:
 		return "memory"
 	case AttributeHwTypeTemperature:
@@ -68,6 +71,7 @@ func (av AttributeHwType) String() string {
 // MapAttributeHwType is a helper map of string to AttributeHwType attribute value.
 var MapAttributeHwType = map[string]AttributeHwType{
 	"frequency":   AttributeHwTypeFrequency,
+	"gpu":         AttributeHwTypeGpu,
 	"memory":      AttributeHwTypeMemory,
 	"temperature": AttributeHwTypeTemperature,
 }
@@ -125,6 +129,9 @@ var MapAttributeStatistic = map[string]AttributeStatistic{
 }
 
 var MetricsInfo = metricsInfo{
+	HwEnergy: metricInfo{
+		Name: "hw.energy",
+	},
 	HwFrequency: metricInfo{
 		Name: "hw.frequency",
 	},
@@ -149,6 +156,9 @@ var MetricsInfo = metricsInfo{
 	HwMemoryUsage: metricInfo{
 		Name: "hw.memory.usage",
 	},
+	HwPower: metricInfo{
+		Name: "hw.power",
+	},
 	HwStatus: metricInfo{
 		Name: "hw.status",
 	},
@@ -158,6 +168,7 @@ var MetricsInfo = metricsInfo{
 }
 
 type metricsInfo struct {
+	HwEnergy                  metricInfo
 	HwFrequency               metricInfo
 	HwFrequencyLimit          metricInfo
 	HwFrequencyRequest        metricInfo
@@ -166,12 +177,71 @@ type metricsInfo struct {
 	HwGpuInfo                 metricInfo
 	HwMemorySize              metricInfo
 	HwMemoryUsage             metricInfo
+	HwPower                   metricInfo
 	HwStatus                  metricInfo
 	HwTemperature             metricInfo
 }
 
 type metricInfo struct {
 	Name string
+}
+
+type metricHwEnergy struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.energy metric with initial data.
+func (m *metricHwEnergy) init() {
+	m.data.SetName("hw.energy")
+	m.data.SetDescription("Energy consumed by the hardware component.")
+	m.data.SetUnit("J")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwEnergy) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
+	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwEnergy) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwEnergy) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwEnergy(cfg MetricConfig) metricHwEnergy {
+	m := metricHwEnergy{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
 }
 
 type metricHwFrequency struct {
@@ -640,6 +710,62 @@ func newMetricHwMemoryUsage(cfg MetricConfig) metricHwMemoryUsage {
 	return m
 }
 
+type metricHwPower struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.power metric with initial data.
+func (m *metricHwPower) init() {
+	m.data.SetName("hw.power")
+	m.data.SetDescription("Instantaneous power usage of the hardware component.")
+	m.data.SetUnit("W")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwPower) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
+	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwPower) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwPower) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwPower(cfg MetricConfig) metricHwPower {
+	m := metricHwPower{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricHwStatus struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -764,6 +890,7 @@ type MetricsBuilder struct {
 	metricsCapacity                 int                  // maximum observed number of metrics per resource.
 	metricsBuffer                   pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo                       component.BuildInfo  // contains version information.
+	metricHwEnergy                  metricHwEnergy
 	metricHwFrequency               metricHwFrequency
 	metricHwFrequencyLimit          metricHwFrequencyLimit
 	metricHwFrequencyRequest        metricHwFrequencyRequest
@@ -772,6 +899,7 @@ type MetricsBuilder struct {
 	metricHwGpuInfo                 metricHwGpuInfo
 	metricHwMemorySize              metricHwMemorySize
 	metricHwMemoryUsage             metricHwMemoryUsage
+	metricHwPower                   metricHwPower
 	metricHwStatus                  metricHwStatus
 	metricHwTemperature             metricHwTemperature
 }
@@ -799,6 +927,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		startTime:                       pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:                   pmetric.NewMetrics(),
 		buildInfo:                       settings.BuildInfo,
+		metricHwEnergy:                  newMetricHwEnergy(mbc.Metrics.HwEnergy),
 		metricHwFrequency:               newMetricHwFrequency(mbc.Metrics.HwFrequency),
 		metricHwFrequencyLimit:          newMetricHwFrequencyLimit(mbc.Metrics.HwFrequencyLimit),
 		metricHwFrequencyRequest:        newMetricHwFrequencyRequest(mbc.Metrics.HwFrequencyRequest),
@@ -807,6 +936,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		metricHwGpuInfo:                 newMetricHwGpuInfo(mbc.Metrics.HwGpuInfo),
 		metricHwMemorySize:              newMetricHwMemorySize(mbc.Metrics.HwMemorySize),
 		metricHwMemoryUsage:             newMetricHwMemoryUsage(mbc.Metrics.HwMemoryUsage),
+		metricHwPower:                   newMetricHwPower(mbc.Metrics.HwPower),
 		metricHwStatus:                  newMetricHwStatus(mbc.Metrics.HwStatus),
 		metricHwTemperature:             newMetricHwTemperature(mbc.Metrics.HwTemperature),
 	}
@@ -875,6 +1005,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
+	mb.metricHwEnergy.emit(ils.Metrics())
 	mb.metricHwFrequency.emit(ils.Metrics())
 	mb.metricHwFrequencyLimit.emit(ils.Metrics())
 	mb.metricHwFrequencyRequest.emit(ils.Metrics())
@@ -883,6 +1014,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricHwGpuInfo.emit(ils.Metrics())
 	mb.metricHwMemorySize.emit(ils.Metrics())
 	mb.metricHwMemoryUsage.emit(ils.Metrics())
+	mb.metricHwPower.emit(ils.Metrics())
 	mb.metricHwStatus.emit(ils.Metrics())
 	mb.metricHwTemperature.emit(ils.Metrics())
 
@@ -904,6 +1036,11 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	metrics := mb.metricsBuffer
 	mb.metricsBuffer = pmetric.NewMetrics()
 	return metrics
+}
+
+// RecordHwEnergyDataPoint adds a data point to hw.energy metric.
+func (mb *MetricsBuilder) RecordHwEnergyDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+	mb.metricHwEnergy.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, hwSensorLocationAttributeValue, comIntelSubdeviceIDAttributeValue)
 }
 
 // RecordHwFrequencyDataPoint adds a data point to hw.frequency metric.
@@ -944,6 +1081,11 @@ func (mb *MetricsBuilder) RecordHwMemorySizeDataPoint(ts pcommon.Timestamp, val 
 // RecordHwMemoryUsageDataPoint adds a data point to hw.memory.usage metric.
 func (mb *MetricsBuilder) RecordHwMemoryUsageDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
 	mb.metricHwMemoryUsage.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+}
+
+// RecordHwPowerDataPoint adds a data point to hw.power metric.
+func (mb *MetricsBuilder) RecordHwPowerDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+	mb.metricHwPower.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, hwSensorLocationAttributeValue, comIntelSubdeviceIDAttributeValue)
 }
 
 // RecordHwStatusDataPoint adds a data point to hw.status metric.

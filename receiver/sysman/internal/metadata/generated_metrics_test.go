@@ -60,6 +60,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", "com.intel.subdevice_id-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.frequency.domain-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", AttributeAggregationMin)
 
 			defaultMetricsCount++
@@ -92,6 +96,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", "com.intel.subdevice_id-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.state-val", "hw.name-val", AttributeHwTypeFrequency, "hw.parent-val", "com.intel.subdevice_id-val")
 
 			defaultMetricsCount++
@@ -120,6 +128,35 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
+				case "hw.energy":
+					assert.False(t, validatedMetrics["hw.energy"], "Found a duplicate in the metrics slice: hw.energy")
+					validatedMetrics["hw.energy"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Energy consumed by the hardware component.", ms.At(i).Description())
+					assert.Equal(t, "J", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.parent")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
 				case "hw.frequency":
 					assert.False(t, validatedMetrics["hw.frequency"], "Found a duplicate in the metrics slice: hw.frequency")
 					validatedMetrics["hw.frequency"] = true
@@ -371,6 +408,33 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+				case "hw.power":
+					assert.False(t, validatedMetrics["hw.power"], "Found a duplicate in the metrics slice: hw.power")
+					validatedMetrics["hw.power"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "Instantaneous power usage of the hardware component.", ms.At(i).Description())
+					assert.Equal(t, "W", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.parent")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())

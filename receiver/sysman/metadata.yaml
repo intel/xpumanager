@@ -1,3 +1,4 @@
+# https://github.com/open-telemetry/opentelemetry-collector/blob/main/cmd/mdatagen/metadata-schema.yaml
 type: sysman
 
 status:
@@ -64,6 +65,7 @@ attributes:
     type: string
     enum:
       - frequency
+      - gpu
       - memory
       - temperature
   hw.vendor:
@@ -92,6 +94,17 @@ attributes:
       - max
 
 metrics:
+  hw.energy:
+    enabled: true
+    description: Energy consumed by the hardware component.
+    stability:
+      level: development
+    unit: "J"
+    sum:
+      value_type: double
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, com.intel.subdevice_id]
   hw.frequency:
     enabled: true
     description: Operating frequency of the hardware component.
@@ -172,6 +185,15 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
+  hw.power:
+    enabled: true
+    description: Instantaneous power usage of the hardware component.
+    stability:
+      level: development
+    unit: "W"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, com.intel.subdevice_id]
   hw.status:
     enabled: true
     description: The operational status of the hardware component.

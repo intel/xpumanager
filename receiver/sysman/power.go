@@ -1,0 +1,134 @@
+//
+// Copyright (C) 2026 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package sysman
+
+import (
+	"fmt"
+	"strings"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.uber.org/zap"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
+	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
+)
+
+func init() {
+	registerSubsystem("power", enumPower)
+}
+
+type sysmanPower struct {
+	*l0sysman.Power
+	counter l0sysman.PowerEnergyCounter
+	logger  *zap.SugaredLogger
+	attribs powerAttribs
+}
+
+type powerAttribs struct {
+	hwID           string
+	hwType         metadata.AttributeHwType
+	hwName         string
+	hwParent       string
+	sensorLocation string
+	subdeviceId    string
+}
+
+func enumPower(d *sysmanDevice) []instanceScraper {
+	items, err := d.EnumPowerDomains()
+	if err != nil {
+		d.logger.Errorw("Failed to enumerate power domains", zap.Error(err))
+		return nil
+	}
+	scrapers := make([]instanceScraper, 0, len(items))
+	for i, item := range items {
+		name := fmt.Sprintf("power_%d", i)
+		p, err := newSysmanPower(name, item, d)
+		if err != nil {
+			d.logger.Errorw("Failed to create Sysman power object", zap.Error(err))
+			continue
+		}
+		scrapers = append(scrapers, p)
+	}
+	return scrapers
+}
+
+func newSysmanPower(name string, power *l0sysman.Power, device *sysmanDevice) (*sysmanPower, error) {
+	props, err := power.GetProperties()
+	if err != nil {
+		return nil, err
+	}
+
+	var location string
+	if props.ExtendedProperties != nil {
+		location = props.ExtendedProperties.Domain.String()
+	} else {
+		location = "GPU"
+	}
+
+	// initial / previous counter value + check for counter working
+	counter, err := power.GetEnergyCounter()
+	if err != nil {
+		return nil, err
+	}
+
+	return &sysmanPower{
+		Power:   power,
+		counter: counter,
+		logger:  device.logger,
+		attribs: powerAttribs{
+			hwID:           device.attributes.hwID + "_" + name,
+			hwType:         metadata.AttributeHwTypeGpu,
+			hwName:         name,
+			hwParent:       device.attributes.hwID,
+			sensorLocation: strings.ToLower(location),
+			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+		},
+	}, nil
+}
+
+// scrape converts energy counter value to OTel metric:
+//   - OTel timestamps are in nanoseconds and values are in base units (Joules)
+//     https://github.com/open-telemetry/opentelemetry-collector/tree/main/pdata#singular-fields
+//   - Sysman timestamps are in microseconds & counter values are in microjoules
+//     https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-energy-counter-t
+func (power *sysmanPower) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	counter, err := power.GetEnergyCounter()
+	if err != nil {
+		power.logger.Errorw("Failed to get energy counter", zap.Error(err), "attributes", power.attribs)
+		return
+	}
+
+	// TODO: check from visualization that energy counter change
+	// rate matches power values calculated below (if not,
+	// caller's timestamps do not match KMD timestamps)
+	mb.RecordHwEnergyDataPoint(
+		ts,
+		float64(counter.Energy)/1e6, // uJ -> J
+		power.attribs.hwID,
+		power.attribs.hwName,
+		power.attribs.hwParent,
+		power.attribs.sensorLocation,
+		power.attribs.subdeviceId,
+	)
+
+	// TODO: Sysman spec states neither timestamp nor counter bits,
+	// so their values are assumed to wrap at full type width
+	tdiff := u64CounterDiff(power.counter.Timestamp, counter.Timestamp)
+	ediff := u64CounterDiff(power.counter.Energy, counter.Energy)
+	power.counter = counter
+
+	watts := float64(ediff) / float64(tdiff)
+	mb.RecordHwPowerDataPoint(
+		ts, watts,
+		power.attribs.hwID,
+		power.attribs.hwName,
+		power.attribs.hwParent,
+		power.attribs.sensorLocation,
+		power.attribs.subdeviceId,
+	)
+}
+
+func (m *sysmanPower) pollAggregatedMetrics() {}
