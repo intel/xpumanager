@@ -82,7 +82,7 @@ docker build -t registry.local/xpumd:main .
 Test the container image:
 
 ```bash
-docker run --rm -p 8080:8080 --device /dev/dri registry.local/xpumd:main --config /etc/xpumd/config-example.yaml
+docker run --rm --publish 8080:8080 --device /dev/dri --user 0:0 --cap-drop ALL registry.local/xpumd:main --config /etc/xpumd/config-example.yaml
 ```
 
 ```bash
