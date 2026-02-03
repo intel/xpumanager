@@ -77,7 +77,9 @@ void mctp::cleanup()
 /**
  * @brief Initializes mctp communication interface
  * @param devpath Wide character string path to the I2C device
- * @return 0 on success, -1 on failure
+ * @return int Status of initialization
+ * @retval MCTP_SUCCESS Initialization successful
+ * @retval MCTP_FAILURE Memory allocation failed or initialization error
  *
  * Sets up mctp instance ID and destination EID, allocates memory buffers for read/write operations,
  * creates and initializes the I2C interface object. Performs cleanup on any initialization failures.
@@ -88,7 +90,7 @@ int mctp::mctpinit(const std::string &devpath)
 
 	if (devpath.empty()) {
 		ERR("Device path is empty\n");
-		return -1;
+		return MCTP_FAILURE;
 	}
 
 	// Initialize instanceID to "1"
@@ -101,27 +103,27 @@ int mctp::mctpinit(const std::string &devpath)
 											  MCTL_PLDM_RESPONSE_PAYLOAD_SIZE);
 	if (mI2cMctpRead == NULL) {
 		ERR("Memory allocation failed for mctp data structure\n");
-		return -1;
+		return MCTP_FAILURE;
 	}
 
 	mI2cMctpWrite = (i2cdata_mctpinfo *)malloc(sizeof(struct mctpSmbusI2cHdr) + sizeof(mctpControlHdr) +
 											   MCTL_PLDM_RESPONSE_PAYLOAD_SIZE);
 	if (mI2cMctpWrite == NULL) {
 		ERR("Memory allocation failed for mctp write data structure\n");
-		return -1;
+		return MCTP_FAILURE;
 	}
 
 	i2cobj = new I2CInterface(devpath);
 	if (i2cobj == NULL) {
 		ERR("Failed to allocate I2C interface\n");
-		return -1;
+		return MCTP_FAILURE;
 	}
 
 	if (!i2cobj->isInit()) {
 		ERR("Failed to initialize I2C interface\n");
-		return -1;
+		return MCTP_FAILURE;
 	}
 
 	DBG("mctp Init Success!!\n");
-	return 0;
+	return MCTP_SUCCESS;
 }

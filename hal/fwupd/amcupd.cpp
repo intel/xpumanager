@@ -122,7 +122,7 @@ ze_result_t amcupd::init()
 	static std::atomic<bool> initFailed{false};
 
 	std::call_once(initFlag, [amc]() {
-		if (amc->amcInitialize() != 0) {
+		if (amc->amcInitialize() != AMC_SUCCESS) {
 			ERR("Failed to initialize AMC devices\n");
 			initFailed.store(true);
 		}
@@ -262,10 +262,10 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	// Create a thread to flash firmware
 	std::thread flashThread([amc, amcIndex, filePath, &flashCompleted, &flashSuccess]() {
 		int result = amc->amcFirmwareFlash(amcIndex, filePath.c_str());
-		flashSuccess.store(result == 0);
+		flashSuccess.store(result == AMC_SUCCESS);
 		flashCompleted.store(true);
 
-		if (result != 0) {
+		if (result != AMC_SUCCESS) {
 			ERR("Failed to flash firmware for card %d\n", amcIndex);
 		} else {
 			DBG("Firmware flash for card %d completed successfully\n", amcIndex);
@@ -274,9 +274,15 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 
 	// Create a thread to monitor firmware flash progress
 	std::thread progressThread([amc, amcIndex, fwInfo, &flashCompleted, &stopProgress]() {
-		uint32_t progress = 0;
+		int progress = 0;
 		while (!stopProgress.load() && progress < 100) {
 			progress = amc->amcFirmwareProgress(amcIndex);
+
+			if (progress < 0) {
+				ERR("Failed to get firmware progress for card %d\n", amcIndex);
+				break;
+			}
+
 			if (progress > 100)
 				progress = 100; // Cap at 100%
 

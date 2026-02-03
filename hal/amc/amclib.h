@@ -12,6 +12,12 @@
 #include "pldm.h"
 #include "redfish.h"
 
+enum amcErrCodes
+{
+	AMC_SUCCESS = 0x00,
+	AMC_ERROR = 0x01
+};
+
 enum oemVrsync
 {
 	OEM_VR_SYNC_PAUSE = 0x01,

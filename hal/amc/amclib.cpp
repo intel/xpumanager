@@ -93,8 +93,8 @@ int amclib::amcEnumFirmwares()
  * This is an internal function called by amcEnumFirmwares().
  *
  * @return Status of initialization
- * @retval 0 All devices initialized successfully
- * @retval -1 One or more devices failed to initialize
+ * @retval AMC_SUCCESS All devices initialized successfully
+ * @retval AMC_ERROR One or more devices failed to initialize
  *
  * @note This is a private member function
  */
@@ -105,7 +105,7 @@ int amclib::amcInitialize()
 	pldmobj = new pldm *[numCards];
 	if (pldmobj == nullptr) {
 		ERR("Failed to allocate memory for pldm object array\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	for (int i = 0; i < numCards; ++i) {
@@ -118,20 +118,20 @@ int amclib::amcInitialize()
 			}
 			delete[] pldmobj;
 			pldmobj = nullptr;
-			return -1;
+			return AMC_ERROR;
 		}
 		DBG("#####################################\n\n");
 	}
 
 	for (int i = 0; i < numCards; i++) {
 		DBG("############ CARD : %02d ############\n", i);
-		if (pldmobj[i]->initialize() == -1) {
+		if (pldmobj[i]->initialize() != PLDM_SUCCESS) {
 			ERR("Failed to initialize pldm Object for card: %d\n", i);
-			return -1;
+			return AMC_ERROR;
 		}
 		DBG("#####################################\n");
 	}
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
@@ -144,8 +144,8 @@ int amclib::amcInitialize()
  * @param pkgFilePath Path to the firmware package file
  *
  * @return Status of firmware flash operation
- * @retval 0 Firmware flash completed successfully
- * @retval <0 Firmware flash failed
+ * @retval AMC_SUCCESS Firmware flash completed successfully
+ * @retval AMC_ERROR Firmware flash failed
  *
  * @note The card must be previously enumerated and initialized
  * @note Progress can be monitored using amcFirmwareProgress()
@@ -155,9 +155,10 @@ int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath)
 	TRACING();
 	if (!pldmobj) {
 		ERR("PLDM objects not initialized\n");
-		return -1;
+		return AMC_ERROR;
 	}
-	return pldmobj[cardNum]->fwupd(pkgFilePath);
+	int ret = pldmobj[cardNum]->fwupd(pkgFilePath);
+	return (ret == PLDM_SUCCESS) ? AMC_SUCCESS : AMC_ERROR;
 }
 
 /**
@@ -240,13 +241,13 @@ int amclib::amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::s
 			// Get amcGetSerialNumber and amcGetVersion
 			uint8_t cardNum = static_cast<uint8_t>(i);
 			size_t bufferSize = sizeof(serialNum);
-			if (amcGetSerialNumber(cardNum, serialNum, &bufferSize) != PLDM_SUCCESS) {
+			if (amcGetSerialNumber(cardNum, serialNum, &bufferSize) != AMC_SUCCESS) {
 				ERR("Failed to get serial number for card %zu\n", i);
 				return -1;
 			}
 			serialNumStr = std::string(serialNum);
 
-			if (amcGetVersion(cardNum, amcVersion, &bufferSize) != PLDM_SUCCESS) {
+			if (amcGetVersion(cardNum, amcVersion, &bufferSize) != AMC_SUCCESS) {
 				ERR("Failed to get version for card %zu\n", i);
 				return -1;
 			}
@@ -269,8 +270,8 @@ int amclib::amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::s
  * @param[out] sensorInfo Reference to vector to receive sensor information
  *
  * @return Status of the sensor info retrieval operation
- * @retval 0 Sensor information retrieved successfully
- * @retval -1 Operation failed due to invalid card index or sensor ID
+ * @retval AMC_SUCCESS Sensor information retrieved successfully
+ * @retval AMC_ERROR Operation failed due to invalid card index or sensor ID
  *
  * @note The function populates the provided vector with matching sensor info
  *       If multiple sensors share the same ID, all will be included.
@@ -281,13 +282,13 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 
 	if (!pldmobj || !pldmobj[cardIndex]) {
 		ERR("PLDM object not initialized for card index: %d\n", cardIndex);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	uint8_t ret = pldmobj[cardIndex]->getSensorInfo(sensorId);
 	if (ret != PLDM_SUCCESS) {
 		ERR("Failed to get sensor info for sensor ID %d on card index %d\n", sensorId, cardIndex);
-		return -1;
+		return AMC_ERROR;
 	}
 	std::vector<pldmSensorInfo> &sensorInfoList = pldmobj[cardIndex]->getSensorInfoList();
 	for (const auto &sensor : sensorInfoList) {
@@ -298,7 +299,7 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 			sensorInfo.push_back(info);
 		}
 	}
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
@@ -312,8 +313,8 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
  *            - OEM_VR_SYNC_RESUME (0x02): Resume VR sync
  *
  * @return Status of VRSync operation
- * @retval 0 VRSync command executed successfully on all cards
- * @retval -1 VRSync command failed on one or more cards
+ * @retval AMC_SUCCESS VRSync command executed successfully on all cards
+ * @retval AMC_ERROR VRSync command failed on one or more cards
  */
 int amclib::oemVrsync(uint8_t cmd)
 {
@@ -321,10 +322,10 @@ int amclib::oemVrsync(uint8_t cmd)
 	for (int i = 0; i < numCards; i++) {
 		if (pldmobj[i]->oemVrsyncCmd(cmd) != PLDM_SUCCESS) {
 			ERR("Failed to perform VRSync for card : %d\n", i);
-			return -1;
+			return AMC_ERROR;
 		}
 	}
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
@@ -339,8 +340,8 @@ int amclib::oemVrsync(uint8_t cmd)
  * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
  *
  * @return Status of the serial number retrieval operation
- * @retval 0 Serial number retrieved successfully or length returned successfully
- * @retval -1 Operation failed due to invalid card number, uninitialized PLDM object, or buffer too small
+ * @retval AMC_SUCCESS Serial number retrieved successfully or length returned successfully
+ * @retval AMC_ERROR Operation failed due to invalid card number, uninitialized PLDM object, or buffer too small
  *
  * @note The card must be properly initialized via amcEnumFirmwares() before calling this function
  * @note When querying length, pass nullptr for serialNum and check returned bufferSize
@@ -353,19 +354,19 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 	// Validate card number is within valid range
 	if (cardNum >= numCards) {
 		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Ensure PLDM object exists for the specified card
 	if (pldmobj[cardNum] == nullptr) {
 		ERR("PLDM object not initialized for card %d\n", cardNum);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Call the underlying PLDM function directly
 	if (pldmobj[cardNum]->getFruSerialNum(serialNum, bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get serial number for card %d\n", cardNum);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Log the serial number if fetched successfully
@@ -373,7 +374,7 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 		DBG("Serial Number of card %d: %s\n", cardNum, serialNum);
 	}
 
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
@@ -388,8 +389,8 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
  * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
  *
  * @return Status of the AMC version retrieval operation
- * @retval 0 AMC version retrieved successfully or length returned successfully
- * @retval -1 Operation failed due to invalid card number, uninitialized PLDM object, or buffer too small
+ * @retval AMC_SUCCESS AMC version retrieved successfully or length returned successfully
+ * @retval AMC_ERROR Operation failed due to invalid card number, uninitialized PLDM object, or buffer too small
  *
  * @note The card must be properly initialized via amcEnumFirmwares() before calling this function
  * @note When querying length, pass nullptr for amcVersion and check returned bufferSize
@@ -402,19 +403,19 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 	// Validate card number is within valid range
 	if (cardNum >= numCards) {
 		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Ensure PLDM object exists for the specified card
 	if (pldmobj[cardNum] == nullptr) {
 		ERR("PLDM object not initialized for card %d\n", cardNum);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Call the underlying PLDM function directly
 	if (pldmobj[cardNum]->getAmcVersion(amcVersion, bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get version for card %d\n", cardNum);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Log the amc version if fetched successfully
@@ -422,7 +423,7 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 		DBG("AMC Version of card %d: %s\n", cardNum, amcVersion);
 	}
 
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
@@ -433,8 +434,8 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
  * @param [in] cardNum Zero-based card number to reset (0 to numCards-1)
  *
  * @return Status of reset operation
- * @retval 0 Reset command sent successfully
- * @retval -1 Invalid card number or reset command failed
+ * @retval AMC_SUCCESS Reset command sent successfully
+ * @retval AMC_ERROR Invalid card number or reset command failed
  *
  */
 int amclib::amcGpuReset(uint32_t cardNum)
@@ -443,12 +444,12 @@ int amclib::amcGpuReset(uint32_t cardNum)
 
 	if (cardNum >= static_cast<uint32_t>(numCards)) {
 		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	if (pldmobj[cardNum] == nullptr) {
 		ERR("PLDM object not initialized for card %d\n", cardNum);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	DBG("Initiating AMC reset for card %d\n", cardNum);
@@ -456,10 +457,10 @@ int amclib::amcGpuReset(uint32_t cardNum)
 	// Execute the AMC reset command
 	if (pldmobj[cardNum]->amcGpuReset() != PLDM_SUCCESS) {
 		ERR("Failed to reset AMC for card %d\n", cardNum);
-		return -1;
+		return AMC_ERROR;
 	}
 
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
@@ -473,8 +474,8 @@ int amclib::amcGpuReset(uint32_t cardNum)
  * @param port BMC port number (default: 443)
  *
  * @return Status of Redfish initialization
- * @retval 0 Redfish connection initialized successfully
- * @retval -1 Failed to initialize Redfish connection
+ * @retval AMC_SUCCESS Redfish connection initialized successfully
+ * @retval AMC_ERROR Failed to initialize Redfish connection
  *
  * @note Ip, username and password are required parameters
  */
@@ -485,21 +486,22 @@ int amclib::redfishInitialize(const std::string &ip, const std::string &username
 
 	if (ip.empty()) {
 		ERR("Ip address is required\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	if (username.empty()) {
 		ERR("Username is required\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	if (password.empty()) {
 		ERR("Password is required\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Manual configuration with provided IP
-	return redfishObj.initialize(ip, username, password, port);
+	int ret = redfishObj.initialize(ip, username, password, port);
+	return (ret == REDFISH_SUCCESS) ? AMC_SUCCESS : AMC_ERROR;
 }
 
 /**
@@ -513,8 +515,8 @@ int amclib::redfishInitialize(const std::string &ip, const std::string &username
  * @param found_count Pointer to integer that will contain the number of discovered devices
  *
  * @return Status of GPU discovery operation
- * @retval 0 Discovery completed successfully, devices found
- * @retval -1 Discovery failed or no devices found
+ * @retval AMC_SUCCESS Discovery completed successfully, devices found
+ * @retval AMC_ERROR Discovery failed or no devices found
  *
  * @note Redfish must be initialized before calling this function
  * @note Caller must call freeGpuDevices() to release allocated memory
@@ -526,7 +528,7 @@ int amclib::redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount)
 
 	if (!gpuDevices || !foundCount) {
 		ERR("Invalid parameters for Redfish discovery\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	*gpuDevices = nullptr;
@@ -534,14 +536,14 @@ int amclib::redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount)
 
 	if (!redfishObj.isInit()) {
 		ERR("Redfish not initialized\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Get the first system ID automatically
 	std::string systemId;
 	if (redfishObj.getFirstSystemId(&systemId) != REDFISH_SUCCESS) {
 		ERR("Redfish: Failed to get system ID\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Use a reasonably large temporary buffer for discovery
@@ -552,14 +554,14 @@ int amclib::redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount)
 
 	if (result != REDFISH_SUCCESS || tempCount <= 0) {
 		INFO("Redfish: No Intel GPUs found or discovery failed\n");
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Dynamically allocate exact amount needed
 	*gpuDevices = new (std::nothrow) RedfishGPUDevice[tempCount];
 	if (!*gpuDevices) {
 		ERR("Redfish: Failed to allocate memory for %d GPU devices\n", tempCount);
-		return -1;
+		return AMC_ERROR;
 	}
 
 	// Copy discovered devices to dynamically allocated array
@@ -568,7 +570,7 @@ int amclib::redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount)
 	}
 	*foundCount = tempCount;
 
-	return 0;
+	return AMC_SUCCESS;
 }
 
 /**
