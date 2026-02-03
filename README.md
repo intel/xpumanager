@@ -11,6 +11,10 @@ provides:
 
 See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
 
+For an example of a more complete telemetry stack, with instructions for
+deploying XPUM daemon with an OpenTelemetry collector backend, see
+[OTEL_STACK.md](OTEL_STACK.md).
+
 ## Metrics
 
 See the [`intelxpu` receiver documentation](receiver/sysman/documentation.md)
