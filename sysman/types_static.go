@@ -107,13 +107,13 @@ func (w *Firmware) setHandle(h firmwareHandle) {
 	w.handle = h
 }
 
-// Freq provides access to Sysman API frequency functions:
+// Frequency provides access to Sysman API frequency functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#frequency-functions
-type Freq struct {
+type Frequency struct {
 	handle freqHandle
 }
 
-func (w *Freq) setHandle(h freqHandle) {
+func (w *Frequency) setHandle(h freqHandle) {
 	w.handle = h
 }
 
@@ -127,33 +127,33 @@ func (w *Led) setHandle(h ledHandle) {
 	w.handle = h
 }
 
-// Mem provides access to Sysman API memory functions:
+// Memory provides access to Sysman API memory functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#memory-functions
-type Mem struct {
+type Memory struct {
 	handle memHandle
 }
 
-func (w *Mem) setHandle(h memHandle) {
+func (w *Memory) setHandle(h memHandle) {
 	w.handle = h
 }
 
-// Perf provides access to Sysman API performance functions:
+// Performance provides access to Sysman API performance functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#performance-functions
-type Perf struct {
+type Performance struct {
 	handle perfHandle
 }
 
-func (w *Perf) setHandle(h perfHandle) {
+func (w *Performance) setHandle(h perfHandle) {
 	w.handle = h
 }
 
-// Pwr provides access to Sysman API power functions:
+// Power provides access to Sysman API power functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#power-functions
-type Pwr struct {
+type Power struct {
 	handle pwrHandle
 }
 
-func (w *Pwr) setHandle(h pwrHandle) {
+func (w *Power) setHandle(h pwrHandle) {
 	w.handle = h
 }
 
@@ -177,13 +177,13 @@ func (w *Ras) setHandle(h rasHandle) {
 	w.handle = h
 }
 
-// Sched provides access to Sysman API scheduler functions:
+// Scheduler provides access to Sysman API scheduler functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#scheduler-functions
-type Sched struct {
+type Scheduler struct {
 	handle schedHandle
 }
 
-func (w *Sched) setHandle(h schedHandle) {
+func (w *Scheduler) setHandle(h schedHandle) {
 	w.handle = h
 }
 
@@ -197,13 +197,13 @@ func (w *Standby) setHandle(h standbyHandle) {
 	w.handle = h
 }
 
-// Temp provides access to Sysman API temperature functions:
+// Temperature provides access to Sysman API temperature functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#temperature-functions
-type Temp struct {
+type Temperature struct {
 	handle tempHandle
 }
 
-func (w *Temp) setHandle(h tempHandle) {
+func (w *Temperature) setHandle(h tempHandle) {
 	w.handle = h
 }
 
