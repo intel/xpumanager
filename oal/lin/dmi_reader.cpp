@@ -1,7 +1,17 @@
+/*
+ * Copyright (C) 2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #include "dmi_reader.h"
 
+#include <exception>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <optional>
+#include <iterator>
 #include <stdexcept>
 #include <cstring>
 #include <format>
@@ -10,6 +20,11 @@
 #include <filesystem>
 #include <ranges>
 #include <algorithm>
+#include <vector>
+#include <utility>
+#include <string_view>
+#include <string>
+#include <tuple>
 
 DmiReader::DmiReader()
 {
@@ -17,7 +32,7 @@ DmiReader::DmiReader()
 		loadDMIData();
 		mIsValid = true;
 	} catch (const std::exception &e) {
-		std::cerr << "DMI Reader initialization failed: " << e.what() << std::endl;
+		std::cerr << "DMI Reader initialization failed: " << e.what() << '\n';
 		mIsValid = false;
 		throw;
 	}
@@ -27,8 +42,9 @@ bool DmiReader::isValid() const noexcept { return mIsValid; }
 
 std::vector<DmiReader::SlotInfo> DmiReader::getSlots() const
 {
-	if (!mIsValid)
+	if (!mIsValid) {
 		return {};
+	}
 
 	std::vector<SlotInfo> slots;
 
@@ -45,8 +61,9 @@ std::vector<DmiReader::SlotInfo> DmiReader::getSlots() const
 
 std::optional<DmiReader::SystemInfo> DmiReader::getSystemInfo() const
 {
-	if (!mIsValid)
+	if (!mIsValid) {
 		return std::nullopt;
+	}
 
 	for (const auto &[offset, header] : getStructureIterator()) {
 		if (header->type == 1) { // System Information
@@ -59,8 +76,9 @@ std::optional<DmiReader::SystemInfo> DmiReader::getSystemInfo() const
 
 std::optional<DmiReader::SlotInfo> DmiReader::findSlotForDevice(std::string_view deviceBdf) const
 {
-	if (!mIsValid)
+	if (!mIsValid) {
 		return std::nullopt;
+	}
 
 	const auto slots = getSlots();
 
@@ -90,7 +108,7 @@ std::optional<DmiReader::SlotInfo> DmiReader::findSlotForDevice(std::string_view
 
 std::span<const uint8_t> DmiReader::dataSpan() const noexcept { return dmiData; }
 
-std::vector<std::string> DmiReader::getParentBridges(std::string_view deviceBdf) const
+std::vector<std::string> DmiReader::getParentBridges(std::string_view deviceBdf)
 {
 	std::vector<std::string> parents;
 
@@ -121,8 +139,9 @@ std::vector<std::string> DmiReader::getParentBridges(std::string_view deviceBdf)
 
 constexpr bool DmiReader::isValidBDF(std::string_view bdf) noexcept
 {
-	if (bdf.size() < 7)
+	if (bdf.size() < 7) {
 		return false;
+	}
 
 	const auto colonPos = bdf.find(':');
 	const auto dotPos = bdf.find('.');
@@ -155,15 +174,17 @@ std::vector<std::pair<size_t, const DmiReader::SMBIOSHeader *>> DmiReader::getSt
 
 	size_t offset = 0;
 	while (offset < dmiData.size()) {
-		if (!validateStructure(offset, sizeof(SMBIOSHeader)))
+		if (!validateStructure(offset, sizeof(SMBIOSHeader))) {
 			break;
+		}
 
 		const auto *header = reinterpret_cast<const SMBIOSHeader *>(&dmiData[offset]);
 		structures.emplace_back(offset, header);
 
 		offset = findNextStructure(offset);
-		if (offset == 0)
+		if (offset == 0) {
 			break;
+		}
 	}
 
 	return structures;
@@ -171,8 +192,9 @@ std::vector<std::pair<size_t, const DmiReader::SMBIOSHeader *>> DmiReader::getSt
 
 bool DmiReader::validateStructure(size_t offset, size_t minSize) const noexcept
 {
-	if (offset + sizeof(SMBIOSHeader) > dmiData.size())
+	if (offset + sizeof(SMBIOSHeader) > dmiData.size()) {
 		return false;
+	}
 
 	const auto *header = reinterpret_cast<const SMBIOSHeader *>(&dmiData[offset]);
 
@@ -182,12 +204,14 @@ bool DmiReader::validateStructure(size_t offset, size_t minSize) const noexcept
 
 std::string DmiReader::getStringFromTable(size_t structureOffset, uint8_t structureLength, uint8_t stringIndex) const
 {
-	if (stringIndex == 0)
+	if (stringIndex == 0) {
 		return {};
+	}
 
 	const size_t stringAreaStart = structureOffset + structureLength;
-	if (stringAreaStart >= dmiData.size())
+	if (stringAreaStart >= dmiData.size()) {
 		return {};
+	}
 
 	const auto stringArea = dataSpan().subspan(stringAreaStart);
 
@@ -197,12 +221,14 @@ std::string DmiReader::getStringFromTable(size_t structureOffset, uint8_t struct
 		const auto remainingArea = stringArea.subspan(pos);
 		const auto nullIt = std::ranges::find(remainingArea, uint8_t{0});
 
-		if (nullIt == remainingArea.end())
+		if (nullIt == remainingArea.end()) {
 			return {};
+		}
 
 		pos += std::distance(remainingArea.begin(), nullIt) + 1;
-		if (pos >= stringArea.size())
+		if (pos >= stringArea.size()) {
 			return {};
+		}
 	}
 
 	const auto targetArea = stringArea.subspan(pos);
@@ -223,7 +249,7 @@ size_t DmiReader::findNextStructure(size_t currentOffset) const noexcept
 	}
 
 	const auto *header = reinterpret_cast<const SMBIOSHeader *>(&dmiData[currentOffset]);
-	size_t offset = currentOffset + header->length;
+	size_t const offset = currentOffset + header->length;
 
 	// Find end of string section (double null terminator)
 	const auto remainingData = dataSpan().subspan(offset);
@@ -239,8 +265,9 @@ size_t DmiReader::findNextStructure(size_t currentOffset) const noexcept
 
 std::optional<DmiReader::SlotInfo> DmiReader::parseSlot(size_t offset) const
 {
-	if (!validateStructure(offset, 12))
+	if (!validateStructure(offset, 12)) {
 		return std::nullopt;
+	}
 
 	const auto buffer = dataSpan().subspan(offset);
 	const auto *header = reinterpret_cast<const SMBIOSHeader *>(buffer.data());
@@ -267,9 +294,9 @@ std::optional<DmiReader::SlotInfo> DmiReader::parseSlot(size_t offset) const
 		const auto tryReadBusAddress = [this,
 										buffer](size_t segOff, size_t busOff,
 												size_t dfOff) -> std::optional<std::tuple<uint16_t, uint8_t, uint8_t>> {
-			const uint16_t seg = readFromBuffer<uint16_t>(buffer, segOff);
-			const uint8_t busNum = readFromBuffer<uint8_t>(buffer, busOff);
-			const uint8_t df = readFromBuffer<uint8_t>(buffer, dfOff);
+			const auto seg = readFromBuffer<uint16_t>(buffer, segOff);
+			const auto busNum = readFromBuffer<uint8_t>(buffer, busOff);
+			const auto df = readFromBuffer<uint8_t>(buffer, dfOff);
 
 			// Valid if bus is present (not 0xFF marker)
 			if (busNum != 0xFF) {
@@ -297,8 +324,9 @@ std::optional<DmiReader::SlotInfo> DmiReader::parseSlot(size_t offset) const
 
 std::optional<DmiReader::SystemInfo> DmiReader::parseSystemInfo(size_t offset) const
 {
-	if (!validateStructure(offset, 8))
+	if (!validateStructure(offset, 8)) {
 		return std::nullopt;
+	}
 
 	const auto buffer = dataSpan().subspan(offset);
 	const auto *header = reinterpret_cast<const SMBIOSHeader *>(buffer.data());
@@ -334,7 +362,7 @@ std::optional<DmiReader::SystemInfo> DmiReader::parseSystemInfo(size_t offset) c
 	return info;
 }
 
-std::string DmiReader::decodeSlotType(uint8_t type) const
+std::string DmiReader::decodeSlotType(uint8_t type)
 {
 	static constexpr std::array slotTypes{std::pair{uint8_t{0x01}, std::string_view{"Other"}},
 										  std::pair{uint8_t{0x02}, std::string_view{"Unknown"}},
@@ -384,19 +412,21 @@ std::string DmiReader::decodeSlotType(uint8_t type) const
 										  std::pair{uint8_t{0xC0}, std::string_view{"PCI Express Gen 5 x8"}},
 										  std::pair{uint8_t{0xC1}, std::string_view{"PCI Express Gen 5 x16"}}};
 
-	const auto match = std::ranges::find_if(slotTypes, [type](const auto &entry) { return entry.first == type; });
+	const auto *const match =
+		std::ranges::find_if(slotTypes, [type](const auto &entry) { return entry.first == type; });
 
 	return (match != slotTypes.end()) ? std::string(match->second) : std::format("Unknown (0x{:x})", type);
 }
 
-std::string DmiReader::decodeSlotUsage(uint8_t usage) const
+std::string DmiReader::decodeSlotUsage(uint8_t usage)
 {
 	static constexpr std::array usageTypes{
 		std::pair{uint8_t{0x01}, std::string_view{"Other"}}, std::pair{uint8_t{0x02}, std::string_view{"Unknown"}},
 		std::pair{uint8_t{0x03}, std::string_view{"Available"}}, std::pair{uint8_t{0x04}, std::string_view{"In Use"}},
 		std::pair{uint8_t{0x05}, std::string_view{"Unavailable"}}};
 
-	const auto match = std::ranges::find_if(usageTypes, [usage](const auto &entry) { return entry.first == usage; });
+	const auto *const match =
+		std::ranges::find_if(usageTypes, [usage](const auto &entry) { return entry.first == usage; });
 
 	return (match != usageTypes.end()) ? std::string(match->second) : std::format("Reserved (0x{:x})", usage);
 }
