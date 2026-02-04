@@ -20,7 +20,7 @@ TRANSLATOR:
   Rules:
     const:
       - {action: accept, from: "^ZES_"}
-      - {action: ignore, from: "^ZES_STRUCTURE_TYPE_"}
+      - {action: replace, from: "^ZES_STRUCTURE_TYPE_", to: "_STRUCTURE_TYPE_"}
       - {action: replace, from: "^ZES_"}
       - {transform: export}
       # Ignore experimental
@@ -44,12 +44,12 @@ TRANSLATOR:
     type:
       - {action: accept, from: "^zes_[a-z0-9_]*_t$"}
       - {action: ignore, from: "^zes_base_[a-z_]*_t$"}
-      - {action: ignore, from: "^zes_structure_type_t$"}
       - {action: replace, from: "^zes_"}
       - {action: replace, from: "_t$"}
       - {action: replace, from: "^ze_driver_handle$", to: "driver_handle"}
       - {transform: export}
       - {load: snakecase}
+      - {transform: unexport, from: "^StructureType$"}
       - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
       # Map Ze types to core package
       - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}

@@ -12,6 +12,7 @@ structs:
         newName: _
       - name: Stype
         newName: stype
+        newType: structureType
       - name: PNext
         newName: pnext
         newType: unsafe.Pointer
