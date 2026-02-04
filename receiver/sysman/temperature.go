@@ -21,7 +21,7 @@ func init() {
 }
 
 type sysmanTemperature struct {
-	*l0sysman.Temp
+	*l0sysman.Temperature
 	logger     *zap.SugaredLogger
 	attributes temperatureAttributes
 }
@@ -55,7 +55,7 @@ func enumTemperature(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanTemperature(name string, temp *l0sysman.Temp, device *sysmanDevice) (*sysmanTemperature, error) {
+func newSysmanTemperature(name string, temp *l0sysman.Temperature, device *sysmanDevice) (*sysmanTemperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func newSysmanTemperature(name string, temp *l0sysman.Temp, device *sysmanDevice
 	}
 
 	return &sysmanTemperature{
-		Temp:   temp,
+		Temperature:   temp,
 		logger: device.logger,
 		attributes: temperatureAttributes{
 			hwID:           device.attributes.hwID + "_" + name,

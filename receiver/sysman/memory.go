@@ -21,7 +21,7 @@ func init() {
 }
 
 type sysmanMemory struct {
-	*l0sysman.Mem
+	*l0sysman.Memory
 	logger     *zap.SugaredLogger
 	state      sysmanMemoryState
 	attributes memoryAttributes
@@ -61,14 +61,14 @@ func enumMemory(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanMemory(name string, mem *l0sysman.Mem, device *sysmanDevice) (*sysmanMemory, error) {
+func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*sysmanMemory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
 	return &sysmanMemory{
-		Mem:    mem,
+		Memory:    mem,
 		logger: device.logger,
 		state: sysmanMemoryState{
 			healthStatesSeen: make(map[l0sysman.MemHealth]bool),
