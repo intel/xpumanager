@@ -72,9 +72,9 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
-| podSecurityContext | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
+| podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
 | resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container |
-| securityContext | object | `{"privileged":true,"runAsUser":0}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| securityContext | object | `{"privileged":true,"readOnlyRootFilesystem":true,"runAsUser":0}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | service.create | bool | `false` | Create service |
 | service.port | int | `8080` | Service port |
 | service.type | string | `"ClusterIP"` | Service type |
