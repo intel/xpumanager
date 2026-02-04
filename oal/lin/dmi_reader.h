@@ -1,5 +1,14 @@
+/*
+ * Copyright (C) 2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #pragma once
 
+#include <concepts>
+#include <bit>
+#include <utility>
 #include <vector>
 #include <string>
 #include <optional>
@@ -20,56 +29,6 @@
  *       appropriate permissions via capabilities/groups).
  * @note Thread-safe for read operations after construction completes.
  *
- * Example usage:
- * @code{.cpp}
- * #include "dmi_reader.h"
- * #include <iostream>
- * #include <format>
- *
- * int main() {
- *     try {
- *         DmiReader dmi_reader;
- *
- *         if (!dmi_reader.isValid()) {
- *             std::cerr << "Failed to initialize DMI reader\n";
- *             return 1;
- *         }
- *
- *         // Get system information
- *         if (const auto system_info = dmi_reader.getSystemInfo()) {
- *             std::cout << "=== System Information ===\n";
- *             std::cout << std::format("Manufacturer: {}\n", system_info->manufacturer);
- *             std::cout << std::format("Product: {}\n", system_info->product_name);
- *             std::cout << std::format("Serial: {}\n", system_info->serial_number);
- *             std::cout << std::format("UUID: {}\n", system_info->uuid);
- *         }
- *
- *         // Enumerate all slots
- *         std::cout << "\n=== System Slots ===\n";
- *         const auto slots = dmi_reader.getSlots();
- *         for (const auto& slot : slots) {
- *             std::cout << std::format("Slot: {} ({})\n", slot.designation, slot.type);
- *             std::cout << std::format("  Usage: {}\n", slot.usage);
- *             if (slot.bus_address) {
- *                 std::cout << std::format("  Bus Address: {}\n", *slot.bus_address);
- *             }
- *         }
- *
- *         // Find slot for a specific device
- *         const std::string device_bdf = "0000:a4:00.0";
- *         if (const auto slot = dmi_reader.findSlotForDevice(device_bdf)) {
- *             std::cout << std::format("\nDevice {} is in slot: {}\n",
- *                                     device_bdf, slot->designation);
- *         }
- *
- *     } catch (const std::exception& e) {
- *         std::cerr << std::format("Error: {}\n", e.what());
- *         return 1;
- *     }
- *
- *     return 0;
- * }
- * @endcode
  */
 class DmiReader
 {
@@ -218,7 +177,7 @@ private:
 	 *
 	 * @note Does not throw on filesystem errors, returns empty vector instead.
 	 */
-	[[nodiscard]] std::vector<std::string> getParentBridges(std::string_view deviceBdf) const;
+	[[nodiscard]] static std::vector<std::string> getParentBridges(std::string_view deviceBdf);
 
 	/**
 	 * @brief Validates if a string is a properly formatted PCI BDF address.
@@ -322,7 +281,7 @@ private:
 	 * @param[in] type Raw SMBIOS slot type value.
 	 * @return Human-readable slot type description.
 	 */
-	[[nodiscard]] std::string decodeSlotType(uint8_t type) const;
+	[[nodiscard]] static std::string decodeSlotType(uint8_t type);
 
 	/**
 	 * @brief Decodes SMBIOS slot usage byte to human-readable string.
@@ -330,5 +289,5 @@ private:
 	 * @param[in] usage Raw SMBIOS slot usage value.
 	 * @return Human-readable usage status description.
 	 */
-	[[nodiscard]] std::string decodeSlotUsage(uint8_t usage) const;
+	[[nodiscard]] static std::string decodeSlotUsage(uint8_t usage);
 };
