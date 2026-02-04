@@ -18,6 +18,9 @@ import (
 )
 
 /* Wrappers for handles */
+
+// Driver provides access to Sysman API driver functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#driver-functions
 type Driver struct {
 	handle driverHandle
 }
@@ -26,6 +29,8 @@ func (w *Driver) setHandle(h driverHandle) {
 	w.handle = h
 }
 
+// Device provides access to Sysman API device functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#device-functions
 type Device struct {
 	handle deviceHandle
 }
@@ -38,6 +43,8 @@ func (w *Device) getHandle() deviceHandle {
 	return w.handle
 }
 
+// Overclock provides access to Sysman API overclock functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#overclock-functions
 type Overclock struct {
 	handle overclockHandle
 }
@@ -46,6 +53,8 @@ func (w *Overclock) setHandle(h overclockHandle) {
 	w.handle = h
 }
 
+// Diagnostics provides access to Sysman API diagnostics functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#diagnostics-functions
 type Diagnostics struct {
 	handle diagHandle
 }
@@ -54,6 +63,8 @@ func (w *Diagnostics) setHandle(h diagHandle) {
 	w.handle = h
 }
 
+// Engine provides access to Sysman API engine functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#engine-functions
 type Engine struct {
 	handle engineHandle
 }
@@ -62,6 +73,8 @@ func (w *Engine) setHandle(h engineHandle) {
 	w.handle = h
 }
 
+// FabricPort provides access to Sysman API fabric functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#fabric-functions
 type FabricPort struct {
 	handle fabricPortHandle
 }
@@ -74,6 +87,8 @@ func (w *FabricPort) getHandle() fabricPortHandle {
 	return w.handle
 }
 
+// Fan provides access to Sysman API fan functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#fan-functions
 type Fan struct {
 	handle fanHandle
 }
@@ -82,6 +97,8 @@ func (w *Fan) setHandle(h fanHandle) {
 	w.handle = h
 }
 
+// Firmware provides access to Sysman API firmware functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#firmware-functions
 type Firmware struct {
 	handle firmwareHandle
 }
@@ -90,6 +107,8 @@ func (w *Firmware) setHandle(h firmwareHandle) {
 	w.handle = h
 }
 
+// Freq provides access to Sysman API frequency functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#frequency-functions
 type Freq struct {
 	handle freqHandle
 }
@@ -98,6 +117,8 @@ func (w *Freq) setHandle(h freqHandle) {
 	w.handle = h
 }
 
+// Led provides access to Sysman API LED functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#led-functions
 type Led struct {
 	handle ledHandle
 }
@@ -106,6 +127,8 @@ func (w *Led) setHandle(h ledHandle) {
 	w.handle = h
 }
 
+// Mem provides access to Sysman API memory functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#memory-functions
 type Mem struct {
 	handle memHandle
 }
@@ -114,6 +137,8 @@ func (w *Mem) setHandle(h memHandle) {
 	w.handle = h
 }
 
+// Perf provides access to Sysman API performance functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#performance-functions
 type Perf struct {
 	handle perfHandle
 }
@@ -122,6 +147,8 @@ func (w *Perf) setHandle(h perfHandle) {
 	w.handle = h
 }
 
+// Pwr provides access to Sysman API power functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#power-functions
 type Pwr struct {
 	handle pwrHandle
 }
@@ -130,6 +157,8 @@ func (w *Pwr) setHandle(h pwrHandle) {
 	w.handle = h
 }
 
+// Psu provides access to Sysman API psu (power supply) functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#psu-functions
 type Psu struct {
 	handle psuHandle
 }
@@ -138,6 +167,8 @@ func (w *Psu) setHandle(h psuHandle) {
 	w.handle = h
 }
 
+// Ras provides access to Sysman API RAS functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#ras-functions
 type Ras struct {
 	handle rasHandle
 }
@@ -146,6 +177,8 @@ func (w *Ras) setHandle(h rasHandle) {
 	w.handle = h
 }
 
+// Sched provides access to Sysman API scheduler functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#scheduler-functions
 type Sched struct {
 	handle schedHandle
 }
@@ -154,6 +187,8 @@ func (w *Sched) setHandle(h schedHandle) {
 	w.handle = h
 }
 
+// Standby provides access to Sysman API standby functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#standby-functions
 type Standby struct {
 	handle standbyHandle
 }
@@ -162,6 +197,8 @@ func (w *Standby) setHandle(h standbyHandle) {
 	w.handle = h
 }
 
+// Temp provides access to Sysman API temperature functions:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#temperature-functions
 type Temp struct {
 	handle tempHandle
 }
