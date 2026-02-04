@@ -189,7 +189,7 @@ uint8_t pldm::getFruRecordTable(uint32_t dataXferHandle, uint8_t xferOpFlag)
 {
 	TRACING();
 
-	DBG("\n=====================PLDM FRU RECORD TABLE CARD %i PACKET %i===============================\n", mCardNum,
+	DBG("\n=====================PLDM FRU RECORD TABLE CARD %i PACKET %u===============================\n", mCardNum,
 		dataXferHandle + 1);
 	DBG(">>> Send GetFRURecordTable (Handle: 0x%08X, Flag: 0x%02X)\n", dataXferHandle, xferOpFlag);
 

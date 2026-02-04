@@ -46,7 +46,7 @@ ze_result_t standby::enumStandbyDomains(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Found %d standby domains.\n", standbyCount);
+	DBG("Found %u standby domains.\n", standbyCount);
 	return result;
 }
 
@@ -71,7 +71,7 @@ ze_result_t standby::getProperties(zes_standby_handle_t standbyHandle)
 
 	DBG("Standby Properties:\n");
 	DBG("  onSubdevice: %d\n", properties.onSubdevice);
-	DBG("  subdeviceId: %d\n", properties.subdeviceId);
+	DBG("  subdeviceId: %u\n", properties.subdeviceId);
 	DBG("  type: %d\n", properties.type);
 
 	return result;

@@ -59,7 +59,7 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 		if (result != ZE_RESULT_SUCCESS) {
 			break;
 		}
-		PRINT("\rFirmware Flash Progress: %d %%", progressPercent);
+		PRINT("\rFirmware Flash Progress: %u %%", progressPercent);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(sleepTimeInMillisec));
 
@@ -73,7 +73,7 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 	if (result != ZE_RESULT_SUCCESS) {
 		return;
 	}
-	PRINT("\rFirmware Flash Progress: %d %%\n", progressPercent);
+	PRINT("\rFirmware Flash Progress: %u %%\n", progressPercent);
 }
 
 /**

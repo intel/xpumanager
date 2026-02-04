@@ -7,6 +7,7 @@
 #ifndef _DRIVER_H
 #define _DRIVER_H
 
+#include <vector>
 #include "device.h"
 
 struct survivabilityDevices
@@ -19,8 +20,8 @@ struct survivabilityDevices
 struct devGroup
 {
 	uint32_t totalDevicesCount;
-	device *dev;
-	ze_device_handle_t *zeDevices;
+	std::vector<device> dev;
+	std::vector<ze_device_handle_t> zeDevices;
 };
 
 class LIBXPUM_API driver

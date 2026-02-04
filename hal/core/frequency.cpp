@@ -42,7 +42,7 @@ ze_result_t frequency::enumFrequencies(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Found %d frequency domains.\n", frequencyCount);
+	DBG("Found %u frequency domains.\n", frequencyCount);
 
 	frequencyHandles = new zes_freq_handle_t[frequencyCount];
 	result = zesDeviceEnumFrequencyDomains(device, &frequencyCount, frequencyHandles);
@@ -121,11 +121,10 @@ ze_result_t frequency::getAvailableClocks(zes_freq_handle_t frequencyHandle)
 		return ZE_RESULT_SUCCESS;
 	}
 
-	double *clocks = new double[count];
-	result = zesFrequencyGetAvailableClocks(frequencyHandle, &count, clocks);
+	std::vector<double> clocks(count);
+	result = zesFrequencyGetAvailableClocks(frequencyHandle, &count, clocks.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get available clocks. 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] clocks;
 		return result;
 	}
 
@@ -134,7 +133,6 @@ ze_result_t frequency::getAvailableClocks(zes_freq_handle_t frequencyHandle)
 		DBG("  Clock %u: %f MHz\n", i, clocks[i]);
 	}
 
-	delete[] clocks;
 	return result;
 }
 
@@ -223,7 +221,7 @@ ze_result_t frequency::getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint
 		zes_freq_properties_t properties = {};
 		ze_result_t result = getProperties(frequencyHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for frequency domain %d\n", i);
+			DBG("Failed to get properties for frequency domain %u\n", i);
 			continue;
 		}
 
@@ -239,7 +237,7 @@ ze_result_t frequency::getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint
 		zes_freq_state_t state = {};
 		result = getState(frequencyHandles[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get state for frequency domain %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			DBG("Failed to get state for frequency domain %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 

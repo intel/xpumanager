@@ -225,11 +225,11 @@ uint8_t pldm::dumpPldmFwpkgInfo()
 		DBG("Component Image %d:\n", i);
 		DBG("  Component Classification: %d\n", compImage->compClassification);
 		DBG("  Component Identifier: %d\n", compImage->id);
-		DBG("  Component Comparison Stamp: %d\n", compImage->compComparisionStamp);
+		DBG("  Component Comparison Stamp: %u\n", compImage->compComparisionStamp);
 		DBG("  Component Options: %04x\n", compImage->compOptions.value);
 		DBG("  Requested Component Activation Method: %d\n", compImage->rqstdCompActivMethod.value);
-		DBG("  Location Offset: %d\n", compImage->compLocOffset);
-		DBG("  Component Size: %d\n", compImage->compSize);
+		DBG("  Location Offset: %u\n", compImage->compLocOffset);
+		DBG("  Component Size: %u\n", compImage->compSize);
 		DBG("  Component Version String Type: %d\n", compImage->verStrType);
 		DBG("  Component Version String Length: %d\n", compImage->verStrLen);
 		DBG("  Component Version String: ");

@@ -46,7 +46,7 @@ ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Found %d RAS domains.\n", rasCount);
+	DBG("Found %u RAS domains.\n", rasCount);
 	return result;
 }
 
@@ -71,7 +71,7 @@ ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t 
 
 	DBG("RAS properties retrieved successfully.\n");
 	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %d\n", properties->subdeviceId);
+	DBG("  subdeviceId: %u\n", properties->subdeviceId);
 
 	switch (properties->type) {
 	case ZES_RAS_ERROR_TYPE_CORRECTABLE:

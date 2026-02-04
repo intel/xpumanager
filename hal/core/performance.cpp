@@ -37,7 +37,7 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 		return result;
 	}
 
-	DBG("Found %d performance factor domains.\n", perfCount);
+	DBG("Found %u performance factor domains.\n", perfCount);
 	return result;
 }
 
@@ -68,7 +68,7 @@ ze_result_t performance::getProperties(zes_perf_handle_t perfHandle, zes_perf_pr
 
 	DBG("Performance Factor Properties:\n");
 	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %d\n", properties->subdeviceId);
+	DBG("  subdeviceId: %u\n", properties->subdeviceId);
 	printEngines(properties->engines);
 
 	return result;
@@ -134,7 +134,7 @@ ze_result_t performance::setConfig(zes_engine_type_flag_t engineType, double fac
 		// Check if the engine type matches the properties of the performance factor domain
 		if (properties.engines & engineType) {
 
-			DBG("Setting config for performance factor domain %d with factor %f\n", i, factor);
+			DBG("Setting config for performance factor domain %u with factor %f\n", i, factor);
 			// Set the performance factor configuration
 			result = zesPerformanceFactorSetConfig(perfHandles->at(i), factor);
 			if (result != ZE_RESULT_SUCCESS) {

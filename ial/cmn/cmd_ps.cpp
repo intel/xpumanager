@@ -64,7 +64,7 @@ void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 {
 	PRINT("PID       Command             DeviceID       SHR            MEM\n");
 	for (auto &item : jsonObj->items()) {
-		PRINT("%-9d %-19s %-14d %-14" PRIu64 " %-14" PRIu64 "\n", item.value()["process_id"].get<uint32_t>(),
+		PRINT("%-9u %-19s %-14u %-14" PRIu64 " %-14" PRIu64 "\n", item.value()["process_id"].get<uint32_t>(),
 			  item.value()["process_name"].get<std::string>().c_str(), item.value()["device_id"].get<uint32_t>(),
 			  item.value()["shared_mem_size"].get<uint64_t>(), item.value()["mem_size"].get<uint64_t>());
 	}
@@ -128,7 +128,7 @@ ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInf
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	std::vector<zes_process_state_t> processList;
-	DBG("Running ps command on device %d\n", dev->index);
+	DBG("Running ps command on device %u\n", dev->index);
 	process *ps = dev->dev->getProcess();
 	if (ps == nullptr) {
 		ERR("Error: Process pointer not found.\n");

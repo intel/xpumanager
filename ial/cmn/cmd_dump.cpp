@@ -1870,7 +1870,7 @@ int cmdDump::run(arg_struct *args)
 					dumpFile.flush(); // Ensure data is written immediately
 				} else {
 					// Print to screen
-					PRINT("%s, %8d, %s\n", timestampStr.c_str(), argsList[i * dumpArgs.size()]->d->index,
+					PRINT("%s, %8u, %s\n", timestampStr.c_str(), argsList[i * dumpArgs.size()]->d->index,
 						  outputLine.c_str());
 				}
 			}

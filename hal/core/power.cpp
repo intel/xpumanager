@@ -160,7 +160,7 @@ ze_result_t power::enumPowerDomains(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Found %d power domains.\n", powerCount);
+	DBG("Found %u power domains.\n", powerCount);
 	return result;
 }
 
@@ -197,7 +197,7 @@ ze_result_t power::getProperties(zes_pwr_handle_t powerHandle, zes_power_propert
 	DBG("  Is Energy threshold supported: %d\n", properties->isEnergyThresholdSupported);
 	DBG("  Can control: %d\n", properties->canControl);
 	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %d\n", properties->subdeviceId);
+	DBG("  subdeviceId: %u\n", properties->subdeviceId);
 	DBG("  extProperties:\n");
 	DBG("    Domain: %d\n", extProps->domain);
 	switch (extProps->domain) {
@@ -297,24 +297,21 @@ ze_result_t power::getPowerLimits(zes_pwr_handle_t powerHandle)
 		return result;
 	}
 
-	zes_power_limit_ext_desc_t *powerLimits = new zes_power_limit_ext_desc_t[powerLimitsCount];
-	result = zesPowerGetLimitsExt(powerHandle, &powerLimitsCount, powerLimits);
+	std::vector<zes_power_limit_ext_desc_t> powerLimits(powerLimitsCount);
+	result = zesPowerGetLimitsExt(powerHandle, &powerLimitsCount, powerLimits.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] powerLimits;
 		return result;
 	}
 
-	DBG("Power Limits Count: %d\n", powerLimitsCount);
+	DBG("Power Limits Count: %u\n", powerLimitsCount);
 	DBG("Power Limits:\n");
 	for (uint32_t i = 0; i < powerLimitsCount; ++i) {
-		DBG("  Limit %d:\n", i);
+		DBG("  Limit %u:\n", i);
 		DBG("    Source: %d\n", powerLimits[i].source);
 		DBG("    Limit: %d mW\n", powerLimits[i].limit);
 		DBG("    Interval: %d ms\n", powerLimits[i].interval);
 	}
-
-	delete[] powerLimits;
 
 	return result;
 }
@@ -340,11 +337,10 @@ ze_result_t power::setPowerLimit(double powerLimit)
 			return result;
 		}
 
-		zes_power_limit_ext_desc_t *powerLimits = new zes_power_limit_ext_desc_t[powerLimitsCount];
-		result = zesPowerGetLimitsExt(powerHandles[i], &powerLimitsCount, powerLimits);
+		std::vector<zes_power_limit_ext_desc_t> powerLimits(powerLimitsCount);
+		result = zesPowerGetLimitsExt(powerHandles[i], &powerLimitsCount, powerLimits.data());
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
-			delete[] powerLimits;
 			return result;
 		}
 
@@ -352,14 +348,12 @@ ze_result_t power::setPowerLimit(double powerLimit)
 			powerLimits[j].limit = static_cast<uint32_t>(powerLimit * 1000); // Convert to mW
 		}
 
-		result = zesPowerSetLimitsExt(powerHandles[i], &powerLimitsCount, powerLimits);
+		result = zesPowerSetLimitsExt(powerHandles[i], &powerLimitsCount, powerLimits.data());
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to set power limits. 0x%X (%s)\n", result, l0_error_to_string(result));
-			delete[] powerLimits;
 			return result;
 		}
 		DBG("Successfully set power limits:\n");
-		delete[] powerLimits;
 	}
 	return result;
 }
@@ -406,7 +400,7 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 		// Once we found the right domain, we can get the energy counter
 		result = getEnergyCounter(powerHandles[i], &energyCounter);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get energy counter for power domain %d. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get energy counter for power domain %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -445,7 +439,7 @@ ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint6
 		zes_power_ext_properties_t extProps = {};
 		result = getProperties(powerHandles[i], &properties, &extProps);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for power domain %d\n", i);
+			DBG("Failed to get properties for power domain %u\n", i);
 			continue;
 		}
 
@@ -453,7 +447,7 @@ ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint6
 			zes_power_energy_counter_t energyCounter = {};
 			result = getEnergyCounter(powerHandles[i], &energyCounter);
 			if (result != ZE_RESULT_SUCCESS) {
-				DBG("Failed to get energy counter for subdevice power domain %d: 0x%X (%s)\n", i, result,
+				DBG("Failed to get energy counter for subdevice power domain %u: 0x%X (%s)\n", i, result,
 					l0_error_to_string(result));
 				continue;
 			}
@@ -484,7 +478,7 @@ ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint6
 			zes_power_energy_counter_t energyCounter = {};
 			result = getEnergyCounter(powerHandles[i], &energyCounter);
 			if (result != ZE_RESULT_SUCCESS) {
-				DBG("Failed to get energy counter for power domain %d: 0x%X (%s)\n", i, result,
+				DBG("Failed to get energy counter for power domain %u: 0x%X (%s)\n", i, result,
 					l0_error_to_string(result));
 				continue;
 			}

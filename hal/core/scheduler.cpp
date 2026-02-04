@@ -46,7 +46,7 @@ ze_result_t scheduler::enumSchedulers(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Found %d schedulers.\n", schedulerCount);
+	DBG("Found %u schedulers.\n", schedulerCount);
 	return result;
 }
 
@@ -71,10 +71,10 @@ ze_result_t scheduler::getProperties(zes_sched_handle_t schedulerHandle)
 
 	DBG("Scheduler Properties:\n");
 	DBG("  onSubdevice: %d\n", properties.onSubdevice);
-	DBG("  subdeviceId: %d\n", properties.subdeviceId);
+	DBG("  subdeviceId: %u\n", properties.subdeviceId);
 	DBG("  canControl: %d\n", properties.canControl);
 	printEngines(properties.engines);
-	DBG("  supportedModes: %d\n", properties.supportedModes);
+	DBG("  supportedModes: %u\n", properties.supportedModes);
 
 	return result;
 }

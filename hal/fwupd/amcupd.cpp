@@ -244,7 +244,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	uint32_t amcIndex = fwInfo->amcIndex;
 
 	if (amcIndex >= (uint32_t)getNumOfCards()) {
-		ERR("Invalid AMC device index: %d\n", amcIndex);
+		ERR("Invalid AMC device index: %u\n", amcIndex);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -266,12 +266,11 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 		flashCompleted.store(true);
 
 		if (result != AMC_SUCCESS) {
-			ERR("Failed to flash firmware for card %d\n", amcIndex);
+			ERR("Failed to flash firmware for card %u\n", amcIndex);
 		} else {
-			DBG("Firmware flash for card %d completed successfully\n", amcIndex);
+			DBG("Firmware flash for card %u completed successfully\n", amcIndex);
 		}
 	});
-
 	// Create a thread to monitor firmware flash progress
 	std::thread progressThread([amc, amcIndex, fwInfo, &flashCompleted, &stopProgress]() {
 		int progress = 0;
@@ -279,7 +278,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 			progress = amc->amcFirmwareProgress(amcIndex);
 
 			if (progress < 0) {
-				ERR("Failed to get firmware progress for card %d\n", amcIndex);
+				ERR("Failed to get firmware progress for card %u\n", amcIndex);
 				break;
 			}
 
@@ -299,7 +298,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 				MSLEEP(100);
 			}
 		}
-		DBG("Firmware progress monitoring completed for device %d\n", amcIndex);
+		DBG("Firmware progress monitoring completed for device %u\n", amcIndex);
 	});
 
 	// Wait for flash thread to complete

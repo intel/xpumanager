@@ -47,10 +47,10 @@ ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t 
 	}
 
 	DBG("  - PCI Properties:\n");
-	DBG("    - Address: %d:%d:%d.%d\n", pciProps->address.domain, pciProps->address.bus, pciProps->address.device,
+	DBG("    - Address: %u:%u:%u.%u\n", pciProps->address.domain, pciProps->address.bus, pciProps->address.device,
 		pciProps->address.function);
-	DBG("    - Max Speed: %d Gen, %d lanes, Max bandwidth: %" PRIu64 "\n", pciProps->maxSpeed.gen,
-		pciProps->maxSpeed.width, pciProps->maxSpeed.maxBandwidth);
+	DBG("    - Max Speed: %d Gen, %d lanes, Max bandwidth: %llu\n", pciProps->maxSpeed.gen, pciProps->maxSpeed.width,
+		(unsigned long long)pciProps->maxSpeed.maxBandwidth);
 
 	DBG("    - haveBandwidthCounters: %d\n", pciProps->haveBandwidthCounters);
 	DBG("    - havePacketCounters: %d\n", pciProps->havePacketCounters);
@@ -81,10 +81,10 @@ ze_result_t pci::getState(zes_device_handle_t device, zes_pci_link_status_t &pci
 
 	DBG("  - PCI State:");
 	DBG("    - Status: %d\n", pciState.status);
-	DBG("    - Stability Issues: %d\n", pciState.stabilityIssues);
-	DBG("    - Quality Issues: %d\n", pciState.qualityIssues);
-	DBG("    - Current Speed: %d Gen, %d lanes, %" PRIu64 "Max bandwidth\n", pciState.speed.gen, pciState.speed.width,
-		pciState.speed.maxBandwidth);
+	DBG("    - Stability Issues: %u\n", pciState.stabilityIssues);
+	DBG("    - Quality Issues: %u\n", pciState.qualityIssues);
+	DBG("    - Current Speed: %d Gen, %d lanes, %lluMax bandwidth\n", pciState.speed.gen, pciState.speed.width,
+		(unsigned long long)pciState.speed.maxBandwidth);
 	return result;
 }
 
@@ -118,7 +118,7 @@ ze_result_t pci::getBars(zes_device_handle_t device)
 
 	DBG("  - PCI BARs:\n");
 	for (const auto &bar : bars) {
-		DBG("    - Index: %d\n", bar.index);
+		DBG("    - Index: %u\n", bar.index);
 		DBG("    - Base Address: 0x%" PRIx64 "\n", bar.base);
 		DBG("    - Size: 0x%" PRIx64 "bytes\n", bar.size);
 		DBG("    - Type: ");

@@ -105,7 +105,13 @@ private:
 
 public:
 	metric() : metricCount(0), metrics(nullptr) {}
-	~metric() {}
+	~metric()
+	{
+		if (metrics) {
+			delete[] metrics;
+			metrics = nullptr;
+		}
+	}
 	void printMetricType(zet_metric_type_t metricType);
 	void printResultType(zet_value_type_t resultType);
 	void printMetricGroupSamplingType(zet_metric_group_sampling_type_flags_t samplingType);

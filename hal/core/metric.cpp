@@ -501,41 +501,40 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 {
 	ze_result_t result;
 
-	// Allocate memory for the metrics
-	metrics = new zet_metric_handle_t[metricCount];
-	if (metrics == nullptr) {
-		ERR("Failed to allocate memory for metrics\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-	// Initialize the metrics to zero
-	memset(metrics, 0, sizeof(zet_metric_handle_t) * metricCount);
+	// Use local vector for safe operations
+	std::vector<zet_metric_handle_t> localMetrics(metricCount);
 
 	// Retrieve the metrics
-	result = zetMetricGet(metricGroup, &metricCount, metrics);
+	result = zetMetricGet(metricGroup, &metricCount, localMetrics.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metrics: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] metrics;
 		return result;
 	}
 
 	// Print metric information
 	for (uint32_t i = 0; i < metricCount; ++i) {
 		zet_metric_properties_t metricProperties = {};
-		result = zetMetricGetProperties(metrics[i], &metricProperties);
+		result = zetMetricGetProperties(localMetrics[i], &metricProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get metric properties for metric %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get metric properties for metric %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
-		DBG("Metric %d:\n", i);
+		DBG("Metric %u:\n", i);
 		DBG("  - Name: %s\n", metricProperties.name);
 		DBG("  - Description: %s\n", metricProperties.description);
-		DBG("  - Metric Type: %d\n", metricProperties.metricType);
+		DBG("  - Metric Type: %u\n", (unsigned int)metricProperties.metricType);
 		printMetricType(metricProperties.metricType);
-		DBG("  - Result Type: %d\n", metricProperties.resultType);
+		DBG("  - Result Type: %u\n", (unsigned int)metricProperties.resultType);
 		printResultType(metricProperties.resultType);
 	}
-	delete[] metrics;
+
+	// Only update class member after all operations succeed
+	if (metrics) {
+		delete[] metrics;
+	}
+	metrics = new zet_metric_handle_t[metricCount];
+	std::memcpy(metrics, localMetrics.data(), metricCount * sizeof(zet_metric_handle_t));
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -564,26 +563,18 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	}
 
 	// Allocate memory for the metric groups
-	zet_metric_group_handle_t *metricGroups = new zet_metric_group_handle_t[groupCount];
-	if (metricGroups == nullptr) {
-		ERR("Failed to allocate memory for metric groups\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-	// Initialize the metric groups to zero
-	memset(metricGroups, 0, sizeof(zet_metric_group_handle_t) * groupCount);
+	std::vector<zet_metric_group_handle_t> metricGroups(groupCount);
 
 	// Retrieve the metric groups
-	result = zetMetricGroupGet(device, &groupCount, metricGroups);
+	result = zetMetricGroupGet(device, &groupCount, metricGroups.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] metricGroups;
 		return result;
 	}
 
-	result = zetContextActivateMetricGroups(context, device, groupCount, metricGroups);
+	result = zetContextActivateMetricGroups(context, device, groupCount, metricGroups.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] metricGroups;
 		return result;
 	}
 
@@ -593,15 +584,15 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 		groupProperties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
 		result = zetMetricGroupGetProperties(metricGroups[i], &groupProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get properties for metric group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get properties for metric group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
-		DBG("Metric Group %d:\n", i);
+		DBG("Metric Group %u:\n", i);
 		DBG("  - Name: %s\n", groupProperties.name);
 		DBG("  - Description: %s\n", groupProperties.description);
-		DBG("  - Domain: %d\n", groupProperties.domain);
-		DBG("  - metricCount: %d\n", groupProperties.metricCount);
+		DBG("  - Domain: %u\n", groupProperties.domain);
+		DBG("  - metricCount: %u\n", groupProperties.metricCount);
 		printMetricGroupSamplingType(groupProperties.samplingType);
 		metricCount = groupProperties.metricCount;
 		getMetric(metricGroups[i]);
@@ -611,12 +602,8 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	result = zetContextActivateMetricGroups(context, device, 0, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] metricGroups;
 		return result;
 	}
-
-	// Clean up
-	delete[] metricGroups;
 
 	return ZE_RESULT_SUCCESS;
 }
