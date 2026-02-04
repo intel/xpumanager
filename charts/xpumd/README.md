@@ -73,7 +73,7 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
 | podSecurityContext | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
-| resources | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container |
+| resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container |
 | securityContext | object | `{"privileged":true,"runAsUser":0}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | service.create | bool | `false` | Create service |
 | service.port | int | `8080` | Service port |
