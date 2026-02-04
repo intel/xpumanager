@@ -34,6 +34,7 @@ table_example = executable(
     include_directories: [global_inc, table_inc],
     link_with: table_lib,
     dependencies: [nlohmann_json_dep],
+    link_args : is_linux ? ['-pie'] : [],
     build_by_default: true,
     install: false
 )
@@ -47,8 +48,7 @@ if ut_dep.found()
         'test/table_builder_test.cpp',
         include_directories: [global_inc, table_inc],
         link_with: table_lib,
-        dependencies: [nlohmann_json_dep, ut_dep],
-        build_by_default: true
+        dependencies: [nlohmann_json_dep, ut_dep],        link_args : is_linux ? ['-pie'] : [],        build_by_default: true
     )
     
     # Register test with meson

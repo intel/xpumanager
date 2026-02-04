@@ -35,6 +35,7 @@ xpu_smi_exe = executable('xpu-smi',
     include_directories('../../hal/fwupd')
   ],
   dependencies : cli_deps + windows_deps,
+  link_args : is_linux ? ['-pie'] : [],
   install : true,
   install_dir : get_option('bindir')
 )
@@ -52,6 +53,7 @@ xpumcli_exe = executable('xpumcli',
   ],
   dependencies : cli_deps + windows_deps,
   cpp_args : ['-DDAEMONMODE'],
+  link_args : is_linux ? ['-pie'] : [],
   install : true,
   install_dir : get_option('bindir')
 )

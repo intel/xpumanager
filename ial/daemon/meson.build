@@ -32,6 +32,7 @@ xpumd_exe = executable('xpumd',
     include_directories('../../hal/fwupd')
   ],
   dependencies : daemon_deps + windows_deps,
+  link_args : is_linux ? ['-pie'] : [],
   install : true,
   install_dir : get_option('bindir')
 )
