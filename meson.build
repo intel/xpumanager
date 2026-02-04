@@ -16,7 +16,8 @@ project('xpum', 'c', 'cpp',
     'cpp_std=c++20',
     'buildtype=debugoptimized',
     'warning_level=3',
-    'werror=true'
+    'werror=true',
+    'b_lto=true',
     ]
 )
 
@@ -168,7 +169,14 @@ endif
 if is_windows
   compile_args += [
     '/guard:cf',
-    '/sdl'
+    '/sdl',
+    '/analyze',
+    '/Gy',
+  ]
+  link_args += [
+    '/CETCOMPAT',
+    '/DYNAMICBASE',
+    '/NXCOMPAT',
   ]
 elif is_linux
   compile_args += [
@@ -178,7 +186,21 @@ elif is_linux
     '-fstack-clash-protection',
     '-Wformat-security',
     '-D_GLIBCXX_ASSERTIONS',
+    '-fcf-protection=full',
+    '-fPIE',
   ]
+  link_args += [
+    '-Wl,-z,noexecstack',
+    '-Wl,-z,relro',
+  ]
+
+  # Disable LTO when sanitizers are enabled (they cause significant false positives)
+  sanitizers = get_option('b_sanitize')
+  if sanitizers != 'none'
+    message('Sanitizers enabled (' + sanitizers + '), disabling LTO to avoid conflicts')
+    add_project_arguments('-fno-lto', language: ['c', 'cpp'])
+    add_project_link_arguments('-fno-lto', language: ['c', 'cpp'])
+  endif
 endif
 
 # Add platform-specific arguments

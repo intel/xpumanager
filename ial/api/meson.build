@@ -16,7 +16,7 @@ api_headers = files(
 
 #Dependencies
 threads_dep = dependency('threads', required: true)
-level_zero_dep = dependency('level-zero', required: true)
+# level_zero_dep = dependency('level-zero', required: true)
 
 #Build the shared library
 libxpum_api = shared_library(
@@ -31,7 +31,7 @@ libxpum_api = shared_library(
   ],
   dependencies: [
     threads_dep,
-    level_zero_dep,
+    levelzero_dep,
     libxpum_dep,  # Link against HAL library
   ],
   install: true,
@@ -70,7 +70,8 @@ c_example = executable(
   'examples/c/example.c',
   include_directories: include_directories('.'),
   link_with: libxpum_api,
-  dependencies: [level_zero_dep],
+  dependencies: [levelzero_dep],
+  link_args : is_linux ? ['-pie'] : [],
   build_by_default: false,
   install: false,
 )
