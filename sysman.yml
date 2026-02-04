@@ -47,6 +47,9 @@ TRANSLATOR:
       - {action: replace, from: "^zes_"}
       - {action: replace, from: "_t$"}
       - {action: replace, from: "^ze_driver_handle$", to: "driver_handle"}
+      - {action: replace, from: "^device_properties$", to: "device_base_properties"}
+      - {action: replace, from: "^engine_properties$", to: "engine_base_properties"}
+      - {action: replace, from: "^power_properties$", to: "power_base_properties"}
       - {transform: export}
       - {load: snakecase}
       - {transform: unexport, from: "^StructureType$"}

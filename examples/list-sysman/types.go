@@ -60,7 +60,7 @@ type PCIInfo struct {
 type ECCInfo struct {
 	Available    bool
 	Configurable bool
-	State        *sysman.DeviceEccProperties
+	State        *sysman.EccProperties
 }
 
 type OverclockInfo struct {

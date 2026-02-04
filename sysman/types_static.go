@@ -244,7 +244,35 @@ type OverclockState struct {
 	PendingReset  bool
 }
 
-/* Stringers for flags types */
+// ExtendedDeviceProperties wraps the device property structures from the Sysman API.
+type DeviceProperties struct {
+	DeviceBaseProperties
+	DeviceExtProperties
+}
+
+// EccProperties wraps the device ECC property structures from the Sysman API.
+type EccProperties struct {
+	DeviceEccProperties
+	// ExtendedProperties provides optional additional properties that may not
+	// be supported on all devices or drivers. Value is nil if not available.
+	ExtendedProperties *DeviceEccDefaultPropertiesExt
+}
+
+// EngineProperties wraps the engine property structures from the Sysman API.
+type EngineProperties struct {
+	EngineBaseProperties
+	// ExtendedProperties provides optional additional properties that may not
+	// be supported on all devices or drivers. Value is nil if not available.
+	ExtendedProperties *EngineExtProperties
+}
+
+// PowerProperties wraps the power property structures from the Sysman API.
+type PowerProperties struct {
+	PowerBaseProperties
+	// ExtendedProperties provides optional additional properties that may not
+	// be supported on all devices or drivers. Value is nil if not available.
+	ExtendedProperties *PowerExtProperties
+}
 
 // String representation of all set bits of InitFlags.
 func (f InitFlags) String() string {
