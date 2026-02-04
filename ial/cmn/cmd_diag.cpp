@@ -308,12 +308,13 @@ ze_result_t cmdDiag::printPrecheckInfo(std::vector<devInfo> deviceList, std::uni
 	}
 
 	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
-	outputLine = (driverLoaded) ? "Pass" : "Fail";
-	auto componentJson = printPreCheckDetail("", "", outputLine, "Driver");
+	outputLine = (driverLoaded) ? std::string("Pass") : std::string("Fail");
+	auto componentJson = printPreCheckDetail(std::string(), std::string(), outputLine, std::string("Driver"));
 	componentListJson->push_back(*componentJson);
 
 	if (!gpuOnly) {
-		auto componentCPUJson = printPreCheckDetail("0", "", CHECKCPUSTATUS(), "CPU");
+		auto componentCPUJson =
+			printPreCheckDetail(std::string("0"), std::string(), CHECKCPUSTATUS(), std::string("CPU"));
 		componentListJson->push_back(*componentCPUJson);
 	}
 
@@ -325,8 +326,9 @@ ze_result_t cmdDiag::printPrecheckInfo(std::vector<devInfo> deviceList, std::uni
 		}
 		outputLine = p->getBDFStr();
 		fwStatus = p->getFWStatus();
-		resultLine = ((fwStatus == "normal") && CHECKPCIELINKSTATUS(outputLine)) ? "Pass" : "Unknown";
-		auto componentGPUJson = printPreCheckDetail("", outputLine, resultLine, "GPU");
+		resultLine = ((fwStatus == std::string("normal")) && CHECKPCIELINKSTATUS(outputLine)) ? std::string("Pass")
+																							  : std::string("Unknown");
+		auto componentGPUJson = printPreCheckDetail(std::string(), outputLine, resultLine, std::string("GPU"));
 		componentListJson->push_back(*componentGPUJson);
 	}
 
@@ -1423,9 +1425,9 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		for (const auto &component : (*jsonObj)["component_list"]) {
 			const std::string componentType = valueToString(component["component_type"]);
 			const std::string friendlyName = getKeyDisplayName(componentType);
-			const std::string resultInfo = "Result: " + valueToString(component["result"]);
+			const std::string resultInfo = std::format("Result: {}", valueToString(component["result"]));
 			printValue(friendlyName, resultInfo, maxCol1Width, col2Width);
-			const std::string messageInfo = "Message: " + valueToString(component["message"]);
+			const std::string messageInfo = std::format("Message: {}", valueToString(component["message"]));
 			printWrappedValue("", messageInfo, maxCol1Width, col2Width);
 			printPretty(maxCol1Width, col2Width);
 		}
@@ -1447,16 +1449,18 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		printPretty(maxCol1Width, col2Width);
 		for (auto &component : (*jsonObj)["component_list"]) {
 			if (component["type"].get<std::string>() == "Driver") {
-				printValue(component["type"].get<std::string>(), "Status: " + component["status"].get<std::string>(),
-						   maxCol1Width, col2Width);
+				printValue(component["type"].get<std::string>(),
+						   std::format("Status: {}", component["status"].get<std::string>()), maxCol1Width, col2Width);
 			} else if (component["type"].get<std::string>() == "CPU") {
-				printValue(component["type"].get<std::string>(), "CPU ID: " + component["id"].get<std::string>(),
-						   maxCol1Width, col2Width);
-				printValue("", "Status: " + component["status"].get<std::string>(), maxCol1Width, col2Width);
+				printValue(component["type"].get<std::string>(),
+						   std::format("CPU ID: {}", component["id"].get<std::string>()), maxCol1Width, col2Width);
+				printValue("", std::format("Status: {}", component["status"].get<std::string>()), maxCol1Width,
+						   col2Width);
 			} else if (component["type"].get<std::string>() == "GPU") {
-				printValue(component["type"].get<std::string>(), "BDF: " + component["bdf"].get<std::string>(),
-						   maxCol1Width, col2Width);
-				printValue("", "Status: " + component["status"].get<std::string>(), maxCol1Width, col2Width);
+				printValue(component["type"].get<std::string>(),
+						   std::format("BDF: {}", component["bdf"].get<std::string>()), maxCol1Width, col2Width);
+				printValue("", std::format("Status: {}", component["status"].get<std::string>()), maxCol1Width,
+						   col2Width);
 			}
 			printPretty(maxCol1Width, col2Width);
 		}
@@ -1601,7 +1605,7 @@ int cmdDiag::run(arg_struct *args)
 		// JSON object to collect diagnostic results for all devices and commands
 		for (auto &device : deviceList) {
 			if (device.dev->isIGPU()) {
-				DBG("Diagnostics are only supported on discrete GPUs so skipping device %d.\n", device.index);
+				DBG("Diagnostics are only supported on discrete GPUs so skipping device %u.\n", device.index);
 				continue;
 			}
 

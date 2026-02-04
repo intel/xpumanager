@@ -126,18 +126,18 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 	DBG("  - Vendor ID: 0x%X\n", zeDevProp->vendorId);
 	DBG("  - Device ID: 0x%X\n", zeDevProp->deviceId);
 	DBG("  - Subdevice ID: 0x%X\n", zeDevProp->subdeviceId);
-	DBG("  - Core Clock Rate: %d\n", zeDevProp->coreClockRate);
+	DBG("  - Core Clock Rate: %u\n", zeDevProp->coreClockRate);
 	DBG("  - Max Memory Allocation Size: %" PRIu64 "\n", zeDevProp->maxMemAllocSize);
-	DBG("  - Max Hardware Contexts: %d\n", zeDevProp->maxHardwareContexts);
-	DBG("  - Max Command Queue Priority: %d\n", zeDevProp->maxCommandQueuePriority);
-	DBG("  - Number of Threads per EU: %d\n", zeDevProp->numThreadsPerEU);
-	DBG("  - Physical EU SIMD Width: %d\n", zeDevProp->physicalEUSimdWidth);
-	DBG("  - Number of EUs per Subslice: %d\n", zeDevProp->numEUsPerSubslice);
-	DBG("  - Number of Subslices per Slice: %d\n", zeDevProp->numSubslicesPerSlice);
-	DBG("  - Number of Slices: %d\n", zeDevProp->numSlices);
+	DBG("  - Max Hardware Contexts: %u\n", zeDevProp->maxHardwareContexts);
+	DBG("  - Max Command Queue Priority: %u\n", zeDevProp->maxCommandQueuePriority);
+	DBG("  - Number of Threads per EU: %u\n", zeDevProp->numThreadsPerEU);
+	DBG("  - Physical EU SIMD Width: %u\n", zeDevProp->physicalEUSimdWidth);
+	DBG("  - Number of EUs per Subslice: %u\n", zeDevProp->numEUsPerSubslice);
+	DBG("  - Number of Subslices per Slice: %u\n", zeDevProp->numSubslicesPerSlice);
+	DBG("  - Number of Slices: %u\n", zeDevProp->numSlices);
 	DBG("  - Timer Resolution: %" PRIu64 "\n", zeDevProp->timerResolution);
-	DBG("  - Timestamp Valid Bits: %d\n", zeDevProp->timestampValidBits);
-	DBG("  - Kernel Timestamp Valid Bits: %d\n", zeDevProp->kernelTimestampValidBits);
+	DBG("  - Timestamp Valid Bits: %u\n", zeDevProp->timestampValidBits);
+	DBG("  - Kernel Timestamp Valid Bits: %u\n", zeDevProp->kernelTimestampValidBits);
 	DBG("  - Name: %s\n", zeDevProp->name);
 
 	return result;
@@ -446,18 +446,11 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ze_command_queue_group_properties_t *localCmdQueueProps =
-		new ze_command_queue_group_properties_t[*cmdQueuePropsCount];
-	if (localCmdQueueProps == NULL) {
-		ERR("Failed to allocate memory for command queue group properties.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-	memset(localCmdQueueProps, 0, sizeof(ze_command_queue_group_properties_t) * (*cmdQueuePropsCount));
+	std::vector<ze_command_queue_group_properties_t> localCmdQueueProps(*cmdQueuePropsCount);
 
-	result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, localCmdQueueProps);
+	result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, localCmdQueueProps.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get command queue group properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] localCmdQueueProps;
 		return result;
 	}
 
@@ -469,7 +462,10 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 			localCmdQueueProps[i].maxMemoryFillPatternSize);
 		DBG("    The number of physical engines within the group: %u\n", localCmdQueueProps[i].numQueues);
 	}
-	*zeCmdQueueProps = localCmdQueueProps;
+
+	// Allocate and copy data for output parameter
+	*zeCmdQueueProps = new ze_command_queue_group_properties_t[*cmdQueuePropsCount];
+	std::copy(localCmdQueueProps.begin(), localCmdQueueProps.end(), *zeCmdQueueProps);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -499,17 +495,11 @@ ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_propert
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ze_device_memory_properties_t *localMemProps = new ze_device_memory_properties_t[*memPropsCount];
-	if (localMemProps == NULL) {
-		ERR("Failed to allocate memory for memory properties.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-	memset(localMemProps, 0, sizeof(ze_device_memory_properties_t) * (*memPropsCount));
+	std::vector<ze_device_memory_properties_t> localMemProps(*memPropsCount);
 
-	result = zeDeviceGetMemoryProperties(dev, memPropsCount, localMemProps);
+	result = zeDeviceGetMemoryProperties(dev, memPropsCount, localMemProps.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] localMemProps;
 		return result;
 	}
 
@@ -523,7 +513,15 @@ ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_propert
 		DBG("    Total memory size in bytes that is available to the device: %" PRIu64 "\n",
 			localMemProps[i].totalSize);
 	}
-	*zeMemProps = localMemProps;
+
+	// Clean up any existing allocation to prevent leaks
+	if (*zeMemProps != nullptr) {
+		delete[] *zeMemProps;
+	}
+
+	// Allocate raw array for output parameter (DLL boundary)
+	*zeMemProps = new ze_device_memory_properties_t[*memPropsCount];
+	std::memcpy(*zeMemProps, localMemProps.data(), sizeof(ze_device_memory_properties_t) * (*memPropsCount));
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -553,17 +551,11 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ze_device_cache_properties_t *localCacheProps = new ze_device_cache_properties_t[*cachePropsCount];
-	if (localCacheProps == NULL) {
-		ERR("Failed to allocate memory for cache properties.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
-	memset(localCacheProps, 0, sizeof(ze_device_cache_properties_t) * (*cachePropsCount));
+	std::vector<ze_device_cache_properties_t> localCacheProps(*cachePropsCount);
 
-	result = zeDeviceGetCacheProperties(dev, cachePropsCount, localCacheProps);
+	result = zeDeviceGetCacheProperties(dev, cachePropsCount, localCacheProps.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get cache properties: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] localCacheProps;
 		return result;
 	}
 
@@ -572,7 +564,15 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 		DBG("    Flags: %u\n", localCacheProps[i].flags);
 		DBG("    Per-cache size, in bytes: %zu\n", localCacheProps[i].cacheSize);
 	}
-	*zeCacheProps = localCacheProps;
+
+	// Clean up any existing allocation to prevent leaks
+	if (*zeCacheProps != nullptr) {
+		delete[] *zeCacheProps;
+	}
+
+	// Allocate raw array for output parameter (DLL boundary)
+	*zeCacheProps = new ze_device_cache_properties_t[*cachePropsCount];
+	std::memcpy(*zeCacheProps, localCacheProps.data(), sizeof(ze_device_cache_properties_t) * (*cachePropsCount));
 
 	return ZE_RESULT_SUCCESS;
 }

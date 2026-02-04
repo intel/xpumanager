@@ -196,13 +196,13 @@ int cmdUpdateFW::run(arg_struct *args)
 
 				firmware *fw = devPtr->dev->getFirmware();
 				if (fw == nullptr) {
-					ERR("Error: Firmware pointer not found (device %d).\n", devPtr->index);
+					ERR("Error: Firmware pointer not found (device %u).\n", devPtr->index);
 					ze_result_t expected = ZE_RESULT_SUCCESS;
 					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 					return;
 				}
 				if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
-					ERR("Error: Failed to update firmware for device %d.\n", devPtr->index);
+					ERR("Error: Failed to update firmware for device %u.\n", devPtr->index);
 					ze_result_t expected = ZE_RESULT_SUCCESS;
 					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 					return;

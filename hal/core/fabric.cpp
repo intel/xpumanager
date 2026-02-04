@@ -38,7 +38,7 @@ ze_result_t fabric::enumFabricPorts(zes_device_handle_t device)
 		ERR("Failed to enumerate fabric ports: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("Device has %d fabric ports\n", portCount);
+	DBG("Device has %u fabric ports\n", portCount);
 
 	if (portCount == 0)
 		return ZE_RESULT_SUCCESS;
@@ -73,16 +73,16 @@ ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort, zes_
 	}
 
 	DBG("Fabric Ports Properties:\n");
-	DBG("  - Fabric Id: %d\n", properties->portId.fabricId);
-	DBG("  - Attach Id: %d\n", properties->portId.attachId);
-	DBG("  - Port Number: %d\n", properties->portId.portNumber);
+	DBG("  - Fabric Id: %u\n", properties->portId.fabricId);
+	DBG("  - Attach Id: %u\n", properties->portId.attachId);
+	DBG("  - Port Number: %u\n", properties->portId.portNumber);
 	DBG("  - Port SType: %d\n", properties->stype);
 	DBG("  - Port model: %s\n", properties->model);
 	DBG("  - Port OnSubdevice ID: %d\n", properties->onSubdevice);
-	DBG("  - Port Subdevice ID: %d\n", properties->subdeviceId);
-	DBG("  - Port maxRxSpeed bitRate: %" PRIu64 "\n", properties->maxRxSpeed.bitRate);
+	DBG("  - Port Subdevice ID: %u\n", properties->subdeviceId);
+	DBG("  - Port maxRxSpeed bitRate: %llu\n", (unsigned long long)properties->maxRxSpeed.bitRate);
 	DBG("  - Port maxRxSpeed width: %d\n", properties->maxRxSpeed.width);
-	DBG("  - Port maxTxSpeed bitRate: %" PRIu64 "\n", properties->maxTxSpeed.bitRate);
+	DBG("  - Port maxTxSpeed bitRate: %llu\n", (unsigned long long)properties->maxTxSpeed.bitRate);
 	DBG("  - Port maxTxSpeed width: %d\n", properties->maxTxSpeed.width);
 
 	return result;
@@ -334,14 +334,14 @@ ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort, zes_fabri
 
 	DBG("Fabric Port State:");
 	DBG("  - Status: %d\n", state->status);
-	DBG("  - Quality Issues: %d\n", state->qualityIssues);
-	DBG("  - Failure Reasons: %d\n", state->failureReasons);
-	DBG("  - Remote Port Id - Fabric Id: %d\n", state->remotePortId.fabricId);
-	DBG("  - Remote Port Id - Attach Id: %d\n", state->remotePortId.attachId);
-	DBG("  - Remote Port Id - Port Number: %d\n", state->remotePortId.portNumber);
-	DBG("  - Rx Speed - Bit Rate: %" PRIu64 "\n", state->rxSpeed.bitRate);
+	DBG("  - Quality Issues: %u\n", state->qualityIssues);
+	DBG("  - Failure Reasons: %u\n", state->failureReasons);
+	DBG("  - Remote Port Id - Fabric Id: %u\n", state->remotePortId.fabricId);
+	DBG("  - Remote Port Id - Attach Id: %u\n", state->remotePortId.attachId);
+	DBG("  - Remote Port Id - Port Number: %u\n", state->remotePortId.portNumber);
+	DBG("  - Rx Speed - Bit Rate: %llu\n", (unsigned long long)state->rxSpeed.bitRate);
 	DBG("  - Rx Speed - Width: %d\n", state->rxSpeed.width);
-	DBG("  - Tx Speed - Bit Rate: %" PRIu64 "\n", state->txSpeed.bitRate);
+	DBG("  - Tx Speed - Bit Rate: %llu\n", (unsigned long long)state->txSpeed.bitRate);
 	DBG("  - Tx Speed - Width: %d\n", state->txSpeed.width);
 
 	return result;
@@ -430,7 +430,7 @@ ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint3
 
 	DBG("Multi-Port Throughput:");
 	for (uint32_t i = 0; i < count; i++) {
-		DBG("Port %d:\n", i);
+		DBG("Port %u:\n", i);
 		DBG("  - Rx Counter: %" PRIu64 "\n", throughputs[i].rxCounter);
 		DBG("  - Tx Counter: %" PRIu64 "\n", throughputs[i].txCounter);
 		DBG("  - Timestamp: %" PRIu64 "\n", throughputs[i].timestamp);
@@ -485,7 +485,7 @@ ze_result_t fabric::setPortConfig(bool enabled)
 			ERR("Failed to set fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Fabric Port %d configuration set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
+		DBG("Fabric Port %u configuration set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
 	}
 	return result;
 }
@@ -519,7 +519,7 @@ ze_result_t fabric::setPortBeaconing(bool enabled)
 			ERR("Failed to set fabric port beaconing: 0x%X (%s)\n", result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Fabric Port %d beaconing set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
+		DBG("Fabric Port %u beaconing set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
 	}
 	return result;
 }

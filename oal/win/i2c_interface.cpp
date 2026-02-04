@@ -116,7 +116,7 @@ bool I2CInterface::openAmc(const std::string &devpath)
 							FILE_FLAG_OVERLAPPED, nullptr);
 
 	if (amchandle == INVALID_HANDLE_VALUE) {
-		ERR("Error openAmc - %d\n", GetLastError());
+		ERR("Error openAmc - %lu\n", GetLastError());
 		return false;
 	}
 
@@ -153,7 +153,7 @@ bool I2CInterface::open_amc_peripheral()
 	DeviceIoControl(amchandle, IOCTL_SPBTESTTOOL_OPEN, &peripheralindex, sizeof(ULONG), nullptr, 0, &bytesReturned,
 					&overlapped);
 	if (GetLastError() != ERROR_IO_PENDING) {
-		ERR("Error open_amc_peripheral - %d\n", GetLastError());
+		ERR("Error open_amc_peripheral - %lu\n", GetLastError());
 		return false;
 	}
 	DBG("open_amc_peripheral Success\n");
@@ -436,7 +436,7 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 
 	DWORD result = QueryDosDevice(NULL, devices, MAX_BUFFER_SIZE);
 	if (result == 0) {
-		ERR("QueryDosDevice failed with error: %d\n", GetLastError());
+		ERR("QueryDosDevice failed with error: %lu\n", GetLastError());
 		delete[] devices;
 		return -1;
 	}

@@ -81,7 +81,7 @@ ze_result_t driver::zeInitialize()
 	}
 	memset(zeDrivers, 0, sizeof(ze_driver_handle_t) * driverCount);
 
-	DBG("Number of zeDrivers: %d\n", driverCount);
+	DBG("Number of zeDrivers: %u\n", driverCount);
 
 	// Retrieve driver handles
 	result = zeDriverGet(&driverCount, zeDrivers);
@@ -121,7 +121,7 @@ ze_result_t driver::zesInitialize()
 		return result;
 	}
 
-	DBG("Number of zesDrivers: %d\n", zesDriverCount);
+	DBG("Number of zesDrivers: %u\n", zesDriverCount);
 
 	// Allocate space for zes driver handles
 	zesDrivers = new zes_driver_handle_t[zesDriverCount];
@@ -201,8 +201,8 @@ ze_result_t driver::init()
 	// upgrading the firmware of the device.
 	result = zeInitialize();
 	if (result == ZE_RESULT_SUCCESS) {
-		devs = new devGroup[driverCount];
-		memset(devs, 0, sizeof(devGroup) * driverCount);
+		// Use local vector to avoid memset on non-trivial type
+		std::vector<devGroup> localDevs(driverCount);
 
 		for (uint32_t i = 0; i < driverCount; i++) {
 			ze_api_version_t apiVersion = {};
@@ -233,52 +233,47 @@ ze_result_t driver::init()
 				}
 			} else {
 				ERR("Failed to get API version for driver %u. Error code: %d\n", i, result);
-				delete[] devs;
 				return result;
 			}
 
 			DBG("\n==============================================\n");
 
 			// Get zeDevices associated with the driver
-			result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, nullptr);
+			result = zeDeviceGet(zeDrivers[i], &localDevs[i].totalDevicesCount, nullptr);
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 				return result;
 			}
 
-			// Allocate memory for zeDevices
-			devs[i].zeDevices = new ze_device_handle_t[devs[i].totalDevicesCount];
-			if (devs[i].zeDevices == nullptr) {
-				ERR("Failed to allocate memory for ze device handles.\n");
-				return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-			}
-
-			// Allocate memory for each dev within the group
-			devs[i].dev = new device[devs[i].totalDevicesCount];
-			if (devs[i].dev == nullptr) {
-				ERR("Failed to allocate memory for device.\n");
-				return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-			}
+			// Resize vectors for zeDevices and dev
+			localDevs[i].zeDevices.resize(localDevs[i].totalDevicesCount);
+			localDevs[i].dev.resize(localDevs[i].totalDevicesCount);
 
 			// Retrieve zeDevices for the driver
-			result = zeDeviceGet(zeDrivers[i], &devs[i].totalDevicesCount, devs[i].zeDevices);
+			result = zeDeviceGet(zeDrivers[i], &localDevs[i].totalDevicesCount, localDevs[i].zeDevices.data());
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
 				return result;
 			}
 
-			for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
-				DBG("Driver %u Device %u: %p\n", i, j, (void *)devs[i].zeDevices[j]);
+			for (uint32_t j = 0; j < localDevs[i].totalDevicesCount; j++) {
+				DBG("Driver %u Device %u: %p\n", i, j, (void *)localDevs[i].zeDevices[j]);
 
 				// Initialize each device in the group
-				result = devs[i].dev[j].init(zeDrivers[i], zesDrivers[0], devs[i].zeDevices[j], totalZesDevices,
-											 +totalZesDevicesCount);
-				devBdfs.insert(devs[i].dev[j].getBDFStr());
+				result = localDevs[i].dev[j].init(zeDrivers[i], zesDrivers[0], localDevs[i].zeDevices[j],
+												  totalZesDevices, +totalZesDevicesCount);
+				devBdfs.insert(localDevs[i].dev[j].getBDFStr());
 				if (result != ZE_RESULT_SUCCESS) {
 					ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
 					return result;
 				}
 			}
+		}
+
+		// Copy from local vector to raw array for DLL boundary
+		devs = new devGroup[driverCount];
+		for (uint32_t i = 0; i < driverCount; i++) {
+			devs[i] = std::move(localDevs[i]);
 		}
 	}
 
@@ -315,10 +310,6 @@ ze_result_t driver::init()
 driver::~driver()
 {
 	if (devs != nullptr) {
-		for (uint32_t i = 0; i < driverCount; i++) {
-			delete[] devs[i].zeDevices;
-			delete[] devs[i].dev;
-		}
 		delete[] devs;
 		devs = nullptr;
 	}
@@ -369,16 +360,11 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t drvr)
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ze_driver_extension_properties_t *extensions = new ze_driver_extension_properties_t[extensionCount];
-	if (extensions == NULL) {
-		ERR("Failed to allocate memory for extension properties.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-	}
+	std::vector<ze_driver_extension_properties_t> extensions(extensionCount);
 
-	result = zeDriverGetExtensionProperties(drvr, &extensionCount, extensions);
+	result = zeDriverGetExtensionProperties(drvr, &extensionCount, extensions.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get extension properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
-		delete[] extensions;
 		return result;
 	}
 
@@ -386,8 +372,6 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t drvr)
 	for (uint32_t i = 0; i < extensionCount; ++i) {
 		DBG("  Extension %u: %s, version 0x%X\n", i + 1, extensions[i].name, extensions[i].version);
 	}
-
-	delete[] extensions;
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -515,7 +499,9 @@ void driver::getLoaderVersion(std::string *lzVersion)
 ze_result_t driver::getLogs(UNUSED std::string fileName)
 {
 	TRACING();
-	return (GETLOGS(fileName) == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
+	// Result variable prevents MSVC /analyze warning C6326: Potential comparison of a constant with another constant
+	int result = GETLOGS(fileName);
+	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
 }
 
 /**
@@ -549,7 +535,7 @@ ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 				}
 				uint32_t userIndex = bdf[0] - '0';
 				if (userIndex == deviceIndex) {
-					DBG("Found device with index: %d\n", userIndex);
+					DBG("Found device with index: %u\n", userIndex);
 					dev.addInfo(devList, deviceIndex);
 					return ZE_RESULT_SUCCESS;
 				}

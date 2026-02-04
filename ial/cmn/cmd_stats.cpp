@@ -215,7 +215,7 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 
 	auto *rasHandler = reinterpret_cast<::ras *>(device->dev->getRAS());
 	if (rasHandler == nullptr) {
-		DBG("RAS handler not available for device %d.\n", device->index);
+		DBG("RAS handler not available for device %u.\n", device->index);
 		return ZE_RESULT_SUCCESS; // Not an error, just not supported
 	}
 
@@ -1991,7 +1991,7 @@ int cmdStats::run(arg_struct *args)
 		result = collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson,
 									statsCmds[STATS_RAS].enabled, statsCmds[STATS_EU].enabled);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to collect stats for device %d.\n", device.index);
+			ERR("Failed to collect stats for device %u.\n", device.index);
 			continue;
 		}
 

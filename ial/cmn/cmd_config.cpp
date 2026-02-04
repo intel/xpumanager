@@ -645,7 +645,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 			domainPad = 0;
 		}
 		if (showDeviceId) {
-			PRINT("| GPU         | %-17d |%s%*s|\n", d->index, domainLabel.c_str(), domainPad, "");
+			PRINT("| GPU         | %-17u |%s%*s|\n", d->index, domainLabel.c_str(), domainPad, "");
 		} else {
 			PRINT("|             |                   |%s%*s|\n", domainLabel.c_str(), domainPad, "");
 		}
@@ -1035,7 +1035,7 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 	ze_result_t result = fq->setFrequencyRange(minFreq, maxFreq, tileId);
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing the core frequency range on GPU %d tile %d to %.0f-%.0f MHz.\n", d->index, tileId,
+		PRINT("Succeeded in changing the core frequency range on GPU %u tile %d to %.0f-%.0f MHz.\n", d->index, tileId,
 			  minFreq, maxFreq);
 	}
 
@@ -1086,7 +1086,7 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 	}
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in setting the %s power limit to %.1f W on GPU %d\n",
+		PRINT("Succeeded in setting the %s power limit to %.1f W on GPU %u\n",
 			  powerType.empty() ? "sustain" : powerType.c_str(), powerLimit, d->index);
 	}
 
@@ -1123,10 +1123,10 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 
 	if (result == ZE_RESULT_SUCCESS) {
 		if (configCmds[configCmdType::TILE].enabled) {
-			PRINT("Succeeded in changing the standby mode on GPU %d tile %s to %s.\n", d->index,
+			PRINT("Succeeded in changing the standby mode on GPU %u tile %s to %s.\n", d->index,
 				  configCmds[configCmdType::TILE].val.c_str(), standbyMode.c_str());
 		} else {
-			PRINT("Succeeded in changing the standby mode on GPU %d to %s.\n", d->index, standbyMode.c_str());
+			PRINT("Succeeded in changing the standby mode on GPU %u to %s.\n", d->index, standbyMode.c_str());
 		}
 	}
 
@@ -1234,7 +1234,7 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 	}
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing the scheduler mode on GPU %d tile %u to %s\n", d->index, tileId, mode.c_str());
+		PRINT("Succeeded in changing the scheduler mode on GPU %u tile %u to %s\n", d->index, tileId, mode.c_str());
 	}
 
 	return result;
@@ -1294,10 +1294,10 @@ ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 
 	if (result == ZE_RESULT_SUCCESS) {
 		if (configCmds[configCmdType::TILE].enabled) {
-			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %d tile %s\n", engineType.c_str(),
+			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %u tile %s\n", engineType.c_str(),
 				  factorValue, d->index, configCmds[configCmdType::TILE].val.c_str());
 		} else {
-			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %d\n", engineType.c_str(),
+			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %u\n", engineType.c_str(),
 				  factorValue, d->index);
 		}
 	}
@@ -1339,13 +1339,13 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 		(memoryEcc == 1) ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
 
 	if (state.currentState == requestedState) {
-		PRINT("Memory ECC is already %s on GPU %d \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
+		PRINT("Memory ECC is already %s on GPU %u \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
 	} else if (state.pendingState == requestedState) {
-		PRINT("Successfully %s ECC memory setting on GPU %d \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
+		PRINT("Successfully %s ECC memory setting on GPU %u \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
 		PRINT("Please perform %s for the change to take effect.\n",
 			  e->printEccPendingAction(state.pendingAction).c_str());
 	} else {
-		ERR("Failed to %s ECC memory setting on GPU %d\n", (memoryEcc == 1 ? "enable" : "disable"), d->index);
+		ERR("Failed to %s ECC memory setting on GPU %u\n", (memoryEcc == 1 ? "enable" : "disable"), d->index);
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
@@ -1451,7 +1451,7 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 {
 	TRACING();
 
-	PRINT("Resetting GPU %d. This may take up to one minute...\n", d->index);
+	PRINT("Resetting GPU %u. This may take up to one minute...\n", d->index);
 
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -1459,7 +1459,7 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 		return result;
 	}
 
-	PRINT("Succeeded in resetting the GPU %d\n", d->index);
+	PRINT("Succeeded in resetting the GPU %u\n", d->index);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1474,7 +1474,7 @@ ze_result_t cmdConfig::applyPpr(UNUSED devInfo *d)
 {
 	TRACING();
 
-	PRINT("Applying PPR to GPU %d. This may take up to ten minutes...\n", d->index);
+	PRINT("Applying PPR to GPU %u. This may take up to ten minutes...\n", d->index);
 	PRINT("PPR feature is not available on this platform\n");
 
 	return ZE_RESULT_SUCCESS;
@@ -1630,7 +1630,7 @@ int cmdConfig::run(arg_struct *args)
 						hadError = true;
 					}
 					// Continue processing other devices/commands instead of early return
-					ERR("Failed to apply configuration to GPU %d, continuing with remaining devices...\n",
+					ERR("Failed to apply configuration to GPU %u, continuing with remaining devices...\n",
 						device.index);
 				}
 			}

@@ -242,7 +242,7 @@ ze_result_t temperature::enumTemperatureDomains(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Found %d temperature domains.\n", temperatureCount);
+	DBG("Found %u temperature domains.\n", temperatureCount);
 	return result;
 }
 
@@ -266,7 +266,7 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_
 
 	DBG("Temperature Properties:\n");
 	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %d\n", properties->subdeviceId);
+	DBG("  subdeviceId: %u\n", properties->subdeviceId);
 	switch (properties->type) {
 	case ZES_TEMP_SENSORS_GLOBAL:
 		DBG("  type: Global\n");
@@ -351,7 +351,7 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		result = getProperties(temperatureHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for temperature sensor %d: 0x%X (%s)\n", i, result,
+			DBG("Failed to get properties for temperature sensor %u: 0x%X (%s)\n", i, result,
 				l0_error_to_string(result));
 			continue;
 		}
@@ -362,7 +362,7 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 			if (result == ZE_RESULT_SUCCESS) {
 				return result;
 			} else {
-				DBG("Failed to get state for temperature sensor %d (type %d): 0x%X (%s)\n", i, type, result,
+				DBG("Failed to get state for temperature sensor %u (type %d): 0x%X (%s)\n", i, type, result,
 					l0_error_to_string(result));
 			}
 		}
@@ -391,7 +391,7 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 		zes_temp_properties_t properties = {};
 		ze_result_t result = getProperties(temperatureHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for temperature sensor %d\n", i);
+			DBG("Failed to get properties for temperature sensor %u\n", i);
 			continue;
 		}
 
@@ -407,7 +407,7 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 		double temp = 0.0;
 		result = getState(temperatureHandles[i], &temp);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get state for temperature sensor %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			DBG("Failed to get state for temperature sensor %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 

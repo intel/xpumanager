@@ -177,7 +177,7 @@ int amclib::amcFirmwareProgress(uint32_t cardNum)
 {
 	TRACING();
 	if (cardNum >= (uint32_t)numCards) {
-		ERR("Invalid cardNum specified: %d. Max cards: %d\n", cardNum, numCards);
+		ERR("Invalid cardNum specified: %u. Max cards: %d\n", cardNum, numCards);
 		return -1;
 	}
 	if (!pldmobj) {
@@ -443,20 +443,20 @@ int amclib::amcGpuReset(uint32_t cardNum)
 	TRACING();
 
 	if (cardNum >= static_cast<uint32_t>(numCards)) {
-		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
+		ERR("Invalid card number %u (valid range: 0-%d)\n", cardNum, numCards - 1);
 		return AMC_ERROR;
 	}
 
 	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card %d\n", cardNum);
+		ERR("PLDM object not initialized for card %u\n", cardNum);
 		return AMC_ERROR;
 	}
 
-	DBG("Initiating AMC reset for card %d\n", cardNum);
+	DBG("Initiating AMC reset for card %u\n", cardNum);
 
 	// Execute the AMC reset command
 	if (pldmobj[cardNum]->amcGpuReset() != PLDM_SUCCESS) {
-		ERR("Failed to reset AMC for card %d\n", cardNum);
+		ERR("Failed to reset AMC for card %u\n", cardNum);
 		return AMC_ERROR;
 	}
 
@@ -546,11 +546,12 @@ int amclib::redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount)
 		return AMC_ERROR;
 	}
 
-	// Use a reasonably large temporary buffer for discovery
-	RedfishGPUDevice tempDevices[MAX_TEMP_GPUS];
+	// Prevents the following warning on MSVC:
+	// warning C6262: Function uses '21068' bytes of stack.  Consider moving some data to heap.
+	auto tempDevices = std::make_unique<RedfishGPUDevice[]>(MAX_TEMP_GPUS);
 	int tempCount = 0;
 
-	int result = redfishObj.discoverIntelGpus(systemId, tempDevices, MAX_TEMP_GPUS, &tempCount);
+	int result = redfishObj.discoverIntelGpus(systemId, tempDevices.get(), MAX_TEMP_GPUS, &tempCount);
 
 	if (result != REDFISH_SUCCESS || tempCount <= 0) {
 		INFO("Redfish: No Intel GPUs found or discovery failed\n");

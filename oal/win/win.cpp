@@ -181,7 +181,7 @@ long long openI2C(UNUSED const std::string &deviceName)
 		CreateFileW(AMC_PATH, (GENERIC_READ | GENERIC_WRITE), 0, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 
 	if (amchandle == INVALID_HANDLE_VALUE) {
-		ERR("Couldn't open AMC device handle - %d\n", GetLastError());
+		ERR("Couldn't open AMC device handle - %lu\n", GetLastError());
 		return -1;
 	}
 
@@ -207,7 +207,7 @@ int closeI2C(long long fd)
 		return -1;
 	}
 	if (CloseHandle((HANDLE)fd) == 0) {
-		ERR("Failed to close I2C handle - %d\n", GetLastError());
+		ERR("Failed to close I2C handle - %lu\n", GetLastError());
 		return -1;
 	}
 	DBG("Successfully closed I2C handle\n");
@@ -227,7 +227,7 @@ static int getDeviceNumaNode(std::string bdf)
 	// Then use heuristics or default to node 0 for most devices
 	ULONG highestNodeNumber = 0;
 	if (!GetNumaHighestNodeNumber(&highestNodeNumber)) {
-		DBG("GetNumaHighestNodeNumber failed: %d\n", GetLastError());
+		DBG("GetNumaHighestNodeNumber failed: %lu\n", GetLastError());
 		return 0; // Default to NUMA node 0
 	}
 
@@ -271,7 +271,7 @@ static std::string numaToCpuMask(int numaNode)
 	BOOL result = GetNumaNodeProcessorMask((UCHAR)numaNode, &processorMask);
 
 	if (!result) {
-		ERR("GetNumaNodeProcessorMask failed: %d\n", GetLastError());
+		ERR("GetNumaNodeProcessorMask failed: %lu\n", GetLastError());
 		return "";
 	}
 
@@ -299,7 +299,7 @@ static std::string numaToCpuList(int numaNode)
 	BOOL result = GetNumaNodeProcessorMask((UCHAR)numaNode, &processorMask);
 
 	if (!result) {
-		ERR("GetNumaNodeProcessorMask failed: %d\n", GetLastError());
+		ERR("GetNumaNodeProcessorMask failed: %lu\n", GetLastError());
 		return "";
 	}
 

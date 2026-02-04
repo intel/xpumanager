@@ -114,12 +114,12 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle, zes_vf_exp2_capabili
 	}
 
 	DBG("Successfully retrieved VF capabilities.\n");
-	DBG("  - VF ID: %d\n", capabilities.vfID);
-	DBG("  - VF Domain: %d\n", capabilities.address.domain);
-	DBG("  - VF Bus: %d\n", capabilities.address.bus);
-	DBG("  - VF Device: %d\n", capabilities.address.device);
-	DBG("  - VF Function: %d\n", capabilities.address.function);
-	DBG("  - VF vfDeviceMemSize: %" PRIu64 " bytes\n", capabilities.vfDeviceMemSize);
+	DBG("  - VF ID: %u\n", capabilities.vfID);
+	DBG("  - VF Domain: %u\n", capabilities.address.domain);
+	DBG("  - VF Bus: %u\n", capabilities.address.bus);
+	DBG("  - VF Device: %u\n", capabilities.address.device);
+	DBG("  - VF Function: %u\n", capabilities.address.function);
+	DBG("  - VF vfDeviceMemSize: %llu bytes\n", (unsigned long long)capabilities.vfDeviceMemSize);
 
 	return result;
 }

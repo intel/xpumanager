@@ -157,7 +157,7 @@ ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nl
 		// Run all component tests and collect results in the device JSON
 		result = this->allComponents(&d, &deviceJson);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Health check failed for device id: %d\n", d.index);
+			ERR("Health check failed for device id: %u\n", d.index);
 		}
 
 		deviceListJson->push_back(deviceJson);
@@ -189,7 +189,7 @@ ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::ordered_json *jsonObj
 		DBG("Running test: %d\n", test.type);
 		result = (this->*test.func)(d, jsonObj);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Health check failed for device id: %d\n", d->index);
+			ERR("Health check failed for device id: %u\n", d->index);
 			break;
 		}
 	}

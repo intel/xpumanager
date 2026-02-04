@@ -61,11 +61,11 @@ ze_result_t fan::enumFans(zes_device_handle_t device)
  */
 void fan::printSupportedModes(const uint32_t mode)
 {
-	DBG("    - Supported Modes: %d\n", mode);
+	DBG("    - Supported Modes: %u\n", mode);
 	DBG("      - ");
-	if (mode & ZES_FAN_SPEED_MODE_DEFAULT)
+	if ((mode & ZES_FAN_SPEED_MODE_DEFAULT) != 0)
 		DBG("Default ");
-	if (mode & ZES_FAN_SPEED_MODE_FIXED)
+	if ((mode & ZES_FAN_SPEED_MODE_FIXED) != 0)
 		DBG("Fixed ");
 	if (mode & ZES_FAN_SPEED_MODE_TABLE)
 		DBG("Table ");
@@ -94,7 +94,7 @@ ze_result_t fan::getProperties(zes_fan_handle_t fanHandle)
 	DBG("    - Fan SType: %d\n", properties.stype);
 	DBG("    - Fan onSubdevice: %d\n", properties.onSubdevice);
 	DBG("    - Fan Can Control: %d\n", properties.canControl);
-	DBG("    - Fan Subdevice ID: %d\n", properties.subdeviceId);
+	DBG("    - Fan Subdevice ID: %u\n", properties.subdeviceId);
 	DBG("    - Fan Max Speed: %d RPM\n", properties.maxRPM);
 	DBG("    - Fan Max Points: %d\n", properties.maxPoints);
 	printSupportedModes(properties.supportedModes);
@@ -127,7 +127,7 @@ ze_result_t fan::getConfig(zes_fan_handle_t fanHandle)
 	} else if (config.mode == ZES_FAN_SPEED_MODE_TABLE) {
 		DBG("    - Table Points Count: %d\n", config.speedTable.numPoints);
 		for (int32_t i = 0; i < config.speedTable.numPoints; i++) {
-			DBG("      - Point %d: Temperature: %d, Speed: %d %s\n", i, config.speedTable.table[i].temperature,
+			DBG("      - Point %d: Temperature: %d, Speed: %d %s\n", i, (int32_t)config.speedTable.table[i].temperature,
 				config.speedTable.table[i].speed.speed,
 				config.speedTable.table[i].speed.units == ZES_FAN_SPEED_UNITS_PERCENT ? "%" : "RPM");
 		}

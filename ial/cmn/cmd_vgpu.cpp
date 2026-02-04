@@ -157,7 +157,7 @@ ze_result_t cmdVgpu::create(devInfo *d)
 	result = v->createVFs(&deviceInfo);
 
 	if (result == 0) {
-		PRINT("Successfully created %d virtual GPUs with %" PRIu64 " MiB memory each on device %s.\n",
+		PRINT("Successfully created %u virtual GPUs with %" PRIu64 " MiB memory each on device %s.\n",
 			  deviceInfo.vGpuNumber, deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
 	} else {
 		ERR("Failed to create virtual GPUs on device %s.\n", p->getBDFStr().c_str());

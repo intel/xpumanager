@@ -82,7 +82,7 @@ ze_result_t firmware::enumFirmwares(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("Device has %d firmwares.\n", firmwareCount);
+	DBG("Device has %u firmwares.\n", firmwareCount);
 
 	firmwareList = new zes_firmware_handle_t[firmwareCount];
 	result = zesDeviceEnumFirmwares(device, &firmwareCount, firmwareList);

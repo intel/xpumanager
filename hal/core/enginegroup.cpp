@@ -42,7 +42,7 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 		ERR("Failed to enumerate engine groups: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("Device has %d engine groups.\n", engineGroupCount);
+	DBG("Device has %u engine groups.\n", engineGroupCount);
 
 	engineGroups = new zes_engine_handle_t[engineGroupCount];
 	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, engineGroups);
@@ -125,7 +125,7 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 		break;
 	}
 
-	DBG("  - Engine Subdevice ID: %d\n", engineProperties->subdeviceId);
+	DBG("  - Engine Subdevice ID: %u\n", engineProperties->subdeviceId);
 	return result;
 }
 
@@ -209,11 +209,11 @@ ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
-		DBG("  - Engine Group %d Type: %d\n", i, engineProperties.type);
+		DBG("  - Engine Group %u Type: %d\n", i, engineProperties.type);
 		if (engineProperties.type == type) {
 			(*count)++;
 		}
@@ -257,7 +257,7 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t 
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -272,12 +272,12 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t 
 		if (found) {
 			result = getActivity(engineGroup, &engineStats);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+				ERR("Failed to get engine activity for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 				return result;
 			}
 			*utilization = engineStats.activeTime;
 			*timestamp = engineStats.timestamp;
-			DBG("  - Engine Group %d Utilization: %" PRIu64 "%%, Timestamp: %" PRIu64 "\n", i, *utilization,
+			DBG("  - Engine Group %u Utilization: %" PRIu64 "%%, Timestamp: %" PRIu64 "\n", i, *utilization,
 				*timestamp);
 			break;
 		}
@@ -321,7 +321,7 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -329,7 +329,7 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 			if (matchIndex == engineIndex) {
 				result = getActivity(engineGroup, &engineStats);
 				if (result != ZE_RESULT_SUCCESS) {
-					ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result,
+					ERR("Failed to get engine activity for group %u: 0x%X (%s)\n", i, result,
 						l0_error_to_string(result));
 					return result;
 				}
@@ -376,14 +376,14 @@ ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
 		if (engineProperties.type == type) {
 			result = getActivity(engineGroup, &engineStats);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get engine activity for group %d: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+				ERR("Failed to get engine activity for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
 				return result;
 			}
 

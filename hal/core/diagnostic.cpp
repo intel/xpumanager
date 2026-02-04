@@ -57,7 +57,7 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 		return result;
 	}
 
-	DBG("  - Device has %d diagnostic test suites:\n", testSuiteCount);
+	DBG("  - Device has %u diagnostic test suites:\n", testSuiteCount);
 	return result;
 }
 
@@ -84,7 +84,7 @@ ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
 	DBG("    - Type : %d\n", diagProperties.stype);
 	DBG("    - have Tests : %d\n", diagProperties.haveTests);
 	DBG("    - onSubDevice : %d\n", diagProperties.onSubdevice);
-	DBG("    - subdeviceId : %d\n", diagProperties.subdeviceId);
+	DBG("    - subdeviceId : %u\n", diagProperties.subdeviceId);
 	return result;
 }
 
@@ -1780,10 +1780,10 @@ int diagnostic::getTests(zes_diag_handle_t testSuite)
 		return 0;
 	}
 
-	DBG("    - Test Suite has %d tests:\n", testCount);
+	DBG("    - Test Suite has %u tests:\n", testCount);
 
 	for (const auto &test : tests) {
-		DBG("      - Test Index: %d\n", test.index);
+		DBG("      - Test Index: %u\n", test.index);
 		DBG("      - Test Name: %s\n", test.name);
 	}
 	return testSuiteCount;
