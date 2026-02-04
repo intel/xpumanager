@@ -16,6 +16,10 @@ help:
 
 # --- Build targets ---
 
+.PHONY: build
+build:
+	$(Q)go build -o bin/list-sysman ./list-sysman/.
+
 .PHONY: images
 images:
 	$(Q)docker build -t $(IMAGE_REPO):$(IMAGE_TAG) \
