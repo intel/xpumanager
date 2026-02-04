@@ -227,6 +227,10 @@ exporters:
     endpoint: "127.0.0.1:8080"
 
 extensions:
+  # HTTP endpoint for checking the collector status.
+  health_check:
+    endpoint: "127.0.0.1:13133"
+
   # Watches for changes in the set of GPU devices this process can use.
   #
   # The L0 Sysman API enumerates devices once, at zesInit: a device that was not
@@ -266,7 +270,7 @@ extensions:
     #dev_root: /dev
 
 service:
-  extensions: [intel_device_watch]
+  extensions: [health_check, intel_device_watch]
   telemetry:
     logs:
       level: info

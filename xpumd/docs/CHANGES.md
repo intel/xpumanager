@@ -30,6 +30,8 @@ Contents:
 * Config updates:
   * Metrics aggregation support for `intel_xpu_status` processor rules
   * Temperature and power warning threshold rules synced with `xpu-smi`
+* New `health_check` extension, enabled by default in the example config and in the Helm chart,
+  for checking the collector status over HTTP (port 13133)
 
 
 ## XPUM 2.3.0

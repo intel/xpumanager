@@ -190,6 +190,7 @@ And add following option to chart install:
 | config.exporters | object |   | [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters) |
 | config.exporters.intel_xpu_info | object | `{}` | Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intel_xpu_info` README for details. |
 | config.extensions | object |   | [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions) |
+| config.extensions.health_check | object | `{"endpoint":"0.0.0.0:13133"}` | Configuration for the [Health Check extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/healthcheckextension). |
 | config.extensions.intel_device_watch | object |   | Configuration for the Intel device watch extension. It detects GPUs that appeared or disappeared after the L0 Sysman API was initialized, which the running process cannot pick up. See `intel_device_watch` README for details. |
 | config.extensions.intel_device_watch.change_action | string | `"log"` | What to do once a change has settled: `log` it, or `exit` so that the collector re-enumerates the devices when its supervisor starts it again. The shutdown is graceful, which exits 0, so it needs a supervisor that restarts on a clean exit too: the pod's `restartPolicy: Always` does. |
 | config.extensions.intel_device_watch.dev_root | string | `"/dev"` | Root of the device file tree compared against sysfs. Mainly for testing. |
@@ -213,8 +214,8 @@ And add following option to chart install:
 | config.receivers.intel_xpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intel_xpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intel_xpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"extensions":["intel_device_watch"],"pipelines":{"logs":{"exporters":["intel_xpu_info"],"receivers":["intel_xpu","intel_crashlog"]},"metrics":{"exporters":["intel_xpu_info"],"processors":["intel_xpu_status"],"receivers":["intel_xpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
-| config.service.extensions | list | `["intel_device_watch"]` | Extensions to enable |
+| config.service | object | `{"extensions":["health_check","intel_device_watch"],"pipelines":{"logs":{"exporters":["intel_xpu_info"],"receivers":["intel_xpu","intel_crashlog"]},"metrics":{"exporters":["intel_xpu_info"],"processors":["intel_xpu_status"],"receivers":["intel_xpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service.extensions | list | `["health_check","intel_device_watch"]` | Extensions to enable |
 
 ### Other Values
 

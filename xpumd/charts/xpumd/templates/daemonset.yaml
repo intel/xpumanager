@@ -82,6 +82,9 @@ spec:
         - name: http
           containerPort: 8080
           protocol: TCP
+        - name: health
+          containerPort: 13133
+          protocol: TCP
         resources:
           {{- if .Values.resourcesOverride }}
           {{- toYaml .Values.resourcesOverride | nindent 10 }}

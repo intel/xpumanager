@@ -188,6 +188,12 @@ config:
   # @default --  
   # @section -- XPUM Daemon Configuration
   extensions:
+    # Bound to all IPs, as the kubelet probes the pod IP
+    # @schema hidden
+    # -- Configuration for the [Health Check extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/healthcheckextension).
+    # @section -- XPUM Daemon Configuration
+    health_check:
+      endpoint: "0.0.0.0:13133"
     # @schema additionalProperties:false
     # -- Configuration for the Intel device watch extension. It detects GPUs that
     # appeared or disappeared after the L0 Sysman API was initialized, which the
@@ -242,7 +248,7 @@ config:
   service:
     # -- Extensions to enable
     # @section -- XPUM Daemon Configuration
-    extensions: [intel_device_watch]
+    extensions: [health_check, intel_device_watch]
     # @schema hidden
     telemetry:
       logs:
