@@ -5,8 +5,8 @@
  */
 
 // Include Level Zero headers first (needed for type conversion functions)
-#include <level_zero/ze_api.h>
-#include <level_zero/zes_api.h>
+#include <ze_api.h>
+#include <zes_api.h>
 
 #include "xpum_api.h"
 #include "xpum_structs.h"
