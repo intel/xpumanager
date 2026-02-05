@@ -6,6 +6,7 @@ package sysman
 import (
 	"unsafe"
 
+	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
 )
 
@@ -117,7 +118,7 @@ type ResetProperties struct {
 //
 // Device universal unique id (UUID)
 type Uuid struct {
-	Id [16]uint8
+	Id uuid.UUID
 }
 
 // DeviceProperties declared in:

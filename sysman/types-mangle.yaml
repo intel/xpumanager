@@ -15,6 +15,11 @@ structs:
       - name: PNext
         newName: pnext
         newType: unsafe.Pointer
+  - name: Uuid
+    fields:
+      - name: Id
+        typeAssert: "[16]uint8"
+        newType: uuid.UUID
   - name: DeviceEccDesc
     fields:
       - name: State
