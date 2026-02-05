@@ -24,7 +24,7 @@ type deviceInfoServer struct {
 
 	// Cached health data
 	healthDataLock sync.RWMutex
-	healthData     []*pb.DeviceHealthResponse
+	healthData     *pb.DeviceHealthResponse
 	// Active clients
 	deviceHealthClients sync.Map
 }
@@ -96,12 +96,10 @@ func (s *deviceInfoServer) broadcastHealthData() {
 // the caller to hold the appropriate locks.
 func (s *deviceInfoServer) sendHealthData(stream pb.DeviceInfo_WatchDeviceHealthServer) error {
 	s.logger.Info("sending device health data")
-	for _, data := range s.healthData {
-		if err := stream.Send(data); err != nil {
-			s.logger.Errorw("failed to send health data to client", "error", err)
-			s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
-			return err
-		}
+	if err := stream.Send(s.healthData); err != nil {
+		s.logger.Errorw("failed to send health data to client", "error", err)
+		s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
+		return err
 	}
 	s.telemetry.ExporterRequestsSent.Add(context.Background(), 1)
 	return nil

@@ -17,8 +17,13 @@ service DeviceInfo {
 // Request message for WatchDeviceHealth.
 message WatchDeviceHealthRequest {}
 
-// Health metrics for a single device
+// Response message containing health metrics for all devices.
 message DeviceHealthResponse {
+  repeated DeviceHealth devices = 1;
+}
+
+// Health metrics for a single device
+message DeviceHealth {
   DeviceInformation info = 1;
 
   repeated HealthStatus health = 2;
