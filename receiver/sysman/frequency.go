@@ -21,7 +21,7 @@ func init() {
 }
 
 type sysmanFrequency struct {
-	*l0sysman.Freq
+	*l0sysman.Frequency
 	logger *zap.SugaredLogger
 
 	state      sysmanFrequencyState
@@ -64,14 +64,14 @@ func enumFrequency(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanFrequency(name string, freq *l0sysman.Freq, device *sysmanDevice) (*sysmanFrequency, error) {
+func newSysmanFrequency(name string, freq *l0sysman.Frequency, device *sysmanDevice) (*sysmanFrequency, error) {
 	props, err := freq.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
 	return &sysmanFrequency{
-		Freq:   freq,
+		Frequency:   freq,
 		logger: device.logger,
 		attributes: frequencyAttributes{
 			hwID:            device.attributes.hwID + "_" + name,
