@@ -1,11 +1,14 @@
 # XPUM Daemon
 
-XPUM daemon is a custom
+XPUM (v2.x) daemon is a custom
 [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) that
 provides:
 
 * Intel GPU metrics
-* GPU topology and health information for Kubernetes Intel GPU resource drivers
+* GPU capability and health information for Kubernetes Intel GPU resource drivers
+
+[Changes](CHANGES.md) lists differences in corresponding functionality compared to XPUM v1.x.
+
 
 ## Deployment
 
