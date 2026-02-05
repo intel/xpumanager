@@ -46,6 +46,68 @@ const (
 	ENGINE_ACTIVITY_EXT_NAME = "ZES_extension_engine_activity"
 )
 
+// structureType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-structure-type-t
+type structureType int32
+
+// structureType enumeration from level-zero/zes_api.h:168
+const (
+	_STRUCTURE_TYPE_DEVICE_PROPERTIES                 structureType = 1
+	_STRUCTURE_TYPE_PCI_PROPERTIES                    structureType = 2
+	_STRUCTURE_TYPE_PCI_BAR_PROPERTIES                structureType = 3
+	_STRUCTURE_TYPE_DIAG_PROPERTIES                   structureType = 4
+	_STRUCTURE_TYPE_ENGINE_PROPERTIES                 structureType = 5
+	_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES            structureType = 6
+	_STRUCTURE_TYPE_FAN_PROPERTIES                    structureType = 7
+	_STRUCTURE_TYPE_FIRMWARE_PROPERTIES               structureType = 8
+	_STRUCTURE_TYPE_FREQ_PROPERTIES                   structureType = 9
+	_STRUCTURE_TYPE_LED_PROPERTIES                    structureType = 10
+	_STRUCTURE_TYPE_MEM_PROPERTIES                    structureType = 11
+	_STRUCTURE_TYPE_PERF_PROPERTIES                   structureType = 12
+	_STRUCTURE_TYPE_POWER_PROPERTIES                  structureType = 13
+	_STRUCTURE_TYPE_PSU_PROPERTIES                    structureType = 14
+	_STRUCTURE_TYPE_RAS_PROPERTIES                    structureType = 15
+	_STRUCTURE_TYPE_SCHED_PROPERTIES                  structureType = 16
+	_STRUCTURE_TYPE_SCHED_TIMEOUT_PROPERTIES          structureType = 17
+	_STRUCTURE_TYPE_SCHED_TIMESLICE_PROPERTIES        structureType = 18
+	_STRUCTURE_TYPE_STANDBY_PROPERTIES                structureType = 19
+	_STRUCTURE_TYPE_TEMP_PROPERTIES                   structureType = 20
+	_STRUCTURE_TYPE_DEVICE_STATE                      structureType = 21
+	_STRUCTURE_TYPE_PROCESS_STATE                     structureType = 22
+	_STRUCTURE_TYPE_PCI_STATE                         structureType = 23
+	_STRUCTURE_TYPE_FABRIC_PORT_CONFIG                structureType = 24
+	_STRUCTURE_TYPE_FABRIC_PORT_STATE                 structureType = 25
+	_STRUCTURE_TYPE_FAN_CONFIG                        structureType = 26
+	_STRUCTURE_TYPE_FREQ_STATE                        structureType = 27
+	_STRUCTURE_TYPE_OC_CAPABILITIES                   structureType = 28
+	_STRUCTURE_TYPE_LED_STATE                         structureType = 29
+	_STRUCTURE_TYPE_MEM_STATE                         structureType = 30
+	_STRUCTURE_TYPE_PSU_STATE                         structureType = 31
+	_STRUCTURE_TYPE_BASE_STATE                        structureType = 32
+	_STRUCTURE_TYPE_RAS_CONFIG                        structureType = 33
+	_STRUCTURE_TYPE_RAS_STATE                         structureType = 34
+	_STRUCTURE_TYPE_TEMP_CONFIG                       structureType = 35
+	_STRUCTURE_TYPE_PCI_BAR_PROPERTIES_1_2            structureType = 36
+	_STRUCTURE_TYPE_DEVICE_ECC_DESC                   structureType = 37
+	_STRUCTURE_TYPE_DEVICE_ECC_PROPERTIES             structureType = 38
+	_STRUCTURE_TYPE_POWER_LIMIT_EXT_DESC              structureType = 39
+	_STRUCTURE_TYPE_POWER_EXT_PROPERTIES              structureType = 40
+	_STRUCTURE_TYPE_OVERCLOCK_PROPERTIES              structureType = 41
+	_STRUCTURE_TYPE_FABRIC_PORT_ERROR_COUNTERS        structureType = 42
+	_STRUCTURE_TYPE_ENGINE_EXT_PROPERTIES             structureType = 43
+	_STRUCTURE_TYPE_RESET_PROPERTIES                  structureType = 44
+	_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES             structureType = 45
+	_STRUCTURE_TYPE_DEVICE_UUID                       structureType = 46
+	_STRUCTURE_TYPE_MEMORY_PAGE_OFFLINE_STATE_EXP     structureType = 131075
+	_STRUCTURE_TYPE_VF_UTIL_MEM_EXP                   structureType = 131078
+	_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP                structureType = 131079
+	_STRUCTURE_TYPE_VF_UTIL_MEM_EXP2                  structureType = 131081
+	_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2               structureType = 131088
+	_STRUCTURE_TYPE_VF_EXP2_CAPABILITIES              structureType = 131089
+	_STRUCTURE_TYPE_DEVICE_ECC_DEFAULT_PROPERTIES_EXT structureType = 131090
+	_STRUCTURE_TYPE_FORCE_UINT32                      structureType = 2147483647
+)
+
 // InitFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 type InitFlag int32
