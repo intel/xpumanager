@@ -5,7 +5,7 @@ status:
   stability:
     development: [metrics]
   codeowners:
-    active: [marquiz]
+    active: [marquiz, eero-t]
 
 sem_conv_version: 1.38.0
 

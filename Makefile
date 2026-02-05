@@ -32,7 +32,10 @@ build:
 	go -C dist build github.com/intel/xpumanager/exporter/xpuinfo-cli
 
 .PHONY: generate
-generate: generate-proto
+generate: generate-proto generate-mods
+
+.PHONY: generate-mods
+generate-mods:
 	scripts/generate.sh $(GO_MODULES)
 
 .PHONY: generate-proto
