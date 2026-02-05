@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,8 +22,8 @@ import (
 )
 
 var (
-	defaultSocketFilename = metadata.Type.String() + ".sock"
-	socketPath            = flag.String("socket", "/run/xpumd/"+defaultSocketFilename, "Path to the socket for the gRPC server")
+	socketDir  = flag.String("sock-dir", os.Getenv("XDG_RUNTIME_DIR"), "gRPC server socket directory")
+	socketName = flag.String("sock-name", metadata.Type.String()+".sock", "gRPC server socket file name")
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
 
 func run() (exitCode int) {
 	conn, err := grpc.NewClient(
-		"unix://"+*socketPath,
+		"unix://"+filepath.Join(*socketDir, *socketName),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {

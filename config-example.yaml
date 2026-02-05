@@ -22,7 +22,8 @@ receivers:
 exporters:
   intelxpuinfo:
     # Only unix domain socket is allowed.
-    endpoint: "/run/xpumd/intelxpuinfo.sock"
+    # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
+    #endpoint: "/run/xpumd/intelxpuinfo.sock"
   prometheus:
     endpoint: "0.0.0.0:8080"
 

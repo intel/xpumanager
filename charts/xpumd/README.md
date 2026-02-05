@@ -45,7 +45,7 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | config.exporters | object |   | Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters) |
-| config.exporters.intelxpuinfo | object |   | Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. |
+| config.exporters.intelxpuinfo | object |   | Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead. |
 | config.extensions | object | `{}` | Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions) |
 | config.processors | object | `{"intelxpustatus":{}}` | Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors) |
 | config.processors.intelxpustatus | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details. |

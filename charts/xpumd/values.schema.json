@@ -17,7 +17,7 @@
                     "type": "object",
                     "properties": {
                         "intelxpuinfo": {
-                            "description": "Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported.",
+                            "description": "Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.",
                             "type": "object",
                             "properties": {
                                 "endpoint": {
