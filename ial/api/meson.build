@@ -16,7 +16,6 @@ api_headers = files(
 
 #Dependencies
 threads_dep = dependency('threads', required: true)
-# level_zero_dep = dependency('level-zero', required: true)
 
 #Build the shared library
 libxpum_api = shared_library(
