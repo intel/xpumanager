@@ -627,19 +627,19 @@ func (z *Firmware) GetConsoleLogs() (string, error) {
 
 // EnumFrequencyDomains wraps the zesDeviceEnumFrequencyDomains function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceenumfrequencydomains
-func (z *Device) EnumFrequencyDomains() ([]*Freq, error) {
+func (z *Device) EnumFrequencyDomains() ([]*Frequency, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumFrequencyDomains(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
 	}
 	handles := make([]freqHandle, count)
 	ret := zesDeviceEnumFrequencyDomains(z.handle, &count, handles)
-	return handlesToWrappers[freqHandle, Freq](handles), ret.ToError()
+	return handlesToWrappers[freqHandle, Frequency](handles), ret.ToError()
 }
 
 // GetProperties wraps the zesFrequencyGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfrequencygetproperties
-func (z *Freq) GetProperties() (FreqProperties, error) {
+func (z *Frequency) GetProperties() (FreqProperties, error) {
 	var props FreqProperties
 	ret := zesFrequencyGetProperties(z.handle, &props)
 	return props, ret.ToError()
@@ -647,7 +647,7 @@ func (z *Freq) GetProperties() (FreqProperties, error) {
 
 // GetAvailableClocks wraps the zesFrequencyGetAvailableClocks function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfrequencygetavailableclocks
-func (z *Freq) GetAvailableClocks() ([]float64, error) {
+func (z *Frequency) GetAvailableClocks() ([]float64, error) {
 	count := uint32(0)
 	if ret := zesFrequencyGetAvailableClocks(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
@@ -659,7 +659,7 @@ func (z *Freq) GetAvailableClocks() ([]float64, error) {
 
 // GetRange wraps the zesFrequencyGetRange function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfrequencygetrange
-func (z *Freq) GetRange() (FreqRange, error) {
+func (z *Frequency) GetRange() (FreqRange, error) {
 	var freqRange FreqRange
 	ret := zesFrequencyGetRange(z.handle, &freqRange)
 	return freqRange, ret.ToError()
@@ -667,14 +667,14 @@ func (z *Freq) GetRange() (FreqRange, error) {
 
 // SetRange wraps the zesFrequencySetRange function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfrequencysetrange
-func (z *Freq) SetRange(freqRange *FreqRange) error {
+func (z *Frequency) SetRange(freqRange *FreqRange) error {
 	ret := zesFrequencySetRange(z.handle, freqRange)
 	return ret.ToError()
 }
 
 // GetState wraps the zesFrequencyGetState function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfrequencygetstate
-func (z *Freq) GetState() (FreqState, error) {
+func (z *Frequency) GetState() (FreqState, error) {
 	var state FreqState
 	ret := zesFrequencyGetState(z.handle, &state)
 	return state, ret.ToError()
@@ -682,7 +682,7 @@ func (z *Freq) GetState() (FreqState, error) {
 
 // GetThrottleTime wraps the zesFrequencyGetThrottleTime function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfrequencygetthrottletime
-func (z *Freq) GetThrottleTime() (FreqThrottleTime, error) {
+func (z *Frequency) GetThrottleTime() (FreqThrottleTime, error) {
 	var throttleTime FreqThrottleTime
 	ret := zesFrequencyGetThrottleTime(z.handle, &throttleTime)
 	return throttleTime, ret.ToError()
@@ -732,19 +732,19 @@ func (z *Led) SetColor(color LedColor) error {
 
 // EnumMemoryModules wraps the zesDeviceEnumMemoryModules function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceenummemorymodules
-func (z *Device) EnumMemoryModules() ([]*Mem, error) {
+func (z *Device) EnumMemoryModules() ([]*Memory, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumMemoryModules(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
 	}
 	handles := make([]memHandle, count)
 	ret := zesDeviceEnumMemoryModules(z.handle, &count, handles)
-	return handlesToWrappers[memHandle, Mem](handles), ret.ToError()
+	return handlesToWrappers[memHandle, Memory](handles), ret.ToError()
 }
 
 // GetProperties wraps the zesMemoryGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesmemorygetproperties
-func (z *Mem) GetProperties() (MemProperties, error) {
+func (z *Memory) GetProperties() (MemProperties, error) {
 	var props MemProperties
 	ret := zesMemoryGetProperties(z.handle, &props)
 	return props, ret.ToError()
@@ -752,7 +752,7 @@ func (z *Mem) GetProperties() (MemProperties, error) {
 
 // GetState wraps the zesMemoryGetState function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesmemorygetstate
-func (z *Mem) GetState() (MemState, error) {
+func (z *Memory) GetState() (MemState, error) {
 	var state MemState
 	ret := zesMemoryGetState(z.handle, &state)
 	return state, ret.ToError()
@@ -760,7 +760,7 @@ func (z *Mem) GetState() (MemState, error) {
 
 // GetBandwidth wraps the zesMemoryGetBandwidth function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesmemorygetbandwidth
-func (z *Mem) GetBandwidth() (MemBandwidth, error) {
+func (z *Memory) GetBandwidth() (MemBandwidth, error) {
 	var bandwidth MemBandwidth
 	ret := zesMemoryGetBandwidth(z.handle, &bandwidth)
 	return bandwidth, ret.ToError()
@@ -768,19 +768,19 @@ func (z *Mem) GetBandwidth() (MemBandwidth, error) {
 
 // EnumPerformanceFactorDomains wraps the zesDeviceEnumPerformanceFactorDomains function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceenumperformancefactordomains
-func (z *Device) EnumPerformanceFactorDomains() ([]*Perf, error) {
+func (z *Device) EnumPerformanceFactorDomains() ([]*Performance, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumPerformanceFactorDomains(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
 	}
 	handles := make([]perfHandle, count)
 	ret := zesDeviceEnumPerformanceFactorDomains(z.handle, &count, handles)
-	return handlesToWrappers[perfHandle, Perf](handles), ret.ToError()
+	return handlesToWrappers[perfHandle, Performance](handles), ret.ToError()
 }
 
 // GetProperties wraps the zesPerformanceFactorGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesperformancefactorgetproperties
-func (z *Perf) GetProperties() (PerfProperties, error) {
+func (z *Performance) GetProperties() (PerfProperties, error) {
 	var props PerfProperties
 	ret := zesPerformanceFactorGetProperties(z.handle, &props)
 	return props, ret.ToError()
@@ -788,7 +788,7 @@ func (z *Perf) GetProperties() (PerfProperties, error) {
 
 // GetConfig wraps the zesPerformanceFactorGetConfig function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesperformancefactorgetconfig
-func (z *Perf) GetConfig() (float64, error) {
+func (z *Performance) GetConfig() (float64, error) {
 	var factor float64
 	ret := zesPerformanceFactorGetConfig(z.handle, &factor)
 	return factor, ret.ToError()
@@ -796,26 +796,26 @@ func (z *Perf) GetConfig() (float64, error) {
 
 // SetConfig wraps the zesPerformanceFactorSetConfig function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesperformancefactorsetconfig
-func (z *Perf) SetConfig(factor float64) error {
+func (z *Performance) SetConfig(factor float64) error {
 	ret := zesPerformanceFactorSetConfig(z.handle, factor)
 	return ret.ToError()
 }
 
 // EnumPowerDomains wraps the zesDeviceEnumPowerDomains function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceenumpowerdomains
-func (z *Device) EnumPowerDomains() ([]*Pwr, error) {
+func (z *Device) EnumPowerDomains() ([]*Power, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumPowerDomains(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
 	}
 	handles := make([]pwrHandle, count)
 	ret := zesDeviceEnumPowerDomains(z.handle, &count, handles)
-	return handlesToWrappers[pwrHandle, Pwr](handles), ret.ToError()
+	return handlesToWrappers[pwrHandle, Power](handles), ret.ToError()
 }
 
 // GetProperties wraps the zesPowerGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetproperties
-func (z *Pwr) GetProperties() (PowerProperties, error) {
+func (z *Power) GetProperties() (PowerProperties, error) {
 	var props PowerProperties
 	ret := zesPowerGetProperties(z.handle, &props)
 	return props, ret.ToError()
@@ -823,7 +823,7 @@ func (z *Pwr) GetProperties() (PowerProperties, error) {
 
 // GetEnergyCounter wraps the zesPowerGetEnergyCounter function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetenergycounter
-func (z *Pwr) GetEnergyCounter() (PowerEnergyCounter, error) {
+func (z *Power) GetEnergyCounter() (PowerEnergyCounter, error) {
 	var counter PowerEnergyCounter
 	ret := zesPowerGetEnergyCounter(z.handle, &counter)
 	return counter, ret.ToError()
@@ -831,7 +831,7 @@ func (z *Pwr) GetEnergyCounter() (PowerEnergyCounter, error) {
 
 // GetEnergyThreshold wraps the zesPowerGetEnergyThreshold function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetenergythreshold
-func (z *Pwr) GetEnergyThreshold() (EnergyThreshold, error) {
+func (z *Power) GetEnergyThreshold() (EnergyThreshold, error) {
 	var threshold EnergyThreshold
 	ret := zesPowerGetEnergyThreshold(z.handle, &threshold)
 	return threshold, ret.ToError()
@@ -839,14 +839,14 @@ func (z *Pwr) GetEnergyThreshold() (EnergyThreshold, error) {
 
 // SetEnergyThreshold wraps the zesPowerSetEnergyThreshold function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowersetenergythreshold
-func (z *Pwr) SetEnergyThreshold(threshold float64) error {
+func (z *Power) SetEnergyThreshold(threshold float64) error {
 	ret := zesPowerSetEnergyThreshold(z.handle, threshold)
 	return ret.ToError()
 }
 
 // GetLimitsExt wraps the zesPowerGetLimitsExt function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetlimitsext
-func (z *Pwr) GetLimitsExt() ([]PowerLimitExtDesc, error) {
+func (z *Power) GetLimitsExt() ([]PowerLimitExtDesc, error) {
 	count := uint32(0)
 	if ret := zesPowerGetLimitsExt(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
@@ -858,7 +858,7 @@ func (z *Pwr) GetLimitsExt() ([]PowerLimitExtDesc, error) {
 
 // SetLimitsExt wraps the zesPowerSetLimitsExt function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowersetlimitsext
-func (z *Pwr) SetLimitsExt(limits []PowerLimitExtDesc) error {
+func (z *Power) SetLimitsExt(limits []PowerLimitExtDesc) error {
 	count := uint32(len(limits))
 	ret := zesPowerSetLimitsExt(z.handle, &count, limits)
 	return ret.ToError()
@@ -937,19 +937,19 @@ func (z *Ras) GetState(resetCounters bool) (RasState, error) {
 
 // EnumSchedulers wraps the zesDeviceEnumSchedulers function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceenumschedulers
-func (z *Device) EnumSchedulers() ([]*Sched, error) {
+func (z *Device) EnumSchedulers() ([]*Scheduler, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumSchedulers(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
 	}
 	handles := make([]schedHandle, count)
 	ret := zesDeviceEnumSchedulers(z.handle, &count, handles)
-	return handlesToWrappers[schedHandle, Sched](handles), ret.ToError()
+	return handlesToWrappers[schedHandle, Scheduler](handles), ret.ToError()
 }
 
 // GetProperties wraps the zesSchedulerGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulergetproperties
-func (z *Sched) GetProperties() (SchedProperties, error) {
+func (z *Scheduler) GetProperties() (SchedProperties, error) {
 	var props SchedProperties
 	ret := zesSchedulerGetProperties(z.handle, &props)
 	return props, ret.ToError()
@@ -957,7 +957,7 @@ func (z *Sched) GetProperties() (SchedProperties, error) {
 
 // GetCurrentMode wraps the zesSchedulerGetCurrentMode function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulergetcurrentmode
-func (z *Sched) GetCurrentMode() (SchedMode, error) {
+func (z *Scheduler) GetCurrentMode() (SchedMode, error) {
 	var mode SchedMode
 	ret := zesSchedulerGetCurrentMode(z.handle, &mode)
 	return mode, ret.ToError()
@@ -965,7 +965,7 @@ func (z *Sched) GetCurrentMode() (SchedMode, error) {
 
 // GetTimeoutModeProperties wraps the zesSchedulerGetTimeoutModeProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulergettimeoutmodeproperties
-func (z *Sched) GetTimeoutModeProperties(getDefaults bool) (SchedTimeoutProperties, error) {
+func (z *Scheduler) GetTimeoutModeProperties(getDefaults bool) (SchedTimeoutProperties, error) {
 	var props SchedTimeoutProperties
 	ret := zesSchedulerGetTimeoutModeProperties(z.handle, boolToByte(getDefaults), &props)
 	return props, ret.ToError()
@@ -973,7 +973,7 @@ func (z *Sched) GetTimeoutModeProperties(getDefaults bool) (SchedTimeoutProperti
 
 // GetTimesliceModeProperties wraps the zesSchedulerGetTimesliceModeProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulergettimeslicemodeproperties
-func (z *Sched) GetTimesliceModeProperties(getDefaults bool) (SchedTimesliceProperties, error) {
+func (z *Scheduler) GetTimesliceModeProperties(getDefaults bool) (SchedTimesliceProperties, error) {
 	var props SchedTimesliceProperties
 	ret := zesSchedulerGetTimesliceModeProperties(z.handle, boolToByte(getDefaults), &props)
 	return props, ret.ToError()
@@ -981,7 +981,7 @@ func (z *Sched) GetTimesliceModeProperties(getDefaults bool) (SchedTimesliceProp
 
 // SetTimeoutMode wraps the zesSchedulerSetTimeoutMode function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulersettimeoutmode
-func (z *Sched) SetTimeoutMode(properties *SchedTimeoutProperties) (bool, error) {
+func (z *Scheduler) SetTimeoutMode(properties *SchedTimeoutProperties) (bool, error) {
 	var needReload byte
 	ret := zesSchedulerSetTimeoutMode(z.handle, properties, &needReload)
 	return needReload != 0, ret.ToError()
@@ -989,7 +989,7 @@ func (z *Sched) SetTimeoutMode(properties *SchedTimeoutProperties) (bool, error)
 
 // SetTimesliceMode wraps the zesSchedulerSetTimesliceMode function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulersettimeslicemode
-func (z *Sched) SetTimesliceMode(properties *SchedTimesliceProperties) (bool, error) {
+func (z *Scheduler) SetTimesliceMode(properties *SchedTimesliceProperties) (bool, error) {
 	var needReload byte
 	ret := zesSchedulerSetTimesliceMode(z.handle, properties, &needReload)
 	return needReload != 0, ret.ToError()
@@ -997,7 +997,7 @@ func (z *Sched) SetTimesliceMode(properties *SchedTimesliceProperties) (bool, er
 
 // SetExclusiveMode wraps the zesSchedulerSetExclusiveMode function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesschedulersetexclusivemode
-func (z *Sched) SetExclusiveMode() (bool, error) {
+func (z *Scheduler) SetExclusiveMode() (bool, error) {
 	var needReload byte
 	ret := zesSchedulerSetExclusiveMode(z.handle, &needReload)
 	return needReload != 0, ret.ToError()
@@ -1040,19 +1040,19 @@ func (z *Standby) SetMode(mode StandbyPromoMode) error {
 
 // EnumTemperatureSensors wraps the zesDeviceEnumTemperatureSensors function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceenumtemperaturesensors
-func (z *Device) EnumTemperatureSensors() ([]*Temp, error) {
+func (z *Device) EnumTemperatureSensors() ([]*Temperature, error) {
 	count := uint32(0)
 	if ret := zesDeviceEnumTemperatureSensors(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
 		return nil, ret.ToError()
 	}
 	handles := make([]tempHandle, count)
 	ret := zesDeviceEnumTemperatureSensors(z.handle, &count, handles)
-	return handlesToWrappers[tempHandle, Temp](handles), ret.ToError()
+	return handlesToWrappers[tempHandle, Temperature](handles), ret.ToError()
 }
 
 // GetProperties wraps the zesTemperatureGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zestemperaturegetproperties
-func (z *Temp) GetProperties() (TempProperties, error) {
+func (z *Temperature) GetProperties() (TempProperties, error) {
 	var props TempProperties
 	ret := zesTemperatureGetProperties(z.handle, &props)
 	return props, ret.ToError()
@@ -1060,7 +1060,7 @@ func (z *Temp) GetProperties() (TempProperties, error) {
 
 // GetConfig wraps the zesTemperatureGetConfig function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zestemperaturegetconfig
-func (z *Temp) GetConfig() (TempConfig, error) {
+func (z *Temperature) GetConfig() (TempConfig, error) {
 	var config TempConfig
 	ret := zesTemperatureGetConfig(z.handle, &config)
 	return config, ret.ToError()
@@ -1068,14 +1068,14 @@ func (z *Temp) GetConfig() (TempConfig, error) {
 
 // SetConfig wraps the zesTemperatureSetConfig function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zestemperaturesetconfig
-func (z *Temp) SetConfig(config *TempConfig) error {
+func (z *Temperature) SetConfig(config *TempConfig) error {
 	ret := zesTemperatureSetConfig(z.handle, config)
 	return ret.ToError()
 }
 
 // GetState wraps the zesTemperatureGetState function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zestemperaturegetstate
-func (z *Temp) GetState() (float64, error) {
+func (z *Temperature) GetState() (float64, error) {
 	var state float64
 	ret := zesTemperatureGetState(z.handle, &state)
 	return state, ret.ToError()
