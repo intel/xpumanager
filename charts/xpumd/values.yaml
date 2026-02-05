@@ -33,7 +33,10 @@ podAnnotations: {}
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext
 # -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)
-podSecurityContext: {}
+podSecurityContext:
+  # @schema hidden
+  seccompProfile:
+    type: RuntimeDefault
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext
 # -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
@@ -42,6 +45,8 @@ securityContext:
   runAsUser: 0
   # @schema hidden
   privileged: true
+  # @schema hidden
+  readOnlyRootFilesystem: true
 
 # @schema additionalProperties:false
 service:
