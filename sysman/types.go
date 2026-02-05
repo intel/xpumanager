@@ -3,7 +3,11 @@
 
 package sysman
 
-import "github.com/intel/level-zero-go/core"
+import (
+	"unsafe"
+
+	"github.com/intel/level-zero-go/core"
+)
 
 // driverHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-handle-t
@@ -92,7 +96,7 @@ type DriverExtensionProperties struct {
 // Device state.
 type DeviceState struct {
 	stype    uint32
-	pnext    *byte
+	pnext    unsafe.Pointer
 	Reset    ResetReasonFlags
 	Repaired RepairStatus
 }
@@ -103,7 +107,7 @@ type DeviceState struct {
 // Device reset properties.
 type ResetProperties struct {
 	stype     uint32
-	pnext     *byte
+	pnext     unsafe.Pointer
 	Force     uint8
 	ResetType ResetType
 }
@@ -122,7 +126,7 @@ type Uuid struct {
 // Device properties.
 type DeviceProperties struct {
 	stype         uint32
-	pnext         *byte
+	pnext         unsafe.Pointer
 	Core          core.DeviceProperties
 	NumSubdevices uint32
 	SerialNumber  core.StringProperty64
@@ -140,7 +144,7 @@ type DeviceProperties struct {
 // Device properties.
 type DeviceExtProperties struct {
 	stype uint32
-	pnext *byte
+	pnext unsafe.Pointer
 	Uuid  Uuid
 	Type  DeviceType
 	Flags DevicePropertyFlags
@@ -155,7 +159,7 @@ type DeviceExtProperties struct {
 //     path to the executable.
 type ProcessState struct {
 	stype      uint32
-	pnext      *byte
+	pnext      unsafe.Pointer
 	ProcessId  uint32
 	MemSize    uint64
 	SharedSize uint64
@@ -190,7 +194,7 @@ type PciSpeed struct {
 // Static PCI properties.
 type PciProperties struct {
 	stype                 uint32
-	pnext                 *byte
+	pnext                 unsafe.Pointer
 	Address               PciAddress
 	MaxSpeed              PciSpeed
 	HaveBandwidthCounters uint8
@@ -205,7 +209,7 @@ type PciProperties struct {
 // Dynamic PCI state.
 type PciState struct {
 	stype           uint32
-	pnext           *byte
+	pnext           unsafe.Pointer
 	Status          PciLinkStatus
 	QualityIssues   PciLinkQualIssueFlags
 	StabilityIssues PciLinkStabIssueFlags
@@ -218,7 +222,7 @@ type PciState struct {
 // Properties of a pci bar.
 type PciBarProperties struct {
 	stype uint32
-	pnext *byte
+	pnext unsafe.Pointer
 	Type  PciBarType
 	Index uint32
 	Base  uint64
@@ -231,7 +235,7 @@ type PciBarProperties struct {
 // Properties of a pci bar, including the resizable bar.
 type PciBarProperties12 struct {
 	stype                 uint32
-	pnext                 *byte
+	pnext                 unsafe.Pointer
 	Type                  PciBarType
 	Index                 uint32
 	Base                  uint64
@@ -270,7 +274,7 @@ type PciStats struct {
 //     the domain.
 type OverclockProperties struct {
 	stype             uint32
-	pnext             *byte
+	pnext             unsafe.Pointer
 	DomainType        OverclockDomain
 	AvailableControls uint32
 	VFProgramType     VfProgramType
@@ -323,7 +327,7 @@ type DiagTest struct {
 // Diagnostics test suite properties.
 type DiagProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	OnSubdevice uint8
 	SubdeviceId uint32
 	Name        core.StringProperty64
@@ -337,7 +341,7 @@ type DiagProperties struct {
 // ECC State Descriptor.
 type DeviceEccDesc struct {
 	stype uint32
-	pnext *byte
+	pnext unsafe.Pointer
 	State DeviceEccState
 	_     [4]byte
 }
@@ -348,7 +352,7 @@ type DeviceEccDesc struct {
 // ECC State.
 type DeviceEccProperties struct {
 	stype         uint32
-	pnext         *byte
+	pnext         unsafe.Pointer
 	CurrentState  DeviceEccState
 	PendingState  DeviceEccState
 	PendingAction DeviceAction
@@ -361,7 +365,7 @@ type DeviceEccProperties struct {
 // Engine group properties.
 type EngineProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	Type        EngineGroup
 	OnSubdevice uint8
 	SubdeviceId uint32
@@ -423,7 +427,7 @@ type FabricPortSpeed struct {
 // Fabric port properties.
 type FabricPortProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	Model       core.StringProperty256
 	OnSubdevice uint8
 	SubdeviceId uint32
@@ -446,7 +450,7 @@ type FabricLinkType struct {
 // Fabric port configuration.
 type FabricPortConfig struct {
 	stype     uint32
-	pnext     *byte
+	pnext     unsafe.Pointer
 	Enabled   uint8
 	Beaconing uint8
 	_         [6]byte
@@ -458,7 +462,7 @@ type FabricPortConfig struct {
 // Fabric port state.
 type FabricPortState struct {
 	stype          uint32
-	pnext          *byte
+	pnext          unsafe.Pointer
 	Status         FabricPortStatus
 	QualityIssues  FabricPortQualIssueFlags
 	FailureReasons FabricPortFailureFlags
@@ -483,7 +487,7 @@ type FabricPortThroughput struct {
 // Fabric Port Error Counters.
 type FabricPortErrorCounters struct {
 	stype            uint32
-	pnext            *byte
+	pnext            unsafe.Pointer
 	LinkFailureCount uint64
 	FwCommErrorCount uint64
 	FwErrorCount     uint64
@@ -523,7 +527,7 @@ type FanSpeedTable struct {
 // Fan properties.
 type FanProperties struct {
 	stype          uint32
-	pnext          *byte
+	pnext          unsafe.Pointer
 	OnSubdevice    uint8
 	SubdeviceId    uint32
 	CanControl     uint8
@@ -540,7 +544,7 @@ type FanProperties struct {
 // Fan configuration.
 type FanConfig struct {
 	stype      uint32
-	pnext      *byte
+	pnext      unsafe.Pointer
 	Mode       FanSpeedMode
 	SpeedFixed FanSpeed
 	SpeedTable FanSpeedTable
@@ -552,7 +556,7 @@ type FanConfig struct {
 // Firmware properties.
 type FirmwareProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	OnSubdevice uint8
 	SubdeviceId uint32
 	CanControl  uint8
@@ -573,7 +577,7 @@ type FirmwareProperties struct {
 //     the maximum frequency that can be requested.
 type FreqProperties struct {
 	stype                    uint32
-	pnext                    *byte
+	pnext                    unsafe.Pointer
 	Type                     FreqDomain
 	OnSubdevice              uint8
 	SubdeviceId              uint32
@@ -604,7 +608,7 @@ type FreqRange struct {
 // Frequency state.
 type FreqState struct {
 	stype           uint32
-	pnext           *byte
+	pnext           unsafe.Pointer
 	CurrentVoltage  float64
 	Request         float64
 	Tdp             float64
@@ -633,7 +637,7 @@ type FreqThrottleTime struct {
 // LED properties.
 type LedProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	OnSubdevice uint8
 	SubdeviceId uint32
 	CanControl  uint8
@@ -657,7 +661,7 @@ type LedColor struct {
 // LED state.
 type LedState struct {
 	stype uint32
-	pnext *byte
+	pnext unsafe.Pointer
 	IsOn  uint8
 	Color LedColor
 }
@@ -668,7 +672,7 @@ type LedState struct {
 // Memory properties.
 type MemProperties struct {
 	stype        uint32
-	pnext        *byte
+	pnext        unsafe.Pointer
 	Type         MemType
 	OnSubdevice  uint8
 	SubdeviceId  uint32
@@ -687,7 +691,7 @@ type MemProperties struct {
 // - Percent free is given by 100 * free / size.
 type MemState struct {
 	stype  uint32
-	pnext  *byte
+	pnext  unsafe.Pointer
 	Health MemHealth
 	Free   uint64
 	Size   uint64
@@ -720,7 +724,7 @@ type MemBandwidth struct {
 // Static information about a Performance Factor domain.
 type PerfProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	OnSubdevice uint8
 	SubdeviceId uint32
 	Engines     EngineTypeFlags
@@ -733,7 +737,7 @@ type PerfProperties struct {
 // Properties related to device power settings.
 type PowerProperties struct {
 	stype                      uint32
-	pnext                      *byte
+	pnext                      unsafe.Pointer
 	OnSubdevice                uint8
 	SubdeviceId                uint32
 	CanControl                 uint8
@@ -774,7 +778,7 @@ type EnergyThreshold struct {
 // Static properties of the power supply.
 type PsuProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	OnSubdevice uint8
 	SubdeviceId uint32
 	HaveFan     uint8
@@ -787,7 +791,7 @@ type PsuProperties struct {
 // Dynamic state of the power supply.
 type PsuState struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	VoltStatus  PsuVoltageStatus
 	FanFailed   uint8
 	Temperature int32
@@ -800,7 +804,7 @@ type PsuState struct {
 // RAS properties.
 type RasProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	Type        RasErrorType
 	OnSubdevice uint8
 	SubdeviceId uint32
@@ -813,7 +817,7 @@ type RasProperties struct {
 // RAS error details.
 type RasState struct {
 	stype    uint32
-	pnext    *byte
+	pnext    unsafe.Pointer
 	Category [7]uint64
 }
 
@@ -834,7 +838,7 @@ type RasState struct {
 //     RAS event is triggered.
 type RasConfig struct {
 	stype              uint32
-	pnext              *byte
+	pnext              unsafe.Pointer
 	TotalThreshold     uint64
 	DetailedThresholds RasState
 }
@@ -845,7 +849,7 @@ type RasConfig struct {
 // Properties related to scheduler component.
 type SchedProperties struct {
 	stype          uint32
-	pnext          *byte
+	pnext          unsafe.Pointer
 	OnSubdevice    uint8
 	SubdeviceId    uint32
 	CanControl     uint8
@@ -860,7 +864,7 @@ type SchedProperties struct {
 // Configuration for timeout scheduler mode (ZES_SCHED_MODE_TIMEOUT)
 type SchedTimeoutProperties struct {
 	stype           uint32
-	pnext           *byte
+	pnext           unsafe.Pointer
 	WatchdogTimeout uint64
 }
 
@@ -870,7 +874,7 @@ type SchedTimeoutProperties struct {
 // Configuration for timeslice scheduler mode (ZES_SCHED_MODE_TIMESLICE)
 type SchedTimesliceProperties struct {
 	stype        uint32
-	pnext        *byte
+	pnext        unsafe.Pointer
 	Interval     uint64
 	YieldTimeout uint64
 }
@@ -881,7 +885,7 @@ type SchedTimesliceProperties struct {
 // Standby hardware component properties.
 type StandbyProperties struct {
 	stype       uint32
-	pnext       *byte
+	pnext       unsafe.Pointer
 	Type        StandbyType
 	OnSubdevice uint8
 	SubdeviceId uint32
@@ -894,7 +898,7 @@ type StandbyProperties struct {
 // Temperature sensor properties.
 type TempProperties struct {
 	stype                   uint32
-	pnext                   *byte
+	pnext                   unsafe.Pointer
 	Type                    TempSensors
 	OnSubdevice             uint8
 	SubdeviceId             uint32
@@ -922,7 +926,7 @@ type TempThreshold struct {
 // conditions.
 type TempConfig struct {
 	stype          uint32
-	pnext          *byte
+	pnext          unsafe.Pointer
 	EnableCritical uint8
 	Threshold1     TempThreshold
 	Threshold2     TempThreshold
@@ -935,7 +939,7 @@ type TempConfig struct {
 // zes_device_ecc_properties_t.
 type DeviceEccDefaultPropertiesExt struct {
 	stype        uint32
-	pnext        *byte
+	pnext        unsafe.Pointer
 	DefaultState DeviceEccState
 	_            [4]byte
 }
@@ -946,7 +950,7 @@ type DeviceEccDefaultPropertiesExt struct {
 // Device power/current limit descriptor.
 type PowerLimitExtDesc struct {
 	stype               uint32
-	pnext               *byte
+	pnext               unsafe.Pointer
 	Level               PowerLevel
 	Source              PowerSource
 	LimitUnit           LimitUnit
@@ -972,7 +976,7 @@ type PowerLimitExtDesc struct {
 //     v/s stack-level & the factory default power limits.
 type PowerExtProperties struct {
 	stype        uint32
-	pnext        *byte
+	pnext        unsafe.Pointer
 	Domain       PowerDomain
 	DefaultLimit *PowerLimitExtDesc
 }
@@ -987,7 +991,7 @@ type PowerExtProperties struct {
 //   - Used for SRIOV per Virtual Function device utilization by zes_engine_group_t
 type EngineExtProperties struct {
 	stype                          uint32
-	pnext                          *byte
+	pnext                          unsafe.Pointer
 	CountOfVirtualFunctionInstance uint32
 	_                              [4]byte
 }
