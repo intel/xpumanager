@@ -23,7 +23,7 @@ type DeviceProperties struct {
 	Type                     DeviceType
 	VendorId                 uint32
 	DeviceId                 uint32
-	Flags                    DevicePropertyFlag
+	Flags                    DevicePropertyFlags
 	SubdeviceId              uint32
 	CoreClockRate            uint32
 	MaxMemAllocSize          uint64
@@ -40,3 +40,9 @@ type DeviceProperties struct {
 	Uuid                     DeviceUuid
 	Name                     StringProperty256
 }
+
+// DevicePropertyFlags declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
+//
+// Supported device property flags.
+type DevicePropertyFlags DevicePropertyFlag
