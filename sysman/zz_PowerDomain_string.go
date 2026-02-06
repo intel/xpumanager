@@ -28,7 +28,7 @@ var (
 
 func (i PowerDomain) String() string {
 	switch {
-	case 0 <= i && i <= 5:
+	case i <= 5:
 		return _PowerDomain_name_0[_PowerDomain_index_0[i]:_PowerDomain_index_0[i+1]]
 	case i == 2147483647:
 		return _PowerDomain_name_1

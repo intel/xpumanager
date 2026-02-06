@@ -25,7 +25,7 @@ var (
 
 func (i DeviceEccState) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case i <= 2:
 		return _DeviceEccState_name_0[_DeviceEccState_index_0[i]:_DeviceEccState_index_0[i+1]]
 	case i == 2147483647:
 		return _DeviceEccState_name_1

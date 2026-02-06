@@ -29,7 +29,7 @@ var (
 
 func (i RasErrorCat) String() string {
 	switch {
-	case 0 <= i && i <= 6:
+	case i <= 6:
 		return _RasErrorCat_name_0[_RasErrorCat_index_0[i]:_RasErrorCat_index_0[i+1]]
 	case i == 2147483647:
 		return _RasErrorCat_name_1

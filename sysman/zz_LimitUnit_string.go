@@ -25,7 +25,7 @@ var (
 
 func (i LimitUnit) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case i <= 2:
 		return _LimitUnit_name_0[_LimitUnit_index_0[i]:_LimitUnit_index_0[i+1]]
 	case i == 2147483647:
 		return _LimitUnit_name_1

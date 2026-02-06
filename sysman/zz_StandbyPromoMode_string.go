@@ -24,7 +24,7 @@ var (
 
 func (i StandbyPromoMode) String() string {
 	switch {
-	case 0 <= i && i <= 1:
+	case i <= 1:
 		return _StandbyPromoMode_name_0[_StandbyPromoMode_index_0[i]:_StandbyPromoMode_index_0[i+1]]
 	case i == 2147483647:
 		return _StandbyPromoMode_name_1

@@ -25,7 +25,7 @@ var (
 
 func (i PciBarType) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case i <= 2:
 		return _PciBarType_name_0[_PciBarType_index_0[i]:_PciBarType_index_0[i+1]]
 	case i == 2147483647:
 		return _PciBarType_name_1

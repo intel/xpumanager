@@ -24,7 +24,7 @@ var (
 
 func (i FanSpeedUnits) String() string {
 	switch {
-	case 0 <= i && i <= 1:
+	case i <= 1:
 		return _FanSpeedUnits_name_0[_FanSpeedUnits_index_0[i]:_FanSpeedUnits_index_0[i+1]]
 	case i == 2147483647:
 		return _FanSpeedUnits_name_1

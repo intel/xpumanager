@@ -25,7 +25,7 @@ var (
 
 func (i PowerSource) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case i <= 2:
 		return _PowerSource_name_0[_PowerSource_index_0[i]:_PowerSource_index_0[i+1]]
 	case i == 2147483647:
 		return _PowerSource_name_1
