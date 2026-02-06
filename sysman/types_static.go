@@ -19,7 +19,8 @@ import "github.com/intel/level-zero-go/internal"
 // Driver provides access to Sysman API driver functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#driver-functions
 type Driver struct {
-	handle driverHandle
+	handle     driverHandle
+	extensions map[string]bool
 }
 
 func (w *Driver) setHandle(h driverHandle) {
@@ -29,7 +30,8 @@ func (w *Driver) setHandle(h driverHandle) {
 // Device provides access to Sysman API device functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#device-functions
 type Device struct {
-	handle deviceHandle
+	handle     deviceHandle
+	extensions map[string]bool
 }
 
 func (w *Device) setHandle(h deviceHandle) {
@@ -64,10 +66,15 @@ func (w *Diagnostics) setHandle(h diagHandle) {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#engine-functions
 type Engine struct {
 	handle engineHandle
+	device *Device
 }
 
 func (w *Engine) setHandle(h engineHandle) {
 	w.handle = h
+}
+
+func (w *Engine) setDevice(d *Device) {
+	w.device = d
 }
 
 // FabricPort provides access to Sysman API fabric functions:
@@ -148,10 +155,15 @@ func (w *Performance) setHandle(h perfHandle) {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#power-functions
 type Power struct {
 	handle pwrHandle
+	device *Device
 }
 
 func (w *Power) setHandle(h pwrHandle) {
 	w.handle = h
+}
+
+func (w *Power) setDevice(d *Device) {
+	w.device = d
 }
 
 // Psu provides access to Sysman API psu (power supply) functions:
@@ -214,6 +226,22 @@ func handlesToWrappers[H any, V any, W interface {
 		v := new(V)
 		w := W(v)
 		w.setHandle(handle)
+		wrappers[i] = w
+	}
+	return wrappers
+}
+
+func handlesToWrappersWithDevice[H any, V any, W interface {
+	*V
+	setHandle(H)
+	setDevice(*Device)
+}](handles []H, device *Device) []W {
+	wrappers := make([]W, len(handles))
+	for i, handle := range handles {
+		v := new(V)
+		w := W(v)
+		w.setHandle(handle)
+		w.setDevice(device)
 		wrappers[i] = w
 	}
 	return wrappers
