@@ -339,7 +339,12 @@ std::string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flag
 		return "frequency throttled due to software supplied frequency range.";
 	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE)
 		return "frequency throttled due to a sub block that has a lower frequency.";
-
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL) == ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL)
+		return "frequency throttled due to thermal conditions.";
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_POWER) == ZES_FREQ_THROTTLE_REASON_FLAG_POWER)
+		return "frequency throttled due to power constraints.";
+	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE) == ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE)
+		return "frequency throttled due to voltage excursion.";
 	return "Not Throttled";
 }
 
