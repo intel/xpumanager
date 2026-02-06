@@ -48,7 +48,7 @@ const (
 
 // structureType declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-structure-type-t
-type structureType int32
+type structureType uint32
 
 // structureType enumeration from level-zero/zes_api.h:168
 const (
@@ -110,7 +110,7 @@ const (
 
 // InitFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
-type InitFlag int32
+type InitFlag uint32
 
 // InitFlag enumeration from level-zero/zes_api.h:592
 const (
@@ -122,7 +122,7 @@ const (
 
 // EngineTypeFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-type-flags-t
-type EngineTypeFlag int32
+type EngineTypeFlag uint32
 
 // EngineTypeFlag enumeration from level-zero/zes_api.h:803
 const (
@@ -146,7 +146,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-repair-status-t
 //
 // Device repair status.
-type RepairStatus int32
+type RepairStatus uint32
 
 // RepairStatus enumeration from level-zero/zes_api.h:814
 const (
@@ -162,7 +162,7 @@ const (
 
 // ResetReasonFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
-type ResetReasonFlag int32
+type ResetReasonFlag uint32
 
 // ResetReasonFlag enumeration from level-zero/zes_api.h:826
 const (
@@ -178,7 +178,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-type-t
 //
 // Device reset type.
-type ResetType int32
+type ResetType uint32
 
 // ResetType enumeration from level-zero/zes_api.h:837
 const (
@@ -196,7 +196,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-type-t
 //
 // Supported device types.
-type DeviceType int32
+type DeviceType uint32
 
 // DeviceType enumeration from level-zero/zes_api.h:884
 const (
@@ -216,7 +216,7 @@ const (
 
 // DevicePropertyFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
-type DevicePropertyFlag int32
+type DevicePropertyFlag uint32
 
 // DevicePropertyFlag enumeration from level-zero/zes_api.h:897
 const (
@@ -236,7 +236,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-status-t
 //
 // PCI link status.
-type PciLinkStatus int32
+type PciLinkStatus uint32
 
 // PciLinkStatus enumeration from level-zero/zes_api.h:1181
 const (
@@ -254,7 +254,7 @@ const (
 
 // PciLinkQualIssueFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-qual-issue-flags-t
-type PciLinkQualIssueFlag int32
+type PciLinkQualIssueFlag uint32
 
 // PciLinkQualIssueFlag enumeration from level-zero/zes_api.h:1192
 const (
@@ -268,7 +268,7 @@ const (
 
 // PciLinkStabIssueFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-stab-issue-flags-t
-type PciLinkStabIssueFlag int32
+type PciLinkStabIssueFlag uint32
 
 // PciLinkStabIssueFlag enumeration from level-zero/zes_api.h:1202
 const (
@@ -282,7 +282,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-type-t
 //
 // PCI bar types.
-type PciBarType int32
+type PciBarType uint32
 
 // PciBarType enumeration from level-zero/zes_api.h:1235
 const (
@@ -300,7 +300,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-domain-t
 //
 // Overclock domains.
-type OverclockDomain int32
+type OverclockDomain uint32
 
 // OverclockDomain enumeration from level-zero/zes_api.h:1428
 const (
@@ -330,7 +330,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-control-t
 //
 // Overclock controls.
-type OverclockControl int32
+type OverclockControl uint32
 
 // OverclockControl enumeration from level-zero/zes_api.h:1451
 const (
@@ -368,7 +368,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-mode-t
 //
 // Overclock modes.
-type OverclockMode int32
+type OverclockMode uint32
 
 // OverclockMode enumeration from level-zero/zes_api.h:1465
 const (
@@ -390,7 +390,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-control-state-t
 //
 // Overclock control states.
-type ControlState int32
+type ControlState uint32
 
 // ControlState enumeration from level-zero/zes_api.h:1478
 const (
@@ -409,7 +409,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pending-action-t
 //
 // Overclock pending actions.
-type PendingAction int32
+type PendingAction uint32
 
 // PendingAction enumeration from level-zero/zes_api.h:1491
 const (
@@ -429,7 +429,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-program-type-t
 //
 // Overclock V-F curve programing.
-type VfProgramType int32
+type VfProgramType uint32
 
 // VfProgramType enumeration from level-zero/zes_api.h:1506
 const (
@@ -451,7 +451,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-type-t
 //
 // VF type.
-type VfType int32
+type VfType uint32
 
 // VfType enumeration from level-zero/zes_api.h:1516
 const (
@@ -467,7 +467,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-array-type-t
 //
 // VF type.
-type VfArrayType int32
+type VfArrayType uint32
 
 // VfArrayType enumeration from level-zero/zes_api.h:1527
 const (
@@ -485,7 +485,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-result-t
 //
 // Diagnostic results.
-type DiagResult int32
+type DiagResult uint32
 
 // DiagResult enumeration from level-zero/zes_api.h:2041
 const (
@@ -506,7 +506,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-state-t
 //
 // ECC State.
-type DeviceEccState int32
+type DeviceEccState uint32
 
 // DeviceEccState enumeration from level-zero/zes_api.h:2227
 const (
@@ -524,7 +524,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-action-t
 //
 // State Change Requirements.
-type DeviceAction int32
+type DeviceAction uint32
 
 // DeviceAction enumeration from level-zero/zes_api.h:2239
 const (
@@ -544,7 +544,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-group-t
 //
 // Accelerator engine groups.
-type EngineGroup int32
+type EngineGroup uint32
 
 // EngineGroup enumeration from level-zero/zes_api.h:2416
 const (
@@ -603,7 +603,7 @@ const (
 
 // EventTypeFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t
-type EventTypeFlag int32
+type EventTypeFlag uint32
 
 // EventTypeFlag enumeration from level-zero/zes_api.h:2584
 const (
@@ -656,7 +656,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-status-t
 //
 // Fabric port status.
-type FabricPortStatus int32
+type FabricPortStatus uint32
 
 // FabricPortStatus enumeration from level-zero/zes_api.h:2731
 const (
@@ -676,7 +676,7 @@ const (
 
 // FabricPortQualIssueFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-qual-issue-flags-t
-type FabricPortQualIssueFlag int32
+type FabricPortQualIssueFlag uint32
 
 // FabricPortQualIssueFlag enumeration from level-zero/zes_api.h:2742
 const (
@@ -690,7 +690,7 @@ const (
 
 // FabricPortFailureFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-failure-flags-t
-type FabricPortFailureFlag int32
+type FabricPortFailureFlag uint32
 
 // FabricPortFailureFlag enumeration from level-zero/zes_api.h:2762
 const (
@@ -714,7 +714,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-mode-t
 //
 // Fan resource speed mode.
-type FanSpeedMode int32
+type FanSpeedMode uint32
 
 // FanSpeedMode enumeration from level-zero/zes_api.h:3147
 const (
@@ -733,7 +733,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-units-t
 //
 // Fan speed units.
-type FanSpeedUnits int32
+type FanSpeedUnits uint32
 
 // FanSpeedUnits enumeration from level-zero/zes_api.h:3157
 const (
@@ -749,7 +749,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-domain-t
 //
 // Frequency domains.
-type FreqDomain int32
+type FreqDomain uint32
 
 // FreqDomain enumeration from level-zero/zes_api.h:3604
 const (
@@ -765,7 +765,7 @@ const (
 
 // FreqThrottleReasonFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-reason-flags-t
-type FreqThrottleReasonFlag int32
+type FreqThrottleReasonFlag uint32
 
 // FreqThrottleReasonFlag enumeration from level-zero/zes_api.h:3678
 const (
@@ -792,7 +792,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-type-t
 //
 // Memory module types.
-type MemType int32
+type MemType uint32
 
 // MemType enumeration from level-zero/zes_api.h:4542
 const (
@@ -844,7 +844,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-loc-t
 //
 // Memory module location.
-type MemLoc int32
+type MemLoc uint32
 
 // MemLoc enumeration from level-zero/zes_api.h:4552
 const (
@@ -860,7 +860,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-health-t
 //
 // Memory health.
-type MemHealth int32
+type MemHealth uint32
 
 // MemHealth enumeration from level-zero/zes_api.h:4567
 const (
@@ -883,7 +883,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-domain-t
 //
 // Power Domain.
-type PowerDomain int32
+type PowerDomain uint32
 
 // PowerDomain enumeration from level-zero/zes_api.h:4905
 const (
@@ -907,7 +907,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-level-t
 //
 // Power Level Type.
-type PowerLevel int32
+type PowerLevel uint32
 
 // PowerLevel enumeration from level-zero/zes_api.h:4925
 const (
@@ -934,7 +934,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-source-t
 //
 // Power Source Type.
-type PowerSource int32
+type PowerSource uint32
 
 // PowerSource enumeration from level-zero/zes_api.h:4937
 const (
@@ -953,7 +953,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-limit-unit-t
 //
 // Limit Unit.
-type LimitUnit int32
+type LimitUnit uint32
 
 // LimitUnit enumeration from level-zero/zes_api.h:4948
 const (
@@ -971,7 +971,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-voltage-status-t
 //
 // PSU voltage status.
-type PsuVoltageStatus int32
+type PsuVoltageStatus uint32
 
 // PsuVoltageStatus enumeration from level-zero/zes_api.h:5315
 const (
@@ -991,7 +991,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-type-t
 //
 // RAS error type.
-type RasErrorType int32
+type RasErrorType uint32
 
 // RasErrorType enumeration from level-zero/zes_api.h:5444
 const (
@@ -1007,7 +1007,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-cat-t
 //
 // RAS error categories.
-type RasErrorCat int32
+type RasErrorCat uint32
 
 // RasErrorCat enumeration from level-zero/zes_api.h:5463
 const (
@@ -1035,7 +1035,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-mode-t
 //
 // Scheduler mode.
-type SchedMode int32
+type SchedMode uint32
 
 // SchedMode enumeration from level-zero/zes_api.h:5718
 const (
@@ -1060,7 +1060,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-type-t
 //
 // Standby hardware components.
-type StandbyType int32
+type StandbyType uint32
 
 // StandbyType enumeration from level-zero/zes_api.h:6070
 const (
@@ -1074,7 +1074,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-promo-mode-t
 //
 // Standby promotion modes.
-type StandbyPromoMode int32
+type StandbyPromoMode uint32
 
 // StandbyPromoMode enumeration from level-zero/zes_api.h:6095
 const (
@@ -1091,7 +1091,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-sensors-t
 //
 // Temperature sensors.
-type TempSensors int32
+type TempSensors uint32
 
 // TempSensors enumeration from level-zero/zes_api.h:6223
 const (
@@ -1121,7 +1121,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-version-t
 //
 // Device ECC default properties Extension Version(s)
-type DeviceEccDefaultPropertiesExtVersion int32
+type DeviceEccDefaultPropertiesExtVersion uint32
 
 // DeviceEccDefaultPropertiesExtVersion enumeration from level-zero/zes_api.h:6454
 const (
@@ -1137,7 +1137,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limits-ext-version-t
 //
 // Power Limits Extension Version(s)
-type PowerLimitsExtVersion int32
+type PowerLimitsExtVersion uint32
 
 // PowerLimitsExtVersion enumeration from level-zero/zes_api.h:6489
 const (
@@ -1153,7 +1153,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-activity-ext-version-t
 //
 // Engine Activity Extension Version(s)
-type EngineActivityExtVersion int32
+type EngineActivityExtVersion uint32
 
 // EngineActivityExtVersion enumeration from level-zero/zes_api.h:6629
 const (
