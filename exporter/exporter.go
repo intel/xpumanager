@@ -100,9 +100,24 @@ func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
 	e.healthServer = h
 
 	if e.cfg.NetAddr.Transport == confignet.TransportTypeUnix {
-		if err := os.MkdirAll(filepath.Dir(e.cfg.NetAddr.Endpoint), 0o755); err != nil {
-			return fmt.Errorf("failed to create directory for unix socket: %w", err)
+		if e.cfg.NetAddr.Endpoint != "" {
+			dir := filepath.Dir(e.cfg.NetAddr.Endpoint)
+			if _, err := os.Stat(dir); err != nil {
+				// does not exist, can it be created?
+				if err := os.MkdirAll(dir, 0o755); err != nil {
+					return fmt.Errorf("failed to create directory for unix socket: %w", err)
+				}
+			}
+		} else {
+			// use runtime dir specified for the user?
+			name := metadata.Type.String() + ".sock"
+			if dir := os.Getenv("XDG_RUNTIME_DIR"); dir != "" {
+				e.cfg.NetAddr.Endpoint = filepath.Join(dir, name)
+			} else {
+				e.cfg.NetAddr.Endpoint = name
+			}
 		}
+
 		// Remove the socket file if it already exists
 		if _, err := os.Stat(e.cfg.NetAddr.Endpoint); err == nil {
 			if err := os.Remove(e.cfg.NetAddr.Endpoint); err != nil {
