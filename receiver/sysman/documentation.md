@@ -124,6 +124,36 @@ Hardware component frequency throttle status.
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | com.intel.speed.throttle_reason | Reason for the hardware component speed throttling. | Any Str | Recommended |
 
+### hw.gpu.bandwidth.limit
+
+Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| By/s | Sum | Int | Cumulative | false | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+
+### hw.gpu.bandwidth.utilization
+
+GPU device (read+write) PCI bandwidth utilization ratio.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+
 ### hw.gpu.info
 
 Information about the GPU device.
@@ -145,6 +175,39 @@ Information about the GPU device.
 | pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | pci.device_id | PCI device ID of the device. | Any Str | Recommended |
 | pci.vendor_id | PCI vendor ID of the device. | Any Str | Recommended |
+| pci.lanes | The number of PCI lanes. | Any Str | Recommended |
+| pci.link_gen | PCI link generation. | Any Str | Recommended |
+
+### hw.gpu.io
+
+Bytes received / transmitted over PCI bus by the GPU device.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| By | Sum | Double | Cumulative | true | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| network.io.direction | The IO operation direction. | Str: ``receive``, ``transmit`` | Recommended |
+
+### hw.gpu.io.rate
+
+Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| By/s | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 
 ### hw.gpu.utilization
 
