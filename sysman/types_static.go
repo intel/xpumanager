@@ -12,10 +12,7 @@ package sysman
 #include "cgo_helpers.h"
 */
 import "C"
-import (
-	"fmt"
-	"strings"
-)
+import "github.com/intel/level-zero-go/internal"
 
 /* Wrappers for handles */
 
@@ -248,70 +245,50 @@ type OverclockState struct {
 
 // String representation of all set bits of InitFlags.
 func (f InitFlags) String() string {
-	return flagsToString[InitFlag](InitFlag(f))
+	return internal.FlagsToString[InitFlag](InitFlag(f))
 }
 
 // String representation of all set bits of EngineTypeFlags.
 func (f EngineTypeFlags) String() string {
-	return flagsToString[EngineTypeFlag](EngineTypeFlag(f))
+	return internal.FlagsToString[EngineTypeFlag](EngineTypeFlag(f))
 }
 
 // String representation of all set bits of ResetReasonFlags.
 func (f ResetReasonFlags) String() string {
-	return flagsToString[ResetReasonFlag](ResetReasonFlag(f))
+	return internal.FlagsToString[ResetReasonFlag](ResetReasonFlag(f))
 }
 
 // String representation of all set bits of DevicePropertyFlags.
 func (f DevicePropertyFlags) String() string {
-	return flagsToString[DevicePropertyFlag](DevicePropertyFlag(f))
+	return internal.FlagsToString[DevicePropertyFlag](DevicePropertyFlag(f))
 }
 
 // String representation of all set bits of PciLinkQualIssueFlags.
 func (f PciLinkQualIssueFlags) String() string {
-	return flagsToString[PciLinkQualIssueFlag](PciLinkQualIssueFlag(f))
+	return internal.FlagsToString[PciLinkQualIssueFlag](PciLinkQualIssueFlag(f))
 }
 
 // String representation of all set bits of PciLinkStabIssueFlags.
 func (f PciLinkStabIssueFlags) String() string {
-	return flagsToString[PciLinkStabIssueFlag](PciLinkStabIssueFlag(f))
+	return internal.FlagsToString[PciLinkStabIssueFlag](PciLinkStabIssueFlag(f))
 }
 
 // String representation of all set bits of EventTypeFlags.
 func (f EventTypeFlags) String() string {
-	return flagsToString[EventTypeFlag](EventTypeFlag(f))
+	return internal.FlagsToString[EventTypeFlag](EventTypeFlag(f))
 }
 
 // String representation of all set bits of FabricPortQualIssueFlags.
 func (f FabricPortQualIssueFlags) String() string {
-	return flagsToString[FabricPortQualIssueFlag](FabricPortQualIssueFlag(f))
+	return internal.FlagsToString[FabricPortQualIssueFlag](FabricPortQualIssueFlag(f))
 }
 
 // String representation of all set bits of FabricPortFailureFlags.
 func (f FabricPortFailureFlags) String() string {
-	return flagsToString[FabricPortFailureFlag](FabricPortFailureFlag(f))
+	return internal.FlagsToString[FabricPortFailureFlag](FabricPortFailureFlag(f))
 }
 
 // String representation of all set bits of FreqThrottleReasonFlags.
 func (f FreqThrottleReasonFlags) String() string {
-	return flagsToString[FreqThrottleReasonFlag](FreqThrottleReasonFlag(f))
-}
-
-type flagType interface {
-	~uint32
-	fmt.Stringer
-}
-
-func flagsToString[T flagType](flags T) string {
-	vals := []string{}
-
-	for flags != 0 {
-		// Get the lowest set bit
-		bit := flags & -flags
-
-		vals = append(vals, T(bit).String())
-
-		// Clear the lowest set bit
-		flags &= flags - 1
-	}
-	return strings.Join(vals, " | ")
+	return internal.FlagsToString[FreqThrottleReasonFlag](FreqThrottleReasonFlag(f))
 }

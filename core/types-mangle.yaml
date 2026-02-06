@@ -18,7 +18,7 @@ structs:
   - name: DeviceProperties
     fields:
       - name: Flags
-        newType: DevicePropertyFlag
+        newType: DevicePropertyFlags
       - name: Name
         typeAssert: "[256]int8"
         newType: StringProperty256
@@ -39,3 +39,5 @@ types:
 
       {{ . }}
       {{- end -}}
+  - name: DevicePropertyFlags
+    newType: DevicePropertyFlag
