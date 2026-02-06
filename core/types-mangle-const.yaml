@@ -15,6 +15,7 @@ types:
 
       {{ . }}
       {{- end -}}
+    typeAssert: int32
     newType: uint32
 
 values:
