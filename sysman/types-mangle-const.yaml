@@ -15,6 +15,7 @@ types:
 
       {{ . }}
       {{- end -}}
+    newType: uint32
 
 values:
   - name: "*"
