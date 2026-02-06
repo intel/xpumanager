@@ -81,8 +81,5 @@ TRANSLATOR:
       - {target: "^zesEngineGetActivityExt$", tips: [ref, ref, arr]}
       # Default tip, everything is ref
       - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
-  TypeTips:
-    type:
-      - {target: "^zes_[a-z_]*_handle", self: raw}
   MemTips:
     - {target: ., self: raw}
