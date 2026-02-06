@@ -1,0 +1,26 @@
+#
+# Config file for the hack/types-mangle tool.
+# Targeting the auto-generated const.go
+#
+options:
+  prefix: "ze"
+  doxygenPath: xml/ze__api_8h.xml
+
+types:
+  - name: "*"
+    newComment: |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+
+values:
+  - name: "*"
+    newComment: |-
+      {{- with doxygen . -}}
+      {{ . }}
+      {{- end -}}
+  - name: API_VERSION_CURRENT
+    newComment: API version of the L0 headers which the bindings were generated from.

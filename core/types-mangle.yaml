@@ -1,5 +1,6 @@
 #
 # Config file for the hack/types-mangle tool.
+# Targeting the auto-generated types.go
 #
 options:
   prefix: "ze"
@@ -38,12 +39,3 @@ types:
 
       {{ . }}
       {{- end -}}
-
-values:
-  - name: "*"
-    newComment: |-
-      {{- with doxygen . -}}
-      {{ . }}
-      {{- end -}}
-  - name: API_VERSION_CURRENT
-    newComment: API version of the L0 headers which the bindings were generated from.

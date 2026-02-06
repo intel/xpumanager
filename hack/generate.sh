@@ -25,7 +25,12 @@ go tool cgo -godefs -- -I../level-zero ./types.go > types.go.tmp
 go -C "$ROOT_DIR/hack" run ./types-mangle \
     -in-place \
     -config "$PWD/types-mangle.yaml" \
-    "$PWD/types.go.tmp" "$PWD/const.go"
+    "$PWD/types.go.tmp"
+go -C "$ROOT_DIR/hack" run ./types-mangle \
+    -in-place \
+    -config "$PWD/types-mangle-const.yaml" \
+    "$PWD/const.go"
+
 gotool goimports types.go.tmp > types.go
 rm -f types.go.tmp
 
