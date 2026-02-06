@@ -71,8 +71,8 @@ func newSysmanFrequency(name string, freq *l0sysman.Frequency, device *sysmanDev
 	}
 
 	return &sysmanFrequency{
-		Frequency:   freq,
-		logger: device.logger,
+		Frequency: freq,
+		logger:    device.logger,
 		attributes: frequencyAttributes{
 			hwID:            device.attributes.hwID + "_" + name,
 			hwType:          metadata.AttributeHwTypeFrequency,
@@ -141,7 +141,7 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 				f.attributes.subdeviceId)
 		}
 
-		for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_HW_RANGE; reason <<= 1 {
+		for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32; reason <<= 1 {
 			value := int64(0)
 			if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
 				value = 1
