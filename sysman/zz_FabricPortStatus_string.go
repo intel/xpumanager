@@ -27,7 +27,7 @@ var (
 
 func (i FabricPortStatus) String() string {
 	switch {
-	case 0 <= i && i <= 4:
+	case i <= 4:
 		return _FabricPortStatus_name_0[_FabricPortStatus_index_0[i]:_FabricPortStatus_index_0[i+1]]
 	case i == 2147483647:
 		return _FabricPortStatus_name_1

@@ -86,7 +86,7 @@ var (
 
 func (i Result) String() string {
 	switch {
-	case 0 <= i && i <= 1:
+	case i <= 1:
 		return _Result_name_0[_Result_index_0[i]:_Result_index_0[i+1]]
 	case 1879048193 <= i && i <= 1879048199:
 		i -= 1879048193

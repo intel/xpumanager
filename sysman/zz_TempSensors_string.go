@@ -31,7 +31,7 @@ var (
 
 func (i TempSensors) String() string {
 	switch {
-	case 0 <= i && i <= 8:
+	case i <= 8:
 		return _TempSensors_name_0[_TempSensors_index_0[i]:_TempSensors_index_0[i+1]]
 	case i == 2147483647:
 		return _TempSensors_name_1

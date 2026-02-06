@@ -26,7 +26,7 @@ var (
 
 func (i DiagResult) String() string {
 	switch {
-	case 0 <= i && i <= 3:
+	case i <= 3:
 		return _DiagResult_name_0[_DiagResult_index_0[i]:_DiagResult_index_0[i+1]]
 	case i == 2147483647:
 		return _DiagResult_name_1

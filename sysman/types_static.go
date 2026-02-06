@@ -297,7 +297,7 @@ func (f FreqThrottleReasonFlags) String() string {
 }
 
 type flagType interface {
-	~int32
+	~uint32
 	fmt.Stringer
 }
 

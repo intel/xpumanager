@@ -42,7 +42,7 @@ var (
 
 func (i MemType) String() string {
 	switch {
-	case 0 <= i && i <= 19:
+	case i <= 19:
 		return _MemType_name_0[_MemType_index_0[i]:_MemType_index_0[i+1]]
 	case i == 2147483647:
 		return _MemType_name_1

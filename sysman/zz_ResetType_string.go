@@ -25,7 +25,7 @@ var (
 
 func (i ResetType) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case i <= 2:
 		return _ResetType_name_0[_ResetType_index_0[i]:_ResetType_index_0[i+1]]
 	case i == 2147483647:
 		return _ResetType_name_1

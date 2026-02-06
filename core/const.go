@@ -20,7 +20,7 @@ import "C"
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-result-t
 //
 // Defines Return/Error codes.
-type Result int32
+type Result uint32
 
 // Result enumeration from level-zero/ze_api.h:263
 const (
@@ -147,7 +147,7 @@ const (
 //
 //   - API versions contain major and minor attributes, use ZE_MAJOR_VERSION and
 //     ZE_MINOR_VERSION
-type ApiVersion int32
+type ApiVersion uint32
 
 // ApiVersion enumeration from level-zero/ze_api.h:1317
 const (
@@ -191,7 +191,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-type-t
 //
 // Supported device types.
-type DeviceType int32
+type DeviceType uint32
 
 // DeviceType enumeration from level-zero/ze_api.h:1702
 const (
@@ -211,7 +211,7 @@ const (
 
 // DevicePropertyFlag declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
-type DevicePropertyFlag int32
+type DevicePropertyFlag uint32
 
 // DevicePropertyFlag enumeration from level-zero/ze_api.h:1735
 const (

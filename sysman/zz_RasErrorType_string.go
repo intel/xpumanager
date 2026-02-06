@@ -24,7 +24,7 @@ var (
 
 func (i RasErrorType) String() string {
 	switch {
-	case 0 <= i && i <= 1:
+	case i <= 1:
 		return _RasErrorType_name_0[_RasErrorType_index_0[i]:_RasErrorType_index_0[i+1]]
 	case i == 2147483647:
 		return _RasErrorType_name_1

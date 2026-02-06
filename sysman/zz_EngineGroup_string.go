@@ -37,7 +37,7 @@ var (
 
 func (i EngineGroup) String() string {
 	switch {
-	case 0 <= i && i <= 14:
+	case i <= 14:
 		return _EngineGroup_name_0[_EngineGroup_index_0[i]:_EngineGroup_index_0[i+1]]
 	case i == 2147483647:
 		return _EngineGroup_name_1

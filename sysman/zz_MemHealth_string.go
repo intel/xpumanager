@@ -27,7 +27,7 @@ var (
 
 func (i MemHealth) String() string {
 	switch {
-	case 0 <= i && i <= 4:
+	case i <= 4:
 		return _MemHealth_name_0[_MemHealth_index_0[i]:_MemHealth_index_0[i+1]]
 	case i == 2147483647:
 		return _MemHealth_name_1

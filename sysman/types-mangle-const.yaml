@@ -1,0 +1,26 @@
+#
+# Config file for the hack/types-mangle tool.
+# Targeting the auto-generated const.go
+#
+options:
+  prefix: "zes"
+  doxygenPath: xml/zes__api_8h.xml
+
+types:
+  - name: "*"
+    newComment: |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+    typeAssert: int32
+    newType: uint32
+
+values:
+  - name: "*"
+    newComment: |-
+      {{- with doxygen . -}}
+      {{ . }}
+      {{- end -}}

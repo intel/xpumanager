@@ -24,7 +24,7 @@ var (
 
 func (i VfType) String() string {
 	switch {
-	case 0 <= i && i <= 1:
+	case i <= 1:
 		return _VfType_name_0[_VfType_index_0[i]:_VfType_index_0[i+1]]
 	case i == 2147483647:
 		return _VfType_name_1

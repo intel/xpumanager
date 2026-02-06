@@ -25,7 +25,7 @@ var (
 
 func (i FreqDomain) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case i <= 2:
 		return _FreqDomain_name_0[_FreqDomain_index_0[i]:_FreqDomain_index_0[i+1]]
 	case i == 2147483647:
 		return _FreqDomain_name_1

@@ -58,6 +58,7 @@ type typeRewriteConfig struct {
 	commentRewriter `yaml:",inline"`
 	Name            string `yaml:"name"`
 	NewType         string `yaml:"newType"`
+	TypeAssert      string `yaml:"typeAssert"`
 }
 
 type valueRewriteConfig struct {
@@ -274,6 +275,13 @@ func (f *fieldRewriteConfig) apply(field *ast.Field) error {
 }
 
 func (t *typeRewriter) rewriteType(tr *typeRewriteConfig, genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) error {
+	// Type assertion check
+	if tr.TypeAssert != "" {
+		typeIdent := types.ExprString(typeSpec.Type)
+		if typeIdent != tr.TypeAssert {
+			return fmt.Errorf("type assertion failed: expected %s, got %s", tr.TypeAssert, typeIdent)
+		}
+	}
 	// Rewrite comment
 	if tr.NewComment != "" {
 		name := typeSpec.Name.Name
