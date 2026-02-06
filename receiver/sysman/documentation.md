@@ -202,6 +202,26 @@ Instantaneous power usage of the hardware component.
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 
+### hw.power.limit
+
+Power usage limit for the hardware component.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| W | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+| com.intel.power.limit.level | For which period / duration power limit applies. | Any Str | Recommended |
+| com.intel.power.limit.source | In which device state power limit applies (e.g. AC, DC, when battery powered). | Any Str | Recommended |
+
 ### hw.status
 
 The operational status of the hardware component.

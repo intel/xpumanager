@@ -100,6 +100,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", "com.intel.subdevice_id-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.state-val", "hw.name-val", AttributeHwTypeFrequency, "hw.parent-val", "com.intel.subdevice_id-val")
 
 			defaultMetricsCount++
@@ -438,6 +442,39 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+				case "hw.power.limit":
+					assert.False(t, validatedMetrics["hw.power.limit"], "Found a duplicate in the metrics slice: hw.power.limit")
+					validatedMetrics["hw.power.limit"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "Power usage limit for the hardware component.", ms.At(i).Description())
+					assert.Equal(t, "W", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.parent")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.power.limit.level")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.power.limit.level-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.power.limit.source")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.power.limit.source-val", attrVal.Str())
 				case "hw.status":
 					assert.False(t, validatedMetrics["hw.status"], "Found a duplicate in the metrics slice: hw.status")
 					validatedMetrics["hw.status"] = true

@@ -18,6 +18,14 @@ attributes:
       - min
       - max
       - avg
+  com.intel.power.limit.level:
+    # TODO: or "hw.power.limit.level"?
+    description: For which period / duration power limit applies.
+    type: string
+  com.intel.power.limit.source:
+    # TODO: or "hw.power.limit.source"?
+    description: In which device state power limit applies (e.g. AC, DC, when battery powered).
+    type: string
   com.intel.speed.throttle_reason:
     description: Reason for the hardware component speed throttling.
     type: string
@@ -194,6 +202,16 @@ metrics:
     gauge:
       value_type: double
     attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, com.intel.subdevice_id]
+  hw.power.limit:
+    enabled: true
+    description: Power usage limit for the hardware component.
+    stability:
+      level: development
+    unit: "W"
+    gauge:
+      value_type: double
+    # TODO: attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, com.intel.subdevice_id, hw.power.limit.level, hw.power.limit.source]
+    attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, com.intel.subdevice_id, com.intel.power.limit.level, com.intel.power.limit.source]
   hw.status:
     enabled: true
     description: The operational status of the hardware component.

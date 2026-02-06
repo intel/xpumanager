@@ -21,6 +21,8 @@ all_set:
       enabled: true
     hw.power:
       enabled: true
+    hw.power.limit:
+      enabled: true
     hw.status:
       enabled: true
     hw.temperature:
@@ -46,6 +48,8 @@ none_set:
     hw.memory.usage:
       enabled: false
     hw.power:
+      enabled: false
+    hw.power.limit:
       enabled: false
     hw.status:
       enabled: false

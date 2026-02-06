@@ -22,6 +22,7 @@ func init() {
 
 type sysmanPower struct {
 	*l0sysman.Power
+	limited bool
 	counter l0sysman.PowerEnergyCounter
 	logger  *zap.SugaredLogger
 	attribs powerAttribs
@@ -76,6 +77,7 @@ func newSysmanPower(name string, power *l0sysman.Power, device *sysmanDevice) (*
 
 	return &sysmanPower{
 		Power:   power,
+		limited: true,
 		counter: counter,
 		logger:  device.logger,
 		attribs: powerAttribs{
@@ -129,6 +131,47 @@ func (power *sysmanPower) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 		power.attribs.sensorLocation,
 		power.attribs.subdeviceId,
 	)
+
+	// log only once
+	if !power.limited {
+		return
+	}
+
+	// TODO: once extension info is available, call this only
+	// when "ZES_extension_power_limits" one is available
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetlimitsext
+	// TODO: find HW supporting this / test it
+	limits, err := power.GetLimitsExt()
+	if err != nil {
+		power.logger.Warnw("Failed to get power limits", zap.Error(err))
+		power.limited = false
+		return
+	}
+
+	count := 0
+	for _, limit := range limits {
+		if limit.Enabled == 0 || limit.LimitUnit != l0sysman.LIMIT_UNIT_POWER {
+			// only enabled power limits are relevant for power usage
+			continue
+		}
+		mb.RecordHwPowerLimitDataPoint(
+			ts,
+			float64(limit.Limit)*1e3, // mW -> W
+			power.attribs.hwID,
+			power.attribs.hwName,
+			power.attribs.hwParent,
+			power.attribs.sensorLocation,
+			power.attribs.subdeviceId,
+			strings.ToLower(limit.Level.String()),
+			strings.ToLower(limit.Source.String()),
+		)
+		count++
+	}
+
+	if count == 0 {
+		power.logger.Warnf("0 / %d suitable power limits", len(limits))
+		power.limited = false
+	}
 }
 
 func (m *sysmanPower) pollAggregatedMetrics() {}

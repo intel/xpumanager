@@ -38,6 +38,7 @@ type MetricsConfig struct {
 	HwMemorySize              MetricConfig `mapstructure:"hw.memory.size"`
 	HwMemoryUsage             MetricConfig `mapstructure:"hw.memory.usage"`
 	HwPower                   MetricConfig `mapstructure:"hw.power"`
+	HwPowerLimit              MetricConfig `mapstructure:"hw.power.limit"`
 	HwStatus                  MetricConfig `mapstructure:"hw.status"`
 	HwTemperature             MetricConfig `mapstructure:"hw.temperature"`
 }
@@ -72,6 +73,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		HwPower: MetricConfig{
+			Enabled: true,
+		},
+		HwPowerLimit: MetricConfig{
 			Enabled: true,
 		},
 		HwStatus: MetricConfig{
