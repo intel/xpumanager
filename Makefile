@@ -23,8 +23,11 @@ stats:
 
 # --- Build targets ---
 
+OTEL_VERSION ?= 0.145.0
+
 .PHONY: build
 build:
+	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
 	go tool -modfile tools/go.mod builder --config=builder-config.yaml
 	go -C dist build github.com/intel/xpumanager/exporter/xpuinfo-cli
 
