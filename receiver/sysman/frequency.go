@@ -141,7 +141,7 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 				f.attributes.subdeviceId)
 		}
 
-		for reason := l0sysman.FreqThrottleReasonFlag(1); reason <= l0sysman.FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32; reason <<= 1 {
+		for reason := l0sysman.FreqThrottleReasonFlag(1); reason < l0sysman.FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32; reason <<= 1 {
 			value := int64(0)
 			if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
 				value = 1
