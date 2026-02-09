@@ -30,7 +30,7 @@
 #include <memory>
 #include <os.h>
 #include <vector>
-
+#include <format>
 #ifdef DAEMONMODE
 DAEMONCAP curDaemonMode = DAEMON;
 std::string progName = "xpumcli";
@@ -64,13 +64,15 @@ template <typename T> void deleteList(std::list<T *> *genericList)
  */
 void printVersion(arg_struct *arg)
 {
+	const std::string fullVersion = std::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
 	std::string lzVersion;
+
 	PRINT("%-*sCLI:\n", TITLE, "");
-	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
+	PRINT("%-*sVersion: %s\n", HEADING, "", fullVersion.c_str());
 	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
 	PRINT("%-*s\n", TITLE, "");
 	PRINT("%-*sService:\n", TITLE, "");
-	PRINT("%-*sVersion: %s\n", HEADING, "", GET_FULL_VERSION());
+	PRINT("%-*sVersion: %s\n", HEADING, "", fullVersion.c_str());
 	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
 	arg->sm.getLoaderVersion(&lzVersion);
 	PRINT("%-*sLevel Zero Version: %s\n", HEADING, "", lzVersion.c_str());
@@ -92,7 +94,8 @@ void printSubCommands(std::list<cmds *> *cmdList)
  */
 void helpcli()
 {
-	PRINT("Intel XPU Manager Command Line Interface -- %s\n", GET_SHORT_VERSION());
+	const std::string shortVersion = std::format("v{}.{}", MAJOR, MINOR);
+	PRINT("Intel XPU Manager Command Line Interface -- %s\n", shortVersion.c_str());
 	PRINT("Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring "
 		  "capabilities.\n");
 	PRINT("It can also be used to change the Intel data center GPU settings and update the firmware.\n");
@@ -105,7 +108,8 @@ void helpcli()
  */
 void helpsmi()
 {
-	PRINT("Intel XPU System Management Interface -- %s\n", GET_SHORT_VERSION());
+	const std::string shortVersion = std::format("v{}.{}", MAJOR, MINOR);
+	PRINT("Intel XPU System Management Interface -- %s\n", shortVersion.c_str());
 	PRINT("Intel XPU System Management Interface provides the Intel data center GPU model."
 		  " It can also be used to update the firmware.\n");
 	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero.\n");
