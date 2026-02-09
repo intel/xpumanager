@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_topology.cpp
@@ -6,6 +6,11 @@
 
 #include "comlet_topology.h"
 
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -13,10 +18,57 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
-#include "utility.h"
 #include "exit_code.h"
+#include "utility.h"
 
 namespace xpum::cli {
+
+// Helper function to diagnose file open failures
+static int diagnoseFileOpenFailure(const std::string &filepath) {
+    struct stat st;
+    std::string dirPath = filepath;
+    size_t lastSlash = dirPath.find_last_of("/");
+
+    if (lastSlash != std::string::npos) {
+        dirPath = dirPath.substr(0, lastSlash);
+    } else {
+        dirPath = ".";
+    }
+
+    // Check if parent directory exists
+    if (stat(dirPath.c_str(), &st) != 0) {
+        std::cout << "Error: Parent directory does not exist: " << dirPath << std::endl;
+        return XPUM_CLI_ERROR_FILE_PARENT_DIR_NOT_EXIST;
+    }
+
+    // Check if parent directory is actually a directory
+    if (!S_ISDIR(st.st_mode)) {
+        std::cout << "Error: Parent path is not a directory: " << dirPath << std::endl;
+        return XPUM_CLI_ERROR_FILE_PARENT_NOT_DIR;
+    }
+
+    // Check write permission on parent directory
+    if (access(dirPath.c_str(), W_OK) != 0) {
+        std::cout << "Error: No write permission for directory: " << dirPath << std::endl;
+        std::cout << "Please check directory permissions or try running with appropriate privileges." << std::endl;
+        return XPUM_CLI_ERROR_FILE_NO_WRITE_PERMISSION_DIR;
+    }
+
+    // Check if file already exists
+    if (stat(filepath.c_str(), &st) == 0) {
+        // File exists, check if it's writable
+        if (access(filepath.c_str(), W_OK) != 0) {
+            std::cout << "Error: No write permission for existing file: " << filepath << std::endl;
+            std::cout << "Please check file permissions or try running with appropriate privileges." << std::endl;
+            return XPUM_CLI_ERROR_FILE_NO_WRITE_PERMISSION_FILE;
+        }
+    }
+
+    // If we get here, provide a generic error message
+    std::cout << "Error: Unable to open file for writing: " << filepath << std::endl;
+    std::cout << "Errno: " << strerror(errno) << std::endl;
+    return XPUM_CLI_ERROR_OPEN_FILE;
+}
 
 static CharTableConfig ComletConfigTopologyDevice(R"({
     "columns": [{
@@ -80,16 +132,48 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
         if (xmlfile.is_open()) {
             std::string xmlBuffer = this->coreStub->getTopoXMLBuffer();
             if (!xmlBuffer.empty()) {
+                // Write the XML buffer
                 xmlfile << xmlBuffer;
-                std::cout << "Export topology to " << opts->xmlFile << " sucessfully." << std::endl;
+
+                // Explicitly flush to ensure all data is written
+                xmlfile.flush();
+
+                // Check for write errors (disk space, permissions, etc.)
+                if (xmlfile.fail() || xmlfile.bad()) {
+                    xmlfile.close();
+                    std::cout << "Error: Failed to write to file: " << opts->xmlFile << std::endl;
+                    std::cout << "Possible causes: insufficient disk space, permission denied, or I/O error." << std::endl;
+                    exit_code = XPUM_CLI_ERROR_FILE_WRITE_FAILED;
+                    return result;
+                }
+
+                xmlfile.close();
+
+                // Final check after closing
+                if (xmlfile.fail()) {
+                    std::cout << "Error: Failed to close file properly: " << opts->xmlFile << std::endl;
+                    std::cout << "The file may be incomplete or corrupted." << std::endl;
+                    exit_code = XPUM_CLI_ERROR_FILE_WRITE_FAILED;
+                    return result;
+                }
+
+                // Verify file size to detect silent write failures (e.g., disk full)
+                struct stat fileStat;
+                if (stat(opts->xmlFile.c_str(), &fileStat) != 0 || fileStat.st_size == 0) {
+                    std::cout << "Error: File was created but appears to be empty." << std::endl;
+                    std::cout << "Possible causes: insufficient disk space or write permission issues." << std::endl;
+                    exit_code = XPUM_CLI_ERROR_FILE_INSUFFICIENT_SPACE;
+                    return result;
+                }
+
+                std::cout << "Export topology to " << opts->xmlFile << " successfully." << std::endl;
             } else {
+                xmlfile.close();
                 std::cout << "Fail to get topology xml buffer." << std::endl;
                 exit_code = XPUM_CLI_ERROR_EMPTY_XML;
             }
-            xmlfile.close();
         } else {
-            std::cout << "Error opening file: " << opts->xmlFile << std::endl;
-            exit_code = XPUM_CLI_ERROR_OPEN_FILE;
+            exit_code = diagnoseFileOpenFailure(opts->xmlFile);
         }
     } else if (this->opts->xeLink) {
         auto json = this->coreStub->getXelinkTopology();

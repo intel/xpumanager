@@ -7,6 +7,7 @@
 #include "comlet_statistics.h"
 
 #include <map>
+#include <sstream>
 #include <nlohmann/json.hpp>
 
 #include "cli_table.h"
@@ -38,7 +39,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "End Time" },
             { "rowTitle": "Elapsed Time (Second) " },
             { "rowTitle": "Energy Consumed (J) " },
-            { "rowTitle": "GPU Utilization (%) " },
+            { "rowTitle": "Average % utilization of all GPU Engines " },
             { "rowTitle": "Compute Engines Util (%) " },
             { "rowTitle": "Render Engines Util (%) " },
             { "rowTitle": "Media Engines Util (%) " },
@@ -338,7 +339,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
-            { "rowTitle": "GPU Utilization (%) " },
+            { "rowTitle": "Average % utilization of all GPU Engines " },
             { "rowTitle": "EU Array Active (%) " },
             { "rowTitle": "EU Array Stall (%) " },
             { "rowTitle": "EU Array Idle (%) " },
@@ -465,7 +466,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
     }, {
         "instance": "",
         "cells": [[
-            { "rowTitle": "GPU Utilization (%) " },
+            { "rowTitle": "Average % utilization of all GPU Engines " },
             { "rowTitle": "EU Array Active (%) " },
             { "rowTitle": "EU Array Stall (%) " },
             { "rowTitle": "EU Array Idle (%) " },

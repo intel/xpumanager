@@ -18,7 +18,7 @@ std::map<xpum_engine_type_t, std::string> engineNameMap{
     {XPUM_ENGINE_TYPE_3D, "3D Engine"}};
 
 std::vector<DumpTypeOption> dumpTypeOptions{
-    {XPUM_DUMP_GPU_UTILIZATION, DUMP_OPTION_STATS, XPUM_STATS_GPU_UTILIZATION, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_GPU_UTILIZATION", "GPU Utilization (%)", "GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles."},
+    {XPUM_DUMP_GPU_UTILIZATION, DUMP_OPTION_STATS, XPUM_STATS_GPU_UTILIZATION, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_GPU_UTILIZATION", "Average % utilization of all GPU Engines", "GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles."},
     {XPUM_DUMP_POWER, DUMP_OPTION_STATS, XPUM_STATS_POWER, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_POWER", "GPU Power (W)", "per tile or device."},
     {XPUM_DUMP_GPU_FREQUENCY, DUMP_OPTION_STATS, XPUM_STATS_GPU_FREQUENCY, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_GPU_FREQUENCY", "GPU Frequency (MHz)", "per tile or device. Device-level is the average value of tiles for multi-tiles."},
     {XPUM_DUMP_GPU_CORE_TEMPERATURE, DUMP_OPTION_STATS, XPUM_STATS_GPU_CORE_TEMPERATURE, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_GPU_CORE_TEMPERATURE", "GPU Core Temperature (Celsius Degree)", "per tile or device. Device-level is the average value of tiles for multi-tiles."},

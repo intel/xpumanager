@@ -9,10 +9,12 @@
 #include <chrono>
 #include <nlohmann/json.hpp>
 #include <regex>
+#include <sstream>
 #include <thread>
 #include <igsc_lib.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #include "core_stub.h"
 #include "xpum_structs.h"

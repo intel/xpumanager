@@ -55,7 +55,7 @@ xpumcli discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
 
 xpumcli dump -d 0 -m 0,1,2,3
-Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz), GPU Core Temperature (Celsius Degree)
+Timestamp, DeviceId, Average % utilization of all GPU Engines, GPU Power (W), GPU Frequency (MHz), GPU Core Temperature (Celsius Degree)
 21:23:00.000,    0, 99.55, 119.61, 1800, 49.00
 21:23:01.000,    0, 99.45, 119.36, 1800, 50.00
 21:23:02.000,    0, 99.48, 119.55, 1750, 50.50

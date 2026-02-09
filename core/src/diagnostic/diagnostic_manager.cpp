@@ -12,6 +12,7 @@
 #include <numeric>
 #include <limits>
 #include <array>
+#include <sstream>
 
 #include "firmware/firmware_manager.h"
 #include "device/gpu/gpu_device_stub.h"

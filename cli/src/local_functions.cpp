@@ -21,6 +21,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <sstream>
 #include <unordered_set>
 #include <algorithm>
 #include <iostream>

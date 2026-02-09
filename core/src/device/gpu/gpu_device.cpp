@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <igsc_lib.h>
 

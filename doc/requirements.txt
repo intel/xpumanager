@@ -2,12 +2,12 @@ apispec-webframeworks==0.5.2
 apispec==5.1.1
 Flask-HTTPAuth==4.6.0
 Flask==2.2.5
-grpcio-tools==1.59.5
-grpcio==1.59.5
-marshmallow==3.14.1
+grpcio-tools==1.72.0
+grpcio==1.72.0
+marshmallow==3.26.2
 myst-parser==2.0.0
 prometheus-client==0.14.1
-protobuf==4.25.8
+protobuf==6.33.5
 sphinx-rtd-theme==2.0.0
 Sphinx==7.1.2
 sphinxcontrib-openapi==0.8.3

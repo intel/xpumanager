@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2023-2025 Intel Corporation
+ *  Copyright (C) 2026 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file vgpu_manager.cpp
  */
@@ -46,6 +46,7 @@ static uint32_t getVFMaxNumberByPciDeviceId(int deviceId) {
             return 63;
         case 0xe211:
         case 0xe212:
+        case 0xe222:
             return 24;
         case 0xe223:
             return 12;

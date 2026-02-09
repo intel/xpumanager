@@ -460,7 +460,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 if (pendingAction.compare("none") == 0) {
                     ret += ".";
                 } else {
-                    ret += ". Please reset the GPU or reboot the OS for the change to take effect.";
+                    ret += ". Please hard reset or power on/off the machine for the change to take effect!";
                 }
 		(*json)["return"] = ret;
             }

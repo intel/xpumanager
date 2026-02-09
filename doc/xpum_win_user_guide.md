@@ -307,7 +307,8 @@ xpu-smi.exe stats -d 0
 +-----------------------------+--------------------------------------------------------------------+
 | Device ID                   | 0                                                                  |
 +-----------------------------+--------------------------------------------------------------------+
-| GPU Utilization (%)         | 0                                                                  |
+| Average % utilization of    | 0                                                                  |
+| all GPU Engines             |                                                                    |
 | EU Array Active (%)         |                                                                    |
 | EU Array Stall (%)          |                                                                    |
 | EU Array Idle (%)           |                                                                    |
@@ -367,7 +368,7 @@ Options:
   -d,--device                 The device id to query
   -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified.
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
-                              0. GPU Utilization (%), GPU active time of the elapsed time, per tile
+                              0. Average % utilization of all GPU Engines, GPU active time of the elapsed time, per tile
                               1. GPU Power (W), per tile
                               2. GPU Frequency (MHz), per tile
                               3. GPU Core Temperature (Celsius Degree), per tile
@@ -414,7 +415,7 @@ Options:
 Dump the device statistics to screen in CSV format.
 ```
 xpu-smi.exe dump -d 0 -m 0,1,2
-Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
+Timestamp, DeviceId, Average % utilization of all GPU Engines, GPU Power (W), GPU Frequency (MHz)
 05:47:42.000, 0, 0.00, 51, 2050
 05:47:43.000, 0, 0.00, 50, 2050
 05:47:44.000, 0, 0.00, 51, 2050
@@ -428,7 +429,7 @@ ESC is pressed. Dumping is stopped.
 Dumping cycle end
 
 type gpudata.csv
-Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
+Timestamp, DeviceId, Average % utilization of all GPU Engines, GPU Power (W), GPU Frequency (MHz)
 06:57:15.000, 0, 0.00, 48.24, 1200
 06:57:16.000, 0, 0.00, 46.47, 1200
 ```

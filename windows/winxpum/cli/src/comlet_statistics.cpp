@@ -33,7 +33,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
-            { "rowTitle": "GPU Utilization (%) " },
+            { "rowTitle": "Average % utilization of all GPU Engines " },
             { "rowTitle": "EU Array Active (%) " },
             { "rowTitle": "EU Array Stall (%) " },
             { "rowTitle": "EU Array Idle (%) " },
@@ -166,7 +166,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
     }, {
         "instance": "",
         "cells": [[
-            { "rowTitle": "GPU Utilization (%) " },
+            { "rowTitle": "Average % utilization of all GPU Engines " },
             { "rowTitle": "EU Array Active (%) " },
             { "rowTitle": "EU Array Stall (%) " },
             { "rowTitle": "EU Array Idle (%) " },

@@ -89,7 +89,7 @@ static nlohmann::json statsTable = R"({
         "cells": [
             [
                 { "label": "PCI BDF Address", "value": "bdf_address" },
-                { "label": "GPU Utilization (%) ", "value": "gpu_util", "fixer": "roundtwodecimals" },
+                { "label": "Average % utilization of all GPU Engines ", "value": "gpu_util", "fixer": "roundtwodecimals" },
                 { "label": "Compute Engine Util(%) ", "value": "ce_util", "fixer": "roundtwodecimals" },
                 { "label": "Render Engine Util (%) ", "value": "re_util", "fixer": "roundtwodecimals" },
                 { "label": "Media Engine Util (%) ", "value": "me_util", "fixer": "roundtwodecimals" },

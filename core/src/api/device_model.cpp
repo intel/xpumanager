@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2025 Intel Corporation
+ *  Copyright (C) 2026 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file device_model.cpp
  */
@@ -40,6 +40,7 @@ int getDeviceModelByPciDeviceId(int deviceId) {
         case 0xe211:
         case 0xe212:
         case 0xe216:
+        case 0xe222:
         case 0xe223:
             return XPUM_DEVICE_MODEL_BMG;
         default:
