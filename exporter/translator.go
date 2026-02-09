@@ -18,7 +18,7 @@ import (
 // metricsTranslator translates OpenTelemetry metrics into the gRPC API format.
 type metricsTranslator struct {
 	logger *zap.SugaredLogger
-	resp   map[string]*pb.DeviceHealthResponse
+	resp   map[string]*pb.DeviceHealth
 	// health is a helper for quick'n'easy lookups
 	health map[string]domainHealth
 }
@@ -28,12 +28,12 @@ type domainHealth map[string]*pb.HealthStatus
 func newMetricsTranslator(logger *zap.SugaredLogger) *metricsTranslator {
 	return &metricsTranslator{
 		logger: logger,
-		resp:   make(map[string]*pb.DeviceHealthResponse),
+		resp:   make(map[string]*pb.DeviceHealth),
 		health: make(map[string]domainHealth),
 	}
 }
 
-func (t *metricsTranslator) translate(md pmetric.Metrics) []*pb.DeviceHealthResponse {
+func (t *metricsTranslator) translate(md pmetric.Metrics) *pb.DeviceHealthResponse {
 	rms := md.ResourceMetrics()
 	for _, rm := range rms.All() {
 		sms := rm.ScopeMetrics()
@@ -47,13 +47,15 @@ func (t *metricsTranslator) translate(md pmetric.Metrics) []*pb.DeviceHealthResp
 
 	t.fillHealthData()
 
-	ret := make([]*pb.DeviceHealthResponse, len(t.resp))
+	devices := make([]*pb.DeviceHealth, len(t.resp))
 
 	// Sort for reproducibility
 	for i, id := range slices.Sorted(maps.Keys(t.resp)) {
-		ret[i] = t.resp[id]
+		devices[i] = t.resp[id]
 	}
-	return ret
+	return &pb.DeviceHealthResponse{
+		Devices: devices,
+	}
 }
 
 func (t *metricsTranslator) fillHealthData() {
@@ -105,7 +107,7 @@ func (t *metricsTranslator) updateMetadata(metricName string, dps pmetric.Number
 
 		resp := t.resp[id]
 		if resp == nil {
-			resp = &pb.DeviceHealthResponse{
+			resp = &pb.DeviceHealth{
 				Info: &pb.DeviceInformation{},
 			}
 			t.resp[id] = resp

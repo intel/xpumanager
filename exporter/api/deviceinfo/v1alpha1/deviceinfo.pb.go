@@ -119,11 +119,10 @@ func (*WatchDeviceHealthRequest) Descriptor() ([]byte, []int) {
 	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{0}
 }
 
-// Health metrics for a single device
+// Response message containing health metrics for all devices.
 type DeviceHealthResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Info          *DeviceInformation     `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
-	Health        []*HealthStatus        `protobuf:"bytes,2,rep,name=health,proto3" json:"health,omitempty"`
+	Devices       []*DeviceHealth        `protobuf:"bytes,1,rep,name=devices,proto3" json:"devices,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -158,14 +157,60 @@ func (*DeviceHealthResponse) Descriptor() ([]byte, []int) {
 	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *DeviceHealthResponse) GetInfo() *DeviceInformation {
+func (x *DeviceHealthResponse) GetDevices() []*DeviceHealth {
+	if x != nil {
+		return x.Devices
+	}
+	return nil
+}
+
+// Health metrics for a single device
+type DeviceHealth struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Info          *DeviceInformation     `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
+	Health        []*HealthStatus        `protobuf:"bytes,2,rep,name=health,proto3" json:"health,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceHealth) Reset() {
+	*x = DeviceHealth{}
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceHealth) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceHealth) ProtoMessage() {}
+
+func (x *DeviceHealth) ProtoReflect() protoreflect.Message {
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceHealth.ProtoReflect.Descriptor instead.
+func (*DeviceHealth) Descriptor() ([]byte, []int) {
+	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DeviceHealth) GetInfo() *DeviceInformation {
 	if x != nil {
 		return x.Info
 	}
 	return nil
 }
 
-func (x *DeviceHealthResponse) GetHealth() []*HealthStatus {
+func (x *DeviceHealth) GetHealth() []*HealthStatus {
 	if x != nil {
 		return x.Health
 	}
@@ -184,7 +229,7 @@ type DeviceInformation struct {
 
 func (x *DeviceInformation) Reset() {
 	*x = DeviceInformation{}
-	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[2]
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -196,7 +241,7 @@ func (x *DeviceInformation) String() string {
 func (*DeviceInformation) ProtoMessage() {}
 
 func (x *DeviceInformation) ProtoReflect() protoreflect.Message {
-	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[2]
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -209,7 +254,7 @@ func (x *DeviceInformation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceInformation.ProtoReflect.Descriptor instead.
 func (*DeviceInformation) Descriptor() ([]byte, []int) {
-	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{2}
+	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DeviceInformation) GetUuid() string {
@@ -245,7 +290,7 @@ type PciInfo struct {
 
 func (x *PciInfo) Reset() {
 	*x = PciInfo{}
-	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[3]
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -257,7 +302,7 @@ func (x *PciInfo) String() string {
 func (*PciInfo) ProtoMessage() {}
 
 func (x *PciInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[3]
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -270,7 +315,7 @@ func (x *PciInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PciInfo.ProtoReflect.Descriptor instead.
 func (*PciInfo) Descriptor() ([]byte, []int) {
-	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{3}
+	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PciInfo) GetBdf() string {
@@ -311,7 +356,7 @@ type HealthStatus struct {
 
 func (x *HealthStatus) Reset() {
 	*x = HealthStatus{}
-	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[4]
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -323,7 +368,7 @@ func (x *HealthStatus) String() string {
 func (*HealthStatus) ProtoMessage() {}
 
 func (x *HealthStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[4]
+	mi := &file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -336,7 +381,7 @@ func (x *HealthStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthStatus.ProtoReflect.Descriptor instead.
 func (*HealthStatus) Descriptor() ([]byte, []int) {
-	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{4}
+	return file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *HealthStatus) GetName() string {
@@ -373,8 +418,10 @@ const file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc = "" +
 	"\n" +
 	"1exporter/api/deviceinfo/v1alpha1/deviceinfo.proto\x12\n" +
 	"deviceinfo\"\x1a\n" +
-	"\x18WatchDeviceHealthRequest\"{\n" +
-	"\x14DeviceHealthResponse\x121\n" +
+	"\x18WatchDeviceHealthRequest\"J\n" +
+	"\x14DeviceHealthResponse\x122\n" +
+	"\adevices\x18\x01 \x03(\v2\x18.deviceinfo.DeviceHealthR\adevices\"s\n" +
+	"\fDeviceHealth\x121\n" +
 	"\x04info\x18\x01 \x01(\v2\x1d.deviceinfo.DeviceInformationR\x04info\x120\n" +
 	"\x06health\x18\x02 \x03(\v2\x18.deviceinfo.HealthStatusR\x06health\"d\n" +
 	"\x11DeviceInformation\x12\x12\n" +
@@ -413,27 +460,29 @@ func file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescGZIP() []byte
 }
 
 var file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_goTypes = []any{
 	(SeverityLevel)(0),               // 0: deviceinfo.SeverityLevel
 	(*WatchDeviceHealthRequest)(nil), // 1: deviceinfo.WatchDeviceHealthRequest
 	(*DeviceHealthResponse)(nil),     // 2: deviceinfo.DeviceHealthResponse
-	(*DeviceInformation)(nil),        // 3: deviceinfo.DeviceInformation
-	(*PciInfo)(nil),                  // 4: deviceinfo.PciInfo
-	(*HealthStatus)(nil),             // 5: deviceinfo.HealthStatus
+	(*DeviceHealth)(nil),             // 3: deviceinfo.DeviceHealth
+	(*DeviceInformation)(nil),        // 4: deviceinfo.DeviceInformation
+	(*PciInfo)(nil),                  // 5: deviceinfo.PciInfo
+	(*HealthStatus)(nil),             // 6: deviceinfo.HealthStatus
 }
 var file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_depIdxs = []int32{
-	3, // 0: deviceinfo.DeviceHealthResponse.info:type_name -> deviceinfo.DeviceInformation
-	5, // 1: deviceinfo.DeviceHealthResponse.health:type_name -> deviceinfo.HealthStatus
-	4, // 2: deviceinfo.DeviceInformation.pci:type_name -> deviceinfo.PciInfo
-	0, // 3: deviceinfo.HealthStatus.severity:type_name -> deviceinfo.SeverityLevel
-	1, // 4: deviceinfo.DeviceInfo.WatchDeviceHealth:input_type -> deviceinfo.WatchDeviceHealthRequest
-	2, // 5: deviceinfo.DeviceInfo.WatchDeviceHealth:output_type -> deviceinfo.DeviceHealthResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 0: deviceinfo.DeviceHealthResponse.devices:type_name -> deviceinfo.DeviceHealth
+	4, // 1: deviceinfo.DeviceHealth.info:type_name -> deviceinfo.DeviceInformation
+	6, // 2: deviceinfo.DeviceHealth.health:type_name -> deviceinfo.HealthStatus
+	5, // 3: deviceinfo.DeviceInformation.pci:type_name -> deviceinfo.PciInfo
+	0, // 4: deviceinfo.HealthStatus.severity:type_name -> deviceinfo.SeverityLevel
+	1, // 5: deviceinfo.DeviceInfo.WatchDeviceHealth:input_type -> deviceinfo.WatchDeviceHealthRequest
+	2, // 6: deviceinfo.DeviceInfo.WatchDeviceHealth:output_type -> deviceinfo.DeviceHealthResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_init() }
@@ -447,7 +496,7 @@ func file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc), len(file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
