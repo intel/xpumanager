@@ -28,19 +28,23 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for sysman metrics.
 type MetricsConfig struct {
-	HwEnergy                  MetricConfig `mapstructure:"hw.energy"`
-	HwFrequency               MetricConfig `mapstructure:"hw.frequency"`
-	HwFrequencyLimit          MetricConfig `mapstructure:"hw.frequency.limit"`
-	HwFrequencyRequest        MetricConfig `mapstructure:"hw.frequency.request"`
-	HwFrequencySamples        MetricConfig `mapstructure:"hw.frequency.samples"`
-	HwFrequencyThrottleStatus MetricConfig `mapstructure:"hw.frequency.throttle_status"`
-	HwGpuInfo                 MetricConfig `mapstructure:"hw.gpu.info"`
-	HwMemorySize              MetricConfig `mapstructure:"hw.memory.size"`
-	HwMemoryUsage             MetricConfig `mapstructure:"hw.memory.usage"`
-	HwPower                   MetricConfig `mapstructure:"hw.power"`
-	HwPowerLimit              MetricConfig `mapstructure:"hw.power.limit"`
-	HwStatus                  MetricConfig `mapstructure:"hw.status"`
-	HwTemperature             MetricConfig `mapstructure:"hw.temperature"`
+	HwEnergy                     MetricConfig `mapstructure:"hw.energy"`
+	HwFrequency                  MetricConfig `mapstructure:"hw.frequency"`
+	HwFrequencyLimit             MetricConfig `mapstructure:"hw.frequency.limit"`
+	HwFrequencyRequest           MetricConfig `mapstructure:"hw.frequency.request"`
+	HwFrequencySamples           MetricConfig `mapstructure:"hw.frequency.samples"`
+	HwFrequencyThrottleStatus    MetricConfig `mapstructure:"hw.frequency.throttle_status"`
+	HwGpuInfo                    MetricConfig `mapstructure:"hw.gpu.info"`
+	HwMemoryBandwidthLimit       MetricConfig `mapstructure:"hw.memory.bandwidth.limit"`
+	HwMemoryBandwidthUtilization MetricConfig `mapstructure:"hw.memory.bandwidth.utilization"`
+	HwMemoryIo                   MetricConfig `mapstructure:"hw.memory.io"`
+	HwMemoryIoRate               MetricConfig `mapstructure:"hw.memory.io.rate"`
+	HwMemorySize                 MetricConfig `mapstructure:"hw.memory.size"`
+	HwMemoryUsage                MetricConfig `mapstructure:"hw.memory.usage"`
+	HwPower                      MetricConfig `mapstructure:"hw.power"`
+	HwPowerLimit                 MetricConfig `mapstructure:"hw.power.limit"`
+	HwStatus                     MetricConfig `mapstructure:"hw.status"`
+	HwTemperature                MetricConfig `mapstructure:"hw.temperature"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
@@ -64,6 +68,18 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		HwGpuInfo: MetricConfig{
+			Enabled: true,
+		},
+		HwMemoryBandwidthLimit: MetricConfig{
+			Enabled: true,
+		},
+		HwMemoryBandwidthUtilization: MetricConfig{
+			Enabled: true,
+		},
+		HwMemoryIo: MetricConfig{
+			Enabled: true,
+		},
+		HwMemoryIoRate: MetricConfig{
 			Enabled: true,
 		},
 		HwMemorySize: MetricConfig{

@@ -79,6 +79,12 @@ attributes:
   hw.vendor:
     description: Vendor name of the hardware component.
     type: string
+  network.io.direction:
+    description: The IO operation direction.
+    type: string
+    enum:
+      - receive
+      - transmit
   pci.bdf:
     description: PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device.
     type: string
@@ -171,6 +177,47 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.firmware_version, pci.bdf, pci.device_id, pci.vendor_id]
+  hw.memory.bandwidth.limit:
+    enabled: true
+    description: Maximum total memory (read+write) bandwidth in bytes/sec.
+    stability:
+      level: development
+    unit: "By/s"
+    sum:
+      value_type: double
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
+  hw.memory.bandwidth.utilization:
+    enabled: true
+    description: Memory bandwidth (read+write) utilization ratio.
+    stability:
+      level: development
+    unit: "1"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
+  hw.memory.io:
+    enabled: true
+    description: Bytes read from / written to memory.
+    stability:
+      level: development
+    unit: "By"
+    sum:
+      value_type: double
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, network.io.direction, com.intel.subdevice_id]
+  hw.memory.io.rate:
+    # TODO: disable/drop this if limits are available on all relevant HW
+    enabled: true
+    description: Current memory bandwidth (read+write) usage in bytes/sec.
+    stability:
+      level: development
+    unit: "By/s"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
   hw.memory.size:
     enabled: true
     description: Size of the memory.

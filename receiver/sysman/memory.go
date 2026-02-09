@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 
+	"github.com/intel/level-zero-go/core"
 	l0sysman "github.com/intel/level-zero-go/sysman"
 	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
 )
@@ -23,8 +24,9 @@ func init() {
 type sysmanMemory struct {
 	*l0sysman.Memory
 	logger     *zap.SugaredLogger
-	state      sysmanMemoryState
 	attributes memoryAttributes
+	counter    *l0sysman.MemBandwidth
+	state      sysmanMemoryState
 }
 
 // sysmanMemoryState holds the dynamic runtime state of the memory instance.
@@ -67,7 +69,7 @@ func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*
 		return nil, err
 	}
 
-	return &sysmanMemory{
+	m := &sysmanMemory{
 		Memory: mem,
 		logger: device.logger,
 		state: sysmanMemoryState{
@@ -82,7 +84,19 @@ func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*
 			memoryLocation: strings.ToLower(props.Location.String()),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
-	}, nil
+	}
+
+	// initial / previous counter value
+	if counter, err := mem.GetBandwidth(); err != nil {
+		if err == core.RESULT_ERROR_UNSUPPORTED_FEATURE {
+			device.logger.Infow("Failed to get memory bandwidth", zap.Error(err))
+		} else {
+			device.logger.Warnw("Failed to get memory bandwidth", zap.Error(err))
+		}
+	} else {
+		m.counter = &counter
+	}
+	return m, nil
 }
 
 func (m *sysmanMemory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
@@ -123,6 +137,109 @@ func (m *sysmanMemory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 			strings.ToLower(s.String()),
 			m.attributes.hwName,
 			m.attributes.hwType,
+			m.attributes.hwParent,
+			m.attributes.subdeviceId,
+		)
+	}
+
+	m.scrapeBW(mb, ts)
+}
+
+func (m *sysmanMemory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if m.counter == nil {
+		// uninitialized/invalid previous value => skip BW metrics
+		return
+	}
+
+	counter, err := m.GetBandwidth()
+	if err != nil {
+		m.logger.Errorw("Failed to get memory bandwidth", zap.Error(err), "attributes", m.attributes)
+		m.counter = nil
+		return
+	}
+
+	// TODO: check from visualization that rate of mem BW counter
+	// changes matches utilization values calculated below (if not,
+	// caller's timestamps do not match KMD timestamps)
+
+	// TODO: spec says these read & write counters are in 32-byte units:
+	// - https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-t
+	// Sysman devs say it could be also in 64-byte units, but (new-)XPUM
+	// C++ sources do no such multiplication...
+
+	// read / write counters
+	mb.RecordHwMemoryIoDataPoint(
+		ts, float64(counter.ReadCounter),
+		m.attributes.hwID,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
+		m.attributes.hwName,
+		m.attributes.hwParent,
+		metadata.AttributeNetworkIoDirectionReceive,
+		m.attributes.subdeviceId,
+	)
+	mb.RecordHwMemoryIoDataPoint(
+		ts, float64(counter.WriteCounter),
+		m.attributes.hwID,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
+		m.attributes.hwName,
+		m.attributes.hwParent,
+		metadata.AttributeNetworkIoDirectionTransmit,
+		m.attributes.subdeviceId,
+	)
+
+	// TODO: Go bindings do not provide BW counter value width info:
+	// - Deprecated: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-ext-bandwidth-t
+	// - Experimental: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-counter-bits-exp-properties-t
+	// => For now assume their values to wrap at full type width
+	timeDiff := u64CounterDiff(m.counter.Timestamp, counter.Timestamp)
+	rxDiff := u64CounterDiff(m.counter.ReadCounter, counter.ReadCounter)
+	txDiff := u64CounterDiff(m.counter.WriteCounter, counter.WriteCounter)
+	m.counter = &counter
+	if timeDiff == 0 {
+		return
+	}
+
+	// total BW rate, b/us -> b/s
+	rate := float64(rxDiff+txDiff) / float64(timeDiff) * 1e6
+
+	// TODO: OTel spec prefers utilization ratio instead of rate, but that
+	// can be provided only when limit is known, and counters can be more
+	// easily validated against rate in dashboard.
+	// => drop later on, if limit is available on all relevant HW
+	mb.RecordHwMemoryIoRateDataPoint(
+		ts, rate,
+		m.attributes.hwID,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
+		m.attributes.hwName,
+		m.attributes.hwParent,
+		m.attributes.subdeviceId,
+	)
+
+	if counter.MaxBandwidth > 0 {
+		// TODO: verify that max is for read+write, not just one direction
+
+		// max BW
+		max := float64(counter.MaxBandwidth)
+		mb.RecordHwMemoryBandwidthLimitDataPoint(
+			ts, max,
+			m.attributes.hwID,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
+			m.attributes.hwName,
+			m.attributes.hwParent,
+			m.attributes.subdeviceId,
+		)
+
+		// BW utilization ratio
+		mb.RecordHwMemoryBandwidthUtilizationDataPoint(
+			ts, rate/max,
+			m.attributes.hwID,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
+			m.attributes.hwName,
 			m.attributes.hwParent,
 			m.attributes.subdeviceId,
 		)
