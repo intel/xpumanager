@@ -410,7 +410,7 @@ type metricHwFrequencyThrottleStatus struct {
 // init fills hw.frequency.throttle_status metric with initial data.
 func (m *metricHwFrequencyThrottleStatus) init() {
 	m.data.SetName("hw.frequency.throttle_status")
-	m.data.SetDescription("GPU frequency throttle status.")
+	m.data.SetDescription("Hardware component frequency throttle status.")
 	m.data.SetUnit("1")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
