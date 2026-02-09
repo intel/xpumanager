@@ -23,4 +23,5 @@ build:
 .PHONY: images
 images:
 	$(Q)docker build -t $(IMAGE_REPO):$(IMAGE_TAG) \
+	             --progress=plain \
 	             -f list-sysman/Dockerfile ..
