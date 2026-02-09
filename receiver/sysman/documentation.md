@@ -28,7 +28,7 @@ Operating frequency of the hardware component.
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | aggregation | Aggregation type for the metric. | Str: ``min``, ``max``, ``avg`` | Recommended |
 
 ### hw.frequency.limit
@@ -47,7 +47,7 @@ Frequency limit in Hertz.
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.limit_type | Type of limit. | Any Str | Recommended |
 
 ### hw.frequency.request
@@ -66,7 +66,7 @@ Requested operating frequency.
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 
 ### hw.frequency.samples
 
@@ -84,12 +84,12 @@ Number of frequency samples during the last collection interval.
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | sample.status | Status of the samples. | Str: ``collected``, ``dropped`` | Recommended |
 
 ### hw.frequency.throttle_status
 
-GPU frequency throttle status.
+Hardware component frequency throttle status.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
@@ -103,8 +103,8 @@ GPU frequency throttle status.
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
-| com.intel.speed.throttle_reason | Reason for GPU speed throttling. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+| com.intel.speed.throttle_reason | Reason for the hardware component speed throttling. | Any Str | Recommended |
 
 ### hw.gpu.info
 
@@ -143,7 +143,7 @@ Size of the memory.
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 
 ### hw.memory.usage
 
@@ -161,7 +161,7 @@ Memory used.
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 
 ### hw.status
 
@@ -176,11 +176,11 @@ The operational status of the hardware component.
 | Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
-| hw.state | Current state of the component. | Any Str | Recommended |
+| hw.state | Current state of the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.type | Type of the hardware component. | Str: ``frequency``, ``memory``, ``temperature`` | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 
 ### hw.temperature
 
@@ -199,4 +199,4 @@ Temperature of the hardware component in degrees Celsius.
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended |
 | statistic | Statistic type for the metric. | Str: ``min``, ``max`` | Recommended |
-| com.intel.subdevice_id | Subdevice ID of the GPU. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |

@@ -18,10 +18,10 @@ attributes:
       - max
       - avg
   com.intel.speed.throttle_reason:
-    description: Reason for GPU speed throttling.
+    description: Reason for the hardware component speed throttling.
     type: string
   com.intel.subdevice_id:
-    description: Subdevice ID of the GPU.
+    description: Subdevice ID of the hardware component.
     type: string
   hw.frequency.domain:
     description: The frequency domain (gpu, memory, media...).
@@ -51,7 +51,7 @@ attributes:
     description: Serial number of the hardware component.
     type: string
   hw.state:
-    description: Current state of the component.
+    description: Current state of the hardware component.
     type: string
   hw.type:
     description: Type of the hardware component.
@@ -124,7 +124,7 @@ metrics:
     attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.subdevice_id, sample.status]
   hw.frequency.throttle_status:
     enabled: true
-    description: GPU frequency throttle status.
+    description: Hardware component frequency throttle status.
     stability:
       level: development
     unit: "1"

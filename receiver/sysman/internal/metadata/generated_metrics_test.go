@@ -242,7 +242,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["hw.frequency.throttle_status"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "GPU frequency throttle status.", ms.At(i).Description())
+					assert.Equal(t, "Hardware component frequency throttle status.", ms.At(i).Description())
 					assert.Equal(t, "1", ms.At(i).Unit())
 					assert.False(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
