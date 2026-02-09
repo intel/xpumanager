@@ -5,7 +5,7 @@ status:
   stability:
     development: [metrics]
   codeowners:
-    active: [marquiz]
+    active: [marquiz, eero-t]
 
 sem_conv_version: 1.38.0
 
@@ -17,10 +17,10 @@ attributes:
       - min
       - max
       - avg
-  com.intel.gpu.speed.throttle_reason:
+  com.intel.speed.throttle_reason:
     description: Reason for GPU speed throttling.
     type: string
-  com.intel.gpu.subdevice_id:
+  com.intel.subdevice_id:
     description: Subdevice ID of the GPU.
     type: string
   hw.frequency.domain:
@@ -94,7 +94,7 @@ metrics:
     unit: "Hz"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, aggregation]
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.subdevice_id, aggregation]
   hw.frequency.limit:
     enabled: true
     description: Frequency limit in Hertz.
@@ -103,7 +103,7 @@ metrics:
     unit: "Hz"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, hw.limit_type]
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.subdevice_id, hw.limit_type]
   hw.frequency.request:
     enabled: true
     description: Requested operating frequency.
@@ -112,7 +112,7 @@ metrics:
     unit: "Hz"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id]
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.subdevice_id]
   hw.frequency.samples:
     enabled: true
     description: Number of frequency samples during the last collection interval.
@@ -121,7 +121,7 @@ metrics:
     unit: "{count}"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, sample.status]
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.subdevice_id, sample.status]
   hw.frequency.throttle_status:
     enabled: true
     description: GPU frequency throttle status.
@@ -132,7 +132,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.gpu.subdevice_id, com.intel.gpu.speed.throttle_reason]
+    attributes: [hw.id, hw.frequency.domain, hw.name, hw.parent, com.intel.subdevice_id, com.intel.speed.throttle_reason]
   hw.gpu.info:
     enabled: true
     description: Information about the GPU device.
@@ -154,7 +154,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.gpu.subdevice_id]
+    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
   hw.memory.usage:
     enabled: true
     description: Memory used.
@@ -165,7 +165,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.gpu.subdevice_id]
+    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
   hw.status:
     enabled: true
     description: The operational status of the hardware component.
@@ -176,7 +176,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.state, hw.name, hw.type, hw.parent, com.intel.gpu.subdevice_id]
+    attributes: [hw.id, hw.state, hw.name, hw.type, hw.parent, com.intel.subdevice_id]
   hw.temperature:
     enabled: true
     description: Temperature of the hardware component in degrees Celsius.
@@ -185,7 +185,7 @@ metrics:
     unit: "Cel"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, statistic, com.intel.gpu.subdevice_id]
+    attributes: [hw.id, hw.name, hw.parent, hw.sensor_location, statistic, com.intel.subdevice_id]
 
 tests:
   # TODO: explore using a stub l0 driver for enabling lifecycle tests (for
