@@ -125,7 +125,7 @@ func (d *DeviceInfo) collectPCIInfo(device *sysman.Device) {
 	if state, err := device.PciGetState(); err != nil {
 		d.recordError("PCI.GetState", err)
 	} else {
-		pciInfo.State = state
+		pciInfo.State = &state
 	}
 
 	if bars, err := device.PciGetBars(); err != nil {
@@ -137,7 +137,7 @@ func (d *DeviceInfo) collectPCIInfo(device *sysman.Device) {
 	if stats, err := device.PciGetStats(); err != nil {
 		d.recordError("PCI.GetStats", err)
 	} else {
-		pciInfo.Stats = stats
+		pciInfo.Stats = &stats
 	}
 
 	d.PCI = pciInfo

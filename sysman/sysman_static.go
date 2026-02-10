@@ -146,10 +146,10 @@ func (z *Device) PciGetProperties() (PciProperties, error) {
 
 // PciGetState wraps the zesDevicePciGetState function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetstate
-func (z *Device) PciGetState() (*PciState, error) {
+func (z *Device) PciGetState() (PciState, error) {
 	var state PciState
 	ret := zesDevicePciGetState(z.handle, &state)
-	return &state, ret.ToError()
+	return state, ret.ToError()
 }
 
 // PciGetBars wraps the zesDevicePciGetBars function:
@@ -166,10 +166,10 @@ func (z *Device) PciGetBars() ([]PciBarProperties, error) {
 
 // PciGetStats wraps the zesDevicePciGetStats function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetstats
-func (z *Device) PciGetStats() (*PciStats, error) {
+func (z *Device) PciGetStats() (PciStats, error) {
 	var stats PciStats
 	ret := zesDevicePciGetStats(z.handle, &stats)
-	return &stats, ret.ToError()
+	return stats, ret.ToError()
 }
 
 // SetOverclockWaiver wraps the zesDeviceSetOverclockWaiver function:
