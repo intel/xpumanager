@@ -141,6 +141,7 @@ Size of the memory.
 | Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
@@ -159,6 +160,7 @@ Memory used.
 | Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
