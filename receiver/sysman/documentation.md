@@ -123,6 +123,7 @@ Information about the GPU device.
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
 | hw.serial_number | Serial number of the hardware component. | Any Str | Recommended |
 | hw.vendor | Vendor name of the hardware component. | Any Str | Recommended |
+| hw.firmware_version | Firmware version of the hardware component. Comma-separated list of `<id>:<name>:<subdevice_id>:<version>`, where `<version>` is URL-encoded. | Any Str | Recommended |
 | pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | pci.device_id | PCI device ID of the device. | Any Str | Recommended |
 | pci.vendor_id | PCI vendor ID of the device. | Any Str | Recommended |

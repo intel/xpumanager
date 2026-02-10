@@ -1,0 +1,62 @@
+//
+// Copyright (C) 2025 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package sysman
+
+import (
+	"strings"
+
+	"go.uber.org/zap"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
+)
+
+// NOTE: we don't register firmware as a subsystem (registerSubsystem())
+// because we don't expose any per-firmware metrics.
+
+type sysmanFirmware struct {
+	*l0sysman.Firmware
+	attributes firmwareAttributes
+}
+
+type firmwareAttributes struct {
+	firmwareName    string
+	firmwareVersion string
+	subdeviceId     string
+}
+
+func enumFirmwares(d *sysmanDevice) []*sysmanFirmware {
+	fws, err := d.EnumFirmwares()
+	if err != nil {
+		d.logger.Errorw("Failed to enumerate firmwares", zap.Error(err))
+		return nil
+	}
+	ret := make([]*sysmanFirmware, 0, len(fws))
+	for _, fw := range fws {
+		m, err := newSysmanFirmware(fw)
+		if err != nil {
+			d.logger.Errorw("Failed to create Sysman firmware", zap.Error(err))
+			continue
+		}
+		ret = append(ret, m)
+	}
+	return ret
+}
+
+func newSysmanFirmware(fw *l0sysman.Firmware) (*sysmanFirmware, error) {
+	props, err := fw.GetProperties()
+	if err != nil {
+		return nil, err
+	}
+
+	return &sysmanFirmware{
+		Firmware: fw,
+		attributes: firmwareAttributes{
+			firmwareName:    strings.ToLower(props.Name.String()),
+			firmwareVersion: props.Version.String(),
+			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+		},
+	}, nil
+}

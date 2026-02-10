@@ -23,6 +23,9 @@ attributes:
   com.intel.subdevice_id:
     description: Subdevice ID of the hardware component.
     type: string
+  hw.firmware_version:
+    description: Firmware version of the hardware component. Comma-separated list of `<id>:<name>:<subdevice_id>:<version>`, where `<version>` is URL-encoded.
+    type: string
   hw.frequency.domain:
     description: The frequency domain (gpu, memory, media...).
     type: string
@@ -143,7 +146,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, pci.bdf, pci.device_id, pci.vendor_id]
+    attributes: [hw.id, hw.model, hw.name, hw.serial_number, hw.vendor, hw.firmware_version, pci.bdf, pci.device_id, pci.vendor_id]
   hw.memory.size:
     enabled: true
     description: Size of the memory.
