@@ -5,7 +5,24 @@ on:
   pull_request:
     branches: [new_xpum]
     types: [opened, reopened, synchronize]
+  workflow_dispatch:
+
 jobs:
+  clean-cache:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, xpum-linux-runner]
+    timeout-minutes: 10
+    steps:
+      - name: Clean Conan cache
+        run: |
+          CACHE_ROOT="$HOME/.conan_cache"
+          if [ -d "$CACHE_ROOT" ]; then
+            echo "Cleaning Conan cache at $CACHE_ROOT"
+            rm -rf "$CACHE_ROOT"
+            echo "Cache cleaned successfully"
+          else
+            echo "Cache directory does not exist: $CACHE_ROOT"
+          fi
   build:
     runs-on: [self-hosted, xpum-linux-runner]
     timeout-minutes: 60
@@ -53,13 +70,13 @@ jobs:
             coverage: false
             env_vars: TSAN_OPTIONS=halt_on_error=1
             upload_artifacts: false
-    env:
-      CONAN_USER_HOME: ${{ github.workspace }}/.conan_cache_${{ matrix.build_type.name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Setup Python environment
         run: |
+          # Set Conan cache to persistent location
+          echo "CONAN_USER_HOME=$HOME/.conan_cache/${{ matrix.build_type.name }}" >> $GITHUB_ENV
           # Create venv if not exists
           if [ ! -d "$HOME/.ci-venv" ]; then
             python3 -m venv $HOME/.ci-venv

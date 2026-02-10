@@ -7,8 +7,26 @@ on:
   pull_request:
     branches: ['new_xpum']
     types: [opened, reopened, synchronize]
+  workflow_dispatch:
 
 jobs:
+  clean-cache:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, windows, xpum-windows-runner]
+    timeout-minutes: 10
+    steps:
+      - name: Clean Conan cache
+        shell: powershell
+        run: |
+          $cacheRoot = "C:\actions-runner-cache\conan"
+          if (Test-Path $cacheRoot) {
+            Write-Host "Cleaning all Conan caches at $cacheRoot"
+            Remove-Item -Recurse -Force $cacheRoot
+            Write-Host "Cache cleaned successfully"
+          } else {
+            Write-Host "Cache directory does not exist: $cacheRoot"
+          }
+
   build-windows:
     runs-on: [self-hosted, windows, xpum-windows-runner]
     timeout-minutes: 45
@@ -18,7 +36,6 @@ jobs:
       http_proxy: "http://proxy-chain.intel.com:912"
       socks_proxy: "http://proxy-us.intel.com:1080"
       ftp_proxy: "http://proxy-chain.intel.com:912"
-      CONAN_USER_HOME: ${{ github.workspace }}\.conan_cache_${{ matrix.build_type }}
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +69,20 @@ jobs:
       - name: Install Conan dependencies
         shell: powershell
         run: |
+          # Set Conan cache location for this runner and persist it (Conan 2.x uses CONAN_HOME)
+          $conanHome = "C:\actions-runner-cache\conan\${{ runner.name }}\${{ matrix.build_type }}"
+          $env:CONAN_HOME = $conanHome
+          echo "CONAN_HOME=$conanHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Using Conan cache at: $conanHome"
+          
+          # Verify Conan recognizes the new home
+          $conanHomeCheck = conan config home
+          Write-Host "Conan reports home as: $conanHomeCheck"
+          
+          # Create the directory if it doesn't exist
+          New-Item -ItemType Directory -Force -Path $conanHome | Out-Null
+          
+          # Detect profile - force it to use the new location
           conan profile detect --force
           # Create custom packages
           conan create recipes/level-zero --name=level-zero --version=1.23.1 `
@@ -60,6 +91,7 @@ jobs:
             -s compiler=msvc `
             -s compiler.cppstd=20 `
             -s compiler.runtime=dynamic `
+            -s compiler.runtime_type=${{ matrix.build_type }} `
             -s compiler.version=194 `
             -s os=Windows `
             -s:b compiler.cppstd=20 `
@@ -70,6 +102,7 @@ jobs:
             -s compiler=msvc `
             -s compiler.cppstd=20 `
             -s compiler.runtime=dynamic `
+            -s compiler.runtime_type=${{ matrix.build_type }} `
             -s compiler.version=194 `
             -s os=Windows `
             -s:b compiler.cppstd=20 `
@@ -80,6 +113,7 @@ jobs:
             -s compiler=msvc `
             -s compiler.cppstd=20 `
             -s compiler.runtime=dynamic `
+            -s compiler.runtime_type=${{ matrix.build_type }} `
             -s compiler.version=194 `
             -s os=Windows `
             -s:b compiler.cppstd=20 `
@@ -90,6 +124,7 @@ jobs:
             -s compiler=msvc `
             -s compiler.cppstd=20 `
             -s compiler.runtime=dynamic `
+            -s compiler.runtime_type=${{ matrix.build_type }} `
             -s compiler.version=194 `
             -s os=Windows `
             -s:b compiler.cppstd=20 `
