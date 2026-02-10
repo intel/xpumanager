@@ -62,11 +62,13 @@ PsTextPrinter::PsTextPrinter() : TextPrinter() {}
  */
 void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 {
-	PRINT("PID       Command             DeviceID       SHR            MEM\n");
-	for (auto &item : jsonObj->items()) {
-		PRINT("%-9u %-19s %-14u %-14" PRIu64 " %-14" PRIu64 "\n", item.value()["process_id"].get<uint32_t>(),
-			  item.value()["process_name"].get<std::string>().c_str(), item.value()["device_id"].get<uint32_t>(),
-			  item.value()["shared_mem_size"].get<uint64_t>(), item.value()["mem_size"].get<uint64_t>());
+	if (jsonObj->contains("device_util_by_proc_list")) {
+		PRINT("PID       Command             DeviceID       SHR            MEM\n");
+		for (auto &item : (*jsonObj)["device_util_by_proc_list"]) {
+			PRINT("%-9u %-19s %-14u %-14" PRIu64 " %-14" PRIu64 "\n", item["process_id"].get<uint32_t>(),
+				  item["process_name"].get<std::string>().c_str(), item["device_id"].get<uint32_t>(),
+				  item["shared_mem_size"].get<uint64_t>(), item["mem_size"].get<uint64_t>());
+		}
 	}
 }
 
@@ -79,10 +81,8 @@ void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
  */
 void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
-	if (jsonObj->contains("device_list")) {
-		for (auto &devJsonObj : (*jsonObj)["device_list"]) {
-			printDeviceInfo(&devJsonObj);
-		}
+	if (jsonObj->contains("error")) {
+		PRINT("Error: %s\n", (*jsonObj)["error"].get<std::string>().c_str());
 	} else {
 		printDeviceInfo(jsonObj);
 	}
@@ -202,15 +202,21 @@ int cmdPs::run(arg_struct *args)
 	}
 
 	std::vector<psInfo> psInfoList;
-	for (const auto &dev : deviceList) {
-		result = getProcessList(&dev, psInfoList);
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+
+	if (!deviceList.empty()) {
+		for (const auto &dev : deviceList) {
+			result = getProcessList(&dev, psInfoList);
+		}
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get process information. Returned with error: %d\n", result);
+			return result;
+		}
+		(*jsonObj)["device_util_by_proc_list"] = psInfoList;
+	} else {
+		(*jsonObj)["error"] = "device not found";
+		(*jsonObj)["errno"] = ZE_RESULT_ERROR_UNINITIALIZED;
 	}
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get process information. Returned with error: %d\n", result);
-		return result;
-	}
-	auto jsonObj =
-		std::make_unique<nlohmann::ordered_json>(nlohmann::ordered_json{{"device_util_by_proc_list", psInfoList}});
 
 	if (psCmds[psCmdType::PS_JSON].enabled == true) {
 		printer = std::make_unique<JsonPrinter>();

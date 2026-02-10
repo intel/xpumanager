@@ -120,7 +120,9 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
  */
 void HealthTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
-	if (jsonObj->contains("device_list")) {
+	if (jsonObj->contains("error")) {
+		PRINT("Error: %s\n", (*jsonObj)["error"].get<std::string>().c_str());
+	} else if (jsonObj->contains("device_list")) {
 		for (auto &device : (*jsonObj)["device_list"]) {
 			printDeviceInfo(&device);
 		}
@@ -821,26 +823,42 @@ int cmdHealth::run(arg_struct *args)
 		return ZE_RESULT_SUCCESS;
 	}
 
+	if (healthCmds[healthCmdType::HEALTH_JSON].enabled == true) {
+		printer = std::make_unique<JsonPrinter>();
+	} else {
+		printer = std::make_unique<HealthTextPrinter>();
+	}
+	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	// user must specify a device ID or PCI BDF address
 	if (!healthCmds[healthCmdType::HEALTH_LIST].enabled && !healthCmds[healthCmdType::HEALTH_DEVICE].enabled) {
-		ERR("You must specify a device ID or PCI BDF address with the -d option.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		result = ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		std::string err = "Wrong argument or unknown operation, run with --help for more information.";
+		DBG("Error: %s\n", err.c_str());
+		(*jsonObj)["error"] = err;
+		(*jsonObj)["errno"] = result;
+		printer->print(jsonObj.get());
+		return result;
 	}
 
 	// Find the device based on the provided device ID or PCI BDF address
 	result = args->sm.findDevice(healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n",
+	if (result != ZE_RESULT_SUCCESS || deviceList.empty()) {
+		DBG("Error: Device handle not found for device ID '%s'.\n",
 			healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str());
+		(*jsonObj)["error"] = "device not found";
+		(*jsonObj)["errno"] = ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		printer->print(jsonObj.get());
 		return result;
 	}
 
-	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	if (healthCmds[healthCmdType::HEALTH_LIST].enabled) {
 		// List all devices
 		result = this->allComponentsAllDevices(&deviceList, jsonObj.get());
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Error: Unable to retrieve health info for devices.\n");
+			std::string err = "Unable to retrieve health info for devices.";
+			DBG("Error: %s\n", err.c_str());
+			(*jsonObj)["error"] = err;
+			(*jsonObj)["errno"] = result;
 		}
 	} else {
 		for (auto &device : deviceList) {
@@ -855,14 +873,7 @@ int cmdHealth::run(arg_struct *args)
 		}
 	}
 
-	if (healthCmds[healthCmdType::HEALTH_JSON].enabled == true) {
-		printer = std::make_unique<JsonPrinter>();
-	} else {
-		printer = std::make_unique<HealthTextPrinter>();
-	}
-	if (result == ZE_RESULT_SUCCESS) {
-		printer->print(jsonObj.get());
-	}
+	printer->print(jsonObj.get());
 
 	return result;
 }
