@@ -6,6 +6,7 @@
 package exporter
 
 import (
+	"cmp"
 	"maps"
 	"slices"
 	"strings"
@@ -20,8 +21,10 @@ import (
 type metricsTranslator struct {
 	logger *zap.SugaredLogger
 	resp   map[string]*pb.DeviceHealth
-	// health is a helper for quick'n'easy lookups
+
+	// helpers for quick'n'easy lookups
 	health map[string]domainHealth
+	memory map[string][]*pb.MemoryInfo
 }
 
 type domainHealth map[string]*pb.HealthStatus
@@ -31,6 +34,7 @@ func newMetricsTranslator(logger *zap.SugaredLogger) *metricsTranslator {
 		logger: logger,
 		resp:   make(map[string]*pb.DeviceHealth),
 		health: make(map[string]domainHealth),
+		memory: make(map[string][]*pb.MemoryInfo),
 	}
 }
 
@@ -47,6 +51,7 @@ func (t *metricsTranslator) translate(md pmetric.Metrics) *pb.DeviceHealthRespon
 	}
 
 	t.fillHealthData()
+	t.fillMemoryData()
 
 	devices := make([]*pb.DeviceHealth, len(t.resp))
 
@@ -74,6 +79,26 @@ func (t *metricsTranslator) fillHealthData() {
 	}
 }
 
+func (t *metricsTranslator) fillMemoryData() {
+	for id, memList := range t.memory {
+		resp := t.resp[id]
+		if resp == nil {
+			t.logger.Errorw("no metadata for device, likely not a GPU, skipping...", "hw.id", id)
+			continue
+		}
+
+		// Sort for reproducibility (data is aggregated by type and subdevice ID)
+		slices.SortFunc(memList, func(a, b *pb.MemoryInfo) int {
+			return cmp.Or(
+				cmp.Compare(a.Type, b.Type),
+				cmp.Compare(a.SubdeviceId, b.SubdeviceId),
+			)
+		})
+
+		resp.Info.Memory = memList
+	}
+}
+
 func (t *metricsTranslator) processMetric(metric pmetric.Metric) {
 	var dps pmetric.NumberDataPointSlice
 
@@ -91,6 +116,8 @@ func (t *metricsTranslator) processMetric(metric pmetric.Metric) {
 		t.updateMetadata(name, dps)
 	case "hw.status":
 		t.updateHealthStatus(name, dps)
+	case "hw.memory.size":
+		t.updateMemoryInfo(name, dps)
 	}
 }
 
@@ -303,4 +330,63 @@ func hwStatusToHealthStatus(hwType, state string) healthStatus {
 	default:
 		return defaultHealthTranslator.translate(state)
 	}
+}
+
+func (t *metricsTranslator) updateMemoryInfo(metricName string, dps pmetric.NumberDataPointSlice) {
+	for _, dp := range dps.All() {
+		attrs := dp.Attributes()
+
+		// Filter for on-device memory only
+		memLocationVal, _ := attrs.Get("hw.memory.location")
+		if memLocationVal.Str() != "device" {
+			continue
+		}
+
+		hwParentVal, _ := attrs.Get("hw.parent")
+		id := hwParentVal.Str()
+		if id == "" {
+			t.logger.Warnw("missing or empty hw.parent attribute", "metric", metricName, "attributes", attrs.AsRaw())
+			continue
+		}
+
+		var size int64
+		switch dp.ValueType() {
+		case pmetric.NumberDataPointValueTypeInt:
+			size = dp.IntValue()
+		case pmetric.NumberDataPointValueTypeDouble:
+			size = int64(dp.DoubleValue())
+		default:
+			t.logger.Errorw("unexpected data point value type for memory size metric", "valueType", dp.ValueType(), "metric", metricName, "attributes", attrs.AsRaw())
+			continue
+		}
+
+		if size < 0 {
+			t.logger.Warnw("negative memory size value, skipped", "value", size, "metric", metricName, "attributes", attrs.AsRaw())
+			continue
+		}
+
+		memTypeVal, _ := attrs.Get("hw.memory.type")
+		subdeviceIdVal, _ := attrs.Get("subdevice_id")
+
+		t.aggregateMemoryInfo(id, memTypeVal.Str(), subdeviceIdVal.Str(), uint64(size))
+	}
+}
+
+func (t *metricsTranslator) aggregateMemoryInfo(deviceID, memType, subdeviceId string, size uint64) {
+	memList := t.memory[deviceID]
+
+	// Find existing entry with matching type and subdevice_id
+	for _, mem := range memList {
+		if mem.Type == memType && mem.SubdeviceId == subdeviceId {
+			mem.Size += size
+			return
+		}
+	}
+
+	// Create new entry
+	t.memory[deviceID] = append(memList, &pb.MemoryInfo{
+		Type:        memType,
+		SubdeviceId: subdeviceId,
+		Size:        size,
+	})
 }
