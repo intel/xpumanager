@@ -32,6 +32,9 @@ attributes:
   hw.limit_type:
     description: Type of limit.
     type: string
+  hw.memory.location:
+    description: Location of the memory (device, system...).
+    type: string
   hw.memory.type:
     description: Type of the memory.
     type: string
@@ -154,7 +157,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
+    attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
   hw.memory.usage:
     enabled: true
     description: Memory used.
@@ -165,7 +168,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
+    attributes: [hw.id, hw.memory.location, hw.memory.type, hw.name, hw.parent, com.intel.subdevice_id]
   hw.status:
     enabled: true
     description: The operational status of the hardware component.

@@ -38,7 +38,7 @@ type memoryAttributes struct {
 	hwName         string
 	hwParent       string
 	memoryType     string
-	sensorLocation string
+	memoryLocation string
 	subdeviceId    string
 }
 
@@ -68,7 +68,7 @@ func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*
 	}
 
 	return &sysmanMemory{
-		Memory:    mem,
+		Memory: mem,
 		logger: device.logger,
 		state: sysmanMemoryState{
 			healthStatesSeen: make(map[l0sysman.MemHealth]bool),
@@ -79,7 +79,7 @@ func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*
 			hwName:         name,
 			hwParent:       device.attributes.hwID,
 			memoryType:     strings.ToLower(props.Type.String()),
-			sensorLocation: strings.ToLower(props.Location.String()),
+			memoryLocation: strings.ToLower(props.Location.String()),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 	}, nil
@@ -94,6 +94,7 @@ func (m *sysmanMemory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 
 	mb.RecordHwMemorySizeDataPoint(ts, int64(state.Size),
 		m.attributes.hwID,
+		m.attributes.memoryLocation,
 		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,
@@ -102,6 +103,7 @@ func (m *sysmanMemory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 
 	mb.RecordHwMemoryUsageDataPoint(ts, int64(state.Size-state.Free),
 		m.attributes.hwID,
+		m.attributes.memoryLocation,
 		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,

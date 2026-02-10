@@ -84,11 +84,11 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -324,6 +324,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.memory.type")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
@@ -353,6 +356,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.memory.type")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.memory.type-val", attrVal.Str())

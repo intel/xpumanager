@@ -538,7 +538,7 @@ func (m *metricHwMemorySize) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -547,6 +547,7 @@ func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
 	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
@@ -596,7 +597,7 @@ func (m *metricHwMemoryUsage) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -605,6 +606,7 @@ func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommo
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
 	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
@@ -934,13 +936,13 @@ func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int
 }
 
 // RecordHwMemorySizeDataPoint adds a data point to hw.memory.size metric.
-func (mb *MetricsBuilder) RecordHwMemorySizeDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemorySize.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemorySizeDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+	mb.metricHwMemorySize.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
 }
 
 // RecordHwMemoryUsageDataPoint adds a data point to hw.memory.usage metric.
-func (mb *MetricsBuilder) RecordHwMemoryUsageDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemoryUsage.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemoryUsageDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+	mb.metricHwMemoryUsage.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
 }
 
 // RecordHwStatusDataPoint adds a data point to hw.status metric.
