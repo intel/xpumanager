@@ -35,7 +35,8 @@ FROM ubuntu:24.04 AS final
 
 COPY --from=builder /debs /debs
 RUN apt-get update && \
-    apt-get install -y /debs/*.deb && \
+    # Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
+    apt-get install -y /debs/*.deb libnl-genl-3-200 && \
     rm -rf /debs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
