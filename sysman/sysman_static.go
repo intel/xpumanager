@@ -9,6 +9,7 @@ package sysman
 
 import (
 	"math"
+	"runtime"
 	"time"
 	"unsafe"
 
@@ -90,8 +91,20 @@ func (z *Driver) EventListenEx(timeout time.Duration, devices []*Device) (uint32
 // GetProperties wraps the zesDeviceGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicegetproperties
 func (z *Device) GetProperties() (DeviceProperties, error) {
-	var props DeviceProperties
-	ret := zesDeviceGetProperties(z.handle, &props)
+	props := DeviceProperties{
+		DeviceExtProperties: DeviceExtProperties{
+			stype: _STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES,
+		},
+	}
+
+	var pinner runtime.Pinner
+	pinner.Pin(&props.DeviceExtProperties)
+	defer pinner.Unpin()
+
+	props.DeviceBaseProperties.pnext = unsafe.Pointer(&props.DeviceExtProperties)
+
+	ret := zesDeviceGetProperties(z.handle, &props.DeviceBaseProperties)
+
 	return props, ret.ToError()
 }
 
@@ -240,10 +253,22 @@ func (z *Device) EccConfigurable() (bool, error) {
 
 // GetEccState wraps the zesDeviceGetEccState function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicegeteccstate
-func (z *Device) GetEccState() (DeviceEccProperties, error) {
-	var state DeviceEccProperties
-	ret := zesDeviceGetEccState(z.handle, &state)
-	return state, ret.ToError()
+func (z *Device) GetEccState() (EccProperties, error) {
+	props := EccProperties{
+		ExtendedProperties: &DeviceEccDefaultPropertiesExt{
+			stype: _STRUCTURE_TYPE_DEVICE_ECC_DEFAULT_PROPERTIES_EXT,
+		},
+	}
+
+	var pinner runtime.Pinner
+	pinner.Pin(props.ExtendedProperties)
+	defer pinner.Unpin()
+
+	props.DeviceEccProperties.pnext = unsafe.Pointer(props.ExtendedProperties) //nolint:staticcheck // could remove embedded field from selector
+
+	ret := zesDeviceGetEccState(z.handle, &props.DeviceEccProperties)
+
+	return props, ret.ToError()
 }
 
 // SetEccState wraps the zesDeviceSetEccState function:
@@ -415,8 +440,20 @@ func (z *Device) EnumEngineGroups() ([]*Engine, error) {
 // GetProperties wraps the zesEngineGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesenginegetproperties
 func (z *Engine) GetProperties() (EngineProperties, error) {
-	var props EngineProperties
-	ret := zesEngineGetProperties(z.handle, &props)
+	props := EngineProperties{
+		ExtendedProperties: &EngineExtProperties{
+			stype: _STRUCTURE_TYPE_ENGINE_EXT_PROPERTIES,
+		},
+	}
+
+	pinner := runtime.Pinner{}
+	pinner.Pin(props.ExtendedProperties)
+	defer pinner.Unpin()
+
+	props.EngineBaseProperties.pnext = unsafe.Pointer(props.ExtendedProperties) //nolint:staticcheck // could remove embedded field from selector
+
+	ret := zesEngineGetProperties(z.handle, &props.EngineBaseProperties)
+
 	return props, ret.ToError()
 }
 
@@ -816,8 +853,20 @@ func (z *Device) EnumPowerDomains() ([]*Power, error) {
 // GetProperties wraps the zesPowerGetProperties function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetproperties
 func (z *Power) GetProperties() (PowerProperties, error) {
-	var props PowerProperties
-	ret := zesPowerGetProperties(z.handle, &props)
+	props := PowerProperties{
+		ExtendedProperties: &PowerExtProperties{
+			stype: _STRUCTURE_TYPE_POWER_EXT_PROPERTIES,
+		},
+	}
+
+	pinner := runtime.Pinner{}
+	pinner.Pin(props.ExtendedProperties)
+	defer pinner.Unpin()
+
+	props.PowerBaseProperties.pnext = unsafe.Pointer(props.ExtendedProperties) //nolint:staticcheck // could remove embedded field from selector
+
+	ret := zesPowerGetProperties(z.handle, &props.PowerBaseProperties)
+
 	return props, ret.ToError()
 }
 

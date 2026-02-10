@@ -121,11 +121,9 @@ type Uuid struct {
 	Id uuid.UUID
 }
 
-// DeviceProperties declared in:
+// DeviceBaseProperties is the device properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
-//
-// Device properties.
-type DeviceProperties struct {
+type DeviceBaseProperties struct {
 	stype         structureType
 	pnext         unsafe.Pointer
 	Core          core.DeviceProperties
@@ -360,11 +358,9 @@ type DeviceEccProperties struct {
 	_             [4]byte
 }
 
-// EngineProperties declared in:
+// EngineBaseProperties is the engine properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
-//
-// Engine group properties.
-type EngineProperties struct {
+type EngineBaseProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
 	Type        EngineGroup
@@ -732,11 +728,9 @@ type PerfProperties struct {
 	_           [4]byte
 }
 
-// PowerProperties declared in:
+// PowerBaseProperties is the power properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-properties-t
-//
-// Properties related to device power settings.
-type PowerProperties struct {
+type PowerBaseProperties struct {
 	stype                      structureType
 	pnext                      unsafe.Pointer
 	OnSubdevice                uint8

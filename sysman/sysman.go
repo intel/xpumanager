@@ -60,7 +60,7 @@ func zesDeviceGet(HDriver driverHandle, PCount *uint32, PhDevices []deviceHandle
 }
 
 // zesDeviceGetProperties function as declared in level-zero/zes_api.h:965
-func zesDeviceGetProperties(HDevice deviceHandle, PProperties *DeviceProperties) core.Result {
+func zesDeviceGetProperties(HDevice deviceHandle, PProperties *DeviceBaseProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_device_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
 	__ret := C.zesDeviceGetProperties(cHDevice, cPProperties)
@@ -382,7 +382,7 @@ func zesDeviceEnumEngineGroups(HDevice deviceHandle, PCount *uint32, PhEngine []
 }
 
 // zesEngineGetProperties function as declared in level-zero/zes_api.h:2511
-func zesEngineGetProperties(HEngine engineHandle, PProperties *EngineProperties) core.Result {
+func zesEngineGetProperties(HEngine engineHandle, PProperties *EngineBaseProperties) core.Result {
 	cHEngine, _ := *(*C.zes_engine_handle_t)(unsafe.Pointer(&HEngine)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_engine_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
 	__ret := C.zesEngineGetProperties(cHEngine, cPProperties)
@@ -826,7 +826,7 @@ func zesDeviceEnumPowerDomains(HDevice deviceHandle, PCount *uint32, PhPower []p
 }
 
 // zesPowerGetProperties function as declared in level-zero/zes_api.h:5141
-func zesPowerGetProperties(HPower pwrHandle, PProperties *PowerProperties) core.Result {
+func zesPowerGetProperties(HPower pwrHandle, PProperties *PowerBaseProperties) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_power_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
 	__ret := C.zesPowerGetProperties(cHPower, cPProperties)

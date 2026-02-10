@@ -44,7 +44,7 @@ structs:
         newType: DeviceType
       - name: Flags
         newType: DevicePropertyFlags
-  - name: DeviceProperties
+  - name: DeviceBaseProperties
     fields:
       - name: Core
         newType: core.DeviceProperties
@@ -87,7 +87,7 @@ structs:
       - name: Name
         typeAssert: "[256]int8"
         newType: core.StringProperty256
-  - name: EngineProperties
+  - name: EngineBaseProperties
     fields:
       - name: Type
         newType: EngineGroup
@@ -231,6 +231,30 @@ types:
     newComment: |-
       {{ .Name }} declared in:
       https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: DeviceBaseProperties
+    newComment: |-
+      DeviceBaseProperties is the device properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: EngineBaseProperties
+    newComment: |-
+      EngineBaseProperties is the engine properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: PowerBaseProperties
+    newComment: |-
+      PowerBaseProperties is the power properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-properties-t
       {{- with doxygen . }}
 
       {{ . }}
