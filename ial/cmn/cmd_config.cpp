@@ -10,6 +10,8 @@
 #include <ecc.h>
 #include <fabric.h>
 #include <frequency.h>
+#include <diagnostic.h>
+#include <memory.h>
 #include <nlohmann/json.hpp>
 #include <power.h>
 #include <scheduler.h>
@@ -21,6 +23,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cmath>
+#include <cstdlib>
 
 // Conversion factors
 constexpr uint64_t W_TO_MW = 1000;
@@ -46,7 +49,7 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	 {{"pciedowngrade", required_argument, 0, 0}, &cmdConfig::setPCIeGenUpdate, false, ""}},
 	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
 	{configCmdType::PPR, {{"ppr", no_argument, 0, 0}, &cmdConfig::applyPpr, false, ""}},
-	{configCmdType::FORCE, {{"force", no_argument, 0, 0}, &cmdConfig::forcePpr, false, ""}},
+	{configCmdType::FORCE, {{"force", no_argument, 0, 0}, nullptr, false, ""}},
 	{configCmdType::POWERTYPE, {{"powertype", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
@@ -93,6 +96,141 @@ static std::string joinRoundedClocks(const std::vector<double> &values)
 	std::sort(rounded.begin(), rounded.end());
 	rounded.erase(std::unique(rounded.begin(), rounded.end()), rounded.end());
 	return joinUint32(rounded);
+}
+
+/**
+ * @brief Converts diagnostic result enum to human-readable string.
+ *
+ * @param[in] val Diagnostic result enum.
+ * @return std::string Diagnostic result string.
+ */
+static std::string diagResultToString(zes_diag_result_t val)
+{
+	switch (val) {
+	case ZES_DIAG_RESULT_NO_ERRORS:
+		return std::string("No error");
+	case ZES_DIAG_RESULT_ABORT:
+		return std::string("Abort");
+	case ZES_DIAG_RESULT_FAIL_CANT_REPAIR:
+		return std::string("Fail cant repair ");
+	case ZES_DIAG_RESULT_REBOOT_FOR_REPAIR:
+		return std::string("reboot for repair");
+	case ZES_DIAG_RESULT_FORCE_UINT32:
+		return std::string("Force uint32");
+	default:
+		return std::string("Unknown");
+	}
+}
+
+/**
+ * @brief Converts diagnostic result enum to detailed description.
+ *
+ * @param[in] val Diagnostic result enum.
+ * @return std::string Diagnostic result description.
+ */
+static std::string diagResultToDescription(zes_diag_result_t val)
+{
+	switch (val) {
+	case ZES_DIAG_RESULT_NO_ERRORS:
+		return std::string("Diagnostic completed without finding errors to repair.");
+	case ZES_DIAG_RESULT_ABORT:
+		return std::string("Diagnostic had problems running tests.");
+	case ZES_DIAG_RESULT_FAIL_CANT_REPAIR:
+		return std::string("Diagnostic had problems setting up repairs.");
+	case ZES_DIAG_RESULT_REBOOT_FOR_REPAIR:
+		return std::string(
+			"Diagnostics found errors, setup for repair and reboot is required to complete the process.");
+	case ZES_DIAG_RESULT_FORCE_UINT32:
+		return std::string("");
+	default:
+		return std::string("Unknown");
+	}
+}
+
+/**
+ * @brief Converts memory health enum to legacy CLI status string.
+ *
+ * @param[in] val Memory health enum.
+ * @return std::string Memory health status string.
+ */
+static std::string memoryHealthToString(zes_mem_health_t val)
+{
+	switch (val) {
+	case ZES_MEM_HEALTH_OK:
+		return std::string("OK");
+	case ZES_MEM_HEALTH_DEGRADED:
+		return std::string("Warning");
+	case ZES_MEM_HEALTH_CRITICAL:
+		return std::string("Critical");
+	case ZES_MEM_HEALTH_REPLACE:
+		return std::string("Critical");
+	default:
+		return std::string("Unknown");
+	}
+}
+
+/**
+ * @brief Converts memory health enum to legacy CLI description string.
+ *
+ * @param[in] val Memory health enum.
+ * @return std::string Memory health description.
+ */
+static std::string memoryHealthToDescription(zes_mem_health_t val)
+{
+	switch (val) {
+	case ZES_MEM_HEALTH_UNKNOWN:
+		return std::string("The memory health cannot be determined.");
+	case ZES_MEM_HEALTH_OK:
+		return std::string("All memory channels are healthy.");
+	case ZES_MEM_HEALTH_DEGRADED:
+		return std::string("Excessive correctable errors have been detected on one or more channels. Please run "
+						   "\"config --ppr\" to recover this device memory.");
+	case ZES_MEM_HEALTH_CRITICAL:
+		return std::string("Operating with reduced memory to cover banks with too many uncorrectable errors.\nDevice "
+						   "should be replaced due to excessive uncorrectable errors.");
+	case ZES_MEM_HEALTH_REPLACE:
+		return std::string("Device should be replaced due to excessive uncorrectable errors.");
+	default:
+		return std::string("The memory health cannot be determined.");
+	}
+}
+
+/**
+ * @brief Finds PPR diagnostic test suite handle by name.
+ *
+ * @param[in] device ZES device handle.
+ * @param[out] pprSuite PPR diagnostic suite handle.
+ * @return ze_result_t Result of the operation.
+ */
+static ze_result_t findPprDiagSuite(zes_device_handle_t device, zes_diag_handle_t &pprSuite)
+{
+	pprSuite = nullptr;
+	uint32_t suiteCount = 0;
+	ze_result_t result = zesDeviceEnumDiagnosticTestSuites(device, &suiteCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || suiteCount == 0) {
+		return result;
+	}
+
+	std::vector<zes_diag_handle_t> suites(suiteCount);
+	result = zesDeviceEnumDiagnosticTestSuites(device, &suiteCount, suites.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	for (const auto &suite : suites) {
+		zes_diag_properties_t props = {};
+		props.stype = ZES_STRUCTURE_TYPE_DIAG_PROPERTIES;
+		result = zesDiagnosticsGetProperties(suite, &props);
+		if (result != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (std::string(props.name) == "MEMORY_PPR") {
+			pprSuite = suite;
+			return ZE_RESULT_SUCCESS;
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -1442,7 +1580,7 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 {
 	TRACING();
 
-	PRINT("Resetting GPU %u. This may take up to one minute...\n", d->index);
+	PRINT("It may take one minute to reset GPU %d. Please wait ...\n", d->index);
 
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -1450,7 +1588,8 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 		return result;
 	}
 
-	PRINT("Succeeded in resetting the GPU %u\n", d->index);
+	PRINT("Succeed to reset the GPU %d\n", d->index);
+	std::_Exit(0);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1461,12 +1600,86 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
  *
  * @return ze_result_t Result of the operation.
  */
-ze_result_t cmdConfig::applyPpr(UNUSED devInfo *d)
+ze_result_t cmdConfig::applyPpr(devInfo *d)
 {
 	TRACING();
 
-	PRINT("Applying PPR to GPU %u. This may take up to ten minutes...\n", d->index);
-	PRINT("PPR feature is not available on this platform\n");
+	PRINT("It may take ten minutes to apply PPR to GPU %d. Please wait ...\n", d->index);
+
+	bool force = configCmds[configCmdType::FORCE].enabled;
+
+	memory *mem = d->dev->getMemory();
+	if (mem == nullptr) {
+		ERR("Failed to get memory handle\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	zes_mem_health_t health = ZES_MEM_HEALTH_UNKNOWN;
+	ze_result_t result = mem->getMemoryHealth(&health);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get memory health: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (!force && health != ZES_MEM_HEALTH_DEGRADED) {
+		std::string memoryState = memoryHealthToString(health);
+		std::string explainStr;
+		if (memoryState.find("OK") != std::string::npos) {
+			explainStr = " PPR doesn't need to be run. If you must run PPR, please add the parameter --force.";
+		} else if (memoryState.find("Critical") != std::string::npos) {
+			explainStr = " PPR can't be Applied to this device. The card should be replaced. If you must run PPR, "
+						 "please add the parameter --force.";
+		} else if (memoryState.find("Unknown") != std::string::npos) {
+			explainStr = " Not sure if PPR can be applied. If you must run PPR, please add the parameter --force.";
+		}
+
+		PRINT("The memory status of GPU %d is %s.%s\n", d->index, memoryState.c_str(), explainStr.c_str());
+		return ZE_RESULT_SUCCESS;
+	}
+
+	diagnostic *diag = d->dev->getDiagnostic();
+	if (diag == nullptr) {
+		PRINT("Error: PPR is not supported on this device\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	zes_diag_handle_t pprSuite = nullptr;
+	result = findPprDiagSuite(d->zesDeviceHdl, pprSuite);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to enumerate diagnostic suites: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+	if (pprSuite == nullptr) {
+		PRINT("Error: PPR is not supported on this device\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	uint32_t testCount = 0;
+	result = zesDiagnosticsGetTests(pprSuite, &testCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS || testCount == 0) {
+		PRINT("Error: PPR is not supported on this device\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	zes_diag_result_t diagResult = ZES_DIAG_RESULT_NO_ERRORS;
+	result = zesDiagnosticsRunTests(pprSuite, 0, testCount, &diagResult);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to run PPR diagnostic tests: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	zes_mem_health_t healthAfter = ZES_MEM_HEALTH_UNKNOWN;
+	result = mem->getMemoryHealth(&healthAfter);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get memory health: 0x%X (%s)\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	PRINT("PPR has been successfully applied to the GPU %d.\n", d->index);
+	PRINT("PPR diag result: %s\n", diagResultToString(diagResult).c_str());
+	PRINT("PPR diag result description: %s\n", diagResultToDescription(diagResult).c_str());
+	PRINT("GPU %d memory status: %s\n", d->index, memoryHealthToString(healthAfter).c_str());
+	PRINT("Description: %s\n", memoryHealthToDescription(healthAfter).c_str());
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1580,6 +1793,33 @@ int cmdConfig::run(arg_struct *args)
 		return result;
 	}
 
+	if (configCmds[configCmdType::RESET].enabled) {
+		if (configCmds[configCmdType::TILE].enabled) {
+			ERR("Reset does not support tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (deviceList.size() != 1) {
+			ERR("Reset requires a single device ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (configCmds[configCmdType::FORCE].enabled && !configCmds[configCmdType::PPR].enabled) {
+		ERR("Force option requires --ppr.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (configCmds[configCmdType::PPR].enabled) {
+		if (configCmds[configCmdType::TILE].enabled) {
+			ERR("PPR does not support tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (deviceList.size() != 1) {
+			ERR("PPR requires a single device ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
 	// If this is query mode, display configuration
 	if (isQueryMode) {
 		if (configCmds[configCmdType::CONFIGJSON].enabled) {
@@ -1621,8 +1861,10 @@ int cmdConfig::run(arg_struct *args)
 						hadError = true;
 					}
 					// Continue processing other devices/commands instead of early return
-					ERR("Failed to apply configuration to GPU %u, continuing with remaining devices...\n",
-						device.index);
+					if (cmd.first != configCmdType::PPR) {
+						ERR("Failed to apply configuration to GPU %d, continuing with remaining devices...\n",
+							device.index);
+					}
 				}
 			}
 		}
