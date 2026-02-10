@@ -8,6 +8,7 @@ package exporter
 import (
 	"maps"
 	"slices"
+	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -127,7 +128,30 @@ func (t *metricsTranslator) updateMetadata(metricName string, dps pmetric.Number
 			DeviceId: pciDeviceIDVal.Str(),
 			VendorId: pciVendorIDVal.Str(),
 		}
+
+		fwVersionVal, _ := attrs.Get("hw.firmware_version")
+		resp.Info.Firmwares = t.parseFirmwares(fwVersionVal.Str())
 	}
+}
+
+func (t *metricsTranslator) parseFirmwares(fwVersionStr string) []*pb.FirmwareInfo {
+	var firmwares []*pb.FirmwareInfo
+	for _, fwEntry := range strings.Split(fwVersionStr, ",") {
+		if fwEntry == "" {
+			continue
+		}
+		fwParts := strings.SplitN(fwEntry, ":", 4)
+		if len(fwParts) != 4 {
+			t.logger.Errorw("unexpected firmware version format", "fwVersionStr", fwVersionStr)
+			continue
+		}
+		firmwares = append(firmwares, &pb.FirmwareInfo{
+			Name:        fwParts[1],
+			SubdeviceId: fwParts[2],
+			Version:     fwParts[3],
+		})
+	}
+	return firmwares
 }
 
 func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.NumberDataPointSlice) {

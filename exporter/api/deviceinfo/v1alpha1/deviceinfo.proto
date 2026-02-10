@@ -34,6 +34,7 @@ message DeviceInformation {
   string uuid = 1;
   string model = 2;
   PciInfo pci = 3;
+  repeated FirmwareInfo firmwares = 4;
 }
 
 // PCI information of the device.
@@ -41,6 +42,12 @@ message PciInfo {
   string bdf = 1;
   string device_id = 2;
   string vendor_id = 3;
+}
+
+message FirmwareInfo {
+  string name = 1;
+  string version = 2;
+  string subdevice_id = 3;
 }
 
 // Status of a health domain.
