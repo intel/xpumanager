@@ -56,7 +56,6 @@ COPY --from=builder /igsc-install/usr/local/lib /usr/local/lib
 RUN apt-get update && \
     # Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
     apt-get install -y libnl-genl-3-200 && \
-    rm -rf /debs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 CMD ["/usr/local/bin/list-sysman"]
