@@ -5,7 +5,7 @@ receivers:
     log_level: info
     # Metrics data collection interval.
     # Must be at least twice the sampling_interval.
-    collection_interval: 30s
+    collection_interval: 5s
     # Initial start delay for metrics collection, any non positive value is assumed to be immediately.
     initial_delay: 1s
     # Metrics collection timeout.
@@ -17,15 +17,6 @@ receivers:
     metrics:
 #      hw.memory.size:
 #        enabled: false
-
-
-exporters:
-  intelxpuinfo:
-    # Only unix domain socket is allowed.
-    # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
-    #endpoint: "/run/xpumd/intelxpuinfo.sock"
-  prometheus:
-    endpoint: "0.0.0.0:8080"
 
 processors:
   intelxpustatus:
@@ -80,9 +71,22 @@ processors:
             conditions:
               - value: 85.0
 
+exporters:
+  intelxpuinfo:
+    # Only unix domain socket is allowed.
+    # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
+    #endpoint: "/run/xpumd/intelxpuinfo.sock"
+  prometheus:
+    endpoint: "0.0.0.0:8080"
+
 extensions:
 
 service:
+  telemetry:
+    logs:
+      level: info
+      # TODO: enable before release
+      #disable_stacktrace: true
   pipelines:
     metrics:
       receivers: [intelxpu]
