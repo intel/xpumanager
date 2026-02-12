@@ -1146,6 +1146,29 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 }
 
 /**
+ * @brief free buffer and module resources
+ *
+ * This function properly frees input & output buffer and module resources.
+ *
+ * @param[in] context Level Zero context handle for the operation
+ * @param[in] inputAllocations pointer to the input buffers to be freed
+ * @param[in] outputAllocations pointer to the output buffers to be freed
+ * @param[in] moduleHandle Handle to the module to be destroyed
+ */
+void diagnostic::freeResources(ze_context_handle_t context, std::vector<uint8_t *> &inputAllocations,
+							   std::vector<uint8_t *> &outputAllocations, ze_module_handle_t moduleHandle)
+{
+	for (auto eachAllocation : inputAllocations) {
+		memoryFree(context, eachAllocation);
+	}
+	for (auto eachAllocation : outputAllocations) {
+		memoryFree(context, eachAllocation);
+	}
+	if (moduleHandle != NULL) {
+		moduleDestroy(moduleHandle);
+	}
+}
+/**
  * @brief performance memory allocation
  *
  * This function performance memory allocation test on the specified device using Level Zero APIs.
@@ -1167,115 +1190,129 @@ ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
 	uint32_t numberOfKernelArgs = 2;
 	uint32_t numberOfKernelsInModule = 10;
 
-	std::vector<float> memoryUseLevels = {0.1f, 0.5f, 0.9f, 1.0f};
+	constexpr float memoryUse = 0.1f;
 	std::vector<uint64_t> allocateSizes = {oneMB, oneGB};
 	std::vector<std::string> memoryTypes = {"DEVICE", "SHARED"};
 	ze_device_properties_t zeDevProp = {};
 	ze_context_handle_t context = d->dev->getContext();
 
-	for (auto &memoryUse : memoryUseLevels)
-		for (auto &allocateSize : allocateSizes)
-			for (auto &memoryType : memoryTypes) {
-				ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-				if (ret != ZE_RESULT_SUCCESS) {
-					ERR("Failed to get device properties : %s\n", l0_error_to_string(ret));
-					return ret;
-				}
-				uint64_t targetTestMemorySize = zeDevProp.maxMemAllocSize;
-				uint64_t hostMemorySize;
-
-				if (CHECKHOSTMEMORYSIZE(&hostMemorySize)) {
-					if (targetTestMemorySize > hostMemorySize) {
-						targetTestMemorySize = hostMemorySize;
-					}
-				}
-				uint64_t maxAllocationSize =
-					static_cast<uint64_t>(static_cast<float>(targetTestMemorySize) * memoryUse);
-				uint64_t oneCaseRequestedAllocationSize = allocateSize * numberOfKernelArgs;
-
-				if (oneCaseRequestedAllocationSize > maxAllocationSize) {
-					oneCaseRequestedAllocationSize = maxAllocationSize;
-				}
-				std::size_t allocationCount = oneCaseRequestedAllocationSize / (numberOfKernelArgs * sizeof(uint8_t));
-				std::uint64_t numberOfDispatch = maxAllocationSize / oneCaseRequestedAllocationSize;
-				std::vector<uint8_t *> inputAllocations;
-				std::vector<uint8_t *> outputAllocations;
-				std::vector<std::vector<uint8_t>> dataOutVector;
-				std::vector<std::string> testKernelNames;
-
-				for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
-					uint8_t *inputAllocation;
-					uint8_t *outputAllocation;
-					if (memoryType == "HOST") {
-						void *memoryInput = nullptr;
-						memoryAllocHost(context, allocationCount, 8, &memoryInput);
-						inputAllocation = (uint8_t *)memoryInput;
-						void *memoryOutput = nullptr;
-						memoryAllocHost(context, allocationCount, 8, &memoryOutput);
-						outputAllocation = (uint8_t *)memoryOutput;
-
-					} else if (memoryType == "DEVICE") {
-						void *memoryInput = nullptr;
-						memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryInput);
-						inputAllocation = (uint8_t *)memoryInput;
-						void *memoryOutput = nullptr;
-						memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
-						outputAllocation = (uint8_t *)memoryOutput;
-					} else {
-						void *memoryInput = nullptr;
-						memoryAllocShared(context, d->deviceHdl, allocationCount, 8, &memoryInput);
-						inputAllocation = (uint8_t *)memoryInput;
-
-						void *memoryOutput = nullptr;
-						memoryAllocShared(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
-						outputAllocation = (uint8_t *)memoryOutput;
-					}
-					inputAllocations.push_back(inputAllocation);
-					outputAllocations.push_back(outputAllocation);
-					std::vector<uint8_t> dataOut(allocationCount, 0);
-					dataOutVector.push_back(dataOut);
-					std::string kernelName;
-					kernelName = "test_device_memory" + std::to_string((dispatchId % numberOfKernelsInModule) + 1);
-					testKernelNames.push_back(kernelName);
-				}
-
-				std::vector<uint8_t> binaryFile;
-				ret = loadBinaryFile("test_multiple_memory_allocations.spv", &binaryFile);
-				ze_module_handle_t moduleHandle = nullptr;
-				ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
-				if (ret != ZE_RESULT_SUCCESS) {
-					ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
-					for (auto eachAllocation : inputAllocations) {
-						memoryFree(context, eachAllocation);
-					}
-					for (auto eachAllocation : outputAllocations) {
-						memoryFree(context, eachAllocation);
-					}
-					moduleDestroy(moduleHandle);
-					return ret;
-				}
-
-				ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
-												   testKernelNames, numberOfDispatch, allocationCount, context);
-				if (ret != ZE_RESULT_SUCCESS) {
-					ERR("Failed to run dispatch kernels for memory test : %s\n", l0_error_to_string(ret));
-					for (auto eachAllocation : inputAllocations) {
-						memoryFree(context, eachAllocation);
-					}
-					for (auto eachAllocation : outputAllocations) {
-						memoryFree(context, eachAllocation);
-					}
-					moduleDestroy(moduleHandle);
-					return ret;
-				}
-				for (auto eachAllocation : inputAllocations) {
-					memoryFree(context, eachAllocation);
-				}
-				for (auto eachAllocation : outputAllocations) {
-					memoryFree(context, eachAllocation);
-				}
-				moduleDestroy(moduleHandle);
+	for (auto &allocateSize : allocateSizes) {
+		for (auto &memoryType : memoryTypes) {
+			ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+			if (ret != ZE_RESULT_SUCCESS) {
+				ERR("Failed to get device properties : %s\n", l0_error_to_string(ret));
+				return ret;
 			}
+			uint64_t targetTestMemorySize = zeDevProp.maxMemAllocSize;
+			uint64_t hostMemorySize;
+
+			if (CHECKHOSTMEMORYSIZE(&hostMemorySize)) {
+				if (targetTestMemorySize > hostMemorySize) {
+					targetTestMemorySize = hostMemorySize;
+				}
+			}
+			uint64_t maxAllocationSize = static_cast<uint64_t>(static_cast<float>(targetTestMemorySize) * memoryUse);
+			uint64_t oneCaseRequestedAllocationSize = allocateSize * numberOfKernelArgs;
+
+			if (oneCaseRequestedAllocationSize > maxAllocationSize) {
+				oneCaseRequestedAllocationSize = maxAllocationSize;
+			}
+			if (oneCaseRequestedAllocationSize == 0) {
+				return ZE_RESULT_ERROR_INVALID_SIZE;
+			}
+			std::size_t allocationCount = oneCaseRequestedAllocationSize / (numberOfKernelArgs * sizeof(uint8_t));
+			std::uint64_t numberOfDispatch = maxAllocationSize / oneCaseRequestedAllocationSize;
+			std::vector<uint8_t *> inputAllocations;
+			std::vector<uint8_t *> outputAllocations;
+			std::vector<std::vector<uint8_t>> dataOutVector;
+			std::vector<std::string> testKernelNames;
+
+			for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
+				uint8_t *inputAllocation;
+				uint8_t *outputAllocation;
+				if (memoryType == "HOST") {
+					void *memoryInput = nullptr;
+					ret = memoryAllocHost(context, allocationCount, 8, &memoryInput);
+					if (ret != ZE_RESULT_SUCCESS) {
+						freeResources(context, inputAllocations, outputAllocations, NULL);
+						return ret;
+					}
+					inputAllocation = (uint8_t *)memoryInput;
+					void *memoryOutput = nullptr;
+					ret = memoryAllocHost(context, allocationCount, 8, &memoryOutput);
+					if (ret != ZE_RESULT_SUCCESS) {
+						memoryFree(context, inputAllocation);
+						freeResources(context, inputAllocations, outputAllocations, NULL);
+						return ret;
+					}
+					outputAllocation = (uint8_t *)memoryOutput;
+
+				} else if (memoryType == "DEVICE") {
+					void *memoryInput = nullptr;
+					ret = memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryInput);
+					if (ret != ZE_RESULT_SUCCESS) {
+						freeResources(context, inputAllocations, outputAllocations, NULL);
+						return ret;
+					}
+					inputAllocation = (uint8_t *)memoryInput;
+					void *memoryOutput = nullptr;
+					ret = memoryAlloc(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
+					if (ret != ZE_RESULT_SUCCESS) {
+						memoryFree(context, inputAllocation);
+						freeResources(context, inputAllocations, outputAllocations, NULL);
+						return ret;
+					}
+					outputAllocation = (uint8_t *)memoryOutput;
+				} else {
+					void *memoryInput = nullptr;
+					ret = memoryAllocShared(context, d->deviceHdl, allocationCount, 8, &memoryInput);
+					if (ret != ZE_RESULT_SUCCESS) {
+						freeResources(context, inputAllocations, outputAllocations, NULL);
+						return ret;
+					}
+					inputAllocation = (uint8_t *)memoryInput;
+					void *memoryOutput = nullptr;
+					ret = memoryAllocShared(context, d->deviceHdl, allocationCount, 8, &memoryOutput);
+					if (ret != ZE_RESULT_SUCCESS) {
+						memoryFree(context, inputAllocation);
+						freeResources(context, inputAllocations, outputAllocations, NULL);
+						return ret;
+					}
+					outputAllocation = (uint8_t *)memoryOutput;
+				}
+				inputAllocations.push_back(inputAllocation);
+				outputAllocations.push_back(outputAllocation);
+				std::vector<uint8_t> dataOut(allocationCount, 0);
+				dataOutVector.push_back(dataOut);
+				std::string kernelName;
+				kernelName = "test_device_memory" + std::to_string((dispatchId % numberOfKernelsInModule) + 1);
+				testKernelNames.push_back(kernelName);
+			}
+
+			std::vector<uint8_t> binaryFile;
+			ret = loadBinaryFile("test_multiple_memory_allocations.spv", &binaryFile);
+			if (ret != ZE_RESULT_SUCCESS) {
+				ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
+				freeResources(context, inputAllocations, outputAllocations, NULL);
+				return ret;
+			}
+			ze_module_handle_t moduleHandle = nullptr;
+			ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
+			if (ret != ZE_RESULT_SUCCESS) {
+				ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
+				freeResources(context, inputAllocations, outputAllocations, moduleHandle);
+				return ret;
+			}
+			ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
+											   testKernelNames, numberOfDispatch, allocationCount, context);
+			if (ret != ZE_RESULT_SUCCESS) {
+				ERR("Failed to run dispatch kernels for memory test : %s\n", l0_error_to_string(ret));
+				freeResources(context, inputAllocations, outputAllocations, moduleHandle);
+				return ret;
+			}
+			freeResources(context, inputAllocations, outputAllocations, moduleHandle);
+		}
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1415,6 +1452,7 @@ ze_result_t diagnostic::memoryErrorTest(devInfo *d, int &errorCount)
  * This function properly free all buffer and module handle related resources,
  * and handles. It provides cleanup functionality for diagnostic operations using GPU modules.
  *
+ * @param[in] context Level Zero context handle for the operation
  * @param[in] moduleHandle Handle to the module to be destroyed
  * @param[in] inputBuf pointer to the buffer to be freed
  * @param[in] outputBuf pointer to the buffer to be freed

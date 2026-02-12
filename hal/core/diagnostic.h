@@ -58,6 +58,8 @@ public:
 	ze_result_t memoryAllocShared(const ze_context_handle_t &context, ze_device_handle_t ze_device, size_t size,
 								  size_t alignment, void **ptr);
 	ze_result_t memoryFree(const ze_context_handle_t &context, const void *ptr);
+	void freeResources(ze_context_handle_t context, std::vector<uint8_t *> &inputAllocations,
+					   std::vector<uint8_t *> &outputAllocations, ze_module_handle_t moduleHandle);
 	void commandListAppendLaunchKernel(ze_command_list_handle_t hCommandList, ze_kernel_handle_t hKernel,
 									   const ze_group_count_t *pLaunchFuncArgs);
 	ze_result_t commandListCreate(const ze_context_handle_t context, ze_device_handle_t ze_device,
