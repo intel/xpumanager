@@ -62,6 +62,11 @@ FROM ${BASE_IMAGE} AS minimal
 COPY --from=builder /out/ /
 COPY --from=builder /igsc-install/usr/local/lib /usr/local/lib
 
+# Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libnl-genl-3-200 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 RUN ldconfig
 
 USER 65534:65534
