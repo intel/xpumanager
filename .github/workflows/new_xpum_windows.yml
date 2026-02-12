@@ -142,7 +142,7 @@ jobs:
         shell: powershell
         run: |
           $builddir = "build_${{ matrix.build_type }}"
-          meson compile -C $builddir xpumcli xpu-smi
+          meson compile -C $builddir xpu-smi
       - name: Run unit tests
         if: matrix.build_type == 'Release'
         shell: powershell
