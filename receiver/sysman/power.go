@@ -121,6 +121,9 @@ func (power *sysmanPower) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 	tdiff := u64CounterDiff(power.counter.Timestamp, counter.Timestamp)
 	ediff := u64CounterDiff(power.counter.Energy, counter.Energy)
 	power.counter = counter
+	if tdiff == 0 {
+		return
+	}
 
 	watts := float64(ediff) / float64(tdiff)
 	mb.RecordHwPowerDataPoint(
@@ -137,9 +140,6 @@ func (power *sysmanPower) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 		return
 	}
 
-	// TODO: once extension info is available, call this only
-	// when "ZES_extension_power_limits" one is available
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetlimitsext
 	// TODO: find HW supporting this / test it
 	limits, err := power.GetLimitsExt()
 	if err != nil {
