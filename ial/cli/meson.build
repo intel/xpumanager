@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 # IAL CLI build
-
 cli_sources = files(
     'cli.cpp',
     '../../hal/core/debug.cpp',
 )
+
 cli_inc = include_directories('.')
 
 # CLI dependencies
@@ -40,20 +40,3 @@ xpu_smi_exe = executable('xpu-smi',
   install_dir : get_option('bindir')
 )
 
-# xpumcli executable (CLI/daemon mode)
-xpumcli_exe = executable('xpumcli',
-  cli_sources,
-  include_directories : [
-    global_inc,
-    cli_inc,
-    oal_inc_dirs,
-    include_directories('../cmn'),
-    include_directories('../../hal/core'),
-    include_directories('../../hal/fwupd')
-  ],
-  dependencies : cli_deps + windows_deps,
-  cpp_args : ['-DDAEMONMODE'],
-  link_args : is_linux ? ['-pie'] : [],
-  install : true,
-  install_dir : get_option('bindir')
-)

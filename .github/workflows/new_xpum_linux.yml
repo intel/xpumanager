@@ -135,7 +135,6 @@ jobs:
       - name: Build project (${{ matrix.build_type.name }})
         run: |
           meson compile -C ${{ matrix.build_type.builddir }} \
-            xpumcli \
             xpu-smi
       - name: Run tests (${{ matrix.build_type.name }})
         run: |
