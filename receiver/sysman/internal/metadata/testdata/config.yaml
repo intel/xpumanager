@@ -1,6 +1,8 @@
 default:
 all_set:
   metrics:
+    hw.energy:
+      enabled: true
     hw.frequency:
       enabled: true
     hw.frequency.limit:
@@ -16,6 +18,10 @@ all_set:
     hw.memory.size:
       enabled: true
     hw.memory.usage:
+      enabled: true
+    hw.power:
+      enabled: true
+    hw.power.limit:
       enabled: true
     hw.status:
       enabled: true
@@ -23,6 +29,8 @@ all_set:
       enabled: true
 none_set:
   metrics:
+    hw.energy:
+      enabled: false
     hw.frequency:
       enabled: false
     hw.frequency.limit:
@@ -38,6 +46,10 @@ none_set:
     hw.memory.size:
       enabled: false
     hw.memory.usage:
+      enabled: false
+    hw.power:
+      enabled: false
+    hw.power.limit:
       enabled: false
     hw.status:
       enabled: false

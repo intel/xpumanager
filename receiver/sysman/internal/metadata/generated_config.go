@@ -28,6 +28,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for sysman metrics.
 type MetricsConfig struct {
+	HwEnergy                  MetricConfig `mapstructure:"hw.energy"`
 	HwFrequency               MetricConfig `mapstructure:"hw.frequency"`
 	HwFrequencyLimit          MetricConfig `mapstructure:"hw.frequency.limit"`
 	HwFrequencyRequest        MetricConfig `mapstructure:"hw.frequency.request"`
@@ -36,12 +37,17 @@ type MetricsConfig struct {
 	HwGpuInfo                 MetricConfig `mapstructure:"hw.gpu.info"`
 	HwMemorySize              MetricConfig `mapstructure:"hw.memory.size"`
 	HwMemoryUsage             MetricConfig `mapstructure:"hw.memory.usage"`
+	HwPower                   MetricConfig `mapstructure:"hw.power"`
+	HwPowerLimit              MetricConfig `mapstructure:"hw.power.limit"`
 	HwStatus                  MetricConfig `mapstructure:"hw.status"`
 	HwTemperature             MetricConfig `mapstructure:"hw.temperature"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
+		HwEnergy: MetricConfig{
+			Enabled: true,
+		},
 		HwFrequency: MetricConfig{
 			Enabled: true,
 		},
@@ -64,6 +70,12 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		HwMemoryUsage: MetricConfig{
+			Enabled: true,
+		},
+		HwPower: MetricConfig{
+			Enabled: true,
+		},
+		HwPowerLimit: MetricConfig{
 			Enabled: true,
 		},
 		HwStatus: MetricConfig{

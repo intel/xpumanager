@@ -12,6 +12,24 @@ metrics:
     enabled: false
 ```
 
+### hw.energy
+
+Energy consumed by the hardware component.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| J | Sum | Double | Cumulative | true | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+
 ### hw.frequency
 
 Operating frequency of the hardware component.
@@ -166,6 +184,44 @@ Memory used.
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 
+### hw.power
+
+Instantaneous power usage of the hardware component.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| W | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+
+### hw.power.limit
+
+Power usage limit for the hardware component.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| W | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+| com.intel.power.limit.level | For which period / duration power limit applies. | Any Str | Recommended |
+| com.intel.power.limit.source | In which device state power limit applies (e.g. AC, DC, when battery powered). | Any Str | Recommended |
+
 ### hw.status
 
 The operational status of the hardware component.
@@ -181,7 +237,7 @@ The operational status of the hardware component.
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.state | Current state of the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.type | Type of the hardware component. | Str: ``frequency``, ``memory``, ``temperature`` | Recommended |
+| hw.type | Type of the hardware component. | Str: ``frequency``, ``gpu``, ``memory``, ``temperature`` | Recommended |
 | hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 

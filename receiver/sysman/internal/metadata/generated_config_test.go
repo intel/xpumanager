@@ -27,6 +27,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					HwEnergy:                  MetricConfig{Enabled: true},
 					HwFrequency:               MetricConfig{Enabled: true},
 					HwFrequencyLimit:          MetricConfig{Enabled: true},
 					HwFrequencyRequest:        MetricConfig{Enabled: true},
@@ -35,6 +36,8 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwGpuInfo:                 MetricConfig{Enabled: true},
 					HwMemorySize:              MetricConfig{Enabled: true},
 					HwMemoryUsage:             MetricConfig{Enabled: true},
+					HwPower:                   MetricConfig{Enabled: true},
+					HwPowerLimit:              MetricConfig{Enabled: true},
 					HwStatus:                  MetricConfig{Enabled: true},
 					HwTemperature:             MetricConfig{Enabled: true},
 				},
@@ -44,6 +47,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					HwEnergy:                  MetricConfig{Enabled: false},
 					HwFrequency:               MetricConfig{Enabled: false},
 					HwFrequencyLimit:          MetricConfig{Enabled: false},
 					HwFrequencyRequest:        MetricConfig{Enabled: false},
@@ -52,6 +56,8 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwGpuInfo:                 MetricConfig{Enabled: false},
 					HwMemorySize:              MetricConfig{Enabled: false},
 					HwMemoryUsage:             MetricConfig{Enabled: false},
+					HwPower:                   MetricConfig{Enabled: false},
+					HwPowerLimit:              MetricConfig{Enabled: false},
 					HwStatus:                  MetricConfig{Enabled: false},
 					HwTemperature:             MetricConfig{Enabled: false},
 				},
