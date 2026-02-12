@@ -35,6 +35,7 @@ message DeviceInformation {
   string model = 2;
   PciInfo pci = 3;
   repeated FirmwareInfo firmwares = 4;
+  repeated MemoryInfo memory = 5;
 }
 
 // PCI information of the device.
@@ -48,6 +49,17 @@ message FirmwareInfo {
   string name = 1;
   string version = 2;
   string subdevice_id = 3;
+}
+
+// Memory information of the device.
+message MemoryInfo {
+  // Type of memory. This is a lowercase identifier describing the memory
+  // technology or placement, e.g. "ddr5", "gddr6", "hbm" etc.
+  string type = 1;
+  // The sub-device ID associated with this memory. Empty if not applicable.
+  string subdevice_id = 2;
+  // Total capacity of this memory region, in bytes.
+  uint64 size = 3;
 }
 
 // Status of a health domain.

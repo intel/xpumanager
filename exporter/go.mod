@@ -5,6 +5,7 @@ go 1.25.0
 replace github.com/intel/xpumanager => ..
 
 require (
+	github.com/google/go-cmp v0.7.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.50.0
 	go.opentelemetry.io/collector/component/componenttest v0.144.0
