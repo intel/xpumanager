@@ -88,6 +88,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwGpuUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "com.intel.subdevice_id-val", "hw.gpu.task-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
@@ -367,6 +371,30 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("pci.vendor_id")
 					assert.True(t, ok)
 					assert.Equal(t, "pci.vendor_id-val", attrVal.Str())
+				case "hw.gpu.utilization":
+					assert.False(t, validatedMetrics["hw.gpu.utilization"], "Found a duplicate in the metrics slice: hw.gpu.utilization")
+					validatedMetrics["hw.gpu.utilization"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "GPU engine / task pipeline utilization ratio.", ms.At(i).Description())
+					assert.Equal(t, "1", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.gpu.task")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.gpu.task-val", attrVal.Str())
 				case "hw.memory.bandwidth.limit":
 					assert.False(t, validatedMetrics["hw.memory.bandwidth.limit"], "Found a duplicate in the metrics slice: hw.memory.bandwidth.limit")
 					validatedMetrics["hw.memory.bandwidth.limit"] = true

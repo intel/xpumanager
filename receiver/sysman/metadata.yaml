@@ -38,6 +38,9 @@ attributes:
   hw.frequency.domain:
     description: The frequency domain (gpu, memory, media...).
     type: string
+  hw.gpu.task:
+    description: GPU engine / task type.
+    type: string
   hw.id:
     description: Unique identifier for the hardware component.
     type: string
@@ -177,6 +180,15 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.name, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, pci.bdf, pci.device_id, pci.vendor_id]
+  hw.gpu.utilization:
+    enabled: true
+    description: GPU engine / task pipeline utilization ratio.
+    stability:
+      level: development
+    unit: "1"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.name, com.intel.subdevice_id, hw.gpu.task]
   hw.memory.bandwidth.limit:
     enabled: true
     description: Maximum total memory (read+write) bandwidth in bytes/sec.

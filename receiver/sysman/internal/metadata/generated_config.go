@@ -35,6 +35,7 @@ type MetricsConfig struct {
 	HwFrequencySamples           MetricConfig `mapstructure:"hw.frequency.samples"`
 	HwFrequencyThrottleStatus    MetricConfig `mapstructure:"hw.frequency.throttle_status"`
 	HwGpuInfo                    MetricConfig `mapstructure:"hw.gpu.info"`
+	HwGpuUtilization             MetricConfig `mapstructure:"hw.gpu.utilization"`
 	HwMemoryBandwidthLimit       MetricConfig `mapstructure:"hw.memory.bandwidth.limit"`
 	HwMemoryBandwidthUtilization MetricConfig `mapstructure:"hw.memory.bandwidth.utilization"`
 	HwMemoryIo                   MetricConfig `mapstructure:"hw.memory.io"`
@@ -68,6 +69,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		HwGpuInfo: MetricConfig{
+			Enabled: true,
+		},
+		HwGpuUtilization: MetricConfig{
 			Enabled: true,
 		},
 		HwMemoryBandwidthLimit: MetricConfig{

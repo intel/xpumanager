@@ -146,6 +146,23 @@ Information about the GPU device.
 | pci.device_id | PCI device ID of the device. | Any Str | Recommended |
 | pci.vendor_id | PCI vendor ID of the device. | Any Str | Recommended |
 
+### hw.gpu.utilization
+
+GPU engine / task pipeline utilization ratio.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+| hw.gpu.task | GPU engine / task type. | Any Str | Recommended |
+
 ### hw.memory.bandwidth.limit
 
 Maximum total memory (read+write) bandwidth in bytes/sec.
