@@ -26,8 +26,6 @@ enum configCmdType
 	PERFORMANCEFACTOR,
 	MEMORYECC,
 	RESET,
-	PPR,
-	FORCE,
 	PCIEDOWNGRADE,
 	TOTAL_CONFIG,
 };
@@ -50,8 +48,6 @@ public:
 	ze_result_t setMemoryEcc(devInfo *d);
 	ze_result_t setPCIeGenUpdate(devInfo *d);
 	ze_result_t resetDevice(devInfo *d);
-	ze_result_t applyPpr(devInfo *d);
-	ze_result_t forcePpr(devInfo *d);
 	int run(arg_struct *args);
 };
 
