@@ -164,6 +164,9 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 	}
 
 	// Handle aggregated metrics
+	if f.actual == nil {
+		return
+	}
 	actualStats := f.actual.collect(0)
 
 	if actualStats.samples > 0 {
@@ -215,8 +218,17 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 }
 
 func (f *sysmanFrequency) pollAggregatedMetrics() {
+	if f.actual == nil {
+		return
+	}
+
 	if state, err := f.GetState(); err != nil {
 		f.logger.Errorw("Failed to get frequency state for aggregated metrics", zap.Error(err), "attributes", f.attributes)
+		f.actual = nil // Stop polling if we can't get the state
+	} else if state.Actual < 0 {
+		// A negative value indicates "not known", stop polling in this case:
+		// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
+		f.actual = nil
 	} else {
 		f.actual.add(state.Actual)
 	}
