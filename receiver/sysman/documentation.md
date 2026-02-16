@@ -146,6 +146,83 @@ Information about the GPU device.
 | pci.device_id | PCI device ID of the device. | Any Str | Recommended |
 | pci.vendor_id | PCI vendor ID of the device. | Any Str | Recommended |
 
+### hw.memory.bandwidth.limit
+
+Maximum total memory (read+write) bandwidth in bytes/sec.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| By/s | Sum | Double | Cumulative | false | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
+| hw.memory.type | Type of the memory. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+
+### hw.memory.bandwidth.utilization
+
+Memory bandwidth utilization ratio.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
+| hw.memory.type | Type of the memory. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+
+### hw.memory.io
+
+Bytes read from / written to memory.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| By | Sum | Double | Cumulative | true | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
+| hw.memory.type | Type of the memory. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| network.io.direction | The IO operation direction. | Str: ``receive``, ``transmit`` | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+
+### hw.memory.io.rate
+
+Current memory bandwidth (read+write) usage in bytes/sec.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| By/s | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
+| hw.memory.type | Type of the memory. | Any Str | Recommended |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
+
 ### hw.memory.size
 
 Size of the memory.
