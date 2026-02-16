@@ -46,3 +46,59 @@ jobs:
           git --no-pager diff
           exit 1
         fi
+
+  trivy-scan-vuln:
+    runs-on:
+      labels: [intel.prod.amr.dind]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy Fs Scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.34.0
+        with:
+          exit-code: 1
+          scan-type: fs
+          list-all-pkgs: true
+          scan-ref: .
+          format: json
+          output: trivy-report.json
+
+      - name: Print Trivy report in human-readable format
+        uses: aquasecurity/trivy-action@0.34.0
+        with:
+          scan-type: convert
+          image-ref: trivy-report.json
+          format: table
+
+      - name: Convert Trivy report to CSV format
+        uses: aquasecurity/trivy-action@0.34.0
+        with:
+          scan-type: convert
+          image-ref: trivy-report.json
+          format: template
+          template: "@.github/workflows/trivy-csv.tpl"
+          output: trivy-vuln-report.csv
+
+      - name: Upload Trivy report as artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: trivy-vuln-report
+          path: trivy-vuln-report.csv
+
+  trivy-scan-license:
+    runs-on:
+      labels: [intel.prod.amr.dind]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy License Scan
+        uses: aquasecurity/trivy-action@0.34.0
+        with:
+          exit-code: 1
+          scan-type: fs
+          scanners: license
+          scan-ref: .
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL

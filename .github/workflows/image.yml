@@ -81,6 +81,38 @@ jobs:
         DIGEST: ${{ steps.build_and_push.outputs.digest }}
       run: cosign sign --yes ${{ env.IMAGE_TAG }}@${{ steps.build_and_push.outputs.digest }}
 
+    - name: Run Trivy image scan
+      continue-on-error: true
+      uses: aquasecurity/trivy-action@0.34.0
+      with:
+        exit-code: 1
+        image-ref: ${{ env.IMAGE_TAG }}
+        list-all-pkgs: true
+        format: json
+        output: trivy-report.json
+
+    - name: Print Trivy report in human-readable format
+      uses: aquasecurity/trivy-action@0.34.0
+      with:
+        scan-type: convert
+        image-ref: trivy-report.json
+        format: table
+
+    - name: Convert Trivy report to CSV format
+      uses: aquasecurity/trivy-action@0.34.0
+      with:
+        scan-type: convert
+        image-ref: trivy-report.json
+        format: template
+        template: "@.github/workflows/trivy-csv.tpl"
+        output: trivy-image-report.csv
+
+    - name: Upload Trivy CSV report as artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: trivy-image-report
+        path: trivy-image-report.csv
+
     - name: Helm login
       if: github.event_name == 'push'
       run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
