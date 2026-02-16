@@ -19,7 +19,7 @@ func (b *BaseInfo) recordError(context string, err error) {
 	if err == nil {
 		return
 	}
-	if errors.Is(err, core.RESULT_ERROR_UNSUPPORTED_FEATURE) {
+	if err == core.RESULT_ERROR_UNSUPPORTED_FEATURE {
 		if b.unsupportedFeaturesMap == nil {
 			b.unsupportedFeaturesMap = make(map[string]bool)
 		}
