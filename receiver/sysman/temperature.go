@@ -24,6 +24,12 @@ type sysmanTemperature struct {
 	*l0sysman.Temperature
 	logger     *zap.SugaredLogger
 	attributes temperatureAttributes
+	state      sysmanTemperatureState
+}
+
+// sysmanTemperatureState holds the dynamic runtime state of the temperature instance.
+type sysmanTemperatureState struct {
+	disabled bool
 }
 
 type temperatureAttributes struct {
@@ -69,8 +75,8 @@ func newSysmanTemperature(name string, temp *l0sysman.Temperature, device *sysma
 	}
 
 	return &sysmanTemperature{
-		Temperature:   temp,
-		logger: device.logger,
+		Temperature: temp,
+		logger:      device.logger,
 		attributes: temperatureAttributes{
 			hwID:           device.attributes.hwID + "_" + name,
 			hwType:         metadata.AttributeHwTypeTemperature,
@@ -84,8 +90,12 @@ func newSysmanTemperature(name string, temp *l0sysman.Temperature, device *sysma
 }
 
 func (t *sysmanTemperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if t.state.disabled {
+		return
+	}
 	if current, err := t.GetState(); err != nil {
-		t.logger.Errorw("Failed to get temperature state", zap.Error(err), "attributes", t.attributes)
+		t.logger.Warnw("Failed to get temperature state", zap.Error(err), "attributes", t.attributes)
+		t.state.disabled = true
 	} else {
 		mb.RecordHwTemperatureDataPoint(ts,
 			current,
