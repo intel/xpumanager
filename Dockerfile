@@ -53,8 +53,11 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     make build && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
     install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
-    install -D config-example.yaml /out/etc/xpumd/config-example.yaml
-
+    install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
+    go -C dist tool -modfile $(pwd)/tools/go.mod \
+        go-licenses save . \
+                --ignore github.com/intel/xpumanager \
+                --save_path /out/usr/share/doc/xpumd/licenses
 
 # The final image
 FROM ${BASE_IMAGE} AS minimal
