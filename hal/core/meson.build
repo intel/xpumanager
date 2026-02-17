@@ -27,10 +27,13 @@ hal_core_sources = files(
   'temperature.cpp',
   'threading.cpp',
   'vf.cpp',
-  'file_io.cpp'
+  'file_io.cpp',
+  # C API
+  '../../ial/api/xpum_api.cpp'
 )
 
 hal_core_inc = include_directories('.')
+api_inc = include_directories('../../ial/api')
 
 # Shared library
 libxpum_shared = shared_library('xpum',
@@ -38,9 +41,11 @@ libxpum_shared = shared_library('xpum',
   include_directories : [
     global_inc,
     hal_core_inc,
+    api_inc,
     oal_inc_dirs,
     include_directories('../fwupd'),
-    include_directories('../amc')
+    include_directories('../amc'),
+    include_directories('../../ial/cli')  # For version.h
   ],
   dependencies : [
     levelzero_dep, 
@@ -60,10 +65,12 @@ libxpum_static = static_library('xpum',
   hal_core_sources,
   include_directories : [
     global_inc,
-    hal_core_inc, 
+    hal_core_inc,
+    api_inc,
     oal_inc_dirs,
     include_directories('../fwupd'),
-    include_directories('../amc')
+    include_directories('../amc'),
+    include_directories('../../ial/cli')  # For version.h
   ],
   dependencies : [
     levelzero_dep,
@@ -83,6 +90,27 @@ libxpum_dep = declare_dependency(
   include_directories : hal_core_inc,
   dependencies : [levelzero_dep, igsc_dep, nlohmann_json_dep]
 )
+
+# On Windows builds, copy the DLL next to xpu-smi.exe so it can be
+# found at runtime without modifying PATH
+# Alternatively, `meson devenv -C {builddir}` will set the path automatically
+# NOTE: if it fails, it may need to be ran in cmd or with `meson devenv -C {builddir} --shell=cmd`
+if is_windows and get_option('shared_library')
+  python = import('python').find_installation(required: true)
+  custom_target('copy_xpum_dll',
+    input: libxpum_shared,
+    output: '.xpum_dll_copy.stamp',
+    command: [
+      python, '-c',
+      'import shutil, sys, pathlib; dst = sys.argv[2]; pathlib.Path(dst).parent.mkdir(parents=True, exist_ok=True); shutil.copy2(sys.argv[1], dst); open(sys.argv[3], "w").close()',
+      '@INPUT0@',
+      meson.project_build_root() / 'ial' / 'cli' / ('xpum-' + major + '.dll'),
+      '@OUTPUT0@',
+    ],
+    build_by_default: true,
+    install: false,
+  )
+endif
 
 # Install headers (optional)
 if get_option('install_headers')
@@ -113,4 +141,20 @@ if get_option('install_headers')
   )
   
   install_headers(hal_headers, subdir : 'xpum')
+  
+  c_api_headers = files(
+    '../../ial/api/xpum_api.h',
+    '../../ial/api/xpum_structs.h'
+  )
+  install_headers(c_api_headers, subdir : 'xpum')
 endif
+
+# Generate pkg-config file for C API compatibility
+pkg = import('pkgconfig')
+pkg.generate(
+  libxpum_shared,
+  name: 'xpum_api',
+  description: 'Intel(R) XPU Manager - Unified C/C++ library for GPU management',
+  version: xpum_version,
+  subdirs: 'xpum',
+)

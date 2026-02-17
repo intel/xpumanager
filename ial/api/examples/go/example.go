@@ -12,8 +12,7 @@
 package main
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/../..
-#cgo LDFLAGS: -lxpum_api
+#cgo pkg-config: xpum_api
 
 #include <level_zero/ze_api.h>
 #include "xpum_api.h"
@@ -31,7 +30,7 @@ func main() {
 
 	// Initialize XPUM
 	fmt.Println("Initializing XPUM...")
-	result := C.xpumInit(C.bool(false))
+	result := C.xpumInit()
 	if result != C.XPUM_OK {
 		panic(fmt.Sprintf("Failed to initialize XPUM: %d", result))
 	}
@@ -43,7 +42,7 @@ func main() {
 	var versionCount C.int
 	result = C.xpumVersionInfo(nil, &versionCount)
 	if result == C.XPUM_OK && versionCount > 0 {
-		versions := make([]C.xpum_version_info, versionCount)
+		versions := make([]C.XpumVersionInfo, versionCount)
 		result = C.xpumVersionInfo(&versions[0], &versionCount)
 		if result == C.XPUM_OK {
 			for i := 0; i < int(versionCount); i++ {
@@ -65,15 +64,15 @@ func main() {
 	fmt.Printf("Found %d device(s)\n\n", deviceCount)
 
 	if deviceCount > 0 {
-		devices := make([]C.xpum_device_basic_info, deviceCount)
+		devices := make([]C.XpumDeviceBasicInfo, deviceCount)
 		result = C.xpumGetDeviceList(&devices[0], &deviceCount)
 
 		if result == C.XPUM_OK {
 			for i := 0; i < int(deviceCount); i++ {
 				fmt.Printf("Device %d:\n", devices[i].deviceId)
 				fmt.Printf("  Name: %s\n", C.GoString(&devices[i].deviceName[0]))
-				fmt.Printf("  Vendor: %s\n", C.GoString(&devices[i].VendorName[0]))
-				fmt.Printf("  BDF: %s\n", C.GoString(&devices[i].PCIBDFAddress[0]))
+				fmt.Printf("  Vendor: %s\n", C.GoString(&devices[i].vendorName[0]))
+				fmt.Printf("  BDF: %s\n", C.GoString(&devices[i].pcibdfAddress[0]))
 				fmt.Printf("  UUID: %s\n", C.GoString(&devices[i].uuid[0]))
 				fmt.Println()
 

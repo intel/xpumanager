@@ -14,7 +14,7 @@
 #include "xpum_structs.h"
 
 #ifdef _WIN32
-#ifdef XPUM_api_EXPORTS
+#ifdef LIBXPUM_EXPORTS
 #define XPUM_API __declspec(dllexport)
 #else
 #define XPUM_API __declspec(dllimport)
