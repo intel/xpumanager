@@ -1,4 +1,5 @@
 dist:
+  module: github.com/intel/xpumanager
   name: xpumd
   description: XPUM Daemon
   output_path: ./dist
