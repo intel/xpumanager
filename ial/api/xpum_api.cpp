@@ -102,8 +102,16 @@ template <size_t N> void toCstr(char (&dest)[N], std::string_view src)
 	dest[len] = '\0';
 }
 
+// Overload for decayed pointer (e.g. function parameters), requires explicit size
+void toCstr(char *dest, size_t destSize, std::string_view src)
+{
+	const size_t len = std::min(src.size(), destSize - 1);
+	std::copy_n(src.data(), len, dest);
+	dest[len] = '\0';
+}
+
 //clang-format off
-// This got merged while failing and seems to continue to fail
+// This got merged while failing clang-format and seems to continue to fail
 template <size_t N, typename... Args>
 	requires(sizeof...(Args) > 0)
 //clang-format on
@@ -369,7 +377,7 @@ XPUM_API xpum_result_t xpumVersionInfo(XpumVersionInfo versionInfoList[], int *c
 		*count = versionCount;
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -437,7 +445,7 @@ XPUM_API xpum_result_t xpumGetDeviceList(XpumDeviceBasicInfo deviceList[], int *
 		*count = deviceCount;
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -543,7 +551,7 @@ XPUM_API xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_d
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -573,7 +581,7 @@ XPUM_API xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *d
 
 		return XPUM_RESULT_DEVICE_NOT_FOUND;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -628,8 +636,7 @@ XPUM_API xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t devic
 				std::string const bdf = dev->getBDFStr();
 
 				if (toXpumResult(firmware->getFWversion(AMC, bdf.c_str(), fwVer, sizeof(fwVer))) == XPUM_OK) {
-					std::strncpy(amcFwVersion, fwVer, XPUM_MAX_STR_LENGTH - 1);
-					amcFwVersion[XPUM_MAX_STR_LENGTH - 1] = '\0';
+					toCstr(amcFwVersion, XPUM_MAX_STR_LENGTH, fwVer);
 				} else {
 					amcFwVersion[0] = '\0';
 				}
@@ -645,7 +652,7 @@ XPUM_API xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t devic
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -683,7 +690,7 @@ XPUM_API xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, UNUSED bool fo
 		}
 		return resetResult;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		ERR("xpumResetDevice: Exception: %s\n", e.what());
 		return XPUM_GENERIC_ERROR;
 	}
@@ -721,7 +728,7 @@ XPUM_API xpum_result_t xpumSetPowerLimit(xpum_device_id_t deviceId, int32_t tile
 		}
 		return setPowerResult;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		ERR("xpumSetPowerLimit: Exception: %s\n", e.what());
 		return XPUM_GENERIC_ERROR;
 	}
@@ -753,7 +760,7 @@ XPUM_API xpum_result_t xpumSetFrequencyRange(xpum_device_id_t deviceId, int32_t 
 			return toXpumResult(freq->setFrequencyRange(minFreq, maxFreq, tileId));
 		}
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -780,7 +787,7 @@ XPUM_API xpum_result_t xpumSetStandby(xpum_device_id_t deviceId, xpum_standby_mo
 
 		return toXpumResult(standby->setMode(toZesStandbyMode(mode)));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -807,7 +814,7 @@ XPUM_API xpum_result_t xpumSetSchedulerTimeoutMode(xpum_device_id_t deviceId, ui
 
 		return toXpumResult(freq->setSchedulerTimeoutMode(subdeviceId, timeout));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -835,7 +842,7 @@ XPUM_API xpum_result_t xpumSetSchedulerTimesliceMode(xpum_device_id_t deviceId, 
 
 		return toXpumResult(freq->setSchedulerTimesliceMode(subdeviceId, interval, yieldTimeout));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -862,7 +869,7 @@ XPUM_API xpum_result_t xpumSetSchedulerExclusiveMode(xpum_device_id_t deviceId, 
 
 		return toXpumResult(freq->setSchedulerExclusiveMode(subdeviceId));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -911,7 +918,7 @@ XPUM_API xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool *enabled,
 
 		return result;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -939,7 +946,7 @@ XPUM_API xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, bool enable)
 		zes_device_handle_t zesDevice = state.context->devices[deviceId].zesDeviceHdl;
 		return toXpumResult(ecc->setState(zesDevice, enable));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -984,7 +991,7 @@ XPUM_API xpum_result_t xpumGetTemperature(xpum_device_id_t deviceId, double *cor
 
 		return tempResult;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1011,7 +1018,7 @@ XPUM_API xpum_result_t xpumGetPower(xpum_device_id_t deviceId, uint64_t *power, 
 
 		return toXpumResult(pwr->getEnergy(power, timestamp, true));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1042,7 +1049,7 @@ XPUM_API xpum_result_t xpumGetFrequency(xpum_device_id_t deviceId, double *curre
 
 		return toXpumResult(freq->getCurFreq(currentFreq, toZesFreqDomain(domain)));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1079,7 +1086,7 @@ XPUM_API xpum_result_t xpumGetFrequencyThrottleReasons(xpum_device_id_t deviceId
 		}
 		return result;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1106,7 +1113,7 @@ XPUM_API xpum_result_t xpumGetMemoryUsage(xpum_device_id_t deviceId, uint64_t *u
 
 		return toXpumResult(mem->getMemoryUsed(usedMemory, utilization));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1134,7 +1141,7 @@ XPUM_API xpum_result_t xpumGetMemoryBandwidth(xpum_device_id_t deviceId, uint64_
 
 		return toXpumResult(mem->getMemoryRW(readBandwidth, writeBandwidth, maxBandwidth, timestamp));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1166,7 +1173,7 @@ XPUM_API xpum_result_t xpumGetRASErrors(xpum_device_id_t deviceId, xpum_ras_erro
 
 		return toXpumResult(ras->getErrors(toZesRasErrorCat(category), toZesRasErrorType(errorType), errorCount));
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1195,7 +1202,7 @@ XPUM_API xpum_result_t xpumGroupCreate(const char *groupName, xpum_group_id_t *p
 		*pGroupId = newGroupId;
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1218,7 +1225,7 @@ XPUM_API xpum_result_t xpumGroupDestroy(xpum_group_id_t groupId)
 		state.context->groups.erase(iter);
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1250,7 +1257,7 @@ XPUM_API xpum_result_t xpumGroupAddDevice(xpum_group_id_t groupId, xpum_device_i
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1272,7 +1279,7 @@ XPUM_API xpum_result_t xpumGroupRemoveDevice(xpum_group_id_t groupId, xpum_devic
 		auto &devices = state.context->groups[groupId].devices;
 		std::erase(devices, deviceId);
 		return XPUM_OK;
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1303,7 +1310,7 @@ XPUM_API xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1341,7 +1348,7 @@ XPUM_API xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[], int *count
 		*count = idx;
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1412,7 +1419,7 @@ XPUM_API xpum_result_t xpumSetHealthConfig(xpum_device_id_t deviceId, xpum_healt
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1445,7 +1452,7 @@ XPUM_API xpum_result_t xpumSetHealthConfigByGroup(xpum_group_id_t groupId, xpum_
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1488,7 +1495,7 @@ XPUM_API xpum_result_t xpumGetHealthConfig(xpum_device_id_t deviceId, xpum_healt
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1518,7 +1525,7 @@ XPUM_API xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId, xpum_
 
 		return XPUM_RESULT_INVALID_DIR;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1670,7 +1677,7 @@ XPUM_API xpum_result_t xpumGetHealth(xpum_device_id_t deviceId, xpum_health_type
 
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1710,7 +1717,7 @@ XPUM_API xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId, xpum_health
 		*data = worstData;
 		return XPUM_OK;
 
-	} catch (const std::exception &e) {
+	} catch (UNUSED const std::exception &e) {
 		return XPUM_GENERIC_ERROR;
 	}
 }

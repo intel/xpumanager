@@ -1161,9 +1161,16 @@ typedef struct xpum_topology_t
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4200) // nonstandard extension used: zero-sized array in struct/union
+#endif
 	ParentSwitch switches[]; ///< device path of parent switch (C99 flexible array member)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
+#ifdef _MSC_VER
+#pragma warning(pop)
 #endif
 } xpum_topology_t;
 
