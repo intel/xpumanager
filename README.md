@@ -96,6 +96,25 @@ docker run --rm --publish 8080:8080 --device /dev/dri --user 0:0 --cap-drop ALL 
 curl http://localhost:8080/metrics
 ```
 
+### Extracting (L)GPL source packages from container image
+
+For (L)GPL compliance, the container image includes source packages in the
+`/sources` directory for (L)GPL-licensed packages that were added on top of the
+Ubuntu base image.
+
+To extract these sources from the container (the locally built image used as an
+example here):
+
+```bash
+# List available source packages
+docker run --rm --entrypoint=ls registry.local/xpumd:main -lh /sources
+
+# Copy source packages from the container
+docker create --name xpumd-temp registry.local/xpumd:main
+docker cp xpumd-temp:/sources ./sources
+docker rm xpumd-temp
+```
+
 ### Testing in single-node cluster
 
 After building the container image, load the image onto the cluster. E.g.
