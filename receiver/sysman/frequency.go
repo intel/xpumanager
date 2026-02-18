@@ -20,11 +20,11 @@ func init() {
 	registerSubsystem("frequency", enumFrequency)
 }
 
-type sysmanFrequency struct {
+type frequency struct {
 	*l0sysman.Frequency
 	logger *zap.SugaredLogger
 
-	state      sysmanFrequencyState
+	state      frequencyState
 	attributes frequencyAttributes
 
 	// Aggregated metrics
@@ -40,12 +40,12 @@ type frequencyAttributes struct {
 	subdeviceId     string
 }
 
-// sysmanFrequencyState holds the dynamic runtime state.
-type sysmanFrequencyState struct {
+// frequencyState holds the dynamic runtime state.
+type frequencyState struct {
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
 }
 
-func enumFrequency(d *sysmanDevice) []instanceScraper {
+func enumFrequency(d *device) []instanceScraper {
 	freqs, err := d.EnumFrequencyDomains()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate frequency domains", zap.Error(err))
@@ -54,7 +54,7 @@ func enumFrequency(d *sysmanDevice) []instanceScraper {
 	scrapers := make([]instanceScraper, 0, len(freqs))
 	for i, freq := range freqs {
 		name := fmt.Sprintf("freq_%d", i)
-		f, err := newSysmanFrequency(name, freq, d)
+		f, err := newFrequency(name, freq, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create Sysman frequency domain", zap.Error(err))
 			continue
@@ -64,13 +64,13 @@ func enumFrequency(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanFrequency(name string, freq *l0sysman.Frequency, device *sysmanDevice) (*sysmanFrequency, error) {
+func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequency, error) {
 	props, err := freq.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
-	return &sysmanFrequency{
+	return &frequency{
 		Frequency: freq,
 		logger:    device.logger,
 		attributes: frequencyAttributes{
@@ -86,7 +86,7 @@ func newSysmanFrequency(name string, freq *l0sysman.Frequency, device *sysmanDev
 	}, nil
 }
 
-func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// Handle instantaneous metrics
 	if rang, err := f.GetRange(); err != nil {
 		f.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", f.attributes)
@@ -217,7 +217,7 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 	}
 }
 
-func (f *sysmanFrequency) pollAggregatedMetrics() {
+func (f *frequency) pollAggregatedMetrics() {
 	if f.actual == nil {
 		return
 	}

@@ -16,7 +16,7 @@ import (
 // NOTE: we don't register firmware as a subsystem (registerSubsystem())
 // because we don't expose any per-firmware metrics.
 
-type sysmanFirmware struct {
+type firmware struct {
 	*l0sysman.Firmware
 	attributes firmwareAttributes
 }
@@ -27,15 +27,15 @@ type firmwareAttributes struct {
 	subdeviceId     string
 }
 
-func enumFirmwares(d *sysmanDevice) []*sysmanFirmware {
+func enumFirmwares(d *device) []*firmware {
 	fws, err := d.EnumFirmwares()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate firmwares", zap.Error(err))
 		return nil
 	}
-	ret := make([]*sysmanFirmware, 0, len(fws))
+	ret := make([]*firmware, 0, len(fws))
 	for _, fw := range fws {
-		m, err := newSysmanFirmware(fw)
+		m, err := newFirmware(fw)
 		if err != nil {
 			d.logger.Errorw("Failed to create Sysman firmware", zap.Error(err))
 			continue
@@ -45,13 +45,13 @@ func enumFirmwares(d *sysmanDevice) []*sysmanFirmware {
 	return ret
 }
 
-func newSysmanFirmware(fw *l0sysman.Firmware) (*sysmanFirmware, error) {
+func newFirmware(fw *l0sysman.Firmware) (*firmware, error) {
 	props, err := fw.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
-	return &sysmanFirmware{
+	return &firmware{
 		Firmware: fw,
 		attributes: firmwareAttributes{
 			firmwareName:    strings.ToLower(props.Name.String()),
