@@ -60,6 +60,7 @@ jobs:
         with:
           exit-code: 1
           scan-type: fs
+          scanners: vuln,secret
           list-all-pkgs: true
           scan-ref: .
           format: json
@@ -69,6 +70,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.34.0
         with:
           scan-type: convert
+          scanners: vuln,secret
           image-ref: trivy-report.json
           format: table
 
