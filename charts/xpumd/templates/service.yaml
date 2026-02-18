@@ -1,4 +1,4 @@
-{{- if .Values.service.create -}}
+{{- if or .Values.service.create .Values.prometheus.monitor -}}
 apiVersion: v1
 kind: Service
 metadata:

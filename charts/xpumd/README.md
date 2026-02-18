@@ -88,14 +88,18 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin) |
+| grafana.dashboards | bool | `true` | Install XPUMD dashboard(s) for Grafana |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
+| kubePrometheus.namespace | string | `"monitoring"` | Namespace used for 'kube-prometheus' install |
+| kubePrometheus.release | string | `"prometheus-stack"` | Helm release name for 'kube-prometheus' chart that installed Prometheus/Grafana |
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
 | podSecurityContextOverride | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to |
+| prometheus.monitor | bool | `false` | Add Prometheus service monitor for XPUMD, requires Prometheus to be installed. overrides 'service.create' |
 | resourcesOverride | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting |
 | securityContextOverride | object | `{}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container). NOTE: security settings control to what GPU metrics container has access to |
 | service.create | bool | `false` | Create service |

@@ -55,6 +55,24 @@ service:
 # -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin)
 gpuAccess: xe
 
+# @schema additionalProperties:false
+kubePrometheus:
+  # -- Helm release name for 'kube-prometheus' chart that installed Prometheus/Grafana
+  release: prometheus-stack
+  # -- Namespace used for 'kube-prometheus' install
+  namespace: monitoring
+
+# @schema additionalProperties:false
+prometheus:
+  # -- Add Prometheus service monitor for XPUMD, requires Prometheus to be installed.
+  # overrides 'service.create'
+  monitor: false
+
+# @schema additionalProperties:false
+grafana:
+  # -- Install XPUMD dashboard(s) for Grafana
+  dashboards: true
+
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
 # -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container.
 # NOTE: overrides `gpuAccess` setting
@@ -119,6 +137,8 @@ config:
     # @section -- XPUM Daemon Configuration
     intelxpuinfo:
       endpoint: "/run/xpumd/intelxpuinfo.sock"
+    prometheus:
+      endpoint: "0.0.0.0:8080"
 
   # -- [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)
   # @section -- XPUM Daemon Configuration
