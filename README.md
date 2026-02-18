@@ -14,9 +14,11 @@ provides:
 
 See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
 
-For an example of a more complete telemetry stack, with instructions for
-deploying XPUM daemon with an OpenTelemetry collector backend, see
-[OTEL_STACK.md](OTEL_STACK.md).
+For an example of a more complete telemetry stack, see either:
+
+* [MONITORING.md](MONITORING.md) for using XPUM daemon with Prometheus + Grafana, or
+* [OTEL_STACK.md](OTEL_STACK.md) for deploying XPUM daemon with an OpenTelemetry collector backend
+
 
 ## Metrics
 
@@ -53,7 +55,7 @@ Run:
 In another terminal, test the metrics endpoint:
 
 ```bash
-curl http://localhost:8080/metrics
+curl --no-progress-meter http://localhost:8080/metrics
 ```
 
 ### Testing device info exporter
@@ -92,7 +94,7 @@ docker run --rm --publish 8080:8080 --device /dev/dri --user 0:0 --cap-drop ALL 
 ```
 
 ```bash
-curl http://localhost:8080/metrics
+curl --no-progress-meter http://localhost:8080/metrics
 ```
 
 ### Extracting (L)GPL source packages from container image
