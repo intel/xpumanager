@@ -706,7 +706,7 @@ type metricHwMemoryBandwidthUtilization struct {
 // init fills hw.memory.bandwidth.utilization metric with initial data.
 func (m *metricHwMemoryBandwidthUtilization) init() {
 	m.data.SetName("hw.memory.bandwidth.utilization")
-	m.data.SetDescription("Memory bandwidth utilization ratio.")
+	m.data.SetDescription("Memory bandwidth (read+write) utilization ratio.")
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)

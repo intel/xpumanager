@@ -404,7 +404,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["hw.memory.bandwidth.utilization"] = true
 					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
-					assert.Equal(t, "Memory bandwidth utilization ratio.", ms.At(i).Description())
+					assert.Equal(t, "Memory bandwidth (read+write) utilization ratio.", ms.At(i).Description())
 					assert.Equal(t, "1", ms.At(i).Unit())
 					dp := ms.At(i).Gauge().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())

@@ -167,7 +167,7 @@ Maximum total memory (read+write) bandwidth in bytes/sec.
 
 ### hw.memory.bandwidth.utilization
 
-Memory bandwidth utilization ratio.
+Memory bandwidth (read+write) utilization ratio.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
