@@ -20,15 +20,12 @@ func init() {
 	registerSubsystem("frequency", enumFrequency)
 }
 
-type sysmanFrequency struct {
+type frequency struct {
 	*l0sysman.Frequency
 	logger *zap.SugaredLogger
 
-	state      sysmanFrequencyState
+	state      frequencyState
 	attributes frequencyAttributes
-
-	// Aggregated metrics
-	actual *aggregatedMetric[float64]
 }
 
 type frequencyAttributes struct {
@@ -40,12 +37,13 @@ type frequencyAttributes struct {
 	subdeviceId     string
 }
 
-// sysmanFrequencyState holds the dynamic runtime state.
-type sysmanFrequencyState struct {
+// frequencyState holds the dynamic runtime state.
+type frequencyState struct {
+	actual              *aggregatedMetric[float64]
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
 }
 
-func enumFrequency(d *sysmanDevice) []instanceScraper {
+func enumFrequency(d *device) []instanceScraper {
 	freqs, err := d.EnumFrequencyDomains()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate frequency domains", zap.Error(err))
@@ -54,7 +52,7 @@ func enumFrequency(d *sysmanDevice) []instanceScraper {
 	scrapers := make([]instanceScraper, 0, len(freqs))
 	for i, freq := range freqs {
 		name := fmt.Sprintf("freq_%d", i)
-		f, err := newSysmanFrequency(name, freq, d)
+		f, err := newFrequency(name, freq, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create Sysman frequency domain", zap.Error(err))
 			continue
@@ -64,13 +62,13 @@ func enumFrequency(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanFrequency(name string, freq *l0sysman.Frequency, device *sysmanDevice) (*sysmanFrequency, error) {
+func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequency, error) {
 	props, err := freq.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
-	return &sysmanFrequency{
+	return &frequency{
 		Frequency: freq,
 		logger:    device.logger,
 		attributes: frequencyAttributes{
@@ -81,12 +79,14 @@ func newSysmanFrequency(name string, freq *l0sysman.Frequency, device *sysmanDev
 			hwFrequencyType: strings.ToLower(props.Type.String()),
 			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
-		// Aggregated metrics
-		actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
+		state: frequencyState{
+			// Aggregated metrics
+			actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
+		},
 	}, nil
 }
 
-func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// Handle instantaneous metrics
 	if rang, err := f.GetRange(); err != nil {
 		f.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", f.attributes)
@@ -164,10 +164,10 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 	}
 
 	// Handle aggregated metrics
-	if f.actual == nil {
+	if f.state.actual == nil {
 		return
 	}
-	actualStats := f.actual.collect(0)
+	actualStats := f.state.actual.collect(0)
 
 	if actualStats.samples > 0 {
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.minValue*1e6),
@@ -217,19 +217,19 @@ func (f *sysmanFrequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timesta
 	}
 }
 
-func (f *sysmanFrequency) pollAggregatedMetrics() {
-	if f.actual == nil {
+func (f *frequency) pollAggregatedMetrics() {
+	if f.state.actual == nil {
 		return
 	}
 
 	if state, err := f.GetState(); err != nil {
 		f.logger.Errorw("Failed to get frequency state for aggregated metrics", zap.Error(err), "attributes", f.attributes)
-		f.actual = nil // Stop polling if we can't get the state
+		f.state.actual = nil // Stop polling if we can't get the state
 	} else if state.Actual < 0 {
 		// A negative value indicates "not known", stop polling in this case:
 		// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
-		f.actual = nil
+		f.state.actual = nil
 	} else {
-		f.actual.add(state.Actual)
+		f.state.actual.add(state.Actual)
 	}
 }

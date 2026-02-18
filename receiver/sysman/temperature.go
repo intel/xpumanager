@@ -20,15 +20,15 @@ func init() {
 	registerSubsystem("temperature", enumTemperature)
 }
 
-type sysmanTemperature struct {
+type temperature struct {
 	*l0sysman.Temperature
 	logger     *zap.SugaredLogger
 	attributes temperatureAttributes
-	state      sysmanTemperatureState
+	state      temperatureState
 }
 
-// sysmanTemperatureState holds the dynamic runtime state of the temperature instance.
-type sysmanTemperatureState struct {
+// temperatureState holds the dynamic runtime state of the temperature instance.
+type temperatureState struct {
 	disabled bool
 }
 
@@ -42,7 +42,7 @@ type temperatureAttributes struct {
 	subdeviceId    string
 }
 
-func enumTemperature(d *sysmanDevice) []instanceScraper {
+func enumTemperature(d *device) []instanceScraper {
 	temps, err := d.EnumTemperatureSensors()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate temperature sensors", zap.Error(err))
@@ -51,7 +51,7 @@ func enumTemperature(d *sysmanDevice) []instanceScraper {
 	scrapers := make([]instanceScraper, 0, len(temps))
 	for i, temp := range temps {
 		name := fmt.Sprintf("temp_%d", i)
-		t, err := newSysmanTemperature(name, temp, d)
+		t, err := newTemperature(name, temp, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create Sysman temperature sensor", zap.Error(err))
 			continue
@@ -61,7 +61,7 @@ func enumTemperature(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanTemperature(name string, temp *l0sysman.Temperature, device *sysmanDevice) (*sysmanTemperature, error) {
+func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*temperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func newSysmanTemperature(name string, temp *l0sysman.Temperature, device *sysma
 		statistic = metadata.AttributeStatisticMin
 	}
 
-	return &sysmanTemperature{
+	return &temperature{
 		Temperature: temp,
 		logger:      device.logger,
 		attributes: temperatureAttributes{
@@ -89,7 +89,7 @@ func newSysmanTemperature(name string, temp *l0sysman.Temperature, device *sysma
 	}, nil
 }
 
-func (t *sysmanTemperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (t *temperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if t.state.disabled {
 		return
 	}
@@ -109,4 +109,4 @@ func (t *sysmanTemperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Times
 	}
 }
 
-func (m *sysmanTemperature) pollAggregatedMetrics() {}
+func (m *temperature) pollAggregatedMetrics() {}

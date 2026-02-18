@@ -21,16 +21,16 @@ func init() {
 	registerSubsystem("memory", enumMemory)
 }
 
-type sysmanMemory struct {
+type memory struct {
 	*l0sysman.Memory
 	logger     *zap.SugaredLogger
 	attributes memoryAttributes
-	counter    *l0sysman.MemBandwidth
-	state      sysmanMemoryState
+	state      memoryState
 }
 
-// sysmanMemoryState holds the dynamic runtime state of the memory instance.
-type sysmanMemoryState struct {
+// memoryState holds the dynamic runtime state of the memory instance.
+type memoryState struct {
+	counter          *l0sysman.MemBandwidth
 	healthStatesSeen map[l0sysman.MemHealth]bool
 }
 
@@ -44,7 +44,7 @@ type memoryAttributes struct {
 	subdeviceId    string
 }
 
-func enumMemory(d *sysmanDevice) []instanceScraper {
+func enumMemory(d *device) []instanceScraper {
 	mems, err := d.EnumMemoryModules()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate memory modules", zap.Error(err))
@@ -53,7 +53,7 @@ func enumMemory(d *sysmanDevice) []instanceScraper {
 	scrapers := make([]instanceScraper, 0, len(mems))
 	for i, mem := range mems {
 		name := fmt.Sprintf("mem_%d", i)
-		m, err := newSysmanMemory(name, mem, d)
+		m, err := newMemory(name, mem, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create Sysman memory module", zap.Error(err))
 			continue
@@ -63,16 +63,16 @@ func enumMemory(d *sysmanDevice) []instanceScraper {
 	return scrapers
 }
 
-func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*sysmanMemory, error) {
+func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
-	m := &sysmanMemory{
+	m := &memory{
 		Memory: mem,
 		logger: device.logger,
-		state: sysmanMemoryState{
+		state: memoryState{
 			healthStatesSeen: make(map[l0sysman.MemHealth]bool),
 		},
 		attributes: memoryAttributes{
@@ -94,12 +94,12 @@ func newSysmanMemory(name string, mem *l0sysman.Memory, device *sysmanDevice) (*
 			device.logger.Warnw("Failed to get memory bandwidth", zap.Error(err))
 		}
 	} else {
-		m.counter = &counter
+		m.state.counter = &counter
 	}
 	return m, nil
 }
 
-func (m *sysmanMemory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	state, err := m.GetState()
 	if err != nil {
 		m.logger.Errorw("Failed to get memory module state", zap.Error(err), "attributes", m.attributes)
@@ -145,8 +145,8 @@ func (m *sysmanMemory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 	m.scrapeBW(mb, ts)
 }
 
-func (m *sysmanMemory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if m.counter == nil {
+func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if m.state.counter == nil {
 		// uninitialized/invalid previous value => skip BW metrics
 		return
 	}
@@ -154,7 +154,7 @@ func (m *sysmanMemory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	counter, err := m.GetBandwidth()
 	if err != nil {
 		m.logger.Errorw("Failed to get memory bandwidth", zap.Error(err), "attributes", m.attributes)
-		m.counter = nil
+		m.state.counter = nil
 		return
 	}
 
@@ -193,10 +193,10 @@ func (m *sysmanMemory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	// - Deprecated: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-ext-bandwidth-t
 	// - Experimental: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-counter-bits-exp-properties-t
 	// => For now assume their values to wrap at full type width
-	timeDiff := u64CounterDiff(m.counter.Timestamp, counter.Timestamp)
-	rxDiff := u64CounterDiff(m.counter.ReadCounter, counter.ReadCounter)
-	txDiff := u64CounterDiff(m.counter.WriteCounter, counter.WriteCounter)
-	m.counter = &counter
+	timeDiff := u64CounterDiff(m.state.counter.Timestamp, counter.Timestamp)
+	rxDiff := u64CounterDiff(m.state.counter.ReadCounter, counter.ReadCounter)
+	txDiff := u64CounterDiff(m.state.counter.WriteCounter, counter.WriteCounter)
+	m.state.counter = &counter
 	if timeDiff == 0 {
 		return
 	}
@@ -246,4 +246,4 @@ func (m *sysmanMemory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	}
 }
 
-func (m *sysmanMemory) pollAggregatedMetrics() {}
+func (m *memory) pollAggregatedMetrics() {}

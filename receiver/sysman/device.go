@@ -18,10 +18,10 @@ import (
 )
 
 type deviceRegistry struct {
-	devices []*sysmanDevice
+	devices []*device
 }
 
-type sysmanDevice struct {
+type device struct {
 	*l0sysman.Device
 	logger                      *zap.SugaredLogger
 	attributes                  deviceAttributes
@@ -72,15 +72,15 @@ func (r *deviceRegistry) pollAggregatedMetrics() {
 	}
 }
 
-func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) ([]*sysmanDevice, error) {
+func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) ([]*device, error) {
 	zesDevs, err := driver.DeviceGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES devices: %w", err)
 	}
-	devs := make([]*sysmanDevice, len(zesDevs))
+	devs := make([]*device, len(zesDevs))
 	for i, d := range zesDevs {
 		name := fmt.Sprintf("gpu_%d", i)
-		dev, err := newSysmanDevice(name, d, logger, aggregatedMetricsBufferSize)
+		dev, err := newDevice(name, d, logger, aggregatedMetricsBufferSize)
 		if err != nil {
 			return nil, err
 		}
@@ -90,14 +90,14 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 	return devs, nil
 }
 
-func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*sysmanDevice, error) {
-	props, err := device.GetProperties()
+func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*device, error) {
+	props, err := dev.GetProperties()
 	if err != nil {
 		return nil, err
 	}
 
-	d := &sysmanDevice{
-		Device: device,
+	d := &device{
+		Device: dev,
 		logger: logger,
 		attributes: deviceAttributes{
 			hwID:           props.Core.Uuid.Id.String(),
@@ -118,7 +118,7 @@ func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLo
 	}
 	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
 
-	if pci, err := device.PciGetProperties(); err != nil {
+	if pci, err := dev.PciGetProperties(); err != nil {
 		logger.Errorw("failed to get PCI properties", "error", err, "deviceAttributes", d.attributes)
 	} else {
 		d.attributes.pciBDF = fmt.Sprintf("%04x:%02x:%02x.%x", pci.Address.Domain, pci.Address.Bus, pci.Address.Device, pci.Address.Function)
@@ -131,7 +131,7 @@ func newSysmanDevice(name string, device *l0sysman.Device, logger *zap.SugaredLo
 	return d, nil
 }
 
-func (d *sysmanDevice) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.hwID,
 		d.attributes.hwModel,
@@ -149,7 +149,7 @@ func (d *sysmanDevice) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp)
 	}
 }
 
-func (d *sysmanDevice) pollAggregatedMetrics() {
+func (d *device) pollAggregatedMetrics() {
 	for _, s := range d.scrapers {
 		s.pollAggregatedMetrics()
 	}

@@ -21,7 +21,7 @@ type instanceScraper interface {
 	pollAggregatedMetrics()
 }
 
-type enumDeviceFunc func(*sysmanDevice) []instanceScraper
+type enumDeviceFunc func(*device) []instanceScraper
 
 type subsystem struct {
 	enumDevice enumDeviceFunc
