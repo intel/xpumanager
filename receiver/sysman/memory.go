@@ -25,12 +25,12 @@ type memory struct {
 	*l0sysman.Memory
 	logger     *zap.SugaredLogger
 	attributes memoryAttributes
-	counter    *l0sysman.MemBandwidth
 	state      memoryState
 }
 
 // memoryState holds the dynamic runtime state of the memory instance.
 type memoryState struct {
+	counter          *l0sysman.MemBandwidth
 	healthStatesSeen map[l0sysman.MemHealth]bool
 }
 
@@ -94,7 +94,7 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 			device.logger.Warnw("Failed to get memory bandwidth", zap.Error(err))
 		}
 	} else {
-		m.counter = &counter
+		m.state.counter = &counter
 	}
 	return m, nil
 }
@@ -146,7 +146,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 }
 
 func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if m.counter == nil {
+	if m.state.counter == nil {
 		// uninitialized/invalid previous value => skip BW metrics
 		return
 	}
@@ -154,7 +154,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	counter, err := m.GetBandwidth()
 	if err != nil {
 		m.logger.Errorw("Failed to get memory bandwidth", zap.Error(err), "attributes", m.attributes)
-		m.counter = nil
+		m.state.counter = nil
 		return
 	}
 
@@ -193,10 +193,10 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// - Deprecated: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-ext-bandwidth-t
 	// - Experimental: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-counter-bits-exp-properties-t
 	// => For now assume their values to wrap at full type width
-	timeDiff := u64CounterDiff(m.counter.Timestamp, counter.Timestamp)
-	rxDiff := u64CounterDiff(m.counter.ReadCounter, counter.ReadCounter)
-	txDiff := u64CounterDiff(m.counter.WriteCounter, counter.WriteCounter)
-	m.counter = &counter
+	timeDiff := u64CounterDiff(m.state.counter.Timestamp, counter.Timestamp)
+	rxDiff := u64CounterDiff(m.state.counter.ReadCounter, counter.ReadCounter)
+	txDiff := u64CounterDiff(m.state.counter.WriteCounter, counter.WriteCounter)
+	m.state.counter = &counter
 	if timeDiff == 0 {
 		return
 	}

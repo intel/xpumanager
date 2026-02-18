@@ -26,9 +26,6 @@ type frequency struct {
 
 	state      frequencyState
 	attributes frequencyAttributes
-
-	// Aggregated metrics
-	actual *aggregatedMetric[float64]
 }
 
 type frequencyAttributes struct {
@@ -42,6 +39,7 @@ type frequencyAttributes struct {
 
 // frequencyState holds the dynamic runtime state.
 type frequencyState struct {
+	actual              *aggregatedMetric[float64]
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
 }
 
@@ -81,8 +79,10 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 			hwFrequencyType: strings.ToLower(props.Type.String()),
 			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
-		// Aggregated metrics
-		actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
+		state: frequencyState{
+			// Aggregated metrics
+			actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
+		},
 	}, nil
 }
 
@@ -164,10 +164,10 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 
 	// Handle aggregated metrics
-	if f.actual == nil {
+	if f.state.actual == nil {
 		return
 	}
-	actualStats := f.actual.collect(0)
+	actualStats := f.state.actual.collect(0)
 
 	if actualStats.samples > 0 {
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.minValue*1e6),
@@ -218,18 +218,18 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 }
 
 func (f *frequency) pollAggregatedMetrics() {
-	if f.actual == nil {
+	if f.state.actual == nil {
 		return
 	}
 
 	if state, err := f.GetState(); err != nil {
 		f.logger.Errorw("Failed to get frequency state for aggregated metrics", zap.Error(err), "attributes", f.attributes)
-		f.actual = nil // Stop polling if we can't get the state
+		f.state.actual = nil // Stop polling if we can't get the state
 	} else if state.Actual < 0 {
 		// A negative value indicates "not known", stop polling in this case:
 		// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
-		f.actual = nil
+		f.state.actual = nil
 	} else {
-		f.actual.add(state.Actual)
+		f.state.actual.add(state.Actual)
 	}
 }

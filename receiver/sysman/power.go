@@ -22,12 +22,16 @@ func init() {
 
 type power struct {
 	*l0sysman.Power
-	limited bool
-	counter l0sysman.PowerEnergyCounter
 	logger  *zap.SugaredLogger
 	attribs powerAttribs
+	state   powerState
 }
 
+// powerState holds the dynamic runtime state of the power instance.
+type powerState struct {
+	limited bool
+	counter l0sysman.PowerEnergyCounter
+}
 type powerAttribs struct {
 	hwID           string
 	hwType         metadata.AttributeHwType
@@ -76,10 +80,8 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 	}
 
 	return &power{
-		Power:   pwr,
-		limited: true,
-		counter: counter,
-		logger:  device.logger,
+		Power:  pwr,
+		logger: device.logger,
 		attribs: powerAttribs{
 			hwID:           device.attributes.hwID + "_" + name,
 			hwType:         metadata.AttributeHwTypeGpu,
@@ -87,6 +89,10 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 			hwParent:       device.attributes.hwID,
 			sensorLocation: strings.ToLower(location),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+		},
+		state: powerState{
+			limited: true,
+			counter: counter,
 		},
 	}, nil
 }
@@ -118,9 +124,9 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
 	// so their values are assumed to wrap at full type width
-	tdiff := u64CounterDiff(power.counter.Timestamp, counter.Timestamp)
-	ediff := u64CounterDiff(power.counter.Energy, counter.Energy)
-	power.counter = counter
+	tdiff := u64CounterDiff(power.state.counter.Timestamp, counter.Timestamp)
+	ediff := u64CounterDiff(power.state.counter.Energy, counter.Energy)
+	power.state.counter = counter
 	if tdiff == 0 {
 		return
 	}
@@ -136,7 +142,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	)
 
 	// log only once
-	if !power.limited {
+	if !power.state.limited {
 		return
 	}
 
@@ -144,7 +150,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	limits, err := power.GetLimitsExt()
 	if err != nil {
 		power.logger.Warnw("Failed to get power limits", zap.Error(err))
-		power.limited = false
+		power.state.limited = false
 		return
 	}
 
@@ -170,7 +176,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	if count == 0 {
 		power.logger.Warnf("0 / %d suitable power limits", len(limits))
-		power.limited = false
+		power.state.limited = false
 	}
 }
 
