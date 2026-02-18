@@ -53,7 +53,7 @@ func enumTemperature(d *device) []instanceScraper {
 		name := fmt.Sprintf("temp_%d", i)
 		t, err := newTemperature(name, temp, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman temperature sensor", zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman temperature sensor", "index", i, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, t)
