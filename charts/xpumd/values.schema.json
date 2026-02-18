@@ -115,6 +115,19 @@
                                     }
                                 }
                             }
+                        },
+                        "telemetry": {
+                            "type": "object",
+                            "properties": {
+                                "logs": {
+                                    "type": "object",
+                                    "properties": {
+                                        "level": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

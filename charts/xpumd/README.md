@@ -51,13 +51,13 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | config.processors.intelxpustatus | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details. |
 | config.receivers | object |   | Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers) |
 | config.receivers.intelxpu | object |   | Configuration for the Intel XPU receiver. |
-| config.receivers.intelxpu.collection_interval | string | `"30s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
+| config.receivers.intelxpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
 | config.receivers.intelxpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
 | config.receivers.intelxpu.log_level | string | `"info"` | Log level (debug, info, warn, error) |
 | config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service | object | `{"pipelines":{"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 

@@ -98,7 +98,7 @@ config:
       log_level: info
       # -- Metrics data collection interval. Must be at least twice the sampling_interval.
       # @section -- XPUM Daemon Configuration
-      collection_interval: 30s
+      collection_interval: 5s
       # -- Initial start delay for metrics collection, any non positive value is assumed to be immediately.
       # @section -- XPUM Daemon Configuration
       initial_delay: 1s
@@ -112,6 +112,13 @@ config:
       # @section -- XPUM Daemon Configuration
       metrics: {}
 
+  # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
+  # @section -- XPUM Daemon Configuration
+  processors:
+    # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
+    # @section -- XPUM Daemon Configuration
+    intelxpustatus: {}
+
   # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
   # @default --  
   # @section -- XPUM Daemon Configuration
@@ -122,13 +129,6 @@ config:
     intelxpuinfo:
       endpoint: "/run/xpumd/intelxpuinfo.sock"
 
-  # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
-  # @section -- XPUM Daemon Configuration
-  processors:
-    # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
-    # @section -- XPUM Daemon Configuration
-    intelxpustatus: {}
-
   # -- Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)
   # @section -- XPUM Daemon Configuration
   extensions: {}
@@ -136,6 +136,11 @@ config:
   # -- Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)
   # @section -- XPUM Daemon Configuration
   service:
+    telemetry:
+      logs:
+        level: info
+        # TODO: enable before release
+        #disable_stacktrace: true
     pipelines:
       metrics:
         receivers: [intelxpu]
