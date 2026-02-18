@@ -65,7 +65,7 @@ func enumFrequency(d *device) []instanceScraper {
 func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequency, error) {
 	props, err := freq.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("frequency GetProperties() failed: %w", err)
 	}
 
 	return &frequency{

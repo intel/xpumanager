@@ -6,6 +6,7 @@
 package sysman
 
 import (
+	"fmt"
 	"strings"
 
 	"go.uber.org/zap"
@@ -48,7 +49,7 @@ func enumFirmwares(d *device) []*firmware {
 func newFirmware(fw *l0sysman.Firmware) (*firmware, error) {
 	props, err := fw.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("firmware GetProperties() failed: %w", err)
 	}
 
 	return &firmware{

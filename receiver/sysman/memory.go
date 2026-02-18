@@ -66,7 +66,7 @@ func enumMemory(d *device) []instanceScraper {
 func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("memory GetProperties() failed: %w", err)
 	}
 
 	m := &memory{

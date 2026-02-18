@@ -50,7 +50,7 @@ func newSysmanScraper(_ context.Context, settings scraper.Settings, cfg *Config)
 
 	devices, err := newDeviceRegistry(logger, cfg.aggregatedMetricsBufferSize)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize device registry: %w", err)
 	}
 
 	return &sysmanScraper{

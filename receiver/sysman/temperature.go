@@ -64,7 +64,7 @@ func enumTemperature(d *device) []instanceScraper {
 func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*temperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("temperature GetProperties() failed: %w", err)
 	}
 	tempType := strings.ToLower(props.Type.String())
 	location := tempType

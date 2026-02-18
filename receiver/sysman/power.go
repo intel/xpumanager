@@ -63,7 +63,7 @@ func enumPower(d *device) []instanceScraper {
 func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) {
 	props, err := pwr.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("power GetProperties() failed: %w", err)
 	}
 
 	var location string
@@ -76,7 +76,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 	// initial / previous counter value + check for counter working
 	counter, err := pwr.GetEnergyCounter()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("power GetEnergyCounter() failed: %w", err)
 	}
 
 	return &power{
