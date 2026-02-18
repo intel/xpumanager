@@ -26,6 +26,7 @@ stats:
 OTEL_VERSION ?= 0.145.0
 
 .PHONY: build
+# Build xpumd + xpuinfo-cli
 build:
 	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
 	go tool -modfile tools/go.mod builder --config=builder-config.yaml
@@ -35,10 +36,12 @@ build:
 generate: generate-proto generate-mods
 
 .PHONY: generate-mods
+# Generate indicated Go modules code + Helm docs / validation schema
 generate-mods:
 	scripts/generate.sh $(GO_MODULES)
 
 .PHONY: generate-proto
+# Generate health processor gRPC protocol implementation
 generate-proto: install-protoc
 	PATH=tools/bin/ protoc --go_out=. --go_opt=paths=source_relative \
 	                       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
