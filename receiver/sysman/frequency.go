@@ -94,19 +94,19 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		if rang.Min >= 0 {
 			mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
 				f.attributes.hwID,
-				f.attributes.hwFrequencyType,
 				f.attributes.hwName,
 				f.attributes.hwParent,
 				f.attributes.subdeviceId,
+				f.attributes.hwFrequencyType,
 				"min")
 		}
 		if rang.Max >= 0 {
 			mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
 				f.attributes.hwID,
-				f.attributes.hwFrequencyType,
 				f.attributes.hwName,
 				f.attributes.hwParent,
 				f.attributes.subdeviceId,
+				f.attributes.hwFrequencyType,
 				"max")
 		}
 	}
@@ -117,10 +117,10 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		if state.Request >= 0 {
 			mb.RecordHwFrequencyRequestDataPoint(ts, int64(state.Request*1e6),
 				f.attributes.hwID,
-				f.attributes.hwFrequencyType,
 				f.attributes.hwName,
 				f.attributes.hwParent,
-				f.attributes.subdeviceId)
+				f.attributes.subdeviceId,
+				f.attributes.hwFrequencyType)
 		}
 
 		states := map[string]int64{}
@@ -134,11 +134,11 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		for state, value := range states {
 			mb.RecordHwStatusDataPoint(ts, value,
 				f.attributes.hwID,
-				state,
 				f.attributes.hwName,
-				f.attributes.hwType,
 				f.attributes.hwParent,
-				f.attributes.subdeviceId)
+				f.attributes.subdeviceId,
+				state,
+				f.attributes.hwType)
 		}
 
 		for reason := l0sysman.FreqThrottleReasonFlag(1); reason < l0sysman.FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32; reason <<= 1 {
@@ -154,10 +154,10 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			if l0sysman.FreqThrottleReasonFlag(f.state.throttleReasonsSeen)&reason != 0 {
 				mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
 					f.attributes.hwID,
-					f.attributes.hwFrequencyType,
 					f.attributes.hwName,
 					f.attributes.hwParent,
 					f.attributes.subdeviceId,
+					f.attributes.hwFrequencyType,
 					strings.ToLower(reason.String()))
 			}
 		}
@@ -172,43 +172,43 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if actualStats.samples > 0 {
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.minValue*1e6),
 			f.attributes.hwID,
-			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
 			f.attributes.hwParent,
 			f.attributes.subdeviceId,
+			f.attributes.hwFrequencyType,
 			metadata.AttributeAggregationMin)
 
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.maxValue*1e6),
 			f.attributes.hwID,
-			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
 			f.attributes.hwParent,
 			f.attributes.subdeviceId,
+			f.attributes.hwFrequencyType,
 			metadata.AttributeAggregationMax)
 
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.avgValue*1e6),
 			f.attributes.hwID,
-			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
 			f.attributes.hwParent,
 			f.attributes.subdeviceId,
+			f.attributes.hwFrequencyType,
 			metadata.AttributeAggregationAvg)
 
 		// Sample debug metrics
 		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.samples),
 			f.attributes.hwID,
-			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
 			f.attributes.hwParent,
 			f.attributes.subdeviceId,
+			f.attributes.hwFrequencyType,
 			metadata.AttributeSampleStatusCollected)
 
 		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.lostSamples),
 			f.attributes.hwID,
-			f.attributes.hwFrequencyType,
 			f.attributes.hwName,
 			f.attributes.hwParent,
 			f.attributes.subdeviceId,
+			f.attributes.hwFrequencyType,
 			metadata.AttributeSampleStatusDropped)
 	}
 

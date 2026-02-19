@@ -249,7 +249,7 @@ func (m *metricHwEnergy) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwEnergy) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwEnergy) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -260,8 +260,8 @@ func (m *metricHwEnergy) recordDataPoint(start pcommon.Timestamp, ts pcommon.Tim
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -305,7 +305,7 @@ func (m *metricHwFrequency) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwFrequency) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, aggregationAttributeValue string) {
+func (m *metricHwFrequency) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, aggregationAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -314,10 +314,10 @@ func (m *metricHwFrequency) recordDataPoint(start pcommon.Timestamp, ts pcommon.
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("aggregation", aggregationAttributeValue)
 }
 
@@ -362,7 +362,7 @@ func (m *metricHwFrequencyLimit) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwFrequencyLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwLimitTypeAttributeValue string) {
+func (m *metricHwFrequencyLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwLimitTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -371,10 +371,10 @@ func (m *metricHwFrequencyLimit) recordDataPoint(start pcommon.Timestamp, ts pco
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("hw.limit_type", hwLimitTypeAttributeValue)
 }
 
@@ -419,7 +419,7 @@ func (m *metricHwFrequencyRequest) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwFrequencyRequest) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwFrequencyRequest) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -428,10 +428,10 @@ func (m *metricHwFrequencyRequest) recordDataPoint(start pcommon.Timestamp, ts p
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -475,7 +475,7 @@ func (m *metricHwFrequencySamples) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwFrequencySamples) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, sampleStatusAttributeValue string) {
+func (m *metricHwFrequencySamples) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, sampleStatusAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -484,10 +484,10 @@ func (m *metricHwFrequencySamples) recordDataPoint(start pcommon.Timestamp, ts p
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("sample.status", sampleStatusAttributeValue)
 }
 
@@ -534,7 +534,7 @@ func (m *metricHwFrequencyThrottleStatus) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwFrequencyThrottleStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, comIntelSpeedThrottleReasonAttributeValue string) {
+func (m *metricHwFrequencyThrottleStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, comIntelSpeedThrottleReasonAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -543,10 +543,10 @@ func (m *metricHwFrequencyThrottleStatus) recordDataPoint(start pcommon.Timestam
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
 	dp.Attributes().PutStr("com.intel.speed.throttle_reason", comIntelSpeedThrottleReasonAttributeValue)
 }
 
@@ -593,7 +593,7 @@ func (m *metricHwGpuInfo) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
+func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -602,8 +602,8 @@ func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Ti
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.model", hwModelAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("hw.model", hwModelAttributeValue)
 	dp.Attributes().PutStr("hw.serial_number", hwSerialNumberAttributeValue)
 	dp.Attributes().PutStr("hw.vendor", hwVendorAttributeValue)
 	dp.Attributes().PutStr("hw.firmware_version", hwFirmwareVersionAttributeValue)
@@ -655,7 +655,7 @@ func (m *metricHwMemoryBandwidthLimit) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemoryBandwidthLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemoryBandwidthLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -664,11 +664,11 @@ func (m *metricHwMemoryBandwidthLimit) recordDataPoint(start pcommon.Timestamp, 
 	dp.SetTimestamp(ts)
 	dp.SetDoubleValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -712,7 +712,7 @@ func (m *metricHwMemoryBandwidthUtilization) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemoryBandwidthUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemoryBandwidthUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -721,11 +721,11 @@ func (m *metricHwMemoryBandwidthUtilization) recordDataPoint(start pcommon.Times
 	dp.SetTimestamp(ts)
 	dp.SetDoubleValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -771,7 +771,7 @@ func (m *metricHwMemoryIo) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemoryIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, networkIoDirectionAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemoryIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, networkIoDirectionAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -780,12 +780,12 @@ func (m *metricHwMemoryIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.T
 	dp.SetTimestamp(ts)
 	dp.SetDoubleValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
-	dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -829,7 +829,7 @@ func (m *metricHwMemoryIoRate) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemoryIoRate) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemoryIoRate) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -838,11 +838,11 @@ func (m *metricHwMemoryIoRate) recordDataPoint(start pcommon.Timestamp, ts pcomm
 	dp.SetTimestamp(ts)
 	dp.SetDoubleValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -888,7 +888,7 @@ func (m *metricHwMemorySize) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -897,11 +897,11 @@ func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -947,7 +947,7 @@ func (m *metricHwMemoryUsage) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -956,11 +956,11 @@ func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommo
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1004,7 +1004,7 @@ func (m *metricHwPower) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwPower) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwPower) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1015,8 +1015,8 @@ func (m *metricHwPower) recordDataPoint(start pcommon.Timestamp, ts pcommon.Time
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1060,7 +1060,7 @@ func (m *metricHwPowerLimit) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwPowerLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string, comIntelPowerLimitLevelAttributeValue string, comIntelPowerLimitSourceAttributeValue string) {
+func (m *metricHwPowerLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, comIntelPowerLimitLevelAttributeValue string, comIntelPowerLimitSourceAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1071,8 +1071,8 @@ func (m *metricHwPowerLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 	dp.Attributes().PutStr("com.intel.power.limit.level", comIntelPowerLimitLevelAttributeValue)
 	dp.Attributes().PutStr("com.intel.power.limit.source", comIntelPowerLimitSourceAttributeValue)
 }
@@ -1120,7 +1120,7 @@ func (m *metricHwStatus) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwStateAttributeValue string, hwNameAttributeValue string, hwTypeAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwStateAttributeValue string, hwTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1129,11 +1129,11 @@ func (m *metricHwStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Tim
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.state", hwStateAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
 	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.state", hwStateAttributeValue)
+	dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1177,7 +1177,7 @@ func (m *metricHwTemperature) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwTemperature) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, statisticAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
+func (m *metricHwTemperature) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, statisticAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1188,9 +1188,9 @@ func (m *metricHwTemperature) recordDataPoint(start pcommon.Timestamp, ts pcommo
 	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
 	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
 	dp.Attributes().PutStr("hw.parent", hwParentAttributeValue)
+	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
 	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
 	dp.Attributes().PutStr("statistic", statisticAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1391,88 +1391,88 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 }
 
 // RecordHwEnergyDataPoint adds a data point to hw.energy metric.
-func (mb *MetricsBuilder) RecordHwEnergyDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwEnergy.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, hwSensorLocationAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwEnergyDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
+	mb.metricHwEnergy.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue)
 }
 
 // RecordHwFrequencyDataPoint adds a data point to hw.frequency metric.
-func (mb *MetricsBuilder) RecordHwFrequencyDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, aggregationAttributeValue AttributeAggregation) {
-	mb.metricHwFrequency.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwFrequencyDomainAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, aggregationAttributeValue.String())
+func (mb *MetricsBuilder) RecordHwFrequencyDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, aggregationAttributeValue AttributeAggregation) {
+	mb.metricHwFrequency.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwFrequencyDomainAttributeValue, aggregationAttributeValue.String())
 }
 
 // RecordHwFrequencyLimitDataPoint adds a data point to hw.frequency.limit metric.
-func (mb *MetricsBuilder) RecordHwFrequencyLimitDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwLimitTypeAttributeValue string) {
-	mb.metricHwFrequencyLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwFrequencyDomainAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwLimitTypeAttributeValue)
+func (mb *MetricsBuilder) RecordHwFrequencyLimitDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwLimitTypeAttributeValue string) {
+	mb.metricHwFrequencyLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwFrequencyDomainAttributeValue, hwLimitTypeAttributeValue)
 }
 
 // RecordHwFrequencyRequestDataPoint adds a data point to hw.frequency.request metric.
-func (mb *MetricsBuilder) RecordHwFrequencyRequestDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwFrequencyRequest.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwFrequencyDomainAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwFrequencyRequestDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string) {
+	mb.metricHwFrequencyRequest.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwFrequencyDomainAttributeValue)
 }
 
 // RecordHwFrequencySamplesDataPoint adds a data point to hw.frequency.samples metric.
-func (mb *MetricsBuilder) RecordHwFrequencySamplesDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, sampleStatusAttributeValue AttributeSampleStatus) {
-	mb.metricHwFrequencySamples.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwFrequencyDomainAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, sampleStatusAttributeValue.String())
+func (mb *MetricsBuilder) RecordHwFrequencySamplesDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, sampleStatusAttributeValue AttributeSampleStatus) {
+	mb.metricHwFrequencySamples.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwFrequencyDomainAttributeValue, sampleStatusAttributeValue.String())
 }
 
 // RecordHwFrequencyThrottleStatusDataPoint adds a data point to hw.frequency.throttle_status metric.
-func (mb *MetricsBuilder) RecordHwFrequencyThrottleStatusDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, comIntelSpeedThrottleReasonAttributeValue string) {
-	mb.metricHwFrequencyThrottleStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwFrequencyDomainAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, comIntelSpeedThrottleReasonAttributeValue)
+func (mb *MetricsBuilder) RecordHwFrequencyThrottleStatusDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, comIntelSpeedThrottleReasonAttributeValue string) {
+	mb.metricHwFrequencyThrottleStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwFrequencyDomainAttributeValue, comIntelSpeedThrottleReasonAttributeValue)
 }
 
 // RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.
-func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwModelAttributeValue string, hwNameAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
-	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwModelAttributeValue, hwNameAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, pciBdfAttributeValue, pciDeviceIDAttributeValue, pciVendorIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
+	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwModelAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, pciBdfAttributeValue, pciDeviceIDAttributeValue, pciVendorIDAttributeValue)
 }
 
 // RecordHwMemoryBandwidthLimitDataPoint adds a data point to hw.memory.bandwidth.limit metric.
-func (mb *MetricsBuilder) RecordHwMemoryBandwidthLimitDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemoryBandwidthLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemoryBandwidthLimitDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
+	mb.metricHwMemoryBandwidthLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue)
 }
 
 // RecordHwMemoryBandwidthUtilizationDataPoint adds a data point to hw.memory.bandwidth.utilization metric.
-func (mb *MetricsBuilder) RecordHwMemoryBandwidthUtilizationDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemoryBandwidthUtilization.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemoryBandwidthUtilizationDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
+	mb.metricHwMemoryBandwidthUtilization.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue)
 }
 
 // RecordHwMemoryIoDataPoint adds a data point to hw.memory.io metric.
-func (mb *MetricsBuilder) RecordHwMemoryIoDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, networkIoDirectionAttributeValue AttributeNetworkIoDirection, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemoryIo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, networkIoDirectionAttributeValue.String(), comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemoryIoDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, networkIoDirectionAttributeValue AttributeNetworkIoDirection) {
+	mb.metricHwMemoryIo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, networkIoDirectionAttributeValue.String())
 }
 
 // RecordHwMemoryIoRateDataPoint adds a data point to hw.memory.io.rate metric.
-func (mb *MetricsBuilder) RecordHwMemoryIoRateDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemoryIoRate.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemoryIoRateDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
+	mb.metricHwMemoryIoRate.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue)
 }
 
 // RecordHwMemorySizeDataPoint adds a data point to hw.memory.size metric.
-func (mb *MetricsBuilder) RecordHwMemorySizeDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemorySize.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemorySizeDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
+	mb.metricHwMemorySize.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue)
 }
 
 // RecordHwMemoryUsageDataPoint adds a data point to hw.memory.usage metric.
-func (mb *MetricsBuilder) RecordHwMemoryUsageDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwMemoryUsage.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwMemoryUsageDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
+	mb.metricHwMemoryUsage.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwMemoryLocationAttributeValue, hwMemoryTypeAttributeValue)
 }
 
 // RecordHwPowerDataPoint adds a data point to hw.power metric.
-func (mb *MetricsBuilder) RecordHwPowerDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwPower.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, hwSensorLocationAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwPowerDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
+	mb.metricHwPower.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue)
 }
 
 // RecordHwPowerLimitDataPoint adds a data point to hw.power.limit metric.
-func (mb *MetricsBuilder) RecordHwPowerLimitDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, comIntelSubdeviceIDAttributeValue string, comIntelPowerLimitLevelAttributeValue string, comIntelPowerLimitSourceAttributeValue string) {
-	mb.metricHwPowerLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, hwSensorLocationAttributeValue, comIntelSubdeviceIDAttributeValue, comIntelPowerLimitLevelAttributeValue, comIntelPowerLimitSourceAttributeValue)
+func (mb *MetricsBuilder) RecordHwPowerLimitDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, comIntelPowerLimitLevelAttributeValue string, comIntelPowerLimitSourceAttributeValue string) {
+	mb.metricHwPowerLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue, comIntelPowerLimitLevelAttributeValue, comIntelPowerLimitSourceAttributeValue)
 }
 
 // RecordHwStatusDataPoint adds a data point to hw.status metric.
-func (mb *MetricsBuilder) RecordHwStatusDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwStateAttributeValue string, hwNameAttributeValue string, hwTypeAttributeValue AttributeHwType, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwStateAttributeValue, hwNameAttributeValue, hwTypeAttributeValue.String(), hwParentAttributeValue, comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwStatusDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwStateAttributeValue string, hwTypeAttributeValue AttributeHwType) {
+	mb.metricHwStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwStateAttributeValue, hwTypeAttributeValue.String())
 }
 
 // RecordHwTemperatureDataPoint adds a data point to hw.temperature metric.
-func (mb *MetricsBuilder) RecordHwTemperatureDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, hwSensorLocationAttributeValue string, statisticAttributeValue AttributeStatistic, comIntelSubdeviceIDAttributeValue string) {
-	mb.metricHwTemperature.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, hwSensorLocationAttributeValue, statisticAttributeValue.String(), comIntelSubdeviceIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwTemperatureDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, hwParentAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, statisticAttributeValue AttributeStatistic) {
+	mb.metricHwTemperature.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue, statisticAttributeValue.String())
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

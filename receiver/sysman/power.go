@@ -118,8 +118,8 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		power.attribs.hwID,
 		power.attribs.hwName,
 		power.attribs.hwParent,
-		power.attribs.sensorLocation,
 		power.attribs.subdeviceId,
+		power.attribs.sensorLocation,
 	)
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
@@ -137,8 +137,8 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		power.attribs.hwID,
 		power.attribs.hwName,
 		power.attribs.hwParent,
-		power.attribs.sensorLocation,
 		power.attribs.subdeviceId,
+		power.attribs.sensorLocation,
 	)
 
 	// log only once
@@ -166,8 +166,8 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			power.attribs.hwID,
 			power.attribs.hwName,
 			power.attribs.hwParent,
-			power.attribs.sensorLocation,
 			power.attribs.subdeviceId,
+			power.attribs.sensorLocation,
 			strings.ToLower(limit.Level.String()),
 			strings.ToLower(limit.Source.String()),
 		)

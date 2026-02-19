@@ -134,8 +134,8 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.hwID,
-		d.attributes.hwModel,
 		d.attributes.hwName,
+		d.attributes.hwModel,
 		d.attributes.hwSerialNumber,
 		d.attributes.hwVendor,
 		d.attributes.hwFirmwareVersion,

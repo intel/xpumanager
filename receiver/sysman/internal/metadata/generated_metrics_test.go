@@ -60,71 +60,71 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", "com.intel.subdevice_id-val")
+			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.frequency.domain-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", AttributeAggregationMin)
+			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeAggregationMin)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyLimitDataPoint(ts, 1, "hw.id-val", "hw.frequency.domain-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.limit_type-val")
+			mb.RecordHwFrequencyLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "hw.limit_type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyRequestDataPoint(ts, 1, "hw.id-val", "hw.frequency.domain-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwFrequencyRequestDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencySamplesDataPoint(ts, 1, "hw.id-val", "hw.frequency.domain-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", AttributeSampleStatusCollected)
+			mb.RecordHwFrequencySamplesDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeSampleStatusCollected)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 1, "hw.id-val", "hw.frequency.domain-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "com.intel.speed.throttle_reason-val")
+			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "com.intel.speed.throttle_reason-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.model-val", "hw.name-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val")
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", AttributeNetworkIoDirectionReceive, "com.intel.subdevice_id-val")
+			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val", AttributeNetworkIoDirectionReceive)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryIoRateDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemoryIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.memory.location-val", "hw.memory.type-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", "com.intel.subdevice_id-val")
+			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", "com.intel.subdevice_id-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
+			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.state-val", "hw.name-val", AttributeHwTypeFrequency, "hw.parent-val", "com.intel.subdevice_id-val")
+			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.state-val", AttributeHwTypeFrequency)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwTemperatureDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "hw.sensor_location-val", AttributeStatisticMin, "com.intel.subdevice_id-val")
+			mb.RecordHwTemperatureDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", AttributeStatisticMin)
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
@@ -171,12 +171,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 				case "hw.frequency":
 					assert.False(t, validatedMetrics["hw.frequency"], "Found a duplicate in the metrics slice: hw.frequency")
 					validatedMetrics["hw.frequency"] = true
@@ -192,9 +192,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -204,6 +201,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("aggregation")
 					assert.True(t, ok)
 					assert.Equal(t, "min", attrVal.Str())
@@ -222,9 +222,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -234,6 +231,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.limit_type")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.limit_type-val", attrVal.Str())
@@ -252,9 +252,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -264,6 +261,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 				case "hw.frequency.samples":
 					assert.False(t, validatedMetrics["hw.frequency.samples"], "Found a duplicate in the metrics slice: hw.frequency.samples")
 					validatedMetrics["hw.frequency.samples"] = true
@@ -279,9 +279,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -291,6 +288,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("sample.status")
 					assert.True(t, ok)
 					assert.Equal(t, "collected", attrVal.Str())
@@ -311,9 +311,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -323,6 +320,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.frequency.domain")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.frequency.domain-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.speed.throttle_reason")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.speed.throttle_reason-val", attrVal.Str())
@@ -343,12 +343,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.model")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.model-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.model")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.model-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.serial_number")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.serial_number-val", attrVal.Str())
@@ -384,12 +384,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.type")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -399,6 +393,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 				case "hw.memory.bandwidth.utilization":
 					assert.False(t, validatedMetrics["hw.memory.bandwidth.utilization"], "Found a duplicate in the metrics slice: hw.memory.bandwidth.utilization")
 					validatedMetrics["hw.memory.bandwidth.utilization"] = true
@@ -414,12 +414,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.type")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -429,6 +423,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 				case "hw.memory.io":
 					assert.False(t, validatedMetrics["hw.memory.io"], "Found a duplicate in the metrics slice: hw.memory.io")
 					validatedMetrics["hw.memory.io"] = true
@@ -446,24 +446,24 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.type")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("network.io.direction")
-					assert.True(t, ok)
-					assert.Equal(t, "receive", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("network.io.direction")
+					assert.True(t, ok)
+					assert.Equal(t, "receive", attrVal.Str())
 				case "hw.memory.io.rate":
 					assert.False(t, validatedMetrics["hw.memory.io.rate"], "Found a duplicate in the metrics slice: hw.memory.io.rate")
 					validatedMetrics["hw.memory.io.rate"] = true
@@ -479,12 +479,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.type")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -494,6 +488,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 				case "hw.memory.size":
 					assert.False(t, validatedMetrics["hw.memory.size"], "Found a duplicate in the metrics slice: hw.memory.size")
 					validatedMetrics["hw.memory.size"] = true
@@ -511,12 +511,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.type")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -526,6 +520,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 				case "hw.memory.usage":
 					assert.False(t, validatedMetrics["hw.memory.usage"], "Found a duplicate in the metrics slice: hw.memory.usage")
 					validatedMetrics["hw.memory.usage"] = true
@@ -543,12 +543,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.memory.type")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
@@ -558,6 +552,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", attrVal.Str())
 				case "hw.power":
 					assert.False(t, validatedMetrics["hw.power"], "Found a duplicate in the metrics slice: hw.power")
 					validatedMetrics["hw.power"] = true
@@ -579,12 +579,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 				case "hw.power.limit":
 					assert.False(t, validatedMetrics["hw.power.limit"], "Found a duplicate in the metrics slice: hw.power.limit")
 					validatedMetrics["hw.power.limit"] = true
@@ -606,12 +606,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.power.limit.level")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.power.limit.level-val", attrVal.Str())
@@ -635,21 +635,21 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.state")
-					assert.True(t, ok)
-					assert.Equal(t, "hw.state-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.type")
-					assert.True(t, ok)
-					assert.Equal(t, "frequency", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.state")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.state-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.type")
+					assert.True(t, ok)
+					assert.Equal(t, "frequency", attrVal.Str())
 				case "hw.temperature":
 					assert.False(t, validatedMetrics["hw.temperature"], "Found a duplicate in the metrics slice: hw.temperature")
 					validatedMetrics["hw.temperature"] = true
@@ -671,15 +671,15 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.parent")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.sensor_location")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.sensor_location-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("statistic")
 					assert.True(t, ok)
 					assert.Equal(t, "min", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
-					assert.True(t, ok)
-					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
 				}
 			}
 		})
