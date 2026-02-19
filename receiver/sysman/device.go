@@ -48,10 +48,10 @@ func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize in
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES drivers: %w", err)
 	}
-	for _, driver := range drivers {
+	for i, driver := range drivers {
 		devs, err := enumDevices(driver, logger, aggregatedMetricsBufferSize)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to enumerate devices for driver %d/%d: %w", i+1, len(drivers), err)
 		}
 
 		reg.devices = append(reg.devices, devs...)
@@ -82,7 +82,7 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 		name := fmt.Sprintf("gpu_%d", i)
 		dev, err := newDevice(name, d, logger, aggregatedMetricsBufferSize)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create sysman device for device %d/%d: %w", i+1, len(devs), err)
 		}
 
 		devs[i] = dev
@@ -93,7 +93,7 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*device, error) {
 	props, err := dev.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("device GetProperties() failed: %w", err)
 	}
 
 	d := &device{

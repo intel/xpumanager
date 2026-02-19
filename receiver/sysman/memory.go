@@ -55,7 +55,7 @@ func enumMemory(d *device) []instanceScraper {
 		name := fmt.Sprintf("mem_%d", i)
 		m, err := newMemory(name, mem, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman memory module", zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman memory module", "index", i, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, m)
@@ -66,7 +66,7 @@ func enumMemory(d *device) []instanceScraper {
 func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("memory GetProperties() failed: %w", err)
 	}
 
 	m := &memory{

@@ -53,7 +53,7 @@ func enumTemperature(d *device) []instanceScraper {
 		name := fmt.Sprintf("temp_%d", i)
 		t, err := newTemperature(name, temp, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman temperature sensor", zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman temperature sensor", "index", i, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, t)
@@ -64,7 +64,7 @@ func enumTemperature(d *device) []instanceScraper {
 func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*temperature, error) {
 	props, err := temp.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("temperature GetProperties() failed: %w", err)
 	}
 	tempType := strings.ToLower(props.Type.String())
 	location := tempType

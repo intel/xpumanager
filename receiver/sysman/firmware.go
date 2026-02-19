@@ -6,6 +6,7 @@
 package sysman
 
 import (
+	"fmt"
 	"strings"
 
 	"go.uber.org/zap"
@@ -34,10 +35,10 @@ func enumFirmwares(d *device) []*firmware {
 		return nil
 	}
 	ret := make([]*firmware, 0, len(fws))
-	for _, fw := range fws {
+	for i, fw := range fws {
 		m, err := newFirmware(fw)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman firmware", zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman firmware", "index", i, zap.Error(err))
 			continue
 		}
 		ret = append(ret, m)
@@ -48,7 +49,7 @@ func enumFirmwares(d *device) []*firmware {
 func newFirmware(fw *l0sysman.Firmware) (*firmware, error) {
 	props, err := fw.GetProperties()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("firmware GetProperties() failed: %w", err)
 	}
 
 	return &firmware{
