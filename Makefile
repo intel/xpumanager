@@ -7,6 +7,8 @@
 
 # Skip the main module at the repo root as it's currently empty and makes some checks to fail.
 GO_MODULES := $(shell git ls-files '*/go.mod' | xargs dirname)
+LEVEL_ZERO_GO_MODULES := $(shell git ls-files '*/go.mod' | grep -F 'level-zero-go' | xargs dirname)
+XPUMD_GO_MODULES := $(filter-out $(LEVEL_ZERO_GO_MODULES),$(GO_MODULES))
 
 .PHONY: help
 help:
@@ -33,12 +35,17 @@ build:
 	go -C dist build github.com/intel/xpumanager/exporter/xpuinfo-cli
 
 .PHONY: generate
-generate: generate-proto generate-mods
+generate: generate-bindings generate-mods generate-proto
+
+.PHONY: generate-bindings
+# Generate Go bindings for Level-Zero
+generate-bindings:
+	make -C receiver/internal/level-zero-go generate
 
 .PHONY: generate-mods
 # Generate indicated Go modules code + Helm docs / validation schema
 generate-mods:
-	scripts/generate.sh $(GO_MODULES)
+	scripts/generate.sh $(XPUMD_GO_MODULES)
 
 .PHONY: generate-proto
 # Generate health processor gRPC protocol implementation
