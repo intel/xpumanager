@@ -17,13 +17,6 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v6
 
-    - name: Checkout level-zero-go
-      uses: actions/checkout@v6
-      with:
-        repository: intel/level-zero-go
-        path: ./level-zero-go
-        token: ${{ secrets.LEVEL_ZERO_GO_BINDINGS_TOKEN }}
-
     - name: Check modfiles
       run: ./scripts/make-dockerized.sh check-modfiles
 
