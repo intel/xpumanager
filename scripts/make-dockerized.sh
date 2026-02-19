@@ -20,8 +20,16 @@ else
     echo "Probably running inside a container, running container as root"
 fi
 
+GOMODCACHE=$(go env GOMODCACHE 2>/dev/null || true)
+GOMODCACHE_MOUNT=()
+if [ -n "${GOMODCACHE}" -a -d "${GOMODCACHE}" ]; then
+    echo "Mounting GOMODCACHE from host: ${GOMODCACHE}"
+    GOMODCACHE_MOUNT=(-v "${GOMODCACHE}:/go/pkg/mod")
+fi
+
 docker run --rm \
     ${USER_FLAG} \
+    "${GOMODCACHE_MOUNT[@]}" \
     -e HOME=/go \
     -v "$(pwd):/go/src" \
     -w /go/src \
