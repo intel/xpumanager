@@ -186,7 +186,7 @@ uint8_t pldm::pldmFwGetParamPayload(uint8_t cmd, uint8_t id)
 	// som = 0 and eom = 1 Last response
 	// som = 0 and eom = 0 Multi response
 	if ((mI2cPldmRead->mctpSmbusHdr.som == PLDM_SOM_BIT_ON) && (mI2cPldmRead->mctpSmbusHdr.eom == PLDM_EOM_BIT_ON)) {
-		DBG("SOM and EOM are set to 1, single response from AMC... Proceed with next command\n");
+		DBG("som and EOM are set to 1, single response from AMC... Proceed with next command\n");
 		mI2cMultiResp = false;
 	} else if (((mI2cPldmRead->mctpSmbusHdr.som == PLDM_SOM_BIT_ON) &&
 				(mI2cPldmRead->mctpSmbusHdr.eom == PLDM_EOM_BIT_OFF)) ||

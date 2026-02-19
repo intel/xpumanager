@@ -109,7 +109,7 @@ typedef enum xpum_result_enum
 	XPUM_RESULT_GROUP_NOT_FOUND = 5,
 	XPUM_RESULT_POLICY_TYPE_INVALID = 6,				///< Policy type is invalid
 	XPUM_RESULT_POLICY_ACTION_TYPE_INVALID = 7,			///< Policy action type is invalid
-	XPUM_RESULT_POLICY_CONDITION_TYPE_INVALID = 8,		///< Policy condtion type is invalid
+	XPUM_RESULT_POLICY_CONDITION_TYPE_INVALID = 8,		///< Policy condition type is invalid
 	XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT = 9,		///< Policy type and policy action not match
 	XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT = 10, ///< Policy type and condition type not match
 	XPUM_RESULT_POLICY_INVALID_THRESHOLD = 11,			///< Policy threshold invalid
@@ -891,7 +891,7 @@ typedef struct xpum_device_realtime_metric_t
 } xpum_device_realtime_metric_t;
 
 /**
- * @brief Struct to store device realtime datas
+ * @brief Struct to store device realtime data
  *
  */
 typedef struct xpum_device_realtime_metrics_t
@@ -1259,7 +1259,7 @@ typedef struct xpum_policy_notify_callback_para_t
 } xpum_policy_notify_callback_para_t;
 
 typedef void (*xpum_notify_callback_ptr_t)(
-	xpum_policy_notify_callback_para_t *); // return value for policy condtion trigger and action
+	xpum_policy_notify_callback_para_t *); // return value for policy condition trigger and action
 typedef struct xpum_policy_t
 {
 	xpum_policy_type_t type;

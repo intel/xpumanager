@@ -46,7 +46,7 @@ std::vector<char> fwupd::readImageContent(const char *filePath)
  * This function fetches the firmware progress update from zesFirmwareGetFlashProgress
  * and updates the screen with completed percentage of firmware flash
  *
- * @param flashData the pointer to structure containing firmware handle and mutex for syncronization
+ * @param flashData the pointer to structure containing firmware handle and mutex for synchronization
  */
 static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 {
