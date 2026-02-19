@@ -526,10 +526,6 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(
 		HEADING, "%s config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]", progName.c_str()));
 	helpList.push_back(
-		helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --xelinkport [portId,value]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]", progName.c_str()));
-	helpList.push_back(
 		helpCmd(HEADING, "%s config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config -d [deviceId] --pciedowngrade [0|1] 0:disable; 1:enable", progName.c_str()));
@@ -565,11 +561,6 @@ void cmdConfig::help(HELP helpType)
 											"bounded and requires very little support from the memory support"));
 	helpList.push_back(helpCmd(SUB_HEADING, "0 means that the workload is completely memory bounded and the "
 											"performance of the memory controller needs to be increased"));
-	helpList.push_back(helpCmd(
-		HEADING, "--xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up"));
-	helpList.push_back(helpCmd(
-		HEADING,
-		"--xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on"));
 	helpList.push_back(
 		helpCmd(HEADING, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
 	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));

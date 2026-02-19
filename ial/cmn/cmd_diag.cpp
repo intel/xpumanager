@@ -1228,38 +1228,6 @@ ze_result_t cmdDiag::mediaFuncTest(UNUSED devInfo *d, nlohmann::ordered_json *js
 }
 
 /**
- * @brief Executes Xe Link throughput diagnostic test
- *
- * This function tests Intel Xe Link fabric interconnect throughput between
- * GPU devices, measuring inter-GPU communication bandwidth and validating
- * fabric link performance and connectivity.
- *
- * @param[in] d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_ERROR_UNSUPPORTED_FEATURE as Xe Link is not supported
- */
-ze_result_t cmdDiag::xeLinkThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-}
-
-/**
- * @brief Executes Xe Link all-to-all throughput diagnostic test
- *
- * This function tests comprehensive Xe Link fabric throughput between all
- * available GPU devices simultaneously, measuring full fabric bandwidth
- * and validating complete multi-GPU interconnect performance.
- *
- * @param[in] d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_ERROR_UNSUPPORTED_FEATURE as Xe Link is not supported
- */
-ze_result_t cmdDiag::xeLinkAllToAllThroughput(UNUSED devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-}
-
-/**
  * @brief Prints formatted table borders for diagnostic output
  *
  * This utility function prints formatted table borders used in diagnostic

@@ -55,8 +55,6 @@ enum diagSubSingleCmdType
 	DIAG_SINGLE_COMPUTATIONFUNCTEST,
 	DIAG_SINGLE_MEDIAFUNCTEST,
 	DIAG_SINGLE_MEMORYALLOCATION,
-	DIAG_SINGLE_XELINKTHROUGHPUT,
-	DIAG_SINGLE_XELINKALLTOALLTHROUGHPUT,
 	TOTAL_DIAG_SUB_SINGLE_CMD,
 };
 
@@ -141,8 +139,6 @@ public:
 	ze_result_t powerTest(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t computationFuncTest(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t mediaFuncTest(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t xeLinkThroughput(devInfo *d, nlohmann::ordered_json *jsonObj);
-	ze_result_t xeLinkAllToAllThroughput(devInfo *d, nlohmann::ordered_json *jsonObj);
 
 	int run(arg_struct *args);
 };
