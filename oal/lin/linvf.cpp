@@ -572,7 +572,7 @@ static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromCon
 			} else if (strcmp(key.c_str(), "DRIVERS_AUTOPROBE") == 0 && currentNameId) {
 				data[currentNameId].driversAutoprobe = (bool)std::stoi(value);
 				if (currentNameId != XPUM_MAX_VF_NUM) {
-					DBG("Found predefined vgpu configration from vgpu.conf\n");
+					DBG("Found predefined vgpu configuration from vgpu.conf\n");
 					break;
 				}
 			}

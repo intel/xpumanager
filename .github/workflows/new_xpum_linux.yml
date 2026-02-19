@@ -302,6 +302,7 @@ jobs:
       - name: Setup Python environment
         run: |
           . $HOME/.ci-venv/bin/activate
+          pip install -q codespell
           echo "VIRTUAL_ENV=$HOME/.ci-venv" >> $GITHUB_ENV
           echo "PATH=$HOME/.ci-venv/bin:$PATH" >> $GITHUB_ENV
       - name: Download build artifacts
@@ -335,6 +336,9 @@ jobs:
                               -extra-arg=-Wno-gnu-zero-variadic-macro-arguments \
                               -extra-arg=-Wno-sign-conversion \
                               -extra-arg=-Wno-inconsistent-missing-override
+      - name: Run codespell
+        run: codespell --ignore-words-list renderD,renderd,som,SOM  --skip '*.exe,*.gz,*.pdf,*.xlsx,pci.ids,third_party,html,meson-*' .
+        
       - name: Check license headers
         run: |
           echo "Verifying license headers in source files..."
