@@ -1717,9 +1717,6 @@ static std::unordered_map<statsCmdType, statsCmdStruct> statsCmds = {
 	{statsCmdType::STATS_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
 	{statsCmdType::STATS_EU, {{"eu", no_argument, 0, 'e'}, &cmdStats::eu, false, ""}},
 	{statsCmdType::STATS_RAS, {{"ras", no_argument, 0, 'r'}, &cmdStats::ras, false, ""}},
-	{statsCmdType::STATS_X, {{"x", no_argument, 0, 'x'}, &cmdStats::x, false, ""}},
-	{statsCmdType::STATS_XELINK, {{"xelink", no_argument, 0, 0}, &cmdStats::xelink, false, ""}},
-	{statsCmdType::STATS_UTILS, {{"utils", no_argument, 0, 0}, &cmdStats::utils, false, ""}},
 	{statsCmdType::STATS_SAMPLES, {{"samples", required_argument, 0, 0}, nullptr, false, ""}},
 	{statsCmdType::STATS_INTERVAL, {{"interval", required_argument, 0, 0}, nullptr, false, ""}},
 };
@@ -1758,10 +1755,6 @@ void cmdStats::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-e,--eu                     Show EU metrics"));
 	helpList.push_back(helpCmd(HEADING, "-r,--ras                    Show RAS error metrics"));
-	helpList.push_back(helpCmd(HEADING, "-x                          Show Xe Link metrics"));
-	helpList.push_back(
-		helpCmd(HEADING, "--xelink                    Show the all the Xe Link throughput (GB/s) matrix"));
-	helpList.push_back(helpCmd(HEADING, "--utils                     Show the Xe Link throughput utilization"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--samples                   Number of samples to collect (default: 2)"));
 	helpList.push_back(
@@ -1798,54 +1791,6 @@ ze_result_t cmdStats::eu(UNUSED devInfo *d)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
  */
 ze_result_t cmdStats::ras(UNUSED devInfo *d)
-{
-	TRACING();
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Retrieves and displays extended GPU statistics
- *
- * This function provides access to extended statistical information that
- * may include advanced performance metrics, power efficiency data, and
- * other specialized statistics not covered by standard metric collections.
- *
- * @param d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
- */
-ze_result_t cmdStats::x(UNUSED devInfo *d)
-{
-	TRACING();
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Retrieves and displays Xe Link interconnect statistics
- *
- * This function collects statistics related to Xe Link fabric connections,
- * including bandwidth utilization, link status, throughput metrics, and
- * inter-GPU communication performance for multi-GPU configurations.
- *
- * @param d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
- */
-ze_result_t cmdStats::xelink(UNUSED devInfo *d)
-{
-	TRACING();
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Retrieves and displays GPU utilization statistics
- *
- * This function provides comprehensive utilization metrics including
- * compute engine usage, memory bandwidth utilization, power consumption
- * patterns, and overall device activity levels over time.
- *
- * @param d Pointer to device information structure (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
- */
-ze_result_t cmdStats::utils(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
@@ -1890,9 +1835,6 @@ int cmdStats::run(arg_struct *args)
 			break;
 		case 'r':
 			statsCmds[STATS_RAS].enabled = true;
-			break;
-		case 'x':
-			statsCmds[STATS_X].enabled = true;
 			break;
 		case 0:
 			for (auto &cmd : statsCmds) {

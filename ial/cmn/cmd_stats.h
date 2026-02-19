@@ -28,9 +28,6 @@ enum statsCmdType
 	STATS_DEVICE,
 	STATS_EU,
 	STATS_RAS,
-	STATS_X,
-	STATS_XELINK,
-	STATS_UTILS,
 	STATS_SAMPLES,
 	STATS_INTERVAL,
 	TOTAL_STATS,
@@ -259,9 +256,6 @@ public:
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t eu(devInfo *d);
 	ze_result_t ras(devInfo *d);
-	ze_result_t x(devInfo *d);
-	ze_result_t xelink(devInfo *d);
-	ze_result_t utils(devInfo *d);
 	int run(arg_struct *args);
 
 private:
