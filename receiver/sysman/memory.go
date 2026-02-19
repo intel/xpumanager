@@ -108,20 +108,20 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	mb.RecordHwMemorySizeDataPoint(ts, int64(state.Size),
 		m.attributes.hwID,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,
 		m.attributes.subdeviceId,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
 	)
 
 	mb.RecordHwMemoryUsageDataPoint(ts, int64(state.Size-state.Free),
 		m.attributes.hwID,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,
 		m.attributes.subdeviceId,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
 	)
 
 	m.state.healthStatesSeen[state.Health] = true
@@ -134,11 +134,11 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 		mb.RecordHwStatusDataPoint(ts, value,
 			m.attributes.hwID,
-			strings.ToLower(s.String()),
 			m.attributes.hwName,
-			m.attributes.hwType,
 			m.attributes.hwParent,
 			m.attributes.subdeviceId,
+			strings.ToLower(s.String()),
+			m.attributes.hwType,
 		)
 	}
 
@@ -171,22 +171,22 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwMemoryIoDataPoint(
 		ts, float64(counter.ReadCounter),
 		m.attributes.hwID,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,
-		metadata.AttributeNetworkIoDirectionReceive,
 		m.attributes.subdeviceId,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
+		metadata.AttributeNetworkIoDirectionReceive,
 	)
 	mb.RecordHwMemoryIoDataPoint(
 		ts, float64(counter.WriteCounter),
 		m.attributes.hwID,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,
-		metadata.AttributeNetworkIoDirectionTransmit,
 		m.attributes.subdeviceId,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
+		metadata.AttributeNetworkIoDirectionTransmit,
 	)
 
 	// TODO: Go bindings do not provide BW counter value width info:
@@ -211,11 +211,11 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwMemoryIoRateDataPoint(
 		ts, rate,
 		m.attributes.hwID,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
 		m.attributes.hwName,
 		m.attributes.hwParent,
 		m.attributes.subdeviceId,
+		m.attributes.memoryLocation,
+		m.attributes.memoryType,
 	)
 
 	if counter.MaxBandwidth > 0 {
@@ -226,22 +226,22 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwMemoryBandwidthLimitDataPoint(
 			ts, max,
 			m.attributes.hwID,
-			m.attributes.memoryLocation,
-			m.attributes.memoryType,
 			m.attributes.hwName,
 			m.attributes.hwParent,
 			m.attributes.subdeviceId,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
 		)
 
 		// BW utilization ratio
 		mb.RecordHwMemoryBandwidthUtilizationDataPoint(
 			ts, rate/max,
 			m.attributes.hwID,
-			m.attributes.memoryLocation,
-			m.attributes.memoryType,
 			m.attributes.hwName,
 			m.attributes.hwParent,
 			m.attributes.subdeviceId,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
 		)
 	}
 }

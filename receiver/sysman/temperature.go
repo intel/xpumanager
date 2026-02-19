@@ -102,9 +102,9 @@ func (t *temperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) 
 			t.attributes.hwID,
 			t.attributes.hwName,
 			t.attributes.hwParent,
+			t.attributes.subdeviceId,
 			t.attributes.sensorLocation,
 			t.attributes.statistic,
-			t.attributes.subdeviceId,
 		)
 	}
 }
