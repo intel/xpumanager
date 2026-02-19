@@ -254,6 +254,12 @@ add_project_arguments(compile_args, language : 'cpp')
 # Specify link flags
 add_project_link_arguments(link_args, language: 'cpp')
 
+# Install-path constant: used for resource/ files
+if is_linux
+  xpum_data_dir = get_option('prefix') / get_option('datadir') / 'xpum'
+  add_project_arguments('-DXPUM_DATA_DIR="' + xpum_data_dir + '"', language : 'cpp')
+endif
+
 # Build subdirectories
 subdir('utility')
 subdir('oal')
@@ -302,10 +308,10 @@ elif is_windows
     check: false)
 endif
 
-# Install resources directory next to binaries so they can be found
-# when running from the install location 
+# Install resources under the FHS data directory.
+# Results in: <prefix>/share/xpum/resources/
 install_subdir('resources',
-  install_dir: get_option('bindir'),
+  install_dir: get_option('datadir') / 'xpum',
   strip_directory: false)
 
 # Summary
