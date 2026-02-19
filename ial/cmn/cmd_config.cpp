@@ -979,7 +979,7 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		ERR("Error: Invalid tile ID.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
-	int tileId = std::stoi(tileIdStr);
+	uint32_t tileId = std::stoi(tileIdStr);
 
 	std::string rangeStr = configCmds[configCmdType::FREQUENCYRANGE].val;
 	size_t commaPos = rangeStr.find(',');
