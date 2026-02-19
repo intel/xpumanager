@@ -6,6 +6,14 @@
 {{ template "chart.sourcesSection" . }}
 {{ template "chart.requirementsSection" . }}
 
+## Pre-conditions
+
+Kubernetes cluster with eiher Intel GPU plugin[^1] or Intel GPU resource driver[^2] installed.
+
+[^1]: [Intel GPU plugin](https://intel.github.io/intel-device-plugins-for-kubernetes/cmd/gpu_plugin/README.html)
+[^2]: [Intel GPU resource driver](https://github.com/intel/intel-resource-drivers-for-kubernetes/tree/main/doc/gpu#readme)
+
+
 ## Installation
 
 Helm login to ghcr.io:
@@ -23,13 +31,28 @@ kubectl create secret docker-registry ghcr-secret \
   --docker-password=GITHUB_PERSONAL_ACCESS_TOKEN \
 ```
 
+Create namespace for the daemon and label it for [DRA](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) GPU monitoring access:
+
+```bash
+kubectl create ns intel-xpumd
+kubectl label ns intel-xpumd resource.kubernetes.io/admin-access=true
+```
+
 Install the chart:
 
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
-  --version 0.0.0-main
+  --version 0.0.0-main \
+  --set gpuAccess=MODE \
+  --namespace intel-xpumd
 ```
+
+Where [MODE](#other-values) specifies how monitoring access to Intel GPUs is requested:
+
+* `i915`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
+* `xe`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
+* `dra`: Use Intel GPU resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
 
 By default no metrics exporters are enabled. To enable exporters, the corresponding
 values must be set. For example, to enable the OTLP gRPC exporter:

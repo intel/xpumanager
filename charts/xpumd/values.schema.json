@@ -146,6 +146,15 @@
                 "null"
             ]
         },
+        "gpuAccess": {
+            "description": "method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin)",
+            "type": "string",
+            "enum": [
+                "dra",
+                "i915",
+                "xe"
+            ]
+        },
         "image": {
             "type": "object",
             "properties": {
@@ -188,18 +197,18 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
             "type": "object"
         },
-        "podSecurityContext": {
-            "description": "[Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)",
+        "podSecurityContextOverride": {
+            "description": "[Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to",
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
             "type": "object"
         },
-        "resources": {
-            "description": "[Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container",
+        "resourcesOverride": {
+            "description": "[Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting",
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
             "type": "object"
         },
-        "securityContext": {
-            "description": "[Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)",
+        "securityContextOverride": {
+            "description": "[Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container). NOTE: security settings control to what GPU metrics container has access to",
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext",
             "type": "object"
         },

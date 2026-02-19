@@ -23,8 +23,18 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "xpumd.serviceAccountName" . }}
+      {{- if eq .Values.gpuAccess "dra" }}
+      resourceClaims:
+      - name: {{ include "xpumd.fullname" . }}
+        resourceClaimTemplateName: {{ include "xpumd.fullname" . }}
+      {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- if .Values.podSecurityContextOverride }}
+        {{- toYaml .Values.podSecurityContextOverride | nindent 8 }}
+        {{- else }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -33,15 +43,47 @@ spec:
         - "--config=/etc/xpumd/config-processor-xpustatus.yaml"
         - "--config=/etc/xpumd/config.yaml"
         securityContext:
-          {{- toYaml .Values.securityContext | nindent 10 }}
+          {{- if .Values.securityContextOverride }}
+          {{- toYaml .Values.securityContextOverride | nindent 10 }}
+          {{- else }}
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          # Required for GPU device access, unless container runtime allows device file owner override:
+          # - https://kubernetes.io/blog/2021/11/09/non-root-containers-and-devices/
+          # Required also for all other metrics than frequency, memory usage, power
+          runAsUser: 0
+          capabilities:
+            drop:
+              - ALL
+            add:
+              # required for engine utilization
+              # (bug in underlying layers, PERFMON should be enough)
+              - SYS_ADMIN
+          {{- end }}
         ports:
         - name: http
           containerPort: 8080
           protocol: TCP
-        {{- with .Values.resources }}
         resources:
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
+          {{- if .Values.resourcesOverride }}
+          {{- toYaml .Values.resourcesOverride | nindent 10 }}
+          {{- else }}
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          # map all GPUs to container
+          {{- if eq .Values.gpuAccess "dra" }}
+          claims:
+          - name: {{ include "xpumd.fullname" . }}
+          {{- end }}
+          limits:
+            {{- if eq .Values.gpuAccess "i915" }}
+            gpu.intel.com/i915_monitoring: 1
+            {{- else if eq .Values.gpuAccess "xe" }}
+            gpu.intel.com/xe_monitoring: 1
+            {{- end }}
+            memory: 2Gi
+          {{- end }}
         volumeMounts:
         - name: config
           mountPath: /etc/xpumd
