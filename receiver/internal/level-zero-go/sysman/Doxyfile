@@ -1,0 +1,6 @@
+INPUT          = ../level-zero/ze_api.h ../level-zero/zes_api.h
+HAVE_DOT       = NO
+GENERATE_XML   = YES
+GENERATE_LATEX = NO
+GENERATE_HTML  = NO
+AUTOLINK_SUPPORT = NO
