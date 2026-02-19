@@ -176,6 +176,9 @@ var MetricsInfo = metricsInfo{
 	HwGpuInfo: metricInfo{
 		Name: "hw.gpu.info",
 	},
+	HwGpuUtilization: metricInfo{
+		Name: "hw.gpu.utilization",
+	},
 	HwMemoryBandwidthLimit: metricInfo{
 		Name: "hw.memory.bandwidth.limit",
 	},
@@ -216,6 +219,7 @@ type metricsInfo struct {
 	HwFrequencySamples           metricInfo
 	HwFrequencyThrottleStatus    metricInfo
 	HwGpuInfo                    metricInfo
+	HwGpuUtilization             metricInfo
 	HwMemoryBandwidthLimit       metricInfo
 	HwMemoryBandwidthUtilization metricInfo
 	HwMemoryIo                   metricInfo
@@ -630,6 +634,61 @@ func (m *metricHwGpuInfo) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuInfo(cfg MetricConfig) metricHwGpuInfo {
 	m := metricHwGpuInfo{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwGpuUtilization struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.gpu.utilization metric with initial data.
+func (m *metricHwGpuUtilization) init() {
+	m.data.SetName("hw.gpu.utilization")
+	m.data.SetDescription("GPU engine / task pipeline utilization ratio.")
+	m.data.SetUnit("1")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwGpuUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwGpuTaskAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.gpu.task", hwGpuTaskAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuUtilization) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuUtilization) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuUtilization(cfg MetricConfig) metricHwGpuUtilization {
+	m := metricHwGpuUtilization{config: cfg}
 
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
@@ -1234,6 +1293,7 @@ type MetricsBuilder struct {
 	metricHwFrequencySamples           metricHwFrequencySamples
 	metricHwFrequencyThrottleStatus    metricHwFrequencyThrottleStatus
 	metricHwGpuInfo                    metricHwGpuInfo
+	metricHwGpuUtilization             metricHwGpuUtilization
 	metricHwMemoryBandwidthLimit       metricHwMemoryBandwidthLimit
 	metricHwMemoryBandwidthUtilization metricHwMemoryBandwidthUtilization
 	metricHwMemoryIo                   metricHwMemoryIo
@@ -1276,6 +1336,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		metricHwFrequencySamples:           newMetricHwFrequencySamples(mbc.Metrics.HwFrequencySamples),
 		metricHwFrequencyThrottleStatus:    newMetricHwFrequencyThrottleStatus(mbc.Metrics.HwFrequencyThrottleStatus),
 		metricHwGpuInfo:                    newMetricHwGpuInfo(mbc.Metrics.HwGpuInfo),
+		metricHwGpuUtilization:             newMetricHwGpuUtilization(mbc.Metrics.HwGpuUtilization),
 		metricHwMemoryBandwidthLimit:       newMetricHwMemoryBandwidthLimit(mbc.Metrics.HwMemoryBandwidthLimit),
 		metricHwMemoryBandwidthUtilization: newMetricHwMemoryBandwidthUtilization(mbc.Metrics.HwMemoryBandwidthUtilization),
 		metricHwMemoryIo:                   newMetricHwMemoryIo(mbc.Metrics.HwMemoryIo),
@@ -1359,6 +1420,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricHwFrequencySamples.emit(ils.Metrics())
 	mb.metricHwFrequencyThrottleStatus.emit(ils.Metrics())
 	mb.metricHwGpuInfo.emit(ils.Metrics())
+	mb.metricHwGpuUtilization.emit(ils.Metrics())
 	mb.metricHwMemoryBandwidthLimit.emit(ils.Metrics())
 	mb.metricHwMemoryBandwidthUtilization.emit(ils.Metrics())
 	mb.metricHwMemoryIo.emit(ils.Metrics())
@@ -1423,6 +1485,11 @@ func (mb *MetricsBuilder) RecordHwFrequencyThrottleStatusDataPoint(ts pcommon.Ti
 // RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.
 func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
 	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwModelAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, pciBdfAttributeValue, pciDeviceIDAttributeValue, pciVendorIDAttributeValue)
+}
+
+// RecordHwGpuUtilizationDataPoint adds a data point to hw.gpu.utilization metric.
+func (mb *MetricsBuilder) RecordHwGpuUtilizationDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwGpuTaskAttributeValue string) {
+	mb.metricHwGpuUtilization.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, comIntelSubdeviceIDAttributeValue, hwGpuTaskAttributeValue)
 }
 
 // RecordHwMemoryBandwidthLimitDataPoint adds a data point to hw.memory.bandwidth.limit metric.
