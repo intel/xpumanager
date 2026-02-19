@@ -20,7 +20,7 @@
 #include <cinttypes>
 #include <file_io.h>
 
-#define VGPU_CONF_FILE "resources/config/vgpu.conf"
+static constexpr std::string_view VGPU_CONF_FILE = "resources/config/vgpu.conf";
 #define XPUM_MAX_VF_NUM 128
 #define PF_EXEC_QUANTUM_MS 64
 #define PF_PREEMPT_TIMEOUT_US 128000

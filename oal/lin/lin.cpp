@@ -60,7 +60,7 @@
  */
 SystemCommandResult execCommand(const std::string &command)
 {
-	std::array<char, 1048576> buffer = {};
+	std::vector<char> buffer(65536); // 64 KB heap buffer; avoids large stack allocation
 	std::string result;
 	// Custom deleter for pipe(), ensures it is always closed automatically on error
 	struct PipeDeleter
@@ -80,7 +80,7 @@ SystemCommandResult execCommand(const std::string &command)
 	if (pipe != nullptr) {
 		try {
 			std::size_t bytesRead;
-			while ((bytesRead = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe.get())) != 0) {
+			while ((bytesRead = std::fread(buffer.data(), sizeof(char), buffer.size(), pipe.get())) != 0) {
 				result += std::string(buffer.data(), bytesRead);
 			}
 			// std::fread returns 0 both when EOF is reached and when some I/O error occured. Check for completeness
@@ -239,8 +239,7 @@ std::string getProcessName(uint32_t processId)
 {
 	std::string processName = "";
 	std::ifstream pinfo;
-	char path[255];
-	sprintf(path, "/proc/%d/cmdline", processId);
+	std::string path = std::format("/proc/{}/cmdline", processId);
 	pinfo.open(path);
 	if (pinfo.is_open()) {
 		std::getline(pinfo, processName);
@@ -284,6 +283,27 @@ std::string timestamp()
 }
 
 /**
+ * @brief Validates that a BDF address string is well-formed
+ *
+ * BDF addresses must match the canonical format DDDD:BB:DD.F using only
+ * hexadecimal digits and the expected separators. This check prevents
+ * path-traversal attacks when the BDF is embedded in sysfs paths.
+ *
+ * @param bdf The BDF string to validate
+ * @return bool True if the string is a valid BDF address, false otherwise
+ */
+static bool isValidBdf(const std::string &bdf)
+{
+	// BDF format: DDDD:BB:DD.F — exactly 12 characters
+	if (bdf.length() != 12) {
+		return false;
+	}
+	const auto isHex = [](unsigned char c) { return std::isxdigit(c) != 0; };
+	return isHex(bdf[0]) && isHex(bdf[1]) && isHex(bdf[2]) && isHex(bdf[3]) && bdf[4] == ':' && isHex(bdf[5]) &&
+		   isHex(bdf[6]) && bdf[7] == ':' && isHex(bdf[8]) && isHex(bdf[9]) && bdf[10] == '.' && isHex(bdf[11]);
+}
+
+/**
  * @brief Reads a line from a sysfs file for a given PCI device
  *
  * This function constructs a path to a sysfs file for a specific PCI device
@@ -295,9 +315,13 @@ std::string timestamp()
  * @param suffix String containing the sysfs file suffix to append to the device path
  * @return std::string Content of the first line from the sysfs file, empty string if file cannot be read
  */
-std::string getSysfsLine(std::string bdf, std::string suffix)
+std::string getSysfsLine(const std::string &bdf, const std::string &suffix)
 {
 	TRACING();
+	if (!isValidBdf(bdf)) {
+		ERR("Rejecting suspicious BDF address: %s\n", bdf.c_str());
+		return "";
+	}
 	std::string affinity = "";
 	std::ifstream infile;
 	std::string file = std::string("/sys/bus/pci/devices/") + bdf + suffix;
@@ -438,19 +462,21 @@ std::string pci2RegxString(hwloc_obj_t obj)
  */
 std::string getDevicePath(const std::string &bdfAddress)
 {
-	std::string devicePath = "/sys/devices";
 	std::string result;
 	namespace stdfs = std::filesystem;
-	const stdfs::recursive_directory_iterator end{};
 
-	for (stdfs::recursive_directory_iterator iter{devicePath}; iter != end; ++iter) {
-		if (iter->path().string().find(bdfAddress, 0) == std::string::npos) {
-			continue;
+	try {
+		for (stdfs::recursive_directory_iterator iter{"/sys/devices", stdfs::directory_options::skip_permission_denied};
+			 iter != stdfs::recursive_directory_iterator{}; ++iter) {
+			// Match on the exact path component, not a substring, to prevent
+			// partial BDF collisions (e.g. "0000:02:00.0" vs "0000:02:00.00")
+			if (stdfs::is_directory(*iter) && iter->path().filename().string() == bdfAddress) {
+				result = iter->path().string();
+				break;
+			}
 		}
-		if (stdfs::is_directory(*iter)) {
-			result = iter->path().string();
-			break;
-		}
+	} catch (const stdfs::filesystem_error &e) {
+		ERR("Error searching /sys/devices for %s: %s\n", bdfAddress.c_str(), e.what());
 	}
 
 	return result;
@@ -636,41 +662,84 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 }
 
 /**
- * @brief Find a resource file by searching multiple locations
+ * @brief Find a resource file using an explicit allow-list of search roots
  *
- * This function searches for resource files in the following order:
- * 1. Relative to current working directory (for development)
- * 2. Relative to executable location (for installed binaries)
+ * Searches the following locations in order; no other paths are ever tried:
+ *   1. Relative to the current working directory  (in-tree / development builds)
+ *   2. Relative to the running executable          (portable / staged installs)
+ *   3. Under XPUM_DATA_DIR                         (package-manager installs;
+ *                                                   compile-time constant injected
+ *                                                   by Meson from datadir/xpum)
  *
- * @param relativePath The relative path to the resource file (e.g., "resources/config/pci.ids")
- * @return Full path to the resource file if found, or the original relative path if not found
+ * The exe-relative candidate is canonicalised and checked for containment within
+ * the exe directory so that symlinks in the resource tree cannot redirect reads
+ * outside that directory.
  *
- * @note This allows the code to work both during development (cwd-relative) and
- *       after installation (exe-relative)
+ * @param relativePath Relative path to the resource (e.g. "resources/config/pci.ids").
+ *                     Must not contain ".." components intended to escape a search root.
+ * @return Absolute path to the first matching file/directory, or "" if not found.
+ *         Callers must treat an empty return as a hard failure.
  */
 std::string findResourceFile(const std::string &relativePath)
 {
-	// Try current working directory first (for development)
-	if (std::filesystem::exists(relativePath)) {
-		return relativePath;
+	namespace fs = std::filesystem;
+	std::error_code ec;
+
+	// Explicit allow-list of search roots, tried in priority order.
+	// If the resource files are not within these locations, they are
+	// considered malicious and disregarded.
+	// (1) and (2) allow for flexible deployment layouts, while (3) is intended
+	// for standard release
+	//
+	//  1. Current working directory   — development / in-tree builds
+	//  2. Executable-relative path    — portable / staged installs
+	//  3. XPUM_DATA_DIR               — package-manager install (compile-time constant)
+
+	// --- 1. CWD-relative ---
+	fs::path cwdCandidate = fs::current_path(ec) / relativePath;
+	if (!ec && fs::exists(cwdCandidate, ec) && !ec) {
+		return cwdCandidate.string();
 	}
 
-	// Try relative to executable location (for installed binaries)
+	// --- 2. Exe-relative ---
 	try {
-		std::string exePath = std::filesystem::read_symlink("/proc/self/exe").string();
-		std::string exeDir = std::filesystem::path(exePath).parent_path().string();
-		std::string fullPath = exeDir + "/" + relativePath;
+		fs::path exeDir = fs::path(fs::read_symlink("/proc/self/exe")).parent_path();
+		// operator/ normalises the path
+		fs::path candidate = exeDir / relativePath;
 
-		if (std::filesystem::exists(fullPath)) {
-			return fullPath;
+		fs::path canonicalCandidate = fs::canonical(candidate, ec);
+		fs::path canonicalExeDir = fs::canonical(exeDir, ec);
+		if (!ec && fs::exists(canonicalCandidate, ec) && !ec) {
+			auto [mismatch_it, _] =
+				std::mismatch(canonicalExeDir.begin(), canonicalExeDir.end(), canonicalCandidate.begin());
+			if (mismatch_it == canonicalExeDir.end()) {
+				return canonicalCandidate.string();
+			}
+			ERR("findResourceFile: exe-relative path escapes exe directory: %s\n", canonicalCandidate.c_str());
 		}
 	} catch (...) {
-		// If we can't read the exe path, just fall through
 		DBG("Could not read /proc/self/exe to determine executable path\n");
 	}
 
-	// Fall back to the original relative path
-	return relativePath;
+	// --- 3. System data directory (set by Meson at build time) ---
+	// Provide a fallback of "" for unconfigured dev builds; if constexpr
+	// elides the block when the path is empty so no string literal
+	// leaks into the binary or ELF .rodata section.
+#ifndef XPUM_DATA_DIR
+#define XPUM_DATA_DIR ""
+#endif
+	static constexpr std::string_view kXpumDataDir = XPUM_DATA_DIR;
+	if constexpr (!kXpumDataDir.empty()) {
+		fs::path sysCandidate = fs::path(kXpumDataDir) / relativePath;
+		if (fs::exists(sysCandidate, ec) && !ec) {
+			return sysCandidate.string();
+		}
+	}
+
+	// Callers should guard against a non-empty string as well as `exists` to handle the case where a file is found but
+	// becomes inaccessible (e.g. permissions change, NFS issue, etc.)
+	ERR("findResourceFile: resource not found in any allowed location: %s\n", relativePath.c_str());
+	return "";
 }
 
 /**
@@ -703,6 +772,11 @@ std::string getKernelVersion()
  */
 std::string getPciSlotLabel(const std::string &bdf)
 {
+	if (!isValidBdf(bdf)) {
+		ERR("Rejecting suspicious BDF address: %s\n", bdf.c_str());
+		return "";
+	}
+
 	// Try sysfs label first (fast path but rarely populated)
 	std::string labelPath = std::format("/sys/bus/pci/devices/{}/label", bdf);
 	std::ifstream labelFile(labelPath);

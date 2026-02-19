@@ -25,11 +25,14 @@
 #include <numeric>
 #include "lin.h"
 
-#define MEDIA_CODER_TOOLS "/usr/bin/sample_multi_transcode"
-#define MEDIA_DATA_PATH "resources/mediadata/"
-#define MEDIA_CODER_TOOLS_1080P_FILE "test_stream_1080p.265"
-#define MEDIA_CODER_TOOLS_4K_FILE "test_stream_4K.265"
-#define MEDIA_CODEC_TOOLS_LIGHT_FILE "test_stream.264"
+// std::string_view has no operator+(string, string_view), so use const std::string
+// for constants that participate in command-string concatenation. They remain
+// typed, scoped, and debugger-visible — unlike the #defines they replaced.
+static const std::string MEDIA_CODER_TOOLS = "/usr/bin/sample_multi_transcode";
+static const std::string MEDIA_DATA_PATH = "resources/mediadata/";
+static const std::string MEDIA_CODER_TOOLS_1080P_FILE = "test_stream_1080p.265";
+static const std::string MEDIA_CODER_TOOLS_4K_FILE = "test_stream_4K.265";
+static const std::string MEDIA_CODEC_TOOLS_LIGHT_FILE = "test_stream.264";
 
 struct CpuData
 {
@@ -282,36 +285,36 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 	}
 
 	if (functionalCheck && h264LightFileExist) {
-		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h264 " + mediaDataPath +
+		testCommand = MEDIA_CODER_TOOLS + " -device " + devicePath + " -hw -i::h264 " + mediaDataPath +
 					  MEDIA_CODEC_TOOLS_LIGHT_FILE + " -o::h264 null -n 2 2>&1";
 		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
 		if (cResult.exitStatus()) {
-			finalResult = std::string(MEDIA_CODEC_TOOLS_LIGHT_FILE) + ":" + cResult.output();
+			finalResult = MEDIA_CODEC_TOOLS_LIGHT_FILE + ":" + cResult.output();
 			return false;
 		}
 	}
 
 	if (!functionalCheck && h2651080pFileExist) {
 
-		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
+		testCommand = MEDIA_CODER_TOOLS + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
 					  MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
 		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
 		if (cResult.exitStatus()) {
-			finalResult = std::string(MEDIA_CODER_TOOLS_1080P_FILE) + ":" + cResult.output();
+			finalResult = MEDIA_CODER_TOOLS_1080P_FILE + ":" + cResult.output();
 			return false;
 		}
 	}
 
 	if (!functionalCheck && h2654kFileExist) {
-		testCommand = std::string(MEDIA_CODER_TOOLS) + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
+		testCommand = MEDIA_CODER_TOOLS + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
 					  MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/MEDIA_CODER_TOOLS_4K_FILE 2>&1";
 
 		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
 		if (cResult.exitStatus()) {
-			finalResult = std::string(MEDIA_CODER_TOOLS_4K_FILE) + ":" + cResult.output();
+			finalResult = MEDIA_CODER_TOOLS_4K_FILE + ":" + cResult.output();
 			return false;
 		}
 	}

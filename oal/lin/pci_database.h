@@ -9,9 +9,10 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <string_view>
 
-#define PCI_IDS_FILE "pci.ids"
-#define PCI_IDS_CONFIG "pci.conf"
+inline constexpr std::string_view PCI_IDS_FILE = "pci.ids";
+inline constexpr std::string_view PCI_IDS_CONFIG = "pci.conf";
 
 /**
  * Class to parse "pci.ids" and "pci.conf" file, save PCIe switch and built-in device info.
