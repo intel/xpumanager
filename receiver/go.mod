@@ -61,4 +61,4 @@ require (
 
 replace github.com/intel/xpumanager => ..
 
-replace github.com/intel/level-zero-go => ../level-zero-go
+replace github.com/intel/level-zero-go => ./internal/level-zero-go
