@@ -7,7 +7,9 @@ IMAGE_TAG="xpumd-builder:latest"
 
 docker build -t "${IMAGE_TAG}" - <<EOF
 FROM golang:1.25
-RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
+
+# Unzip needed for installing protoc, doxygen for generating Go bindings
+RUN apt-get update && apt-get install -y --no-install-recommends unzip doxygen && \
     curl -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
          -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     dpkg -i ./*.deb && \
