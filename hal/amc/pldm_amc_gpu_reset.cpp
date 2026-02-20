@@ -10,7 +10,7 @@
 /**
  * @brief Execute AMC GPU reset via PLDM Platform Monitoring & Control
  *
- * Uses SetStateEffecterEnable command (0x38) with DISABLED operational state
+ * Uses SetStateEffecterStates command (0x39)
  * on effecter ID 402 (AIC_RESET).
  *
  * Based on PLDM Platform Monitoring & Control Specification (DSP0248)
@@ -25,7 +25,7 @@ uint8_t pldm::amcGpuReset()
 	TRACING();
 
 	// Calculate command length: MCTP header + PLDM header + payload size
-	uint8_t cmdLen = MCTP_HEADER_SIZE + PLDM_HEADER_SIZE + sizeof(setStateEffecterEnableReq);
+	uint8_t cmdLen = MCTP_HEADER_SIZE + PLDM_HEADER_SIZE + sizeof(setStateEffecterStatesReq);
 	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
 	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
 
@@ -33,12 +33,13 @@ uint8_t pldm::amcGpuReset()
 		instanceID = 1;
 	}
 
-	// Build SetStateEffecterEnable request payload
-	struct setStateEffecterEnableReq payload;
+	// Build SetStateEffecterStates request payload
+	struct setStateEffecterStatesReq payload;
 	payload.effecter_id = PLDM_STATE_EFFECTER_AIC_RESET;
 	payload.composite_effecter_count = 1;
-	payload.state_field.effecter_operational_state = PLDM_EFFECTER_DISABLED;
-	payload.state_field.event_message_enable = EVENT_MSG_NO_CHANGE;
+	payload.state_field.set_request = SET_REQUEST_SET;
+	payload.state_field.effecter_state = EFFECTER_STATE_REQUEST_RESTART;
+	constexpr uint8_t amcResetProcessingWaitMultiplier = 2;
 
 	memcpy(mI2cPldmWrite->respPayload, &payload, sizeof(payload));
 
@@ -48,7 +49,7 @@ uint8_t pldm::amcGpuReset()
 	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
 
 	// Construct PLDM header (application layer)
-	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_PLATFORM_MONITORING, PLDM_SET_STATE_EFFECTER_ENABLE,
+	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_PLATFORM_MONITORING, PLDM_SET_STATE_EFFECTER_STATES,
 						PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
 
 	DBG("AMC Reset TX :: ");
@@ -60,8 +61,8 @@ uint8_t pldm::amcGpuReset()
 		return PLDM_ERROR;
 	}
 
-	// Wait for AMC to process command
-	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
+	// GPU reset processing on AMC can take longer than a regular command.
+	MSLEEP(amcResetProcessingWaitMultiplier * I2C_EVENT_WAIT_PERIOD_MS);
 
 	// Read response
 	if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
