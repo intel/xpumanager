@@ -45,9 +45,9 @@ func enumEngine(d *device) []instanceScraper {
 	}
 	scrapers := make([]instanceScraper, 0, len(engines))
 	for i, engine := range engines {
-		m, err := newEngine(i, engine, d)
+		m, err := newEngine(i+1, engine, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman engine group", "index", i, zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman engine group", "index", i+1, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, m)
