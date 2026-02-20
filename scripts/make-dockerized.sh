@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 
-THIS_DIR="$(dirname "$(realpath "$0")")"
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
 LEVEL_ZERO_VERSION=${LEVEL_ZERO_VERSION:-"1.26.2"}
 L0_BASE_URL="https://github.com/oneapi-src/level-zero/releases/download"
@@ -25,7 +25,7 @@ fi
 docker run --rm \
     ${USER_FLAG} \
     -e HOME=/go \
-    -v "${THIS_DIR}/..:/go/src" \
+    -v "${SCRIPT_DIR}/..:/go/src" \
     -w /go/src \
     "${IMAGE_TAG}" \
     /bin/sh -c "make $*"
