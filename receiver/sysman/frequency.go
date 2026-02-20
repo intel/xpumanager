@@ -51,10 +51,10 @@ func enumFrequency(d *device) []instanceScraper {
 	}
 	scrapers := make([]instanceScraper, 0, len(freqs))
 	for i, freq := range freqs {
-		name := fmt.Sprintf("freq_%d", i)
+		name := fmt.Sprintf("freq-%d", i+1)
 		f, err := newFrequency(name, freq, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman frequency domain", "index", i, zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman frequency domain", "index", i+1, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, f)

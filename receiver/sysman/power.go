@@ -49,10 +49,10 @@ func enumPower(d *device) []instanceScraper {
 	}
 	scrapers := make([]instanceScraper, 0, len(items))
 	for i, item := range items {
-		name := fmt.Sprintf("power_%d", i)
+		name := fmt.Sprintf("power-%d", i+1)
 		p, err := newPower(name, item, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman power object", "index", i, zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman power object", "index", i+1, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, p)

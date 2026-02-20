@@ -38,7 +38,7 @@ func enumFirmwares(d *device) []*firmware {
 	for i, fw := range fws {
 		m, err := newFirmware(fw)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman firmware", "index", i, zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman firmware", "index", i+1, zap.Error(err))
 			continue
 		}
 		ret = append(ret, m)
