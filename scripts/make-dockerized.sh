@@ -9,7 +9,9 @@ IMAGE_TAG="xpumd-builder:latest"
 
 docker build -t "${IMAGE_TAG}" - <<EOF
 FROM golang:1.25
-RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
+
+# Unzip needed for installing protoc, doxygen for generating Go bindings
+RUN apt-get update && apt-get install -y --no-install-recommends unzip doxygen && \
     curl -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
          -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     dpkg -i ./*.deb && \
@@ -22,8 +24,16 @@ else
     echo "Probably running inside a container, running container as root"
 fi
 
+GOMODCACHE=$(go env GOMODCACHE 2>/dev/null || true)
+GOMODCACHE_MOUNT=()
+if [ -n "${GOMODCACHE}" -a -d "${GOMODCACHE}" ]; then
+    echo "Mounting GOMODCACHE from host: ${GOMODCACHE}"
+    GOMODCACHE_MOUNT=(-v "${GOMODCACHE}:/go/pkg/mod")
+fi
+
 docker run --rm \
     ${USER_FLAG} \
+    "${GOMODCACHE_MOUNT[@]}" \
     -e HOME=/go \
     -v "${THIS_DIR}/..:/go/src" \
     -w /go/src \
