@@ -1,0 +1,23 @@
+name: Linux - Level-Zero Go bindings
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v6
+
+    - name: Build examples
+      uses: docker/build-push-action@v6
+      with:
+        context: ./xpumd/receiver/internal/level-zero-go
+        file: ./xpumd/receiver/internal/level-zero-go/examples/list-sysman/Dockerfile
