@@ -96,7 +96,7 @@ func (t *temperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) 
 		return
 	}
 	if current, err := t.GetState(); err != nil {
-		t.logger.Warnw("Failed to get temperature state", zap.Error(err), "attributes", t.attributes)
+		t.logger.Warnw("Temperature GetState() failed: temp metric disabled", zap.Error(err), "attributes", t.attributes)
 		t.state.disabled = true
 	} else {
 		mb.RecordHwTemperatureDataPoint(ts,

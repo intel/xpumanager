@@ -96,7 +96,7 @@ func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 	counter, err := e.GetActivity()
 	if err != nil {
-		e.logger.Errorw("Engine GetActivity() failed", zap.Error(err), "attributes", e.attributes)
+		e.logger.Errorw("Engine GetActivity() failed: engine metrics disabled", zap.Error(err), "attributes", e.attributes)
 		e.state.counter = nil
 		return
 	}
