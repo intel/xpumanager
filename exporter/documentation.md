@@ -8,7 +8,7 @@ The following telemetry is emitted by this component.
 
 ### otelcol_exporter_request_errors
 
-Number of transmission errors encountered when sending updates to the endpoint(s). [Development]
+Number of transmission errors encountered when sending updates to the endpoint(s).
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
@@ -16,7 +16,7 @@ Number of transmission errors encountered when sending updates to the endpoint(s
 
 ### otelcol_exporter_requests_sent
 
-Number of updates sent to the endpoint(s). [Development]
+Number of updates sent to the endpoint(s).
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |

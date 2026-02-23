@@ -11,8 +11,7 @@ telemetry:
   metrics:
     exporter_request_errors:
       enabled: true
-      stability:
-        level: development
+      stability: development
       description: Number of transmission errors encountered when sending updates to the endpoint(s).
       unit: "{error}"
       sum:
@@ -20,8 +19,7 @@ telemetry:
         monotonic: true
     exporter_requests_sent:
       enabled: true
-      stability:
-        level: development
+      stability: development
       description: Number of updates sent to the endpoint(s).
       unit: "{request}"
       sum:
