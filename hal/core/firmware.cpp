@@ -224,7 +224,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			fwInfo->fwType = updateFWCmds[i].fw;
 			fwInfo->firmwareHandle = updateFWCmds[i].firmwareHandle;
 
-			if (fwInfo->firmwareHandle == nullptr) {
+			if ((fwInfo->fwType != fwType::AMC) && fwInfo->firmwareHandle == nullptr) {
 				ERR("Failed to find firmware handle 0x%X (%s)\n", ZE_RESULT_ERROR_UNKNOWN,
 					l0_error_to_string(ZE_RESULT_ERROR_UNKNOWN));
 				return ZE_RESULT_ERROR_UNKNOWN;

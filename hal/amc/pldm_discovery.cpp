@@ -236,6 +236,10 @@ uint8_t pldm::pldmDiscInitialize()
 	DBG(">>> Send GetVersion\n");
 	for (int i = 0; i < mPldmRespInfo.totalSupportedTypes; i++) {
 		DBG("PLDM_GETVERSION for 0x%02x\n", versionInfo[i].type);
+		// skip checking unsupported features
+		if (versionInfo[i].type == 0x07) {
+			continue;
+		}
 		if (discoveryCmd(PLDM_GETVERSION, PLDM_GETVERSION_SIZE, versionInfo[i].type) != PLDM_SUCCESS) {
 			ERR("pldm Discovery : GETVERSION command failed for type 0x%02x\n", versionInfo[i].type);
 			return PLDM_ERROR;
