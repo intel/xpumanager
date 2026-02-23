@@ -52,6 +52,8 @@ func enumEngine(d *device) []instanceScraper {
 		}
 		scrapers = append(scrapers, m)
 	}
+
+	d.logger.Infow("Sysman engine groups", "created", len(scrapers), "enumerated", len(engines))
 	return scrapers
 }
 

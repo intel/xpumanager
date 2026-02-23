@@ -97,6 +97,8 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 
 		devs[i] = dev
 	}
+
+	logger.Infow("Sysman devices", "created", len(devs), "enumerated", len(zesDevs))
 	return devs, nil
 }
 

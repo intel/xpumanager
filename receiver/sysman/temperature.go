@@ -58,6 +58,8 @@ func enumTemperature(d *device) []instanceScraper {
 		}
 		scrapers = append(scrapers, t)
 	}
+
+	d.logger.Infow("Sysman temperature sensors", "created", len(scrapers), "enumerated", len(temps))
 	return scrapers
 }
 

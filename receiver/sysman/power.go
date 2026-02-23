@@ -52,11 +52,13 @@ func enumPower(d *device) []instanceScraper {
 		name := fmt.Sprintf("power-%d", i+1)
 		p, err := newPower(name, item, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman power object", "index", i+1, zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman power domain", "index", i+1, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, p)
 	}
+
+	d.logger.Infow("Sysman power domains", "created", len(scrapers), "enumerated", len(items))
 	return scrapers
 }
 

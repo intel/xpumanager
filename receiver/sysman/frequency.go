@@ -59,6 +59,8 @@ func enumFrequency(d *device) []instanceScraper {
 		}
 		scrapers = append(scrapers, f)
 	}
+
+	d.logger.Infow("Sysman frequency domains", "created", len(scrapers), "enumerated", len(freqs))
 	return scrapers
 }
 

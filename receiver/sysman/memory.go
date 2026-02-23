@@ -60,6 +60,8 @@ func enumMemory(d *device) []instanceScraper {
 		}
 		scrapers = append(scrapers, m)
 	}
+
+	d.logger.Infow("Sysman memory modules", "created", len(scrapers), "enumerated", len(mems))
 	return scrapers
 }
 
