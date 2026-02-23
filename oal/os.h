@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <string>
 
 #ifndef ARRAY_SIZE
@@ -40,6 +41,7 @@ std::string getProcessName(uint32_t processId);
 std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
+inline std::mutex progressPrintMutex;
 
 #ifdef _WIN32
 #include "win/oswin.h"

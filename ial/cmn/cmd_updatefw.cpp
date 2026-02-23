@@ -10,6 +10,37 @@
 #include <assert.h>
 #include <thread>
 #include <atomic>
+#include <cerrno>
+#include <cstring>
+#include <fstream>
+#include <sys/stat.h>
+
+static ze_result_t validateFirmwareImageFile(const std::string &filePath)
+{
+	struct stat fileStat;
+	if (stat(filePath.c_str(), &fileStat) != 0) {
+		ERR("Error: Invalid firmware file path '%s': %s.\n", filePath.c_str(), std::strerror(errno));
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!(fileStat.st_mode & S_IFREG)) {
+		ERR("Error: Firmware file '%s' is not a regular file.\n", filePath.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (fileStat.st_size <= 0) {
+		ERR("Error: Firmware file '%s' is empty.\n", filePath.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::ifstream file(filePath, std::ios::binary);
+	if (!file.good()) {
+		ERR("Error: Firmware file '%s' is not readable.\n", filePath.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -161,6 +192,11 @@ int cmdUpdateFW::run(arg_struct *args)
 	if (fwInfo.filePath.empty()) {
 		ERR("Error: Missing required argument --file.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	result = validateFirmwareImageFile(fwInfo.filePath);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
 	}
 
 	result = args->sm.findDevice(fwInfo.deviceId.c_str(), &deviceList);

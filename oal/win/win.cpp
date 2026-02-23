@@ -370,6 +370,7 @@ std::string getCpuList(const std::string &bdf)
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 {
 	TRACING();
+	std::lock_guard<std::mutex> lock(progressPrintMutex);
 
 	// Use std::osyncstream for thread-safe output (C++20)
 	std::osyncstream sync_out(std::cout);

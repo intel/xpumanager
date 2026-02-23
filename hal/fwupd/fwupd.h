@@ -86,6 +86,9 @@ struct firmwareProgressInfo
 	zes_firmware_handle_t firmwareHandle;
 	std::mutex firmwareProgressMutex;
 	bool flashComplete;
+	uint32_t deviceIndex;
+	uint32_t curThread;
+	uint32_t totalThreads;
 };
 
 class fwupd
@@ -100,28 +103,16 @@ public:
 	virtual ze_result_t updateAMC(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t postUpdateAMC(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfx(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateGfx(firmwareInfo *fwInfo)
-	{
-		updateFW(fwInfo);
-		return ZE_RESULT_SUCCESS;
-	};
+	virtual ze_result_t updateGfx(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateGfx(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t postUpdateOpCode(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateOpCode(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateOpCode(firmwareInfo *fwInfo)
-	{
-		updateFW(fwInfo);
-		return ZE_RESULT_SUCCESS;
-	};
+	virtual ze_result_t updateOpCode(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateOpData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateOpData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateOpData(firmwareInfo *fwInfo)
-	{
-		updateFW(fwInfo);
-		return ZE_RESULT_SUCCESS;
-	};
+	virtual ze_result_t updateOpData(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxCodeData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateGfxCodeData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
@@ -130,18 +121,10 @@ public:
 	virtual ze_result_t updateGfxPscBin(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t postUpdateGfxPscBin(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateFanTable(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateFanTable(firmwareInfo *fwInfo)
-	{
-		updateFW(fwInfo);
-		return ZE_RESULT_SUCCESS;
-	};
+	virtual ze_result_t updateFanTable(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateFanTable(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateVrConfig(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateVrConfig(UNUSED firmwareInfo *fwInfo)
-	{
-		updateFW(fwInfo);
-		return ZE_RESULT_SUCCESS;
-	};
+	virtual ze_result_t updateVrConfig(UNUSED firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateVrConfig(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 };
 

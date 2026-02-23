@@ -239,7 +239,10 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			}
 			result = (fw->*updateFWCmds[i].updateFunc)(fwInfo);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
+				if (result != ZE_RESULT_ERROR_UNINITIALIZED && result != ZE_RESULT_ERROR_INVALID_ARGUMENT &&
+					result != ZE_RESULT_ERROR_INVALID_SIZE) {
+					ERR("Failed to update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
+				}
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
 				return result;
 			}
