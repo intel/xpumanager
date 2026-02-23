@@ -110,7 +110,7 @@ std::string getDisplayName(const std::string &key)
 		{"uuid", "UUID"},
 		{"pci_bdf_address", "PCI BDF Address"},
 		{"drm_device_path", "DRM Device"},
-		{"function_type", "Function Type"},
+		{"device_function_type", "Function Type"},
 		{"survivability_mode", "Survivability mode"},
 		{"serial_number", "Serial Number"},
 		{"core_clock_rate", "Core Clock Rate"},
@@ -304,7 +304,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		}
 		if (jsonObj->contains("memory_ecc_state")) {
 			std::string eccState = valueToString((*jsonObj)["memory_ecc_state"]);
-			printRow("", std::string("ECC State: ") + (eccState.empty() ? "N/A" : eccState));
+			printRow("", std::string("ECC State: ") + (eccState.empty() ? "disabled" : eccState));
 		}
 		printField("number_of_memory_channels", "Number of Memory Channels");
 		printField("memory_bus_width", "Memory Bus Width");
@@ -341,7 +341,7 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 
 	// Get string values first, then assign to JSON (simple format for JSON output)
 	(*jsonObj)["device_function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
-	(*jsonObj)["device_id"] = device->index;
+	(*jsonObj)["device_id"] = std::to_string(device->index);
 
 	deviceName(device, &outputLine);
 	(*jsonObj)["device_name"] = outputLine;
@@ -593,7 +593,7 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
 		return result;
 	}
 
-	convertToJson(props, jsonObj);
+	*jsonObj = props;
 
 	return result;
 }
@@ -774,31 +774,6 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	props["core_clock_rate"] = std::format("{} MHz", zeDevProp.coreClockRate);
 
 	return result;
-}
-
-/**
- * @brief Converts device properties map to JSON
- *
- * @param[in] props Device properties map (string key-value pairs)
- * @param[out] jsonObj Output JSON object to populate
- * @param[in] useIntForDeviceId Whether to convert device_id to integer (default: true)
- */
-void cmdDiscovery::convertToJson(const DeviceProperties &props, nlohmann::ordered_json *jsonObj, bool useIntForDeviceId)
-{
-	for (const auto &[key, value] : props) {
-		// Special handling for device_id in new format
-		if (useIntForDeviceId && key == "device_id") {
-			int deviceId = 0;
-			auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), deviceId);
-			if (ec == std::errc{}) {
-				(*jsonObj)[key] = deviceId;
-			} else {
-				(*jsonObj)[key] = value; // Fallback to string if parsing fails
-			}
-		} else {
-			(*jsonObj)[key] = value;
-		}
-	}
 }
 
 /**
@@ -1697,7 +1672,7 @@ ze_result_t cmdDiscovery::memoryEccState(devInfo *d, std::string *outputLine)
 	if (zeDevProp.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
 		*outputLine = "enabled";
 	} else {
-		*outputLine = "N/A";
+		*outputLine = "disabled";
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -1811,6 +1786,10 @@ ze_result_t cmdDiscovery::pcieMaxBandwidth(devInfo *d, std::string *outputLine)
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
+	}
+	// If the PCI information is unavailable display -1
+	if (pciProps.maxSpeed.width == -1) {
+		*outputLine = "-1";
 	}
 	// Calculate bandwidth based on PCIe generation and width
 	// Formula: (width * gen_rate) where gen_rate depends on PCIe generation

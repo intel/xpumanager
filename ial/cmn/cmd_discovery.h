@@ -108,7 +108,6 @@ public:
 
 	// Core data gathering functions (JSON-independent)
 	ze_result_t gatherDeviceProperties(devInfo *d, DeviceProperties &props);
-	void convertToJson(const DeviceProperties &props, nlohmann::ordered_json *jsonObj, bool useIntForDeviceId = true);
 
 	ze_result_t physicalFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
 	ze_result_t virtualFunction(devInfo *d, nlohmann::ordered_json *jsonObj);
