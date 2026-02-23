@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 
 project_root_dir=$(dirname "$(go env GOMOD)")
 types=$(grep '^type [A-Z]' const.go | awk '{print $2;}')
