@@ -79,7 +79,7 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 }
 
 func (e *xpuInfoExporter) pushMetrics(_ context.Context, md pmetric.Metrics) error {
-	e.logger.Infow("Pushing metrics", "dataPoints", md.DataPointCount())
+	e.logger.Debugw("Pushing metrics", "dataPoints", md.DataPointCount())
 
 	// NOTE: No batching is in place. We rely on the property that md contains
 	// all metrics for a particular device.
