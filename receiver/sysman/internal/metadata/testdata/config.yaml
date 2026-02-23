@@ -13,7 +13,15 @@ all_set:
       enabled: true
     hw.frequency.throttle_status:
       enabled: true
+    hw.gpu.bandwidth.limit:
+      enabled: true
+    hw.gpu.bandwidth.utilization:
+      enabled: true
     hw.gpu.info:
+      enabled: true
+    hw.gpu.io:
+      enabled: true
+    hw.gpu.io.rate:
       enabled: true
     hw.gpu.utilization:
       enabled: true
@@ -51,7 +59,15 @@ none_set:
       enabled: false
     hw.frequency.throttle_status:
       enabled: false
+    hw.gpu.bandwidth.limit:
+      enabled: false
+    hw.gpu.bandwidth.utilization:
+      enabled: false
     hw.gpu.info:
+      enabled: false
+    hw.gpu.io:
+      enabled: false
+    hw.gpu.io.rate:
       enabled: false
     hw.gpu.utilization:
       enabled: false

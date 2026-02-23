@@ -173,8 +173,20 @@ var MetricsInfo = metricsInfo{
 	HwFrequencyThrottleStatus: metricInfo{
 		Name: "hw.frequency.throttle_status",
 	},
+	HwGpuBandwidthLimit: metricInfo{
+		Name: "hw.gpu.bandwidth.limit",
+	},
+	HwGpuBandwidthUtilization: metricInfo{
+		Name: "hw.gpu.bandwidth.utilization",
+	},
 	HwGpuInfo: metricInfo{
 		Name: "hw.gpu.info",
+	},
+	HwGpuIo: metricInfo{
+		Name: "hw.gpu.io",
+	},
+	HwGpuIoRate: metricInfo{
+		Name: "hw.gpu.io.rate",
 	},
 	HwGpuUtilization: metricInfo{
 		Name: "hw.gpu.utilization",
@@ -218,7 +230,11 @@ type metricsInfo struct {
 	HwFrequencyRequest           metricInfo
 	HwFrequencySamples           metricInfo
 	HwFrequencyThrottleStatus    metricInfo
+	HwGpuBandwidthLimit          metricInfo
+	HwGpuBandwidthUtilization    metricInfo
 	HwGpuInfo                    metricInfo
+	HwGpuIo                      metricInfo
+	HwGpuIoRate                  metricInfo
 	HwGpuUtilization             metricInfo
 	HwMemoryBandwidthLimit       metricInfo
 	HwMemoryBandwidthUtilization metricInfo
@@ -580,6 +596,114 @@ func newMetricHwFrequencyThrottleStatus(cfg MetricConfig) metricHwFrequencyThrot
 	return m
 }
 
+type metricHwGpuBandwidthLimit struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.gpu.bandwidth.limit metric with initial data.
+func (m *metricHwGpuBandwidthLimit) init() {
+	m.data.SetName("hw.gpu.bandwidth.limit")
+	m.data.SetDescription("Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.")
+	m.data.SetUnit("By/s")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwGpuBandwidthLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuBandwidthLimit) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuBandwidthLimit) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuBandwidthLimit(cfg MetricConfig) metricHwGpuBandwidthLimit {
+	m := metricHwGpuBandwidthLimit{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwGpuBandwidthUtilization struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.gpu.bandwidth.utilization metric with initial data.
+func (m *metricHwGpuBandwidthUtilization) init() {
+	m.data.SetName("hw.gpu.bandwidth.utilization")
+	m.data.SetDescription("GPU device (read+write) PCI bandwidth utilization ratio.")
+	m.data.SetUnit("1")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwGpuBandwidthUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuBandwidthUtilization) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuBandwidthUtilization) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuBandwidthUtilization(cfg MetricConfig) metricHwGpuBandwidthUtilization {
+	m := metricHwGpuBandwidthUtilization{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricHwGpuInfo struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -597,7 +721,7 @@ func (m *metricHwGpuInfo) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
+func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string, pciLanesAttributeValue string, pciLinkGenAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -614,6 +738,8 @@ func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Ti
 	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
 	dp.Attributes().PutStr("pci.device_id", pciDeviceIDAttributeValue)
 	dp.Attributes().PutStr("pci.vendor_id", pciVendorIDAttributeValue)
+	dp.Attributes().PutStr("pci.lanes", pciLanesAttributeValue)
+	dp.Attributes().PutStr("pci.link_gen", pciLinkGenAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -634,6 +760,115 @@ func (m *metricHwGpuInfo) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuInfo(cfg MetricConfig) metricHwGpuInfo {
 	m := metricHwGpuInfo{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwGpuIo struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.gpu.io metric with initial data.
+func (m *metricHwGpuIo) init() {
+	m.data.SetName("hw.gpu.io")
+	m.data.SetDescription("Bytes received / transmitted over PCI bus by the GPU device.")
+	m.data.SetUnit("By")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwGpuIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, networkIoDirectionAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuIo) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuIo) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuIo(cfg MetricConfig) metricHwGpuIo {
+	m := metricHwGpuIo{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwGpuIoRate struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.gpu.io.rate metric with initial data.
+func (m *metricHwGpuIoRate) init() {
+	m.data.SetName("hw.gpu.io.rate")
+	m.data.SetDescription("Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.")
+	m.data.SetUnit("By/s")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwGpuIoRate) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuIoRate) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuIoRate) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuIoRate(cfg MetricConfig) metricHwGpuIoRate {
+	m := metricHwGpuIoRate{config: cfg}
 
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
@@ -1292,7 +1527,11 @@ type MetricsBuilder struct {
 	metricHwFrequencyRequest           metricHwFrequencyRequest
 	metricHwFrequencySamples           metricHwFrequencySamples
 	metricHwFrequencyThrottleStatus    metricHwFrequencyThrottleStatus
+	metricHwGpuBandwidthLimit          metricHwGpuBandwidthLimit
+	metricHwGpuBandwidthUtilization    metricHwGpuBandwidthUtilization
 	metricHwGpuInfo                    metricHwGpuInfo
+	metricHwGpuIo                      metricHwGpuIo
+	metricHwGpuIoRate                  metricHwGpuIoRate
 	metricHwGpuUtilization             metricHwGpuUtilization
 	metricHwMemoryBandwidthLimit       metricHwMemoryBandwidthLimit
 	metricHwMemoryBandwidthUtilization metricHwMemoryBandwidthUtilization
@@ -1335,7 +1574,11 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		metricHwFrequencyRequest:           newMetricHwFrequencyRequest(mbc.Metrics.HwFrequencyRequest),
 		metricHwFrequencySamples:           newMetricHwFrequencySamples(mbc.Metrics.HwFrequencySamples),
 		metricHwFrequencyThrottleStatus:    newMetricHwFrequencyThrottleStatus(mbc.Metrics.HwFrequencyThrottleStatus),
+		metricHwGpuBandwidthLimit:          newMetricHwGpuBandwidthLimit(mbc.Metrics.HwGpuBandwidthLimit),
+		metricHwGpuBandwidthUtilization:    newMetricHwGpuBandwidthUtilization(mbc.Metrics.HwGpuBandwidthUtilization),
 		metricHwGpuInfo:                    newMetricHwGpuInfo(mbc.Metrics.HwGpuInfo),
+		metricHwGpuIo:                      newMetricHwGpuIo(mbc.Metrics.HwGpuIo),
+		metricHwGpuIoRate:                  newMetricHwGpuIoRate(mbc.Metrics.HwGpuIoRate),
 		metricHwGpuUtilization:             newMetricHwGpuUtilization(mbc.Metrics.HwGpuUtilization),
 		metricHwMemoryBandwidthLimit:       newMetricHwMemoryBandwidthLimit(mbc.Metrics.HwMemoryBandwidthLimit),
 		metricHwMemoryBandwidthUtilization: newMetricHwMemoryBandwidthUtilization(mbc.Metrics.HwMemoryBandwidthUtilization),
@@ -1419,7 +1662,11 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricHwFrequencyRequest.emit(ils.Metrics())
 	mb.metricHwFrequencySamples.emit(ils.Metrics())
 	mb.metricHwFrequencyThrottleStatus.emit(ils.Metrics())
+	mb.metricHwGpuBandwidthLimit.emit(ils.Metrics())
+	mb.metricHwGpuBandwidthUtilization.emit(ils.Metrics())
 	mb.metricHwGpuInfo.emit(ils.Metrics())
+	mb.metricHwGpuIo.emit(ils.Metrics())
+	mb.metricHwGpuIoRate.emit(ils.Metrics())
 	mb.metricHwGpuUtilization.emit(ils.Metrics())
 	mb.metricHwMemoryBandwidthLimit.emit(ils.Metrics())
 	mb.metricHwMemoryBandwidthUtilization.emit(ils.Metrics())
@@ -1482,9 +1729,29 @@ func (mb *MetricsBuilder) RecordHwFrequencyThrottleStatusDataPoint(ts pcommon.Ti
 	mb.metricHwFrequencyThrottleStatus.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwParentAttributeValue, comIntelSubdeviceIDAttributeValue, hwFrequencyDomainAttributeValue, comIntelSpeedThrottleReasonAttributeValue)
 }
 
+// RecordHwGpuBandwidthLimitDataPoint adds a data point to hw.gpu.bandwidth.limit metric.
+func (mb *MetricsBuilder) RecordHwGpuBandwidthLimitDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string) {
+	mb.metricHwGpuBandwidthLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue)
+}
+
+// RecordHwGpuBandwidthUtilizationDataPoint adds a data point to hw.gpu.bandwidth.utilization metric.
+func (mb *MetricsBuilder) RecordHwGpuBandwidthUtilizationDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string) {
+	mb.metricHwGpuBandwidthUtilization.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue)
+}
+
 // RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.
-func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string) {
-	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwModelAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, pciBdfAttributeValue, pciDeviceIDAttributeValue, pciVendorIDAttributeValue)
+func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, pciBdfAttributeValue string, pciDeviceIDAttributeValue string, pciVendorIDAttributeValue string, pciLanesAttributeValue string, pciLinkGenAttributeValue string) {
+	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, hwModelAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, pciBdfAttributeValue, pciDeviceIDAttributeValue, pciVendorIDAttributeValue, pciLanesAttributeValue, pciLinkGenAttributeValue)
+}
+
+// RecordHwGpuIoDataPoint adds a data point to hw.gpu.io metric.
+func (mb *MetricsBuilder) RecordHwGpuIoDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, networkIoDirectionAttributeValue AttributeNetworkIoDirection) {
+	mb.metricHwGpuIo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, networkIoDirectionAttributeValue.String())
+}
+
+// RecordHwGpuIoRateDataPoint adds a data point to hw.gpu.io.rate metric.
+func (mb *MetricsBuilder) RecordHwGpuIoRateDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string) {
+	mb.metricHwGpuIoRate.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue)
 }
 
 // RecordHwGpuUtilizationDataPoint adds a data point to hw.gpu.utilization metric.

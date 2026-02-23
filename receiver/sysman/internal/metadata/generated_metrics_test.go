@@ -84,7 +84,23 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val")
+			mb.RecordHwGpuBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val", "pci.lanes-val", "pci.link_gen-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwGpuIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", AttributeNetworkIoDirectionReceive)
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwGpuIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -330,6 +346,44 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("com.intel.speed.throttle_reason")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.speed.throttle_reason-val", attrVal.Str())
+				case "hw.gpu.bandwidth.limit":
+					assert.False(t, validatedMetrics["hw.gpu.bandwidth.limit"], "Found a duplicate in the metrics slice: hw.gpu.bandwidth.limit")
+					validatedMetrics["hw.gpu.bandwidth.limit"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.", ms.At(i).Description())
+					assert.Equal(t, "By/s", ms.At(i).Unit())
+					assert.False(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+				case "hw.gpu.bandwidth.utilization":
+					assert.False(t, validatedMetrics["hw.gpu.bandwidth.utilization"], "Found a duplicate in the metrics slice: hw.gpu.bandwidth.utilization")
+					validatedMetrics["hw.gpu.bandwidth.utilization"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "GPU device (read+write) PCI bandwidth utilization ratio.", ms.At(i).Description())
+					assert.Equal(t, "1", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
 				case "hw.gpu.info":
 					assert.False(t, validatedMetrics["hw.gpu.info"], "Found a duplicate in the metrics slice: hw.gpu.info")
 					validatedMetrics["hw.gpu.info"] = true
@@ -371,6 +425,53 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("pci.vendor_id")
 					assert.True(t, ok)
 					assert.Equal(t, "pci.vendor_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.lanes")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.lanes-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.link_gen")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.link_gen-val", attrVal.Str())
+				case "hw.gpu.io":
+					assert.False(t, validatedMetrics["hw.gpu.io"], "Found a duplicate in the metrics slice: hw.gpu.io")
+					validatedMetrics["hw.gpu.io"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Bytes received / transmitted over PCI bus by the GPU device.", ms.At(i).Description())
+					assert.Equal(t, "By", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("network.io.direction")
+					assert.True(t, ok)
+					assert.Equal(t, "receive", attrVal.Str())
+				case "hw.gpu.io.rate":
+					assert.False(t, validatedMetrics["hw.gpu.io.rate"], "Found a duplicate in the metrics slice: hw.gpu.io.rate")
+					validatedMetrics["hw.gpu.io.rate"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.", ms.At(i).Description())
+					assert.Equal(t, "By/s", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", attrVal.Str())
 				case "hw.gpu.utilization":
 					assert.False(t, validatedMetrics["hw.gpu.utilization"], "Found a duplicate in the metrics slice: hw.gpu.utilization")
 					validatedMetrics["hw.gpu.utilization"] = true

@@ -94,6 +94,12 @@ attributes:
   pci.device_id:
     description: PCI device ID of the device.
     type: string
+  pci.lanes:
+    description: The number of PCI lanes.
+    type: string
+  pci.link_gen:
+    description: PCI link generation.
+    type: string
   pci.vendor_id:
     description: PCI vendor ID of the device.
     type: string
@@ -169,6 +175,26 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.frequency.domain, com.intel.speed.throttle_reason]
+  hw.gpu.bandwidth.limit:
+    enabled: true
+    description: Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.
+    stability:
+      level: development
+    unit: "By/s"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name]
+  hw.gpu.bandwidth.utilization:
+    enabled: true
+    description: GPU device (read+write) PCI bandwidth utilization ratio.
+    stability:
+      level: development
+    unit: "1"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.name]
   hw.gpu.info:
     enabled: true
     description: Information about the GPU device.
@@ -179,7 +205,28 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, pci.bdf, pci.device_id, pci.vendor_id]
+    attributes: [hw.id, hw.name, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, pci.bdf, pci.device_id, pci.vendor_id, pci.lanes, pci.link_gen]
+  hw.gpu.io:
+    enabled: true
+    description: Bytes received / transmitted over PCI bus by the GPU device.
+    stability:
+      level: development
+    unit: "By"
+    sum:
+      value_type: double
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name, network.io.direction]
+  hw.gpu.io.rate:
+    # TODO: disable/drop this if limits are available on all relevant HW
+    enabled: true
+    description: Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.
+    stability:
+      level: development
+    unit: "By/s"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.name]
   hw.gpu.utilization:
     enabled: true
     description: GPU engine / task pipeline utilization ratio.
