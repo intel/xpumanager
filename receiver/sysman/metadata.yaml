@@ -120,8 +120,7 @@ metrics:
   hw.energy:
     enabled: true
     description: Energy consumed by the hardware component.
-    stability:
-      level: development
+    stability: development
     unit: "J"
     sum:
       value_type: double
@@ -131,8 +130,7 @@ metrics:
   hw.frequency:
     enabled: true
     description: Operating frequency of the hardware component.
-    stability:
-      level: development
+    stability: development
     unit: "Hz"
     gauge:
       value_type: int
@@ -140,8 +138,7 @@ metrics:
   hw.frequency.limit:
     enabled: true
     description: Frequency limit in Hertz.
-    stability:
-      level: development
+    stability: development
     unit: "Hz"
     gauge:
       value_type: int
@@ -149,8 +146,7 @@ metrics:
   hw.frequency.request:
     enabled: true
     description: Requested operating frequency.
-    stability:
-      level: development
+    stability: development
     unit: "Hz"
     gauge:
       value_type: int
@@ -158,8 +154,7 @@ metrics:
   hw.frequency.samples:
     enabled: true
     description: Number of frequency samples during the last collection interval.
-    stability:
-      level: development
+    stability: development
     unit: "{count}"
     gauge:
       value_type: int
@@ -167,8 +162,7 @@ metrics:
   hw.frequency.throttle_status:
     enabled: true
     description: Hardware component frequency throttle status.
-    stability:
-      level: development
+    stability: development
     unit: "1"
     sum:
       value_type: int
@@ -178,8 +172,7 @@ metrics:
   hw.gpu.bandwidth.limit:
     enabled: true
     description: Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.
-    stability:
-      level: development
+    stability: development
     unit: "By/s"
     sum:
       value_type: int
@@ -189,8 +182,7 @@ metrics:
   hw.gpu.bandwidth.utilization:
     enabled: true
     description: GPU device (read+write) PCI bandwidth utilization ratio.
-    stability:
-      level: development
+    stability: development
     unit: "1"
     gauge:
       value_type: double
@@ -198,8 +190,7 @@ metrics:
   hw.gpu.info:
     enabled: true
     description: Information about the GPU device.
-    stability:
-      level: development
+    stability: development
     unit: "1"
     sum:
       value_type: int
@@ -209,8 +200,7 @@ metrics:
   hw.gpu.io:
     enabled: true
     description: Bytes received / transmitted over PCI bus by the GPU device.
-    stability:
-      level: development
+    stability: development
     unit: "By"
     sum:
       value_type: double
@@ -221,8 +211,7 @@ metrics:
     # TODO: disable/drop this if limits are available on all relevant HW
     enabled: true
     description: Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.
-    stability:
-      level: development
+    stability: development
     unit: "By/s"
     gauge:
       value_type: double
@@ -230,8 +219,7 @@ metrics:
   hw.gpu.utilization:
     enabled: true
     description: GPU engine / task pipeline utilization ratio.
-    stability:
-      level: development
+    stability: development
     unit: "1"
     gauge:
       value_type: double
@@ -239,8 +227,7 @@ metrics:
   hw.memory.bandwidth.limit:
     enabled: true
     description: Maximum total memory (read+write) bandwidth in bytes/sec.
-    stability:
-      level: development
+    stability: development
     unit: "By/s"
     sum:
       value_type: double
@@ -250,8 +237,7 @@ metrics:
   hw.memory.bandwidth.utilization:
     enabled: true
     description: Memory bandwidth (read+write) utilization ratio.
-    stability:
-      level: development
+    stability: development
     unit: "1"
     gauge:
       value_type: double
@@ -259,8 +245,7 @@ metrics:
   hw.memory.io:
     enabled: true
     description: Bytes read from / written to memory.
-    stability:
-      level: development
+    stability: development
     unit: "By"
     sum:
       value_type: double
@@ -271,8 +256,7 @@ metrics:
     # TODO: disable/drop this if limits are available on all relevant HW
     enabled: true
     description: Current memory bandwidth (read+write) usage in bytes/sec.
-    stability:
-      level: development
+    stability: development
     unit: "By/s"
     gauge:
       value_type: double
@@ -280,8 +264,7 @@ metrics:
   hw.memory.size:
     enabled: true
     description: Size of the memory.
-    stability:
-      level: development
+    stability: development
     unit: "By"
     sum:
       value_type: int
@@ -291,8 +274,7 @@ metrics:
   hw.memory.usage:
     enabled: true
     description: Memory used.
-    stability:
-      level: development
+    stability: development
     unit: "By"
     sum:
       value_type: int
@@ -302,8 +284,7 @@ metrics:
   hw.power:
     enabled: true
     description: Instantaneous power usage of the hardware component.
-    stability:
-      level: development
+    stability: development
     unit: "W"
     gauge:
       value_type: double
@@ -311,8 +292,7 @@ metrics:
   hw.power.limit:
     enabled: true
     description: Power usage limit for the hardware component.
-    stability:
-      level: development
+    stability: development
     unit: "W"
     gauge:
       value_type: double
@@ -321,8 +301,7 @@ metrics:
   hw.status:
     enabled: true
     description: The operational status of the hardware component.
-    stability:
-      level: development
+    stability: development
     unit: "1"
     sum:
       value_type: int
@@ -332,8 +311,7 @@ metrics:
   hw.temperature:
     enabled: true
     description: Temperature of the hardware component in degrees Celsius.
-    stability:
-      level: development
+    stability: development
     unit: "Cel"
     gauge:
       value_type: double
