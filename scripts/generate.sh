@@ -1,4 +1,9 @@
 #!/bin/bash -e
+#
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 
 # We assume this script is run from the root of the repository
 ROOT_DIR=$(pwd)

@@ -1,4 +1,9 @@
 #!/bin/bash -ex
+#
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
