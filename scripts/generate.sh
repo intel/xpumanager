@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2026 Intel Corporation
 #
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT
 
 
 # We assume this script is run from the root of the repository
