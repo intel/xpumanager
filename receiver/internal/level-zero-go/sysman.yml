@@ -2,7 +2,7 @@ GENERATOR:
   PackageName: sysman
   PackageDescription: "Level Zero sysman API bindings for Go"
   PackageLicense: |
-    Copyright (C) 2019-2025 Intel Corporation
+    Copyright (C) 2026 Intel Corporation
 
     SPDX-License-Identifier: MIT
   PkgConfigOpts: ["level-zero"]
