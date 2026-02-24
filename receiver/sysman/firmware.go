@@ -43,6 +43,8 @@ func enumFirmwares(d *device) []*firmware {
 		}
 		ret = append(ret, m)
 	}
+
+	d.logger.Infow("Sysman firmwares", "created", len(ret), "enumerated", len(fws))
 	return ret
 }
 

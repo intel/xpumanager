@@ -29,8 +29,8 @@ type power struct {
 
 // powerState holds the dynamic runtime state of the power instance.
 type powerState struct {
-	limited bool
-	counter l0sysman.PowerEnergyCounter
+	hasLimits bool
+	counter   l0sysman.PowerEnergyCounter
 }
 type powerAttribs struct {
 	hwID           string
@@ -52,11 +52,13 @@ func enumPower(d *device) []instanceScraper {
 		name := fmt.Sprintf("power-%d", i+1)
 		p, err := newPower(name, item, d)
 		if err != nil {
-			d.logger.Errorw("Failed to create Sysman power object", "index", i+1, zap.Error(err))
+			d.logger.Errorw("Failed to create Sysman power domain", "index", i+1, zap.Error(err))
 			continue
 		}
 		scrapers = append(scrapers, p)
 	}
+
+	d.logger.Infow("Sysman power domains", "created", len(scrapers), "enumerated", len(items))
 	return scrapers
 }
 
@@ -79,6 +81,12 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		return nil, fmt.Errorf("power GetEnergyCounter() failed: %w", err)
 	}
 
+	hasLimits := true
+	if _, err = pwr.GetLimitsExt(); err != nil {
+		device.logger.Warnw("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "name", name)
+		hasLimits = false
+	}
+
 	return &power{
 		Power:  pwr,
 		logger: device.logger,
@@ -91,8 +99,8 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: powerState{
-			limited: true,
-			counter: counter,
+			hasLimits: hasLimits,
+			counter:   counter,
 		},
 	}, nil
 }
@@ -105,7 +113,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	counter, err := power.GetEnergyCounter()
 	if err != nil {
-		power.logger.Errorw("Failed to get energy counter", zap.Error(err), "attributes", power.attribs)
+		power.logger.Errorw("Power GetEnergyCounter() failed: power metrics disabled", zap.Error(err), "attributes", power.attribs)
 		return
 	}
 
@@ -142,15 +150,15 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	)
 
 	// log only once
-	if !power.state.limited {
+	if !power.state.hasLimits {
 		return
 	}
 
 	// TODO: find HW supporting this / test it
 	limits, err := power.GetLimitsExt()
 	if err != nil {
-		power.logger.Warnw("Failed to get power limits", zap.Error(err))
-		power.state.limited = false
+		power.logger.Warnw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attribs)
+		power.state.hasLimits = false
 		return
 	}
 
@@ -175,8 +183,8 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 
 	if count == 0 {
-		power.logger.Warnf("0 / %d suitable power limits", len(limits))
-		power.state.limited = false
+		power.logger.Warnw("Power GetLimitsExt(): no suitable power limits", "all", len(limits))
+		power.state.hasLimits = false
 	}
 }
 

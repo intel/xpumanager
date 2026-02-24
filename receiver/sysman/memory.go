@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 
-	"github.com/intel/level-zero-go/core"
 	l0sysman "github.com/intel/level-zero-go/sysman"
 	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
 )
@@ -30,6 +29,7 @@ type memory struct {
 
 // memoryState holds the dynamic runtime state of the memory instance.
 type memoryState struct {
+	disabled         bool
 	counter          *l0sysman.MemBandwidth
 	healthStatesSeen map[l0sysman.MemHealth]bool
 }
@@ -60,6 +60,8 @@ func enumMemory(d *device) []instanceScraper {
 		}
 		scrapers = append(scrapers, m)
 	}
+
+	d.logger.Infow("Sysman memory modules", "created", len(scrapers), "enumerated", len(mems))
 	return scrapers
 }
 
@@ -88,11 +90,7 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 
 	// initial / previous counter value
 	if counter, err := mem.GetBandwidth(); err != nil {
-		if err == core.RESULT_ERROR_UNSUPPORTED_FEATURE {
-			device.logger.Infow("Failed to get memory bandwidth", zap.Error(err))
-		} else {
-			device.logger.Warnw("Failed to get memory bandwidth", zap.Error(err))
-		}
+		device.logger.Warnw("Memory GetBandwidth() failed: no BW metrics available", zap.Error(err))
 	} else {
 		m.state.counter = &counter
 	}
@@ -100,9 +98,13 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 }
 
 func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if m.state.disabled {
+		return
+	}
 	state, err := m.GetState()
 	if err != nil {
-		m.logger.Errorw("Failed to get memory module state", zap.Error(err), "attributes", m.attributes)
+		m.logger.Errorw("Memory GetState() failed: mem metrics disabled", zap.Error(err), "attributes", m.attributes)
+		m.state.disabled = true
 		return
 	}
 
@@ -153,7 +155,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	counter, err := m.GetBandwidth()
 	if err != nil {
-		m.logger.Errorw("Failed to get memory bandwidth", zap.Error(err), "attributes", m.attributes)
+		m.logger.Errorw("Memory GetBandwidth() failed: BW metrics disabled", zap.Error(err), "attributes", m.attributes)
 		m.state.counter = nil
 		return
 	}

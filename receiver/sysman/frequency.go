@@ -41,6 +41,8 @@ type frequencyAttributes struct {
 type frequencyState struct {
 	actual              *aggregatedMetric[float64]
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
+	hasRange            bool
+	disabled            bool
 }
 
 func enumFrequency(d *device) []instanceScraper {
@@ -59,6 +61,8 @@ func enumFrequency(d *device) []instanceScraper {
 		}
 		scrapers = append(scrapers, f)
 	}
+
+	d.logger.Infow("Sysman frequency domains", "created", len(scrapers), "enumerated", len(freqs))
 	return scrapers
 }
 
@@ -66,6 +70,16 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 	props, err := freq.GetProperties()
 	if err != nil {
 		return nil, fmt.Errorf("frequency GetProperties() failed: %w", err)
+	}
+
+	if _, err := freq.GetState(); err != nil {
+		return nil, fmt.Errorf("frequency GetState() failed: %w", err)
+	}
+
+	hasRange := true
+	if _, err := freq.GetRange(); err != nil {
+		device.logger.Warnw("Frequency GetRange() failed: limit metrics not available", zap.Error(err), "name", name)
+		hasRange = false
 	}
 
 	return &frequency{
@@ -80,6 +94,7 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: frequencyState{
+			hasRange: hasRange,
 			// Aggregated metrics
 			actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
 		},
@@ -88,31 +103,39 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 
 func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// Handle instantaneous metrics
-	if rang, err := f.GetRange(); err != nil {
-		f.logger.Errorw("Failed to get frequency range", zap.Error(err), "attributes", f.attributes)
-	} else {
-		if rang.Min >= 0 {
-			mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
-				f.attributes.hwID,
-				f.attributes.hwName,
-				f.attributes.hwParent,
-				f.attributes.subdeviceId,
-				f.attributes.hwFrequencyType,
-				"min")
-		}
-		if rang.Max >= 0 {
-			mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
-				f.attributes.hwID,
-				f.attributes.hwName,
-				f.attributes.hwParent,
-				f.attributes.subdeviceId,
-				f.attributes.hwFrequencyType,
-				"max")
+	if f.state.disabled {
+		return
+	}
+
+	if f.state.hasRange {
+		if rang, err := f.GetRange(); err != nil {
+			f.logger.Errorw("Frequency GetRange() failed: limit metric disabled", zap.Error(err), "attributes", f.attributes)
+			f.state.hasRange = false
+		} else {
+			if rang.Min >= 0 {
+				mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
+					f.attributes.hwID,
+					f.attributes.hwName,
+					f.attributes.hwParent,
+					f.attributes.subdeviceId,
+					f.attributes.hwFrequencyType,
+					"min")
+			}
+			if rang.Max >= 0 {
+				mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
+					f.attributes.hwID,
+					f.attributes.hwName,
+					f.attributes.hwParent,
+					f.attributes.subdeviceId,
+					f.attributes.hwFrequencyType,
+					"max")
+			}
 		}
 	}
 
 	if state, err := f.GetState(); err != nil {
-		f.logger.Errorw("Failed to get frequency state", zap.Error(err), "attributes", f.attributes)
+		f.logger.Errorw("Frequency GetState() failed: freq metrics disabled", zap.Error(err), "attributes", f.attributes)
+		f.state.disabled = true
 	} else {
 		if state.Request >= 0 {
 			mb.RecordHwFrequencyRequestDataPoint(ts, int64(state.Request*1e6),
@@ -223,10 +246,10 @@ func (f *frequency) pollAggregatedMetrics() {
 	}
 
 	if state, err := f.GetState(); err != nil {
-		f.logger.Errorw("Failed to get frequency state for aggregated metrics", zap.Error(err), "attributes", f.attributes)
-		f.state.actual = nil // Stop polling if we can't get the state
+		f.logger.Errorw("Frequency GetState() failed: aggregated metrics polling stopped", zap.Error(err), "attributes", f.attributes)
+		f.state.actual = nil
 	} else if state.Actual < 0 {
-		// A negative value indicates "not known", stop polling in this case:
+		// A negative value indicates "not known", stop polling also in this case:
 		// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
 		f.state.actual = nil
 	} else {
