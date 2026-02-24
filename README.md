@@ -36,12 +36,11 @@ The device info exporter is enabled by the default configuration file
 
 ### Building
 
-Clone required repositories and build the daemon.
+Clone the repository and build the daemon.
 
 ```bash
 git clone https://github.com/intel/xpumd xpumd
 cd xpumd
-git clone https://github.com/intel/level-zero-go level-zero-go
 make build
 ```
 
