@@ -89,10 +89,20 @@ add_definitions(-DLOADER_VERSION_PATCH=${PROJECT_VERSION_PATCH})
 
 message(STATUS "CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 
+if(SYSTEM_SPDLOG)
+	find_package(spdlog CONFIG)
+	if(spdlog_FOUND)
+		message(STATUS "System spdlog found.")
+	else()
+		message(FATAL_ERROR "SYSTEM_SPDLOG specified but spdlog wasn't found.")
+	endif()
+else()
+   add_subdirectory(third_party/spdlog)
+endif()
+
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/third_party/googletest)
   add_subdirectory(third_party/googletest)
 endif()
-add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/hwloc)
 add_subdirectory(third_party/pcm/pcm-iio-gpu)
 
