@@ -34,7 +34,6 @@ type temperatureState struct {
 
 type temperatureAttributes struct {
 	hwID           string
-	hwType         metadata.AttributeHwType
 	hwName         string
 	pciBDF         string
 	sensorLocation string
@@ -81,7 +80,6 @@ func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*t
 		logger:      device.logger,
 		attributes: temperatureAttributes{
 			hwID:           device.attributes.hwID,
-			hwType:         metadata.AttributeHwTypeTemperature,
 			hwName:         name,
 			pciBDF:         device.attributes.pciBDF,
 			sensorLocation: location,

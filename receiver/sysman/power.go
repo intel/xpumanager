@@ -34,7 +34,6 @@ type powerState struct {
 }
 type powerAttribs struct {
 	hwID           string
-	hwType         metadata.AttributeHwType
 	hwName         string
 	pciBDF         string
 	sensorLocation string
@@ -92,7 +91,6 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		logger: device.logger,
 		attribs: powerAttribs{
 			hwID:           device.attributes.hwID,
-			hwType:         metadata.AttributeHwTypeGpu,
 			hwName:         name,
 			pciBDF:         device.attributes.pciBDF,
 			sensorLocation: strings.ToLower(location),

@@ -50,7 +50,6 @@ const (
 	AttributeHwTypeFrequency
 	AttributeHwTypeGpu
 	AttributeHwTypeMemory
-	AttributeHwTypeTemperature
 )
 
 // String returns the string representation of the AttributeHwType.
@@ -62,18 +61,15 @@ func (av AttributeHwType) String() string {
 		return "gpu"
 	case AttributeHwTypeMemory:
 		return "memory"
-	case AttributeHwTypeTemperature:
-		return "temperature"
 	}
 	return ""
 }
 
 // MapAttributeHwType is a helper map of string to AttributeHwType attribute value.
 var MapAttributeHwType = map[string]AttributeHwType{
-	"frequency":   AttributeHwTypeFrequency,
-	"gpu":         AttributeHwTypeGpu,
-	"memory":      AttributeHwTypeMemory,
-	"temperature": AttributeHwTypeTemperature,
+	"frequency": AttributeHwTypeFrequency,
+	"gpu":       AttributeHwTypeGpu,
+	"memory":    AttributeHwTypeMemory,
 }
 
 // AttributeNetworkIoDirection specifies the value network.io.direction attribute.

@@ -38,7 +38,6 @@ type deviceState struct {
 
 type deviceAttributes struct {
 	hwID              string
-	hwType            metadata.AttributeHwType
 	hwName            string
 	pciBDF            string
 	pciVendorID       string
@@ -114,7 +113,6 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		attributes: deviceAttributes{
 			// TODO: use extended props UUID?
 			hwID:           props.Core.Uuid.Id.String(),
-			hwType:         metadata.AttributeHwTypeGpu,
 			hwName:         name,
 			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
 			pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),

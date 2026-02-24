@@ -75,7 +75,6 @@ attributes:
       - frequency
       - gpu
       - memory
-      - temperature
   hw.vendor:
     description: Vendor name of the hardware component.
     type: string
