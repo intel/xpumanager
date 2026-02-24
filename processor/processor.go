@@ -150,6 +150,7 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 			parentAttrs, exists := p.parentAttrs[parentID]
 			if !exists {
 				p.logger.Debugw("missing parent attributes", "metric", p.SourceMetric, "parentID", parentID, "attributes", sourceAttrs.AsRaw())
+				parentAttrs = pcommon.Map{}
 			}
 			if !p.matchFilters(parentAttrs, p.ParentFilters) {
 				continue

@@ -38,15 +38,14 @@ type deviceState struct {
 
 type deviceAttributes struct {
 	hwID              string
-	hwType            metadata.AttributeHwType
 	hwName            string
+	pciBDF            string
+	pciVendorID       string
+	pciDeviceID       string
 	hwModel           string
 	hwSerialNumber    string
 	hwVendor          string
 	hwFirmwareVersion string
-	pciBDF            string
-	pciDeviceID       string
-	pciVendorID       string
 	pciLanes          string
 	pciLinkGen        string
 }
@@ -114,13 +113,12 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		attributes: deviceAttributes{
 			// TODO: use extended props UUID?
 			hwID:           props.Core.Uuid.Id.String(),
-			hwType:         metadata.AttributeHwTypeGpu,
 			hwName:         name,
+			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
+			pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
 			hwModel:        props.ModelName.String(),
 			hwSerialNumber: props.SerialNumber.String(),
 			hwVendor:       props.VendorName.String(),
-			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
-			pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
 		},
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}
@@ -176,13 +174,13 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.hwID,
 		d.attributes.hwName,
+		d.attributes.pciBDF,
+		d.attributes.pciVendorID,
+		d.attributes.pciDeviceID,
 		d.attributes.hwModel,
 		d.attributes.hwSerialNumber,
 		d.attributes.hwVendor,
 		d.attributes.hwFirmwareVersion,
-		d.attributes.pciBDF,
-		d.attributes.pciDeviceID,
-		d.attributes.pciVendorID,
 		d.attributes.pciLanes,
 		d.attributes.pciLinkGen,
 	)
@@ -217,12 +215,14 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		ts, float64(stats.RxCounter),
 		d.attributes.hwID,
 		hwName,
+		d.attributes.pciBDF,
 		metadata.AttributeNetworkIoDirectionReceive,
 	)
 	mb.RecordHwGpuIoDataPoint(
 		ts, float64(stats.TxCounter),
 		d.attributes.hwID,
 		hwName,
+		d.attributes.pciBDF,
 		metadata.AttributeNetworkIoDirectionTransmit,
 	)
 
@@ -248,6 +248,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		ts, rate,
 		d.attributes.hwID,
 		hwName,
+		d.attributes.pciBDF,
 	)
 
 	if d.state.maxBandwidth > 0 {
@@ -258,6 +259,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			ts, d.state.maxBandwidth,
 			d.attributes.hwID,
 			hwName,
+			d.attributes.pciBDF,
 		)
 
 		// BW utilization ratio
@@ -265,6 +267,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			ts, rate/float64(d.state.maxBandwidth),
 			d.attributes.hwID,
 			hwName,
+			d.attributes.pciBDF,
 		)
 	}
 }

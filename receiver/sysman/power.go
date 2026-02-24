@@ -34,9 +34,8 @@ type powerState struct {
 }
 type powerAttribs struct {
 	hwID           string
-	hwType         metadata.AttributeHwType
 	hwName         string
-	hwParent       string
+	pciBDF         string
 	sensorLocation string
 	subdeviceId    string
 }
@@ -91,10 +90,9 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		Power:  pwr,
 		logger: device.logger,
 		attribs: powerAttribs{
-			hwID:           device.attributes.hwID + "_" + name,
-			hwType:         metadata.AttributeHwTypeGpu,
+			hwID:           device.attributes.hwID,
 			hwName:         name,
-			hwParent:       device.attributes.hwID,
+			pciBDF:         device.attributes.pciBDF,
 			sensorLocation: strings.ToLower(location),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
@@ -125,7 +123,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		float64(counter.Energy)/1e6, // uJ -> J
 		power.attribs.hwID,
 		power.attribs.hwName,
-		power.attribs.hwParent,
+		power.attribs.pciBDF,
 		power.attribs.subdeviceId,
 		power.attribs.sensorLocation,
 	)
@@ -144,7 +142,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		ts, watts,
 		power.attribs.hwID,
 		power.attribs.hwName,
-		power.attribs.hwParent,
+		power.attribs.pciBDF,
 		power.attribs.subdeviceId,
 		power.attribs.sensorLocation,
 	)
@@ -173,7 +171,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			float64(limit.Limit)*1e3, // mW -> W
 			power.attribs.hwID,
 			power.attribs.hwName,
-			power.attribs.hwParent,
+			power.attribs.pciBDF,
 			power.attribs.subdeviceId,
 			power.attribs.sensorLocation,
 			strings.ToLower(limit.Level.String()),

@@ -33,6 +33,7 @@ type engineState struct {
 type engineAttributes struct {
 	hwID        string
 	hwName      string
+	pciBDF      string
 	subdeviceId string
 	hwGpuTask   string
 }
@@ -80,6 +81,7 @@ func newEngine(i int, metric *l0sysman.Engine, device *device) (*engine, error) 
 		attributes: engineAttributes{
 			hwID:        device.attributes.hwID,
 			hwName:      fmt.Sprintf("engine-%d-%s", i, hwType),
+			pciBDF:      device.attributes.pciBDF,
 			subdeviceId: subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 			hwGpuTask:   hwType,
 		},
@@ -119,6 +121,7 @@ func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		ts, ratio,
 		e.attributes.hwID,
 		e.attributes.hwName,
+		e.attributes.pciBDF,
 		e.attributes.subdeviceId,
 		e.attributes.hwGpuTask,
 	)

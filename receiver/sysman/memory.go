@@ -38,7 +38,7 @@ type memoryAttributes struct {
 	hwID           string
 	hwType         metadata.AttributeHwType
 	hwName         string
-	hwParent       string
+	pciBDF         string
 	memoryType     string
 	memoryLocation string
 	subdeviceId    string
@@ -78,10 +78,10 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 			healthStatesSeen: make(map[l0sysman.MemHealth]bool),
 		},
 		attributes: memoryAttributes{
-			hwID:           device.attributes.hwID + "_" + name,
+			hwID:           device.attributes.hwID,
 			hwType:         metadata.AttributeHwTypeMemory,
 			hwName:         name,
-			hwParent:       device.attributes.hwID,
+			pciBDF:         device.attributes.pciBDF,
 			memoryType:     strings.ToLower(props.Type.String()),
 			memoryLocation: strings.ToLower(props.Location.String()),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
@@ -111,7 +111,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwMemorySizeDataPoint(ts, int64(state.Size),
 		m.attributes.hwID,
 		m.attributes.hwName,
-		m.attributes.hwParent,
+		m.attributes.pciBDF,
 		m.attributes.subdeviceId,
 		m.attributes.memoryLocation,
 		m.attributes.memoryType,
@@ -120,7 +120,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwMemoryUsageDataPoint(ts, int64(state.Size-state.Free),
 		m.attributes.hwID,
 		m.attributes.hwName,
-		m.attributes.hwParent,
+		m.attributes.pciBDF,
 		m.attributes.subdeviceId,
 		m.attributes.memoryLocation,
 		m.attributes.memoryType,
@@ -137,7 +137,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwStatusDataPoint(ts, value,
 			m.attributes.hwID,
 			m.attributes.hwName,
-			m.attributes.hwParent,
+			m.attributes.pciBDF,
 			m.attributes.subdeviceId,
 			strings.ToLower(s.String()),
 			m.attributes.hwType,
@@ -174,7 +174,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		ts, float64(counter.ReadCounter),
 		m.attributes.hwID,
 		m.attributes.hwName,
-		m.attributes.hwParent,
+		m.attributes.pciBDF,
 		m.attributes.subdeviceId,
 		m.attributes.memoryLocation,
 		m.attributes.memoryType,
@@ -184,7 +184,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		ts, float64(counter.WriteCounter),
 		m.attributes.hwID,
 		m.attributes.hwName,
-		m.attributes.hwParent,
+		m.attributes.pciBDF,
 		m.attributes.subdeviceId,
 		m.attributes.memoryLocation,
 		m.attributes.memoryType,
@@ -214,7 +214,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		ts, rate,
 		m.attributes.hwID,
 		m.attributes.hwName,
-		m.attributes.hwParent,
+		m.attributes.pciBDF,
 		m.attributes.subdeviceId,
 		m.attributes.memoryLocation,
 		m.attributes.memoryType,
@@ -229,7 +229,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			ts, max,
 			m.attributes.hwID,
 			m.attributes.hwName,
-			m.attributes.hwParent,
+			m.attributes.pciBDF,
 			m.attributes.subdeviceId,
 			m.attributes.memoryLocation,
 			m.attributes.memoryType,
@@ -240,7 +240,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			ts, rate/max,
 			m.attributes.hwID,
 			m.attributes.hwName,
-			m.attributes.hwParent,
+			m.attributes.pciBDF,
 			m.attributes.subdeviceId,
 			m.attributes.memoryLocation,
 			m.attributes.memoryType,

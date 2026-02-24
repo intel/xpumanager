@@ -26,7 +26,7 @@ Energy consumed by the hardware component.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended |
 
@@ -44,7 +44,7 @@ Operating frequency of the hardware component.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | aggregation | Aggregation type for the metric. | Str: ``min``, ``max``, ``avg`` | Recommended |
@@ -63,7 +63,7 @@ Frequency limit in Hertz.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | hw.limit_type | Type of limit. | Any Str | Recommended |
@@ -82,7 +82,7 @@ Requested operating frequency.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 
@@ -100,7 +100,7 @@ Number of frequency samples during the last collection interval.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | sample.status | Status of the samples. | Str: ``collected``, ``dropped`` | Recommended |
@@ -119,7 +119,7 @@ Hardware component frequency throttle status.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.frequency.domain | The frequency domain (gpu, memory, media...). | Any Str | Recommended |
 | com.intel.speed.throttle_reason | Reason for the hardware component speed throttling. | Any Str | Recommended |
@@ -138,6 +138,7 @@ Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 
 ### hw.gpu.bandwidth.utilization
 
@@ -153,6 +154,7 @@ GPU device (read+write) PCI bandwidth utilization ratio.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 
 ### hw.gpu.info
 
@@ -168,13 +170,13 @@ Information about the GPU device.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
+| pci.vendor_id | PCI vendor ID of the device. | Any Str | Recommended |
+| pci.device_id | PCI device ID of the device. | Any Str | Recommended |
 | hw.model | Model name of the hardware component. | Any Str | Recommended |
 | hw.serial_number | Serial number of the hardware component. | Any Str | Recommended |
 | hw.vendor | Vendor name of the hardware component. | Any Str | Recommended |
 | hw.firmware_version | Firmware version of the hardware component. Comma-separated list of `<id>:<name>:<subdevice_id>:<version>`, where `<version>` is URL-encoded. | Any Str | Recommended |
-| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
-| pci.device_id | PCI device ID of the device. | Any Str | Recommended |
-| pci.vendor_id | PCI vendor ID of the device. | Any Str | Recommended |
 | pci.lanes | The number of PCI lanes. | Any Str | Recommended |
 | pci.link_gen | PCI link generation. | Any Str | Recommended |
 
@@ -192,6 +194,7 @@ Bytes received / transmitted over PCI bus by the GPU device.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | network.io.direction | The IO operation direction. | Str: ``receive``, ``transmit`` | Recommended |
 
 ### hw.gpu.io.rate
@@ -208,6 +211,7 @@ Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 
 ### hw.gpu.utilization
 
@@ -223,6 +227,7 @@ GPU engine / task pipeline utilization ratio.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.gpu.task | GPU engine / task type. | Any Str | Recommended |
 
@@ -240,7 +245,7 @@ Maximum total memory (read+write) bandwidth in bytes/sec.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
@@ -259,7 +264,7 @@ Memory bandwidth (read+write) utilization ratio.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
@@ -278,7 +283,7 @@ Bytes read from / written to memory.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
@@ -298,7 +303,7 @@ Current memory bandwidth (read+write) usage in bytes/sec.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
@@ -317,7 +322,7 @@ Size of the memory.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
@@ -336,7 +341,7 @@ Memory used.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended |
 | hw.memory.type | Type of the memory. | Any Str | Recommended |
@@ -355,7 +360,7 @@ Instantaneous power usage of the hardware component.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended |
 
@@ -373,7 +378,7 @@ Power usage limit for the hardware component.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended |
 | com.intel.power.limit.level | For which period / duration power limit applies. | Any Str | Recommended |
@@ -393,10 +398,10 @@ The operational status of the hardware component.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.state | Current state of the hardware component. | Any Str | Recommended |
-| hw.type | Type of the hardware component. | Str: ``frequency``, ``gpu``, ``memory``, ``temperature`` | Recommended |
+| hw.type | Type of the hardware component. | Str: ``frequency``, ``gpu``, ``memory`` | Recommended |
 
 ### hw.temperature
 
@@ -412,7 +417,7 @@ Temperature of the hardware component in degrees Celsius.
 | ---- | ----------- | ------ | -------- |
 | hw.id | Unique identifier for the hardware component. | Any Str | Recommended |
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended |
-| hw.parent | Unique identifier for the parent component. | Any Str | Recommended |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended |
 | com.intel.subdevice_id | Subdevice ID of the hardware component. | Any Str | Recommended |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended |
 | statistic | Statistic type for the metric. | Str: ``min``, ``max`` | Recommended |
