@@ -14,13 +14,14 @@ data:
           - name: "Intel GPU core temperature health"
             source_metric: "hw.temperature"
             parent_metric: "hw.gpu.info"
+            parent_ref_attribute: "hw.id"
             parent_filters:
               - key: "pci.vendor_id"
                 values: ["8086"]
             component_filters:
               - key: "hw.sensor_location"
                 values: ["gpu"]
-            copy_attributes: ["hw.id", "hw.name", "hw.parent", "hw.sensor_location"]
+            copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
             add_attributes:
               hw.type: "temperature.core"
             states:
@@ -41,13 +42,14 @@ data:
           - name: "Intel GPU memory temperature health"
             source_metric: "hw.temperature"
             parent_metric: "hw.gpu.info"
+            parent_ref_attribute: "hw.id"
             parent_filters:
               - key: "pci.vendor_id"
                 values: ["8086"]
             component_filters:
               - key: "hw.sensor_location"
                 values: ["memory"]
-            copy_attributes: ["hw.id", "hw.name", "hw.parent", "hw.sensor_location"]
+            copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
             add_attributes:
               hw.type: "temperature.memory"
             states:
