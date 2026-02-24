@@ -60,91 +60,91 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
+			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeAggregationMin)
+			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeAggregationMin)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "hw.limit_type-val")
+			mb.RecordHwFrequencyLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "hw.limit_type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyRequestDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val")
+			mb.RecordHwFrequencyRequestDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencySamplesDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeSampleStatusCollected)
+			mb.RecordHwFrequencySamplesDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeSampleStatusCollected)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "com.intel.speed.throttle_reason-val")
+			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "com.intel.speed.throttle_reason-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val")
+			mb.RecordHwGpuBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val")
+			mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.bdf-val", "pci.device_id-val", "pci.vendor_id-val", "pci.lanes-val", "pci.link_gen-val")
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.lanes-val", "pci.link_gen-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", AttributeNetworkIoDirectionReceive)
+			mb.RecordHwGpuIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", AttributeNetworkIoDirectionReceive)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val")
+			mb.RecordHwGpuIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "com.intel.subdevice_id-val", "hw.gpu.task-val")
+			mb.RecordHwGpuUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.gpu.task-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+			mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val", AttributeNetworkIoDirectionReceive)
+			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val", AttributeNetworkIoDirectionReceive)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+			mb.RecordHwMemoryIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
+			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
+			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.state-val", AttributeHwTypeFrequency)
+			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.state-val", AttributeHwTypeFrequency)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwTemperatureDataPoint(ts, 1, "hw.id-val", "hw.name-val", "hw.parent-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", AttributeStatisticMin)
+			mb.RecordHwTemperatureDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", AttributeStatisticMin)
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
@@ -188,9 +188,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -215,9 +215,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -245,9 +245,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -275,9 +275,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -302,9 +302,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -334,9 +334,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -366,6 +366,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 				case "hw.gpu.bandwidth.utilization":
 					assert.False(t, validatedMetrics["hw.gpu.bandwidth.utilization"], "Found a duplicate in the metrics slice: hw.gpu.bandwidth.utilization")
 					validatedMetrics["hw.gpu.bandwidth.utilization"] = true
@@ -384,6 +387,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 				case "hw.gpu.info":
 					assert.False(t, validatedMetrics["hw.gpu.info"], "Found a duplicate in the metrics slice: hw.gpu.info")
 					validatedMetrics["hw.gpu.info"] = true
@@ -404,6 +410,15 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.vendor_id")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.vendor_id-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.device_id")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.device_id-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("hw.model")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.model-val", attrVal.Str())
@@ -416,15 +431,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.firmware_version")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.firmware_version-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("pci.bdf")
-					assert.True(t, ok)
-					assert.Equal(t, "pci.bdf-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("pci.device_id")
-					assert.True(t, ok)
-					assert.Equal(t, "pci.device_id-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("pci.vendor_id")
-					assert.True(t, ok)
-					assert.Equal(t, "pci.vendor_id-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("pci.lanes")
 					assert.True(t, ok)
 					assert.Equal(t, "pci.lanes-val", attrVal.Str())
@@ -451,6 +457,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("network.io.direction")
 					assert.True(t, ok)
 					assert.Equal(t, "receive", attrVal.Str())
@@ -472,6 +481,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 				case "hw.gpu.utilization":
 					assert.False(t, validatedMetrics["hw.gpu.utilization"], "Found a duplicate in the metrics slice: hw.gpu.utilization")
 					validatedMetrics["hw.gpu.utilization"] = true
@@ -490,6 +502,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -516,9 +531,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -546,9 +561,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -578,9 +593,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -611,9 +626,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -643,9 +658,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -675,9 +690,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -705,9 +720,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -732,9 +747,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -767,9 +782,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())
@@ -797,9 +812,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("hw.name")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("hw.parent")
+					attrVal, ok = dp.Attributes().Get("pci.bdf")
 					assert.True(t, ok)
-					assert.Equal(t, "hw.parent-val", attrVal.Str())
+					assert.Equal(t, "pci.bdf-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("com.intel.subdevice_id")
 					assert.True(t, ok)
 					assert.Equal(t, "com.intel.subdevice_id-val", attrVal.Str())

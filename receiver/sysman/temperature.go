@@ -36,7 +36,7 @@ type temperatureAttributes struct {
 	hwID           string
 	hwType         metadata.AttributeHwType
 	hwName         string
-	hwParent       string
+	pciBDF         string
 	sensorLocation string
 	statistic      metadata.AttributeStatistic
 	subdeviceId    string
@@ -80,10 +80,10 @@ func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*t
 		Temperature: temp,
 		logger:      device.logger,
 		attributes: temperatureAttributes{
-			hwID:           device.attributes.hwID + "_" + name,
+			hwID:           device.attributes.hwID,
 			hwType:         metadata.AttributeHwTypeTemperature,
 			hwName:         name,
-			hwParent:       device.attributes.hwID,
+			pciBDF:         device.attributes.pciBDF,
 			sensorLocation: location,
 			statistic:      statistic,
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
@@ -103,7 +103,7 @@ func (t *temperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) 
 			current,
 			t.attributes.hwID,
 			t.attributes.hwName,
-			t.attributes.hwParent,
+			t.attributes.pciBDF,
 			t.attributes.subdeviceId,
 			t.attributes.sensorLocation,
 			t.attributes.statistic,

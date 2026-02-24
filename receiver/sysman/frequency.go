@@ -32,7 +32,7 @@ type frequencyAttributes struct {
 	hwID            string
 	hwType          metadata.AttributeHwType
 	hwName          string
-	hwParent        string
+	pciBDF          string
 	hwFrequencyType string
 	subdeviceId     string
 }
@@ -86,10 +86,10 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 		Frequency: freq,
 		logger:    device.logger,
 		attributes: frequencyAttributes{
-			hwID:            device.attributes.hwID + "_" + name,
+			hwID:            device.attributes.hwID,
 			hwType:          metadata.AttributeHwTypeFrequency,
 			hwName:          name,
-			hwParent:        device.attributes.hwID,
+			pciBDF:          device.attributes.pciBDF,
 			hwFrequencyType: strings.ToLower(props.Type.String()),
 			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
@@ -116,7 +116,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
 					f.attributes.hwID,
 					f.attributes.hwName,
-					f.attributes.hwParent,
+					f.attributes.pciBDF,
 					f.attributes.subdeviceId,
 					f.attributes.hwFrequencyType,
 					"min")
@@ -125,7 +125,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
 					f.attributes.hwID,
 					f.attributes.hwName,
-					f.attributes.hwParent,
+					f.attributes.pciBDF,
 					f.attributes.subdeviceId,
 					f.attributes.hwFrequencyType,
 					"max")
@@ -141,7 +141,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			mb.RecordHwFrequencyRequestDataPoint(ts, int64(state.Request*1e6),
 				f.attributes.hwID,
 				f.attributes.hwName,
-				f.attributes.hwParent,
+				f.attributes.pciBDF,
 				f.attributes.subdeviceId,
 				f.attributes.hwFrequencyType)
 		}
@@ -158,7 +158,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			mb.RecordHwStatusDataPoint(ts, value,
 				f.attributes.hwID,
 				f.attributes.hwName,
-				f.attributes.hwParent,
+				f.attributes.pciBDF,
 				f.attributes.subdeviceId,
 				state,
 				f.attributes.hwType)
@@ -178,7 +178,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
 					f.attributes.hwID,
 					f.attributes.hwName,
-					f.attributes.hwParent,
+					f.attributes.pciBDF,
 					f.attributes.subdeviceId,
 					f.attributes.hwFrequencyType,
 					strings.ToLower(reason.String()))
@@ -196,7 +196,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.minValue*1e6),
 			f.attributes.hwID,
 			f.attributes.hwName,
-			f.attributes.hwParent,
+			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
 			f.attributes.hwFrequencyType,
 			metadata.AttributeAggregationMin)
@@ -204,7 +204,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.maxValue*1e6),
 			f.attributes.hwID,
 			f.attributes.hwName,
-			f.attributes.hwParent,
+			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
 			f.attributes.hwFrequencyType,
 			metadata.AttributeAggregationMax)
@@ -212,7 +212,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.avgValue*1e6),
 			f.attributes.hwID,
 			f.attributes.hwName,
-			f.attributes.hwParent,
+			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
 			f.attributes.hwFrequencyType,
 			metadata.AttributeAggregationAvg)
@@ -221,7 +221,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.samples),
 			f.attributes.hwID,
 			f.attributes.hwName,
-			f.attributes.hwParent,
+			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
 			f.attributes.hwFrequencyType,
 			metadata.AttributeSampleStatusCollected)
@@ -229,7 +229,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.lostSamples),
 			f.attributes.hwID,
 			f.attributes.hwName,
-			f.attributes.hwParent,
+			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
 			f.attributes.hwFrequencyType,
 			metadata.AttributeSampleStatusDropped)

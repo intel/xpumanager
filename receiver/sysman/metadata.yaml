@@ -59,9 +59,6 @@ attributes:
   hw.name:
     description: An easily-recognizable name for the hardware component.
     type: string
-  hw.parent:
-    description: Unique identifier for the parent component.
-    type: string
   hw.sensor_location:
     description: Location of the sensor.
     type: string
@@ -126,7 +123,7 @@ metrics:
       value_type: double
       monotonic: true
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.sensor_location]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]
   hw.frequency:
     enabled: true
     description: Operating frequency of the hardware component.
@@ -134,7 +131,7 @@ metrics:
     unit: "Hz"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.frequency.domain, aggregation]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, aggregation]
   hw.frequency.limit:
     enabled: true
     description: Frequency limit in Hertz.
@@ -142,7 +139,7 @@ metrics:
     unit: "Hz"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.frequency.domain, hw.limit_type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, hw.limit_type]
   hw.frequency.request:
     enabled: true
     description: Requested operating frequency.
@@ -150,7 +147,7 @@ metrics:
     unit: "Hz"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.frequency.domain]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain]
   hw.frequency.samples:
     enabled: true
     description: Number of frequency samples during the last collection interval.
@@ -158,7 +155,7 @@ metrics:
     unit: "{count}"
     gauge:
       value_type: int
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.frequency.domain, sample.status]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, sample.status]
   hw.frequency.throttle_status:
     enabled: true
     description: Hardware component frequency throttle status.
@@ -168,7 +165,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.frequency.domain, com.intel.speed.throttle_reason]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, com.intel.speed.throttle_reason]
   hw.gpu.bandwidth.limit:
     enabled: true
     description: Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.
@@ -178,7 +175,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name]
+    attributes: [hw.id, hw.name, pci.bdf]
   hw.gpu.bandwidth.utilization:
     enabled: true
     description: GPU device (read+write) PCI bandwidth utilization ratio.
@@ -186,7 +183,7 @@ metrics:
     unit: "1"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name]
+    attributes: [hw.id, hw.name, pci.bdf]
   hw.gpu.info:
     enabled: true
     description: Information about the GPU device.
@@ -196,7 +193,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, pci.bdf, pci.device_id, pci.vendor_id, pci.lanes, pci.link_gen]
+    attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, pci.lanes, pci.link_gen]
   hw.gpu.io:
     enabled: true
     description: Bytes received / transmitted over PCI bus by the GPU device.
@@ -206,7 +203,7 @@ metrics:
       value_type: double
       monotonic: true
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, network.io.direction]
+    attributes: [hw.id, hw.name, pci.bdf, network.io.direction]
   hw.gpu.io.rate:
     # TODO: disable/drop this if limits are available on all relevant HW
     enabled: true
@@ -215,7 +212,7 @@ metrics:
     unit: "By/s"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name]
+    attributes: [hw.id, hw.name, pci.bdf]
   hw.gpu.utilization:
     enabled: true
     description: GPU engine / task pipeline utilization ratio.
@@ -223,7 +220,7 @@ metrics:
     unit: "1"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name, com.intel.subdevice_id, hw.gpu.task]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.gpu.task]
   hw.memory.bandwidth.limit:
     enabled: true
     description: Maximum total memory (read+write) bandwidth in bytes/sec.
@@ -233,7 +230,7 @@ metrics:
       value_type: double
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.bandwidth.utilization:
     enabled: true
     description: Memory bandwidth (read+write) utilization ratio.
@@ -241,7 +238,7 @@ metrics:
     unit: "1"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.io:
     enabled: true
     description: Bytes read from / written to memory.
@@ -251,7 +248,7 @@ metrics:
       value_type: double
       monotonic: true
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.memory.location, hw.memory.type, network.io.direction]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type, network.io.direction]
   hw.memory.io.rate:
     # TODO: disable/drop this if limits are available on all relevant HW
     enabled: true
@@ -260,7 +257,7 @@ metrics:
     unit: "By/s"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.size:
     enabled: true
     description: Size of the memory.
@@ -270,7 +267,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.usage:
     enabled: true
     description: Memory used.
@@ -280,7 +277,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.power:
     enabled: true
     description: Instantaneous power usage of the hardware component.
@@ -288,7 +285,7 @@ metrics:
     unit: "W"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.sensor_location]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]
   hw.power.limit:
     enabled: true
     description: Power usage limit for the hardware component.
@@ -296,8 +293,8 @@ metrics:
     unit: "W"
     gauge:
       value_type: double
-    # TODO: attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.sensor_location, hw.power.limit.level, hw.power.limit.source]
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.sensor_location, com.intel.power.limit.level, com.intel.power.limit.source]
+    # TODO: attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, hw.power.limit.level, hw.power.limit.source]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, com.intel.power.limit.level, com.intel.power.limit.source]
   hw.status:
     enabled: true
     description: The operational status of the hardware component.
@@ -307,7 +304,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.state, hw.type]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.state, hw.type]
   hw.temperature:
     enabled: true
     description: Temperature of the hardware component in degrees Celsius.
@@ -315,7 +312,7 @@ metrics:
     unit: "Cel"
     gauge:
       value_type: double
-    attributes: [hw.id, hw.name, hw.parent, com.intel.subdevice_id, hw.sensor_location, statistic]
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, statistic]
 
 tests:
   # TODO: explore using a stub l0 driver for enabling lifecycle tests (for
