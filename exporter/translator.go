@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 
@@ -181,6 +182,23 @@ func (t *metricsTranslator) parseFirmwares(fwVersionStr string) []*pb.FirmwareIn
 	return firmwares
 }
 
+// getParentID returns hw.parent if available, otherwise it fallbacks to hw.id
+func (t *metricsTranslator) getParentID(metricName string, attrs pcommon.Map) string {
+	hwParentVal, _ := attrs.Get("hw.parent")
+	id := hwParentVal.Str()
+
+	if id == "" {
+		// Missing or empty hw.parent -> fallback to hw.id
+		hwIDVal, _ := attrs.Get("hw.id")
+		id = hwIDVal.Str()
+		if id == "" {
+			// Missing hardware ID
+			t.logger.Errorw("missing or empty hw.parent & hw.id attributes", "metric", metricName, "attributes", attrs.AsRaw())
+		}
+	}
+	return id
+}
+
 func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.NumberDataPointSlice) {
 	for _, dp := range dps.All() {
 		attrs := dp.Attributes()
@@ -202,18 +220,9 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 			continue
 		}
 
-		hwParentVal, _ := attrs.Get("hw.parent")
-		id := hwParentVal.Str()
-
+		id := t.getParentID(metricName, attrs)
 		if id == "" {
-			// Missing or empty hw.parent -> fallback to hw.id
-			hwIDVal, _ := attrs.Get("hw.id")
-			id = hwIDVal.Str()
-			if id == "" {
-				// Missing hardware ID
-				t.logger.Errorw("missing or empty hw.id attribute", "metric", metricName, "attributes", attrs.AsRaw())
-				continue
-			}
+			continue
 		}
 
 		health := t.health[id]
@@ -342,10 +351,8 @@ func (t *metricsTranslator) updateMemoryInfo(metricName string, dps pmetric.Numb
 			continue
 		}
 
-		hwParentVal, _ := attrs.Get("hw.parent")
-		id := hwParentVal.Str()
+		id := t.getParentID(metricName, attrs)
 		if id == "" {
-			t.logger.Warnw("missing or empty hw.parent attribute", "metric", metricName, "attributes", attrs.AsRaw())
 			continue
 		}
 
