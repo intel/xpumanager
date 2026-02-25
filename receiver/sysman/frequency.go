@@ -76,13 +76,7 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 		return nil, fmt.Errorf("frequency GetState() failed: %w", err)
 	}
 
-	hasRange := true
-	if _, err := freq.GetRange(); err != nil {
-		device.logger.Warnw("Frequency GetRange() failed: limit metrics not available", zap.Error(err), "name", name)
-		hasRange = false
-	}
-
-	return &frequency{
+	f := &frequency{
 		Frequency: freq,
 		logger:    device.logger,
 		attributes: frequencyAttributes{
@@ -94,11 +88,18 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: frequencyState{
-			hasRange: hasRange,
+			hasRange: true,
 			// Aggregated metrics
 			actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
 		},
-	}, nil
+	}
+
+	if _, err := freq.GetRange(); err != nil {
+		device.logger.Infow("Frequency GetRange() failed: limit metrics not available", zap.Error(err), "name", name, "attributes", f.attributes)
+		f.state.hasRange = false
+	}
+
+	return f, nil
 }
 
 func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {

@@ -80,13 +80,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		return nil, fmt.Errorf("power GetEnergyCounter() failed: %w", err)
 	}
 
-	hasLimits := true
-	if _, err = pwr.GetLimitsExt(); err != nil {
-		device.logger.Warnw("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "name", name)
-		hasLimits = false
-	}
-
-	return &power{
+	p := &power{
 		Power:  pwr,
 		logger: device.logger,
 		attribs: powerAttribs{
@@ -97,10 +91,17 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: powerState{
-			hasLimits: hasLimits,
+			hasLimits: true,
 			counter:   counter,
 		},
-	}, nil
+	}
+
+	if _, err = pwr.GetLimitsExt(); err != nil {
+		device.logger.Infow("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "attributes", p.attribs)
+		p.state.hasLimits = false
+	}
+
+	return p, nil
 }
 
 // scrape converts energy counter value to OTel metric:
@@ -155,7 +156,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// TODO: find HW supporting this / test it
 	limits, err := power.GetLimitsExt()
 	if err != nil {
-		power.logger.Warnw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attribs)
+		power.logger.Errorw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attribs)
 		power.state.hasLimits = false
 		return
 	}
@@ -181,7 +182,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 
 	if count == 0 {
-		power.logger.Warnw("Power GetLimitsExt(): no suitable power limits", "all", len(limits))
+		power.logger.Infow("Power GetLimitsExt(): no suitable power limits", "all", len(limits), "attributes", power.attribs)
 		power.state.hasLimits = false
 	}
 }

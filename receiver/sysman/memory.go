@@ -90,7 +90,7 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 
 	// initial / previous counter value
 	if counter, err := mem.GetBandwidth(); err != nil {
-		device.logger.Warnw("Memory GetBandwidth() failed: no BW metrics available", zap.Error(err))
+		device.logger.Infow("Memory GetBandwidth() failed: no BW metrics available", zap.Error(err), "attributes", m.attributes)
 	} else {
 		m.state.counter = &counter
 	}
