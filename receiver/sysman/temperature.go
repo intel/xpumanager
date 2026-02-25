@@ -75,6 +75,11 @@ func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*t
 		statistic = metadata.AttributeStatisticMin
 	}
 
+	// Initial check to see if the metric is available
+	if _, err := temp.GetState(); err != nil {
+		return nil, fmt.Errorf("temperature GetState() failed, temp metric not available: %w", err)
+	}
+
 	return &temperature{
 		Temperature: temp,
 		logger:      device.logger,
@@ -94,7 +99,7 @@ func (t *temperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) 
 		return
 	}
 	if current, err := t.GetState(); err != nil {
-		t.logger.Warnw("Temperature GetState() failed: temp metric disabled", zap.Error(err), "attributes", t.attributes)
+		t.logger.Errorw("Temperature GetState() failed: temp metric disabled", zap.Error(err), "attributes", t.attributes)
 		t.state.disabled = true
 	} else {
 		mb.RecordHwTemperatureDataPoint(ts,
