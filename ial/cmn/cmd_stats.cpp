@@ -115,13 +115,33 @@ std::string cmdStats::formatIso8601Timestamp(const std::chrono::system_clock::ti
 }
 
 /**
+ * @brief Compute delta between two monotonic 64-bit counters, handling wrap-around
+ *
+ * Level Zero sysman counters (bandwidth, energy, engine activity, timestamps) are
+ * monotonically increasing uint64_t values that may wrap. This helper computes the
+ * correct delta regardless of whether the counter has wrapped.
+ *
+ * @param [in] current Current counter value
+ * @param [in] baseline Previous counter value
+ * @return Delta accounting for possible wrap-around
+ */
+static uint64_t deltaWithWrap(uint64_t current, uint64_t baseline)
+{
+	if (current >= baseline) {
+		return current - baseline;
+	}
+	// Counter wrapped around
+	return (UINT64_MAX - baseline) + current + 1;
+}
+
+/**
  * @brief Compute engine utilization percentage from two snapshots
  *
  * This function calculates the utilization percentage by comparing the active time
  * and total elapsed time between two engine activity snapshots. It computes the
  * ratio of (delta active time) / (delta timestamp) * 100, clamping the result
- * to the range [0.0, 100.0]. Returns NaN if snapshots are invalid, timestamps
- * don't increase, or active time decreases (which would indicate invalid data).
+ * to the range [0.0, 100.0]. Returns NaN if snapshots are invalid or deltaTime is zero.
+ * Handles counter/timestamp wrap-around per Level Zero spec.
  *
  * @param [in] start The starting engine snapshot
  * @param [in] end The ending engine snapshot
@@ -134,12 +154,8 @@ double cmdStats::computeUtilPercent(const EngineSnapshot &start, const EngineSna
 		return std::numeric_limits<double>::quiet_NaN();
 	}
 
-	if (end.timestamp <= start.timestamp || end.activeTime < start.activeTime) {
-		return std::numeric_limits<double>::quiet_NaN();
-	}
-
-	uint64_t deltaActive = end.activeTime - start.activeTime;
-	uint64_t deltaTime = end.timestamp - start.timestamp;
+	uint64_t deltaActive = deltaWithWrap(end.activeTime, start.activeTime);
+	uint64_t deltaTime = deltaWithWrap(end.timestamp, start.timestamp);
 
 	if (deltaTime == 0) {
 		return std::numeric_limits<double>::quiet_NaN();
@@ -284,17 +300,15 @@ ze_result_t cmdStats::collectPowerMetricsPerTile(power *powerHandler, TilePowerS
 			uint64_t baseEnergy = baseline.energy[tileId];
 			uint64_t baseTimestamp = baseline.timestamp[tileId];
 
-			if (timestamp > baseTimestamp && energy >= baseEnergy) {
-				uint64_t deltaEnergy = energy - baseEnergy;
-				uint64_t deltaTime = timestamp - baseTimestamp;
+			uint64_t deltaEnergy = deltaWithWrap(energy, baseEnergy);
+			uint64_t deltaTime = deltaWithWrap(timestamp, baseTimestamp);
 
-				if (deltaTime > 0) {
-					double powerWatts = static_cast<double>(deltaEnergy) / static_cast<double>(deltaTime);
-					powerSamplesPerTile[tileId].push_back(powerWatts);
+			if (deltaTime > 0) {
+				double powerWatts = static_cast<double>(deltaEnergy) / static_cast<double>(deltaTime);
+				powerSamplesPerTile[tileId].push_back(powerWatts);
 
-					DBG("Tile %u power sample: %.2f W (deltaEnergy=%" PRIu64 " µJ, deltaTime=%" PRIu64 " µs)\n", tileId,
-						powerWatts, deltaEnergy, deltaTime);
-				}
+				DBG("Tile %u power sample: %.2f W (deltaEnergy=%" PRIu64 " µJ, deltaTime=%" PRIu64 " µs)\n", tileId,
+					powerWatts, deltaEnergy, deltaTime);
 			}
 		}
 
@@ -462,10 +476,11 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidth
 	if (result == ZE_RESULT_SUCCESS && !tileBandwidth.empty()) {
 		for (const auto &[tileId, data] : tileBandwidth) {
 			if (baseline.valid && baseline.timestamp.find(tileId) != baseline.timestamp.end()) {
-				uint64_t deltaTime = data.timestamp - baseline.timestamp[tileId];
+				uint64_t deltaTime = deltaWithWrap(data.timestamp, baseline.timestamp[tileId]);
+
 				if (deltaTime > 0) {
-					uint64_t deltaRead = data.readCounter - baseline.readCounter[tileId];
-					uint64_t deltaWrite = data.writeCounter - baseline.writeCounter[tileId];
+					uint64_t deltaRead = deltaWithWrap(data.readCounter, baseline.readCounter[tileId]);
+					uint64_t deltaWrite = deltaWithWrap(data.writeCounter, baseline.writeCounter[tileId]);
 
 					double readKBps = calculateThroughputKBps(deltaRead, deltaTime);
 					double writeKBps = calculateThroughputKBps(deltaWrite, deltaTime);
@@ -545,24 +560,17 @@ ze_result_t cmdStats::collectPcieMetrics(pci *pciHandler, zes_device_handle_t de
 		return ZE_RESULT_SUCCESS; // Not fatal, device may not support PCIe stats
 	}
 
-	if (baseline.valid && pciStats.timestamp > baseline.timestamp) {
-		uint64_t deltaTime = pciStats.timestamp - baseline.timestamp;
-
-		uint64_t deltaRx = 0;
-		if (pciStats.rxCounter >= baseline.rxCounter) {
-			deltaRx = pciStats.rxCounter - baseline.rxCounter;
-		} else {
-			// Counter wrapped around
-			deltaRx = (UINT64_MAX - baseline.rxCounter) + pciStats.rxCounter + 1;
+	if (baseline.valid) {
+		uint64_t deltaTime = deltaWithWrap(pciStats.timestamp, baseline.timestamp);
+		if (deltaTime == 0) {
+			baseline.rxCounter = pciStats.rxCounter;
+			baseline.txCounter = pciStats.txCounter;
+			baseline.timestamp = pciStats.timestamp;
+			return ZE_RESULT_SUCCESS;
 		}
 
-		uint64_t deltaTx = 0;
-		if (pciStats.txCounter >= baseline.txCounter) {
-			deltaTx = pciStats.txCounter - baseline.txCounter;
-		} else {
-			// Counter wrapped around
-			deltaTx = (UINT64_MAX - baseline.txCounter) + pciStats.txCounter + 1;
-		}
+		uint64_t deltaRx = deltaWithWrap(pciStats.rxCounter, baseline.rxCounter);
+		uint64_t deltaTx = deltaWithWrap(pciStats.txCounter, baseline.txCounter);
 
 		double readKBps =
 			static_cast<double>(deltaRx) * MICROSECONDS_PER_SECOND / (static_cast<double>(deltaTime) * BYTES_PER_KB);
@@ -621,16 +629,14 @@ ze_result_t cmdStats::collectEngineUtilPerTile(enginegroup *engineGroup, zes_eng
 			uint64_t baseActiveTime = baseline.activeTime[tileId];
 			uint64_t baseTimestamp = baseline.timestamp[tileId];
 
-			if (timestamp > baseTimestamp && activeTime >= baseActiveTime) {
-				uint64_t deltaActive = activeTime - baseActiveTime;
-				uint64_t deltaTime = timestamp - baseTimestamp;
+			uint64_t deltaActive = deltaWithWrap(activeTime, baseActiveTime);
+			uint64_t deltaTime = deltaWithWrap(timestamp, baseTimestamp);
 
-				if (deltaTime > 0) {
-					double util = (static_cast<double>(deltaActive) / static_cast<double>(deltaTime)) * 100.0;
-					util = std::clamp(util, 0.0, 100.0);
-					utilPerTile[tileId].push_back(util);
-					DBG("Engine type %d tile %u util: %.2f%%\n", engineType, tileId, util);
-				}
+			if (deltaTime > 0) {
+				double util = (static_cast<double>(deltaActive) / static_cast<double>(deltaTime)) * 100.0;
+				util = std::clamp(util, 0.0, 100.0);
+				utilPerTile[tileId].push_back(util);
+				DBG("Engine type %d tile %u util: %.2f%%\n", engineType, tileId, util);
 			}
 		}
 
