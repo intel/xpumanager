@@ -144,16 +144,16 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		if pci.MaxSpeed.MaxBandwidth > 0 {
 			d.state.maxBandwidth = pci.MaxSpeed.MaxBandwidth
 		} else {
-			d.logger.Warnw("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
+			d.logger.Infow("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
 		}
 		if pci.HaveBandwidthCounters != 0 {
 			if stats, err := dev.PciGetStats(); err == nil {
 				d.state.pciStats = &stats
 			} else {
-				d.logger.Warnw("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
+				d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
 			}
 		} else {
-			d.logger.Warnw("Device PciGetProperties(): PCI BW counters not available", "attributes", d.attributes)
+			d.logger.Infow("Device PciGetProperties(): PCI BW counters not available", "attributes", d.attributes)
 		}
 	}
 
