@@ -1890,7 +1890,7 @@ int cmdStats::run(arg_struct *args)
 	size_t sampleCount = DEFAULT_SAMPLE_COUNT;
 	if (statsCmds[STATS_SAMPLES].enabled && !statsCmds[STATS_SAMPLES].val.empty()) {
 		try {
-			size_t parsed = std::stoull(statsCmds[STATS_SAMPLES].val);
+			size_t parsed = static_cast<size_t>(std::stoull(statsCmds[STATS_SAMPLES].val));
 			if (parsed < 2) {
 				ERR("Sample count must be at least 2.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;

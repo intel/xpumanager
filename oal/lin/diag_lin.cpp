@@ -76,7 +76,6 @@ CpuData getCpuStats()
 	if (file.is_open()) {
 		std::string line;
 		std::getline(file, line); // Read first line
-		data.isLoaded = true;
 		// Format: cpu user nice system idle ioWait irq softIrq steal
 		int result = std::sscanf(line.c_str(), "cpu %lld %lld %lld %lld %lld %lld %lld %lld", &data.user, &data.nice,
 								 &data.system, &data.idle, &data.ioWait, &data.irq, &data.softIrq, &data.steal);

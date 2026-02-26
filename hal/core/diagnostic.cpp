@@ -1037,11 +1037,11 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 		return ret;
 	}
 	for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
-		uint8_t *srcAllocation = srcAllocations[dispatchId];
-		uint8_t *dstAllocation = dstAllocations[dispatchId];
+		uint8_t *srcAllocation = srcAllocations[static_cast<unsigned int>(dispatchId)];
+		uint8_t *dstAllocation = dstAllocations[static_cast<unsigned int>(dispatchId)];
 
 		ze_kernel_handle_t testFunction = nullptr;
-		kernelCreate(module, testKernelNames[dispatchId], &testFunction);
+		kernelCreate(module, testKernelNames[static_cast<unsigned int>(dispatchId)], &testFunction);
 		ret = zeKernelSetGroupSize(testFunction, workgroupSizeX, 1, 1);
 		if (ret != ZE_RESULT_SUCCESS) {
 			ERR("Failed to set kernel group size: %s\n", l0_error_to_string(ret));
@@ -1060,8 +1060,9 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 		uint32_t groupCountX = static_cast<uint32_t>(allocationCount / workgroupSizeX);
 		ze_group_count_t threadGroupDimensions = {groupCountX, 1, 1};
 
-		ret = zeCommandListAppendMemoryFill(commandList, srcAllocation, &initValue2, sizeof(uint8_t),
-											allocationCount * sizeof(uint8_t), nullptr, 0, nullptr);
+		ret =
+			zeCommandListAppendMemoryFill(commandList, srcAllocation, &initValue2, sizeof(uint8_t),
+										  static_cast<size_t>(allocationCount) * sizeof(uint8_t), nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
 			ERR("Failed to fill command list append memory : %s\n", l0_error_to_string(ret));
 			return ret;
@@ -1073,8 +1074,9 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 			return ret;
 		}
 
-		ret = zeCommandListAppendMemoryFill(commandList, dstAllocation, &initValue3, sizeof(uint8_t),
-											allocationCount * sizeof(uint8_t), nullptr, 0, nullptr);
+		ret =
+			zeCommandListAppendMemoryFill(commandList, dstAllocation, &initValue3, sizeof(uint8_t),
+										  static_cast<size_t>(allocationCount) * sizeof(uint8_t), nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
 			ERR("Failed to fill command list append memory : %s\n", l0_error_to_string(ret));
 			return ret;
@@ -1093,8 +1095,9 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 			return ret;
 		}
 
-		ret = zeCommandListAppendMemoryCopy(commandList, dataOut[dispatchId].data(), dstAllocation,
-											dataOut[dispatchId].size() * sizeof(uint8_t), nullptr, 0, nullptr);
+		ret = zeCommandListAppendMemoryCopy(
+			commandList, dataOut[static_cast<unsigned int>(dispatchId)].data(), dstAllocation,
+			dataOut[static_cast<unsigned int>(dispatchId)].size() * sizeof(uint8_t), nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
 			ERR("Failed to copy command list append memory : %s\n", l0_error_to_string(ret));
 			return ret;
@@ -1136,7 +1139,7 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 	}
 
 	for (uint64_t dispatchId = 0; dispatchId < testFunctions.size(); dispatchId++) {
-		ret = zeKernelDestroy(testFunctions[dispatchId]);
+		ret = zeKernelDestroy(testFunctions[static_cast<unsigned int>(dispatchId)]);
 		if (ret != ZE_RESULT_SUCCESS) {
 			ERR("Failed to run kernel destroy : %s\n", l0_error_to_string(ret));
 			return ret;
@@ -1220,7 +1223,8 @@ ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
 			if (oneCaseRequestedAllocationSize == 0) {
 				return ZE_RESULT_ERROR_INVALID_SIZE;
 			}
-			std::size_t allocationCount = oneCaseRequestedAllocationSize / (numberOfKernelArgs * sizeof(uint8_t));
+			std::size_t allocationCount =
+				static_cast<size_t>(oneCaseRequestedAllocationSize / numberOfKernelArgs) * sizeof(uint8_t);
 			std::uint64_t numberOfDispatch = maxAllocationSize / oneCaseRequestedAllocationSize;
 			std::vector<uint8_t *> inputAllocations;
 			std::vector<uint8_t *> outputAllocations;
@@ -1300,7 +1304,7 @@ ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
 			ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
 			if (ret != ZE_RESULT_SUCCESS) {
 				ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
-				freeResources(context, inputAllocations, outputAllocations, moduleHandle);
+				freeResources(context, inputAllocations, outputAllocations, NULL);
 				return ret;
 			}
 			ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
