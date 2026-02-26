@@ -32,21 +32,14 @@ serviceAccount:
 podAnnotations: {}
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext
-# -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)
-podSecurityContext:
-  # @schema hidden
-  seccompProfile:
-    type: RuntimeDefault
+# -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+# NOTE: security settings control to what GPU metrics container has access to
+podSecurityContextOverride: {}
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext
-# -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
-securityContext:
-  # @schema hidden
-  runAsUser: 0
-  # @schema hidden
-  privileged: true
-  # @schema hidden
-  readOnlyRootFilesystem: true
+# -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container).
+# NOTE: security settings control to what GPU metrics container has access to
+securityContextOverride: {}
 
 # @schema additionalProperties:false
 service:
@@ -58,16 +51,14 @@ service:
   # -- Service port
   port: 8080
 
+# @schema enum: [dra, i915, xe]
+# -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin)
+gpuAccess: xe
+
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
-# -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container
-resources:
-  # @schema hidden
-  limits:
-    memory: 2Gi
-  # @schema hidden
-  requests:
-    cpu: 10m
-    memory: 128Mi
+# -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container.
+# NOTE: overrides `gpuAccess` setting
+resourcesOverride: {}
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector
 # -- Node selector for pod placement
@@ -83,7 +74,7 @@ affinity: {}
 
 # @schema additionalProperties:false
 config:
-  # -- Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)
+  # -- [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers)
   # @default --  
   # @section -- XPUM Daemon Configuration
   receivers:
@@ -112,14 +103,14 @@ config:
       # @section -- XPUM Daemon Configuration
       metrics: {}
 
-  # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
+  # -- [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)
   # @section -- XPUM Daemon Configuration
   processors:
     # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
     # @section -- XPUM Daemon Configuration
     intelxpustatus: {}
 
-  # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
+  # -- [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters)
   # @default --  
   # @section -- XPUM Daemon Configuration
   exporters:
@@ -129,11 +120,11 @@ config:
     intelxpuinfo:
       endpoint: "/run/xpumd/intelxpuinfo.sock"
 
-  # -- Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)
+  # -- [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)
   # @section -- XPUM Daemon Configuration
   extensions: {}
 
-  # -- Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)
+  # -- [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)
   # @section -- XPUM Daemon Configuration
   service:
     telemetry:

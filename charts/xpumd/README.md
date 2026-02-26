@@ -3,6 +3,13 @@
 ![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: main](https://img.shields.io/badge/AppVersion-main-informational?style=flat-square)
 A Helm chart for Intel(R) XPUM Daemon
 
+## Pre-conditions
+
+Kubernetes cluster with eiher Intel GPU plugin[^1] or Intel GPU resource driver[^2] installed.
+
+[^1]: [Intel GPU plugin](https://intel.github.io/intel-device-plugins-for-kubernetes/cmd/gpu_plugin/README.html)
+[^2]: [Intel GPU resource driver](https://github.com/intel/intel-resource-drivers-for-kubernetes/tree/main/doc/gpu#readme)
+
 ## Installation
 
 Helm login to ghcr.io:
@@ -20,13 +27,28 @@ kubectl create secret docker-registry ghcr-secret \
   --docker-password=GITHUB_PERSONAL_ACCESS_TOKEN \
 ```
 
+Create namespace for the daemon and label it for [DRA](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) GPU monitoring access:
+
+```bash
+kubectl create ns intel-xpumd
+kubectl label ns intel-xpumd resource.kubernetes.io/admin-access=true
+```
+
 Install the chart:
 
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
-  --version 0.0.0-main
+  --version 0.0.0-main \
+  --set gpuAccess=MODE \
+  --namespace intel-xpumd
 ```
+
+Where [MODE](#other-values) specifies how monitoring access to Intel GPUs is requested:
+
+* `i915`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
+* `xe`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
+* `dra`: Use Intel GPU resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
 
 By default no metrics exporters are enabled. To enable exporters, the corresponding
 values must be set. For example, to enable the OTLP gRPC exporter:
@@ -44,12 +66,12 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| config.exporters | object |   | Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters) |
+| config.exporters | object |   | [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters) |
 | config.exporters.intelxpuinfo | object |   | Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead. |
-| config.extensions | object | `{}` | Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions) |
-| config.processors | object | `{"intelxpustatus":{}}` | Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors) |
+| config.extensions | object | `{}` | [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions) |
+| config.processors | object | `{"intelxpustatus":{}}` | [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors) |
 | config.processors.intelxpustatus | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details. |
-| config.receivers | object |   | Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers) |
+| config.receivers | object |   | [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers) |
 | config.receivers.intelxpu | object |   | Configuration for the Intel XPU receiver. |
 | config.receivers.intelxpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
 | config.receivers.intelxpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
@@ -57,7 +79,7 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service | object | `{"pipelines":{"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 
@@ -65,6 +87,7 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 |-----|------|---------|-------------|
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
+| gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin) |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
@@ -72,9 +95,9 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
-| podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
-| resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container |
-| securityContext | object | `{"privileged":true,"readOnlyRootFilesystem":true,"runAsUser":0}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| podSecurityContextOverride | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to |
+| resourcesOverride | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting |
+| securityContextOverride | object | `{}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container). NOTE: security settings control to what GPU metrics container has access to |
 | service.create | bool | `false` | Create service |
 | service.port | int | `8080` | Service port |
 | service.type | string | `"ClusterIP"` | Service type |
