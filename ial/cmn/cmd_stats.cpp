@@ -1299,25 +1299,19 @@ void StatsTextPrinter::print(nlohmann::ordered_json *jsonObj)
 }
 
 /**
- * @brief Print device statistics table
+ * @brief Print device statistics table using TableBuilder
  *
- * This function renders a complete statistics table for a single device.
- * The table uses a fixed-width ASCII box format with separators between logical
- * sections.
+ * This function renders a complete statistics table for a single device
+ * using the TableBuilder utility for consistent, formatted output.
+ * The table uses a two-column key-value layout with section separators.
  *
  * @param [in] deviceJson JSON object containing single device statistics
  */
 void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson)
 {
 	TRACING();
-	auto printSeparator = []() {
-		PRINT("+----------------------------+---------------------------------------------------------------------+"
-			  "\n");
-	};
-
-	auto printRow = [](const std::string &label, const std::string &value) {
-		PRINT("| %-26s | %-67s |\n", label.c_str(), value.c_str());
-	};
+	TableBuilder table;
+	table.addColumn("Metric", 26, Align::Left).addColumn("Value", 67, Align::Left);
 
 	uint32_t deviceIndex = deviceJson.value("device_index", 0);
 	std::string pciBdf = deviceJson.value("pci_bdf", "N/A");
@@ -1333,194 +1327,201 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 		elapsedSeconds = ts.value("elapsed_seconds", elapsedSeconds);
 	}
 
-	printSeparator();
-	printRow("Device ID", std::to_string(deviceIndex));
-	printSeparator();
-	printRow("PCI BDF", pciBdf);
-	printRow("Device Type", deviceType);
+	table.addRow("Device ID", std::to_string(deviceIndex));
+	table.addSeparator();
+	table.addRow("PCI BDF", pciBdf);
+	table.addRow("Device Type", deviceType);
 
-	printSeparator();
-	printRow("Start Time", startTime);
-	printRow("End Time", endTime);
-
-	std::ostringstream elapsedStr;
-	elapsedStr << std::fixed << std::setprecision(2) << elapsedSeconds;
-	printRow("Elapsed Time (seconds)", elapsedStr.str());
+	table.addSeparator();
+	table.addRow("Start Time", startTime);
+	table.addRow("End Time", endTime);
+	table.addRow("Elapsed Time (seconds)", std::format("{:.2f}", elapsedSeconds));
 
 	if (deviceJson.contains("power") && deviceJson["power"].contains("energy_consumed_j")) {
 		double energyJ = deviceJson["power"]["energy_consumed_j"].get<double>();
-		std::ostringstream oss;
-		oss << std::fixed << std::setprecision(2) << energyJ;
-		printRow("Energy Consumed (J)", oss.str());
+		table.addRow("Energy Consumed (J)", std::format("{:.2f}", energyJ));
 	} else {
-		printRow("Energy Consumed (J)", "N/A");
+		table.addRow("Energy Consumed (J)", "N/A");
 	}
 
-	auto printPerTileMetric = [&printRow](const nlohmann::ordered_json &json, const std::string &label,
-										  const std::vector<std::string> &path, int precision = 0) {
-		const nlohmann::ordered_json *metricPtr = getNestedJson(json, path);
-		if (metricPtr == nullptr) {
-			printRow(label, "N/A");
-			return;
-		}
-
-		const auto &metric = *metricPtr;
-		if (!metric.is_object() || metric.empty()) {
-			printRow(label, "N/A");
-			return;
-		}
-
-		std::vector<uint32_t> tileIds;
-		const std::string tilePrefix = "tile_";
-		for (auto it = metric.begin(); it != metric.end(); ++it) {
-			const std::string &key = it.key();
-			if (key.find(tilePrefix) == 0) {
-				try {
-					uint32_t tileId = static_cast<uint32_t>(std::stoi(key.substr(tilePrefix.length())));
-					tileIds.push_back(tileId);
-				} catch (...) {
-					continue;
-				}
-			}
-		}
-
-		if (tileIds.empty()) {
-			printRow(label, "N/A");
-			return;
-		}
-
-		std::sort(tileIds.begin(), tileIds.end());
-
-		bool firstTile = true;
-		for (uint32_t tileId : tileIds) {
-			std::string tileKey = tilePrefix + std::to_string(tileId);
-			const auto &tileMetric = metric[tileKey];
-
-			std::ostringstream oss;
-			oss << std::fixed << std::setprecision(precision);
-
-			// Handle scalar value (avg only) vs object (full stats)
-			if (tileMetric.is_number()) {
-				oss << "Tile " << tileId << ": " << tileMetric.get<double>();
-			} else if (tileMetric.is_object()) {
-				double avg = tileMetric.value("avg", 0.0);
-				double min = tileMetric.value("min", 0.0);
-				double max = tileMetric.value("max", 0.0);
-				double current = tileMetric.value("current", 0.0);
-				oss << "Tile " << tileId << ": avg: " << avg << ", min: " << min << ", max: " << max
-					<< ", current: " << current;
-			} else {
-				continue;
-			}
-
-			if (firstTile) {
-				printRow(label, oss.str());
-				firstTile = false;
-			} else {
-				printRow("", oss.str());
-			}
-		}
-	};
-
-	printPerTileMetric(deviceJson, "GPU Utilization (%)", {"utilization", "gpu_percent"}, 0);
-	printPerTileMetric(deviceJson, "Compute Engines Util (%)", {"utilization", "compute_percent"}, 0);
-	printPerTileMetric(deviceJson, "Render Engines Util (%)", {"utilization", "render_percent"}, 0);
-	printPerTileMetric(deviceJson, "Media Engines Util (%)", {"utilization", "media_percent"}, 0);
-	printPerTileMetric(deviceJson, "Copy Engines Util (%)", {"utilization", "copy_percent"}, 0);
+	addPerTileMetricRows(table, deviceJson, "GPU Utilization (%)", {"utilization", "gpu_percent"}, 0);
+	addPerTileMetricRows(table, deviceJson, "Compute Engines Util (%)", {"utilization", "compute_percent"}, 0);
+	addPerTileMetricRows(table, deviceJson, "Render Engines Util (%)", {"utilization", "render_percent"}, 0);
+	addPerTileMetricRows(table, deviceJson, "Media Engines Util (%)", {"utilization", "media_percent"}, 0);
+	addPerTileMetricRows(table, deviceJson, "Copy Engines Util (%)", {"utilization", "copy_percent"}, 0);
 
 	if (deviceJson.contains("utilization") && deviceJson["utilization"].contains("eu_active_percent")) {
-		printPerTileMetric(deviceJson, "EU Array Active (%)", {"utilization", "eu_active_percent"}, 2);
-		printPerTileMetric(deviceJson, "EU Array Stall (%)", {"utilization", "eu_stall_percent"}, 2);
-		printPerTileMetric(deviceJson, "EU Array Idle (%)", {"utilization", "eu_idle_percent"}, 2);
+		addPerTileMetricRows(table, deviceJson, "EU Array Active (%)", {"utilization", "eu_active_percent"}, 2);
+		addPerTileMetricRows(table, deviceJson, "EU Array Stall (%)", {"utilization", "eu_stall_percent"}, 2);
+		addPerTileMetricRows(table, deviceJson, "EU Array Idle (%)", {"utilization", "eu_idle_percent"}, 2);
 	}
 
 	if (deviceJson.contains("ras_errors")) {
-		printSeparator();
-		printRasCounters(deviceJson, printRow);
+		table.addSeparator();
+		addRasCounterRows(table, deviceJson);
 	}
 
-	printSeparator();
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Power (W)", {"power", "gpu_power_w"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Power (W)", {"power", "gpu_power_w"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Frequency (MHz)", {"frequency", "gpu_frequency_mhz"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Frequency (MHz)", {"frequency", "gpu_frequency_mhz"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "Media Frequency (MHz)", {"frequency", "media_frequency_mhz"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "Media Frequency (MHz)", {"frequency", "media_frequency_mhz"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Core Temperature", {"temperature", "gpu_core_celsius"}, 0);
-	printRow("(Degrees Celsius)", "");
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Core Temperature", {"temperature", "gpu_core_celsius"}, 0);
+	table.addRow("(Degrees Celsius)", "");
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Temperature", {"temperature", "memory_celsius"}, 0);
-	printRow("(Degrees Celsius)", "");
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Memory Temperature", {"temperature", "memory_celsius"}, 0);
+	table.addRow("(Degrees Celsius)", "");
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Read (kB/s)", {"memory", "read_kbps"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Memory Read (kB/s)", {"memory", "read_kbps"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Write (kB/s)", {"memory", "write_kbps"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Memory Write (kB/s)", {"memory", "write_kbps"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Bandwidth (%)", {"memory", "bandwidth_percent"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Memory Bandwidth (%)", {"memory", "bandwidth_percent"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Used (MiB)", {"memory", "used_mib"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Memory Used (MiB)", {"memory", "used_mib"}, 0);
+	table.addSeparator();
 
-	printPerTileMetric(deviceJson, "GPU Memory Util (%)", {"memory", "util_percent"}, 0);
-	printSeparator();
+	addPerTileMetricRows(table, deviceJson, "GPU Memory Util (%)", {"memory", "util_percent"}, 0);
+	table.addSeparator();
 
-	printMetric(deviceJson, printRow, "PCIe Read (kB/s)", {"pcie", "read_kbps"});
-	printSeparator();
-	printMetric(deviceJson, printRow, "PCIe Write (kB/s)", {"pcie", "write_kbps"});
-	printSeparator();
+	addMetricRow(table, deviceJson, "PCIe Read (kB/s)", {"pcie", "read_kbps"});
+	table.addSeparator();
+	addMetricRow(table, deviceJson, "PCIe Write (kB/s)", {"pcie", "write_kbps"});
+	table.addSeparator();
 
-	printEngineInstances(deviceJson, printRow, "Compute Engine Util (%)", {"utilization", "compute_engines"});
-	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Render Engine Util (%)", {"utilization", "render_engines"});
-	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Decoder Engine Util (%)", {"utilization", "decoder_engines"});
-	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Encoder Engine Util (%)", {"utilization", "encoder_engines"});
-	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Copy Engine Util (%)", {"utilization", "copy_engines"});
-	printSeparator();
-	printEngineInstances(deviceJson, printRow, "Media EM Engine Util (%)", {"utilization", "media_em_engines"});
+	addEngineInstanceRows(table, deviceJson, "Compute Engine Util (%)", {"utilization", "compute_engines"});
+	table.addSeparator();
+	addEngineInstanceRows(table, deviceJson, "Render Engine Util (%)", {"utilization", "render_engines"});
+	table.addSeparator();
+	addEngineInstanceRows(table, deviceJson, "Decoder Engine Util (%)", {"utilization", "decoder_engines"});
+	table.addSeparator();
+	addEngineInstanceRows(table, deviceJson, "Encoder Engine Util (%)", {"utilization", "encoder_engines"});
+	table.addSeparator();
+	addEngineInstanceRows(table, deviceJson, "Copy Engine Util (%)", {"utilization", "copy_engines"});
+	table.addSeparator();
+	addEngineInstanceRows(table, deviceJson, "Media EM Engine Util (%)", {"utilization", "media_em_engines"});
 
-	printSeparator();
+	PRINT("%s", table.toString().c_str());
 }
 
 /**
- * @brief Print a single metric row with summary statistics
+ * @brief Add per-tile metric rows to the table
+ *
+ * This function extracts per-tile metric data from JSON and adds rows to
+ * the table. For multi-tile devices, the first tile's row shows the label
+ * while subsequent tiles show an empty label for visual grouping.
+ * Handles both scalar values (avg only) and full stat objects (avg/min/max/current).
+ *
+ * @param [in,out] table TableBuilder to add rows to
+ * @param [in] json JSON object containing device statistics
+ * @param [in] label The label for the metric
+ * @param [in] path Vector of keys representing the path to the metric data
+ * @param [in] precision Decimal places for formatting (default: 0)
+ */
+void StatsTextPrinter::addPerTileMetricRows(TableBuilder &table, const nlohmann::ordered_json &json,
+											const std::string &label, const std::vector<std::string> &path,
+											int precision)
+{
+	const nlohmann::ordered_json *metricPtr = getNestedJson(json, path);
+	if (metricPtr == nullptr) {
+		table.addRow(label, "N/A");
+		return;
+	}
+
+	const auto &metric = *metricPtr;
+	if (!metric.is_object() || metric.empty()) {
+		table.addRow(label, "N/A");
+		return;
+	}
+
+	std::vector<uint32_t> tileIds;
+	const std::string tilePrefix = "tile_";
+	for (auto it = metric.begin(); it != metric.end(); ++it) {
+		const std::string &key = it.key();
+		if (key.find(tilePrefix) == 0) {
+			try {
+				uint32_t tileId = static_cast<uint32_t>(std::stoi(key.substr(tilePrefix.length())));
+				tileIds.push_back(tileId);
+			} catch (...) {
+				continue;
+			}
+		}
+	}
+
+	if (tileIds.empty()) {
+		table.addRow(label, "N/A");
+		return;
+	}
+
+	std::sort(tileIds.begin(), tileIds.end());
+
+	bool firstTile = true;
+	for (uint32_t tileId : tileIds) {
+		std::string tileKey = tilePrefix + std::to_string(tileId);
+		const auto &tileMetric = metric[tileKey];
+
+		std::ostringstream oss;
+		oss << std::fixed << std::setprecision(precision);
+
+		// Handle scalar value (avg only) vs object (full stats)
+		if (tileMetric.is_number()) {
+			oss << "Tile " << tileId << ": " << tileMetric.get<double>();
+		} else if (tileMetric.is_object()) {
+			double avg = tileMetric.value("avg", 0.0);
+			double min = tileMetric.value("min", 0.0);
+			double max = tileMetric.value("max", 0.0);
+			double current = tileMetric.value("current", 0.0);
+			oss << "Tile " << tileId << ": avg: " << avg << ", min: " << min << ", max: " << max
+				<< ", current: " << current;
+		} else {
+			continue;
+		}
+
+		if (firstTile) {
+			table.addRow(label, oss.str());
+			firstTile = false;
+		} else {
+			table.addRow("", oss.str());
+		}
+	}
+}
+
+/**
+ * @brief Add a single metric row with summary statistics to the table
  *
  * This function extracts a metric's summary statistics (avg, min, max, current)
- * from the JSON data using a JSON pointer and formats them into a single line
- * showing all four values. If the metric is missing or not a valid object, it
- * prints "N/A" instead. The values are formatted with 2 decimal places. This
- * is a helper function used by printDeviceTable to display scalar metrics.
+ * from the JSON data and adds a single row to the table showing all four values.
+ * If the metric is missing or not a valid object, it adds "N/A" instead.
  *
+ * @param [in,out] table TableBuilder to add the row to
  * @param [in] deviceJson JSON object containing device statistics
- * @param [in] printRow Callback function to print a row
  * @param [in] label The label for the metric row
  * @param [in] path Vector of keys representing the path to the metric data
  */
-void StatsTextPrinter::printMetric(const nlohmann::ordered_json &deviceJson,
-								   std::function<void(const std::string &, const std::string &)> printRow,
-								   const std::string &label, const std::vector<std::string> &path)
+void StatsTextPrinter::addMetricRow(TableBuilder &table, const nlohmann::ordered_json &deviceJson,
+									const std::string &label, const std::vector<std::string> &path)
 {
 	TRACING();
 	const nlohmann::ordered_json *metricPtr = getNestedJson(deviceJson, path);
 	if (metricPtr == nullptr) {
-		printRow(label, "N/A");
+		table.addRow(label, "N/A");
 		return;
 	}
 
 	const auto &metric = *metricPtr;
 	if (!metric.is_object()) {
-		printRow(label, "N/A");
+		table.addRow(label, "N/A");
 		return;
 	}
 
@@ -1532,39 +1533,35 @@ void StatsTextPrinter::printMetric(const nlohmann::ordered_json &deviceJson,
 	std::ostringstream oss;
 	oss << std::fixed << std::setprecision(2);
 	oss << "avg: " << avg << ", min: " << min << ", max: " << max << ", current: " << current;
-	printRow(label, oss.str());
+	table.addRow(label, oss.str());
 }
 
 /**
- * @brief Print engine instance utilizations
+ * @brief Add engine instance utilization rows to the table
  *
  * This function displays utilization data for multiple engine instances of a given
  * type. It extracts engine data from JSON (keyed as "engine_0", "engine_1", etc.),
  * formats the current utilization value for each instance, and concatenates them
- * into a comma-separated list like "Engine 0: 45.2, Engine 1: 67.8". If no engine
- * data exists or the data is invalid, it prints "N/A". Values are formatted with
- * 1 decimal place. This helper displays per-instance granularity for engine types
- * that have multiple instances.
+ * into a comma-separated list like "Engine 0: 45.2, Engine 1: 67.8".
  *
+ * @param [in,out] table TableBuilder to add the row to
  * @param [in] deviceJson JSON object containing device statistics
- * @param [in] printRow Callback function to print a row
  * @param [in] label The label for the engine instances row
  * @param [in] path Vector of keys representing the path to the engine data
  */
-void StatsTextPrinter::printEngineInstances(const nlohmann::ordered_json &deviceJson,
-											std::function<void(const std::string &, const std::string &)> printRow,
-											const std::string &label, const std::vector<std::string> &path)
+void StatsTextPrinter::addEngineInstanceRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson,
+											 const std::string &label, const std::vector<std::string> &path)
 {
 	TRACING();
 	const nlohmann::ordered_json *enginesPtr = getNestedJson(deviceJson, path);
 	if (enginesPtr == nullptr) {
-		printRow(label, "N/A");
+		table.addRow(label, "N/A");
 		return;
 	}
 
 	const auto &enginesJson = *enginesPtr;
 	if (!enginesJson.is_object() || enginesJson.empty()) {
-		printRow(label, "N/A");
+		table.addRow(label, "N/A");
 		return;
 	}
 
@@ -1601,25 +1598,23 @@ void StatsTextPrinter::printEngineInstances(const nlohmann::ordered_json &device
 	}
 
 	if (first) {
-		printRow(label, "N/A");
+		table.addRow(label, "N/A");
 	} else {
-		printRow(label, oss.str());
+		table.addRow(label, oss.str());
 	}
 }
 
 /**
- * @brief Print RAS error counters in table format
+ * @brief Add RAS error counter rows to the table
  *
- * This function displays RAS (Reliability, Availability, Serviceability) error
- * counters matching the legacy output format. For each error category, it shows
- * tile-level counts and total counts. The format matches:
- * "Category Name | Tile 0: value, total: value"
+ * This function adds RAS (Reliability, Availability, Serviceability) error
+ * counter rows to the table. For each error category, it shows tile-level
+ * counts and total counts in the format: "Tile 0: value, total: value"
  *
+ * @param [in,out] table TableBuilder to add rows to
  * @param [in] deviceJson JSON object containing device statistics with RAS data
- * @param [in] printRow Callback function to print a row
  */
-void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson,
-										std::function<void(const std::string &, const std::string &)> printRow)
+void StatsTextPrinter::addRasCounterRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson)
 {
 	TRACING();
 	if (!deviceJson.contains("ras_errors")) {
@@ -1630,7 +1625,7 @@ void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson
 
 	// For legacy compatibility, we show cache errors separately as correctable/uncorrectable
 	// and map memory errors from Non-Compute errors category
-	auto printRasCategory = [&](const std::string &jsonKey, const std::string &errorType = "") {
+	auto addRasCategory = [&](const std::string &jsonKey, const std::string &errorType = "") {
 		std::string displayName = jsonKey;
 		if (errorType == "correctable") {
 			displayName += " Correctable";
@@ -1639,7 +1634,7 @@ void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson
 		}
 
 		if (!rasJson.contains(jsonKey)) {
-			printRow(displayName, "Tile 0: N/A, total: N/A");
+			table.addRow(displayName, "Tile 0: N/A, total: N/A");
 			return;
 		}
 
@@ -1703,16 +1698,16 @@ void StatsTextPrinter::printRasCounters(const nlohmann::ordered_json &deviceJson
 			oss << "Tile 0: " << totalValue << ", total: " << totalValue;
 		}
 
-		printRow(displayName, oss.str());
+		table.addRow(displayName, oss.str());
 	};
 
 	for (const auto &categoryInfo : RAS_CATEGORIES) {
 		if (categoryInfo.category == ZES_RAS_ERROR_CAT_CACHE_ERRORS ||
 			categoryInfo.category == ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS) {
-			printRasCategory(categoryInfo.name, "correctable");
-			printRasCategory(categoryInfo.name, "uncorrectable");
+			addRasCategory(categoryInfo.name, "correctable");
+			addRasCategory(categoryInfo.name, "uncorrectable");
 		} else {
-			printRasCategory(categoryInfo.name);
+			addRasCategory(categoryInfo.name);
 		}
 	}
 }
