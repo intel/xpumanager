@@ -83,7 +83,7 @@ affinity: {}
 
 # @schema additionalProperties:false
 config:
-  # -- Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)
+  # -- [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers)
   # @default --  
   # @section -- XPUM Daemon Configuration
   receivers:
@@ -112,14 +112,14 @@ config:
       # @section -- XPUM Daemon Configuration
       metrics: {}
 
-  # -- Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)
+  # -- [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)
   # @section -- XPUM Daemon Configuration
   processors:
     # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
     # @section -- XPUM Daemon Configuration
     intelxpustatus: {}
 
-  # -- Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)
+  # -- [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters)
   # @default --  
   # @section -- XPUM Daemon Configuration
   exporters:
@@ -129,11 +129,11 @@ config:
     intelxpuinfo:
       endpoint: "/run/xpumd/intelxpuinfo.sock"
 
-  # -- Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)
+  # -- [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)
   # @section -- XPUM Daemon Configuration
   extensions: {}
 
-  # -- Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)
+  # -- [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)
   # @section -- XPUM Daemon Configuration
   service:
     telemetry:

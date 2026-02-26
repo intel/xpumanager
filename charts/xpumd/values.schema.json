@@ -13,7 +13,7 @@
             "type": "object",
             "properties": {
                 "exporters": {
-                    "description": "Configuration for exporters (https://opentelemetry.io/docs/collector/configuration/#exporters)",
+                    "description": "[Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters)",
                     "type": "object",
                     "properties": {
                         "intelxpuinfo": {
@@ -28,11 +28,11 @@
                     }
                 },
                 "extensions": {
-                    "description": "Configuration for extensions (https://opentelemetry.io/docs/collector/configuration/#extensions)",
+                    "description": "[Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)",
                     "type": "object"
                 },
                 "processors": {
-                    "description": "Configuration for processors (https://opentelemetry.io/docs/collector/configuration/#processors)",
+                    "description": "[Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)",
                     "type": "object",
                     "properties": {
                         "intelxpustatus": {
@@ -42,7 +42,7 @@
                     }
                 },
                 "receivers": {
-                    "description": "Configuration for receivers (https://opentelemetry.io/docs/collector/configuration/#receivers)",
+                    "description": "[Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers)",
                     "type": "object",
                     "properties": {
                         "intelxpu": {
@@ -85,7 +85,7 @@
                     }
                 },
                 "service": {
-                    "description": "Configuration for service (https://opentelemetry.io/docs/collector/configuration/#service)",
+                    "description": "[Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)",
                     "type": "object",
                     "properties": {
                         "pipelines": {
