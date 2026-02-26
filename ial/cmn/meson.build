@@ -29,7 +29,7 @@ ial_cmn_sources = files(
 ial_cmn_inc = include_directories('.')
 
 # Platform-specific dependencies
-ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep, fwupd_dep]
+ial_cmn_deps = [libxpum_dep, oal_dep, nlohmann_json_dep, amc_dep, fwupd_dep, table_dep]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]
 endif
@@ -62,5 +62,6 @@ ial_cmn_lib = static_library('ial_cmn',
 # IAL common dependency for CLI and daemon
 ial_cmn_dep = declare_dependency(
   link_with : ial_cmn_lib,
-  include_directories : ial_cmn_inc
+  include_directories : ial_cmn_inc,
+  dependencies : [table_dep]
 )

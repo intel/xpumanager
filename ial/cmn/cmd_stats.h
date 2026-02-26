@@ -9,6 +9,7 @@
 
 #include "cmds.h"
 #include "printer.h"
+#include "table_builder.h"
 #include <os.h>
 #include <chrono>
 #include <string>
@@ -237,14 +238,13 @@ public:
 
 private:
 	void printDeviceTable(const nlohmann::ordered_json &deviceJson);
-	void printMetric(const nlohmann::ordered_json &deviceJson,
-					 std::function<void(const std::string &, const std::string &)> printRow, const std::string &label,
-					 const std::vector<std::string> &path);
-	void printEngineInstances(const nlohmann::ordered_json &deviceJson,
-							  std::function<void(const std::string &, const std::string &)> printRow,
-							  const std::string &label, const std::vector<std::string> &path);
-	void printRasCounters(const nlohmann::ordered_json &deviceJson,
-						  std::function<void(const std::string &, const std::string &)> printRow);
+	static void addPerTileMetricRows(TableBuilder &table, const nlohmann::ordered_json &json, const std::string &label,
+									 const std::vector<std::string> &path, int precision = 0);
+	static void addMetricRow(TableBuilder &table, const nlohmann::ordered_json &deviceJson, const std::string &label,
+							 const std::vector<std::string> &path);
+	static void addEngineInstanceRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson,
+									  const std::string &label, const std::vector<std::string> &path);
+	static void addRasCounterRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson);
 };
 
 class cmdStats : public cmds
