@@ -13,6 +13,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <cerrno>
 #include <vector>
 #include <dlfcn.h>
 #include <math.h>
@@ -2682,6 +2683,32 @@ xpum_result_t xpumApplyPPR(xpum_device_id_t deviceId, xpum_diag_result_t* diagRe
 }
 
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
+    auto readSriovValue = [](const std::string& bdfAddress, const std::string& file, int& valueOut) -> bool {
+        std::string path = "/sys/bus/pci/devices/" + bdfAddress + "/" + file;
+        if (access(path.c_str(), F_OK) != 0) {
+            if (errno == ENOENT) {
+                valueOut = 0;
+                return true;
+            }
+            return false;
+        }
+        std::ifstream sysfs(path);
+        if (!sysfs.is_open()) {
+            return false;
+        }
+        std::string value;
+        std::getline(sysfs, value);
+        if (value.empty()) {
+            return false;
+        }
+        try {
+            valueOut = std::stoi(value);
+        } catch (std::exception&) {
+            return false;
+        }
+        return true;
+    };
+
     if (isZeinitRequired) {
 	std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
         if (device == nullptr) {
@@ -2689,6 +2716,19 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
         }
         if (device->isUpgradingFw()) {
             return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        }
+
+        Property bdfProp;
+        device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, bdfProp);
+        int numVfs = 0;
+        if (!readSriovValue(bdfProp.getValue(), "sriov_numvfs", numVfs)) {
+            return XPUM_VGPU_SYSFS_ERROR;
+        }
+        if (numVfs > 0) {
+            auto removeRes = xpumRemoveAllVf(deviceId);
+            if (removeRes != XPUM_OK) {
+                return removeRes;
+            }
         }
     }
 

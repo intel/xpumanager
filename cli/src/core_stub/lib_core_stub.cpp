@@ -1614,6 +1614,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool forc
             (*json)["error"] = "device Id or tile Id is invalid";
         } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
             (*json)["error"] = "device is updating firmware";
+        } else if (res == XPUM_VGPU_REMOVE_VF_FAILED) {
+            (*json)["error"] = "Failed to remove SR-IOV virtual functions (VFs)";
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            (*json)["error"] = "Failed to access SR-IOV sysfs attributes";
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Device model does not support SR-IOV";
+        } else if (res == XPUM_RESULT_UNSUPPORTED_DEVICE) {
+            (*json)["error"] = "Reset is not supported on this device.";
         } else if (res == XPUM_RESULT_RESET_FAIL) {
             (*json)["error"] = "Fail to reset device";
         } else {
