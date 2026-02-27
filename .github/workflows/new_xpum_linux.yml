@@ -1,9 +1,14 @@
 name: Linux
 on:
   push:
-    branches: [dev/**]
+    branches:
+      - main
+      - dev
+      - dev/**
   pull_request:
-    branches: [new_xpum]
+    branches: 
+      - new_xpum
+      - dev
     types: [opened, reopened, synchronize]
   workflow_dispatch:
 
