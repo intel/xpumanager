@@ -28,3 +28,6 @@ option('conan_deps_build_type', type: 'string', value: 'Release',
 
 option('conan_deps_runtime', type: 'string', value: 'Release',
        description: 'Runtime type used for Conan dependencies')
+
+option('with_tests', type: 'boolean', value: false,
+       description: 'Build unit tests (requires boost-ext-ut via Conan)')

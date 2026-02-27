@@ -30,6 +30,10 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 
 	processList->clear();
 	processList->resize(processCount);
+	for (auto &procState : *processList) {
+		procState.stype = ZES_STRUCTURE_TYPE_PROCESS_STATE;
+		procState.pNext = nullptr;
+	}
 	result = zesDeviceProcessesGetState(device, &processCount, processList->data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get process states: 0x%X (%s)\n", result, l0_error_to_string(result));

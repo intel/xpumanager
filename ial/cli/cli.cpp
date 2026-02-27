@@ -22,6 +22,7 @@
 #include <cmd_topology.h>
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
+#include <cmd_smi.h>
 #include <debug.h>
 #include <functional>
 #include <iostream>
@@ -261,9 +262,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* If no command line args are provided, just print help message and exit */
+	/* If no command line args are provided, show GPU status in xpu-smi style,
+	 * or fall back to help text in daemon (xpumcli) mode. */
 	if (argc == 1) {
-		help(cmdList);
+		if (curDaemonMode == DAEMONCAP::DAEMONLESS) {
+			cmdSmi smi;
+			smi.run(&arg);
+		} else {
+			help(cmdList);
+		}
 		deleteList(cmdList);
 		return 0;
 	}

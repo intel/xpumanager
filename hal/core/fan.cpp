@@ -176,3 +176,25 @@ ze_result_t fan::zesRun(UNUSED zes_device_handle_t device)
 
 	return result;
 }
+
+ze_result_t fan::getSpeedPercent(int32_t &pct)
+{
+	if (fanCount == 0) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+	int64_t totalPct = 0;
+	uint32_t validCount = 0;
+	for (uint32_t i = 0; i < fanCount; ++i) {
+		int32_t speed = 0;
+		ze_result_t res = zesFanGetState(fanHandles[i], ZES_FAN_SPEED_UNITS_PERCENT, &speed);
+		if (res == ZE_RESULT_SUCCESS && speed >= 0) {
+			totalPct += speed;
+			++validCount;
+		}
+	}
+	if (validCount == 0) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+	pct = static_cast<int32_t>(totalPct / static_cast<int64_t>(validCount));
+	return ZE_RESULT_SUCCESS;
+}

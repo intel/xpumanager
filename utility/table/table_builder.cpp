@@ -64,9 +64,12 @@ void TableBuilder::calculateWidths() const
 		return;
 	}
 
-	// Initialize with header widths
+	// Initialize with header widths (considering extra header lines)
 	for (const auto &column : columns) {
 		column.width = displayWidth(column.header);
+		for (const auto &extraHdr : column.extraHeaders) {
+			column.width = std::max(column.width, displayWidth(extraHdr));
+		}
 	}
 
 	for (const auto &row : rows) {
@@ -91,6 +94,33 @@ void TableBuilder::calculateWidths() const
 	for (const auto &col : columns) {
 		col.width = std::min(col.width, config.maxCellWidth - 2);
 		col.width += 2; // Add padding
+	}
+
+	// Expand last column if any span text (pre-header or regular) is wider than the
+	// total column content area — otherwise alignTextDirect will truncate the banner.
+	auto computeContentWidth = [&]() {
+		int w = 0;
+		for (const auto &col : columns) {
+			w += col.width + 3;
+		}
+		return w - 3;
+	};
+	auto ensureFits = [&](std::string_view text) {
+		int textW = displayWidth(text);
+		int deficit = textW - computeContentWidth();
+		if (deficit > 0) {
+			columns.back().width += deficit;
+		}
+	};
+	for (const auto &row : preHeaderRows) {
+		if (row.spanText) {
+			ensureFits(*row.spanText);
+		}
+	}
+	for (const auto &row : rows) {
+		if (row.spanText) {
+			ensureFits(*row.spanText);
+		}
 	}
 
 	widthsCalculated = true;
@@ -232,6 +262,30 @@ std::string TableBuilder::toTableString() const
 	// Top border
 	result += borderLine;
 
+	// Pre-header rows: inside the top border, before the column header line.
+	// Each span row is followed by a separator using the row's border style.
+	for (const auto &row : preHeaderRows) {
+		if (row.spanText) {
+			int totalContentWidth = 0;
+			if (config.showRowNumbers) {
+				totalContentWidth += rowNumWidth + 3;
+			}
+			for (const auto &col : columns) {
+				totalContentWidth += col.width + 3;
+			}
+			totalContentWidth -= 3;
+
+			result += config.verticalChar;
+			result += ' ';
+			alignTextDirect(result, *row.spanText, totalContentWidth, row.spanAlign);
+			result += std::format(" {}", config.verticalChar);
+			result += '\n';
+		}
+		if (row.borderStyle != BorderStyle::None) {
+			result += getBorderLine(rowNumWidth, row.borderStyle);
+		}
+	}
+
 	// Header row
 	result += config.verticalChar;
 
@@ -242,13 +296,46 @@ std::string TableBuilder::toTableString() const
 		result += std::format(" {}", config.verticalChar);
 	}
 
-	for (const auto &col : columns) {
+	for (size_t colIdx = 0; colIdx < columns.size(); ++colIdx) {
+		const auto &col = columns[colIdx];
 		result += ' ';
 		alignTextDirect(result, col.header, col.width, col.alignment);
-		result += std::format(" {}", config.verticalChar);
+		const bool isLast = (colIdx == columns.size() - 1);
+		if (!suppressHeaderColSep || isLast) {
+			result += std::format(" {}", config.verticalChar);
+		} else {
+			result += "  "; // two spaces instead of " |"
+		}
 	}
 	result += '\n';
-	result += borderLine;
+
+	// Extra header lines (multi-line column headers)
+	size_t maxExtraHeaders = 0;
+	for (const auto &col : columns) {
+		maxExtraHeaders = std::max(maxExtraHeaders, col.extraHeaders.size());
+	}
+	for (size_t lineIdx = 0; lineIdx < maxExtraHeaders; ++lineIdx) {
+		result += config.verticalChar;
+		if (config.showRowNumbers) {
+			result += ' ';
+			alignTextDirect(result, "", rowNumWidth, Align::Left);
+			result += std::format(" {}", config.verticalChar);
+		}
+		for (const auto &col : columns) {
+			result += ' ';
+			if (lineIdx < col.extraHeaders.size()) {
+				alignTextDirect(result, col.extraHeaders[lineIdx], col.width, col.alignment);
+			} else {
+				alignTextDirect(result, "", col.width, col.alignment);
+			}
+			result += std::format(" {}", config.verticalChar);
+		}
+		result += '\n';
+	}
+
+	if (!suppressHeaderSep) {
+		result += borderLine;
+	}
 
 	// Data rows
 	if (rows.empty()) {
@@ -325,7 +412,12 @@ std::string TableBuilder::toTableString() const
 							cellContent = row.multiLineCells[i][line];
 						}
 						alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
-						result += std::format(" {}", config.verticalChar);
+						const bool isLast = (i == columns.size() - 1);
+						if (!suppressDataColSep || isLast) {
+							result += std::format(" {}", config.verticalChar);
+						} else {
+							result += "  ";
+						}
 					}
 					result += '\n';
 				}
@@ -346,7 +438,12 @@ std::string TableBuilder::toTableString() const
 															 ? std::string_view{row.cells[i]}
 															 : std::string_view{config.emptyCellText};
 					alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
-					result += std::format(" {}", config.verticalChar);
+					const bool isLast = (i == columns.size() - 1);
+					if (!suppressDataColSep || isLast) {
+						result += std::format(" {}", config.verticalChar);
+					} else {
+						result += "  ";
+					}
 				}
 				result += '\n';
 			}
@@ -443,6 +540,35 @@ TableBuilder &TableBuilder::addMultiLineRow(const std::vector<std::vector<std::s
 	row.multiLineCells = cellLines;
 	rows.push_back(std::move(row));
 	widthsCalculated = false;
+	return *this;
+}
+
+TableBuilder &TableBuilder::addPreHeaderSpanRow(std::string_view text, BorderStyle style, Align align)
+{
+	Row row;
+	row.spanText = std::string{text};
+	row.spanAlign = align;
+	row.borderStyle = style;
+	preHeaderRows.push_back(std::move(row));
+	widthsCalculated = false;
+	return *this;
+}
+
+TableBuilder &TableBuilder::suppressHeaderSeparator() noexcept
+{
+	suppressHeaderSep = true;
+	return *this;
+}
+
+TableBuilder &TableBuilder::suppressHeaderColumnSeparators() noexcept
+{
+	suppressHeaderColSep = true;
+	return *this;
+}
+
+TableBuilder &TableBuilder::suppressDataColumnSeparators() noexcept
+{
+	suppressDataColSep = true;
 	return *this;
 }
 
@@ -556,6 +682,44 @@ TableBuilder &TableBuilder::setColumnWidth(size_t colIndex, int width)
 	columns[colIndex].width = width;
 	widthsCalculated = false;
 	widthCache.clear();
+	return *this;
+}
+
+TableBuilder &TableBuilder::setColumnExtraHeaders(size_t colIndex, std::vector<std::string> headers)
+{
+	if (colIndex >= columns.size()) {
+		throw std::out_of_range("Column index out of range");
+	}
+	columns[colIndex].extraHeaders = std::move(headers);
+	widthsCalculated = false;
+	widthCache.clear();
+	return *this;
+}
+
+int TableBuilder::getTotalWidth() const
+{
+	calculateWidths();
+	int total = 1; // left border char
+	if (config.showRowNumbers) {
+		int rw = std::max(3, static_cast<int>(std::to_string(rows.size()).length()) + 2);
+		total += rw + 3;
+	}
+	for (const auto &col : columns) {
+		total += col.width + 3; // ' ' content ' |'
+	}
+	return total;
+}
+
+TableBuilder &TableBuilder::padToWidth(int targetWidth)
+{
+	if (columns.empty()) {
+		return *this;
+	}
+	int deficit = targetWidth - getTotalWidth();
+	if (deficit > 0) {
+		columns.back().width += deficit;
+		widthCache.clear();
+	}
 	return *this;
 }
 
@@ -810,6 +974,7 @@ TableBuilder &TableBuilder::clear() noexcept
 {
 	columns.clear();
 	rows.clear();
+	preHeaderRows.clear();
 	widthsCalculated = false;
 	widthCache.clear();
 	return *this;
