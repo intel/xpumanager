@@ -17,7 +17,7 @@ prefix_macro="xpumd.fullname"
 
 # XPUMD Helm chart value names
 enable_dashboards="grafana.dashboards"
-grafana_namespace="kubePrometheus.namespace"
+grafana_namespace="grafana.namespace"
 
 # dummy for 'kubectl', so that output will include namespace field (overridden later on)
 DUMMY_NS="default"

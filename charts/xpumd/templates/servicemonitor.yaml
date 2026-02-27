@@ -7,8 +7,8 @@ metadata:
   # Should be found by Prometheus (installed by 'kube-prometheus')
   # when it's either in same namespace, or uses same release name
   labels:
-    release: {{ .Values.kubePrometheus.release }}
-  #namespace: {{ .Values.kubePrometheus.namespace }}
+    release: {{ .Values.prometheus.release }}
+  #namespace: {{ .Values.prometheus.namespace }}
 spec:
   selector:
     matchLabels:

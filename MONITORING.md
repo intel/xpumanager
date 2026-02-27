@@ -15,6 +15,18 @@ If cluster does not run [Prometheus operator](https://github.com/prometheus-oper
 yet, it SHOULD be be installed before enabling monitoring, e.g. by using a Helm chart for it:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#readme
 
+First verify that following default Grafana options are enabled, for dashboard auto-loading:
+```console
+$ helm -n monitoring show values prometheus-community/kube-prometheus-stack | grep -B1 -A3 dashboards:
+  sidecar:
+     dashboards:
+       enabled: true
+       label: grafana_dashboard
+       labelValue: "1"
+```
+
+Then install it:
+
 ```console
 $ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 $ helm repo update
@@ -32,7 +44,7 @@ and `grafana.dashboards=true` option installs Grafana dashboard for viewing the 
 NOTE: XPUMD Helm chart assumes Prometheus & Grafana are installed to `monitoring` namespace, using
 `prometheus-stack` as the release name for the `kube-prometheus` installation, as in the above example.
 
-If this is not the case, update `kubePrometheus.namespace` and `kubePrometheus.release`
+If this is not the case, update `grafana.namespace` and `prometheus.release`
 chart values to correct values.
 
 (Otherwise XPUMD `serviceMonitor` object and dashboard `configMap` will not be found by

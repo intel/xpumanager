@@ -2330,5 +2330,5 @@ metadata:
   labels:
     grafana_dashboard: "1"
   name: {{ include "xpumd.fullname" . }}-dashboard
-  namespace: {{ .Values.kubePrometheus.namespace }}
+  namespace: {{ .Values.grafana.namespace }}
 {{- end }}
