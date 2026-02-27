@@ -54,14 +54,33 @@ Where [MODE](#other-values) specifies how monitoring access to Intel GPUs is req
 * `xe`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `dra`: Use Intel GPU resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
 
-By default no metrics exporters are enabled. To enable exporters, the corresponding
-values must be set. For example, to enable the OTLP gRPC exporter:
+
+### Optional functionality
+
+By default, only `intelxpuinfo` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
+To enable other exporters, the corresponding values must be set.
+
+To enable also Prometheus exporter endpoint, Prometheus monitoring of that,
+and Grafana dashboard for the collected metrics:
 
 ```bash
-helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
-  --set imagePullSecrets[0].name=ghcr-secret \
+  ...
+  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
+  --set prometheus.monitor=true" \
+  --set grafana.dashboards=true"
+```
+
+NOTE: above requires Prometheus (+ Grafana) to be installed to the cluster before install,
+see [monitoring](../../MONITORING.md).
+
+To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service:
+
+```bash
+  ...
   --set config.exporters.otlp.endpoint="otel-collector:4317" \
   --set config.service.pipelines.metrics.exporters="{otlp}"
 ```
+
+See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector.
 
 {{ template "chart.valuesSection" . }}

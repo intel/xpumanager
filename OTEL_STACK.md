@@ -114,7 +114,7 @@ kubectl port-forward svc/otel-collector-opentelemetry-collector 8889:8889
 In another terminal, fetch the metrics:
 
 ```bash
-curl http://localhost:8889/metrics
+curl --no-progress-meter http://localhost:8889/metrics
 ```
 
 Look for Intel GPU metrics, e.g.:
@@ -130,4 +130,5 @@ Look for Intel GPU metrics, e.g.:
 
 ## Visualization with Grafana
 
-TODO: @eero-t
+TODO: add instructions on using Prometheus with OTel collector, instead
+of [monitoring XPUM daemon directly](MONITORING.md).

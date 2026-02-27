@@ -50,15 +50,33 @@ Where [MODE](#other-values) specifies how monitoring access to Intel GPUs is req
 * `xe`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `dra`: Use Intel GPU resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
 
-By default no metrics exporters are enabled. To enable exporters, the corresponding
-values must be set. For example, to enable the OTLP gRPC exporter:
+### Optional functionality
+
+By default, only `intelxpuinfo` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
+To enable other exporters, the corresponding values must be set.
+
+To enable also Prometheus exporter endpoint, Prometheus monitoring of that,
+and Grafana dashboard for the collected metrics:
 
 ```bash
-helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
-  --set imagePullSecrets[0].name=ghcr-secret \
+  ...
+  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
+  --set prometheus.monitor=true" \
+  --set grafana.dashboards=true"
+```
+
+NOTE: above requires Prometheus (+ Grafana) to be installed to the cluster before install,
+see [monitoring](../../MONITORING.md).
+
+To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service:
+
+```bash
+  ...
   --set config.exporters.otlp.endpoint="otel-collector:4317" \
   --set config.service.pipelines.metrics.exporters="{otlp}"
 ```
+
+See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector.
 
 ## Values
 
@@ -88,14 +106,18 @@ helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin) |
+| grafana.dashboards | bool | `true` | Install XPUMD dashboard(s) for Grafana |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
+| kubePrometheus.namespace | string | `"monitoring"` | Namespace used for 'kube-prometheus' install |
+| kubePrometheus.release | string | `"prometheus-stack"` | Helm release name for 'kube-prometheus' chart that installed Prometheus/Grafana |
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
 | podSecurityContextOverride | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to |
+| prometheus.monitor | bool | `false` | Add Prometheus service monitor for XPUMD, requires Prometheus to be installed. overrides 'service.create' |
 | resourcesOverride | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting |
 | securityContextOverride | object | `{}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container). NOTE: security settings control to what GPU metrics container has access to |
 | service.create | bool | `false` | Create service |

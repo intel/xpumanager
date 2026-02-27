@@ -24,6 +24,14 @@
                                     "type": "string"
                                 }
                             }
+                        },
+                        "prometheus": {
+                            "type": "object",
+                            "properties": {
+                                "endpoint": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
@@ -155,6 +163,16 @@
                 "xe"
             ]
         },
+        "grafana": {
+            "type": "object",
+            "properties": {
+                "dashboards": {
+                    "description": "Install XPUMD dashboard(s) for Grafana",
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
         "image": {
             "type": "object",
             "properties": {
@@ -183,6 +201,20 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets",
             "type": "array"
         },
+        "kubePrometheus": {
+            "type": "object",
+            "properties": {
+                "namespace": {
+                    "description": "Namespace used for 'kube-prometheus' install",
+                    "type": "string"
+                },
+                "release": {
+                    "description": "Helm release name for 'kube-prometheus' chart that installed Prometheus/Grafana",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
         "nameOverride": {
             "description": "Override the chart name",
             "type": "string"
@@ -201,6 +233,16 @@
             "description": "[Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to",
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
             "type": "object"
+        },
+        "prometheus": {
+            "type": "object",
+            "properties": {
+                "monitor": {
+                    "description": "Add Prometheus service monitor for XPUMD, requires Prometheus to be installed. overrides 'service.create'",
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
         },
         "resourcesOverride": {
             "description": "[Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting",
