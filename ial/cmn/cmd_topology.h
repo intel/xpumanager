@@ -93,7 +93,7 @@ public:
 	 *
 	 * @param[in] info The topology information to print
 	 */
-	void print(const TopologyInfo &info) { PRINT("%s", toText(info).c_str()); }
+	void print(const TopologyInfo &info);
 };
 
 enum class topologyCmdType
