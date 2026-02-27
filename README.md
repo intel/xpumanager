@@ -10,6 +10,80 @@ provides:
 [Changes](CHANGES.md) lists differences in corresponding functionality compared to XPUM v1.x.
 
 
+## Architecture
+
+```mermaid
+graph TB
+    subgraph LEGEND
+        LEGEND_PROJECT["Project components"]
+	LEGEND_EXTERNAL["External components"]
+    end
+
+    subgraph CONT["Container Image"]
+        SYSTEM_LIBRARIES["System Libraries<br/>[level-zero, glibc...]"]
+
+        subgraph XPUMD["XPUM Daemon - xpumd"]
+            subgraph RECV["Receivers"]
+                RECV_XPU["Intel XPU Receiver<br/>(intelxpu)"]
+            end
+
+            subgraph PROC["Processor pipeline"]
+                PROC_XPU["Status Processor<br/>(intelxpustatus)"]
+                PROC_OTHERS["Standard Processors"]
+            end
+
+            PROC_XPU --> PROC_OTHERS
+
+            subgraph EXP["Exporters"]
+                EXP_INFO["Device Info Exporter<br/>(intelxpuinfo)"]
+                EXP_PROM["Prometheus Exporter"]
+                EXP_OTEL["OpenTelemetry Exporter"]
+            end
+
+            PROC_OTHERS -->|processed metrics| EXP_INFO
+            PROC_OTHERS -->|processed metrics| EXP_PROM
+            PROC_OTHERS -->|processed metrics| EXP_OTEL
+        end
+    end
+
+    subgraph TELEM["Telemetry Stack"]
+        PROM["Prometheus Server"]
+        OTEL_COL["OpenTelemetry Collector"]
+        GRAFANA["Grafana/Visualization"]
+    end
+
+    subgraph K8S["Kubernetes Integration"]
+        DRA["DRA Driver<br/>Intel GPU Resource Driver"]
+        SCHEDULER["Kubernetes Scheduler"]
+    end
+
+    SYSTEM_LIBRARIES --> RECV_XPU
+    RECV -->|metrics| PROC_XPU
+
+    EXP_PROM -->|"HTTP(S)"| PROM
+    EXP_OTEL -->|"OTLP<br/>gRPC/HTTP(S)"| OTEL_COL
+    PROM --> GRAFANA
+    OTEL_COL --> GRAFANA
+
+    EXP_INFO -->|"gRPC<br/>Unix Socket"| DRA
+    DRA --> SCHEDULER
+
+    style LEGEND_PROJECT fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+    style LEGEND_EXTERNAL fill:#e1f5ff
+    style SYSTEM_LIBRARIES fill:#e1f5ff
+    style XPUMD fill:#e1f5ff
+    style PROC_OTHERS fill:#e1f5ff
+    style EXP_PROM fill:#e1f5ff
+    style EXP_OTEL fill:#e1f5ff
+    style CONT fill:#fff3e0
+    style K8S fill:#e8f5e9
+    style TELEM fill:#e8f5e9
+    style RECV_XPU fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+    style PROC_XPU fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+    style EXP_INFO fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+```
+
+
 ## Deployment
 
 See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
