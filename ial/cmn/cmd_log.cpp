@@ -22,14 +22,13 @@ void cmdLogs::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "Collect GPU debug logs"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s log [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s log -f [tarGzipFileName]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s log -f [fileName]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(
-		helpCmd(HEADING, "-f,--file                   The file (a tar.gz) to archive all the debug logs"));
+	helpList.push_back(helpCmd(HEADING, "-f,--file                   The file to write all the debug logs into"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();

@@ -21,8 +21,7 @@
 #define ERR_TMP_DIR -2
 #define ERR_COPY_FILES -3
 #define ERR_GEN_OUT -5
-#define ERR_TAR -6
-#define ERR_RM_TMP -7
+#define ERR_WRITE_FILE -6
 
 namespace {
 
@@ -730,44 +729,57 @@ static int genCmdOut(const std::string &uuid)
 }
 
 /**
- * @brief Creates a compressed archive of collected diagnostic logs
+ * @brief Writes all collected diagnostic files into a single plain-text output file
  *
- * This function creates a gzipped tar archive containing all the diagnostic
- * files and directories that were collected in the temporary directory.
- * The archive is created at the specified file path for easy distribution
- * and analysis.
+ * Recursively iterates the temporary collection directory and appends each
+ * file's content to the output file, preceded by a section header showing
+ * the file's path relative to the collection root.
  *
- * @param uuid The UUID string identifying the temporary directory to archive
- * @param fileName The output path where the compressed archive will be created
- * @return Exit status from the tar command (0 for success, non-zero for failure)
- *
- * @note Uses tar with gzip compression (-czf flags)
- * @note Archive is created from /var/tmp/ directory to maintain relative paths
- * @note The archived directory name will be "xpum-<uuid>"
+ * @param uuid     The UUID string identifying the temporary directory
+ * @param fileName The output file path to write into
+ * @return 0 on success, -1 if the output file could not be opened or written
  */
-static int tarBall(const std::string &uuid, const std::string fileName)
+static int writeToFile(const std::string &uuid, const std::string &fileName)
 {
-	std::string cmd = "tar -C /var/tmp/ -czf " + fileName + " xpum-" + uuid;
-	SystemCommandResult scr = execCommand(cmd.c_str());
-	return scr.exitStatus();
+	const std::filesystem::path srcDir{"/var/tmp/xpum-" + uuid};
+	std::ofstream out{fileName};
+	if (!out) {
+		ERR("Failed to open output file: %s\n", fileName.c_str());
+		return -1;
+	}
+
+	for (const auto &entry : std::filesystem::recursive_directory_iterator(
+			 srcDir, std::filesystem::directory_options::skip_permission_denied)) {
+		if (!entry.is_regular_file()) {
+			continue;
+		}
+		const auto relPath = std::filesystem::relative(entry.path(), srcDir);
+		out << "=== " << relPath.string() << " ===\n";
+		if (std::ifstream in{entry.path()}; in) {
+			out << in.rdbuf();
+		}
+		out << '\n';
+	}
+
+	return out ? 0 : -1;
 }
 
 /**
  * @brief Main function to collect Linux system logs and create a diagnostic archive
  *
  * This is the primary entry point for the Linux log collection functionality.
- * It orchestrates the entire process of collecting diagnostic information,
- * creating a compressed archive, and cleaning up temporary files.
+ * It orchestrates the entire process of collecting diagnostic information
+ * and writing it to a single plain-text output file.
  *
  * The process follows these steps:
  * 1. Generate a unique UUID for the temporary directory
  * 2. Create a temporary directory for log collection
  * 3. Copy system files and logs to the temporary directory
  * 4. Generate diagnostic command outputs
- * 5. Create a compressed tar archive of all collected data
- * 6. Clean up the temporary directory
+ * 5. Write all collected files to the output file
+ * 6. Clean up the temporary directory (via RAII)
  *
- * @param fileName The output path where the compressed log archive will be created
+ * @param fileName The output path where the plain-text log file will be written
  * @return Error code indicating success (0) or the specific step that failed
  *
  * @retval 0 Success - all operations completed successfully
@@ -775,12 +787,10 @@ static int tarBall(const std::string &uuid, const std::string fileName)
  * @retval ERR_TMP_DIR (-2) Failed to create temporary directory
  * @retval ERR_COPY_FILES (-3) Failed to copy system files
  * @retval ERR_GEN_OUT (-5) Failed to generate diagnostic outputs
- * @retval ERR_TAR (-6) Failed to create compressed archive
- * @retval ERR_RM_TMP (-7) Failed to remove temporary directory
+ * @retval ERR_WRITE_FILE (-6) Failed to write output file
  *
- * @note Uses a goto-based error handling pattern for cleanup
  * @note All operations are designed to be safe and handle missing files gracefully
- * @note The resulting archive contains comprehensive system diagnostic information
+ * @note The resulting file contains all diagnostic information as plain text
  */
 int getLinLogs(const std::string &fileName)
 {
@@ -798,8 +808,8 @@ int getLinLogs(const std::string &fileName)
 	if (genCmdOut(uuid) != 0) {
 		return ERR_GEN_OUT;
 	}
-	if (tarBall(uuid, fileName) != 0) {
-		return ERR_TAR;
+	if (writeToFile(uuid, fileName) != 0) {
+		return ERR_WRITE_FILE;
 	}
 	return 0;
 }
