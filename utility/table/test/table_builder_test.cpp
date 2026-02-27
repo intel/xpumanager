@@ -481,5 +481,197 @@ int main()
 		expect(!result.empty());
 	};
 
+	// ── New TableBuilder features ──────────────────────────────────────────────
+
+	// Helper: count occurrences of a char on the line containing needle
+	auto pipeCountOnLine = [](const std::string &str, std::string_view needle) -> int {
+		auto pos = str.find(needle);
+		if (pos == std::string::npos) return -1;
+		auto lineStart = str.rfind('\n', pos);
+		lineStart = (lineStart == std::string::npos) ? 0 : lineStart + 1;
+		auto lineEnd = str.find('\n', pos);
+		if (lineEnd == std::string::npos) lineEnd = str.size();
+		return static_cast<int>(std::count(str.begin() + lineStart, str.begin() + lineEnd, '|'));
+	};
+
+	"TableBuilder setColumnExtraHeaders appears in output"_test = [&] {
+		TableBuilder table;
+		table.addColumn("Col1", Align::Left)
+			.addColumn("Col2", Align::Left)
+			.setColumnExtraHeaders(0, {"Sub-A"})
+			.setColumnExtraHeaders(1, {"Sub-B"})
+			.addRow("X", "Y")
+			.enableAutoSizing();
+
+		auto str = table.toString();
+		expect(str.find("Sub-A") != std::string::npos) << "extra header Sub-A missing";
+		expect(str.find("Sub-B") != std::string::npos) << "extra header Sub-B missing";
+		expect(str.find("Col1") != std::string::npos) << "primary header Col1 missing";
+		// Extra headers appear after the primary header in the output
+		expect(str.find("Sub-A") > str.find("Col1")) << "extra header should follow primary header";
+	};
+
+	"TableBuilder setColumnExtraHeaders drives column width"_test = [] {
+		// Extra header 19 chars wide; primary header is only 1 char — auto-size must use wider
+		TableBuilder table;
+		table.addColumn("A", Align::Left)
+			.setColumnExtraHeaders(0, {"VeryLongExtraHeader"})
+			.addRow("x")
+			.enableAutoSizing();
+
+		int w = table.getTotalWidth();
+		// Column width >= 19 chars; total is at least " VeryLongExtraHeader |" = 1+19+2 = 22 + outer |
+		expect(w >= 23) << "column not widened by extra header";
+	};
+
+	"TableBuilder setColumnExtraHeaders out-of-range throws"_test = [] {
+		TableBuilder table;
+		table.addColumn("A");
+		expect(throws([&] { table.setColumnExtraHeaders(5, {"X"}); }));
+	};
+
+	"TableBuilder addPreHeaderSpanRow center appears before column headers"_test = [] {
+		TableBuilder table;
+		table.addColumn("A").addColumn("B")
+			.addPreHeaderSpanRow("BannerText")
+			.addRow("1", "2")
+			.enableAutoSizing();
+
+		auto str = table.toString();
+		expect(str.find("BannerText") != std::string::npos) << "banner text missing";
+		// Banner must appear before the column headers
+		expect(str.find("BannerText") < str.find(" A ")) << "banner should appear before column header A";
+	};
+
+	"TableBuilder addPreHeaderSpanRow left alignment"_test = [] {
+		TableBuilder table;
+		table.addColumn("X").addColumn("Y")
+			.addPreHeaderSpanRow("LeftBanner", BorderStyle::None, Align::Left)
+			.addRow("a", "b")
+			.enableAutoSizing();
+
+		auto str = table.toString();
+		expect(str.find("LeftBanner") != std::string::npos) << "left-aligned banner missing";
+	};
+
+	"TableBuilder addPreHeaderSpanRow BorderStyle::None omits inner separator"_test = [] {
+		// With Normal style there's a +---+ between banner and headers; None omits it
+		TableBuilder withSep;
+		withSep.addColumn("A").addPreHeaderSpanRow("X", BorderStyle::Normal).addRow("v").enableAutoSizing();
+
+		TableBuilder noSep;
+		noSep.addColumn("A").addPreHeaderSpanRow("X", BorderStyle::None).addRow("v").enableAutoSizing();
+
+		auto countCorners = [](const std::string &s) {
+			return std::count(s.begin(), s.end(), '+');
+		};
+		expect(countCorners(noSep.toString()) < countCorners(withSep.toString()))
+			<< "BorderStyle::None should produce fewer separator corners";
+	};
+
+	"TableBuilder suppressHeaderSeparator removes border line after headers"_test = [] {
+		TableBuilder normal;
+		normal.addColumn("A").addRow("X").enableAutoSizing();
+
+		TableBuilder suppressed;
+		suppressed.addColumn("A").addRow("X").suppressHeaderSeparator().enableAutoSizing();
+
+		auto countLines = [](const std::string &s) {
+			return std::count(s.begin(), s.end(), '\n');
+		};
+		expect(countLines(suppressed.toString()) < countLines(normal.toString()))
+			<< "suppressed table should have fewer lines (missing header-separator line)";
+	};
+
+	"TableBuilder suppressHeaderColumnSeparators reduces pipes on header line"_test = [&] {
+		// 3-column table: normal header has 4 pipes (|A|B|C|), suppressed has 2 (|A  B  C|)
+		TableBuilder normal;
+		normal.addColumn("Alpha").addColumn("Beta").addColumn("Gamma").addRow("1","2","3").enableAutoSizing();
+
+		TableBuilder suppressed;
+		suppressed.addColumn("Alpha").addColumn("Beta").addColumn("Gamma")
+			.addRow("1","2","3").suppressHeaderColumnSeparators().enableAutoSizing();
+
+		expect(pipeCountOnLine(normal.toString(), "Alpha") == 4)
+			<< "normal 3-col header should have 4 pipes";
+		expect(pipeCountOnLine(suppressed.toString(), "Alpha") == 2)
+			<< "suppressed 3-col header should have only outer 2 pipes";
+	};
+
+	"TableBuilder suppressDataColumnSeparators reduces pipes on data line"_test = [&] {
+		// 3-column table: normal data row has 4 pipes, suppressed has 2
+		TableBuilder normal;
+		normal.addColumn("A").addColumn("B").addColumn("C").addRow("foo","bar","baz").enableAutoSizing();
+
+		TableBuilder suppressed;
+		suppressed.addColumn("A").addColumn("B").addColumn("C")
+			.addRow("foo","bar","baz").suppressDataColumnSeparators().enableAutoSizing();
+
+		expect(pipeCountOnLine(normal.toString(), "foo") == 4)
+			<< "normal 3-col data row should have 4 pipes";
+		expect(pipeCountOnLine(suppressed.toString(), "foo") == 2)
+			<< "suppressed 3-col data row should have only outer 2 pipes";
+	};
+
+	"TableBuilder suppressDataColumnSeparators multiline row"_test = [&] {
+		TableBuilder suppressed;
+		suppressed.addColumn("A").addColumn("B")
+			.addMultiLineRow({{"line1a", "line2a"}, {"line1b", "line2b"}})
+			.suppressDataColumnSeparators()
+			.enableAutoSizing();
+
+		// 2-col multi-line row: suppressed should have 2 pipes, not 3
+		expect(pipeCountOnLine(suppressed.toString(), "line1a") == 2)
+			<< "suppressed 2-col multi-line data row should have only outer 2 pipes";
+	};
+
+	"TableBuilder getTotalWidth is positive and grows with columns"_test = [] {
+		TableBuilder narrow;
+		narrow.addColumn("A").addRow("x").enableAutoSizing();
+
+		TableBuilder wide;
+		wide.addColumn("A").addColumn("B").addColumn("C").addRow("x","y","z").enableAutoSizing();
+
+		expect(narrow.getTotalWidth() > 0) << "total width must be positive";
+		expect(wide.getTotalWidth() > narrow.getTotalWidth()) << "more columns = wider table";
+	};
+
+	"TableBuilder padToWidth expands last column"_test = [] {
+		TableBuilder table;
+		table.addColumn("A").addColumn("B").addRow("x","y").enableAutoSizing();
+
+		int original = table.getTotalWidth();
+		int target   = original + 20;
+		table.padToWidth(target);
+
+		expect(table.getTotalWidth() == target) << "table width should equal target after padToWidth";
+	};
+
+	"TableBuilder padToWidth is a no-op when already wide enough"_test = [] {
+		TableBuilder table;
+		table.addColumn("A").addRow("x").enableAutoSizing();
+
+		int original = table.getTotalWidth();
+		table.padToWidth(original - 5);
+
+		expect(table.getTotalWidth() == original) << "padToWidth must not shrink the table";
+	};
+
+	"TableBuilder clear also clears preHeaderRows"_test = [] {
+		TableBuilder table;
+		table.addColumn("A")
+			.addPreHeaderSpanRow("MyBanner")
+			.addRow("x")
+			.enableAutoSizing();
+
+		expect(table.toString().find("MyBanner") != std::string::npos) << "banner must appear before clear";
+
+		table.clear();
+		table.addColumn("B").addRow("y").enableAutoSizing();
+
+		expect(table.toString().find("MyBanner") == std::string::npos)
+			<< "banner must not appear after clear()";
+	};
+
 	return 0;
 }

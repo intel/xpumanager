@@ -60,6 +60,7 @@ struct psInfo
 	uint32_t processId;
 	std::string commandName;
 	uint32_t devId;
+	uint64_t engines;
 	uint64_t sharedSize;
 	uint64_t memSize;
 };

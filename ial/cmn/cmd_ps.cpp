@@ -119,6 +119,7 @@ void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
 	jsonObj = nlohmann::ordered_json{{"process_id", procInfo.processId},
 									 {"process_name", cleanProcessName},
 									 {"device_id", procInfo.devId},
+									 {"engines", static_cast<uint64_t>(procInfo.engines)},
 									 {"shared_mem_size", procInfo.sharedSize},
 									 {"mem_size", procInfo.memSize}};
 }
@@ -146,7 +147,7 @@ ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInf
 	result = ps->getState(dev->zesDeviceHdl, &processList);
 	for (auto &p : processList) {
 		psInfoList.push_back(
-			{p.processId, GETPROCESSNAME(p.processId), dev->index, p.sharedSize / 1024, p.memSize / 1024});
+			{p.processId, GETPROCESSNAME(p.processId), dev->index, p.engines, p.sharedSize / 1024, p.memSize / 1024});
 	}
 	return result;
 }

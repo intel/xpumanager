@@ -233,6 +233,7 @@ void exampleGpuMonitoringStyle()
 
 	// Add process information section
 	table.addSpanRow("Processes:", BorderStyle::Normal);
+	table.print();
 	std::cout << "\n";
 }
 

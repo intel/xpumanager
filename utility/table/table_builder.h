@@ -103,6 +103,7 @@ public:
 		// GPU monitoring style features
 		std::vector<std::vector<std::string>> multiLineCells; // Multi-line cell content (overrides cells if non-empty)
 		std::optional<std::string> spanText;				  // Text spanning all columns
+		Align spanAlign = Align::Center;                      // Alignment for span text
 		BorderStyle borderStyle = BorderStyle::Normal;		  // Custom border for this row
 		bool isSeparator = false;							  // Row is just a separator line
 
@@ -200,6 +201,7 @@ private:
 	struct Column
 	{
 		std::string header;
+		std::vector<std::string> extraHeaders; // Additional header lines (second and further header rows)
 		mutable int width;
 		Align alignment;
 
@@ -208,7 +210,11 @@ private:
 
 	std::vector<Column> columns;
 	std::vector<Row> rows;
+	std::vector<Row> preHeaderRows; // Rendered inside the table border, before column headers
 	bool autoSize = false;
+	bool suppressHeaderSep = false; // Suppress the border line drawn after column headers
+	bool suppressHeaderColSep = false; // Suppress inner | between column headers
+	bool suppressDataColSep = false; // Suppress inner | between data cells
 	mutable bool widthsCalculated = false;
 	OutputFormat outputFormat = OutputFormat::Table;
 	TableConfig config;
@@ -320,6 +326,23 @@ public:
 	 * @return Reference to this TableBuilder for chaining
 	 */
 	TableBuilder &addSpanRow(std::string_view text, BorderStyle style = BorderStyle::Normal);
+
+	/**
+	 * @brief Add a span row that renders BEFORE the column header row (but inside the table border).
+	 *
+	 * Use this for section banners (e.g. tool version / driver info) that should appear
+	 * at the very top of the table, above the column names.
+	 * A separator line (using the given style) is automatically inserted between the span
+	 * text and the column header row.
+	 *
+	 * @param text    Text to center across the full table width
+	 * @param style   Border style for the separator that follows the span row
+	 * @return Reference to this TableBuilder for chaining
+	 */
+	TableBuilder &addPreHeaderSpanRow(std::string_view text, BorderStyle style = BorderStyle::Normal, Align align = Align::Center);
+	TableBuilder &suppressHeaderSeparator() noexcept;
+	TableBuilder &suppressHeaderColumnSeparators() noexcept;
+	TableBuilder &suppressDataColumnSeparators() noexcept;
 
 	/**
 	 * @brief Add a separator line with custom border style
@@ -441,6 +464,20 @@ public:
 	 * @brief Set column width after creation
 	 */
 	TableBuilder &setColumnWidth(size_t colIndex, int width);
+	TableBuilder &setColumnExtraHeaders(size_t colIndex, std::vector<std::string> headers);
+
+	/**
+	 * @brief Get the total rendered width of the table in characters (border-to-border).
+	 * Triggers auto-size calculation if enabled. Useful for equalising two tables.
+	 */
+	[[nodiscard]] int getTotalWidth() const;
+
+	/**
+	 * @brief Stretch the last column so the table reaches @p targetWidth characters wide.
+	 * Has no effect when the table is already at least that wide.
+	 * Must be called after all rows have been added (uses current auto-sized widths).
+	 */
+	TableBuilder &padToWidth(int targetWidth);
 
 	/**
 	 * @brief Remove a column by index

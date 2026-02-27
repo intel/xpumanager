@@ -25,6 +25,13 @@ public:
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;
+
+	/**
+	 * @brief Read current fan speed as a percentage (0-100) averaged across all fans.
+	 * @param pct  Output: fan speed in percent
+	 * @return ZE_RESULT_SUCCESS, or ZE_RESULT_ERROR_NOT_AVAILABLE if no fans present.
+	 */
+	ze_result_t getSpeedPercent(int32_t &pct);
 };
 
 #endif
