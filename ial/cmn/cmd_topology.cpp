@@ -7,6 +7,7 @@
 #include "cmd_topology.h"
 #include "debug.h"
 #include "printer.h"
+#include "table_builder.h"
 #include <assert.h>
 #include <format>
 #include <algorithm>
@@ -82,11 +83,11 @@ TopologyTextPrinter::TopologyTextPrinter() : TextPrinter() {}
  * Supported Formats:
  * 1. Error: {"error": "message"} → "Error: message"
  * 2. Message: {"message": "text"} → "text"
- * 3. Matrix: {"headers": [...], "matrix": [...]} → Formatted table with:
- *    - Header row with tile labels and "CPU Affinity" column
- *    - Data rows with connections and affinity per tile
- *    - Fixed-width columns for alignment (9 chars tile, 7 chars per connection, 15 chars affinity)
- * 4. Device: {"device_id": N, "local_cpu_list": "...", ...} → Labeled field output
+ * 3. Matrix: {"headers": [...], "matrix": [...]} → Bordered table via TableBuilder with:
+ *    - Dynamic columns: one per tile header plus "CPU Affinity"
+ *    - Data rows with connection types (S/MDF/NODE/SYS) and CPU affinity per tile
+ * 4. Device: {"device_id": N, "local_cpu_list": "...", ...} → 2-column TableBuilder
+ *    table with "Property" and "Value" columns, auto-sized with max cell width of 120
  *
  * @param[in] jsonObj Pointer to JSON object containing topology data.
  *                    Must not be nullptr.
@@ -106,10 +107,9 @@ TopologyTextPrinter::TopologyTextPrinter() : TextPrinter() {}
  * @post No modification to jsonObj (const behavior despite non-const signature)
  *
  * @note Outputs directly to stdout using PRINT macro
- * @note Matrix format precedence: error > message > matrix > device fields
- * @note Matrix table uses pipe separators (|) for visual clarity
+ * @note Format precedence: error > message > matrix > device fields
+ * @note Both matrix and device formats use TableBuilder for bordered table output
  * @note Empty fields in device format are silently skipped
- * @note Uses std::format for type-safe string formatting
  * @note Inherited from TextPrinter base class
  *
  * @see showMatrix() for matrix data generation
@@ -133,43 +133,82 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		const auto &headers = (*jsonObj)["headers"];
 		const auto &matrix = (*jsonObj)["matrix"];
 
-		// Print header row
-		PRINT("%*s", MATRIX_TILE_COL_WIDTH, " ");
+		TableBuilder table;
+		table.addColumn("", MATRIX_TILE_COL_WIDTH);
 		for (const auto &header : headers) {
-			PRINT("|%-*s", MATRIX_CONNECTION_COL_WIDTH, header.get<std::string>().c_str());
+			const auto &name = header.get<std::string>();
+			const int colWidth = std::max(MATRIX_CONNECTION_COL_WIDTH, static_cast<int>(name.size()));
+			table.addColumn(name, colWidth);
 		}
-		PRINT("|%-*s\n", MATRIX_AFFINITY_COL_WIDTH, "CPU Affinity");
+
+		// Compute affinity column width from actual data to avoid truncation
+		int affinityWidth = MATRIX_AFFINITY_COL_WIDTH;
+		for (const auto &row : matrix) {
+			const auto affinity = row["cpu_affinity"].get<std::string>();
+			affinityWidth = std::max(affinityWidth, static_cast<int>(affinity.size()));
+		}
+		table.addColumn("CPU Affinity", affinityWidth);
 
 		for (const auto &row : matrix) {
-			const auto tileName = row["tile"].get<std::string>();
-			PRINT("%-*s", MATRIX_TILE_COL_WIDTH, tileName.c_str());
-
+			std::vector<std::string> cells;
+			cells.push_back(row["tile"].get<std::string>());
 			for (const auto &conn : row["connections"]) {
-				PRINT("|%-*s", MATRIX_CONNECTION_COL_WIDTH, conn.get<std::string>().c_str());
+				cells.push_back(conn.get<std::string>());
 			}
-
-			const auto affinity = row["cpu_affinity"].get<std::string>();
-			PRINT("|%-*s\n", MATRIX_AFFINITY_COL_WIDTH, affinity.c_str());
+			cells.push_back(row["cpu_affinity"].get<std::string>());
+			table.addRowFromContainer(cells);
 		}
+
+		PRINT("%s", table.toString().c_str());
 		return;
 	}
 
+	TableBuilder table;
+	table.addColumn("Property", 20);
+	table.addColumn("Value", 40);
+	table.enableAutoSizing();
+	table.setMaxCellWidth(120);
+
 	if (const auto deviceId = jsonObj->value("device_id", -1); deviceId != -1) {
-		PRINT("%s", std::format("Device ID: {}\n", deviceId).c_str());
+		table.addRow("Device ID", std::to_string(deviceId));
 	}
 	if (const auto cpuList = jsonObj->value("local_cpu_list", std::string{}); !cpuList.empty()) {
-		PRINT("%s", std::format("Local CPU List: {}\n", cpuList).c_str());
+		table.addRow("Local CPU List", cpuList);
 	}
 	if (const auto localCpus = jsonObj->value("local_cpus", std::string{}); !localCpus.empty()) {
-		PRINT("%s", std::format("Local CPUs: {}\n", localCpus).c_str());
+		table.addRow("Local CPUs", localCpus);
 	}
 	if (jsonObj->contains("pcie_switch_count")) {
-		const auto count = jsonObj->value("pcie_switch_count", 0);
-		PRINT("%s", std::format("PCIe Switch Count: {}\n", count).c_str());
+		table.addRow("PCIe Switch Count", std::to_string(jsonObj->value("pcie_switch_count", 0)));
 	}
 	if (const auto pcieSwitch = jsonObj->value("pcie_switch", std::string{}); !pcieSwitch.empty()) {
-		PRINT("%s", std::format("PCIe Switch: {}\n", pcieSwitch).c_str());
+		table.addRow("PCIe Switch", pcieSwitch);
 	}
+
+	PRINT("%s", table.toString().c_str());
+}
+
+/**
+ * @brief Prints TopologyInfo as a formatted table
+ * @ingroup topology_printers
+ *
+ * @param[in] info The topology information to print
+ */
+void TopologyTextPrinter::print(const TopologyInfo &info)
+{
+	TableBuilder table;
+	table.addColumn("Property", 20);
+	table.addColumn("Value", 40);
+	table.enableAutoSizing();
+	table.setMaxCellWidth(120);
+
+	table.addRow("Device ID", std::to_string(info.deviceId));
+	table.addRow("Local CPU List", info.localCpuList);
+	table.addRow("Local CPUs", info.localCpus);
+	table.addRow("PCIe Switch Count", std::to_string(info.pcieSwitchCount));
+	table.addRow("PCIe Switch", info.pcieSwitch);
+
+	PRINT("%s", table.toString().c_str());
 }
 
 static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
