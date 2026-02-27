@@ -71,7 +71,7 @@ prometheus:
 # @schema additionalProperties:false
 grafana:
   # -- Install XPUMD dashboard(s) for Grafana
-  dashboards: true
+  dashboards: false
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
 # -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container.

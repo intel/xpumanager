@@ -61,8 +61,8 @@ and Grafana dashboard for the collected metrics:
 ```bash
   ...
   --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
-  --set prometheus.monitor=true" \
-  --set grafana.dashboards=true"
+  --set prometheus.monitor=true \
+  --set grafana.dashboards=true
 ```
 
 NOTE: above requires Prometheus (+ Grafana) to be installed to the cluster before install,
@@ -106,7 +106,7 @@ See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector.
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin) |
-| grafana.dashboards | bool | `true` | Install XPUMD dashboard(s) for Grafana |
+| grafana.dashboards | bool | `false` | Install XPUMD dashboard(s) for Grafana |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |

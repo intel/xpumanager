@@ -66,8 +66,8 @@ and Grafana dashboard for the collected metrics:
 ```bash
   ...
   --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
-  --set prometheus.monitor=true" \
-  --set grafana.dashboards=true"
+  --set prometheus.monitor=true \
+  --set grafana.dashboards=true
 ```
 
 NOTE: above requires Prometheus (+ Grafana) to be installed to the cluster before install,
