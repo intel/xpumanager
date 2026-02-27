@@ -6,9 +6,11 @@
 
 #include "cmd_config.h"
 #include "debug.h"
+#include "table_builder.h"
 #include <assert.h>
 #include <ecc.h>
 #include <fabric.h>
+#include <format>
 #include <frequency.h>
 #include <nlohmann/json.hpp>
 #include <power.h>
@@ -584,9 +586,10 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 {
 	TRACING();
 
-	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
-	PRINT("| Device Type | Device ID/Tile ID | Configuration                                                  |\n");
-	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
+	TableBuilder table;
+	table.addColumn("Device Type", 11);
+	table.addColumn("Device ID/Tile ID", 17);
+	table.addColumn("Configuration", 62);
 
 	// Power configuration - using getLimitsExt() with domain granularity
 	std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> domainLimits;
@@ -624,51 +627,28 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 	}
 
 	// Display power limits by domain (fixed order: card, package)
-	auto printPowerDomain = [&](bool showDeviceId, const char *domainStr,
-								const std::map<zes_power_level_t, uint32_t> *limits) {
+	auto addPowerDomain = [&](bool showDeviceId, const char *domainStr,
+							  const std::map<zes_power_level_t, uint32_t> *limits) {
 		std::string domainLabel = " Power domain " + std::string(domainStr) + ":";
-		int domainPad = 64 - static_cast<int>(domainLabel.length());
-		if (domainPad < 0) {
-			domainPad = 0;
-		}
 		if (showDeviceId) {
-			PRINT("| GPU         | %-17u |%s%*s|\n", d->index, domainLabel.c_str(), domainPad, "");
+			table.addRow("GPU", std::to_string(d->index), domainLabel);
 		} else {
-			PRINT("|             |                   |%s%*s|\n", domainLabel.c_str(), domainPad, "");
+			table.addRow("", "", domainLabel);
 		}
-		bool found = false;
-		uint32_t value = 0;
-		if (limits != nullptr) {
-			auto it = limits->find(ZES_POWER_LEVEL_SUSTAINED);
-			if (it != limits->end()) {
-				found = true;
-				value = it->second;
+
+		auto getLimitStr = [&](zes_power_level_t level) -> std::string {
+			if (limits != nullptr) {
+				auto it = limits->find(level);
+				if (it != limits->end()) {
+					return std::to_string(it->second / 1000);
+				}
 			}
-		}
-		std::string sustainStr = found ? std::to_string(value / 1000) : "N/A";
-		PRINT("|             |                   |   sustain(w): %-48s |\n", sustainStr.c_str());
-		found = false;
-		value = 0;
-		if (limits != nullptr) {
-			auto it = limits->find(ZES_POWER_LEVEL_BURST);
-			if (it != limits->end()) {
-				found = true;
-				value = it->second;
-			}
-		}
-		std::string burstStr = found ? std::to_string(value / 1000) : "N/A";
-		PRINT("|             |                   |   burst(w): %-50s |\n", burstStr.c_str());
-		found = false;
-		value = 0;
-		if (limits != nullptr) {
-			auto it = limits->find(ZES_POWER_LEVEL_PEAK);
-			if (it != limits->end()) {
-				found = true;
-				value = it->second;
-			}
-		}
-		std::string peakStr = found ? std::to_string(value / 1000) : "N/A";
-		PRINT("|             |                   |   peak(w): %-51s |\n", peakStr.c_str());
+			return "N/A";
+		};
+
+		table.addRow("", "", "  sustain(w): " + getLimitStr(ZES_POWER_LEVEL_SUSTAINED));
+		table.addRow("", "", "  burst(w): " + getLimitStr(ZES_POWER_LEVEL_BURST));
+		table.addRow("", "", "  peak(w): " + getLimitStr(ZES_POWER_LEVEL_PEAK));
 	};
 
 	const std::map<zes_power_level_t, uint32_t> *cardLimits = nullptr;
@@ -682,12 +662,12 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 		packageLimits = &packageIt->second;
 	}
 
-	printPowerDomain(true, "card", cardLimits);
-	printPowerDomain(false, "package", packageLimits);
+	addPowerDomain(true, "card", cardLimits);
+	addPowerDomain(false, "package", packageLimits);
 
 	// Memory ECC configuration (avoid logging errors on unsupported devices)
-	PRINT("|             |                   |                                                                |\n");
-	PRINT("|             |                   | Memory ECC:                                                    |\n");
+	table.addRow("", "", "");
+	table.addRow("", "", " Memory ECC:");
 	std::string eccCurrent = "N/A";
 	std::string eccPending = "N/A";
 	ze_bool_t eccAvailable = false;
@@ -699,16 +679,16 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 			eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
 		}
 	}
-	PRINT("|             |                   |   Current: %-51s |\n", eccCurrent.c_str());
-	PRINT("|             |                   |   Pending: %-51s |\n", eccPending.c_str());
+	table.addRow("", "", "  Current: " + eccCurrent);
+	table.addRow("", "", "  Pending: " + eccPending);
 
 	// PCIe Gen4 Downgrade (if available - this may not be available on all platforms)
 	// TODO: Check if there's a sysman API for this
-	PRINT("|             |                   |                                                                |\n");
-	PRINT("|             |                   | PCIe Gen4 Downgrade:                                           |\n");
-	PRINT("|             |                   |   Current: N/A%48s |\n", "");
+	table.addRow("", "", "");
+	table.addRow("", "", " PCIe Gen4 Downgrade:");
+	table.addRow("", "", "  Current: N/A");
 
-	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
+	table.addSeparator();
 
 	// Display tile-level configuration
 	uint32_t tileCount = 0;
@@ -724,10 +704,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 	}
 
 	for (uint32_t tileId = 0; tileId < tileCount; tileId++) {
-		std::stringstream tileIdStr;
-		tileIdStr << d->index << "/" << tileId;
-
-		PRINT("| GPU         | %-17s |", tileIdStr.str().c_str());
+		std::string tileIdStr = std::format("{}/{}", d->index, tileId);
 
 		// GPU Frequency
 		frequency *fq = d->dev->getFrequency();
@@ -780,19 +757,17 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 			}
 
 			if (minFreq > 0 || maxFreq > 0) {
-				PRINT(" GPU Min Frequency (MHz): %-37.0f |\n", minFreq);
-				PRINT("|             |                   | GPU Max Frequency (MHz): %-37.0f |\n", maxFreq);
+				table.addRow("GPU", tileIdStr, std::format(" GPU Min Frequency (MHz): {:.0f}", minFreq));
+				table.addRow("", "", std::format(" GPU Max Frequency (MHz): {:.0f}", maxFreq));
 			} else {
-				PRINT(" GPU Min Frequency (MHz): %-37s |\n", "N/A");
-				PRINT("|             |                   | GPU Max Frequency (MHz): %-37s |\n", "N/A");
+				table.addRow("GPU", tileIdStr, " GPU Min Frequency (MHz): N/A");
+				table.addRow("", "", " GPU Max Frequency (MHz): N/A");
 			}
 
 			// Display valid options
 			const int firstLineBreakWidth = 43;
-			const int firstLinePrintWidth = 46;
 			const int firstContinuationBreakWidth = 55;
 			const int nextLineBreakWidth = 52;
-			const int nextLinePrintWidth = 59;
 			if (gotClocks && !clocks.empty()) {
 				bool firstLine = true;
 				int continuationLineIndex = 0;
@@ -810,11 +785,9 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 							lineOut += ",";
 						}
 						if (firstLine) {
-							PRINT("|             |                   |   Valid Options: %-*s|\n", firstLinePrintWidth,
-								  lineOut.c_str());
+							table.addRow("", "", "  Valid Options: " + lineOut);
 						} else {
-							PRINT("|             |                   |     %-*s|\n", nextLinePrintWidth,
-								  lineOut.c_str());
+							table.addRow("", "", "    " + lineOut);
 						}
 						if (firstLine) {
 							firstLine = false;
@@ -829,19 +802,17 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 
 				if (!currentLine.empty()) {
 					if (firstLine) {
-						PRINT("|             |                   |   Valid Options: %-*s|\n", firstLinePrintWidth,
-							  currentLine.c_str());
+						table.addRow("", "", "  Valid Options: " + currentLine);
 					} else {
-						PRINT("|             |                   |     %-*s|\n", nextLinePrintWidth,
-							  currentLine.c_str());
+						table.addRow("", "", "    " + currentLine);
 					}
 				}
 			} else {
-				PRINT("|             |                   |   Valid Options: %-*s|\n", firstLinePrintWidth, "N/A");
+				table.addRow("", "", "  Valid Options: N/A");
 			}
 		}
 
-		PRINT("|             |                   |                                                                |\n");
+		table.addRow("", "", "");
 
 		// Standby Mode
 		standby *sb = d->dev->getStandby();
@@ -865,15 +836,15 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 						}
 					}
 					const char *modeStr = (mode == ZES_STANDBY_PROMO_MODE_NEVER) ? "never" : "default";
-					PRINT("|             |                   | Standby Mode: %-48s |\n", modeStr);
+					table.addRow("", "", std::format(" Standby Mode: {}", modeStr));
 				}
 			} else {
-				PRINT("|             |                   | Standby Mode: %-48s |\n", "N/A");
+				table.addRow("", "", " Standby Mode: N/A");
 			}
 		}
-		PRINT("|             |                   |   Valid Options: %-45s |\n", "default, never");
+		table.addRow("", "", "  Valid Options: default, never");
 
-		PRINT("|             |                   |                                                                |\n");
+		table.addRow("", "", "");
 
 		// Scheduler Mode
 		scheduler *sched = d->dev->getScheduler();
@@ -906,43 +877,36 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 										modeStr = "unknown";
 										break;
 									}
-									PRINT("|             |                   | Scheduler Mode: %-46s |\n", modeStr);
+									table.addRow("", "", std::format(" Scheduler Mode: {}", modeStr));
 
 									// Get mode-specific properties
 									if (mode == ZES_SCHED_MODE_TIMEOUT) {
 										zes_sched_timeout_properties_t timeoutProps = {};
 										if (zesSchedulerGetTimeoutModeProperties(schedHandles[i], 0, &timeoutProps) ==
 											ZE_RESULT_SUCCESS) {
-											PRINT("|             |                   |   Timeout (us): %-46" PRIu64
-												  " |\n",
-												  timeoutProps.watchdogTimeout);
+											table.addRow(
+												"", "",
+												std::format("  Timeout (us): {}", timeoutProps.watchdogTimeout));
 										} else {
-											PRINT("|             |                   |   Timeout (us): %-46s |\n",
-												  "N/A");
+											table.addRow("", "", "  Timeout (us): N/A");
 										}
 									} else if (mode == ZES_SCHED_MODE_TIMESLICE) {
 										zes_sched_timeslice_properties_t timesliceProps = {};
 										if (zesSchedulerGetTimesliceModeProperties(
 												schedHandles[i], 0, &timesliceProps) == ZE_RESULT_SUCCESS) {
-											PRINT("|             |                   |   Timeout (us): %-46s |\n",
-												  "N/A");
-											PRINT("|             |                   |   Interval (us): %-45" PRIu64
-												  " |\n",
-												  timesliceProps.interval);
-											PRINT(
-												"|             |                   |   Yield Timeout (us): %-40" PRIu64
-												" |\n",
-												timesliceProps.yieldTimeout);
+											table.addRow("", "", "  Timeout (us): N/A");
+											table.addRow("", "",
+														 std::format("  Interval (us): {}", timesliceProps.interval));
+											table.addRow(
+												"", "",
+												std::format("  Yield Timeout (us): {}", timesliceProps.yieldTimeout));
 										} else {
-											PRINT("|             |                   |   Timeout (us): %-46s |\n",
-												  "N/A");
-											PRINT("|             |                   |   Interval (us): %-45s |\n",
-												  "N/A");
-											PRINT("|             |                   |   Yield Timeout (us): %-40s |\n",
-												  "N/A");
+											table.addRow("", "", "  Timeout (us): N/A");
+											table.addRow("", "", "  Interval (us): N/A");
+											table.addRow("", "", "  Yield Timeout (us): N/A");
 										}
 									} else {
-										PRINT("|             |                   |   Timeout (us): %-46s |\n", "N/A");
+										table.addRow("", "", "  Timeout (us): N/A");
 									}
 								}
 								break;
@@ -953,15 +917,14 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 			}
 		}
 
-		PRINT("|             |                   |                                                                |\n");
+		table.addRow("", "", "");
 
 		if (tileId < tileCount - 1) {
-			PRINT("+-------------+-------------------+----------------------------------------------------------------+"
-				  "\n");
+			table.addSeparator();
 		}
 	}
 
-	PRINT("+-------------+-------------------+----------------------------------------------------------------+\n");
+	PRINT("%s", table.toString().c_str());
 }
 
 ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
