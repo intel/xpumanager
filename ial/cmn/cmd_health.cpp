@@ -7,6 +7,7 @@
 #include "cmd_health.h"
 #include "printer.h"
 #include "debug.h"
+#include "table_builder.h"
 #include <assert.h>
 #include <temperature.h>
 #include <memory.h>
@@ -89,13 +90,18 @@ HealthTextPrinter::HealthTextPrinter() : TextPrinter() {}
  */
 void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 {
-	PRINT("| Device ID: %d\n", (*jsonObj)["device_id"].get<int>());
+	TableBuilder table;
+	table.addColumn("Component", 30, Align::Left).addColumn("Value", 60, Align::Left);
+
+	table.addRow("Device ID", std::to_string((*jsonObj)["device_id"].get<int>()));
+
 	for (auto &item : jsonObj->items()) {
 		if (item.key() == "device_id") {
 			continue;
 		}
 
-		PRINT("|   %s:\n", item.key().c_str());
+		table.addSeparator();
+		table.addRow("[ " + item.key() + " ]", "");
 		for (auto &subitem : item.value().items()) {
 			std::string value;
 			if (subitem.value().is_string()) {
@@ -103,10 +109,11 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 			} else {
 				value = subitem.value().dump();
 			}
-			PRINT("|     %s: %s\n", subitem.key().c_str(), value.c_str());
+			table.addRow(subitem.key(), value);
 		}
 	}
-	PRINT("\n");
+
+	PRINT("%s", table.toString().c_str());
 }
 /**
  * @brief Prints text output with custom formatting for health command

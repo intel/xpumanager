@@ -7,6 +7,7 @@
 #include "cmd_discovery.h"
 #include "debug.h"
 #include "printer.h"
+#include "table_builder.h"
 #include <array>
 #include <assert.h>
 #include <charconv>
@@ -188,18 +189,6 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		return val.dump();
 	};
 
-	auto printRow = [](const std::string &col1, const std::string &col2) {
-		PRINT("| %-9s | %-84s |\n", col1.c_str(), col2.c_str());
-	};
-
-	auto printBlankRow = []() { PRINT("| %-9s | %-84s |\n", "", ""); };
-
-	auto printTableHeader = []() {
-		PRINT("+-----------+--------------------------------------------------------------------------------------+\n");
-		PRINT("| Device ID | Device Information                                                                   |\n");
-		PRINT("+-----------+--------------------------------------------------------------------------------------+\n");
-	};
-
 	if (jsonObj->contains("heading")) {
 		// Print CSV-style headers for dump command
 		const auto &headers = (*jsonObj)["heading"];
@@ -227,103 +216,111 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	}
 
 	// Table-based output for device list or single device
-	printTableHeader();
-
 	if (jsonObj->contains("device_list")) {
+		TableBuilder table;
+		table.addColumn("Device ID", 9, Align::Left).addColumn("Device Information", 84, Align::Left);
+
+		bool firstDevice = true;
 		for (auto &device : (*jsonObj)["device_list"]) {
+			if (!firstDevice) {
+				table.addSeparator(BorderStyle::Normal);
+			}
+			firstDevice = false;
+
 			std::string deviceId = device.contains("device_id") ? valueToString(device["device_id"]) : "";
 
-			auto printField = [&](const char *key, const char *label) {
+			auto addField = [&](const char *key, const char *label) {
 				if (device.contains(key)) {
-					printRow(deviceId, std::string(label) + ": " + valueToString(device[key]));
+					table.addRow(deviceId, std::string(label) + ": " + valueToString(device[key]));
 					deviceId = ""; // Only show device ID once
 				}
 			};
 
-			printField("device_name", "Device Name");
-			printField("vendor_name", "Vendor Name");
-			printField("uuid", "SOC UUID");
-			printField("pci_bdf_address", "PCI BDF Address");
-			printField("drm_device", "DRM Device");
-			printField("device_function_type", "Function Type");
-
-			PRINT("+-----------+--------------------------------------------------------------------------------------+"
-				  "\n");
+			addField("device_name", "Device Name");
+			addField("vendor_name", "Vendor Name");
+			addField("uuid", "SOC UUID");
+			addField("pci_bdf_address", "PCI BDF Address");
+			addField("drm_device", "DRM Device");
+			addField("device_function_type", "Function Type");
 		}
+
+		PRINT("%s", table.toString().c_str());
 	} else {
+		TableBuilder table;
+		table.addColumn("Device ID", 9, Align::Left).addColumn("Device Information", 84, Align::Left);
+
 		std::string deviceId = jsonObj->contains("device_id") ? valueToString((*jsonObj)["device_id"]) : "";
 
-		auto printField = [&](const char *key, const char *label) {
+		auto addField = [&](const char *key, const char *label) {
 			if (jsonObj->contains(key)) {
-				printRow(deviceId, std::string(label) + ": " + valueToString((*jsonObj)[key]));
+				table.addRow(deviceId, std::string(label) + ": " + valueToString((*jsonObj)[key]));
 				deviceId = ""; // Only show device ID once
 			}
 		};
 
 		// Group 1: Basic Device Information
-		printField("device_type", "Device Type");
-		printField("device_name", "Device Name");
-		printField("pci_device_id", "PCI Device ID");
-		printField("vendor_name", "Vendor Name");
-		printField("uuid", "SOC UUID");
-		printField("serial_number", "Serial Number");
-		printField("core_clock_rate", "Core Clock Rate");
-		printField("device_stepping", "Stepping");
-		printField("sku_type", "SKU Type");
-		printBlankRow();
+		addField("device_type", "Device Type");
+		addField("device_name", "Device Name");
+		addField("pci_device_id", "PCI Device ID");
+		addField("vendor_name", "Vendor Name");
+		addField("uuid", "SOC UUID");
+		addField("serial_number", "Serial Number");
+		addField("core_clock_rate", "Core Clock Rate");
+		addField("device_stepping", "Stepping");
+		addField("sku_type", "SKU Type");
+		table.addRow("", "");
 
 		// Group 2: Driver and Firmware
-		printField("driver_version", "Driver Version");
-		printField("kernel_version", "Kernel Version");
-		printField("gfx_firmware_name", "GFX Firmware Name");
-		printField("gfx_firmware_version", "GFX Firmware Version");
-		printField("gfx_firmware_status", "GFX Firmware Status");
-		printBlankRow();
+		addField("driver_version", "Driver Version");
+		addField("kernel_version", "Kernel Version");
+		addField("gfx_firmware_name", "GFX Firmware Name");
+		addField("gfx_firmware_version", "GFX Firmware Version");
+		addField("gfx_firmware_status", "GFX Firmware Status");
+		table.addRow("", "");
 
 		// Group 3: PCIe Information
-		printField("pci_bdf_address", "PCI BDF Address");
+		addField("pci_bdf_address", "PCI BDF Address");
 		if (jsonObj->contains("pci_slot")) {
 			std::string pciSlot = valueToString((*jsonObj)["pci_slot"]);
-			printRow("", std::string("PCI Slot: ") + (pciSlot.empty() ? "N/A" : pciSlot));
+			table.addRow("", std::string("PCI Slot: ") + (pciSlot.empty() ? "N/A" : pciSlot));
 		}
-		printField("pcie_generation", "PCIe Generation");
-		printField("pcie_max_link_width", "PCIe Max Link Width");
-		printField("pcie_max_bandwidth", "PCIe Max Bandwidth");
-		printBlankRow();
+		addField("pcie_generation", "PCIe Generation");
+		addField("pcie_max_link_width", "PCIe Max Link Width");
+		addField("pcie_max_bandwidth", "PCIe Max Bandwidth");
+		table.addRow("", "");
 
 		// Group 4: Memory Information
-		printField("memory_physical_size", "Memory Physical Size");
+		addField("memory_physical_size", "Memory Physical Size");
 		if (jsonObj->contains("max_mem_alloc_size_byte")) {
 			uint64_t maxAllocBytes = 0;
 			std::string bytesStr = valueToString((*jsonObj)["max_mem_alloc_size_byte"]);
 			auto [ptr, ec] = std::from_chars(bytesStr.data(), bytesStr.data() + bytesStr.size(), maxAllocBytes);
 			if (ec == std::errc{}) {
 				double maxAllocMiB = static_cast<double>(maxAllocBytes) / (1024.0 * 1024.0);
-				printRow("", std::format("Max Mem Alloc Size: {:.2f} MiB", maxAllocMiB));
+				table.addRow("", std::format("Max Mem Alloc Size: {:.2f} MiB", maxAllocMiB));
 			}
 		}
 		if (jsonObj->contains("memory_ecc_state")) {
 			std::string eccState = valueToString((*jsonObj)["memory_ecc_state"]);
-			printRow("", std::string("ECC State: ") + (eccState.empty() ? "disabled" : eccState));
+			table.addRow("", std::string("ECC State: ") + (eccState.empty() ? "disabled" : eccState));
 		}
-		printField("number_of_memory_channels", "Number of Memory Channels");
-		printField("memory_bus_width", "Memory Bus Width");
-		printField("max_hardware_contexts", "Max Hardware Contexts");
-		printField("max_command_queue_priority", "Max Command Queue Priority");
-		printBlankRow();
+		addField("number_of_memory_channels", "Number of Memory Channels");
+		addField("memory_bus_width", "Memory Bus Width");
+		addField("max_hardware_contexts", "Max Hardware Contexts");
+		addField("max_command_queue_priority", "Max Command Queue Priority");
+		table.addRow("", "");
 
 		// Group 5: EU and Architecture Information
-		printField("number_of_eus", "Number of EUs");
-		printField("number_of_tiles", "Number of Tiles");
-		printField("number_of_slices", "Number of Slices");
-		printField("number_of_sub_slices_per_slice", "Number of Sub Slices per Slice");
-		printField("number_of_threads_per_eu", "Number of Threads per EU");
-		printField("physical_eu_simd_width", "Physical EU SIMD Width");
-		printField("number_of_media_engines", "Number of Media Engines");
-		printField("number_of_media_enh_engines", "Number of Media Enhancement Engines");
-		printBlankRow();
+		addField("number_of_eus", "Number of EUs");
+		addField("number_of_tiles", "Number of Tiles");
+		addField("number_of_slices", "Number of Slices");
+		addField("number_of_sub_slices_per_slice", "Number of Sub Slices per Slice");
+		addField("number_of_threads_per_eu", "Number of Threads per EU");
+		addField("physical_eu_simd_width", "Physical EU SIMD Width");
+		addField("number_of_media_engines", "Number of Media Engines");
+		addField("number_of_media_enh_engines", "Number of Media Enhancement Engines");
 
-		PRINT("+-----------+--------------------------------------------------------------------------------------+\n");
+		PRINT("%s", table.toString().c_str());
 	}
 }
 

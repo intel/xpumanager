@@ -153,7 +153,7 @@ void TableBuilder::alignTextDirect(std::string &result, std::string_view text, i
 {
 	int const textWidth = displayWidth(text);
 
-	if (textWidth >= width) {
+	if (textWidth > width) {
 		if (width >= 3) {
 			// Truncate and add ellipsis
 			size_t charCount = 0;
