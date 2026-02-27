@@ -187,5 +187,5 @@ int cmdOOB::run(UNUSED arg_struct *args)
 
 	amcobj.freeGpuDevices(gpuDevices);
 
-	return 0;
+	return found ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_INVALID_ARGUMENT;
 }

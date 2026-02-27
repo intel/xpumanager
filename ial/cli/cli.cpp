@@ -276,6 +276,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	int exitCode = 0;
+
 	/* Parse command line and run the command that the user wants */
 	for (const auto &it : *cmdList) {
 		if (!STRCASECMP(it->getName(), argv[1])) {
@@ -285,19 +287,20 @@ int main(int argc, char *argv[])
 				deleteList(cmdList);
 				return 0;
 			}
-			/* Run the command */
-			it->run(&arg);
+			/* Run the command and capture the return code */
+			exitCode = (it->run(&arg) != 0) ? 1 : 0;
 			found = true;
 			/* Exit the loop once the command is found */
 			break;
 		}
 	}
 
-	/* If we can't parse the user's command line, then print help */
+	/* If we can't parse the user's command line, then print help and signal error */
 	if (!found) {
 		help(cmdList);
+		exitCode = 1;
 	}
 
 	deleteList(cmdList);
-	return 0;
+	return exitCode;
 }

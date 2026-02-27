@@ -223,16 +223,21 @@ int cmdGroup::run(arg_struct *args)
 		return result;
 	}
 
+	ze_result_t firstError = ZE_RESULT_SUCCESS;
+
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : groupCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
 				DBG("Running command: %s\n", cmd.second.opt.name);
-				(this->*cmd.second.func)(&device);
+				ze_result_t cmdResult = (this->*cmd.second.func)(&device);
+				if (cmdResult != ZE_RESULT_SUCCESS && firstError == ZE_RESULT_SUCCESS) {
+					firstError = cmdResult;
+				}
 			}
 		}
 	}
 
-	return 0;
+	return firstError;
 }

@@ -6,8 +6,11 @@
 
 #include "driver.h"
 #include <loader/ze_loader.h>
-#include <vector>
+#include <charconv>
+#include <optional>
 #include <set>
+#include <string_view>
+#include <vector>
 
 /**
  * @brief Sets the print/debug level for the driver and synchronizes across modules
@@ -517,8 +520,20 @@ ze_result_t driver::getLogs(UNUSED std::string fileName)
 ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 {
 	uint32_t deviceIndex = 0;
+
+	// Parse bdf as a numeric device index; empty optional means it's a BDF string (or absent)
+	const std::string_view bdfView{bdf ? bdf : ""};
+	std::optional<uint32_t> numericId;
+	if (!bdfView.empty()) {
+		uint32_t val{};
+		auto [ptr, ec] = std::from_chars(bdfView.data(), bdfView.data() + bdfView.size(), val);
+		if (ec == std::errc{} && ptr == bdfView.data() + bdfView.size()) {
+			numericId = val;
+		}
+	}
+
 	auto processDevice = [&](device &dev) -> ze_result_t {
-		if (!bdf || !strlen(bdf)) {
+		if (bdfView.empty()) {
 			// If no BDF is provided, add all devices to the list
 			DBG("No BDF provided, adding all devices.\n");
 			dev.addInfo(devList, deviceIndex);
@@ -526,19 +541,10 @@ ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 			if (dev.isBDF(bdf)) {
 				dev.addInfo(devList, deviceIndex);
 				return ZE_RESULT_SUCCESS;
-			} else if (bdf && strlen(bdf) == 1) {
-				// Maybe the user provided a device index instead of BDF
-				// Check if the index is a digit
-				if (!isdigit(bdf[0])) {
-					ERR("Invalid device index: %s\n", bdf);
-					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-				}
-				uint32_t userIndex = bdf[0] - '0';
-				if (userIndex == deviceIndex) {
-					DBG("Found device with index: %u\n", userIndex);
-					dev.addInfo(devList, deviceIndex);
-					return ZE_RESULT_SUCCESS;
-				}
+			} else if (numericId && *numericId == deviceIndex) {
+				DBG("Found device with index: %u\n", *numericId);
+				dev.addInfo(devList, deviceIndex);
+				return ZE_RESULT_SUCCESS;
 			}
 		}
 		deviceIndex++;
@@ -559,5 +565,11 @@ ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 		if (res != ZE_RESULT_NOT_READY)
 			return res;
 	}
+
+	// If a specific device was requested but nothing matched, return an error
+	if (!bdfView.empty() && devList->empty()) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
