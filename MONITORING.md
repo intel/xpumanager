@@ -50,8 +50,6 @@ chart values to correct values.
 (Otherwise XPUMD `serviceMonitor` object and dashboard `configMap` will not be found by
 the Prometheus and Grafana services installed by the `kube-prometheus` Helm chart.)
 
-TODO: add screenshot of the dashboard.
-
 
 ## View metrics
 
@@ -77,6 +75,8 @@ $ kubectl get secret -n $(kubectl get svc -A | awk '/grafana/{print $1,$2}') \
 ```
 
 (With older Grafana versions, password is `prom-operator`, not one generated to a secret on Grafana install.)
+
+![GPU metrics dashboard](xpumd-dashboard.png)
 
 
 ## Manual metrics verification
