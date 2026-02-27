@@ -6,6 +6,7 @@
 
 #include "cmd_vgpu.h"
 #include "debug.h"
+#include "table_builder.h"
 #include <osvf.h>
 #include <algorithm>
 #include <assert.h>
@@ -224,9 +225,14 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 	}
 
 	for (const auto &vfInfo : vfDeviceInfoList) {
-		PRINT("PCI BDF Address: %s\n", vfInfo.bdfAddress.c_str());
-		PRINT("Function Type: %s\n", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
-		PRINT("Memory Physical Size:  %" PRIu64 " MiB\n\n", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES);
+		TableBuilder table;
+		table.addColumn("Property", 25, Align::Left).addColumn("Value", 40, Align::Left);
+
+		table.addRow("PCI BDF Address", vfInfo.bdfAddress);
+		table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
+		table.addRow("Memory Physical Size", std::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
+
+		PRINT("%s", table.toString().c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -276,49 +282,29 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 			memPercent = std::min(memPercent, 100.0);
 		}
 
-		// Print in legacy format
-		PRINT("+--------------------------------------------------------------------------------------------------+\n");
-		PRINT("| Device Information                                                                               |\n");
-		PRINT("+--------------------------------------------------------------------------------------------------+\n");
-		PRINT("| PCI BDF Address: %-79s |\n", vfBdf);
+		TableBuilder table;
+		table.addColumn("Metric", 26, Align::Left).addColumn("Value", 67, Align::Left);
 
-		if (vfStats.gpuUtilization >= 0.0) {
-			PRINT("| GPU Utilization (%%): %-75.0f |\n", vfStats.gpuUtilization);
-		} else {
-			PRINT("| GPU Utilization (%%): %-75s |\n", "N/A");
-		}
+		table.addSeparator();
+		table.addSpanRow("Device Information");
+		table.addSeparator();
 
-		if (vfStats.computeUtilization >= 0.0) {
-			PRINT("| Compute Engine Util(%%): %-72.0f |\n", vfStats.computeUtilization);
-		} else {
-			PRINT("| Compute Engine Util(%%): %-72s |\n", "N/A");
-		}
+		table.addRow("PCI BDF Address", vfBdf);
+		table.addRow("GPU Utilization (%)",
+					 vfStats.gpuUtilization >= 0.0 ? std::format("{:.0f}", vfStats.gpuUtilization) : "N/A");
+		table.addRow("Compute Engine Util(%)",
+					 vfStats.computeUtilization >= 0.0 ? std::format("{:.0f}", vfStats.computeUtilization) : "N/A");
+		table.addRow("Render Engine Util (%)",
+					 vfStats.renderUtilization >= 0.0 ? std::format("{:.0f}", vfStats.renderUtilization) : "N/A");
+		table.addRow("Media Engine Util (%)",
+					 vfStats.mediaUtilization >= 0.0 ? std::format("{:.0f}", vfStats.mediaUtilization) : "N/A");
+		table.addRow("Copy Engine Util (%)",
+					 vfStats.copyUtilization >= 0.0 ? std::format("{:.0f}", vfStats.copyUtilization) : "N/A");
+		table.addRow("GPU Memory Util (%)", memPercent >= 0.0 ? std::format("{:.0f}", memPercent) : "N/A");
 
-		if (vfStats.renderUtilization >= 0.0) {
-			PRINT("| Render Engine Util (%%): %-72.0f |\n", vfStats.renderUtilization);
-		} else {
-			PRINT("| Render Engine Util (%%): %-72s |\n", "N/A");
-		}
+		table.addSeparator();
 
-		if (vfStats.mediaUtilization >= 0.0) {
-			PRINT("| Media Engine Util (%%): %-73.0f |\n", vfStats.mediaUtilization);
-		} else {
-			PRINT("| Media Engine Util (%%): %-73s |\n", "N/A");
-		}
-
-		if (vfStats.copyUtilization >= 0.0) {
-			PRINT("| Copy Engine Util (%%): %-74.0f |\n", vfStats.copyUtilization);
-		} else {
-			PRINT("| Copy Engine Util (%%): %-74s |\n", "N/A");
-		}
-
-		if (memPercent >= 0.0) {
-			PRINT("| GPU Memory Util (%%): %-75.0f |\n", memPercent);
-		} else {
-			PRINT("| GPU Memory Util (%%): %-75s |\n", "N/A");
-		}
-
-		PRINT("+--------------------------------------------------------------------------------------------------+\n");
+		PRINT("%s", table.toString().c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;

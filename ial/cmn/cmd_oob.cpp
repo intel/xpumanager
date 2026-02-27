@@ -6,6 +6,7 @@
 
 #include "cmd_oob.h"
 #include "debug.h"
+#include "table_builder.h"
 #include <amclib.h>
 
 /**
@@ -162,16 +163,21 @@ int cmdOOB::run(UNUSED arg_struct *args)
 			oobCmds[oobCmdType::OOB_DEVICE].val == std::to_string(gpuDevices[i].id) ||
 			oobCmds[oobCmdType::OOB_DEVICE].val == gpuDevices[i].pciBdfAddress) {
 			found = true;
-			PRINT("  Name: %s\n", gpuDevices[i].deviceName.c_str());
-			PRINT("  Vendor: %s\n", gpuDevices[i].vendorName.c_str());
-			PRINT("  Device ID: %s\n", gpuDevices[i].deviceId.c_str());
-			PRINT("  Vendor ID: %s\n", gpuDevices[i].vendorId.c_str());
-			PRINT("  Class Code: %s\n", gpuDevices[i].classCode.c_str());
-			PRINT("  Device Class: %s\n", gpuDevices[i].deviceClass.c_str());
-			PRINT("  PCI BDF Address: %s\n", gpuDevices[i].pciBdfAddress.c_str());
-			PRINT("  Function Type: %s\n", gpuDevices[i].functionType.c_str());
-			PRINT("  device_path = %s\n", gpuDevices[i].devicePath.c_str());
-			PRINT("  function_endpoint = %s\n", gpuDevices[i].functionEndpoint.c_str());
+			TableBuilder table;
+			table.addColumn("Property", 22, Align::Left).addColumn("Value", 50, Align::Left);
+
+			table.addRow("Name", gpuDevices[i].deviceName);
+			table.addRow("Vendor", gpuDevices[i].vendorName);
+			table.addRow("Device ID", gpuDevices[i].deviceId);
+			table.addRow("Vendor ID", gpuDevices[i].vendorId);
+			table.addRow("Class Code", gpuDevices[i].classCode);
+			table.addRow("Device Class", gpuDevices[i].deviceClass);
+			table.addRow("PCI BDF Address", gpuDevices[i].pciBdfAddress);
+			table.addRow("Function Type", gpuDevices[i].functionType);
+			table.addRow("Device Path", gpuDevices[i].devicePath);
+			table.addRow("Function Endpoint", gpuDevices[i].functionEndpoint);
+
+			PRINT("%s", table.toString().c_str());
 		}
 	}
 

@@ -6,6 +6,7 @@
 
 #include "cmd_ps.h"
 #include "debug.h"
+#include "table_builder.h"
 #include <assert.h>
 #include <sysprocess.h>
 
@@ -63,12 +64,20 @@ PsTextPrinter::PsTextPrinter() : TextPrinter() {}
 void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 {
 	if (jsonObj->contains("device_util_by_proc_list")) {
-		PRINT("PID       Command             DeviceID       SHR            MEM\n");
+		TableBuilder table;
+		table.addColumn("PID", 9)
+			.addColumn("Command", 19)
+			.addColumn("DeviceID", 14)
+			.addColumn("SHR", 14)
+			.addColumn("MEM", 14);
+
 		for (auto &item : (*jsonObj)["device_util_by_proc_list"]) {
-			PRINT("%-9u %-19s %-14u %-14" PRIu64 " %-14" PRIu64 "\n", item["process_id"].get<uint32_t>(),
-				  item["process_name"].get<std::string>().c_str(), item["device_id"].get<uint32_t>(),
-				  item["shared_mem_size"].get<uint64_t>(), item["mem_size"].get<uint64_t>());
+			table.addRow(item["process_id"].get<uint32_t>(), item["process_name"].get<std::string>(),
+						 item["device_id"].get<uint32_t>(), item["shared_mem_size"].get<uint64_t>(),
+						 item["mem_size"].get<uint64_t>());
 		}
+
+		PRINT("%s", table.toString().c_str());
 	}
 }
 

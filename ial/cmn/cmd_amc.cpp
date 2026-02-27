@@ -6,6 +6,7 @@
 
 #include "cmd_amc.h"
 #include "debug.h"
+#include "table_builder.h"
 #include "amclib.h"
 #include "printer.h"
 #include <atomic>
@@ -38,9 +39,14 @@ AmcTextPrinter::AmcTextPrinter() : TextPrinter() {}
  */
 void AmcTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 {
-	PRINT("| Device: %s\n", (*jsonObj)["device"].get<std::string>().c_str());
+	TableBuilder table;
+	table.addColumn("Property", 20, Align::Left).addColumn("Value", 40, Align::Left);
+
+	if (jsonObj->contains("device")) {
+		table.addRow("Device", (*jsonObj)["device"].get<std::string>());
+	}
 	if (jsonObj->contains("sensor_id")) {
-		PRINT("| Sensor ID: %d\n", (*jsonObj)["sensor_id"].get<int>());
+		table.addRow("Sensor ID", std::to_string((*jsonObj)["sensor_id"].get<int>()));
 	}
 	for (auto &item : jsonObj->items()) {
 		if (item.key() == "device" || item.key() == "sensor_id") {
@@ -52,9 +58,10 @@ void AmcTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 		} else {
 			value = item.value().dump();
 		}
-		PRINT("| %s: %s\n", item.key().c_str(), value.c_str());
+		table.addRow(item.key(), value);
 	}
-	PRINT("\n");
+
+	PRINT("%s", table.toString().c_str());
 }
 
 /**
