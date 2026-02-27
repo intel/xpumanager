@@ -61,12 +61,14 @@ and Grafana dashboard for the collected metrics:
 ```bash
   ...
   --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
-  --set prometheus.monitor=true" \
-  --set grafana.dashboards=true"
+  --set prometheus.release=prometheus-stack \
+  --set prometheus.monitor=true \
+  --set grafana.dashboards=true \
+  --set grafana.namespace=monitoring
 ```
 
-NOTE: above requires Prometheus (+ Grafana) to be installed to the cluster before install,
-see [monitoring](../../MONITORING.md).
+NOTE: above requires Prometheus to be installed to the cluster beforehand, otherwise install fails.
+See [monitoring](../../MONITORING.md).
 
 To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service:
 
@@ -106,18 +108,18 @@ See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector.
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
 | gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin) |
-| grafana.dashboards | bool | `true` | Install XPUMD dashboard(s) for Grafana |
+| grafana.dashboards | bool | `false` | Install XPUMD dashboard(s) for Grafana |
+| grafana.namespace | string | `"monitoring"` | Namespace for Grafana install. Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
-| kubePrometheus.namespace | string | `"monitoring"` | Namespace used for 'kube-prometheus' install |
-| kubePrometheus.release | string | `"prometheus-stack"` | Helm release name for 'kube-prometheus' chart that installed Prometheus/Grafana |
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
 | podSecurityContextOverride | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to |
-| prometheus.monitor | bool | `false` | Add Prometheus service monitor for XPUMD, requires Prometheus to be installed. overrides 'service.create' |
+| prometheus.monitor | bool | `false` | Add Prometheus service monitor for XPUMD, requires Prometheus to be installed. overrides `service.create` |
+| prometheus.release | string | `"prometheus-stack"` | Helm release name for Helm ('kube-prometheus') chart that installed Prometheus. (May be) needed for Prometheus to detect daemon serviceMonitor |
 | resourcesOverride | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting |
 | securityContextOverride | object | `{}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container). NOTE: security settings control to what GPU metrics container has access to |
 | service.create | bool | `false` | Create service |

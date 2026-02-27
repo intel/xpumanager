@@ -56,22 +56,21 @@ service:
 gpuAccess: xe
 
 # @schema additionalProperties:false
-kubePrometheus:
-  # -- Helm release name for 'kube-prometheus' chart that installed Prometheus/Grafana
-  release: prometheus-stack
-  # -- Namespace used for 'kube-prometheus' install
-  namespace: monitoring
-
-# @schema additionalProperties:false
 prometheus:
   # -- Add Prometheus service monitor for XPUMD, requires Prometheus to be installed.
-  # overrides 'service.create'
+  # overrides `service.create`
   monitor: false
+  # -- Helm release name for Helm ('kube-prometheus') chart that installed Prometheus.
+  # (May be) needed for Prometheus to detect daemon serviceMonitor
+  release: prometheus-stack
 
 # @schema additionalProperties:false
 grafana:
   # -- Install XPUMD dashboard(s) for Grafana
-  dashboards: true
+  dashboards: false
+  # -- Namespace for Grafana install.
+  # Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used
+  namespace: monitoring
 
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
 # -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container.

@@ -66,12 +66,14 @@ and Grafana dashboard for the collected metrics:
 ```bash
   ...
   --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
-  --set prometheus.monitor=true" \
-  --set grafana.dashboards=true"
+  --set prometheus.release=prometheus-stack \
+  --set prometheus.monitor=true \
+  --set grafana.dashboards=true \
+  --set grafana.namespace=monitoring
 ```
 
-NOTE: above requires Prometheus (+ Grafana) to be installed to the cluster before install,
-see [monitoring](../../MONITORING.md).
+NOTE: above requires Prometheus to be installed to the cluster beforehand, otherwise install fails.
+See [monitoring](../../MONITORING.md).
 
 To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service:
 
