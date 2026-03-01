@@ -326,7 +326,10 @@ uint8_t pldm::pfGetTotalPdrs()
 	pfPdrReq.requestCount = static_cast<uint16_t>(pfPdrRepoInfo.largestRecordSize);
 	pfPdrReq.recordChangeNumber = 0;
 	for (uint32_t i = 0; i < pfPdrRepoInfo.recordCount; i++) {
-		pfMonCtrlCmd(cmd, size);
+		if (pfMonCtrlCmd(cmd, size) != PLDM_SUCCESS) {
+			ERR("Failed to retrieve PDR record %u\n", i);
+			return PLDM_ERROR;
+		}
 	}
 	return PLDM_SUCCESS;
 }
@@ -453,7 +456,33 @@ uint8_t pldm::pfMonCtrlInitialize()
  * @param[in] sensorId The ID of the sensor to retrieve
  * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
  */
-uint8_t pldm::getSensorInfo(uint16_t sensorId)
+uint8_t pldm::getSensorInfoById(uint16_t sensorId)
+{
+	TRACING();
+
+	uint8_t ret = pfMonCtrlInitialize();
+	if (ret != PLDM_SUCCESS) {
+		ERR("Failed to initialize PFMonCtrl\n");
+		return PLDM_ERROR;
+	}
+	ret = pfGetSensorValuesById(sensorId);
+	if (ret != PLDM_SUCCESS) {
+		ERR("Failed to get sensor values\n");
+		return PLDM_ERROR;
+	}
+	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Retrieves sensor information by sensor unit type
+ *
+ * Initializes the platform monitoring and control,
+ * then retrieves sensor values for all sensors with the specified unit type.
+ *
+ * @param[in] unit The sensor unit type to filter by
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
+ */
+uint8_t pldm::getSensorInfoByUnit(sensorUnits unit)
 {
 	TRACING();
 
@@ -463,7 +492,7 @@ uint8_t pldm::getSensorInfo(uint16_t sensorId)
 		return PLDM_ERROR;
 	}
 	pfBuildPdrSensorCache();
-	ret = pfGetSensorValuesById(sensorId);
+	ret = pfGetSensorValuesByUnit(unit);
 	if (ret != PLDM_SUCCESS) {
 		ERR("Failed to get sensor values\n");
 		return PLDM_ERROR;

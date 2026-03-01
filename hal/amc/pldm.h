@@ -9,6 +9,7 @@
 
 #include "mctp.h"
 #include "pldm_constants.h"
+#include "pldm_file_transfer.h"
 #include "pldm_fru.h"
 #include "pldm_fwpackage.h"
 #include "pldm_fwupdate.h"
@@ -23,6 +24,15 @@ enum pldmTransferOpFlag
 {
 	PLDM_GET_FIRSTPART = 0x01,
 	PLDM_GET_NEXTPART = 0x00
+};
+
+enum pldmFileTransferOpFlag
+{
+	PLDM_XFER_FIRST_PART = 0x00,
+	PLDM_XFER_NEXT_PART = 0x01,
+	PLDM_XFER_ABORT = 0x02,
+	PLDM_XFER_COMPLETE = 0x03,
+	PLDM_XFER_CURRENT_PART = 0x04
 };
 
 // Transfer Flags
@@ -167,6 +177,22 @@ private:
 	struct pldmGetSensorReadingResp pfSensorReadingResp;
 	sensorReadingValue mSensorReading;
 	std::vector<pldmSensorInfo> mSensorInfoList;
+
+	// PLDM File Transfer datastructures
+	struct pldm_file_df_open_req mDfOpenReq;
+	struct pldm_file_df_open_resp mDfOpenResp;
+	struct pldm_file_df_close_req mDfCloseReq;
+	struct pldm_file_df_close_resp mDfCloseResp;
+	struct pldm_file_df_heartbeat_req mDfHeartbeatReq;
+	struct pldm_file_df_heartbeat_resp mDfHeartbeatResp;
+	struct pldm_file_df_read_req mDfReadReq;
+	struct pldm_file_df_read_resp mDfReadResp;
+	struct pldm_base_multipart_receive_req mMultipartReceiveReq;
+	struct pldm_base_multipart_receive_resp mMultipartReceiveResp;
+	std::vector<uint8_t> mMultipartReceiveData;
+	std::vector<uint8_t> mRxAssembledFrame;
+	std::vector<uint8_t> mRxAssembledPayload;
+
 	// pldm Base APIs
 	int pldminit();
 	void cleanup();
@@ -252,6 +278,22 @@ private:
 	uint8_t pfGetSensorValue(const pldmNumericSensorValuePdr *sensor);
 	void pfBuildPdrSensorCache() { mPdrManager.buildSensorCache(); }
 
+	// PLDM File Transfer APIs
+	uint8_t pldmFileTransferCmd(uint8_t cmd, uint8_t size);
+	uint8_t PldmFillFileTxPayload(uint8_t cmd, uint8_t size);
+	uint8_t pldmFileTransferResp(uint8_t cmd, uint8_t id);
+	uint8_t pldmFileTransferRespPayload(const uint8_t *respPayload, size_t respPayloadLen, const uint8_t cmd,
+										const uint8_t id);
+	uint8_t handleDfOpenResp(const uint8_t *respPayload, size_t respPayloadLen);
+	uint8_t handleDfCloseResp(const uint8_t *respPayload, size_t respPayloadLen);
+	uint8_t handleDfHeartbeatResp(const uint8_t *respPayload, size_t respPayloadLen);
+	uint8_t handleDfReadResp(const uint8_t *respPayload, size_t respPayloadLen, size_t totalFrameSize);
+	uint8_t handleMultipartReceiveResp(const uint8_t *respPayload, size_t respPayloadLen, size_t totalFrameSize);
+	uint8_t pldmDfOpenCommand(uint16_t fileIdentifier, uint16_t &fileDescriptor);
+	uint8_t pldmDfCloseCommand(uint16_t fileDescriptor);
+	uint8_t pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<uint8_t> &fileData);
+	const PdrRecord *getFilePdrById(uint32_t filePdrId);
+
 public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
@@ -266,7 +308,9 @@ public:
 	// pldm Base APIs
 	int initialize();
 	int fwupd(const char *pkgFilePath);
-	uint8_t getSensorInfo(uint16_t sensorId);
+	uint8_t getSensorInfoById(uint16_t sensorId);
+	uint8_t getSensorInfoByUnit(sensorUnits unit);
+	uint8_t getFile(uint32_t filePdrId, std::vector<uint8_t> &fileData);
 	std::vector<pldmSensorInfo> &getSensorInfoList() { return mSensorInfoList; }
 	uint8_t oemVrsyncCmd(uint8_t cmd);
 	int fwupdProgress() { return mProgPercent; }

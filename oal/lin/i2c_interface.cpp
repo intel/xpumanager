@@ -182,6 +182,7 @@ bool I2CInterface::readAmc(void *readBuffer, size_t readSize)
 	}
 
 	ssize_t bytesRead = read(amchandle, readBuffer, readSize);
+	DBG("Number of bytes read from AMC: %zd\n", bytesRead);
 	if (bytesRead < 0) {
 		ERR("Failed to read from I2C device: %s\n", strerror(errno));
 		return false;

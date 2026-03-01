@@ -8,6 +8,8 @@
 #include <array>
 #include <fwupd.h>
 #include <debug.h>
+#include <sstream>
+#include <iomanip>
 
 /**
  * @brief Common progress callback function for firmware update operations
@@ -95,13 +97,25 @@ uint8_t crc8Smbus(const uint8_t *data, size_t len)
  *
  * @note Uses DBG for output, so visibility depends on debug settings
  */
-void hexdump(uint8_t buff[], unsigned int len)
+void hexdump(const uint8_t buff[], unsigned int len)
 {
-	unsigned int i = 0;
-	for (i = 0; i < len; i++) {
-		DBG("0x%02x ", buff[i]);
+	if (dbgLvl < DBG || buff == nullptr || len == 0) {
+		return;
 	}
-	DBG("\n");
+
+	unsigned int i = 0;
+	std::stringstream ss{};
+
+	for (i = 0; i < len; i++) {
+		ss << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(buff[i]) << " ";
+		if ((i + 1) % 16 == 0) {
+			DBG("%s\n", ss.str().c_str());
+			ss.str("");
+		}
+	}
+	if (!ss.str().empty()) {
+		DBG("%s\n", ss.str().c_str());
+	}
 }
 
 /**

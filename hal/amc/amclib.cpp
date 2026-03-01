@@ -285,7 +285,7 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 		return AMC_ERROR;
 	}
 
-	uint8_t ret = pldmobj[cardIndex]->getSensorInfo(sensorId);
+	uint8_t ret = pldmobj[cardIndex]->getSensorInfoById(sensorId);
 	if (ret != PLDM_SUCCESS) {
 		ERR("Failed to get sensor info for sensor ID %d on card index %d\n", sensorId, cardIndex);
 		return AMC_ERROR;
@@ -461,4 +461,39 @@ int amclib::amcGpuReset(uint32_t cardNum)
 	}
 
 	return AMC_SUCCESS;
+}
+
+/**
+ * @brief Read a file from the AMC card using PLDM file transfer
+ *
+ * This function retrieves the contents of a file identified by its PDR ID from the specified AMC card.
+ * It uses the PLDM file transfer protocol to read the file in chunks and assembles the complete file data.
+ *
+ * @param[in] deviceIndex Index of the AMC card to read from (0-based)
+ * @param[in] filePdrId PDR ID of the file to read
+ * @param[out] fileData Reference to vector that will receive the file data
+ *
+ * @return Status of the file read operation
+ * @retval AMC_SUCCESS File read successfully and data populated in fileData
+ * @retval AMC_ERROR Failed to read file due to invalid parameters, PLDM errors, or other issues
+ *
+ * @note The function handles multipart transfers for large files and ensures proper assembly of data
+ * @note The caller is responsible for providing a valid device index and file PDR ID
+ */
+int amclib::amcReadFile(int deviceIndex, uint32_t filePdrId, std::vector<uint8_t> &fileData)
+{
+	TRACING();
+
+	if (deviceIndex < 0 || deviceIndex >= numCards) {
+		ERR("Invalid device index %d (valid range: 0-%d)\n", deviceIndex, numCards - 1);
+		return AMC_ERROR;
+	}
+
+	if (!pldmobj || !pldmobj[deviceIndex]) {
+		ERR("PLDM object not initialized for device index: %d\n", deviceIndex);
+		return AMC_ERROR;
+	}
+
+	int ret = pldmobj[deviceIndex]->getFile(filePdrId, fileData);
+	return (ret == PLDM_SUCCESS) ? AMC_SUCCESS : AMC_ERROR;
 }
