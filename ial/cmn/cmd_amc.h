@@ -32,6 +32,10 @@ public:
 	int run(arg_struct *args) override;
 	ze_result_t gpuReset(amclib *amc, int numCards);
 	ze_result_t readSensor(amclib *amc, int numCards);
+	ze_result_t readFile(amclib *amc, int numCards);
+
+private:
+	ze_result_t getDeviceIndex(amclib *amc, const std::string &val, int numCards, int &deviceIndex);
 };
 
 enum amcSubCmdType
@@ -40,6 +44,9 @@ enum amcSubCmdType
 	AMC_GPURESET,
 	AMC_SENSOR,
 	AMC_SENSORID,
+	AMC_FILE,
+	AMC_FILE_TYPE,
+	AMC_OP_FILENAME,
 	AMC_DEVICE,
 	AMC_YES,
 	AMC_JSON,

@@ -98,13 +98,27 @@ enum pldmPdrType
 {
 	PLDM_TERMINUS_LOCATOR_PDR = 1,
 	PLDM_NUMERIC_SENSOR_PDR = 2,
-	PLDM_NUMERIC_EFFECTER_PDR = 3,
+	PLDM_NUMERIC_SENSOR_INITIALIZATION_PDR = 3,
 	PLDM_STATE_SENSOR_PDR = 4,
-	PLDM_STATE_EFFECTER_PDR = 5,
+	PLDM_STATE_SENSOR_INITIALIZATION_PDR = 5,
 	PLDM_SENSOR_AUXILIARY_NAMES_PDR = 6,
-	PLDM_EFFECTER_AUXILIARY_NAMES_PDR = 7,
+	PLDM_OEM_UNIT_PDR = 7,
+	PLDM_OEM_STATE_SET_PDR = 8,
+	PLDM_NUMERIC_EFFECTER_PDR = 9,
+	PLDM_NUMERIC_EFFECTER_INITIALIZATION_PDR = 10,
+	PLDM_STATE_EFFECTER_PDR = 11,
+	PLDM_STATE_EFFECTER_INITIALIZATION_PDR = 12,
+	PLDM_EFFECTER_AUXILIARY_NAMES_PDR = 13,
+	PLDM_EFFECTER_OEM_SEMANTIC_PDR = 14,
+	PLDM_PDR_ENTITY_ASSOCIATION_PDR = 15,
+	PLDM_ENTITY_AUXILIARY_NAMES_PDR = 16,
+	PLDM_OEM_ENTITY_ID_PDR = 17,
+	PLDM_INTERRUPT_ASSOCIATION_PDR = 18,
+	PLDM_EVENT_LOG_PDR = 19,
 	PLDM_PDR_FRU_RECORD_SET = 20,
-	PLDM_PDR_ENTITY_ASSOCIATION = 21
+	PLDM_FILE_DESCRIPTOR_PDR = 30,
+	PLDM_OEM_DEVICE_PDR = 126,
+	PLDM_OEM_PDR = 127,
 };
 
 enum sensorUnits
@@ -329,6 +343,45 @@ struct pldmNumericSensorValuePdr
 	union_range_field_format criticalLow;
 	union_range_field_format fatalHigh;
 	union_range_field_format fatalLow;
+};
+
+/**
+ * @brief File version in File Descriptor PDR
+ *
+ * Field order follows PLDM ver32 encoding order.
+ */
+struct pldmFileVersion
+{
+	uint8_t alpha;
+	uint8_t update;
+	uint8_t minor;
+	uint8_t major;
+};
+
+/**
+ * @brief File Descriptor PDR for file receiving
+ *
+ * Refer to DSP0248 section 28.3 (File Descriptor PDR format).
+ * This structure contains the fixed-length portion and a variable-length
+ * file name tail.
+ */
+struct pldmFileDescriptorPdr
+{
+	struct pdrPayloadHeader hdr;
+	uint16_t terminusHandle;
+	uint16_t fileIdentifier;
+	uint16_t entityType;
+	uint16_t entityInstanceNum;
+	uint16_t containerId;
+	uint16_t superiorDirectoryFileIdentifier;
+	uint8_t fileClassification;
+	uint8_t oemFileClassification;
+	uint16_t fileCapabilities;
+	struct pldmFileVersion fileVersion;
+	uint32_t fileMaximumSize;
+	uint8_t fileMaximumFileDescriptorCount;
+	uint8_t fileNameLength;
+	uint8_t fileName[1]; // Variable length
 };
 
 #pragma pack(pop)

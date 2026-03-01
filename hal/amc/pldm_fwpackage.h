@@ -8,6 +8,7 @@
 #define __PLDM_FIRMWAREPACKAGE_H
 
 #include "pldm.h"
+#include "pldm_types.h"
 
 #define UUID_SIZE 16
 #define RELEASE_DATE_TIME_SIZE 13
@@ -21,16 +22,6 @@
 #define PLDM_TIMESTAMP104_SIZE 13
 
 #define offset_of(type, element) ((size_t) & (((type *)0)->element))
-
-typedef union
-{
-	uint16_t value;
-} bitfield16_t;
-
-typedef union
-{
-	uint32_t value;
-} bitfield32_t;
 
 #pragma pack(push, 1)
 typedef struct

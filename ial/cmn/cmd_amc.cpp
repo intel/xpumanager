@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <unordered_map>
 #include <algorithm>
 #include <nlohmann/json.hpp>
@@ -22,6 +23,9 @@ static std::unordered_map<amcSubCmdType, amcSubCmdStruct> amcCmds = {
 	{AMC_GPURESET, {{"gpureset", no_argument, 0, 0}, &cmdAmc::gpuReset, false, ""}},
 	{AMC_SENSOR, {{"sensor", no_argument, 0, 0}, &cmdAmc::readSensor, false, ""}},
 	{AMC_SENSORID, {{"sensorid", required_argument, 0, 's'}, nullptr, false, ""}},
+	{AMC_FILE, {{"file", no_argument, 0, 0}, &cmdAmc::readFile, false, ""}},
+	{AMC_FILE_TYPE, {{"filetype", required_argument, 0, 0}, nullptr, false, ""}},
+	{AMC_OP_FILENAME, {{"filename", required_argument, 0, 0}, nullptr, false, ""}},
 	{AMC_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
 	{AMC_YES, {{"yes", no_argument, 0, 'y'}, nullptr, false, ""}},
 	{AMC_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
@@ -95,14 +99,22 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId] -y", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId] -j", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --file -d [deviceId] --filetype [fileType] --filename [outputFile]",
+							   progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
+	helpList.push_back(helpCmd(HEADING, "-d,--device                 Specify the device ID or PCI BDF address"));
 	helpList.push_back(helpCmd(HEADING, "--gpureset                  Reset GPU(s) via AMC"));
 	helpList.push_back(helpCmd(HEADING, "--sensor                    Read AMC real-time sensor readings"));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 Specify the device ID or PCI BDF address"));
 	helpList.push_back(
 		helpCmd(HEADING, "-s,--sensorid               Specify the sensor ID (Sensor IDs are listed below)"));
+	helpList.push_back(helpCmd(HEADING, "--file                      Read a file from GPU via AMC"));
+	helpList.push_back(helpCmd(
+		HEADING, "--filetype                  Specify the type of file to read (Filetype ids are listed below)"));
+	helpList.push_back(helpCmd(
+		HEADING,
+		"--filename                  Specify the output file name. Default is amc_file_<YrMthDt_HrMinSec>.txt"));
 	helpList.push_back(helpCmd(HEADING, "-y,--yes                    Skip confirmation prompt"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
@@ -115,6 +127,9 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "6. VR Temperature Sensor"));
 	helpList.push_back(helpCmd(SUB_HEADING, "7. Total Board Power"));
 	helpList.push_back(helpCmd(BLANK));
+	helpList.push_back(helpCmd(TITLE, "File Types (used with --filetype):"));
+	// Note: The actual file type IDs and descriptions should be updated based on the implementation
+	helpList.push_back(helpCmd(SUB_HEADING, "0. GPU logs"));
 	helpList.push_back(helpCmd(TITLE, "WARNING:"));
 	helpList.push_back(helpCmd(HEADING, "  - The operation may require root/administrator privileges"));
 
@@ -252,6 +267,54 @@ int cmdAmc::run(arg_struct *args)
 }
 
 /**
+ * @brief Get the index of an AMC card associated with the specified GPU BDF
+ *
+ * Searches the discovered AMC devices for a card associated with the given
+ * GPU BDF (Bus:Device.Function) string and returns its index.
+ *
+ * @param gpuBDF GPU BDF string to identify the AMC card
+ *
+ * @return Card index if found, or -1 if not found
+ * @retval >=0 Index of the found AMC card
+ * @retval -1 No matching card found
+ *
+ * @note The function searches through the discovered AMC devices
+ *       and retrieves information for the first matching GPU BDF.
+ * @note The function returns -1 if no devices have been enumerated.
+ */
+ze_result_t cmdAmc::getDeviceIndex(amclib *amc, const std::string &val, int numCards, int &deviceIndex)
+{
+	deviceIndex = -1;
+	if (val.empty())
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+
+	try {
+		size_t pos = 0;
+		int parsed = std::stoi(val, &pos);
+		if (pos == val.size()) {
+			if (parsed < 0 || parsed >= numCards) {
+				ERR("Device index %d is out of range. Valid range is 0 to %d.\n", parsed, numCards - 1);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			deviceIndex = parsed;
+			return ZE_RESULT_SUCCESS;
+		}
+	} catch (const std::exception &) {
+		// Not a pure integer, treat as PCI BDF
+	}
+
+	if (amc == nullptr)
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+
+	deviceIndex = amc->amcGetIndex(val);
+	if (deviceIndex < 0 || deviceIndex >= numCards) {
+		ERR("No AMC card found for GPU BDF: %s\n", val.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Performs GPU reset operation via AMC
  *
  * This function executes GPU reset operations through the AMC
@@ -385,23 +448,8 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 	}
 
 	int deviceIndex = -1;
-	if (std::all_of(amcCmds[AMC_DEVICE].val.begin(), amcCmds[AMC_DEVICE].val.end(), ::isdigit)) {
-		try {
-			deviceIndex = std::stoi(amcCmds[AMC_DEVICE].val);
-		} catch (const std::exception &) {
-			ERR("Device index '%s' is out of range.\n", amcCmds[AMC_DEVICE].val.c_str());
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		if (deviceIndex < 0 || deviceIndex >= numCards) {
-			ERR("Device index %d is out of range. Valid range is 0 to %d.\n", deviceIndex, numCards - 1);
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	} else {
-		deviceIndex = amc->amcGetIndex(amcCmds[AMC_DEVICE].val);
-		if (deviceIndex < 0) {
-			ERR("No AMC card found for GPU BDF: %s\n", amcCmds[AMC_DEVICE].val.c_str());
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
+	if (getDeviceIndex(amc, amcCmds[AMC_DEVICE].val, numCards, deviceIndex) != ZE_RESULT_SUCCESS) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	nlohmann::ordered_json outputJson;
@@ -445,5 +493,81 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 		printer->print(&outputJson);
 	}
 
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Executes the AMC file reading command
+ *
+ * This function implements the main execution logic for the AMC file command,
+ * parsing command line arguments and retrieving specified files from the GPU via
+ * the Advanced Management Controller. It validates input parameters, handles file
+ * retrieval, and supports saving output to a specified file with error handling.
+ *
+ * @param[in] amc Pointer to initialized AMC library instance
+ * @param[in] numCards Number of available AMC devices
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code on failure
+ */
+ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
+{
+	TRACING();
+
+	if (!amcCmds[AMC_DEVICE].enabled || amcCmds[AMC_DEVICE].val.empty()) {
+		ERR("Device ID must be specified with --device option.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!amcCmds[AMC_FILE_TYPE].enabled || amcCmds[AMC_FILE_TYPE].val.empty()) {
+		ERR("File type must be specified with --filetype option.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::string opFilename{};
+	if (amcCmds[AMC_OP_FILENAME].enabled && !amcCmds[AMC_OP_FILENAME].val.empty()) {
+		opFilename = amcCmds[AMC_OP_FILENAME].val;
+	} else {
+		std::time_t now = std::time(nullptr);
+		char timeStr[20];
+		std::strftime(timeStr, sizeof(timeStr), "%Y%m%d_%H%M%S", std::localtime(&now));
+		opFilename = "amc_file_" + std::string(timeStr) + ".txt";
+	}
+
+	int deviceIndex = -1;
+	if (getDeviceIndex(amc, amcCmds[AMC_DEVICE].val, numCards, deviceIndex) != ZE_RESULT_SUCCESS) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	uint32_t filePdrId = 0;
+	try {
+		filePdrId = static_cast<uint32_t>(std::stoul(amcCmds[AMC_FILE_TYPE].val));
+	} catch (const std::exception &) {
+		ERR("Invalid file type: %s. File type must be a numeric value.\n", amcCmds[AMC_FILE_TYPE].val.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	std::vector<uint8_t> fileData;
+	int ret = amc->amcReadFile(deviceIndex, filePdrId, fileData);
+	if (ret != AMC_SUCCESS) {
+		ERR("Failed to read AMC file of type %u on device %s.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	if (!fileData.empty()) {
+		std::ofstream outFile(opFilename, std::ios::binary);
+		if (!outFile) {
+			ERR("Failed to open output file: %s\n", opFilename.c_str());
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		outFile.write(reinterpret_cast<const char *>(fileData.data()), fileData.size());
+		if (!outFile) {
+			ERR("Failed to write data to output file: %s\n", opFilename.c_str());
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		outFile.close();
+		PRINT("Successfully read AMC file of type %u on device %s and saved to %s\n", filePdrId,
+			  amcCmds[AMC_DEVICE].val.c_str(), opFilename.c_str());
+	} else {
+		ERR("AMC file of type %u on device %s is empty.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
 	return ZE_RESULT_SUCCESS;
 }

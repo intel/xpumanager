@@ -25,6 +25,7 @@ amc_sources = files(
   'pldm_fru_resp.cpp',
   'pldm_platform.cpp',
   'pldm_pdr_manager.cpp',
+  'pldm_file_transfer.cpp'
 )
 
 amc_inc = include_directories('.')
