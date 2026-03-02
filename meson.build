@@ -314,6 +314,19 @@ install_subdir('resources',
   install_dir: get_option('datadir') / 'xpum',
   strip_directory: false)
 
+# Install third-party license files collected by Conan's generate() step.
+# Linux: <prefix>/share/doc/xpum/third-party-licenses/  (FHS / Debian dh_installdocs)
+# Windows: <bindir>/third-party-licenses/
+if is_linux
+  install_subdir('THIRD_PARTY_LICENSES',
+    install_dir: get_option('datadir') / 'doc' / 'xpum',
+    strip_directory: true)
+elif is_windows
+  install_subdir('THIRD_PARTY_LICENSES',
+    install_dir: get_option('bindir'),
+    strip_directory: true)
+endif
+
 # Summary
 summary_info = {
   'Build type' : buildtype,
