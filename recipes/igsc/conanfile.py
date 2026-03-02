@@ -3,7 +3,7 @@
 
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
-from conan.tools.files import get, copy
+from conan.tools.files import get, copy, save
 import os
 
 
@@ -69,11 +69,13 @@ class IgscConan(ConanFile):
     def package(self):
         cmake = CMake(self)
         cmake.install()
-        
-        # Copy license
-        copy(self, "COPYING", 
-             src=self.source_folder, 
-             dst=os.path.join(self.package_folder, "licenses"))
+
+        license_dst = os.path.join(self.package_folder, "licenses")
+
+        # Try to copy license file from source (may be named COPYING, LICENSE, or LICENSE.txt)
+        for name in ("COPYING", "LICENSE", "LICENSE.txt"):
+            copy(self, name, src=self.source_folder, dst=license_dst)
+
     
     def package_info(self):
         # Main library

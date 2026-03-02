@@ -1,7 +1,8 @@
 # Copyright (C) 2025-2026 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-from conan import ConanFile 
+from conan import ConanFile
+from conan.tools.files import copy
 from conan.tools.meson import MesonToolchain
 from conan.tools.gnu import PkgConfigDeps
 import os
@@ -82,3 +83,9 @@ class XpumConan(ConanFile):
             tc.project_options["use_system_igsc"] = False
             
         tc.generate()
+
+        # Collect license files from all host dependencies into THIRD_PARTY_LICENSES/.
+        for dep in self.dependencies.host.values():
+            src = os.path.join(dep.package_folder, "licenses")
+            dst = os.path.join(self.recipe_folder, "THIRD_PARTY_LICENSES", dep.ref.name)
+            copy(self, "*", src, dst)

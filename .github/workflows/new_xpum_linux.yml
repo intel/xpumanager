@@ -128,6 +128,10 @@ jobs:
 
           # Install dependencies (should use cached packages or build if needed)
           conan install . --build=missing -s build_type=${{ matrix.build_type.buildtype == 'debug' && 'Debug' || 'Release' }}
+          if [ -n "$(git status --porcelain THIRD_PARTY_LICENSES/)" ]; then
+            echo "THIRD_PARTY_LICENSES/ is out of date. Run 'conan install' locally and commit the changes."
+            exit 1
+          fi
       - name: Setup Meson build directory (${{ matrix.build_type.name }})
         run: |
           echo "Setting up build directory..."
