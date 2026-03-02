@@ -228,9 +228,9 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
 	// so their values are assumed to wrap at full type width
-	timeDiff := u64CounterDiff(stats.Timestamp, d.state.pciStats.Timestamp)
-	rxDiff := u64CounterDiff(stats.RxCounter, d.state.pciStats.RxCounter)
-	txDiff := u64CounterDiff(stats.TxCounter, d.state.pciStats.TxCounter)
+	timeDiff := u64CounterDiff(d.state.pciStats.Timestamp, stats.Timestamp)
+	rxDiff := u64CounterDiff(d.state.pciStats.RxCounter, stats.RxCounter)
+	txDiff := u64CounterDiff(d.state.pciStats.TxCounter, stats.TxCounter)
 	d.state.pciStats = &stats
 
 	if timeDiff == 0 {
