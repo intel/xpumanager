@@ -11,6 +11,7 @@ Intel(R) XPU System Management Interface (XPU-SMI) is a command line interface (
 * Monitoring:
 	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory throughput, errors
 	* GPU health – memory, power, temperature, fabric port, etc.
+	* [GPU metric exporter daemon](xpumd/README.md)
 * Diagnostics:
 	* 3 levels of GPU diagnostic tests
 	* Pre-check GPU hardware and driver critical issues
