@@ -6,6 +6,8 @@
 
 #include "cmd_diag.h"
 #include "debug.h"
+#include "table_builder.h"
+#include <format>
 #include <pci.h>
 #include <power.h>
 #include <chrono>
@@ -114,65 +116,52 @@ std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevel
 };
 
 /**
- * @brief Prints a dashed line with dynamic column widths.
+ * @brief Wraps text to fit within specified width, returning lines.
  *
- */
-static void printPretty(size_t col1Width, size_t col2Width)
-{
-	PRINT("+%s+%s+\n", std::string(col1Width + 2, '-').c_str(), std::string(col2Width + 2, '-').c_str());
-}
-
-/**
- * @brief Prints a line with two input column values using dynamic widths.
+ * Splits text at word boundaries to fit within maxWidth. Continuation
+ * lines are indented by 2 spaces.
  *
+ * @param[in] text Text to wrap.
+ * @param[in] maxWidth Maximum width per line.
+ * @return Vector of wrapped lines.
  */
-static void printValue(const std::string &value1, const std::string &value2, size_t col1Width, size_t col2Width)
-{
-	PRINT("| %-*s | %-*s |\n", static_cast<int>(col1Width), value1.c_str(), static_cast<int>(col2Width),
-		  value2.c_str());
-}
-
-/**
- * @brief Wraps text to fit within specified width and prints multiple lines with dynamic column widths.
- *
- */
-static void printWrappedValue(std::string_view value1, std::string_view value2, size_t col1Width, size_t col2Width)
+static std::vector<std::string> wrapText(std::string_view text, size_t maxWidth)
 {
 	constexpr size_t indentSize = 2;
+	constexpr size_t minWidth = indentSize + 1;
+	std::vector<std::string> lines;
 
-	if (value2.length() <= col2Width) {
-		printValue(std::string(value1), std::string(value2), col1Width, col2Width);
-		return;
+	if (maxWidth < minWidth) {
+		maxWidth = minWidth;
 	}
 
-	// Wrap text at word boundaries
-	std::vector<std::string> lines;
-	std::string_view remaining = value2;
+	if (text.length() <= maxWidth) {
+		lines.emplace_back(text);
+		return lines;
+	}
+
+	std::string_view remaining = text;
 	bool firstLine = true;
 
 	while (!remaining.empty()) {
-		const size_t lineWidth = firstLine ? col2Width : (col2Width - indentSize);
+		const size_t lineWidth = firstLine ? maxWidth : (maxWidth - indentSize);
 
 		if (remaining.length() <= lineWidth) {
-			// Remaining text fits
 			lines.push_back(std::format("{}{}", firstLine ? "" : "  ", remaining));
 			break;
 		}
 
-		// Find last space before width limit
 		size_t breakPos = remaining.rfind(' ', lineWidth);
 		if (breakPos == std::string_view::npos || breakPos == 0) {
-			breakPos = lineWidth; // Force break if no space found
+			breakPos = lineWidth;
 		}
 
 		auto line = remaining.substr(0, breakPos);
-		// Trim trailing spaces from the line
 		if (auto lastNonSpace = line.find_last_not_of(' '); lastNonSpace != std::string_view::npos) {
 			line = line.substr(0, lastNonSpace + 1);
 		}
 		lines.push_back(std::format("{}{}", firstLine ? "" : "  ", line));
 
-		// Move past the break point and trim leading spaces
 		remaining = remaining.substr(breakPos);
 		if (auto firstNonSpace = remaining.find_first_not_of(' '); firstNonSpace != std::string_view::npos) {
 			remaining = remaining.substr(firstNonSpace);
@@ -183,23 +172,8 @@ static void printWrappedValue(std::string_view value1, std::string_view value2, 
 		firstLine = false;
 	}
 
-	if (!lines.empty()) {
-		printValue(std::string(value1), lines[0], col1Width, col2Width);
-		for (const auto &line : lines | std::views::drop(1)) {
-			printValue("", line, col1Width, col2Width);
-		}
-	}
+	return lines;
 }
-
-/**
-* @brief Prints a line with four input column values.
-t *
-*/
-static void printErrorValues(const std::string &value1, const std::string &value2, const std::string &value3,
-							 const std::string &value4)
-{
-	PRINT("| %-10s | %-35s | %-25s| %-21s|\n", value1.c_str(), value2.c_str(), value3.c_str(), value4.c_str());
-};
 
 /**
  * @brief Adds help commands to the provided help list.
@@ -1323,115 +1297,129 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	};
 
 	// Calculate required column widths based on content
-	size_t maxCol1Width = 15;		   // Minimum width
-	constexpr size_t totalWidth = 100; // Total table width
+	constexpr int totalWidth = 100;	  // Total table width
+	constexpr int borderOverhead = 5; // Borders and padding (| + space on each side + |)
+	constexpr int minCol2Width = 20;  // Minimum second column width
+	int maxCol1Width = 15;			  // Minimum first column width
 
 	if (jsonObj->contains("level")) {
-		// Check header field names
 		static const std::vector<std::string> headerFields = {"device_id", "level", "result", "component_count"};
 		for (const auto &field : headerFields) {
 			if (jsonObj->contains(field)) {
-				maxCol1Width = std::max(maxCol1Width, getKeyDisplayName(field).length());
+				maxCol1Width = std::max(maxCol1Width, static_cast<int>(getKeyDisplayName(field).length()));
 			}
 		}
-
-		// Check component type names
 		for (const auto &component : (*jsonObj)["component_list"]) {
 			const std::string componentType = valueToString(component["component_type"]);
-			const std::string friendlyName = getKeyDisplayName(componentType);
-			maxCol1Width = std::max(maxCol1Width, friendlyName.length());
+			maxCol1Width = std::max(maxCol1Width, static_cast<int>(getKeyDisplayName(componentType).length()));
 		}
 
-		const size_t col2Width = totalWidth - maxCol1Width - 5; // 5 for borders and spaces
+		const int col1 = maxCol1Width;
+		const int col2 = std::max(minCol2Width, totalWidth - maxCol1Width - borderOverhead);
 
-		printPretty(maxCol1Width, col2Width);
-		// Print only specific header fields in order
-		bool firstField = true;
+		TableBuilder table;
+		table.addColumn(getKeyDisplayName("device_id"), col1);
+		table.addColumn(jsonObj->contains("device_id") ? valueToString((*jsonObj)["device_id"]) : "", col2);
+
+		// Print remaining header fields (device_id is already the column header)
 		for (const auto &field : headerFields) {
-			if (jsonObj->contains(field)) {
-				const std::string displayKey = getKeyDisplayName(field);
-				printValue(displayKey, valueToString((*jsonObj)[field]), maxCol1Width, col2Width);
-				if (firstField) {
-					printPretty(maxCol1Width, col2Width);
-					firstField = false;
-				}
+			if (field != "device_id" && jsonObj->contains(field)) {
+				table.addRow(getKeyDisplayName(field), valueToString((*jsonObj)[field]));
 			}
 		}
 
-		printPretty(maxCol1Width, col2Width);
-		// Handle JSON object with device_list field - print device information in a formatted table-like structure
-		for (const auto &component : (*jsonObj)["component_list"]) {
-			// For the first item, print it as the main device identifier
+		table.addSeparator(BorderStyle::Normal);
+
+		// Print components with word-wrapped messages
+		const auto &componentList = (*jsonObj)["component_list"];
+		for (size_t i = 0; i < componentList.size(); ++i) {
+			const auto &component = componentList[i];
 			const std::string componentType = valueToString(component["component_type"]);
 			const std::string friendlyName = getKeyDisplayName(componentType);
-			const std::string resultInfo = "Result: " + valueToString(component["result"]);
-			printValue(friendlyName, resultInfo, maxCol1Width, col2Width);
-			const std::string messageInfo = "Message: " + valueToString(component["message"]);
-			printWrappedValue("", messageInfo, maxCol1Width, col2Width);
-			printPretty(maxCol1Width, col2Width);
-		}
-	} else if (jsonObj->contains("device_id")) {
-		// Check device_id field name
-		maxCol1Width = std::max(maxCol1Width, getKeyDisplayName("device_id").length());
-
-		// Check component type names
-		for (const auto &component : (*jsonObj)["component_list"]) {
-			const std::string componentType = valueToString(component["component_type"]);
-			const std::string friendlyName = getKeyDisplayName(componentType);
-			maxCol1Width = std::max(maxCol1Width, friendlyName.length());
-		}
-
-		const size_t col2Width = totalWidth - maxCol1Width - 5;
-
-		printPretty(maxCol1Width, col2Width);
-		// Print Device ID header
-		const std::string displayKey = getKeyDisplayName("device_id");
-		printValue(displayKey, valueToString((*jsonObj)["device_id"]), maxCol1Width, col2Width);
-		printPretty(maxCol1Width, col2Width);
-
-		// Print each component in table format
-		for (const auto &component : (*jsonObj)["component_list"]) {
-			const std::string componentType = valueToString(component["component_type"]);
-			const std::string friendlyName = getKeyDisplayName(componentType);
-			const std::string resultInfo = std::format("Result: {}", valueToString(component["result"]));
-			printValue(friendlyName, resultInfo, maxCol1Width, col2Width);
+			table.addRow(friendlyName, std::format("Result: {}", valueToString(component["result"])));
 			const std::string messageInfo = std::format("Message: {}", valueToString(component["message"]));
-			printWrappedValue("", messageInfo, maxCol1Width, col2Width);
-			printPretty(maxCol1Width, col2Width);
-		}
-	} else if (jsonObj->contains("error_type_list")) {
-		const size_t col2Width = totalWidth - maxCol1Width;
-		printPretty(maxCol1Width - 5, col2Width);
-		printErrorValues("Error ID", "Error Type", "Error Category", "Error Severity");
-		printPretty(maxCol1Width - 5, col2Width);
-		for (const auto &component : (*jsonObj)["error_type_list"]) {
-			printErrorValues(valueToString(component["error_id"]), valueToString(component["error_type"]),
-							 valueToString(component["error_category"]), valueToString(component["error_severity"]));
-			printPretty(maxCol1Width - 5, col2Width);
+			const auto wrappedLines = wrapText(messageInfo, static_cast<size_t>(col2));
+			for (const auto &line : wrappedLines) {
+				table.addRow("", line);
+			}
+			if (i + 1 < componentList.size()) {
+				table.addSeparator(BorderStyle::Normal);
+			}
 		}
 
-	} else if (jsonObj->contains("component_list")) {
-		const size_t col2Width = totalWidth - maxCol1Width - 25;
-		printPretty(maxCol1Width, col2Width);
-		printValue("Component", "Details", maxCol1Width, col2Width);
-		printPretty(maxCol1Width, col2Width);
-		for (auto &component : (*jsonObj)["component_list"]) {
-			if (component["type"].get<std::string>() == "Driver") {
-				printValue(component["type"].get<std::string>(),
-						   std::format("Status: {}", component["status"].get<std::string>()), maxCol1Width, col2Width);
-			} else if (component["type"].get<std::string>() == "CPU") {
-				printValue(component["type"].get<std::string>(),
-						   std::format("CPU ID: {}", component["id"].get<std::string>()), maxCol1Width, col2Width);
-				printValue("", std::format("Status: {}", component["status"].get<std::string>()), maxCol1Width,
-						   col2Width);
-			} else if (component["type"].get<std::string>() == "GPU") {
-				printValue(component["type"].get<std::string>(),
-						   std::format("BDF: {}", component["bdf"].get<std::string>()), maxCol1Width, col2Width);
-				printValue("", std::format("Status: {}", component["status"].get<std::string>()), maxCol1Width,
-						   col2Width);
-			}
-			printPretty(maxCol1Width, col2Width);
+		PRINT("%s", table.toString().c_str());
+	} else if (jsonObj->contains("device_id")) {
+		maxCol1Width = std::max(maxCol1Width, static_cast<int>(getKeyDisplayName("device_id").length()));
+		for (const auto &component : (*jsonObj)["component_list"]) {
+			const std::string componentType = valueToString(component["component_type"]);
+			maxCol1Width = std::max(maxCol1Width, static_cast<int>(getKeyDisplayName(componentType).length()));
 		}
+
+		const int col1 = maxCol1Width;
+		const int col2 = std::max(minCol2Width, totalWidth - maxCol1Width - borderOverhead);
+
+		TableBuilder table;
+		table.addColumn(getKeyDisplayName("device_id"), col1);
+		table.addColumn(valueToString((*jsonObj)["device_id"]), col2);
+
+		const auto &componentList = (*jsonObj)["component_list"];
+		for (size_t i = 0; i < componentList.size(); ++i) {
+			const auto &component = componentList[i];
+			const std::string componentType = valueToString(component["component_type"]);
+			const std::string friendlyName = getKeyDisplayName(componentType);
+			table.addRow(friendlyName, std::format("Result: {}", valueToString(component["result"])));
+			const std::string messageInfo = std::format("Message: {}", valueToString(component["message"]));
+			const auto wrappedLines = wrapText(messageInfo, static_cast<size_t>(col2));
+			for (const auto &line : wrappedLines) {
+				table.addRow("", line);
+			}
+			if (i + 1 < componentList.size()) {
+				table.addSeparator(BorderStyle::Normal);
+			}
+		}
+
+		PRINT("%s", table.toString().c_str());
+	} else if (jsonObj->contains("error_type_list")) {
+		TableBuilder table;
+		table.addColumn("Error ID", 10);
+		table.addColumn("Error Type", 35);
+		table.addColumn("Error Category", 25);
+		table.addColumn("Error Severity", 21);
+
+		for (const auto &component : (*jsonObj)["error_type_list"]) {
+			table.addRow(valueToString(component["error_id"]), valueToString(component["error_type"]),
+						 valueToString(component["error_category"]), valueToString(component["error_severity"]));
+		}
+
+		PRINT("%s", table.toString().c_str());
+	} else if (jsonObj->contains("component_list")) {
+		const int col2 = std::max(minCol2Width, totalWidth - maxCol1Width - 25);
+
+		TableBuilder table;
+		table.addColumn("Component", maxCol1Width);
+		table.addColumn("Details", col2);
+
+		const auto &componentList = (*jsonObj)["component_list"];
+		for (size_t i = 0; i < componentList.size(); ++i) {
+			const auto &component = componentList[i];
+			if (component["type"].get<std::string>() == "Driver") {
+				table.addRow(component["type"].get<std::string>(),
+							 std::format("Status: {}", component["status"].get<std::string>()));
+			} else if (component["type"].get<std::string>() == "CPU") {
+				table.addRow(component["type"].get<std::string>(),
+							 std::format("CPU ID: {}", component["id"].get<std::string>()));
+				table.addRow("", std::format("Status: {}", component["status"].get<std::string>()));
+			} else if (component["type"].get<std::string>() == "GPU") {
+				table.addRow(component["type"].get<std::string>(),
+							 std::format("BDF: {}", component["bdf"].get<std::string>()));
+				table.addRow("", std::format("Status: {}", component["status"].get<std::string>()));
+			}
+			if (i + 1 < componentList.size()) {
+				table.addSeparator(BorderStyle::Normal);
+			}
+		}
+
+		PRINT("%s", table.toString().c_str());
 	}
 }
 
