@@ -10,7 +10,6 @@
 #include <vector>
 #include <string>
 #include "pldm.h"
-#include "redfish.h"
 
 enum amcErrCodes
 {
@@ -36,7 +35,6 @@ private:
 	pldm **pldmobj;
 	std::vector<amcCardInfo> *amcDeviceList;
 	int numCards;
-	redfish redfishObj;
 
 public:
 	amclib();
@@ -52,10 +50,6 @@ public:
 	int amcGetSerialNumber(uint8_t card_num, char *serialNumber, size_t *bufferSize);
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
 	int amcGpuReset(uint32_t cardNum);
-	int redfishInitialize(const std::string &ip, const std::string &username, const std::string &password,
-						  uint16_t port = 443);
-	int redfishDiscovery(RedfishGPUDevice **gpuDevices, int *foundCount); // Dynamically allocate and return GPU devices
-	void freeGpuDevices(RedfishGPUDevice *gpuDevices);					  // Free dynamically allocated GPU devices
 };
 
 #endif

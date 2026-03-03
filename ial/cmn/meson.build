@@ -13,7 +13,6 @@ ial_cmn_sources = files(
   'cmd_group.cpp',
   'cmd_health.cpp',
   'cmd_log.cpp',
-  'cmd_oob.cpp',
   'cmd_policy.cpp',
   'cmd_ps.cpp',
   'cmd_stats.cpp',

@@ -15,7 +15,6 @@
 #include <cmd_group.h>
 #include <cmd_health.h>
 #include <cmd_log.h>
-#include <cmd_oob.h>
 #include <cmd_policy.h>
 #include <cmd_ps.h>
 #include <cmd_stats.h>
@@ -239,7 +238,6 @@ int main(int argc, char *argv[])
 		{createInstance<cmdStats>, DAEMONCAP::BOTH, OSTYPE::BOTH},
 		{createInstance<cmdDump>, DAEMONCAP::BOTH, OSTYPE::BOTH},
 		{createInstance<cmdLogs>, DAEMONCAP::BOTH, OSTYPE::LINUX},
-		{createInstance<cmdOOB>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 		{createInstance<cmdGroup>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 		{createInstance<cmdPolicy>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::LINUX},

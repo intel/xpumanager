@@ -72,10 +72,6 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(SUB_HEADING, "and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer)"));
 	helpList.push_back(helpCmd(HEADING, "-f,--file                   The firmware image file path on this server"));
-	helpList.push_back(
-		helpCmd(HEADING, "-u,--username               Username used to authenticate for host redfish access"));
-	helpList.push_back(
-		helpCmd(HEADING, "-p,--password               Password used to authenticate for host redfish access"));
 	helpList.push_back(helpCmd(
 		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList.push_back(helpCmd(
@@ -113,14 +109,12 @@ int cmdUpdateFW::run(arg_struct *args)
 	std::vector<std::thread> workers;
 	int opt;
 	int optionIndex = 0;
-	const char *optString = "hjd:t:f:u:p:y";
+	const char *optString = "hjd:t:f:y";
 	struct option longOpts[] = {{"help", no_argument, nullptr, 'h'},
 								{"json", no_argument, nullptr, 'j'},
 								{"device", required_argument, nullptr, 'd'},
 								{"type", required_argument, nullptr, 't'},
 								{"file", required_argument, nullptr, 'f'},
-								{"username", required_argument, nullptr, 'u'},
-								{"password", required_argument, nullptr, 'p'},
 								{"assumeyes", no_argument, nullptr, 'y'},
 								{"force", no_argument, nullptr, 0},
 								{"recovery", no_argument, nullptr, 0},
@@ -146,12 +140,6 @@ int cmdUpdateFW::run(arg_struct *args)
 			break;
 		case 'f':
 			fwInfo.filePath = optarg;
-			break;
-		case 'u':
-			fwInfo.username = optarg;
-			break;
-		case 'p':
-			fwInfo.password = optarg;
 			break;
 		case 'y':
 			fwInfo.assumeYes = true;

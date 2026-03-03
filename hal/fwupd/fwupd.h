@@ -66,8 +66,6 @@ struct firmwareInfo
 	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
 	std::string firmwareType; // This is the string representation of fwType
 	std::string filePath;
-	std::string username;
-	std::string password;
 	device *dev;
 	fwupdPreference preference;
 	uint32_t totalThreads;
