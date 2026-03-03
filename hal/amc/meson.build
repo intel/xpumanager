@@ -20,7 +20,6 @@ amc_sources = files(
   'pldm_amc_gpu_reset.cpp',
   'oem_vrsync.cpp',
   'amclib.cpp',
-  'redfish.cpp',
   'pldm_fru.cpp',
   'pldm_fru_helper.cpp',
   'pldm_fru_resp.cpp',
