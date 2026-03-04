@@ -575,18 +575,24 @@ ze_result_t power::setSustainedLimit(uint32_t limitMw, int32_t tileId)
  */
 ze_result_t power::setBurstLimit(uint32_t limitMw)
 {
+	ze_result_t firstError = ZE_RESULT_ERROR_UNKNOWN;
+	bool foundRootDomain = false;
+
 	for (uint32_t i = 0; i < powerCount; ++i) {
 		zes_power_properties_t props = {};
 		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
 		props.pNext = nullptr;
 		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			if (firstError == ZE_RESULT_ERROR_UNKNOWN) {
+				firstError = res;
+			}
 			continue;
 		}
 
 		// Only apply to device-level power domains
 		if (!props.onSubdevice) {
+			foundRootDomain = true;
 			zes_power_burst_limit_t burst = {};
 			burst.enabled = true;
 			burst.power = limitMw;
@@ -595,8 +601,20 @@ ze_result_t power::setBurstLimit(uint32_t limitMw)
 			if (res == ZE_RESULT_SUCCESS) {
 				return res;
 			}
-			ERR("Failed to set burst limit. 0x%X (%s)\n", res, l0_error_to_string(res));
+			if (firstError == ZE_RESULT_ERROR_UNKNOWN) {
+				firstError = res;
+			}
 		}
+	}
+
+	if (!foundRootDomain) {
+		ERR("No matching device-level power domain found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (firstError != ZE_RESULT_ERROR_UNKNOWN) {
+		ERR("Failed to set burst limit. 0x%X (%s)\n", firstError, l0_error_to_string(firstError));
+		return firstError;
 	}
 
 	return ZE_RESULT_ERROR_UNKNOWN;
@@ -615,18 +633,24 @@ ze_result_t power::setBurstLimit(uint32_t limitMw)
  */
 ze_result_t power::setPeakLimit(uint32_t limitAcMw, uint32_t limitDcMw)
 {
+	ze_result_t firstError = ZE_RESULT_ERROR_UNKNOWN;
+	bool foundRootDomain = false;
+
 	for (uint32_t i = 0; i < powerCount; ++i) {
 		zes_power_properties_t props = {};
 		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
 		props.pNext = nullptr;
 		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get power properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+			if (firstError == ZE_RESULT_ERROR_UNKNOWN) {
+				firstError = res;
+			}
 			continue;
 		}
 
 		// Only apply to device-level power domains
 		if (!props.onSubdevice) {
+			foundRootDomain = true;
 			zes_power_peak_limit_t peak = {};
 			peak.powerAC = limitAcMw;
 			peak.powerDC = limitDcMw;
@@ -635,8 +659,20 @@ ze_result_t power::setPeakLimit(uint32_t limitAcMw, uint32_t limitDcMw)
 			if (res == ZE_RESULT_SUCCESS) {
 				return res;
 			}
-			ERR("Failed to set peak limit. 0x%X (%s)\n", res, l0_error_to_string(res));
+			if (firstError == ZE_RESULT_ERROR_UNKNOWN) {
+				firstError = res;
+			}
 		}
+	}
+
+	if (!foundRootDomain) {
+		ERR("No matching device-level power domain found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (firstError != ZE_RESULT_ERROR_UNKNOWN) {
+		ERR("Failed to set peak limit. 0x%X (%s)\n", firstError, l0_error_to_string(firstError));
+		return firstError;
 	}
 
 	return ZE_RESULT_ERROR_UNKNOWN;
@@ -674,7 +710,9 @@ ze_result_t power::getLimitsExt(std::vector<PowerLimitExt> &limits)
 			uint32_t limitCount = 0;
 			res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, nullptr);
 			if (res != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get extended power limits count. 0x%X (%s)\n", res, l0_error_to_string(res));
+				if (res != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+					ERR("Failed to get extended power limits count. 0x%X (%s)\n", res, l0_error_to_string(res));
+				}
 				continue;
 			}
 
