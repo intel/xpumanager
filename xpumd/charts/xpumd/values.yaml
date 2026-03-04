@@ -1,7 +1,7 @@
 # @schema additionalProperties:false
 image:
   # -- Image repository
-  repository: ghcr.io/intel/xpumd/xpumd
+  repository: ghcr.io/intel/xpumanager/xpumd
   # @schema enum: [Always, IfNotPresent, Never]
   # -- Image pull policy
   pullPolicy: Always

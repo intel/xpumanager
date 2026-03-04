@@ -115,8 +115,8 @@ The device info exporter is enabled by the default configuration file
 Clone the repository and build the daemon.
 
 ```bash
-git clone https://github.com/intel/xpumd xpumd
-cd xpumd
+git clone https://github.com/intel/xpumanager
+cd xpumanager/xpumd
 make build
 ```
 

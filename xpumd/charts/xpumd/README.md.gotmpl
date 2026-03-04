@@ -41,7 +41,7 @@ kubectl label ns intel-xpumd resource.kubernetes.io/admin-access=true
 Install the chart:
 
 ```bash
-helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --version 0.0.0-main \
   --set gpuAccess=MODE \
