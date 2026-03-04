@@ -37,7 +37,7 @@ kubectl label ns intel-xpumd resource.kubernetes.io/admin-access=true
 Install the chart:
 
 ```bash
-helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --version 0.0.0-main \
   --set gpuAccess=MODE \
@@ -111,7 +111,7 @@ See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector.
 | grafana.dashboards | bool | `false` | Install XPUMD dashboard(s) for Grafana |
 | grafana.namespace | string | `"monitoring"` | Namespace for Grafana install. Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
-| image.repository | string | `"ghcr.io/intel/xpumd/xpumd"` | Image repository |
+| image.repository | string | `"ghcr.io/intel/xpumanager/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
 | nameOverride | string | `""` | Override the chart name |

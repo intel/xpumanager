@@ -81,7 +81,7 @@ helm install xpumd charts/xpumd \
 From ghcr.io registry:
 
 ```bash
-helm install xpumd oci://ghcr.io/intel/xpumd/charts/xpumd \
+helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
   --set imagePullSecrets[0].name=ghcr-secret \
   --set config.exporters.otlp.endpoint="otel-collector-opentelemetry-collector.default.svc.cluster.local:4317" \
   --set config.exporters.otlp.tls.insecure=true \
