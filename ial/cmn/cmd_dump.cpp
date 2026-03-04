@@ -21,6 +21,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <memory>
 
 static std::unordered_map<dumpCmdType, dumpCmdStruct> dumpCmds = {
 	{dumpCmdType::DUMP_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
@@ -1549,10 +1550,11 @@ int cmdDump::run(arg_struct *args)
 	std::vector<struct option> longOptsVec;
 	std::string header;
 	bool first = true;
-	std::atomic<bool> running{true};
+	auto running = std::make_shared<std::atomic<bool>>(true);
 	int total = 0, iter = -1;
 	std::chrono::milliseconds interval = DEFAULT_INTERVAL;
 	std::thread inputThread;
+	auto inputThreadExited = std::make_shared<std::atomic<bool>>(false);
 	bool showDate = false;
 
 	// If the user didn't provide any arguments, show help
@@ -1782,7 +1784,8 @@ int cmdDump::run(arg_struct *args)
 		// Write header to file
 		dumpFile << header << std::endl;
 		if (!dumpCmds[dumpCmdType::DUMP_TIME].enabled && STDIN_ISATTY()) {
-			PRINT("Dump data to file %s. Press 'q' or ESC to stop dumping.\n",
+			PRINT("Dump data to file %s. Press 'q' or ESC to stop dumping. On some systems, Ctrl+C may terminate the "
+				  "program immediately.\n",
 				  dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
 		} else {
 			PRINT("Dump data to file %s.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
@@ -1806,16 +1809,17 @@ int cmdDump::run(arg_struct *args)
 		STDIN_ISATTY() && ((iter < 0 && !useFile) || (useFile && !dumpCmds[dumpCmdType::DUMP_TIME].enabled));
 
 	if (shouldStartInputThread) {
-		inputThread = std::thread([&running]() {
+		inputThread = std::thread([running, inputThreadExited]() {
 			char ch;
-			while (running) {
+			while (running->load()) {
 				ch = GETCH();
-				// Accept 'q', 'Q', or ESC key to stop dumping
-				if (ch == 'q' || ch == 'Q' || ch == 27) {
-					running = false;
+				// Accept 'q', 'Q', ESC, or Ctrl+C key to stop dumping
+				if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
+					running->store(false);
 					break;
 				}
 			}
+			inputThreadExited->store(true);
 		});
 	}
 
@@ -1827,7 +1831,7 @@ int cmdDump::run(arg_struct *args)
 	// Always do warm-up iteration for all cases including -n 1
 	bool skipOutput = true;
 
-	while (running) {
+	while (running->load()) {
 		total = 0;
 
 		// Iterate through the device list and create a thread called metrics for each device
@@ -1884,7 +1888,7 @@ int cmdDump::run(arg_struct *args)
 			if (iter > 0) {
 				iter--;
 				if (iter == 0) {
-					running = false; // Stop the loop after the specified number of iterations
+					running->store(false); // Stop the loop after the specified number of iterations
 				}
 			}
 		} else {
@@ -1899,7 +1903,7 @@ int cmdDump::run(arg_struct *args)
 			auto currentTime = std::chrono::steady_clock::now();
 			auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
 			if (elapsedSeconds >= dumpTotalTime) {
-				running = false; // Stop the loop after the specified time
+				running->store(false); // Stop the loop after the specified time
 			}
 		}
 	}
@@ -1911,17 +1915,13 @@ int cmdDump::run(arg_struct *args)
 	}
 
 	// Clean up input thread
-	// Note: If the thread is still blocked on GETCH() (time limit or iteration count reached),
-	// we must detach it as joining would block indefinitely. The thread will terminate when
-	// the process exits, which is acceptable since this is the final cleanup before program termination.
+	// If the thread has already exited (user key press), join it.
+	// If it is still blocked on GETCH() (time limit or iteration count reached), detach it.
 	if (inputThread.joinable()) {
-		if (!running) {
-			// Loop stopped by time limit or iteration count - thread may still be blocked on GETCH()
-			// Detaching is necessary to avoid blocking indefinitely on join()
-			inputThread.detach();
-		} else {
-			// User pressed ESC key - thread has exited, safe to join
+		if (inputThreadExited->load()) {
 			inputThread.join();
+		} else {
+			inputThread.detach();
 		}
 	}
 
