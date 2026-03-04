@@ -21,6 +21,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <unordered_set>
 #include <memory>
 
 static std::unordered_map<dumpCmdType, dumpCmdStruct> dumpCmds = {
@@ -1640,10 +1641,74 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// --file requires --metrics
+	if (dumpCmds[dumpCmdType::DUMP_FILE].enabled && !dumpCmds[dumpCmdType::DUMP_METRICS].enabled) {
+		ERR("--file requires --metrics\n");
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Parse and validate metric IDs once, while preserving user-specified order.
+	std::vector<int> metricIds;
+	std::vector<std::string> dumpArgs;
+	if (dumpCmds[dumpCmdType::DUMP_METRICS].enabled) {
+		std::stringstream ss(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
+		std::string token;
+		std::unordered_set<int> seenMetricIds;
+		std::vector<int> duplicatedMetricIds;
+		std::unordered_set<int> reportedDuplicatedMetricIds;
+
+		while (getline(ss, token, ',')) {
+			// Trim whitespaces around metric id token
+			auto begin = token.find_first_not_of(" \t\r\n");
+			auto end = token.find_last_not_of(" \t\r\n");
+			std::string trimmed = (begin == std::string::npos) ? "" : token.substr(begin, end - begin + 1);
+
+			int metricId;
+			try {
+				size_t pos = 0;
+				metricId = stoi(trimmed, &pos);
+				if (pos != trimmed.size()) {
+					throw std::invalid_argument("trailing characters");
+				}
+			} catch (const std::exception &) {
+				ERR("The following metric ID was not expected: '%s'.\n", trimmed.c_str());
+				ERR("Run with --help for more information.\n");
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+
+			if (seenMetricIds.count(metricId)) {
+				if (reportedDuplicatedMetricIds.insert(metricId).second) {
+					duplicatedMetricIds.push_back(metricId);
+				}
+				continue;
+			}
+
+			seenMetricIds.insert(metricId);
+			dumpArgs.push_back(trimmed);
+			metricIds.push_back(metricId);
+		}
+
+		if (!duplicatedMetricIds.empty()) {
+			for (const auto duplicateMetricId : duplicatedMetricIds) {
+				ERR("Duplicate metric ID: %d.\n", duplicateMetricId);
+			}
+			ERR("Run with --help for more information.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
 	// If the user specified the -n /--number option, we need to check if it is a valid positive integer.
 	if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
-		iter = stoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val);
-		if (iter <= 0) {
+		try {
+			size_t pos = 0;
+			iter = stoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val, &pos);
+			if (pos != dumpCmds[dumpCmdType::DUMP_NUMBER].val.size() || iter <= 0) {
+				ERR("Invalid value for -n/--number: '%s'. Must be a positive integer.\n",
+					dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+		} catch (const std::exception &) {
 			ERR("Invalid value for -n/--number: '%s'. Must be a positive integer.\n",
 				dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -1653,7 +1718,11 @@ int cmdDump::run(arg_struct *args)
 	// If the user specified an interval with -i / --interval, we need to check if it is a valid positive integer.
 	if (dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled) {
 		try {
-			int intervalSecValue = stoi(dumpCmds[dumpCmdType::DUMP_INTERVAL].val);
+			size_t pos = 0;
+			int intervalSecValue = stoi(dumpCmds[dumpCmdType::DUMP_INTERVAL].val, &pos);
+			if (pos != dumpCmds[dumpCmdType::DUMP_INTERVAL].val.size()) {
+				throw std::invalid_argument("trailing characters");
+			}
 			std::chrono::seconds intervalSec{intervalSecValue};
 
 			// intervalSec.count() now contains the parsed integer. Check for valid range
@@ -1673,7 +1742,11 @@ int cmdDump::run(arg_struct *args)
 	// If the user specified --ims option, we need to check if it is a valid integer between 10 and 1000
 	if (dumpCmds[dumpCmdType::DUMP_IMS].enabled) {
 		try {
-			int msIntervalValue = stoi(dumpCmds[dumpCmdType::DUMP_IMS].val);
+			size_t pos = 0;
+			int msIntervalValue = stoi(dumpCmds[dumpCmdType::DUMP_IMS].val, &pos);
+			if (pos != dumpCmds[dumpCmdType::DUMP_IMS].val.size()) {
+				throw std::invalid_argument("trailing characters");
+			}
 
 			if (msIntervalValue < 10 || msIntervalValue > 1000) {
 				ERR("Invalid value for --ims: '%s'. Must be an integer between 10 and 1000.\n",
@@ -1698,7 +1771,11 @@ int cmdDump::run(arg_struct *args)
 	int64_t dumpTotalTime = -1;
 	if (dumpCmds[dumpCmdType::DUMP_TIME].enabled) {
 		try {
-			dumpTotalTime = stoll(dumpCmds[dumpCmdType::DUMP_TIME].val);
+			size_t pos = 0;
+			dumpTotalTime = stoll(dumpCmds[dumpCmdType::DUMP_TIME].val, &pos);
+			if (pos != dumpCmds[dumpCmdType::DUMP_TIME].val.size()) {
+				throw std::invalid_argument("trailing characters");
+			}
 
 			if (dumpTotalTime < 1 || dumpTotalTime > MAX_DUMP_TIME_SECONDS) {
 				ERR("Invalid value for --time: '%s'. Must be an integer between 1 and %lld.\n",
@@ -1732,14 +1809,6 @@ int cmdDump::run(arg_struct *args)
 		return result;
 	}
 
-	// Split the dump command argument by commas
-	std::stringstream ss(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
-	std::string token;
-	std::vector<std::string> dumpArgs;
-	while (getline(ss, token, ',')) {
-		dumpArgs.push_back(token);
-	}
-
 	// Check if only metric 21 is requested (not supported when used alone)
 	if (dumpArgs.size() == 1) {
 		try {
@@ -1755,12 +1824,6 @@ int cmdDump::run(arg_struct *args)
 
 	header = "Timestamp, DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
-	// Parse metric IDs once and then use direct lookup in dumpMetrics to maintain user-specified order
-	std::vector<int> metricIds;
-	metricIds.reserve(dumpArgs.size());
-	for (const auto &arg : dumpArgs) {
-		metricIds.push_back(stoi(arg));
-	}
 	for (const auto metricId : metricIds) {
 		auto it = dumpMetrics.find(metricId);
 		if (it != dumpMetrics.end() && it->second.func != nullptr) {
