@@ -378,35 +378,79 @@ static std::string getStandbyMode(devInfo *d, uint32_t tileId)
  */
 static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 {
-	std::string eccCurrent;
-	std::string eccPending;
-	ze_device_properties_t zeProps = {};
-	if (d->dev->getDevProps(d->deviceHdl, &zeProps) == ZE_RESULT_SUCCESS) {
-		if (zeProps.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
-			ecc *e = d->dev->getECC();
-			if (e != nullptr) {
-				zes_device_ecc_properties_t state = {};
-				if (e->getState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
-					eccCurrent = (state.currentState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
-					eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
-				}
-			}
+	std::string eccCurrent = "N/A";
+	std::string eccPending = "N/A";
+	ze_bool_t eccAvailable = false;
+	ze_result_t eccAvailRes = zesDeviceEccAvailable(d->zesDeviceHdl, &eccAvailable);
+	if (eccAvailRes == ZE_RESULT_SUCCESS && eccAvailable) {
+		zes_device_ecc_properties_t state = {};
+		if (zesDeviceGetEccState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
+			eccCurrent = (state.currentState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
+			eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
 		}
 	}
 
 	int plPackageSustain = 0;
+	int plPackageBurst = 0;
+	int plPackagePeak = 0;
+	int plCardSustain = 0;
+	int plCardBurst = 0;
+	int plCardPeak = 0;
 	std::string powerValidRange;
 	power *pwr = d->dev->getPower();
 	if (pwr != nullptr) {
-		std::vector<PowerLimitExt> limits;
-		if (pwr->getLimitsExt(limits) == ZE_RESULT_SUCCESS) {
-			for (const auto &limit : limits) {
-				if (limit.level == ZES_POWER_LEVEL_SUSTAINED) {
-					plPackageSustain = static_cast<int>(limit.limitMw / 1000);
-					break;
-				}
+		std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> domainLimits;
+		uint32_t powerCount = pwr->getPowerCount();
+		zes_pwr_handle_t *powerHandles = pwr->getPowerHandles();
+
+		for (uint32_t i = 0; i < powerCount; ++i) {
+			zes_power_properties_t props = {};
+			zes_power_ext_properties_t extProps = {};
+			zes_power_limit_ext_desc_t defaultLimit = {};
+
+			extProps.defaultLimit = &defaultLimit;
+			extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+			props.pNext = &extProps;
+			props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+
+			if (zesPowerGetProperties(powerHandles[i], &props) != ZE_RESULT_SUCCESS || props.onSubdevice) {
+				continue;
+			}
+
+			uint32_t limitCount = 0;
+			if (zesPowerGetLimitsExt(powerHandles[i], &limitCount, nullptr) != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+
+			std::vector<zes_power_limit_ext_desc_t> powerExtDescs(limitCount);
+			if (zesPowerGetLimitsExt(powerHandles[i], &limitCount, powerExtDescs.data()) != ZE_RESULT_SUCCESS) {
+				continue;
+			}
+
+			for (uint32_t j = 0; j < limitCount; j++) {
+				zes_power_level_t level = static_cast<zes_power_level_t>(powerExtDescs[j].level);
+				domainLimits[extProps.domain][level] = powerExtDescs[j].limit;
 			}
 		}
+
+		auto getLimitW = [&](zes_power_domain_t domain, zes_power_level_t level) -> int {
+			auto domainIt = domainLimits.find(domain);
+			if (domainIt == domainLimits.end()) {
+				return 0;
+			}
+			auto levelIt = domainIt->second.find(level);
+			if (levelIt == domainIt->second.end()) {
+				return 0;
+			}
+			return static_cast<int>(levelIt->second / 1000);
+		};
+
+		plCardSustain = getLimitW(ZES_POWER_DOMAIN_CARD, ZES_POWER_LEVEL_SUSTAINED);
+		plCardBurst = getLimitW(ZES_POWER_DOMAIN_CARD, ZES_POWER_LEVEL_BURST);
+		plCardPeak = getLimitW(ZES_POWER_DOMAIN_CARD, ZES_POWER_LEVEL_PEAK);
+		plPackageSustain = getLimitW(ZES_POWER_DOMAIN_PACKAGE, ZES_POWER_LEVEL_SUSTAINED);
+		plPackageBurst = getLimitW(ZES_POWER_DOMAIN_PACKAGE, ZES_POWER_LEVEL_BURST);
+		plPackagePeak = getLimitW(ZES_POWER_DOMAIN_PACKAGE, ZES_POWER_LEVEL_PEAK);
 	}
 	if (powerValidRange.empty()) {
 		powerValidRange = getPowerValidRange(d->zesDeviceHdl);
@@ -426,7 +470,12 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 	deviceJson["device_id"] = d->index;
 	deviceJson["memory_ecc_current_state"] = eccCurrent;
 	deviceJson["memory_ecc_pending_state"] = eccPending;
+	deviceJson["pl_card_sustain"] = plCardSustain;
+	deviceJson["pl_card_burst"] = plCardBurst;
+	deviceJson["pl_card_peak"] = plCardPeak;
 	deviceJson["pl_package_sustain"] = plPackageSustain;
+	deviceJson["pl_package_burst"] = plPackageBurst;
+	deviceJson["pl_package_peak"] = plPackagePeak;
 	deviceJson["power_valid_range"] = powerValidRange;
 
 	nlohmann::ordered_json tileConfigArray = nlohmann::ordered_json::array();
