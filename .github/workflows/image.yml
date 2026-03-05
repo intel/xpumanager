@@ -101,7 +101,7 @@ jobs:
         output: trivy-image-report.csv
 
     - name: Upload Trivy CSV report as artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: trivy-image-report
         path: trivy-image-report.csv
