@@ -30,7 +30,7 @@ type power struct {
 // powerState holds the dynamic runtime state of the power instance.
 type powerState struct {
 	hasLimits bool
-	counter   l0sysman.PowerEnergyCounter
+	counter   *l0sysman.PowerEnergyCounter
 }
 type powerAttribs struct {
 	hwID           string
@@ -77,7 +77,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 	// initial / previous counter value + check for counter working
 	counter, err := pwr.GetEnergyCounter()
 	if err != nil {
-		return nil, fmt.Errorf("power GetEnergyCounter() failed: %w", err)
+		return nil, fmt.Errorf("power GetEnergyCounter() failed, power metrics not available: %w", err)
 	}
 
 	p := &power{
@@ -92,7 +92,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		},
 		state: powerState{
 			hasLimits: true,
-			counter:   counter,
+			counter:   &counter,
 		},
 	}
 
@@ -110,9 +110,14 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 //   - Sysman timestamps are in microseconds & counter values are in microjoules
 //     https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-energy-counter-t
 func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if power.state.counter == nil {
+		return
+	}
+
 	counter, err := power.GetEnergyCounter()
 	if err != nil {
 		power.logger.Errorw("Power GetEnergyCounter() failed: power metrics disabled", zap.Error(err), "attributes", power.attribs)
+		power.state.counter = nil
 		return
 	}
 
@@ -133,7 +138,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// so their values are assumed to wrap at full type width
 	tdiff := u64CounterDiff(power.state.counter.Timestamp, counter.Timestamp)
 	ediff := u64CounterDiff(power.state.counter.Energy, counter.Energy)
-	power.state.counter = counter
+	power.state.counter = &counter
 	if tdiff == 0 {
 		return
 	}
