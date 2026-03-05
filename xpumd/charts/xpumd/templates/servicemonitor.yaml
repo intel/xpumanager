@@ -1,0 +1,31 @@
+{{- if .Values.prometheus.monitor -}}
+# API added by Prometheus installation
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "xpumd.fullname" . }}
+  # Should be found by Prometheus (installed by 'kube-prometheus')
+  # when it's either in same namespace, or uses same release name
+  labels:
+    release: {{ .Values.prometheus.release }}
+  #namespace: {{ .Values.prometheus.namespace }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "xpumd.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: http
+    interval: 5s
+    # drop common "0000." BDF label prefix for Dashboard readability
+    #metricRelabelings:
+    #- sourceLabels: [pci_bdf]
+    #  regex: '0000:(.+)'
+    #  replacement: '${1}'
+    #  targetLabel: pci_bdf
+    relabelings:
+    # simplify metric label names
+    - action: replace
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+{{- end }}
