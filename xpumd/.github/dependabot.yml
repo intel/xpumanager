@@ -1,0 +1,47 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    target-branch: main
+    directory: "/"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/processor"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/exporter"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/receiver"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"

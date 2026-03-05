@@ -1,0 +1,142 @@
+//
+// Copyright (C) 2026 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+package exporter
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+
+	pb "github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1"
+	"github.com/intel/xpumanager/exporter/internal/metadata"
+)
+
+type xpuInfoExporter struct {
+	cfg          *Config
+	logger       *zap.SugaredLogger
+	telemetry    *metadata.TelemetryBuilder
+	settings     exporter.Settings
+	grpcServer   *grpc.Server
+	healthServer *deviceInfoServer
+}
+
+func newXpuInfoExporter(cfg *Config, settings exporter.Settings) *xpuInfoExporter {
+	return &xpuInfoExporter{
+		cfg:      cfg,
+		logger:   settings.Logger.Sugar(),
+		settings: settings,
+	}
+}
+
+func (e *xpuInfoExporter) start(ctx context.Context, host component.Host) error {
+	e.logger.Info("Starting XPU Info exporter")
+
+	tb, err := metadata.NewTelemetryBuilder(e.settings.TelemetrySettings)
+	if err != nil {
+		return err
+	}
+	e.telemetry = tb
+
+	if err := e.startGrpcServer(ctx); err != nil {
+		return fmt.Errorf("failed to start gRPC server: %w", err)
+	}
+
+	return nil
+}
+
+func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
+	e.logger.Info("Shutting down XPU Info exporter")
+
+	done := make(chan struct{})
+	go func() {
+		if e.healthServer != nil {
+			e.healthServer.stop()
+		}
+		if e.grpcServer != nil {
+			e.grpcServer.GracefulStop()
+		}
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		e.logger.Info("gRPC server stopped gracefully")
+	case <-ctx.Done():
+		return fmt.Errorf("gRPC server shutdown timed out: %v", ctx.Err())
+	}
+	return nil
+}
+
+func (e *xpuInfoExporter) pushMetrics(_ context.Context, md pmetric.Metrics) error {
+	e.logger.Debugw("Pushing metrics", "dataPoints", md.DataPointCount())
+
+	// NOTE: No batching is in place. We rely on the property that md contains
+	// all metrics for a particular device.
+	e.healthServer.updateHealthData(md)
+
+	return nil
+}
+
+func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
+	s, err := e.cfg.ToServer(ctx, nil, e.settings.TelemetrySettings)
+	if err != nil {
+		return fmt.Errorf("failed to create gRPC server: %v", err)
+	}
+	e.grpcServer = s
+
+	h := newDeviceInfoServer(e.logger, e.telemetry)
+	pb.RegisterDeviceInfoServer(s, h)
+	e.healthServer = h
+
+	if e.cfg.NetAddr.Transport == confignet.TransportTypeUnix {
+		if e.cfg.NetAddr.Endpoint != "" {
+			dir := filepath.Dir(e.cfg.NetAddr.Endpoint)
+			if _, err := os.Stat(dir); err != nil {
+				// does not exist, can it be created?
+				if err := os.MkdirAll(dir, 0o755); err != nil {
+					return fmt.Errorf("failed to create directory for unix socket: %w", err)
+				}
+			}
+		} else {
+			// use runtime dir specified for the user?
+			name := metadata.Type.String() + ".sock"
+			if dir := os.Getenv("XDG_RUNTIME_DIR"); dir != "" {
+				e.cfg.NetAddr.Endpoint = filepath.Join(dir, name)
+			} else {
+				e.cfg.NetAddr.Endpoint = name
+			}
+		}
+
+		// Remove the socket file if it already exists
+		if _, err := os.Stat(e.cfg.NetAddr.Endpoint); err == nil {
+			if err := os.Remove(e.cfg.NetAddr.Endpoint); err != nil {
+				return fmt.Errorf("failed to remove existing unix socket file: %w", err)
+			}
+		}
+	}
+
+	lis, err := e.cfg.NetAddr.Listen(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to listen on endpoint: %v", err)
+	}
+
+	e.logger.Infow("gRPC server listening", "endpoint", e.cfg.NetAddr.Endpoint)
+
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			e.logger.Errorw("gRPC server failed", "error", err)
+		}
+	}()
+	return nil
+}

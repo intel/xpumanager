@@ -1,0 +1,88 @@
+GENERATOR:
+  PackageName: sysman
+  PackageDescription: "Level Zero sysman API bindings for Go"
+  PackageLicense: |
+    Copyright (C) 2026 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+  PkgConfigOpts: ["level-zero"]
+  Includes:
+    - ze_api.h
+    - zes_api.h
+
+PARSER:
+  SourcesPaths:
+    - level-zero/ze_api.h
+    - level-zero/zes_api.h
+
+TRANSLATOR:
+  ConstRules:
+  Rules:
+    const:
+      - {action: accept, from: "^ZES_"}
+      - {action: replace, from: "^ZES_STRUCTURE_TYPE_", to: "_STRUCTURE_TYPE_"}
+      - {action: replace, from: "^ZES_"}
+      - {transform: export}
+      # Ignore experimental
+      - {action: ignore, from: "_EXP_"}
+    function:
+      - {action: accept, from: "^zes[A-Z]"}
+      - {transform: unexport}
+      # Ignore experimental
+      - {action: ignore, from: "Exp[2]?$"}
+      - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
+      # Ignore deprecated (non-experimental)
+      - {action: ignore, from: "^zesDeviceGetCardPowerDomain$"}
+      - {action: ignore, from: "^zesFrequencyOcGetCapabilities$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)FrequencyTarget$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)IccMax$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)Mode$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)VoltageTarget$"}
+      - {action: ignore, from: "^zesFrequencyOc(Get|Set)TjMax$"}
+      - {action: ignore, from: "^zesPower(Get|Set)Limits$"}
+      - {action: ignore, from: "^zesSchedulerSetComputeUnitDebugMode$"}
+    type:
+      - {action: accept, from: "^zes_[a-z0-9_]*_t$"}
+      - {action: ignore, from: "^zes_base_[a-z_]*_t$"}
+      - {action: replace, from: "^zes_"}
+      - {action: replace, from: "_t$"}
+      - {action: replace, from: "^ze_driver_handle$", to: "driver_handle"}
+      - {action: replace, from: "^device_properties$", to: "device_base_properties"}
+      - {action: replace, from: "^engine_properties$", to: "engine_base_properties"}
+      - {action: replace, from: "^power_properties$", to: "power_base_properties"}
+      - {transform: export}
+      - {load: snakecase}
+      - {transform: unexport, from: "^StructureType$"}
+      - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
+      # Map Ze types to core package
+      - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
+      # Ignore experimental
+      - {action: ignore, from: "^zes_vf_handle_t$"}
+      - {action: ignore, from: "_exp[2]?_"}
+      # Ignore deprecated (non-experimental)
+      - {action: ignore, from: "^zes_oc_mode_t$"}
+      - {action: ignore, from: "^zes_oc_capabilities_t$"}
+      - {action: ignore, from: "^zes_mem_ext_bandwidth_t$"}
+      - {action: ignore, from: "^zes_power_sustained_limit_t$"}
+      - {action: ignore, from: "^zes_power_burst_limit_t$"}
+      - {action: ignore, from: "^zes_power_peak_limit_t$"}
+  PtrTips:
+    function:
+      # Specific tips
+      - {target: "^zesDriverGet$", tips: [ref, arr]}
+      - {target: "^zesDriverGetExtensionProperties$", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceGet$", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceEnum", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceProcessesGetState$", tips: [ref, ref, arr]}
+      - {target: "^zesDevicePciGetBars$", tips: [ref, ref, arr]}
+      - {target: "^zesDiagnosticsGetTests$", tips: [ref, ref, arr]}
+      - {target: "^zesDiagnosticsRunTests$", tips: [ref, ref, ref, arr]}
+      - {target: "^zesDriverEventListen(Ex)?", tips: [ref, ref, ref, arr, ref, arr]}
+      - {target: "^zesFabricPortGetMultiPortThroughput$", tips: [ref, ref, arr, ref]}
+      - {target: "^zesFrequencyGetAvailableClocks$", tips: [ref, ref, arr]}
+      - {target: "^zesPower(Get|Set)LimitsExt$", tips: [ref, ref, arr]}
+      - {target: "^zesEngineGetActivityExt$", tips: [ref, ref, arr]}
+      # Default tip, everything is ref
+      - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
+  MemTips:
+    - {target: ., self: raw}

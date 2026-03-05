@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "xpumd.fullname" . }}-config
+  labels:
+    {{- include "xpumd.labels" . | nindent 4 }}
+data:
+  # Default configuration for the Intel XPU status processor. Can be overridden
+  # in config.yaml (via .Values.config).
+  config-processor-xpustatus.yaml: |-
+    processors:
+      intelxpustatus:
+        rules:
+          - name: "Intel GPU core temperature health"
+            source_metric: "hw.temperature"
+            parent_metric: "hw.gpu.info"
+            parent_ref_attribute: "hw.id"
+            parent_filters:
+              - key: "pci.vendor_id"
+                values: ["8086"]
+            component_filters:
+              - key: "hw.sensor_location"
+                values: ["gpu"]
+            copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
+            add_attributes:
+              hw.type: "temperature.core"
+            states:
+              # Default state
+              - state_name: "ok"
+              - state_name: "warning"
+                conditions:
+                  - value: 95.0
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["56c1"]
+                  - value: 100.0
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["56c0", "56c2"]
+                  # Default threshold for other device IDs
+                  - value: 105.0
+          - name: "Intel GPU memory temperature health"
+            source_metric: "hw.temperature"
+            parent_metric: "hw.gpu.info"
+            parent_ref_attribute: "hw.id"
+            parent_filters:
+              - key: "pci.vendor_id"
+                values: ["8086"]
+            component_filters:
+              - key: "hw.sensor_location"
+                values: ["memory"]
+            copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
+            add_attributes:
+              hw.type: "temperature.memory"
+            states:
+              # Default state
+              - state_name: "ok"
+              - state_name: "warning"
+                conditions:
+                  - value: 85.0
+  config.yaml: |-
+{{ .Values.config | toYaml | indent 4 }}
