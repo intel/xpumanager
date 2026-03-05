@@ -76,7 +76,7 @@ jobs:
 
     - name: Run Trivy image scan
       continue-on-error: true
-      uses: aquasecurity/trivy-action@0.34.1
+      uses: aquasecurity/trivy-action@0.34.2
       with:
         exit-code: 1
         image-ref: ${{ env.IMAGE_TAG }}
@@ -85,14 +85,14 @@ jobs:
         output: trivy-report.json
 
     - name: Print Trivy report in human-readable format
-      uses: aquasecurity/trivy-action@0.34.1
+      uses: aquasecurity/trivy-action@0.34.2
       with:
         scan-type: convert
         image-ref: trivy-report.json
         format: table
 
     - name: Convert Trivy report to CSV format
-      uses: aquasecurity/trivy-action@0.34.1
+      uses: aquasecurity/trivy-action@0.34.2
       with:
         scan-type: convert
         image-ref: trivy-report.json
