@@ -1,0 +1,281 @@
+#
+# Config file for the hack/types-mangle tool.
+# Targeting the auto-generated types.go
+#
+options:
+  prefix: "zes"
+  doxygenPath: xml/zes__api_8h.xml
+
+structs:
+  - name: "*"
+    fields:
+      - name: Pad_cgo_0
+        newName: _
+      - name: Stype
+        newName: stype
+        newType: structureType
+      - name: PNext
+        newName: pnext
+        newType: unsafe.Pointer
+  - name: Uuid
+    fields:
+      - name: Id
+        typeAssert: "[16]uint8"
+        newType: uuid.UUID
+  - name: DeviceEccDesc
+    fields:
+      - name: State
+        newType: DeviceEccState
+  - name: DeviceEccProperties
+    fields:
+      - name: CurrentState
+        newType: DeviceEccState
+      - name: PendingState
+        newType: DeviceEccState
+      - name: PendingAction
+        newType: DeviceAction
+  - name: DeviceEccDefaultPropertiesExt
+    fields:
+      - name: DefaultState
+        newType: DeviceEccState
+  - name: DeviceExtProperties
+    fields:
+      - name: Type
+        newType: DeviceType
+      - name: Flags
+        newType: DevicePropertyFlags
+  - name: DeviceBaseProperties
+    fields:
+      - name: Core
+        newType: core.DeviceProperties
+      - name: BoardNumber
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+      - name: BrandName
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+      - name: DriverVersion
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+      - name: ModelName
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+      - name: SerialNumber
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+      - name: VendorName
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+  - name: DeviceState
+    fields:
+      - name: Repaired
+        newType: RepairStatus
+      - name: Reset
+        newType: ResetReasonFlags
+  - name: DiagTest
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+  - name: DiagProperties
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+  - name: DriverExtensionProperties
+    fields:
+      - name: Name
+        typeAssert: "[256]int8"
+        newType: core.StringProperty256
+  - name: EngineBaseProperties
+    fields:
+      - name: Type
+        newType: EngineGroup
+  - name: FabricLinkType
+    fields:
+      - name: Desc
+        typeAssert: "[256]int8"
+        newType: core.StringProperty256
+  - name: FabricPortProperties
+    fields:
+      - name: Model
+        typeAssert: "[256]int8"
+        newType: core.StringProperty256
+  - name: FabricPortState
+    fields:
+      - name: Status
+        newType: FabricPortStatus
+      - name: FailureReasons
+        newType: FabricPortFailureFlags
+      - name: QualityIssues
+        newType: FabricPortQualIssueFlags
+  - name: FanConfig
+    fields:
+      - name: Mode
+        newType: FanSpeedMode
+  - name: FanSpeed
+    fields:
+      - name: Units
+        newType: FanSpeedUnits
+  - name: FirmwareProperties
+    fields:
+      - name: Name
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+      - name: Version
+        typeAssert: "[64]int8"
+        newType: core.StringProperty64
+  - name: FreqProperties
+    fields:
+      - name: Type
+        newType: FreqDomain
+  - name: FreqState
+    fields:
+      - name: ThrottleReasons
+        newType: FreqThrottleReasonFlags
+  - name: MemProperties
+    fields:
+      - name: Location
+        newType: MemLoc
+      - name: Type
+        newType: MemType
+  - name: MemState
+    fields:
+      - name: Health
+        newType: MemHealth
+  - name: OverclockProperties
+    fields:
+      - name: DomainType
+        newType: OverclockDomain
+      - name: VFProgramType
+        newType: VfProgramType
+  - name: PciBarProperties
+    fields:
+      - name: Type
+        newType: PciBarType
+  - name: PciBarProperties12
+    fields:
+      - name: Type
+        newType: PciBarType
+  - name: PciState
+    fields:
+      - name: Status
+        newType: PciLinkStatus
+      - name: QualityIssues
+        newType: PciLinkQualIssueFlags
+      - name: StabilityIssues
+        newType: PciLinkStabIssueFlags
+  - name: PerfProperties
+    fields:
+      - name: Engines
+        newType: EngineTypeFlags
+  - name: PowerDomainExpProperties
+    fields:
+      - name: PowerDomain
+        newType: PowerDomain
+  - name: PowerExtProperties
+    fields:
+      - name: Domain
+        newType: PowerDomain
+  - name: PowerLimitExtDesc
+    fields:
+      - name: Level
+        newType: PowerLevel
+      - name: LimitUnit
+        newType: LimitUnit
+      - name: Source
+        newType: PowerSource
+  - name: ProcessState
+    fields:
+      - name: Engines
+        newType: EngineTypeFlags
+  - name: PsuState
+    fields:
+      - name: VoltStatus
+        newType: PsuVoltageStatus
+  - name: RasProperties
+    fields:
+      - name: Type
+        newType: RasErrorType
+  - name: RasStateExp
+    fields:
+      - name: Category
+        newType: RasErrorCategoryExp
+  - name: ResetProperties
+    fields:
+      - name: ResetType
+        newType: ResetType
+  - name: SchedProperties
+    fields:
+      - name: Engines
+        newType: EngineTypeFlags
+  - name: StandbyProperties
+    fields:
+      - name: Type
+        newType: StandbyType
+  - name: TempProperties
+    fields:
+      - name: Type
+        newType: TempSensors
+  - name: VfUtilEngineExp2
+    fields:
+      - name: VfEngineType
+        newType: EngineGroup
+  - name: VfUtilMemExp2
+    fields:
+      - name: VfMemLocation
+        newType: MemLoc
+
+types:
+  - name: "*"
+    newComment: |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: DeviceBaseProperties
+    newComment: |-
+      DeviceBaseProperties is the device properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: EngineBaseProperties
+    newComment: |-
+      EngineBaseProperties is the engine properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: PowerBaseProperties
+    newComment: |-
+      PowerBaseProperties is the power properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: InitFlags
+    newType: InitFlag
+  - name: EngineTypeFlags
+    newType: EngineTypeFlag
+  - name: ResetReasonFlags
+    newType: ResetReasonFlag
+  - name: DevicePropertyFlags
+    newType: DevicePropertyFlag
+  - name: PciLinkQualIssueFlags
+    newType: PciLinkQualIssueFlag
+  - name: PciLinkStabIssueFlags
+    newType: PciLinkStabIssueFlag
+  - name: EventTypeFlags
+    newType: EventTypeFlag
+  - name: FabricPortQualIssueFlags
+    newType: FabricPortQualIssueFlag
+  - name: FabricPortFailureFlags
+    newType: FabricPortFailureFlag
+  - name: FreqThrottleReasonFlags
+    newType: FreqThrottleReasonFlag

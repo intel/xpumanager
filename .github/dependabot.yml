@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # TODO: enable dependabot for github actions
+  #- package-ecosystem: "github-actions"
+  #  target-branch: main
+  #  directory: "/"
+  #  schedule:
+  #    interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/tools"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/processor"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/exporter"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/receiver"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"

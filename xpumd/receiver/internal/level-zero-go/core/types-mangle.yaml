@@ -1,0 +1,43 @@
+#
+# Config file for the hack/types-mangle tool.
+# Targeting the auto-generated types.go
+#
+options:
+  prefix: "ze"
+  doxygenPath: xml/ze__api_8h.xml
+
+structs:
+  - name: "*"
+    fields:
+      - name: Pad_cgo_0
+        newName: _
+      - name: Stype
+        newName: stype
+      - name: PNext
+        newName: pnext
+  - name: DeviceProperties
+    fields:
+      - name: Flags
+        newType: DevicePropertyFlags
+      - name: Name
+        typeAssert: "[256]int8"
+        newType: StringProperty256
+      - name: Type
+        newType: DeviceType
+  - name: DeviceUuid
+    fields:
+      - name: Id
+        typeAssert: "[16]uint8"
+        newType: uuid.UUID
+
+types:
+  - name: "*"
+    newComment: |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: DevicePropertyFlags
+    newType: DevicePropertyFlag

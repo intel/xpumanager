@@ -1,0 +1,158 @@
+# @schema additionalProperties:false
+image:
+  # -- Image repository
+  repository: ghcr.io/intel/xpumanager/xpumd
+  # @schema enum: [Always, IfNotPresent, Never]
+  # -- Image pull policy
+  pullPolicy: Always
+  # -- Image tag, defaults to Chart.AppVersion
+  tag: ""
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets
+# -- [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod)
+imagePullSecrets: []
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the fully qualified app name
+fullnameOverride: ""
+
+# @schema additionalProperties:false
+serviceAccount:
+  # -- Create service account
+  create: true
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not specified and create is true, a name is generated using the fully qualified app name.
+  name: ""
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
+# -- Annotations to add to the pod
+podAnnotations: {}
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext
+# -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+# NOTE: security settings control to what GPU metrics container has access to
+podSecurityContextOverride: {}
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext
+# -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container).
+# NOTE: security settings control to what GPU metrics container has access to
+securityContextOverride: {}
+
+# @schema additionalProperties:false
+service:
+  # -- Create service
+  create: false
+  # @schema enum: [ClusterIP, NodePort, LoadBalancer, ExternalName]
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 8080
+
+# @schema enum: [dra, i915, xe]
+# -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin)
+gpuAccess: xe
+
+# @schema additionalProperties:false
+prometheus:
+  # -- Add Prometheus service monitor for XPUMD, requires Prometheus to be installed.
+  # overrides `service.create`
+  monitor: false
+  # -- Helm release name for Helm ('kube-prometheus') chart that installed Prometheus.
+  # (May be) needed for Prometheus to detect daemon serviceMonitor
+  release: prometheus-stack
+
+# @schema additionalProperties:false
+grafana:
+  # -- Install XPUMD dashboard(s) for Grafana
+  dashboards: false
+  # -- Namespace for Grafana install.
+  # Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used
+  namespace: monitoring
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
+# -- [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container.
+# NOTE: overrides `gpuAccess` setting
+resourcesOverride: {}
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector
+# -- Node selector for pod placement
+nodeSelector: {}
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations
+# -- [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the pods
+tolerations: []
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity
+# -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods
+affinity: {}
+
+# @schema additionalProperties:false
+config:
+  # -- [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers)
+  # @default --  
+  # @section -- XPUM Daemon Configuration
+  receivers:
+    # @schema additionalProperties:false
+    # -- Configuration for the Intel XPU receiver.
+    # @default --  
+    # @section -- XPUM Daemon Configuration
+    intelxpu:
+      # @schema enum: [debug, info, warn, error]
+      # -- Log level (debug, info, warn, error)
+      # @section -- XPUM Daemon Configuration
+      log_level: info
+      # -- Metrics data collection interval. Must be at least twice the sampling_interval.
+      # @section -- XPUM Daemon Configuration
+      collection_interval: 5s
+      # -- Initial start delay for metrics collection, any non positive value is assumed to be immediately.
+      # @section -- XPUM Daemon Configuration
+      initial_delay: 1s
+      # -- Metrics collection timeout.
+      # @section -- XPUM Daemon Configuration
+      timeout: 0
+      # -- Sampling interval for the high-frequency metrics.
+      # @section -- XPUM Daemon Configuration
+      sampling_interval: 1s
+      # -- Configuration for enabling/disabling individual metrics.
+      # @section -- XPUM Daemon Configuration
+      metrics: {}
+
+  # -- [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)
+  # @section -- XPUM Daemon Configuration
+  processors:
+    # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
+    # @section -- XPUM Daemon Configuration
+    intelxpustatus: {}
+
+  # -- [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters)
+  # @default --  
+  # @section -- XPUM Daemon Configuration
+  exporters:
+    # -- Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
+    # @default --  
+    # @section -- XPUM Daemon Configuration
+    intelxpuinfo:
+      endpoint: "/run/xpumd/intelxpuinfo.sock"
+    prometheus:
+      endpoint: "0.0.0.0:8080"
+
+  # -- [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)
+  # @section -- XPUM Daemon Configuration
+  extensions: {}
+
+  # -- [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)
+  # @section -- XPUM Daemon Configuration
+  service:
+    telemetry:
+      logs:
+        level: info
+        # TODO: enable before release
+        #disable_stacktrace: true
+    pipelines:
+      metrics:
+        receivers: [intelxpu]
+        processors: [intelxpustatus]
+        exporters: [intelxpuinfo]

@@ -1,0 +1,94 @@
+name: CI Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on:
+      labels: [intel.prod.amr.dind]
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v6
+
+    - name: Check modfiles
+      run: ./scripts/make-dockerized.sh check-modfiles
+
+    - name: Golangci-lint
+      run: ./scripts/make-dockerized.sh golint
+
+    - name: Run tests
+      run: ./scripts/make-dockerized.sh test
+
+    - name: Verify generated assets
+      run: |
+        ./scripts/make-dockerized.sh generate
+        if ! git diff --quiet; then
+          echo "Generated assets are out of date. Please run make generate and commit the changes."
+          git --no-pager diff
+          exit 1
+        fi
+
+  trivy-scan-vuln:
+    runs-on:
+      labels: [intel.prod.amr.dind]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy Fs Scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.34.2
+        with:
+          exit-code: 1
+          scan-type: fs
+          scanners: vuln,secret
+          list-all-pkgs: true
+          scan-ref: .
+          format: json
+          output: trivy-report.json
+
+      - name: Print Trivy report in human-readable format
+        uses: aquasecurity/trivy-action@0.34.2
+        with:
+          scan-type: convert
+          scanners: vuln,secret
+          image-ref: trivy-report.json
+          format: table
+
+      - name: Convert Trivy report to CSV format
+        uses: aquasecurity/trivy-action@0.34.2
+        with:
+          scan-type: convert
+          image-ref: trivy-report.json
+          format: template
+          template: "@.github/workflows/trivy-csv.tpl"
+          output: trivy-vuln-report.csv
+
+      - name: Upload Trivy report as artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: trivy-vuln-report
+          path: trivy-vuln-report.csv
+
+  trivy-scan-license:
+    runs-on:
+      labels: [intel.prod.amr.dind]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy License Scan
+        uses: aquasecurity/trivy-action@0.34.2
+        with:
+          exit-code: 1
+          scan-type: fs
+          scanners: license
+          scan-ref: .
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL

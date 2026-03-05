@@ -1,0 +1,27 @@
+#
+# Copyright (C) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+ARG GO_VERSION=1.25
+ARG BASE_DEBIAN_DISTRO="trixie"
+
+FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
+
+ARG PACKAGES="core sysman"
+
+RUN apt-get update && apt-get install -y doxygen
+
+WORKDIR /go/src
+
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=src=.,target=.,rw \
+    make generate PACKAGES="${PACKAGES}" && \
+    mkdir /gen && \
+    if [ -n "${PACKAGES}" ]; then \
+        cp -r ${PACKAGES} /gen/; \
+    fi
+
+FROM scratch AS artifacts
+
+COPY --from=builder /gen .
