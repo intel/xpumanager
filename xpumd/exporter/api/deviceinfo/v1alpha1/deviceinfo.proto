@@ -1,0 +1,84 @@
+//
+// Copyright (C) 2026 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package deviceinfo;
+option go_package = "github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1";
+
+// DeviceInfo service provides info for XPU devices.
+service DeviceInfo {
+  // WatchDeviceHealth returns a stream of health metrics for all devices.
+  rpc WatchDeviceHealth(WatchDeviceHealthRequest) returns (stream DeviceHealthResponse);
+}
+
+// Request message for WatchDeviceHealth.
+message WatchDeviceHealthRequest {}
+
+// Response message containing health metrics for all devices.
+message DeviceHealthResponse {
+  repeated DeviceHealth devices = 1;
+}
+
+// Health metrics for a single device
+message DeviceHealth {
+  DeviceInformation info = 1;
+
+  repeated HealthStatus health = 2;
+}
+
+// Device identification and metadata
+message DeviceInformation {
+  string uuid = 1;
+  string model = 2;
+  PciInfo pci = 3;
+  repeated FirmwareInfo firmwares = 4;
+  repeated MemoryInfo memory = 5;
+}
+
+// PCI information of the device.
+message PciInfo {
+  string bdf = 1;
+  string device_id = 2;
+  string vendor_id = 3;
+}
+
+message FirmwareInfo {
+  string name = 1;
+  string version = 2;
+  string subdevice_id = 3;
+}
+
+// Memory information of the device.
+message MemoryInfo {
+  // Type of memory. This is a lowercase identifier describing the memory
+  // technology or placement, e.g. "ddr5", "gddr6", "hbm" etc.
+  string type = 1;
+  // The sub-device ID associated with this memory. Empty if not applicable.
+  string subdevice_id = 2;
+  // Total capacity of this memory region, in bytes.
+  uint64 size = 3;
+}
+
+// Status of a health domain.
+message HealthStatus {
+  // Name of the health domain.
+  string name = 1;
+  // Severity level of the status condition.
+  SeverityLevel severity = 2;
+  // Short (single word) reason for the status.
+  string reason = 3;
+  // Detailed message about the status.
+  string message = 4;
+}
+
+// Health status of a health domain.
+enum SeverityLevel {
+  SEVERITY_LEVEL_UNKNOWN = 0;
+  SEVERITY_LEVEL_OK = 1;
+  SEVERITY_LEVEL_WARNING = 2;
+  SEVERITY_LEVEL_CRITICAL = 3;
+  SEVERITY_LEVEL_FAILED = 4;
+}

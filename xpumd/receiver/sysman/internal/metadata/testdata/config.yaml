@@ -1,0 +1,93 @@
+default:
+all_set:
+  metrics:
+    hw.energy:
+      enabled: true
+    hw.frequency:
+      enabled: true
+    hw.frequency.limit:
+      enabled: true
+    hw.frequency.request:
+      enabled: true
+    hw.frequency.samples:
+      enabled: true
+    hw.frequency.throttle_status:
+      enabled: true
+    hw.gpu.bandwidth.limit:
+      enabled: true
+    hw.gpu.bandwidth.utilization:
+      enabled: true
+    hw.gpu.info:
+      enabled: true
+    hw.gpu.io:
+      enabled: true
+    hw.gpu.io.rate:
+      enabled: true
+    hw.gpu.utilization:
+      enabled: true
+    hw.memory.bandwidth.limit:
+      enabled: true
+    hw.memory.bandwidth.utilization:
+      enabled: true
+    hw.memory.io:
+      enabled: true
+    hw.memory.io.rate:
+      enabled: true
+    hw.memory.size:
+      enabled: true
+    hw.memory.usage:
+      enabled: true
+    hw.power:
+      enabled: true
+    hw.power.limit:
+      enabled: true
+    hw.status:
+      enabled: true
+    hw.temperature:
+      enabled: true
+none_set:
+  metrics:
+    hw.energy:
+      enabled: false
+    hw.frequency:
+      enabled: false
+    hw.frequency.limit:
+      enabled: false
+    hw.frequency.request:
+      enabled: false
+    hw.frequency.samples:
+      enabled: false
+    hw.frequency.throttle_status:
+      enabled: false
+    hw.gpu.bandwidth.limit:
+      enabled: false
+    hw.gpu.bandwidth.utilization:
+      enabled: false
+    hw.gpu.info:
+      enabled: false
+    hw.gpu.io:
+      enabled: false
+    hw.gpu.io.rate:
+      enabled: false
+    hw.gpu.utilization:
+      enabled: false
+    hw.memory.bandwidth.limit:
+      enabled: false
+    hw.memory.bandwidth.utilization:
+      enabled: false
+    hw.memory.io:
+      enabled: false
+    hw.memory.io.rate:
+      enabled: false
+    hw.memory.size:
+      enabled: false
+    hw.memory.usage:
+      enabled: false
+    hw.power:
+      enabled: false
+    hw.power.limit:
+      enabled: false
+    hw.status:
+      enabled: false
+    hw.temperature:
+      enabled: false

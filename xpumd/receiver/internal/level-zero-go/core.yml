@@ -1,0 +1,44 @@
+GENERATOR:
+  PackageName: core
+  PackageDescription: "Level Zero Core API bindings for Go"
+  PackageLicense: |
+    Copyright (C) 2026 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+  PkgConfigOpts: ["level-zero"]
+  Includes:
+    - ze_api.h
+
+PARSER:
+  SourcesPaths:
+    - level-zero/ze_api.h
+
+TRANSLATOR:
+  ConstRules:
+  Rules:
+    const:
+      - {action: accept, from: "^ZE_API_VERSION_"}
+      - {action: ignore, from: "^ZE_API_VERSION_CURRENT_M$"} # ignore the macro version
+      - {action: accept, from: "^ZE_RESULT_"}
+      - {action: accept, from: "^ZE_DEVICE_PROPERTY_FLAG_"}
+      - {action: accept, from: "^ZE_DEVICE_TYPE_"}
+      - {action: replace, from: "^ZE_"}
+      - {transform: export}
+    function:
+    type:
+      - {action: accept, from: "^ze_api_version_t$"}
+      - {action: accept, from: "^ze_result_t$"}
+      - {action: accept, from: "^ze_device_properties_t$"}
+      - {action: accept, from: "^ze_device_uuid_t$"}
+      - {action: accept, from: "^ze_device_property_flag(s)?_t$"}
+      - {action: accept, from: "^ze_device_type_t$"}
+      - {action: replace, from: "^ze_"}
+      - {action: replace, from: "_t$"}
+      - {transform: export}
+      - {load: snakecase}
+  PtrTips:
+  TypeTips:
+    type:
+      - {target: "^zes_[a-z_]*_handle", self: raw}
+  MemTips:
+    - {target: ., self: raw}
