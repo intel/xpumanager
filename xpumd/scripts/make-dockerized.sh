@@ -43,7 +43,7 @@ docker run --rm \
     ${USER_FLAG} \
     "${GOMODCACHE_MOUNT[@]}" \
     -e HOME=/go \
-    -v "${SCRIPT_DIR}/..:/go/src" \
+    -v "${SCRIPT_DIR}/../..:/go/src" \
     -w /go/src \
     "${IMAGE_TAG}" \
-    /bin/sh -c "make $*"
+    /bin/sh -c "make -C xpumd $*"
