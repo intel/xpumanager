@@ -5,7 +5,6 @@
 *.vs
 xpu-smi
 xpumcli
-xpumd
 tags
 release
 x64
