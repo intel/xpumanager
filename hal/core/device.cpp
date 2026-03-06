@@ -484,6 +484,16 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_properties_t **zeMemProps,
 								uint32_t *memPropsCount)
 {
+	if (dev == nullptr) {
+		ERR("Failed to get memory properties: device handle is NULL -- device may be in survivability mode\n");
+		return ZE_RESULT_ERROR_SURVIVABILITY_MODE_DETECTED;
+	}
+
+	if (memPropsCount == nullptr) {
+		ERR("Failed to get memory properties: invalid arguments (memPropsCount=%p)\n", (void *)memPropsCount);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	ze_result_t result = zeDeviceGetMemoryProperties(dev, memPropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));

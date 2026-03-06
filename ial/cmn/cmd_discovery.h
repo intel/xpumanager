@@ -12,6 +12,10 @@
 #include <os.h>
 #include <map>
 
+inline constexpr char DEVICE_STATE_SURV_MODE[] =
+	"survivability mode (firmware update and cold reset are recommended for device recovery)";
+inline constexpr char DEVICE_STATE_NORMAL[] = "normal";
+
 /**
  * @brief Discovery-specific text printer that formats discovery output as human-readable text
  */
