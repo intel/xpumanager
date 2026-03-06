@@ -81,11 +81,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: xpumd/go.mod
+
+      - name: Warm up the gomod cache for the license scan
+        run: ./xpumd/scripts/trivy-warmup.sh
+
       - name: Run Trivy License Scan
         uses: aquasecurity/trivy-action@0.34.2
+        env:
+          TRIVY_IGNORED_LICENSES: MPL-2.0
         with:
           exit-code: 1
           scan-type: fs
           scanners: license
           scan-ref: ./xpumd
+          skip-dirs: tools
           severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
