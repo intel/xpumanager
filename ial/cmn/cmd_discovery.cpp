@@ -107,6 +107,7 @@ std::string getDisplayName(const std::string &key)
 		// clang-format off
 		{"device_id", "Device ID"},
 		{"device_name", "Device Name"},
+		{"device_state", "Device State"},
 		{"vendor_name", "Vendor Name"},
 		{"uuid", "UUID"},
 		{"pci_bdf_address", "PCI BDF Address"},
@@ -237,6 +238,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			};
 
 			addField("device_name", "Device Name");
+			addField("device_state", "Device State");
 			addField("vendor_name", "Vendor Name");
 			addField("uuid", "SOC UUID");
 			addField("pci_bdf_address", "PCI BDF Address");
@@ -261,6 +263,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		// Group 1: Basic Device Information
 		addField("device_type", "Device Type");
 		addField("device_name", "Device Name");
+		addField("device_state", "Device State");
 		addField("pci_device_id", "PCI Device ID");
 		addField("vendor_name", "Vendor Name");
 		addField("uuid", "SOC UUID");
@@ -342,6 +345,12 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 
 	deviceName(device, &outputLine);
 	(*jsonObj)["device_name"] = outputLine;
+
+	if (device->dev->isInSurvMode()) {
+		(*jsonObj)["device_state"] = DEVICE_STATE_SURV_MODE;
+	} else {
+		(*jsonObj)["device_state"] = DEVICE_STATE_NORMAL;
+	}
 
 	deviceType(device, &outputLine);
 	(*jsonObj)["device_type"] = outputLine;
@@ -627,6 +636,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	deviceName(d, &outputLine);
 	props["device_name"] = outputLine;
 
+	props["device_state"] = d->dev->isInSurvMode() ? DEVICE_STATE_SURV_MODE : DEVICE_STATE_NORMAL;
 	vendorName(d, &outputLine);
 	props["vendor_name"] = outputLine;
 
