@@ -75,7 +75,7 @@ test:
 golint:
 	@error=""; for module in $(GO_MODULES); do \
 		echo "Running golangci-lint in module '$$module'..."; \
-		go -C $$module tool -modfile $(PWD)/tools/go.mod golangci-lint run || error=1; \
+		go -C $$module tool -modfile $$(realpath --relative-to="$$module" tools/go.mod) golangci-lint run || error=1; \
 	done; \
 	if [ -n "$$error" ]; then \
 		exit 1; \
