@@ -68,7 +68,7 @@ and Grafana dashboard for the collected metrics:
 ```
 
 NOTE: above requires Prometheus to be installed to the cluster beforehand, otherwise install fails.
-See [monitoring](../../MONITORING.md).
+See [monitoring](../../MONITORING.md) and [Prometheus exporter README](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusexporter#readme).
 
 To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service:
 
@@ -78,7 +78,8 @@ To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collecto
   --set config.service.pipelines.metrics.exporters="{otlp}"
 ```
 
-See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector.
+See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector and
+[OTLP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter#readme).
 
 ## Values
 
