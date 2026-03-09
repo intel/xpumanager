@@ -15,7 +15,9 @@ example setup:
 
 > [!CAUTION]
 > This guide is for demonstration purposes only. For production deployments,
-> consider security, scaling, and reliability aspects.
+> consider security, scaling, and reliability aspects. See
+> [configuration best practices](https://opentelemetry.io/docs/security/config-best-practices/).
+
 
 ## Deployment Steps
 
