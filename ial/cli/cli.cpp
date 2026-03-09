@@ -134,6 +134,7 @@ void help(std::list<cmds *> *cmdList)
 	PRINT("Usage: %s [Options]\n", progName.c_str());
 	PRINT("  %s -v\n", progName.c_str());
 	PRINT("  %s -h\n", progName.c_str());
+	PRINT("  %s help\n", progName.c_str());
 	PRINT("  %s discovery\n\n", progName.c_str());
 
 	PRINT("Options:\n");
@@ -262,6 +263,19 @@ int main(int argc, char *argv[])
 
 	/* If no command line args are provided, just print help message and exit */
 	if (argc == 1) {
+		help(cmdList);
+		deleteList(cmdList);
+		return 0;
+	}
+
+	/* Print top-level help if -h, --help, or help is specified */
+	if (!STRCASECMP(argv[1], "-h") || !STRCASECMP(argv[1], "--help") || !STRCASECMP(argv[1], "help")) {
+		if (argc > 2) {
+			PRINT("The following argument was not expected: '%s'.\n", argv[2]);
+			help(cmdList);
+			deleteList(cmdList);
+			return 1;
+		}
 		help(cmdList);
 		deleteList(cmdList);
 		return 0;
