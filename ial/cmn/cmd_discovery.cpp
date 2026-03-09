@@ -341,7 +341,7 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 
 	// Get string values first, then assign to JSON (simple format for JSON output)
 	(*jsonObj)["device_function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
-	(*jsonObj)["device_id"] = std::to_string(device->index);
+	(*jsonObj)["device_id"] = device->index;
 
 	deviceName(device, &outputLine);
 	(*jsonObj)["device_name"] = outputLine;

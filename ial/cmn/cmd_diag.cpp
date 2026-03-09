@@ -494,7 +494,13 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiag::printPreCheckDetail(std::string
 
 	// Get string values first, then assign to JSON
 	if (preId != "") {
-		(*jsonObj)["id"] = preId;
+		int idVal;
+		auto [ptr, ec] = std::from_chars(preId.data(), preId.data() + preId.size(), idVal);
+		if (ec == std::errc{} && ptr == preId.data() + preId.size()) {
+			(*jsonObj)["id"] = idVal;
+		} else {
+			(*jsonObj)["id"] = preId;
+		}
 	}
 	if (preBdf != "") {
 		(*jsonObj)["bdf"] = preBdf;
