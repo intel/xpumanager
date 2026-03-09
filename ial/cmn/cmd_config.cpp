@@ -312,6 +312,52 @@ static void getSchedulerInfo(devInfo *d, uint32_t tileId, std::string &mode, uin
 }
 
 /**
+ * @brief Converts ECC state enum to user-friendly text.
+ *
+ * @param[in] state ECC state value.
+ * @return std::string "enabled", "disabled", or "N/A".
+ */
+static std::string eccStateToString(zes_device_ecc_state_t state)
+{
+	if (state == ZES_DEVICE_ECC_STATE_ENABLED) {
+		return "enabled";
+	}
+
+	if (state == ZES_DEVICE_ECC_STATE_DISABLED) {
+		return "disabled";
+	}
+
+	return "N/A";
+}
+
+/**
+ * @brief Gets current and pending memory ECC states for a device.
+ *
+ * @param[in] d Device information.
+ * @param[out] current Current ECC state string.
+ * @param[out] pending Pending ECC state string.
+ */
+static void getMemoryEccStates(devInfo *d, std::string &current, std::string &pending)
+{
+	current = "N/A";
+	pending = "N/A";
+
+	zes_device_ecc_properties_t state = {};
+	if (zesDeviceGetEccState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
+		current = eccStateToString(state.currentState);
+		pending = eccStateToString(state.pendingState);
+		return;
+	}
+
+	auto zeDevProp = ze_device_properties_t{};
+	if (d->dev->getDevProps(d->deviceHdl, &zeDevProp) == ZE_RESULT_SUCCESS) {
+		const std::string fallback = (zeDevProp.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) ? "enabled" : "disabled";
+		current = fallback;
+		pending = fallback;
+	}
+}
+
+/**
  * @brief Gets standby mode for a tile.
  *
  * @param[in] d Device information.
@@ -378,17 +424,9 @@ static std::string getStandbyMode(devInfo *d, uint32_t tileId)
  */
 static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 {
-	std::string eccCurrent = "N/A";
-	std::string eccPending = "N/A";
-	ze_bool_t eccAvailable = false;
-	ze_result_t eccAvailRes = zesDeviceEccAvailable(d->zesDeviceHdl, &eccAvailable);
-	if (eccAvailRes == ZE_RESULT_SUCCESS && eccAvailable) {
-		zes_device_ecc_properties_t state = {};
-		if (zesDeviceGetEccState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
-			eccCurrent = (state.currentState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
-			eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
-		}
-	}
+	std::string eccCurrent;
+	std::string eccPending;
+	getMemoryEccStates(d, eccCurrent, eccPending);
 
 	int plPackageSustain = 0;
 	int plPackageBurst = 0;
@@ -717,17 +755,9 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 	// Memory ECC configuration (avoid logging errors on unsupported devices)
 	table.addRow("", "", "");
 	table.addRow("", "", " Memory ECC:");
-	std::string eccCurrent = "N/A";
-	std::string eccPending = "N/A";
-	ze_bool_t eccAvailable = false;
-	ze_result_t eccAvailRes = zesDeviceEccAvailable(d->zesDeviceHdl, &eccAvailable);
-	if (eccAvailRes == ZE_RESULT_SUCCESS && eccAvailable) {
-		zes_device_ecc_properties_t state = {};
-		if (zesDeviceGetEccState(d->zesDeviceHdl, &state) == ZE_RESULT_SUCCESS) {
-			eccCurrent = (state.currentState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
-			eccPending = (state.pendingState == ZES_DEVICE_ECC_STATE_ENABLED) ? "enabled" : "disabled";
-		}
-	}
+	std::string eccCurrent;
+	std::string eccPending;
+	getMemoryEccStates(d, eccCurrent, eccPending);
 	table.addRow("", "", "  Current: " + eccCurrent);
 	table.addRow("", "", "  Pending: " + eccPending);
 
