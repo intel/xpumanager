@@ -14,6 +14,9 @@ IMAGE_TAG="xpumd-builder:latest"
 
 docker build -t "${IMAGE_TAG}" - <<EOF
 FROM golang:1.25
+# Pre-create /go/pkg with wide permissions to allow "docker run" below (with non-root user)
+# to write to it (the mount (-v) in docker run would otherwise create it with 755)
+RUN mkdir -p /go/pkg && chmod 777 /go/pkg
 
 # Unzip needed for installing protoc, doxygen for generating Go bindings
 RUN apt-get update && apt-get install -y --no-install-recommends unzip doxygen && \
