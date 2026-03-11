@@ -24,14 +24,6 @@
                                     "type": "string"
                                 }
                             }
-                        },
-                        "prometheus": {
-                            "type": "object",
-                            "properties": {
-                                "endpoint": {
-                                    "type": "string"
-                                }
-                            }
                         }
                     }
                 },
@@ -94,50 +86,7 @@
                 },
                 "service": {
                     "description": "[Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)",
-                    "type": "object",
-                    "properties": {
-                        "pipelines": {
-                            "type": "object",
-                            "properties": {
-                                "metrics": {
-                                    "type": "object",
-                                    "properties": {
-                                        "exporters": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        },
-                                        "processors": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        },
-                                        "receivers": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "telemetry": {
-                            "type": "object",
-                            "properties": {
-                                "logs": {
-                                    "type": "object",
-                                    "properties": {
-                                        "level": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    "type": "object"
                 }
             },
             "additionalProperties": false
