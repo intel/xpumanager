@@ -7,7 +7,7 @@ in the given dashboard JSON file from old to new XPUM names:
 $ ./convert-metrics.sh old-xpum.json dashboard.json
 ```
 
-Then check which panels are using the ambigous old-XPUM "type"
+Then check which panels are using the ambiguous old-XPUM "type"
 attribute, so one can update their legends to suitable OTel ones:
 
 ```

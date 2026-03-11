@@ -337,7 +337,7 @@ jobs:
                               -extra-arg=-Wno-sign-conversion \
                               -extra-arg=-Wno-inconsistent-missing-override
       - name: Run codespell
-        run: codespell --ignore-words-list renderD,renderd,som,SOM  --skip '*.exe,*.gz,*.pdf,*.xlsx,pci.ids,third_party,html,meson-*' .
+        run: codespell --ignore-words-list renderD,renderd,som,SOM  --skip '*.exe,*.gz,*.pdf,*.xlsx,pci.ids,third_party,html,go.mod,go.sum,*/level-zero-go/level-zero/*,*/level-zero-go/sysman/*,*THIRD_PARTY_LICENSES/*' .
         
       - name: Check license headers
         run: |
