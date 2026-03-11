@@ -136,6 +136,7 @@ config:
     # @section -- XPUM Daemon Configuration
     intelxpuinfo:
       endpoint: "/run/xpumd/intelxpuinfo.sock"
+    # @schema hidden
     prometheus:
       endpoint: "0.0.0.0:8080"
 
@@ -146,11 +147,13 @@ config:
   # -- [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)
   # @section -- XPUM Daemon Configuration
   service:
+    # @schema hidden
     telemetry:
       logs:
         level: info
         # TODO: enable before release
         #disable_stacktrace: true
+    # @schema hidden
     pipelines:
       metrics:
         receivers: [intelxpu]
