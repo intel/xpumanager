@@ -32,7 +32,7 @@ cd "$MESON_SOURCE_ROOT"
 # run static checkers for...
 
 # code spelling: ignore binary files, PCI vendor names, 3rd party code & auto-generated files
-codespell --ignore-words-list renderd,renderD,som,SOM --skip '*.exe,*.gz,*.pdf,*.xlsx,pci.ids,third_party,html,meson-*'
+codespell --ignore-words-list renderD,renderd,som,SOM  --skip '*.exe,*.gz,*.pdf,*.xlsx,pci.ids,third_party,html,go.mod,go.sum,*/level-zero-go/level-zero/*,*/level-zero-go/sysman/*,*THIRD_PARTY_LICENSES/*' .
 
 # shell script best practices
 find . -name '*.sh' -print0 | xargs -0 shellcheck
