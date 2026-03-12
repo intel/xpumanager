@@ -61,6 +61,8 @@ typedef wchar_t TCHAR;
 #define GETDOWNGRADEDPCIEINFO(bdfStr) getDowngradedPCIeInfo(bdfStr);
 #define GETKERNELVERSION() getKernelVersion()
 #define GETPCISLOTLABEL(bdf) getPciSlotLabel(bdf)
+#define FINDRESOURCEFILE(relativePath) findResourceFile(relativePath)
+
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
 	*(pFile) = fopen(filename, mode);
@@ -109,4 +111,6 @@ bool checkPCIeLinkStatus(std::string &bdf);
 std::string getKernelVersion();
 std::string getPciSlotLabel(const std::string &bdf);
 std::string getDowngradedPCIeInfo(std::string &bdfStr);
+std::string findResourceFile(const std::string &relativePath);
+
 #endif
