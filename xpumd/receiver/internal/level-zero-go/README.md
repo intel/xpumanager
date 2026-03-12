@@ -33,7 +33,7 @@ for details.
 > The oneAPI Level-Zero version is checked at build time. Incompatible versions
 > will cause build errors like
 > ```golang
-> ../core/core_static.go:28:5: invalid array length ... (constant -1 of int32 type ApiVersion)
+> ../core/core_static.go:26:5: invalid array length ... (constant -1 of type int)
 > ```
 
 ## Development
