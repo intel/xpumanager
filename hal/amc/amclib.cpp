@@ -79,7 +79,7 @@ int amclib::amcEnumFirmwares()
 
 	numCards = AMC_CARD_DISCOVERY(amcDeviceList);
 	if (numCards <= 0) {
-		ERR("No AMC devices found\n");
+		DBG("No AMC devices found\n");
 		return -1;
 	}
 
