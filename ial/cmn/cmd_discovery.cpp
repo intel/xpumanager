@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "printer.h"
 #include "table_builder.h"
+#include "amclib.h"
 #include <array>
 #include <assert.h>
 #include <charconv>
@@ -903,7 +904,20 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 		return result;
 	}
 
-	*outputLine = zesDevProp.serialNumber;
+	if (strcmp(zesDevProp.serialNumber, "unknown") == 0) {
+		std::string serialNumFromAMC = "";
+		const auto amcResult = querySerialNumberFromAMC(d, &serialNumFromAMC);
+		if (amcResult != ZE_RESULT_SUCCESS || (serialNumFromAMC.size() == 0)) {
+			DBG("Failed to get serial number from AMC or No AMC Available: 0x%X (%s)\n", amcResult,
+				l0_error_to_string(amcResult));
+			*outputLine = zesDevProp.serialNumber;
+		} else {
+			DBG("Successfully retrieved serial number from AMC: %s\n", serialNumFromAMC.c_str());
+			*outputLine = serialNumFromAMC;
+		}
+	} else {
+		*outputLine = zesDevProp.serialNumber;
+	}
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -2009,6 +2023,56 @@ ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *js
 
 	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
 	jsonObj->push_back(version.data());
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Fetches the serial number of the given device from the AMC FRU data if AMC is available.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] serialNumberString Pointer to string object to populate with the device serial number
+ *
+ * @retval ZE_RESULT_SUCCESS The AMC query completed. If the device has an AMC entry and the serial
+ *         number was successfully retrieved, serialNumberString is populated; otherwise it is left
+ *         unchanged.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED No AMC devices were found, AMC initialization failed, or
+ *         the serial number could not be retrieved.
+ */
+ze_result_t cmdDiscovery::querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString)
+{
+	TRACING();
+	amclib amc;
+	int numCards = amc.amcEnumFirmwares();
+	if (numCards <= 0) {
+		DBG("No AMC devices found or enumeration failed. Skipping AMC serial number query.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	int ret = amc.amcInitialize();
+	if (ret != AMC_SUCCESS) {
+		ERR("Failed to initialize AMC devices (error code: %d)\n", ret);
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	std::string bdfStr = d->dev->getPCI()->getBDFStr();
+	int index = amc.amcGetIndex(bdfStr.c_str());
+
+	if ((index < 0) || (index >= numCards)) {
+		ERR("AMC device index out of range for BDF %s (index: %d, numCards: %d)\n", bdfStr.c_str(), index, numCards);
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	char serialNumber[MAX_PATH] = {0};
+	uint8_t cardNum = static_cast<uint8_t>(index);
+	size_t bufferSize = sizeof(serialNumber);
+	ret = amc.amcGetSerialNumber(cardNum, serialNumber, &bufferSize);
+	if (ret != AMC_SUCCESS) {
+		ERR("Failed to get serial number for AMC device %d (error code: %d)\n", index, ret);
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	std::string snStr(serialNumber);
+	*serialNumberString = snStr;
 
 	return ZE_RESULT_SUCCESS;
 }
