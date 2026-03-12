@@ -1,0 +1,33 @@
+Drivers:
+- ExtensionProperties: []
+  Devices:
+  - Processes: []
+    Properties: {}
+    Overclock:
+      DomainsBitmask: 0
+      State:
+        Mode: 0
+        WaiverSetting: false
+        State: false
+        PendingAction: 0
+        PendingReset: false
+      Domains: []
+    EngineGroups:
+    - Properties:
+        Type: 0
+    - Properties:
+        Type: 1
+    FabricPorts: []
+    Fans: []
+    Firmwares: []
+    FrequencyDomains: []
+    Leds: []
+    MemoryModules: []
+    PerformanceDomains: []
+    PowerDomains: []
+    Psus: []
+    RasErrorSets: []
+    Schedulers: []
+    StandbyDomains: []
+    TemperatureSensors: []
+    Diagnostics: []
