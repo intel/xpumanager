@@ -569,7 +569,7 @@ uint64_t diagnostic::setWorkgroups(ze_device_compute_properties_t *deviceCompute
  */
 ze_result_t diagnostic::loadBinaryFile(const std::string &filePath, std::vector<uint8_t> *binaryFile)
 {
-	std::string folder = std::string(XPUM_RESOURCES_DIR) + std::string("kernels/");
+	std::string folder = FINDRESOURCEFILE(std::string(XPUM_RESOURCES_DIR) + std::string("kernels/"));
 	if (!fileExists(folder)) {
 		ERR("Kernel folder does not exist: %s\n", folder.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;

@@ -103,6 +103,7 @@ static constexpr std::string CHECKCPUSTATUS() { return std::string{"0"}; }
 #define CHECKPCIELINKSTATUS(bdf) (UNUSED_VAR(bdf), false)
 #define GETKERNELVERSION() std::string("")
 #define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
+static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relativePath) { return std::string{}; }
 static constexpr std::string GETDOWNGRADEDPCIEINFO(UNUSED const std::string &bdfStr) { return std::string{}; }
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
