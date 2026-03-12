@@ -20,10 +20,10 @@ import "C"
 var (
 	// Fails with "cannot use type" compiler error if the major version from the C
 	// headers does not match that from the bindings.
-	_ [1]struct{} = [(C.ZE_API_VERSION_CURRENT >> 16) - (API_VERSION_CURRENT >> 16) + 1]struct{}{}
+	_ [1]struct{} = [int(C.ZE_API_VERSION_CURRENT>>16) - int(API_VERSION_CURRENT>>16) + 1]struct{}{}
 	// Fails with "invalid array length" compiler error if the minor version
 	// from the C headers is less than that from the bindings.
-	_ [(C.ZE_API_VERSION_CURRENT & 0xffff) - (API_VERSION_CURRENT & 0xffff)]struct{}
+	_ [int(C.ZE_API_VERSION_CURRENT&0xffff) - int(API_VERSION_CURRENT&0xffff)]struct{}
 )
 
 func (r Result) Error() string {
