@@ -3,15 +3,15 @@
 First convert metric + attribute names that have direct enough mapping
 in the given dashboard JSON file from old to new XPUM names:
 
-```
-$ ./convert-metrics.sh old-xpum.json dashboard.json
+```bash
+./convert-metrics.sh old-xpum.json dashboard.json
 ```
 
 Then check which panels are using the ambiguous old-XPUM "type"
 attribute, so one can update their legends to suitable OTel ones:
 
-```
-$ grep -e expr -e legendFormat dashboard.json
+```bash
+grep -e expr -e legendFormat dashboard.json
 ```
 
 Unless new XPUM dashboard is intended to replace the old one, its
@@ -29,9 +29,14 @@ configMaps. After dashboard is updated in Grafana, it can be saved
 again to a JSON file here, and the corresponding configMap updated
 with the provided conversion script.
 
-Usage:
+Switch to template dir:
 
+```bash
+cd ../templates/
 ```
-$ cd ../templates/
-$ ../json/convert-dashboard.sh ../json/dashboard.json
+
+Update dashboard configMap:
+
+```bash
+../json/convert-dashboard.sh ../json/dashboard.json
 ```

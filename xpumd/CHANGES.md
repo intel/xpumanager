@@ -1,7 +1,7 @@
 # XPUM 1.x vs 2.x
 
 This document describes user visible differences between the XPUM 1.x and 2.x versions,
-in their daemon and exporter / remote API functionality.
+for their daemon / exporter / remote API functionality.
 
 ## Major differences
 
@@ -26,7 +26,7 @@ in their daemon and exporter / remote API functionality.
 * Provides OpenTelemetry and Prometheus metrics endpoints
   * Prometheus metric names (`hw_*`) and attributes follow OTel conventions
   * No "destructive" GPU operations supported, only GPU metric / status queries
-* Provides GPU state information for K8s DRA Intel GPU driver
+* Separate endpoint to provide GPU state information for Kubernetes DRA Intel GPU driver
 * Extensive configuration support through YAML configuration file
 
 
@@ -34,7 +34,7 @@ in their daemon and exporter / remote API functionality.
 
 Compared to XPUM 1.x, XPUM 2.x lacks support for the following GPU metrics:
 
-* EU active/stall/idle metrics - disabled by default in 1.x
+* EU active/stall/idle metrics - were disabled by default in 1.x
 * Fabric (XeLink) metrics - not relevant for BMG
 * RAS (error) counters - not relevant for BMG
 
