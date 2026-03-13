@@ -16,21 +16,6 @@ Kubernetes cluster with eiher Intel GPU plugin[^1] or Intel GPU resource driver[
 
 ## Installation
 
-Helm login to ghcr.io:
-
-```bash
-helm registry login ghcr.io -u GITHUB_USERNAME
-```
-
-Create an image pull secret in your Kubernetes cluster:
-
-```bash
-kubectl create secret docker-registry ghcr-secret \
-  --docker-server=ghcr.io/intel \
-  --docker-username=GITHUB_USERNAME \
-  --docker-password=GITHUB_PERSONAL_ACCESS_TOKEN \
-```
-
 Create namespace for the daemon and label it for [DRA](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) GPU monitoring access:
 
 ```bash
@@ -42,7 +27,6 @@ Install the chart:
 
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
-  --set imagePullSecrets[0].name=ghcr-secret \
   --version 0.0.0-main \
   --set gpuAccess=MODE \
   --namespace intel-xpumd
@@ -85,5 +69,29 @@ To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collecto
 
 See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector and
 [OTLP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter#readme).
+
+
+### Using private GitHub registry
+
+If image is in a private GitHub registry to which you have access, Helm login to ghcr.io:
+
+```bash
+helm registry login ghcr.io -u GITHUB_USERNAME
+```
+
+Create an image pull secret in your Kubernetes cluster:
+
+```bash
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io/intel \
+  --docker-username=GITHUB_USERNAME \
+  --docker-password=GITHUB_PERSONAL_ACCESS_TOKEN
+```
+
+And add following option to chart install:
+
+```bash
+  --set imagePullSecrets[0].name=ghcr-secret
+```
 
 {{ template "chart.valuesSection" . }}
