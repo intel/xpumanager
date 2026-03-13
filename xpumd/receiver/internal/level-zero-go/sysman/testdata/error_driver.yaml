@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: driver method failures (DriverGet succeeds, driver methods fail)
+# (ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS = 0x70010000).
+# Used by TestDriverGetExtensionProperties/Error, TestDriverDeviceGet/Error,
+# TestDriverEventListen/Error, TestDriverEventListenEx/Error.
+
+EventNumDeviceEvents: 0
+Drivers:
+  - ReturnValues:
+      zesDriverGetExtensionProperties: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      zesDeviceGet: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      zesDriverEventListen: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      zesDriverEventListenEx: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+    ExtensionProperties: []
+    Devices: []

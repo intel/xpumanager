@@ -38,13 +38,36 @@ generate-dockerized: clean
 	    -f hack/Dockerfile.generate .
 
 .PHONY: clean
-clean:
+clean: clean-coverage
 	for pkg in $(PACKAGES); do \
 	    rm -f $$pkg/cgo_helpers.go $$pkg/cgo_helpers.h $$pkg/cgo_helpers.c; \
 	    rm -f $$pkg/const.go $$pkg/doc.go $$pkg/types.go; \
 	    rm -f $$pkg/$$pkg.go; \
 	    rm -f $$pkg/zz_*; \
 	done
+
+# --- Test targets ---
+
+.PHONY: test
+test: test-stub test-go
+
+.PHONY: test-stub
+test-stub:
+	$(MAKE) -C level-zero-stub test
+
+.PHONY: test-go
+test-go:
+	go test -tags stub_test -count=1 -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out | tail -1
+
+.PHONY: coverage
+coverage: test-go
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report: coverage.html"
+
+.PHONY: clean-coverage
+clean-coverage:
+	rm -f coverage.out coverage.html
 
 # --- Lint targets ---
 

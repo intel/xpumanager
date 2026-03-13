@@ -1,0 +1,526 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Default stub state for unit testing sysman Go bindings.
+# Component counts are derived from the length of each array.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_extension_foo"
+        Version: 1
+      - Name: "ZES_extension_bar"
+        Version: 2
+
+    Devices:
+      - Properties:
+          Core:
+            Type: 1 # ZE_DEVICE_TYPE_GPU
+            VendorId: 32902
+            DeviceId: 3029
+            Flags: 1 # ZE_DEVICE_PROPERTY_FLAG_INTEGRATED
+            SubdeviceId: 1
+            CoreClockRate: 1600
+            MaxMemAllocSize: 17179869184 # 16 GiB
+            MaxHardwareContexts: 256
+            MaxCommandQueuePriority: 2
+            NumThreadsPerEU: 8
+            PhysicalEUSimdWidth: 16
+            NumEUsPerSubslice: 16
+            NumSubslicesPerSlice: 8
+            NumSlices: 2
+            TimerResolution: 100
+            TimestampValidBits: 36
+            KernelTimestampValidBits: 32
+            Name: "ACME Data Center GPU"
+          NumSubdevices: 2
+          SerialNumber: "SN-0001"
+          BoardNumber: "BOARD-0001"
+          BrandName: "ACME"
+          ModelName: "Stub GPU 1234"
+          VendorName: "ACME Corporation"
+          DriverVersion: "1.2.3"
+
+        State:
+          Reset: 0 # 0 = no flags set
+          Repaired: 1 # ZES_REPAIR_STATUS_NOT_PERFORMED
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 1
+              Bus: 5
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 256000000000
+            HaveBandwidthCounters: true
+            HavePacketCounters: true
+            HaveReplayCounters: true
+          State:
+            Status: 2 # ZES_PCI_LINK_STATUS_QUALITY_ISSUES
+            QualityIssues: 3 # REPLAYS | SPEED
+            StabilityIssues: 1 # RETRAINING
+            Speed:
+              Gen: 3
+              Width: 8
+              MaxBandwidth: 126000000000
+          Stats:
+            ReplayCounter: 77
+            PacketCounter: 88
+            RxCounter: 1000000
+            TxCounter: 2000000
+            Timestamp: 999999
+            Speed:
+              Gen: 3
+              Width: 8
+              MaxBandwidth: 126000000000
+          Bars:
+            - Type: 0 # ZES_PCI_BAR_TYPE_MMIO
+              Index: 0
+              Base: 0x80000000
+              Size: 16777216 # 16 MiB
+            - Type: 2 # ZES_PCI_BAR_TYPE_MEM
+              Index: 2
+              Base: 0x100000000
+              Size: 268435456 # 256 MiB
+
+        ECC:
+          Available: true
+          Configurable: true
+          State:
+            CurrentState: 1 # ZES_DEVICE_ECC_STATE_ENABLED
+            PendingState: 1 # ZES_DEVICE_ECC_STATE_ENABLED
+            PendingAction: 0 # ZES_DEVICE_ACTION_NONE
+
+        Overclock:
+          DomainsBitmask: 3 # OVERCLOCK_DOMAIN_CARD | OVERCLOCK_DOMAIN_PACKAGE
+          Controls:
+            - DomainType: 0
+              ControlsBitmask: 7 # OVERCLOCK_CONTROL_VF | OVERCLOCK_CONTROL_FREQ_OFFSET | OVERCLOCK_CONTROL_VMAX_OFFSET
+          State:
+            Mode: 3 # ZES_OVERCLOCK_MODE_MODE_ON
+            WaiverSetting: true
+            State: false
+            PendingAction: 0 # ZES_PENDING_ACTION_PENDING_NONE
+            PendingReset: false
+          Domains:
+            - Properties:
+                DomainType: 1 # ZES_OVERCLOCK_DOMAIN_CARD
+                AvailableControls: 3 # OVERCLOCK_CONTROL_VF | OVERCLOCK_CONTROL_FREQ_OFFSET
+                VFProgramType: 0 # ZES_VF_PROGRAM_TYPE_VF_ARBITRARY
+                NumberOfVFPoints: 16
+              VFProperties:
+                MinFreq: 300.0
+                MaxFreq: 1600.0
+                StepFreq: 25.0
+                MinVolt: 700.0
+                MaxVolt: 1200.0
+                StepVolt: 10.0
+              ControlInfos:
+                - ControlType: 0
+                  Properties:
+                    MinValue: 100.0
+                    MaxValue: 2000.0
+                    StepValue: 50.0
+                    RefValue: 900.0
+                    DefaultValue: 1100.0
+                  CurrentValue: 1200.0
+                  PendingValue: 1100.0
+                  State: 2 # ZES_CONTROL_STATE_STATE_ACTIVE
+                  PendingAction: 0 # ZES_PENDING_ACTION_PENDING_NONE
+              VfPointValue: 42
+
+        Processes:
+          - ProcessId: 1234
+            MemSize: 1073741824
+            SharedSize: 268435456
+            Engines: 7
+          - ProcessId: 5678
+            MemSize: 536870912
+            SharedSize: 134217728
+            Engines: 2
+
+        Events: 1 # EVENT_TYPE_FLAG_DEVICE_DETACH
+
+        EngineGroups:
+          - Properties:
+              Type: 0 # ZES_ENGINE_GROUP_ALL
+              OnSubdevice: false
+              SubdeviceId: 0
+            Activity:
+              ActiveTime: 12345678
+              Timestamp: 87654321
+          - Properties:
+              Type: 1 # ZES_ENGINE_GROUP_COMPUTE_ALL
+              OnSubdevice: false
+              SubdeviceId: 0
+          - Properties:
+              Type: 4 # ZES_ENGINE_GROUP_COMPUTE_SINGLE
+              OnSubdevice: true
+              SubdeviceId: 1
+
+        FabricPorts:
+          - Properties:
+              Model: "Xe-Link"
+              OnSubdevice: true
+              SubdeviceId: 1
+              PortId:
+                FabricId: 10
+                AttachId: 20
+                PortNumber: 3
+              MaxRxSpeed:
+                BitRate: 53125000000
+                Width: 4
+              MaxTxSpeed:
+                BitRate: 50000000000
+                Width: 4
+            LinkType:
+              Desc: "Xe-Link"
+            Config:
+              Enabled: true
+              Beaconing: true
+            State:
+              Status: 2 # ZES_FABRIC_PORT_STATUS_DEGRADED
+              QualityIssues: 3 # LINK_ERRORS | SPEED
+              FailureReasons: 5 # FAILED | FLAPPING
+              RemotePortId:
+                FabricId: 11
+                AttachId: 21
+                PortNumber: 4
+              RxSpeed:
+                BitRate: 49000000000
+                Width: 4
+              TxSpeed:
+                BitRate: 47000000000
+                Width: 4
+            Throughput:
+              Timestamp: 777777
+              RxCounter: 111111
+              TxCounter: 222222
+            ErrorCounters:
+              LinkFailureCount: 5
+              FwCommErrorCount: 6
+              FwErrorCount: 7
+              LinkDegradeCount: 8
+          - Properties:
+              Model: "Xe-Link"
+              OnSubdevice: true
+              SubdeviceId: 1
+
+        Fans:
+          - Properties:
+              OnSubdevice: true
+              SubdeviceId: 1
+              CanControl: true
+              SupportedModes: 7
+              SupportedUnits: 3
+              MaxRPM: 3000
+              MaxPoints: 16
+            Config:
+              Mode: 1 # ZES_FAN_SPEED_MODE_FIXED
+              SpeedFixed:
+                Speed: 1500
+                Units: 0 # ZES_FAN_SPEED_UNITS_RPM
+            Speed: 1500
+          - Properties:
+              MaxRPM: 4500
+
+        Firmwares:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Name: "GFX"
+              Version: "1.2.3.4"
+            FlashProgress: 100
+            Log: "test log"
+          - Properties:
+              Name: "MEDIA"
+              Version: "5.6.7.8"
+
+        FrequencyDomains:
+          - Properties:
+              Type: 0 # ZES_FREQ_DOMAIN_GPU
+              OnSubdevice: true
+              SubdeviceId: 1
+              CanControl: true
+              IsThrottleEventSupported: true
+              Min: 300.0
+              Max: 1600.0
+            Range:
+              Min: 300.0
+              Max: 1600.0
+            State:
+              CurrentVoltage: 0.85
+              Actual: 1200.0
+              Request: 1400.0
+              Tdp: 1600.0
+              Efficient: 300.0
+              ThrottleReasons: 40 # THERMAL_LIMIT | SW_RANGE
+            ThrottleTime:
+              ThrottleTime: 5000
+              Timestamp: 100000
+            AvailableClocks: [300.0, 900.0, 1600.0]
+          - Properties:
+              Type: 1 # ZES_FREQ_DOMAIN_MEMORY
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: false
+              Min: 800.0
+              Max: 3200.0
+            Range:
+              Min: 800.0
+              Max: 3200.0
+
+        Leds:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              HaveRGB: true
+            State:
+              IsOn: true
+              Color:
+                Red: 1.0
+                Green: 0.5
+                Blue: 0.0
+          - Properties:
+              CanControl: false
+              HaveRGB: false
+
+        MemoryModules:
+          - Properties:
+              Type: 0 # ZES_MEM_TYPE_HBM
+              Location: 1 # ZES_MEM_LOC_DEVICE
+              OnSubdevice: true
+              SubdeviceId: 1
+              PhysicalSize: 17179869184 # 16 GiB
+              BusWidth: 128
+              NumChannels: 8
+            State:
+              Health: 1 # ZES_MEM_HEALTH_OK
+              Free: 8589934592 # 8 GiB
+              Size: 17179869184 # 16 GiB
+            Bandwidth:
+              ReadCounter: 1073741824 # 1 GiB
+              WriteCounter: 536870912 # 512 MiB
+              MaxBandwidth: 512000000000
+              Timestamp: 123456789
+          - Properties:
+              Type: 0 # ZES_MEM_TYPE_HBM
+              Location: 1 # ZES_MEM_LOC_DEVICE
+              OnSubdevice: true
+              SubdeviceId: 1
+              PhysicalSize: 8589934592 # 8 GiB
+            State:
+              Free: 4294967296 # 4 GiB
+              Size: 8589934592 # 8 GiB
+
+        PerformanceDomains:
+          - Properties:
+              Engines: 7 # ENGINE_TYPE_FLAG_OTHER | ENGINE_TYPE_FLAG_COMPUTE | ENGINE_TYPE_FLAG_3D
+            Config: 1.0
+          - Config: 0.8
+
+        PowerDomains:
+          - Properties:
+              OnSubdevice: true
+              SubdeviceId: 1
+              CanControl: true
+              IsEnergyThresholdSupported: true
+              DefaultLimit: 200000
+              MinLimit: 100000
+              MaxLimit: 300000
+            EnergyCounter:
+              Energy: 5000000
+              Timestamp: 123456789
+            EnergyThreshold:
+              Enable: true
+              Threshold: 10.5
+              ProcessId: 4321
+            Limits:
+              - Level: 1 # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0 # ZES_POWER_SOURCE_ANY
+                LimitUnit: 0 # ZES_LIMIT_UNIT_UNKNOWN
+                EnabledStateLocked: false
+                Enabled: true
+                IntervalValueLocked: false
+                Interval: 1000
+                LimitValueLocked: false
+                Limit: 200000
+              - Level: 2 # ZES_POWER_LEVEL_BURST
+                Source: 0 # ZES_POWER_SOURCE_ANY
+                LimitUnit: 0 # ZES_LIMIT_UNIT_UNKNOWN
+                EnabledStateLocked: false
+                Enabled: true
+                IntervalValueLocked: false
+                Interval: 0
+                LimitValueLocked: false
+                Limit: 250000
+          - Properties:
+              OnSubdevice: true
+              SubdeviceId: 1
+              CanControl: false
+              IsEnergyThresholdSupported: false
+
+        Psus:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              HaveFan: true
+              AmpLimit: 30
+            State:
+              VoltStatus: 1 # ZES_PSU_VOLTAGE_STATUS_NORMAL
+              FanFailed: false
+              Temperature: 45
+              Current: 10
+          - Properties:
+              HaveFan: false
+              AmpLimit: 15
+
+        RasErrorSets:
+          - Properties:
+              Type: 0 # ZES_RAS_ERROR_TYPE_CORRECTABLE
+              OnSubdevice: true
+              SubdeviceId: 1
+            Config:
+              TotalThreshold: 100
+              DetailedThresholds:
+                Category: [10, 11, 12, 13, 14, 15, 16]
+            State:
+              Category: [5, 6, 7, 8, 9, 10, 11]
+          - Properties:
+              Type: 1 # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+              OnSubdevice: false
+              SubdeviceId: 0
+
+        Schedulers:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              SupportedModes: 7 # ZES_SCHED_MODE_TIMEOUT | ZES_SCHED_MODE_TIMESLICE | ZES_SCHED_MODE_EXCLUSIVE
+              Engines: 7 # ENGINE_TYPE_FLAG_OTHER | ENGINE_TYPE_FLAG_COMPUTE | ENGINE_TYPE_FLAG_3D
+            CurrentMode: 1 # ZES_SCHED_MODE_TIMESLICE
+            TimeoutModeProperties:
+              WatchdogTimeout: 5000000
+            TimesliceModeProperties:
+              Interval: 2000
+              YieldTimeout: 500
+          - Properties:
+              OnSubdevice: true
+              SubdeviceId: 1
+              CanControl: true
+              SupportedModes: 3 # ZES_SCHED_MODE_TIMEOUT | ZES_SCHED_MODE_TIMESLICE
+              Engines: 1 # ENGINE_TYPE_FLAG_OTHER
+            CurrentMode: 0 # ZES_SCHED_MODE_TIMEOUT
+
+        StandbyDomains:
+          - Properties:
+              Type: 0 # ZES_STANDBY_TYPE_GLOBAL
+              OnSubdevice: false
+              SubdeviceId: 0
+            Mode: 0 # ZES_STANDBY_PROMO_MODE_DEFAULT
+
+        TemperatureSensors:
+          - Properties:
+              Type: 0 # ZES_TEMP_SENSORS_GLOBAL
+              OnSubdevice: true
+              SubdeviceId: 1
+              MaxTemperature: 110.0
+              IsCriticalTempSupported: true
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+            Config:
+              EnableCritical: true
+              Threshold1:
+                EnableLowToHigh: true
+                EnableHighToLow: true
+                Threshold: 90.0
+              Threshold2:
+                EnableLowToHigh: true
+                EnableHighToLow: true
+                Threshold: 100.0
+          - Properties:
+              Type: 1 # ZES_TEMP_SENSORS_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 105.0
+            Temperature: 52.5
+          - Properties:
+              Type: 2 # ZES_TEMP_SENSORS_MEMORY
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 95.0
+            Temperature: 41.0
+
+        Diagnostics:
+          - Properties:
+              Name: "GPU"
+              HaveTests: false
+            Result: 0 # ZES_DIAG_RESULT_NO_ERRORS
+          - Result: 3 # ZES_DIAG_RESULT_REBOOT_FOR_REPAIR
+
+  - ExtensionProperties:
+      - Name: "ZES_extension_engine_activity"
+        Version: 1
+      - Name: "ZES_extension_power_limits"
+        Version: 1
+      - Name: "ZES_extension_device_ecc_default_properties"
+        Version: 1
+
+    Devices:
+      - Properties:
+          Type: 1 # ZES_DEVICE_TYPE_GPU
+          Flags: 1 # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
+        ECC:
+          Available: true
+          Configurable: true
+          State:
+            ExtendedProperties:
+              DefaultState: 1 # ZES_DEVICE_ECC_STATE_ENABLED
+
+        EngineGroups:
+          - Properties:
+              Type: 0 # ZES_ENGINE_GROUP_ALL
+              ExtendedProperties:
+                CountOfVirtualFunctionInstance: 4
+
+        FabricPorts: []
+        Fans: []
+        Firmwares: []
+        FrequencyDomains: []
+        Leds: []
+        MemoryModules: []
+        PerformanceDomains: []
+        PowerDomains:
+          - Properties:
+              OnSubdevice: true
+              SubdeviceId: 1
+              CanControl: true
+              IsEnergyThresholdSupported: true
+              DefaultLimit: 150000
+              MinLimit: 90000
+              MaxLimit: 225000
+              ExtendedProperties:
+                Domain: 2 # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Level: 1 # ZES_POWER_LEVEL_SUSTAINED
+                  Source: 0 # ZES_POWER_SOURCE_ANY
+                  LimitUnit: 0 # ZES_LIMIT_UNIT_UNKNOWN
+                  EnabledStateLocked: true
+                  Enabled: true
+                  IntervalValueLocked: true
+                  Interval: 250
+                  LimitValueLocked: true
+                  Limit: 150000
+        Psus: []
+        RasErrorSets: []
+        Schedulers: []
+        StandbyDomains: []
+        TemperatureSensors: []
+        Diagnostics: []
+        Processes: []

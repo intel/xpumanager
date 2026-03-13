@@ -61,8 +61,12 @@ install-protoc:
 # --- Test / lint targets
 
 .PHONY: test
-test:
-	@error=""; for module in $(GO_MODULES); do \
+test: test-daemon test-bindings
+
+.PHONY: test-daemon
+test-daemon:
+	@error=""; \
+	for module in $(XPUMD_GO_MODULES); do \
 		echo "Running tests in module '$$module'..."; \
 		go -C $$module test ./... || error=1; \
 	done; \
@@ -70,6 +74,11 @@ test:
 		exit 1; \
 	fi; \
 	echo "✓ All tests passed"
+
+.PHONY: test-bindings
+test-bindings:
+	@echo "Running Level-Zero Go bindings tests..."
+	make -C receiver/internal/level-zero-go test
 
 .PHONY: golint
 golint:

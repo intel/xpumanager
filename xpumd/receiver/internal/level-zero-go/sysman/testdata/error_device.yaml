@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: device method failures (DriverGet + DeviceGet succeed, device methods fail)
+# (ZE_RESULT_ERROR_INVALID_ARGUMENT = 0x78000004).
+# Used by all TestDevice*/Error and TestDeviceEnum*/Error tests.
+
+EventNumDeviceEvents: 0
+Drivers:
+  - ExtensionProperties: []
+    Devices:
+      - ReturnValues:
+          zesDeviceGetProperties: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceGetState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceReset: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceResetExt: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceProcessesGetState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDevicePciGetProperties: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDevicePciGetState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDevicePciGetBars: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDevicePciGetStats: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceSetOverclockWaiver: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceGetOverclockDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceGetOverclockControls: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceResetOverclockSettings: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceReadOverclockState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumOverclockDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEccAvailable: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEccConfigurable: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceGetEccState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceSetEccState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumEngineGroups: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEventRegister: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumFabricPorts: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumFans: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumFirmwares: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumFrequencyDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumLeds: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumMemoryModules: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumPerformanceFactorDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumPowerDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumPsus: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumRasErrorSets: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumSchedulers: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumStandbyDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumTemperatureSensors: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceEnumDiagnosticTestSuites: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+        ECC:
+          Available: true
+          Configurable: true
+        EngineGroups: []
+        FabricPorts: []
+        Fans: []
+        Firmwares: []
+        FrequencyDomains: []
+        Leds: []
+        MemoryModules: []
+        PerformanceDomains: []
+        PowerDomains: []
+        Psus: []
+        RasErrorSets: []
+        Schedulers: []
+        StandbyDomains: []
+        TemperatureSensors: []
+        Diagnostics: []
+        Processes: []

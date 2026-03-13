@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: zesInit and zesDriverGet failures (ZE_RESULT_ERROR_UNINITIALIZED = 0x78000001).
+# Used by TestInit/Error and TestDriverGet/Error.
+
+EventNumDeviceEvents: 0
+Drivers: []
+
+ReturnValues:
+  zesInit: 0x78000001      # ZE_RESULT_ERROR_UNINITIALIZED
+  zesDriverGet: 0x78000001 # ZE_RESULT_ERROR_UNINITIALIZED

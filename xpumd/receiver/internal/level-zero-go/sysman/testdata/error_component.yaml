@@ -1,0 +1,125 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: component method failures (DriverGet + DeviceGet + all Enum* succeed,
+# component methods fail, ZE_RESULT_ERROR_NOT_AVAILABLE = 0x70010001).
+# Used by all component-level method tests (Engine, FabricPort,
+# Fan, Firmware, Frequency, Led, Memory, Overclock, Performance, Power, Psu, Ras,
+# Scheduler, Standby, Temperature, Diagnostics) and FabricPortGetMultiPortThroughput.
+
+EventNumDeviceEvents: 0
+Drivers:
+  - ExtensionProperties: []
+    Devices:
+      - ECC:
+          Available: true
+          Configurable: true
+        EngineGroups:
+          - ReturnValues:
+              zesEngineGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesEngineGetActivity: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesEngineGetActivityExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        FabricPorts:
+          - ReturnValues:
+              zesFabricPortGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortGetLinkType: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortGetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortSetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortGetThroughput: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortGetFabricErrorCounters: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFabricPortGetMultiPortThroughput: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Fans:
+          - ReturnValues:
+              zesFanGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFanGetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFanSetDefaultMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFanSetFixedSpeedMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFanSetSpeedTableMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFanGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Firmwares:
+          - ReturnValues:
+              zesFirmwareGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFirmwareFlash: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFirmwareGetFlashProgress: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFirmwareGetConsoleLogs: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        FrequencyDomains:
+          - ReturnValues:
+              zesFrequencyGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFrequencyGetAvailableClocks: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFrequencyGetRange: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFrequencySetRange: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFrequencyGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesFrequencyGetThrottleTime: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Leds:
+          - ReturnValues:
+              zesLedGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesLedGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesLedSetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesLedSetColor: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        MemoryModules:
+          - ReturnValues:
+              zesMemoryGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesMemoryGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesMemoryGetBandwidth: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Overclock:
+          Domains:
+            - ReturnValues:
+                zesOverclockGetDomainProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockGetDomainVFProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockGetDomainControlProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockGetControlCurrentValue: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockGetControlPendingValue: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockSetControlUserValue: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockGetControlState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockGetVFPointValues: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+                zesOverclockSetVFPointValues: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        PerformanceDomains:
+          - ReturnValues:
+              zesPerformanceFactorGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPerformanceFactorGetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPerformanceFactorSetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        PowerDomains:
+          - ReturnValues:
+              zesPowerGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerGetEnergyCounter: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerGetLimitsExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerSetLimitsExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerGetEnergyThreshold: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerSetEnergyThreshold: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Psus:
+          - ReturnValues:
+              zesPsuGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPsuGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        RasErrorSets:
+          - ReturnValues:
+              zesRasGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesRasGetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesRasSetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesRasGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Schedulers:
+          - ReturnValues:
+              zesSchedulerGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesSchedulerGetCurrentMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesSchedulerGetTimeoutModeProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesSchedulerGetTimesliceModeProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesSchedulerSetTimeoutMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesSchedulerSetTimesliceMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesSchedulerSetExclusiveMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        StandbyDomains:
+          - ReturnValues:
+              zesStandbyGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesStandbyGetMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesStandbySetMode: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        TemperatureSensors:
+          - ReturnValues:
+              zesTemperatureGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesTemperatureGetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesTemperatureSetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesTemperatureGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Diagnostics:
+          - ReturnValues:
+              zesDiagnosticsGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesDiagnosticsGetTests: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesDiagnosticsRunTests: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+        Processes: []
