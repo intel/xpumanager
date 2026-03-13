@@ -33,7 +33,7 @@ processors:
             values: ["gpu"]
         copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
         add_attributes:
-          hw.type: "temperature.core"
+          hw.type: "temperature"
         # Ordered list of state rules. The rules should be ordered by increasing severity.
         # All rules are evaluated, the last matching one will be active.
         states:
@@ -63,7 +63,7 @@ processors:
             values: ["memory"]
         copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
         add_attributes:
-          hw.type: "temperature.memory"
+          hw.type: "temperature"
         # Ordered list of state rules. The rules should be ordered by increasing severity.
         # All rules are evaluated, the last matching one will be active.
         states:
