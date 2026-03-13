@@ -23,7 +23,7 @@ data:
                 values: ["gpu"]
             copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
             add_attributes:
-              hw.type: "temperature.core"
+              hw.type: "temperature"
             states:
               # Default state
               - state_name: "ok"
@@ -51,7 +51,7 @@ data:
                 values: ["memory"]
             copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
             add_attributes:
-              hw.type: "temperature.memory"
+              hw.type: "temperature"
             states:
               # Default state
               - state_name: "ok"
