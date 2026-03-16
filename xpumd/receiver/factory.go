@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	sysmanFactory = sysman.NewFactory()
+	sysmanFactory = sysman.New()
 )
 
 // NewFactory creates a factory for the receiver.
@@ -28,11 +28,12 @@ func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
 		defaultConfig,
-		receiver.WithMetrics(createReceiver, metadata.MetricsStability),
+		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability),
+		receiver.WithLogs(createLogsReceiver, metadata.LogsStability),
 	)
 }
 
-func createReceiver(_ context.Context, settings receiver.Settings, rcfg component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
+func createMetricsReceiver(_ context.Context, settings receiver.Settings, rcfg component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
 	cfg, ok := rcfg.(*Config)
 	if !ok {
 		return nil, fmt.Errorf("invalid config type: %T", rcfg)
@@ -51,4 +52,13 @@ func createReceiver(_ context.Context, settings receiver.Settings, rcfg componen
 		consumer,
 		scraperhelper.AddFactoryWithConfig(sysmanFactory, cfg.Config),
 	)
+}
+
+func createLogsReceiver(_ context.Context, settings receiver.Settings, rcfg component.Config, nextConsumer consumer.Logs) (receiver.Logs, error) {
+	cfg, ok := rcfg.(*Config)
+	if !ok {
+		return nil, fmt.Errorf("invalid config type: %T", rcfg)
+	}
+
+	return sysmanFactory.CreateLogsReceiver(settings.TelemetrySettings, cfg.Config, nextConsumer)
 }

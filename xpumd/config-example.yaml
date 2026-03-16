@@ -126,3 +126,5 @@ service:
       receivers: [intelxpu]
       processors: [intelxpustatus]
       exporters: [intelxpuinfo,prometheus]
+    logs:
+      receivers: [intelxpu]

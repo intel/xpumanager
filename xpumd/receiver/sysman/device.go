@@ -7,6 +7,7 @@ package sysman
 
 import (
 	"fmt"
+	"iter"
 	"net/url"
 	"strings"
 
@@ -18,6 +19,11 @@ import (
 )
 
 type deviceRegistry struct {
+	drivers []*driver
+}
+
+type driver struct {
+	driver  *l0sysman.Driver
 	devices []*device
 }
 
@@ -70,27 +76,39 @@ func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize in
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES drivers: %w", err)
 	}
-	for i, driver := range drivers {
-		devs, err := enumDevices(driver, logger, aggregatedMetricsBufferSize)
+	for i, drv := range drivers {
+		devs, err := enumDevices(drv, logger, aggregatedMetricsBufferSize)
 		if err != nil {
 			return nil, fmt.Errorf("failed to enumerate devices for driver %d/%d: %w", i+1, len(drivers), err)
 		}
 
-		reg.devices = append(reg.devices, devs...)
+		reg.drivers = append(reg.drivers, &driver{driver: drv, devices: devs})
 	}
 
 	return reg, nil
 }
 
 func (r *deviceRegistry) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	for _, dev := range r.devices {
+	for dev := range r.devices() {
 		dev.scrape(mb, ts)
 	}
 }
 
 func (r *deviceRegistry) pollAggregatedMetrics() {
-	for _, dev := range r.devices {
+	for dev := range r.devices() {
 		dev.pollAggregatedMetrics()
+	}
+}
+
+func (r *deviceRegistry) devices() iter.Seq[*device] {
+	return func(yield func(*device) bool) {
+		for _, drv := range r.drivers {
+			for _, dev := range drv.devices {
+				if !yield(dev) {
+					return
+				}
+			}
+		}
 	}
 }
 

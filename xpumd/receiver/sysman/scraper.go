@@ -7,7 +7,6 @@ package sysman
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -17,11 +16,9 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper"
 	"go.uber.org/zap"
-
-	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
-type sysmanScraper struct {
+type sysmanMetricsScraper struct {
 	settings scraper.Settings
 	cfg      *Config
 	wg       sync.WaitGroup
@@ -31,7 +28,7 @@ type sysmanScraper struct {
 	stop     context.CancelFunc
 }
 
-func newSysmanScraper(_ context.Context, settings scraper.Settings, cfg *Config) (*sysmanScraper, error) {
+func newSysmanMetricsScraper(_ context.Context, settings scraper.Settings, cfg *Config, devices *deviceRegistry) (*sysmanMetricsScraper, error) {
 	logger := settings.Logger.WithOptions(zap.IncreaseLevel(cfg.LogLevel)).Sugar()
 
 	// Warn about potentially config issues.
@@ -42,18 +39,7 @@ func newSysmanScraper(_ context.Context, settings scraper.Settings, cfg *Config)
 		)
 	}
 
-	// Initialize Sysman
-	err := l0sysman.Init(0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize L0 Sysman API (likely a Level-Zero driver / device access issue): %w", err)
-	}
-
-	devices, err := newDeviceRegistry(logger, cfg.aggregatedMetricsBufferSize)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize device registry: %w", err)
-	}
-
-	return &sysmanScraper{
+	return &sysmanMetricsScraper{
 		settings: settings,
 		cfg:      cfg,
 		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
@@ -62,7 +48,7 @@ func newSysmanScraper(_ context.Context, settings scraper.Settings, cfg *Config)
 	}, nil
 }
 
-func (s *sysmanScraper) start(ctx context.Context, _ component.Host) error {
+func (s *sysmanMetricsScraper) start(ctx context.Context, _ component.Host) error {
 	ctx, s.stop = context.WithCancel(ctx)
 
 	s.wg.Go(func() { s.runSampler(ctx) })
@@ -70,7 +56,7 @@ func (s *sysmanScraper) start(ctx context.Context, _ component.Host) error {
 	return nil
 }
 
-func (s *sysmanScraper) shutdown(ctx context.Context) error {
+func (s *sysmanMetricsScraper) shutdown(ctx context.Context) error {
 	if s.stop != nil {
 		s.stop()
 	}
@@ -79,7 +65,7 @@ func (s *sysmanScraper) shutdown(ctx context.Context) error {
 }
 
 // runSampler samples the aggregated device metrics.
-func (s *sysmanScraper) runSampler(ctx context.Context) {
+func (s *sysmanMetricsScraper) runSampler(ctx context.Context) {
 	ticker := time.NewTicker(s.cfg.SamplingInterval)
 	defer ticker.Stop()
 	for {
@@ -92,7 +78,7 @@ func (s *sysmanScraper) runSampler(ctx context.Context) {
 	}
 }
 
-func (s *sysmanScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
+func (s *sysmanMetricsScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	s.devices.scrape(s.mb, now)
