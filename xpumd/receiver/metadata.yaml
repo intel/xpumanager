@@ -3,7 +3,7 @@ type: intelxpu
 status:
   class: receiver
   stability:
-    alpha: [metrics]
+    alpha: [metrics, logs]
   codeowners:
     active: [marquiz]
 

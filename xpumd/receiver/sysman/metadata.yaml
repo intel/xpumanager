@@ -4,7 +4,7 @@ type: sysman
 status:
   class: scraper
   stability:
-    development: [metrics]
+    development: [metrics, logs]
   codeowners:
     active: [marquiz, eero-t]
 
