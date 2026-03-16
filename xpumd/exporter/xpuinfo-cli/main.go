@@ -17,8 +17,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v3"
 
-	pb "github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1"
-	"github.com/intel/xpumanager/exporter/internal/metadata"
+	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
+	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
 )
 
 var (

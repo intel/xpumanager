@@ -597,7 +597,7 @@ const file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc = "" +
 	"\x15SEVERITY_LEVEL_FAILED\x10\x042k\n" +
 	"\n" +
 	"DeviceInfo\x12]\n" +
-	"\x11WatchDeviceHealth\x12$.deviceinfo.WatchDeviceHealthRequest\x1a .deviceinfo.DeviceHealthResponse0\x01B>Z<github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1b\x06proto3"
+	"\x11WatchDeviceHealth\x12$.deviceinfo.WatchDeviceHealthRequest\x1a .deviceinfo.DeviceHealthResponse0\x01BDZBgithub.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1b\x06proto3"
 
 var (
 	file_exporter_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescOnce sync.Once

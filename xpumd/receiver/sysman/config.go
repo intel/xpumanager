@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap/zapcore"
 )

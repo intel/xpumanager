@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
