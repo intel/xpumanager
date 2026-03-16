@@ -32,7 +32,7 @@ OTEL_VERSION ?= 0.146.0
 build:
 	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
 	go tool -modfile tools/go.mod builder --config=builder-config.yaml
-	go -C dist build github.com/intel/xpumanager/exporter/xpuinfo-cli
+	go -C dist build github.com/intel/xpumanager/xpumd/exporter/xpuinfo-cli
 
 .PHONY: generate
 generate: generate-bindings generate-mods generate-proto

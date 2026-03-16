@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 
-	"github.com/intel/xpumanager/exporter/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
 )
 
 // NewFactory creates a factory for the exporter.

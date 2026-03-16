@@ -15,8 +15,8 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
-	"github.com/intel/xpumanager/receiver/internal/metadata"
-	"github.com/intel/xpumanager/receiver/sysman"
+	"github.com/intel/xpumanager/xpumd/receiver/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/sysman"
 )
 
 var (

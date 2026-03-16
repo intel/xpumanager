@@ -1,4 +1,4 @@
-module github.com/intel/xpumanager/receiver
+module github.com/intel/xpumanager/xpumd/receiver
 
 go 1.25.0
 
@@ -59,6 +59,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/intel/xpumanager => ..
+replace github.com/intel/xpumanager/xpumd => ..
 
 replace github.com/intel/level-zero-go => ./internal/level-zero-go

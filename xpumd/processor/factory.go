@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 
-	"github.com/intel/xpumanager/processor/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/processor/internal/metadata"
 )
 
 // NewFactory returns a factory for the processor.

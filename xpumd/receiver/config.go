@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 	"go.uber.org/zap"
 
-	"github.com/intel/xpumanager/receiver/sysman"
+	"github.com/intel/xpumanager/xpumd/receiver/sysman"
 )
 
 // Config defines configuration for the receiver.

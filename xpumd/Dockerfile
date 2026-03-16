@@ -53,7 +53,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
     go -C dist tool -modfile $(pwd)/tools/go.mod \
         go-licenses save . \
-                --ignore github.com/intel/xpumanager \
+                --ignore github.com/intel/xpumanager/xpumd \
                 --save_path /out/usr/share/doc/xpumd/licenses
 
 # (L)GPL compliance: store source packages stored in /sources

@@ -8,7 +8,7 @@ package sysman
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
-	"github.com/intel/xpumanager/receiver/sysman/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
 )
 
 const (

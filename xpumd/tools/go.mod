@@ -1,4 +1,4 @@
-module github.com/intel/xpumanager/tools
+module github.com/intel/xpumanager/xpumd/tools
 
 go 1.25.0
 

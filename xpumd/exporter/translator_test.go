@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/testing/protocmp"
 
-	pb "github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1"
+	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
 )
 
 func TestParseFirmwares(t *testing.T) {

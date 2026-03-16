@@ -9,8 +9,8 @@ import (
 	"context"
 	"sync"
 
-	pb "github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1"
-	"github.com/intel/xpumanager/exporter/internal/metadata"
+	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
+	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 )

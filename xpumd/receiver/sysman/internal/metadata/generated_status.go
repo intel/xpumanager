@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("sysman")
-	ScopeName = "github.com/intel/xpumanager/receiver/sysman"
+	ScopeName = "github.com/intel/xpumanager/xpumd/receiver/sysman"
 )
 
 const (

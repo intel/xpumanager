@@ -1,4 +1,4 @@
-module github.com/intel/xpumanager/processor
+module github.com/intel/xpumanager/xpumd/processor
 
 go 1.25.0
 
