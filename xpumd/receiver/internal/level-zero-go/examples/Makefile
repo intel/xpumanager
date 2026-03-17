@@ -19,6 +19,7 @@ help:
 .PHONY: build
 build:
 	$(Q)go build -o bin/list-sysman ./list-sysman/.
+	$(Q)go build -o bin/events-sysman ./events-sysman/.
 
 .PHONY: images
 images:
