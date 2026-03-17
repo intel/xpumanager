@@ -11,6 +11,9 @@
 
 ## Building
 
+See the build requirements in Level-Zero Go Bindings
+[README](receiver/internal/level-zero-go/README.md#requirements).
+
 Clone the repository:
 
 ```bash
@@ -143,21 +146,43 @@ ls -lh ./sources
 
 ## Testing in single-node cluster
 
-After building the container image, load the image onto the cluster. E.g.
-with containerd:
+After building the container image, load the image onto the cluster.
+
+### Load container image
+
+#### Kind
+
+```bash
+kind load docker-image registry.local/xpumd:main
+```
+
+#### Containerd-based cluster
 
 1. Save image as a tarball (on build machine):
 
 ```bash
-docker save registry.local/xpumd:main  -o xpum-main.tar
+docker save registry.local/xpumd:main -o xpumd-main.tar
 ```
 
 2. Import tarball to container runtime (on cluster node):
 
 ```bash
-sudo ctr -n k8s.io images  import xpum-main.tar
+sudo ctr -n k8s.io images import xpumd-main.tar
 ```
 
 (`-n k8s.io` option is needed for images to be visible to Kubernetes / `crictl`.)
 
-Then see [Helm chart README](charts/xpumd/README.md) on how to deploy the new image.
+### Deploy with Helm
+
+The most straightforward way to deploy the daemon for testing and debugging is
+to use privileged mode, which allows the daemon to access all the necessary
+devices without Kubernetes resource drivers:
+
+```bash
+helm install xpumd charts/xpumd --set image.repository=registry.local/xpumd --set image.pullPolicy=Never \
+        --set gpuAccess=null \
+        --set securityContextOverride.runAsUser=0 --set securityContextOverride.privileged=true
+```
+
+See [Helm chart README](charts/xpumd/README.md) for other deployment scenarios
+and detailed configuration options.
