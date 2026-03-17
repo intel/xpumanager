@@ -1193,7 +1193,7 @@ func durationToMillisecondsUint32(d time.Duration) uint32 {
 // Negative durations are treated as infinite timeout (UINT64_MAX).
 func durationToMillisecondsUint64(d time.Duration) uint64 {
 	if d < 0 {
-		return math.MaxUint32
+		return math.MaxUint64
 	}
 	return uint64(d.Milliseconds())
 }
