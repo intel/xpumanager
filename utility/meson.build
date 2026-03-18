@@ -3,4 +3,5 @@
 
 # Utility components build
 
+subdir('bdf')
 subdir('table')

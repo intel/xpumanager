@@ -25,6 +25,9 @@ enum configCmdType
 	PERFORMANCEFACTOR,
 	MEMORYECC,
 	RESET,
+	COLDRESET,
+	IGNORE_GPU_USER_PROCESSES,
+	FORCE_RESET_GPUS,
 	PCIEDOWNGRADE,
 	FANSPEED,
 	FANCURVE,
@@ -55,6 +58,7 @@ public:
 	ze_result_t setFanCurve(devInfo *d);
 	ze_result_t setFanCurveRpm(devInfo *d);
 	ze_result_t getSelectedFanId(int32_t &fanId);
+	ze_result_t coldResetDevice(devInfo *d);
 	int run(arg_struct *args);
 };
 

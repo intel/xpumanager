@@ -7,6 +7,7 @@
 #include "cmd_config.h"
 #include "debug.h"
 #include "table_builder.h"
+#include "bdf.h"
 #include <assert.h>
 #include <ecc.h>
 #include <fabric.h>
@@ -61,6 +62,9 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::FANCURVE, {{"fancurve", required_argument, 0, 0}, &cmdConfig::setFanCurve, false, ""}},
 	{configCmdType::FANCURVERPM, {{"fancurve-rpm", required_argument, 0, 0}, &cmdConfig::setFanCurveRpm, false, ""}},
 	{configCmdType::FANID, {{"fanid", required_argument, 0, 0}, nullptr, false, ""}},
+	{configCmdType::COLDRESET, {{"coldreset", no_argument, 0, 0}, &cmdConfig::coldResetDevice, false, ""}},
+	{configCmdType::IGNORE_GPU_USER_PROCESSES, {{"ignore-gpu-user-processes", no_argument, 0, 0}, nullptr, false, ""}},
+	{configCmdType::FORCE_RESET_GPUS, {{"force-reset-gpus", no_argument, 0, 0}, nullptr, false, ""}},
 	{configCmdType::POWERTYPE, {{"powertype", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
@@ -636,6 +640,7 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "--fanid                     Fan target: -1 (all fans, default) or 0..N-1"));
 
 	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --reset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [pciBdfAddress] --coldreset", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -657,6 +662,16 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(SUB_HEADING,
 				"When SR-IOV is disabled, please add \"pci=realloc=on\" into Linux kernel command line parameters"));
+	helpList.push_back(helpCmd(HEADING, "--coldreset                 Cold reset device via PCIe slot power cycle"));
+	helpList.push_back(helpCmd(SUB_HEADING, "Device must be addressed by PCI BDF (e.g. 0000:4d:00.0), not by device "
+											"ID. Aborts if processes are using the GPU or if other devices share "
+											"the PCIe slot. Override with the flags below."));
+	helpList.push_back(
+		helpCmd(HEADING, "--ignore-gpu-user-processes Proceed with --coldreset even if processes have the GPU"));
+	helpList.push_back(helpCmd(SUB_HEADING, "open."));
+	helpList.push_back(
+		helpCmd(HEADING, "--force-reset-gpus          Proceed with --coldreset even if other PCI devices share"));
+	helpList.push_back(helpCmd(SUB_HEADING, "the PCIe slot. All devices on the slot will be reset together."));
 	helpList.push_back(helpCmd(HEADING, "--performancefactor         Set the tile-level performance factor. Valid "
 										"options: \"compute/media\",factorValue. The factor value should be"));
 	helpList.push_back(helpCmd(SUB_HEADING, "between 0 to 100. 100 means that the workload is completely compute "
@@ -1782,6 +1797,74 @@ ze_result_t cmdConfig::setFanCurveRpm(devInfo *d)
 }
 
 /**
+ * @brief Cold resets the device via PCIe slot power cycle.
+ *
+ * Aborts if processes are using the GPU (override with --ignore-gpu-user-processes)
+ * or if other PCI devices share the slot (override with --force-reset-gpus).
+ *
+ * On success the process exits via std::_Exit(0) because the GPU has
+ * disappeared and re-enumerated; outstanding Level Zero handles are no
+ * longer valid and clean teardown is unsafe.
+ *
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation. The function does not return
+ *         on success (process exits).
+ */
+ze_result_t cmdConfig::coldResetDevice(devInfo *d)
+{
+	TRACING();
+
+	if (!PRIVILEGECHECK()) {
+		ERR("Cold reset requires elevated privileges (root or 'xpum' group on Linux).\n");
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	}
+
+	const std::string bdfStr = d->dev->getBDFStr();
+
+	if (!configCmds[configCmdType::IGNORE_GPU_USER_PROCESSES].enabled) {
+		std::vector<uint32_t> pids = getGpuProcessesByBdf(bdfStr);
+		if (!pids.empty()) {
+			ERR("Cold reset aborted: {} process(es) are currently using GPU {} ({}):\n", pids.size(), d->index, bdfStr);
+			for (uint32_t pid : pids) {
+				std::string procName = GETPROCESSNAME(pid);
+				ERR("  PID {} ({})\n", pid, procName.empty() ? "<unknown>" : procName.c_str());
+			}
+			ERR("Terminate these processes and re-run, or pass --ignore-gpu-user-processes to\n"
+				"proceed.\n");
+			return ZE_RESULT_ERROR_HANDLE_OBJECT_IN_USE;
+		}
+	}
+
+	if (!configCmds[configCmdType::FORCE_RESET_GPUS].enabled) {
+		std::vector<std::string> peers = getDevicesSharingSlotWith(bdfStr);
+		if (!peers.empty()) {
+			ERR("Cold reset aborted: {} other PCI device(s) share the PCIe slot with GPU {} ({})\n"
+				"and would be reset by this operation:\n",
+				peers.size(), d->index, bdfStr);
+			for (const auto &peerBdf : peers) {
+				ERR("  {}\n", peerBdf);
+			}
+			ERR("Pass --force-reset-gpus to proceed and reset all listed devices.\n");
+			return ZE_RESULT_ERROR_NOT_AVAILABLE;
+		}
+	}
+
+	PRINT("Performing cold reset on GPU {} ({}). Please wait ...\n", d->index, bdfStr);
+
+	ze_result_t result = d->dev->coldResetDevice();
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to cold reset device: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	PRINT("Cold reset succeeded for GPU {}\n", d->index);
+	std::fflush(stdout);
+	std::_Exit(0);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Executes the config run.
  *
  * @return int Returns 0 on success.
@@ -1865,6 +1948,15 @@ int cmdConfig::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (configCmds[configCmdType::COLDRESET].enabled) {
+		const std::string &devArg = configCmds[configCmdType::CONFIGDEVICE].val;
+		if (!isValidBdf(devArg)) {
+			ERR("Cold reset requires a PCI BDF address in DDDD:BB:DD.F format "
+				"(e.g. 0000:4d:00.0), not a device ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
 	result = args->sm.findDevice(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '{}'.\n",
@@ -1879,6 +1971,17 @@ int cmdConfig::run(arg_struct *args)
 		}
 		if (deviceList.size() != 1) {
 			ERR("Reset requires a single device ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (configCmds[configCmdType::COLDRESET].enabled) {
+		if (configCmds[configCmdType::TILE].enabled) {
+			ERR("Cold reset does not support tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (deviceList.size() != 1) {
+			ERR("Cold reset requires a single PCI BDF.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}

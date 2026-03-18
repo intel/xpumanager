@@ -112,5 +112,8 @@ std::string getKernelVersion();
 std::string getPciSlotLabel(const std::string &bdf);
 std::string getDowngradedPCIeInfo(std::string &bdfStr);
 std::string findResourceFile(const std::string &relativePath);
+int coldResetViaSysfs(const std::string &gpuBdf);
+std::vector<uint32_t> getGpuProcessesByBdf(const std::string &gpuBdf);
+std::vector<std::string> getDevicesSharingSlotWith(const std::string &gpuBdf);
 
 #endif

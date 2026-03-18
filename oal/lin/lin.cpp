@@ -6,26 +6,30 @@
 
 #include <os.h>
 #include <algorithm>
+#include <cctype>
+#include <cerrno>
+#include <cstring>
 #include <debug.h>
 #include <fcntl.h>
 #include <filesystem>
+#include <format>
 #include <fstream>
+#include <functional>
 #include <grp.h>
+#include <iostream>
 #include <math.h>
 #include <pwd.h>
 #include <sys/mman.h>
 #include <sys/utsname.h>
-#include <vector>
+#include <syncstream>
 #include <termios.h>
 #include <unistd.h>
-#include <format>
-#include <filesystem>
-#include <iostream>
-#include <syncstream>
+#include <vector>
 
 #include "lin.h"
 #include "pci_database.h"
 #include "dmi_reader.h"
+#include "bdf.h"
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
@@ -280,27 +284,6 @@ std::string timestamp()
 	timestampStr = std::format("{:02d}:{:02d}:{:02d}.{:03d}", timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec,
 							   (int)tv.tv_usec / 1000);
 	return timestampStr;
-}
-
-/**
- * @brief Validates that a BDF address string is well-formed
- *
- * BDF addresses must match the canonical format DDDD:BB:DD.F using only
- * hexadecimal digits and the expected separators. This check prevents
- * path-traversal attacks when the BDF is embedded in sysfs paths.
- *
- * @param bdf The BDF string to validate
- * @return bool True if the string is a valid BDF address, false otherwise
- */
-static bool isValidBdf(const std::string &bdf)
-{
-	// BDF format: DDDD:BB:DD.F — exactly 12 characters
-	if (bdf.length() != 12) {
-		return false;
-	}
-	const auto isHex = [](unsigned char c) { return std::isxdigit(c) != 0; };
-	return isHex(bdf[0]) && isHex(bdf[1]) && isHex(bdf[2]) && isHex(bdf[3]) && bdf[4] == ':' && isHex(bdf[5]) &&
-		   isHex(bdf[6]) && bdf[7] == ':' && isHex(bdf[8]) && isHex(bdf[9]) && bdf[10] == '.' && isHex(bdf[11]);
 }
 
 /**
@@ -957,4 +940,560 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 	}
 
 	return 0;
+}
+
+// PCI Express Capability ID
+static constexpr uint8_t PCI_CAP_ID_EXP = 0x10;
+
+// Offset of Slot Capabilities register within the PCIe Capability structure
+static constexpr uint8_t PCI_EXP_SLTCAP_OFFSET = 0x14;
+
+// Slot Capabilities register bits
+static constexpr uint32_t PCI_EXP_SLTCAP_PCP = 0x0002;	   // Power Controller Present (bit 1)
+static constexpr uint32_t PCI_EXP_SLTCAP_HPC = 0x0040;	   // Hot-Plug Capable (bit 6)
+static constexpr uint32_t PCI_EXP_SLTCAP_PSN = 0xFFF80000; // Physical Slot Number (bits 31:19)
+
+/**
+ * @brief Finds the root port BDF for a given GPU PCI device by walking the sysfs topology
+ *
+ * Traverses parent directories in /sys/bus/pci/devices/<gpuBdf>/ upward until
+ * reaching the root port (the bridge whose parent is a PCI domain root).
+ *
+ * @param gpuBdf BDF string of the GPU device (e.g., "0000:4d:00.0")
+ * @param rootPortBdf Output string to store the root port BDF
+ * @return true if the root port was found, false otherwise
+ */
+static bool findRootPortBdf(const std::string &gpuBdf, std::string &rootPortBdf)
+{
+	if (!isValidBdf(gpuBdf)) {
+		ERR("Rejecting invalid BDF address: {}\n", gpuBdf);
+		return false;
+	}
+
+	std::error_code ec;
+	std::filesystem::path devPath = "/sys/bus/pci/devices/" + gpuBdf;
+
+	if (!std::filesystem::exists(devPath, ec)) {
+		ERR("GPU sysfs path not found: {}\n", devPath.string());
+		return false;
+	}
+
+	// Resolve symlink to physical path, e.g. /sys/devices/pci0000:00/0000:00:01.0/0000:4d:00.0
+	std::filesystem::path realPath = std::filesystem::canonical(devPath, ec);
+	if (ec) {
+		ERR("Failed to resolve sysfs path for {}: {}\n", gpuBdf, ec.message());
+		return false;
+	}
+
+	// Walk up from the GPU device through parent bridges.
+	// The root port is the first bridge whose parent directory name starts with "pci"
+	std::filesystem::path current = realPath;
+	std::filesystem::path candidate;
+
+	while (current.has_parent_path() && current != current.parent_path()) {
+		std::filesystem::path parent = current.parent_path();
+		std::string parentName = parent.filename().string();
+
+		if (parentName.starts_with("pci")) {
+			candidate = current;
+			break;
+		}
+		std::string currentName = current.filename().string();
+		if (isValidBdf(currentName)) {
+			candidate = current;
+		}
+		current = parent;
+	}
+
+	if (candidate.empty()) {
+		ERR("Could not find root port for {}\n", gpuBdf);
+		return false;
+	}
+
+	rootPortBdf = candidate.filename().string();
+	DBG("Root port for {} is {}\n", gpuBdf, rootPortBdf);
+	return true;
+}
+
+/**
+ * @brief Reads the PCIe Slot Capabilities register from a root port's config space
+ *
+ * Walks the PCI capability list to find the PCIe Capability (ID 0x10),
+ * then reads the Slot Capabilities register at offset (+0x14) within that capability.
+ *
+ * @param rootPortBdf BDF string of the root port
+ * @param slotCap Output for the 32-bit Slot Capabilities register value
+ * @return true if the register was read successfully, false otherwise
+ */
+static bool readSlotCapabilities(const std::string &rootPortBdf, uint32_t &slotCap)
+{
+	std::string configPath = "/sys/bus/pci/devices/" + rootPortBdf + "/config";
+
+	std::ifstream config(configPath, std::ios::binary);
+	if (!config) {
+		ERR("Cannot open PCI config space: {}\n", configPath);
+		return false;
+	}
+
+	uint8_t capPtr = 0;
+	config.seekg(PCI_CAPABILITY_LIST);
+	config.read(reinterpret_cast<char *>(&capPtr), sizeof(capPtr));
+	if (!config) {
+		ERR("Failed to read capability pointer from {}\n", configPath);
+		return false;
+	}
+
+	// PCI spec requires capability pointers to be DWORD-aligned (bits 1:0 = 0)
+	capPtr &= 0xFC;
+
+	// Standard PCI config space is 256 bytes; cap list cannot have more than ~48 entries.
+	// Bound iterations to detect corrupted/looping capability lists.
+	constexpr int maxCapEntries = 48;
+	int iterations = 0;
+
+	while (capPtr != 0 && iterations++ < maxCapEntries) {
+		uint8_t capId = 0;
+		config.seekg(capPtr);
+		config.read(reinterpret_cast<char *>(&capId), sizeof(capId));
+		if (!config) {
+			ERR("Failed to read capability ID at offset {:#04x}\n", capPtr);
+			return false;
+		}
+
+		if (capId == PCI_CAP_ID_EXP) {
+			// Found PCIe Capability - read Slot Capabilities register
+			config.seekg(capPtr + PCI_EXP_SLTCAP_OFFSET);
+			config.read(reinterpret_cast<char *>(&slotCap), sizeof(slotCap));
+			if (!config) {
+				ERR("Failed to read Slot Capabilities register\n");
+				return false;
+			}
+			return true;
+		}
+
+		uint8_t nextPtr = 0;
+		config.seekg(capPtr + 1);
+		config.read(reinterpret_cast<char *>(&nextPtr), sizeof(nextPtr));
+		if (!config) {
+			return false;
+		}
+		capPtr = nextPtr & 0xFC;
+	}
+
+	if (iterations >= maxCapEntries) {
+		ERR("Capability list walk exceeded {} entries for {} (corrupted?)\n", maxCapEntries, rootPortBdf);
+	} else {
+		ERR("PCIe Capability not found for {}\n", rootPortBdf);
+	}
+	return false;
+}
+
+// Cold reset timing constants
+static constexpr int POWER_CYCLE_DELAY_US = 1000000; // 1s for power rail discharge
+static constexpr int POLL_INTERVAL_MS = 200;		 // Re-enumeration poll interval
+static constexpr int REENUM_TIMEOUT_MS = 10000;		 // 10s max wait for re-enumeration
+static constexpr int BIND_TIMEOUT_MS = 5000;		 // 5s max wait for driver auto-bind
+
+/**
+ * @brief Resolves the kernel driver currently bound to a PCI device
+ *
+ * Reads the symlink at /sys/bus/pci/devices/<bdf>/driver and returns its
+ * basename (e.g. "xe", "i915").
+ *
+ * @param bdf PCI BDF string
+ * @return Driver name on success, empty string if no driver is bound
+ */
+static std::string getPciDriverName(const std::string &bdf)
+{
+	std::error_code ec;
+	std::filesystem::path link = "/sys/bus/pci/devices/" + bdf + "/driver";
+	std::filesystem::path target = std::filesystem::read_symlink(link, ec);
+	if (ec) {
+		return "";
+	}
+	return target.filename().string();
+}
+
+/**
+ * @brief Writes a PCI BDF to a driver sysfs control file (bind or unbind)
+ *
+ * @param driverName Kernel driver name (e.g. "xe")
+ * @param action     "bind" or "unbind"
+ * @param bdf        PCI BDF to write
+ * @return true on success
+ */
+static bool writeToPciDriverFile(const std::string &driverName, const std::string &action, const std::string &bdf)
+{
+	std::string path = "/sys/bus/pci/drivers/" + driverName + "/" + action;
+	std::ofstream f(path, std::ios::trunc);
+	if (!f) {
+		ERR("Failed to open {} for writing\n", path);
+		return false;
+	}
+	f << bdf;
+	if (!f) {
+		ERR("Failed to write '{}' to {}\n", bdf, path);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Performs a cold reset on a GPU via the sysfs slot power interface
+ *
+ * This function:
+ * 1. Finds the root port for the GPU
+ * 2. Reads the PCIe Slot Capabilities register to check for hot-plug and power control
+ * 3. Derives the physical slot number from bits 31:19
+ * 4. Power-cycles the slot via /sys/bus/pci/slots/<slot>/power (echo 0, then echo 1)
+ *
+ * @param gpuBdf BDF string of the GPU device (e.g., "0000:4d:00.0")
+ * @return 0 on success, -1 if sysfs cold reset is not supported (caller may
+ *         fall back to AMC), 1 if supported but the operation failed
+ */
+int coldResetViaSysfs(const std::string &gpuBdf)
+{
+	std::string rootPortBdf;
+	if (!findRootPortBdf(gpuBdf, rootPortBdf)) {
+		return 1;
+	}
+
+	uint32_t slotCap = 0;
+	if (!readSlotCapabilities(rootPortBdf, slotCap)) {
+		return 1;
+	}
+
+	bool pwrCtrl = (slotCap & PCI_EXP_SLTCAP_PCP) != 0;
+	bool hotPlug = (slotCap & PCI_EXP_SLTCAP_HPC) != 0;
+	uint32_t slotNum = (slotCap & PCI_EXP_SLTCAP_PSN) >> 19;
+
+	DBG("Root port {}: PwrCtrl={}, HotPlug={}, SlotNum={}\n", rootPortBdf, pwrCtrl, hotPlug, slotNum);
+
+	if (!pwrCtrl || !hotPlug) {
+		INFO("Cold reset via sysfs not supported for {} (PwrCtrl={}, HotPlug={})\n", gpuBdf, pwrCtrl, hotPlug);
+		return -1;
+	}
+
+	std::string slotDir = "/sys/bus/pci/slots/" + std::to_string(slotNum);
+	std::string slotPowerPath = slotDir + "/power";
+
+	std::error_code ec;
+	if (!std::filesystem::exists(slotPowerPath, ec)) {
+		ERR("Slot power sysfs path not found: {}\n", slotPowerPath);
+		return -1;
+	}
+
+	// Verify the sysfs slot belongs to our root port by checking the address file.
+	// This prevents rare case of power-cycling the wrong slot when Physical Slot
+	// Number defaults to 0 or collides with another slot.
+	{
+		std::string slotAddrPath = slotDir + "/address";
+		std::ifstream addrFile(slotAddrPath);
+		std::string slotAddr;
+		if (!addrFile || !std::getline(addrFile, slotAddr)) {
+			ERR("Cannot read slot address from {}\n", slotAddrPath);
+			return 1;
+		}
+		// rootPortBdf is "DDDD:BB:DD.F", slot address is "DDDD:BB:DD" (no function)
+		std::string rootPortPrefix = rootPortBdf.substr(0, rootPortBdf.rfind('.'));
+		if (slotAddr != rootPortPrefix) {
+			ERR("Slot {} address mismatch: expected {}, got {}\n", slotNum, rootPortPrefix, slotAddr);
+			return 1;
+		}
+	}
+
+	INFO("Performing cold reset on {} via slot {} power cycle\n", gpuBdf, slotNum);
+
+	// Unbind the kernel driver before power-off
+	std::string driverName = getPciDriverName(gpuBdf);
+	if (!driverName.empty()) {
+		INFO("Unbinding driver '{}' from {} before reset\n", driverName, gpuBdf);
+		if (!writeToPciDriverFile(driverName, "unbind", gpuBdf)) {
+			ERR("Driver unbind failed for {}; aborting cold reset\n", gpuBdf);
+			return 1;
+		}
+	} else {
+		DBG("No driver bound to {}; skipping unbind\n", gpuBdf);
+	}
+
+	// Power off
+	{
+		std::ofstream powerFile(slotPowerPath, std::ios::trunc);
+		if (!powerFile) {
+			ERR("Failed to open {} for writing\n", slotPowerPath);
+			return 1;
+		}
+		powerFile << "0";
+		if (!powerFile) {
+			ERR("Failed to write '0' to {}\n", slotPowerPath);
+			return 1;
+		}
+	}
+
+	// Wait for power rails to fully discharge.
+	// PCIe spec requires minimum 100ms for PCIe Reset, but 1s is recommended
+	// by platform vendors for full power rail discharge.
+	usleep(POWER_CYCLE_DELAY_US);
+
+	// Confirm power-off by reading back the slot power state
+	{
+		std::ifstream powerRead(slotPowerPath);
+		std::string state;
+		if (powerRead && std::getline(powerRead, state) && state == "0") {
+			DBG("Slot {} power confirmed off\n", slotNum);
+		} else {
+			ERR("Slot {} power state not confirmed off (read: '{}')\n", slotNum, state);
+			return 1;
+		}
+	}
+
+	// Power on
+	{
+		std::ofstream powerFile(slotPowerPath, std::ios::trunc);
+		if (!powerFile) {
+			ERR("Failed to open {} for writing\n", slotPowerPath);
+			return 1;
+		}
+		powerFile << "1";
+		if (!powerFile) {
+			ERR("Failed to write '1' to {}\n", slotPowerPath);
+			return 1;
+		}
+	}
+
+	// Wait for device to re-enumerate after power-on.
+	// The device needs time for link training and PCI enumeration.
+	std::string gpuSysfsPath = "/sys/bus/pci/devices/" + gpuBdf;
+	int elapsed = 0;
+
+	while (elapsed < REENUM_TIMEOUT_MS) {
+		usleep(POLL_INTERVAL_MS * 1000);
+		elapsed += POLL_INTERVAL_MS;
+
+		std::error_code devEc;
+		if (std::filesystem::exists(gpuSysfsPath, devEc)) {
+			INFO("Device {} re-enumerated after {} ms\n", gpuBdf, elapsed);
+			break;
+		}
+	}
+
+	if (elapsed >= REENUM_TIMEOUT_MS) {
+		ERR("Device {} did not re-enumerate within {} ms after power-on\n", gpuBdf, REENUM_TIMEOUT_MS);
+		return 1;
+	}
+
+	// After re-enumeration, the PCI subsystem normally auto-binds the matching
+	// driver. If it does not happen within the timeout, fall back
+	// to an explicit bind. Skipped if no driver was bound originally.
+	if (!driverName.empty()) {
+		int bindElapsed = 0;
+		std::string boundDriver;
+		while (bindElapsed < BIND_TIMEOUT_MS) {
+			boundDriver = getPciDriverName(gpuBdf);
+			if (!boundDriver.empty()) {
+				break;
+			}
+			usleep(POLL_INTERVAL_MS * 1000);
+			bindElapsed += POLL_INTERVAL_MS;
+		}
+
+		if (boundDriver.empty()) {
+			INFO("Driver '{}' did not auto-bind to {}; performing explicit bind\n", driverName, gpuBdf);
+			if (!writeToPciDriverFile(driverName, "bind", gpuBdf)) {
+				ERR("Explicit driver bind failed for {}\n", gpuBdf);
+				return 1;
+			}
+		} else {
+			DBG("Driver '{}' bound to {} after {} ms\n", boundDriver, gpuBdf, bindElapsed);
+		}
+	}
+
+	INFO("Cold reset completed for {} via slot {}\n", gpuBdf, slotNum);
+	return 0;
+}
+
+/**
+ * @brief Enumerates processes using a GPU device by scanning /proc for open DRM FDs
+ *
+ * Maps the GPU's PCI BDF to its /dev/dri/ device nodes (card<N>, renderD<N>),
+ * then scans every process in /proc/ checking /proc/<pid>/fd/ symlinks for
+ * references to those device nodes. This approach works without depending on
+ * Level Zero (which may fail on a wedged GPU).
+ *
+ * The calling process is excluded from the result, since xpu-smi itself
+ * holds Level Zero handles on the GPU.
+ *
+ * @param gpuBdf BDF string of the GPU device (e.g., "0000:4d:00.0")
+ * @return Vector of PIDs (other than the caller) using the device (empty on error)
+ */
+std::vector<uint32_t> getGpuProcessesByBdf(const std::string &gpuBdf)
+{
+	std::vector<uint32_t> pids;
+	namespace fs = std::filesystem;
+
+	if (!isValidBdf(gpuBdf)) {
+		ERR("Rejecting invalid BDF: {}\n", gpuBdf);
+		return pids;
+	}
+
+	// Find all /dev/dri/ device node names belonging to this BDF.
+	// /sys/class/drm/card<N> is a symlink whose resolved path contains the BDF.
+	std::vector<std::string> deviceNodes; // e.g. {"/dev/dri/card0", "/dev/dri/renderD128"}
+	std::error_code ec;
+
+	for (const auto &entry : fs::directory_iterator("/sys/class/drm", ec)) {
+		std::string name = entry.path().filename().string();
+		if (name.rfind("card", 0) != 0 || name.find('-') != std::string::npos)
+			continue;
+
+		auto resolved = fs::canonical(entry.path(), ec);
+		if (ec || resolved.string().find(gpuBdf) == std::string::npos)
+			continue;
+
+		// Found the card - enumerate device/drm/ for all DRM node names
+		fs::path devDrmDir = entry.path() / "device" / "drm";
+		if (fs::is_directory(devDrmDir, ec)) {
+			for (const auto &node : fs::directory_iterator(devDrmDir, ec)) {
+				std::string nodeName = node.path().filename().string();
+				if (nodeName.rfind("card", 0) == 0 || nodeName.rfind("renderD", 0) == 0) {
+					deviceNodes.push_back("/dev/dri/" + nodeName);
+				}
+			}
+		}
+		break;
+	}
+
+	if (deviceNodes.empty()) {
+		ERR("No DRM device nodes found for BDF {}\n", gpuBdf);
+		return pids;
+	}
+
+	DBG("Device nodes for {}:", gpuBdf);
+	for (const auto &dn : deviceNodes) {
+		DBG("  {}", dn);
+	}
+
+	// Scan /proc/ for all PIDs, then check their open FDs.
+	const pid_t selfPid = getpid();
+	for (const auto &procEntry : fs::directory_iterator("/proc", ec)) {
+		std::string pidName = procEntry.path().filename().string();
+
+		// Only numeric directories are PIDs
+		if (pidName.empty() || !std::isdigit(static_cast<unsigned char>(pidName[0])))
+			continue;
+
+		uint32_t pid = 0;
+		try {
+			unsigned long parsed = std::stoul(pidName);
+			if (parsed > UINT32_MAX)
+				continue;
+			pid = static_cast<uint32_t>(parsed);
+		} catch (...) {
+			continue;
+		}
+
+		if (static_cast<pid_t>(pid) == selfPid)
+			continue;
+
+		// Scan /proc/<pid>/fd/ for symlinks pointing to our device nodes
+		fs::path fdDir = procEntry.path() / "fd";
+		std::error_code fdEc;
+		bool found = false;
+
+		for (const auto &fdEntry : fs::directory_iterator(fdDir, fs::directory_options::skip_permission_denied, fdEc)) {
+			fs::path target = fs::read_symlink(fdEntry.path(), fdEc);
+			if (fdEc)
+				continue;
+
+			std::string targetStr = target.string();
+			for (const auto &devNode : deviceNodes) {
+				if (targetStr == devNode) {
+					pids.push_back(pid);
+					found = true;
+					break;
+				}
+			}
+			if (found)
+				break;
+		}
+	}
+
+	DBG("Found {} processes using GPU {}\n", pids.size(), gpuBdf);
+	return pids;
+}
+
+/**
+ * @brief Checks whether a PCI device is a PCI/PCIe bridge
+ *
+ * Reads the class code from sysfs. PCI base class 0x06 covers all bridge
+ * types.
+ *
+ * @param bdf BDF string of the PCI device to check
+ * @return true if the device is a bridge, false otherwise (or on read error)
+ */
+static bool isPciBridge(const std::string &bdf)
+{
+	std::ifstream classFile("/sys/bus/pci/devices/" + bdf + "/class");
+	std::string classStr;
+	if (!classFile || !std::getline(classFile, classStr)) {
+		return false;
+	}
+
+	return classStr.length() >= 4 && classStr.substr(0, 4) == "0x06";
+}
+
+/**
+ * @brief Enumerates other PCI endpoints that share a PCIe slot with the given GPU
+ *
+ * A PCIe slot is rooted at a single root port. Any endpoint reachable below
+ * that root port tied to the same slot power rail and would be reset by a slot
+ * power cycle.
+ *
+ * This function walks the sysfs subtree under the GPU's root port, returning
+ * BDFs of every non-bridge device other than the GPU itself.
+ *
+ * @param gpuBdf BDF string of the GPU device (e.g., "0000:4d:00.0")
+ * @return Vector of sibling endpoint BDFs sharing the slot (empty if none or on error)
+ */
+std::vector<std::string> getDevicesSharingSlotWith(const std::string &gpuBdf)
+{
+	std::vector<std::string> siblings;
+	namespace fs = std::filesystem;
+
+	std::string rootPortBdf;
+	if (!findRootPortBdf(gpuBdf, rootPortBdf)) {
+		return siblings;
+	}
+
+	std::error_code ec;
+	fs::path rootPortLink = "/sys/bus/pci/devices/" + rootPortBdf;
+	fs::path rootPortPath = fs::canonical(rootPortLink, ec);
+	if (ec) {
+		ERR("Failed to resolve root port path {}: {}\n", rootPortLink.string(), ec.message());
+		return siblings;
+	}
+
+	// Recursively collect all non-bridge BDFs under the root port
+	std::function<void(const fs::path &)> collectEndpointsBelow = [&](const fs::path &dir) {
+		std::error_code wec;
+		for (const auto &entry : fs::directory_iterator(dir, wec)) {
+			std::string name = entry.path().filename().string();
+			if (!isValidBdf(name)) {
+				continue;
+			}
+			if (!fs::is_directory(entry.symlink_status(wec))) {
+				continue;
+			}
+
+			if (isPciBridge(name)) {
+				collectEndpointsBelow(entry.path());
+			} else if (name != gpuBdf) {
+				siblings.push_back(name);
+			}
+		}
+	};
+	collectEndpointsBelow(rootPortPath);
+
+	DBG("Found {} sibling endpoints sharing slot with {}\n", siblings.size(), gpuBdf);
+	return siblings;
 }

@@ -128,6 +128,9 @@ static constexpr std::string CHECKCPUSTATUS() { return std::string{"0"}; }
 #define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
 static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relativePath) { return std::string{}; }
 static constexpr std::string GETDOWNGRADEDPCIEINFO(UNUSED const std::string &bdfStr) { return std::string{}; }
+static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -1; }
+static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
+static inline std::vector<std::string> getDevicesSharingSlotWith(UNUSED const std::string &gpuBdf) { return {}; }
 
 typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;

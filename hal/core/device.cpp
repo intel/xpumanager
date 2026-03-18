@@ -633,6 +633,40 @@ ze_result_t device::getDriverProperties(ze_driver_properties_t *driverProps)
 }
 
 /**
+ * @brief Performs a cold reset on a device via PCIe slot power cycle.
+ *
+ * Power-cycles the PCIe slot containing the GPU by writing to
+ * /sys/bus/pci/slots/<slot>/power. This is a thin wrapper around the OAL
+ * sysfs implementation.
+ *
+ * @return ZE_RESULT_SUCCESS on success.
+ *         ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if the platform does not expose
+ *           a PCIe slot power controller / hot-plug capability for this device.
+ *         ZE_RESULT_ERROR_UNKNOWN if the slot was reset-capable but the
+ *           operation failed.
+ */
+ze_result_t device::coldResetDevice()
+{
+	TRACING();
+
+	std::string bdfStr = getBDFStr();
+	INFO("Cold reset requested for device {}\n", bdfStr);
+
+	int sysfsResult = coldResetViaSysfs(bdfStr);
+	if (sysfsResult == 0) {
+		INFO("Cold reset via sysfs succeeded for {}\n", bdfStr);
+		return ZE_RESULT_SUCCESS;
+	}
+	if (sysfsResult < 0) {
+		ERR("Cold reset via sysfs not supported for {}\n", bdfStr);
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ERR("Sysfs cold reset failed for {} (supported but operation failed)\n", bdfStr);
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
  * @brief Retrieves and prints ZES (Ze System Management) device properties.
  *
  * This function retrieves the properties of a ZES device and prints them to the debug output.

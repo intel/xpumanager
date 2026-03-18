@@ -132,6 +132,7 @@ public:
 	ze_result_t getCacheProps(ze_device_handle_t dev, ze_device_cache_properties_t **zeCacheProps,
 							  uint32_t *cachePropsCount);
 	ze_result_t resetDevice(ze_device_handle_t dev);
+	ze_result_t coldResetDevice();
 	ze_result_t getDriverProperties(ze_driver_properties_t *driverProps);
 
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
