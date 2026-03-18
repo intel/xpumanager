@@ -1,0 +1,693 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Example stub configuration file.
+#
+# This file documents every supported field. All fields are optional, unset
+# fields default to their zero value.
+#
+# Nullable fields: related functions return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
+# when set to "null" (or when not specified).
+
+# -----------------------------------------------------------------------
+# Drivers
+# -----------------------------------------------------------------------
+# zesDriverGet
+Drivers:
+  - # Per-driver extension properties returned by
+    # zesDriverGetExtensionProperties.
+    ExtensionProperties:
+      - Name: "ZES_extension_power_limits"
+        Version: 65536
+      - Name: "ZES_extension_device_ecc_default_properties"
+        Version: 65536
+      - Name: "ZES_extension_engine_activity"
+        Version: 65536
+
+    # Function-level return-value overrides for driver-scoped calls.
+    # Set a non-zero ze_result_t value to inject an error.
+    ReturnValues:
+      zesDeviceGet: 0
+
+    # -------------------------------------------------------------------
+    # Devices
+    # -------------------------------------------------------------------
+    # zesDeviceGet
+    Devices:
+      - # zesDeviceGetProperties (nullable)
+        Properties:
+          Core:
+            Type: 1  # ZE_DEVICE_TYPE_GPU
+            VendorId: 32902
+            DeviceId: 3029
+            Flags: 1  # ZE_DEVICE_PROPERTY_FLAG_INTEGRATED
+            SubdeviceId: 0
+            CoreClockRate: 1600
+            MaxMemAllocSize: 17179869184
+            MaxHardwareContexts: 256
+            MaxCommandQueuePriority: 0
+            NumThreadsPerEU: 8
+            PhysicalEUSimdWidth: 8
+            NumEUsPerSubslice: 16
+            NumSubslicesPerSlice: 8
+            NumSlices: 1
+            TimerResolution: 100
+            TimestampValidBits: 36
+            KernelTimestampValidBits: 32
+            Uuid:
+              Id: "12345678-000a-00b0-0c00-00000000d000"
+            Name: "ACME GPU"
+          NumSubdevices: 2
+          SerialNumber: "SN-0001"
+          BoardNumber: "BOARD-0001"
+          BrandName: "ACME"
+          ModelName: "Max 1550"
+          VendorName: "ACME Inc."
+          DriverVersion: "1.0.0"
+          Uuid:
+            Id: "12345678-000a-00b0-0c00-00000000d000"
+          Type: 1  # ZES_DEVICE_TYPE_GPU
+          Flags: 1  # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
+
+        # zesDeviceGetState (nullable)
+        State:
+          Reset: 0
+          Repaired: 1  # ZES_REPAIR_STATUS_NOT_PERFORMED
+
+        # PCI info
+        PCI:
+          # zesDevicePciGetProperties (nullable)
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 0
+            HaveBandwidthCounters: true
+            HavePacketCounters: true
+            HaveReplayCounters: true
+          # zesDevicePciGetState (nullable)
+          State:
+            Status: 1  # ZES_PCI_LINK_STATUS_GOOD
+            QualityIssues: 0
+            StabilityIssues: 0
+            Speed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 0
+          # zesDevicePciGetBars
+          Bars:
+            - Type: 0  # ZES_PCI_BAR_TYPE_MMIO
+              Index: 0
+              Base: 2147483648
+              Size: 16777216
+            - Type: 2  # ZES_PCI_BAR_TYPE_MEM
+              Index: 2
+              Base: 4294967296
+              Size: 268435456
+          # zesDevicePciGetStats (nullable)
+          Stats:
+            RxCounter: 1000000
+            TxCounter: 2000000
+            PacketCounter: 0
+            ReplayCounter: 0
+            Timestamp: 999999
+            Speed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 0
+
+        # ECC info
+        ECC:
+          # zesDeviceEccAvailable
+          Available: true
+          # zesDeviceEccConfigurable
+          Configurable: true
+          # zesDeviceGetEccState (nullable)
+          State:
+            CurrentState: 1  # ZES_DEVICE_ECC_STATE_ENABLED
+            PendingState: 1  # ZES_DEVICE_ECC_STATE_ENABLED
+            PendingAction: 0  # ZES_DEVICE_ACTION_NONE
+            ExtendedProperties:
+              DefaultState: 1  # ZES_DEVICE_ECC_STATE_ENABLED
+
+        # Overclock info (nullable)
+        Overclock:
+          # zesDeviceGetOverclockDomains
+          DomainsBitmask: 3  # ZES_OVERCLOCK_DOMAIN_CARD | ZES_OVERCLOCK_DOMAIN_PACKAGE
+          # zesDeviceGetOverclockControls
+          Controls:
+            - DomainType: 1  # ZES_ZES_OVERCLOCK_DOMAIN_CARD
+              ControlsBitmask: 7  # ZES_OVERCLOCK_CONTROL_VF | ZES_OVERCLOCK_CONTROL_FREQ_OFFSET | ZES_OVERCLOCK_CONTROL_VMAX_OFFSET
+            - DomainType: 2  # ZES_ZES_OVERCLOCK_DOMAIN_PACKAGE
+              ControlsBitmask: 7  # ZES_OVERCLOCK_CONTROL_VF | ZES_OVERCLOCK_CONTROL_FREQ_OFFSET | ZES_OVERCLOCK_CONTROL_VMAX_OFFSET
+          # zesDeviceReadOverclockState (nullable)
+          State:
+            Mode: 3  # ZES_OVERCLOCK_MODE_MODE_ON
+            WaiverSetting: true
+            State: false
+            PendingAction: 0  # ZES_PENDING_ACTION_PENDING_NONE
+            PendingReset: false
+          # ---------------------------------------------------------------
+          # OverclockDomains (zesDeviceEnumOverclockDomains)
+          # ---------------------------------------------------------------
+          Domains:
+            - # zesOverclockGetDomainProperties (nullable)
+              Properties:
+                DomainType: 1  # ZES_OVERCLOCK_DOMAIN_CARD
+                AvailableControls: 3  # ZES_OVERCLOCK_CONTROL_VF | ZES_OVERCLOCK_CONTROL_FREQ_OFFSET
+                VFProgramType: 0  # ZES_VF_PROGRAM_TYPE_VF_ARBITRARY
+                NumberOfVFPoints: 16
+              # zesOverclockGetDomainVFProperties (nullable)
+              VFProperties:
+                MinFreq: 300
+                MaxFreq: 1600
+                StepFreq: 25
+                MinVolt: 700
+                MaxVolt: 1200
+                StepVolt: 10
+              # Per-control info: zesOverclockGetDomainControlProperties,
+              # zesOverclockGetControlCurrentValue, zesOverclockGetControlPendingValue,
+              # zesOverclockGetControlState (each field nullable individually)
+              ControlInfos:
+                - ControlType: 1  # ZES_OVERCLOCK_CONTROL_VF
+                  Properties:
+                    MinValue: 100
+                    MaxValue: 2000
+                    StepValue: 50
+                    RefValue: 900
+                    DefaultValue: 1100
+                  CurrentValue: 1200
+                  PendingValue: 1100
+                  State: 2  # ZES_CONTROL_STATE_STATE_ACTIVE
+                  PendingAction: 0  # ZES_PENDING_ACTION_PENDING_NONE
+                - ControlType: 2  # ZES_OVERCLOCK_CONTROL_FREQ_OFFSET
+                  Properties:
+                    MinValue: 200
+                    MaxValue: 3000
+                    StepValue: 50
+                    RefValue: 900
+                    DefaultValue: 1100
+                  CurrentValue: 1200
+                  PendingValue: 1100
+                  State: 3  # ZES_CONTROL_STATE_STATE_DISABLED
+                  PendingAction: 0  # ZES_PENDING_ACTION_PENDING_NONE
+              # zesOverclockGetVFPointValues
+              VfPointValue: 42
+
+        # zesDeviceProcessesGetState
+        Processes:
+          - ProcessId: 1234
+            MemSize: 1073741824
+            SharedSize: 0
+            Engines: 7  # ZES_ENGINE_TYPE_FLAG_OTHER | ZES_ENGINE_TYPE_FLAG_COMPUTE | ZES_ENGINE_TYPE_FLAG_3D
+          - ProcessId: 5678
+            MemSize: 536870912
+            SharedSize: 134217728
+            Engines: 2  # ZES_ENGINE_TYPE_FLAG_COMPUTE
+
+        # Function-level return-value overrides for device-scoped calls.
+        ReturnValues:
+          zesDeviceGetProperties: 0
+          zesDeviceGetState: 0
+          zesDevicePciGetProperties: 0
+          zesDevicePciGetState: 0
+          zesDevicePciGetStats: 0
+          zesDevicePciGetBars: 0
+          zesDeviceGetEccState: 0
+          zesDeviceSetEccState: 0
+          zesDeviceEventRegister: 0
+          zesDeviceEnumEngineGroups: 0
+          zesDeviceEnumFabricPorts: 0
+          zesDeviceEnumFans: 0
+          zesDeviceEnumFirmwares: 0
+          zesDeviceEnumFrequencyDomains: 0
+          zesDeviceEnumLeds: 0
+          zesDeviceEnumMemoryModules: 0
+          zesDeviceEnumOverclockDomains: 0
+          zesDeviceEnumPerformanceFactorDomains: 0
+          zesDeviceEnumPowerDomains: 0
+          zesDeviceEnumPsus: 0
+          zesDeviceEnumRasErrorSets: 0
+          zesDeviceEnumSchedulers: 0
+          zesDeviceEnumStandbyDomains: 0
+          zesDeviceEnumTemperatureSensors: 0
+          zesDeviceEnumDiagnosticTestSuites: 0
+
+        # zesDriverEventListen / zesDriverEventListenEx (0 == no pending events)
+        Events: 1  # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
+
+        # -----------------------------------------------------------------
+        # Engine groups (zesDeviceEnumEngineGroups)
+        # -----------------------------------------------------------------
+        EngineGroups:
+        - # zesEngineGetProperties
+          Properties:
+            Type: 0  # ZES_ENGINE_GROUP_ALL
+            OnSubdevice: false
+            SubdeviceId: 0
+            ExtendedProperties:
+              CountOfVirtualFunctionInstance: 4
+          # zesEngineGetActivity
+          Activity:
+            ActiveTime: 12345678
+            Timestamp: 87654321
+          # zesEngineGetActivityExt
+          ActivityExt:
+          - ActiveTime: 11111111
+            Timestamp: 22222222
+          - ActiveTime: 33333333
+            Timestamp: 44444444
+          ReturnValues:
+            zesEngineGetProperties: 0
+            zesEngineGetActivity: 0
+
+        # -----------------------------------------------------------------
+        # Fabric ports (zesDeviceEnumFabricPorts)
+        # -----------------------------------------------------------------
+        FabricPorts:
+        - # zesFabricPortGetProperties (nullable)
+          Properties:
+            Model: Xe-Link
+            OnSubdevice: false
+            SubdeviceId: 0
+            PortId:
+              FabricId: 1
+              AttachId: 2
+              PortNumber: 3
+            MaxRxSpeed:
+              BitRate: 53125000000
+              Width: 4
+            MaxTxSpeed:
+              BitRate: 53125000000
+              Width: 4
+          # zesFabricPortGetLinkType (nullable)
+          LinkType:
+            Desc: Xe-Link
+          # zesFabricPortGetConfig (nullable)
+          Config:
+            Enabled: true
+            Beaconing: false
+          # zesFabricPortGetState (nullable)
+          State:
+            Status: 1  # ZES_FABRIC_PORT_STATUS_HEALTHY
+            QualityIssues: 0
+            FailureReasons: 0
+            RemotePortId:
+              FabricId: 4
+              AttachId: 5
+              PortNumber: 6
+            RxSpeed:
+              BitRate: 53125000000
+              Width: 4
+            TxSpeed:
+              BitRate: 53125000000
+              Width: 4
+          # zesFabricPortGetThroughput (nullable)
+          Throughput:
+            Timestamp: 777777
+            RxCounter: 111111
+            TxCounter: 222222
+          # zesFabricPortGetFabricErrorCounters (nullable)
+          ErrorCounters:
+            LinkFailureCount: 5
+            FwCommErrorCount: 0
+            FwErrorCount: 0
+            LinkDegradeCount: 0
+          ReturnValues:
+            zesFabricPortGetProperties: 0
+            zesFabricPortGetLinkType: 0
+            zesFabricPortGetConfig: 0
+            zesFabricPortGetState: 0
+            zesFabricPortGetThroughput: 0
+            zesFabricPortGetFabricErrorCounters: 0
+
+        # -----------------------------------------------------------------
+        # Fans (zesDeviceEnumFans)
+        # -----------------------------------------------------------------
+        Fans:
+        - # zesFanGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            CanControl: true
+            SupportedModes: 7  # ZE_BIT(ZES_FAN_SPEED_MODE_DEFAULT) | ZE_BIT(ZES_FAN_SPEED_MODE_FIXED) | ZE_BIT(ZES_FAN_SPEED_MODE_TABLE)
+            SupportedUnits: 3  # ZE_BIT(ZES_FAN_SPEED_UNITS_RPM) | ZE_BIT(ZES_FAN_SPEED_UNITS_PERCENT)
+            MaxRPM: 3000
+            MaxPoints: 16
+          # zesFanGetConfig (nullable)
+          Config:
+            Mode: 2  # ZES_FAN_SPEED_MODE_TABLE
+            SpeedFixed:
+              Speed: 1500
+              Units: 0  # ZES_FAN_SPEED_UNITS_RPM
+            SpeedTable:
+              NumPoints: 2
+              Table:
+              - Temperature: 30
+                Speed:
+                  Speed: 1200
+                  Units: 0  # ZES_FAN_SPEED_UNITS_RPM
+              - Temperature: 65
+                Speed:
+                  Speed: 70
+                  Units: 1  # ZES_FAN_SPEED_UNITS_PERCENT
+          # zesFanGetState
+          Speed: 1500
+          ReturnValues:
+            zesFanGetProperties: 0
+            zesFanGetConfig: 0
+            zesFanGetState: 0
+
+        # -----------------------------------------------------------------
+        # Firmware (zesDeviceEnumFirmwares)
+        # -----------------------------------------------------------------
+        Firmwares:
+        - # zesFirmwareGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            CanControl: true
+            Name: GFX
+            Version: 1.2.3.4
+          # zesFirmwareGetFlashProgress
+          FlashProgress: 100
+          # zesFirmwareGetConsoleLogs
+          Log: Firmware update complete
+          ReturnValues:
+            zesFirmwareGetProperties: 0
+            zesFirmwareGetFlashProgress: 0
+            zesFirmwareGetConsoleLogs: 0
+
+        # -----------------------------------------------------------------
+        # Frequency domains (zesDeviceEnumFrequencyDomains)
+        # -----------------------------------------------------------------
+        FrequencyDomains:
+        - # zesFrequencyGetProperties (nullable)
+          Properties:
+            Type: 0  # ZES_FREQ_DOMAIN_GPU
+            OnSubdevice: false
+            SubdeviceId: 0
+            CanControl: true
+            IsThrottleEventSupported: false
+            Min: 300
+            Max: 1600
+          # zesFrequencyGetRange (nullable)
+          Range:
+            Min: 300
+            Max: 1600
+          # zesFrequencyGetState (nullable)
+          State:
+            CurrentVoltage: 0.85
+            Request: 1400
+            Tdp: 1600
+            Efficient: 300
+            Actual: 1200
+            ThrottleReasons: 0
+          # zesFrequencyGetThrottleTime (nullable)
+          ThrottleTime:
+            ThrottleTime: 5000
+            Timestamp: 100000
+          # zesFrequencyGetAvailableClocks
+          AvailableClocks:
+          - 300
+          - 900
+          - 1600
+          ReturnValues:
+            zesFrequencyGetProperties: 0
+            zesFrequencyGetRange: 0
+            zesFrequencyGetState: 0
+            zesFrequencyGetThrottleTime: 0
+            zesFrequencyGetAvailableClocks: 0
+
+        # -----------------------------------------------------------------
+        # LEDs (zesDeviceEnumLeds)
+        # -----------------------------------------------------------------
+        Leds:
+        - # zesLedGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            CanControl: true
+            HaveRGB: true
+          # zesLedGetState (nullable)
+          State:
+            IsOn: true
+            Color:
+              Red: 1
+              Green: 0.5
+              Blue: 0
+          ReturnValues:
+            zesLedGetProperties: 0
+            zesLedGetState: 0
+
+        # -----------------------------------------------------------------
+        # Memory modules (zesDeviceEnumMemoryModules)
+        # -----------------------------------------------------------------
+        MemoryModules:
+        - # zesMemoryGetProperties (nullable)
+          Properties:
+            Type: 0  # ZES_MEM_TYPE_HBM
+            OnSubdevice: false
+            SubdeviceId: 0
+            Location: 1  # ZES_MEM_LOC_DEVICE
+            PhysicalSize: 17179869184
+            BusWidth: 128
+            NumChannels: 4
+          # zesMemoryGetState (nullable)
+          State:
+            Health: 1  # ZES_MEM_HEALTH_OK
+            Free: 8589934592
+            Size: 17179869184
+          # zesMemoryGetBandwidth (nullable)
+          Bandwidth:
+            ReadCounter: 1073741824
+            WriteCounter: 536870912
+            MaxBandwidth: 512000000000
+            Timestamp: 123456789
+          ReturnValues:
+            zesMemoryGetProperties: 0
+            zesMemoryGetState: 0
+            zesMemoryGetBandwidth: 0
+
+        # -----------------------------------------------------------------
+        # Performance factor domains (zesDeviceEnumPerformanceFactorDomains)
+        # -----------------------------------------------------------------
+        PerformanceDomains:
+        - # zesPerformanceFactorGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            Engines: 7  # ZES_ENGINE_TYPE_FLAG_OTHER | ZES_ENGINE_TYPE_FLAG_COMPUTE | ZES_ENGINE_TYPE_FLAG_3D
+          # zesPerformanceFactorGetConfig
+          Config: 1
+          ReturnValues:
+            zesPerformanceFactorGetProperties: 0
+            zesPerformanceFactorGetConfig: 0
+
+        # -----------------------------------------------------------------
+        # Power domains (zesDeviceEnumPowerDomains)
+        # -----------------------------------------------------------------
+        PowerDomains:
+        - # zesPowerGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            CanControl: true
+            IsEnergyThresholdSupported: true
+            DefaultLimit: 200000
+            MinLimit: 50000
+            MaxLimit: 300000
+            ExtendedProperties:
+              Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+              DefaultLimit:
+                Level: 0  # ZES_POWER_LEVEL_UNKNOWN
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 0  # ZES_LIMIT_UNIT_UNKNOWN
+                EnabledStateLocked: false
+                Enabled: true
+                IntervalValueLocked: false
+                Interval: 0
+                LimitValueLocked: false
+                Limit: 150000
+          # zesPowerGetEnergyCounter (nullable)
+          EnergyCounter:
+            Energy: 5000000
+            Timestamp: 123456789
+          # zesPowerGetEnergyThreshold (nullable)
+          EnergyThreshold:
+            Enable: true
+            Threshold: 10.5
+            ProcessId: 0
+          # zesPowerGetLimitsExt
+          Limits:
+          - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+            Source: 0  # ZES_POWER_SOURCE_ANY
+            LimitUnit: 0  # ZES_LIMIT_UNIT_UNKNOWN
+            EnabledStateLocked: false
+            Enabled: true
+            IntervalValueLocked: false
+            Interval: 1000
+            LimitValueLocked: false
+            Limit: 200000
+          - Level: 2  # ZES_POWER_LEVEL_BURST
+            Source: 0  # ZES_POWER_SOURCE_ANY
+            LimitUnit: 0  # ZES_LIMIT_UNIT_UNKNOWN
+            EnabledStateLocked: false
+            Enabled: true
+            IntervalValueLocked: false
+            Interval: 0
+            LimitValueLocked: false
+            Limit: 250000
+          ReturnValues:
+            zesPowerGetProperties: 0
+            zesPowerGetEnergyCounter: 0
+            zesPowerGetEnergyThreshold: 0
+            zesPowerGetLimitsExt: 0
+
+        # -----------------------------------------------------------------
+        # PSUs (zesDeviceEnumPsus)
+        # -----------------------------------------------------------------
+        Psus:
+        - # zesPsuGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            HaveFan: true
+            AmpLimit: 30
+          # zesPsuGetState (nullable)
+          State:
+            VoltStatus: 1  # ZES_PSU_VOLTAGE_STATUS_NORMAL
+            FanFailed: false
+            Temperature: 45
+            Current: 10
+          ReturnValues:
+            zesPsuGetProperties: 0
+            zesPsuGetState: 0
+
+        # -----------------------------------------------------------------
+        # RAS error sets (zesDeviceEnumRasErrorSets)
+        # -----------------------------------------------------------------
+        RasErrorSets:
+        - # zesRasGetProperties (nullable)
+          Properties:
+            Type: 0  # ZES_RAS_ERROR_TYPE_CORRECTABLE
+            OnSubdevice: false
+            SubdeviceId: 0
+          # zesRasGetConfig (nullable)
+          Config:
+            TotalThreshold: 100
+            DetailedThresholds:
+              Category: [10, 11, 12, 13, 14, 15, 16]
+          # zesRasGetState (nullable)
+          State:
+            Category: [5, 6, 7, 8, 9, 10, 11]
+          ReturnValues:
+            zesRasGetProperties: 0
+            zesRasGetConfig: 0
+            zesRasGetState: 0
+
+        # -----------------------------------------------------------------
+        # Schedulers (zesDeviceEnumSchedulers)
+        # -----------------------------------------------------------------
+        Schedulers:
+        - # zesSchedulerGetProperties (nullable)
+          Properties:
+            OnSubdevice: false
+            SubdeviceId: 0
+            CanControl: true
+            SupportedModes: 7  # ZE_BIT(ZES_SCHED_MODE_TIMEOUT) | ZE_BIT(ZES_SCHED_MODE_TIMESLICE) | ZE_BIT(ZES_SCHED_MODE_EXCLUSIVE)
+            Engines: 7  # ZES_ENGINE_TYPE_FLAG_OTHER | ZES_ENGINE_TYPE_FLAG_COMPUTE | ZES_ENGINE_TYPE_FLAG_3D
+          # zesSchedulerGetCurrentMode
+          CurrentMode: 1  # ZES_SCHED_MODE_TIMESLICE
+          # zesSchedulerGetTimeoutModeProperties (nullable)
+          TimeoutModeProperties:
+            WatchdogTimeout: 5000000
+          # zesSchedulerGetTimesliceModeProperties (nullable)
+          TimesliceModeProperties:
+            Interval: 2000
+            YieldTimeout: 500
+          ReturnValues:
+            zesSchedulerGetProperties: 0
+            zesSchedulerGetCurrentMode: 0
+            zesSchedulerGetTimeoutModeProperties: 0
+            zesSchedulerGetTimesliceModeProperties: 0
+
+        # -----------------------------------------------------------------
+        # Standby domains (zesDeviceEnumStandbyDomains)
+        # -----------------------------------------------------------------
+        StandbyDomains:
+        - # zesStandbyGetProperties (nullable)
+          Properties:
+            Type: 0  # ZES_STANDBY_TYPE_GLOBAL
+            OnSubdevice: false
+            SubdeviceId: 0
+          # zesStandbyGetMode
+          Mode: 0  # ZES_STANDBY_PROMO_MODE_DEFAULT
+          ReturnValues:
+            zesStandbyGetProperties: 0
+            zesStandbyGetMode: 0
+
+        # -----------------------------------------------------------------
+        # Temperature sensors (zesDeviceEnumTemperatureSensors)
+        # -----------------------------------------------------------------
+        TemperatureSensors:
+        - # zesTemperatureGetProperties (nullable)
+          Properties:
+            Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+            OnSubdevice: false
+            SubdeviceId: 0
+            MaxTemperature: 110
+            IsCriticalTempSupported: false
+            IsThreshold1Supported: true
+            IsThreshold2Supported: true
+          # zesTemperatureGetState
+          Temperature: 48
+          # zesTemperatureGetConfig (nullable)
+          Config:
+            EnableCritical: false
+            Threshold1:
+              EnableLowToHigh: true
+              EnableHighToLow: false
+              Threshold: 90
+            Threshold2:
+              EnableLowToHigh: false
+              EnableHighToLow: false
+              Threshold: 100
+          ReturnValues:
+            zesTemperatureGetProperties: 0
+            zesTemperatureGetState: 0
+            zesTemperatureGetConfig: 0
+
+        # -----------------------------------------------------------------
+        # Diagnostic test suites (zesDeviceEnumDiagnosticTestSuites)
+        # -----------------------------------------------------------------
+        Diagnostics:
+        - # zesDiagnosticsGetProperties (nullable)
+          Properties:
+            Name: GPU
+            OnSubdevice: false
+            SubdeviceId: 0
+            HaveTests: true
+          # zesDiagnosticsGetTests
+          Tests:
+            - Index: 0
+              Name: "Memory test"
+            - Index: 1
+              Name: "Register test"
+          # zesDiagnosticsRunTests
+          Result: 0  # ZES_DIAG_RESULT_NO_ERRORS
+          ReturnValues:
+            zesDiagnosticsGetProperties: 0
+            zesDiagnosticsRunTests: 0
+
+# ---------------------------------------------------------------------------
+# Top-level return-value overrides
+# ---------------------------------------------------------------------------
+ReturnValues:
+  zesInit: 0
+  zesDriverGet: 0
