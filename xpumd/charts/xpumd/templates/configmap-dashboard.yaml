@@ -37,7 +37,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -122,7 +122,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "avg by (pci_bdf) (hw_gpu_utilization_ratio{node=\"$Node\"})",
@@ -137,7 +137,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -191,7 +191,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "avg by (pci_bdf) (hw_gpu_utilization_ratio{node=\"$Node\"})",
@@ -207,7 +207,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -292,7 +292,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_frequency_hertz{aggregation=\"avg\", node=\"$Node\"}",
@@ -308,7 +308,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -362,7 +362,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_frequency_hertz{aggregation=\"avg\", node=\"$Node\"}",
@@ -378,7 +378,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -463,7 +463,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"min\",node=\"$Node\", hw_sensor_location=\"gpu\"}",
@@ -474,7 +474,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"max\",node=\"$Node\", hw_sensor_location=\"gpu\"}",
@@ -490,7 +490,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -544,7 +544,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"min\",node=\"$Node\", hw_sensor_location=\"gpu\"}",
@@ -555,7 +555,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"max\",node=\"$Node\", hw_sensor_location=\"gpu\"}",
@@ -571,7 +571,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -656,7 +656,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"min\",node=\"$Node\", hw_sensor_location=\"memory\"}",
@@ -667,7 +667,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"max\",node=\"$Node\", hw_sensor_location=\"memory\"}",
@@ -683,7 +683,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -737,7 +737,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"min\",node=\"$Node\", hw_sensor_location=\"memory\"}",
@@ -748,7 +748,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_temperature_celsius{statistic=\"max\",node=\"$Node\", hw_sensor_location=\"memory\"}",
@@ -764,7 +764,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -849,7 +849,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_power_watts{node=\"$Node\"}",
@@ -864,7 +864,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -918,7 +918,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_power_watts{node=\"$Node\"}",
@@ -933,7 +933,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1018,7 +1018,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_energy_joules_total{node=\"$Node\"}",
@@ -1033,7 +1033,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1089,7 +1089,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_energy_joules_total{node=\"$Node\"}",
@@ -1104,7 +1104,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1189,7 +1189,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_memory_usage_bytes{node=\"$Node\"}",
@@ -1205,7 +1205,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1290,7 +1290,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_memory_io_bytes_total{network_io_direction=\"receive\",node=\"$Node\"}",
@@ -1305,7 +1305,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1361,7 +1361,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "rate(hw_memory_io_bytes_total{network_io_direction=\"receive\",node=\"$Node\"}[10s])",
@@ -1376,7 +1376,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1461,7 +1461,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_memory_io_bytes_total{network_io_direction=\"transmit\",node=\"$Node\"}",
@@ -1476,7 +1476,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1532,7 +1532,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "rate(hw_memory_io_bytes_total{network_io_direction=\"transmit\",node=\"$Node\"}[10s])",
@@ -1547,7 +1547,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1632,7 +1632,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_memory_usage_bytes{node=\"$Node\"}/hw_memory_size_bytes{node=\"$Node\"}",
@@ -1647,7 +1647,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1732,7 +1732,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_gpu_io_bytes_total{network_io_direction=\"receive\",node=\"$Node\"}",
@@ -1747,7 +1747,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1803,7 +1803,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "rate(hw_gpu_io_bytes_total{network_io_direction=\"receive\",node=\"$Node\"}[10s])",
@@ -1818,7 +1818,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1903,7 +1903,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_gpu_io_bytes_total{network_io_direction=\"transmit\",node=\"$Node\"}",
@@ -1918,7 +1918,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -1974,7 +1974,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "rate(hw_gpu_io_bytes_total{network_io_direction=\"transmit\",node=\"$Node\"}[10s])",
@@ -1989,7 +1989,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -2074,7 +2074,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_memory_bandwidth_utilization_ratio{node=\"$Node\"}",
@@ -2089,7 +2089,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -2174,7 +2174,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "avg by (pci_bdf,hw_gpu_task) (hw_gpu_utilization_ratio{node=\"$Node\"})",
@@ -2189,7 +2189,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${Metrics}"
           },
           "fieldConfig": {
             "defaults": {
@@ -2274,7 +2274,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${Metrics}"
               },
               "exemplar": true,
               "expr": "hw_gpu_utilization_ratio{node=\"$Node\"}",
@@ -2296,9 +2296,23 @@ data:
       "templating": {
         "list": [
           {
+            "current": {
+              "text": "Prometheus",
+              "value": "prometheus"
+            },
+            "description": "",
+            "label": "Metrics",
+            "name": "Metrics",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "type": "datasource"
+          },
+          {
             "datasource": {
               "type": "prometheus",
-              "uid": "prometheus"
+              "uid": "${Metrics}"
             },
             "definition": "label_values(hw_gpu_info,node)",
             "includeAll": false,
