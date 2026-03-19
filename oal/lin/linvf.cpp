@@ -267,6 +267,110 @@ static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdfString)
 }
 
 /**
+ * @brief Get the sysfs SR-IOV admin path for a device
+ *
+ * Checks if the sysfs sriov_admin directory exists for the device.
+ * Returns the sysfs path if present, otherwise returns an empty string
+ * to signal callers to use the legacy debugfs paths instead.
+ *
+ * @param[in] drmCardName The DRM card name (e.g., "card0")
+ * @return std::string The sriov_admin sysfs base path, or empty string if not available
+ */
+static std::string getSriovAdminPath(const std::string &drmCardName)
+{
+	std::string sysfsPath = "/sys/class/drm/" + drmCardName + "/device/sriov_admin";
+	if (fileExists(sysfsPath)) {
+		DBG("Using sysfs SR-IOV admin path: %s\n", sysfsPath.c_str());
+		return sysfsPath;
+	}
+	INFO("sysfs sriov_admin not found, callers will use debugfs\n");
+	return "";
+}
+
+/**
+ * @brief Write VF scheduling parameters to the given directory
+ *
+ * Writes exec_quantum_ms and preempt_timeout_us. The caller is responsible
+ * for passing either the sysfs or debugfs path.
+ *
+ * @param[in] dir The target directory (sysfs profile or debugfs VF path)
+ * @param[in] attrs Configuration attributes
+ * @return int 0 on success, -1 on failure
+ */
+static int writeVfSchedParams(const std::string &dir, const AttrFromConfigFile &attrs)
+{
+	if (writeFile(dir + "/exec_quantum_ms", std::to_string(attrs.vfExec)) != 0) {
+		return -1;
+	}
+	if (writeFile(dir + "/preempt_timeout_us", std::to_string(attrs.vfPreempt)) != 0) {
+		return -1;
+	}
+	return 0;
+}
+
+/**
+ * @brief Write PF scheduling parameters to the given directory
+ *
+ * Writes exec_quantum_ms, preempt_timeout_us, and the scheduling policy
+ * attribute. When using sysfs, writes sched_priority derived from
+ * attrs.schedIfIdle (true="low", false="normal"). When using debugfs,
+ * writes sched_if_idle as a boolean ("1" or "0").
+ *
+ * @param[in] dir The target PF directory (sysfs profile or debugfs PF path)
+ * @param[in] attrs Configuration attributes
+ * @param[in] useSysfs true to write sched_priority (sysfs), false for sched_if_idle (debugfs)
+ * @return int 0 on success, -1 on failure
+ */
+static int writePfSchedParams(const std::string &dir, const AttrFromConfigFile &attrs, bool useSysfs)
+{
+	if (writeFile(dir + "/exec_quantum_ms", std::to_string(attrs.pfExec)) != 0) {
+		return -1;
+	}
+	if (writeFile(dir + "/preempt_timeout_us", std::to_string(attrs.pfPreempt)) != 0) {
+		return -1;
+	}
+	if (useSysfs) {
+		if (writeFile(dir + "/sched_priority", attrs.schedIfIdle ? "low" : "normal") != 0) {
+			return -1;
+		}
+	} else {
+		if (writeFile(dir + "/sched_if_idle", attrs.schedIfIdle ? "1" : "0") != 0) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief Write resource provisioning attributes for a VF
+ *
+ * Writes lmem_quota, ggtt_quota, doorbells_quota, and contexts_quota
+ * to the given directory. The caller is responsible for passing the
+ * correct path (currently debugfs, sysfs in future).
+ *
+ * @param[in] dir The target VF directory containing resource quota files
+ * @param[in] attrs Configuration attributes
+ * @param[in] lmem Local memory quota to assign in bytes
+ * @return int 0 on success, -1 on failure
+ */
+static int writeVfResourceParams(const std::string &dir, const AttrFromConfigFile &attrs, uint64_t lmem)
+{
+	if (writeFile(dir + "/lmem_quota", std::to_string(lmem)) != 0) {
+		return -1;
+	}
+	if (writeFile(dir + "/ggtt_quota", std::to_string(attrs.vfGgtt)) != 0) {
+		return -1;
+	}
+	if (writeFile(dir + "/doorbells_quota", std::to_string(attrs.vfDoorbells)) != 0) {
+		return -1;
+	}
+	if (writeFile(dir + "/contexts_quota", std::to_string(attrs.vfContexts)) != 0) {
+		return -1;
+	}
+	return 0;
+}
+
+/**
  * @brief Get the amount of free local memory (LMEM) available on the device
  *
  * Reads the vram_mm file(vram0_mm for older kernels) from the debugfs path to determine the
@@ -311,34 +415,27 @@ static uint64_t getFreeLmemSize(const std::string &path)
 }
 
 /**
- * @brief Write VF (Virtual Function) attributes to sysfs
+ * @brief Write VF (Virtual Function) attributes to sysfs and debugfs
  *
- * Configures a specific VF by writing its resource quotas and scheduling
- * parameters to the appropriate sysfs files in debugfs.
+ * Configures a specific VF by writing scheduling parameters via sysfs
+ * (with debugfs fallback) and resource quotas via debugfs.
  *
- * @param[in] vfDir The VF directory path in debugfs (e.g., /sys/kernel/debug/dri/.../gt0/vf1)
+ * @param[in] sysfsVfProfileDir sysfs VF profile path (empty string to skip sysfs scheduling)
+ * @param[in] debugfsVfDir debugfs VF directory path for resource provisioning and fallback scheduling
  * @param[in] attrs Configuration attributes from the config file
  * @param[in] lmem Local memory quota to assign to this VF in bytes
  * @return int 0 on success, -1 on failure
  */
-static int writeVfAttrToSysfs(std::string vfDir, AttrFromConfigFile attrs, uint64_t lmem)
+static int writeVfAttr(const std::string &sysfsVfProfileDir, const std::string &debugfsVfDir,
+					   const AttrFromConfigFile &attrs, uint64_t lmem)
 {
-	if (writeFile(vfDir + "/exec_quantum_ms", std::to_string(attrs.vfExec)) != 0) {
+	std::string schedDir = !sysfsVfProfileDir.empty() ? sysfsVfProfileDir : debugfsVfDir;
+	if (writeVfSchedParams(schedDir, attrs) != 0) {
 		return -1;
 	}
-	if (writeFile(vfDir + "/preempt_timeout_us", std::to_string(attrs.vfPreempt)) != 0) {
-		return -1;
-	}
-	if (writeFile(vfDir + "/lmem_quota", std::to_string(lmem)) != 0) {
-		return -1;
-	}
-	if (writeFile(vfDir + "/ggtt_quota", std::to_string(attrs.vfGgtt)) != 0) {
-		return -1;
-	}
-	if (writeFile(vfDir + "/doorbells_quota", std::to_string(attrs.vfDoorbells)) != 0) {
-		return -1;
-	}
-	if (writeFile(vfDir + "/contexts_quota", std::to_string(attrs.vfContexts)) != 0) {
+
+	// Write resource provisioning: debugfs only (not yet in sysfs)
+	if (writeVfResourceParams(debugfsVfDir, attrs, lmem) != 0) {
 		return -1;
 	}
 	return 0;
@@ -365,20 +462,20 @@ static bool createVfInternal(std::string drmPath, std::string bdfAddress, AttrFr
 {
 	std::string devicePathString = std::string("/sys/class/drm/") + drmPath;
 	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + bdfAddress;
+	std::string sriovAdminPath = getSriovAdminPath(drmPath);
 	std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
-	if (writeFile(debugfsPath + "/gt" + gtNum + "/pf/exec_quantum_ms", std::to_string(attrs.pfExec)) != 0) {
-		return false;
-	}
-	if (writeFile(debugfsPath + "/gt" + gtNum + "/pf/preempt_timeout_us", std::to_string(attrs.pfPreempt)) != 0) {
-		return false;
-	}
-	if (writeFile(debugfsPath + "/gt" + gtNum + "/pf/sched_if_idle", attrs.schedIfIdle ? "1" : "0") != 0) {
+
+	bool useSysfs = !sriovAdminPath.empty();
+	std::string pfSchedDir = useSysfs ? sriovAdminPath + "/pf/profile" : debugfsPath + "/gt" + gtNum + "/pf";
+	if (writePfSchedParams(pfSchedDir, attrs, useSysfs) != 0) {
 		return false;
 	}
 
 	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
-		std::string vfResPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(vfNum);
-		if (writeVfAttrToSysfs(vfResPath, attrs, lmem) != 0) {
+		std::string sysfsVfProfile =
+			!sriovAdminPath.empty() ? sriovAdminPath + "/vf" + std::to_string(vfNum) + "/profile" : "";
+		std::string debugfsVfPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(vfNum);
+		if (writeVfAttr(sysfsVfProfile, debugfsVfPath, attrs, lmem) != 0) {
 			return false;
 		}
 	}
@@ -718,11 +815,16 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
 	}
 
 	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + devInfo->bdfAddress;
+	std::string cardName = getCardNameFromDrmPath(devInfo->drmPath);
+	std::string sriovAdminPath = getSriovAdminPath(cardName);
 	int numVfs = std::stoi(numVfsString);
 
 	try {
 		for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
-			writeVfAttrToSysfs(debugfsPath + "/gt0/vf" + std::to_string(functionIndex), zeroAttr, 0);
+			std::string sysfsVfProfile =
+				!sriovAdminPath.empty() ? sriovAdminPath + "/vf" + std::to_string(functionIndex) + "/profile" : "";
+			std::string debugfsVfPath = debugfsPath + "/gt0/vf" + std::to_string(functionIndex);
+			writeVfAttr(sysfsVfProfile, debugfsVfPath, zeroAttr, 0);
 		}
 	} catch (std::ios::failure &) {
 		return -1;
