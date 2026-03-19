@@ -3,10 +3,12 @@
 
 CC      = gcc
 CFLAGS  = -std=c11 -Wall -Wextra -fPIC -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg-config --cflags libcyaml)
-LDFLAGS = -shared -lpthread $(shell pkg-config --libs libcyaml)
+LDFLAGS = -shared
+LDLIBS  = -lpthread $(shell pkg-config --libs libcyaml)
 
 TEST_CFLAGS  = -std=c11 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg-config --cflags libcyaml)
-TEST_LDFLAGS = -L. -lze_stub -Wl,-rpath,. $(shell pkg-config --libs libcyaml)
+TEST_LDFLAGS = -Wl,-rpath,.
+TEST_LDLIBS  = -L. -lze_stub $(shell pkg-config --libs libcyaml)
 
 LIB   = libze_stub.so
 SRCS  = zes_stub.c sysman_state.c
@@ -17,13 +19,13 @@ TESTS = test_sysman
 all: $(LIB)
 
 $(LIB): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c sysman_state.h zes_stub.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(TESTS): %: %.c $(LIB) zes_stub.h
-	$(CC) $(TEST_CFLAGS) -o $@ $< $(TEST_LDFLAGS)
+	$(CC) $(TEST_CFLAGS) -o $@ $< $(TEST_LDFLAGS) $(TEST_LDLIBS)
 
 .PHONY: test
 test: $(TESTS)

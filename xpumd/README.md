@@ -110,6 +110,11 @@ docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
   --config /etc/xpumd/config-example.yaml
 ```
 
+For integration-style runs without a real Level Zero userspace driver, the
+image also ships a stub driver. See
+[`DEVELOPMENT.md`](DEVELOPMENT.md#testing-container-image-with-stub-driver)
+for detailed instructions.
+
 See also [Testing container image](#testing-container-image).
 
 ### Kubernetes

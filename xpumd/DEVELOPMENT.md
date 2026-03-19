@@ -111,6 +111,38 @@ Query Prometheus metrics:
 curl --no-progress-meter http://localhost:8080/metrics
 ```
 
+### Testing container image with stub driver
+
+The image also includes a stub Level-Zero loader library which can be used to
+test the daemon without a real GPU or driver.
+
+Use `LD_LIBRARY_PATH` to load the stub driver and `SYSMAN_STUB_CONFIG` to
+specify the config file:
+
+```bash
+docker run -it --rm --user 0 \
+  -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
+  -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
+  --publish 8080:8080 registry.local/xpumd:main \
+  --config /etc/xpumd/config-example.yaml
+```
+
+To supply test-specific stub state, bind-mount a YAML file into the container
+and point `SYSMAN_STUB_CONFIG` at that path:
+
+```bash
+docker run -it --rm --user 0 \
+  -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
+  -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
+  --volume $PWD/receiver/internal/level-zero-go/level-zero-stub:/etc/xpumd/level-zero-stub:ro \
+  --publish 8080:8080 registry.local/xpumd:main \
+  --config /etc/xpumd/config-example.yaml
+```
+
+> [!NOTE]
+> When using the stub loader, no `/dev/dri` device mapping or GPU-specific
+> Linux capabilities are required.
+
 ## Extracting sources from container image
 
 For (L)GPL compliance, the container image includes source packages in the

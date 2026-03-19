@@ -20,8 +20,11 @@ WORKDIR /go/src/work
 RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources && \
     apt-get update && apt-get install -y --no-install-recommends \
     cmake \
+    libcyaml-dev \
+    libyaml-dev \
     ninja-build \
-    libudev-dev
+    libudev-dev \
+    pkg-config
 
 # Download and install Level-Zero and its dependencies
 RUN mkdir /debs /out && \
@@ -48,9 +51,14 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \
     make build && \
+    make -C receiver/internal/level-zero-go/level-zero-stub clean test && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
     install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
     install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
+    install -D receiver/internal/level-zero-go/level-zero-stub/libze_stub.so \
+               /out/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
+    install -D receiver/internal/level-zero-go/level-zero-stub/example-config.yaml \
+               /out/etc/xpumd/level-zero-stub/example-config.yaml && \
     go -C dist tool -modfile $(pwd)/tools/go.mod \
         go-licenses save . \
                 --ignore github.com/intel/xpumanager/xpumd \
@@ -62,7 +70,7 @@ RUN mkdir /out/sources && \
     cd /out/sources && \
     gpl_pkgs="libc6 libcap2 libudev1 libstdc++6 libgcc-s1" && \
     apt-get source --download-only $gpl_pkgs && \
-    other_pkgs="libigdgmm12 libze-intel-gpu1" && \
+    other_pkgs="libigdgmm12 libze-intel-gpu1 libcyaml1 libyaml-0-2" && \
     for pkg in $gpl_pkgs $other_pkgs; do \
         install -Dt /out/usr/share/doc/$pkg \
                 /usr/share/doc/$pkg/copyright; \
@@ -77,7 +85,9 @@ RUN install -Dt /out/lib64 \
             /lib64/ld-linux-x86-64.so.2 && \
     install -Dt /out/lib/x86_64-linux-gnu \
             /lib/x86_64-linux-gnu/libc.so.6 \
-            /lib/x86_64-linux-gnu/libcap.so.2 && \
+            /lib/x86_64-linux-gnu/libcap.so.2 \
+            /lib/x86_64-linux-gnu/libcyaml.so.1 \
+            /lib/x86_64-linux-gnu/libyaml-0.so.2 && \
     install -Dt /out/usr/lib/x86_64-linux-gnu \
             /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
             /usr/lib/x86_64-linux-gnu/libm.so.6 \
