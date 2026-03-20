@@ -14,6 +14,9 @@ NOTE: Enable NFD ([Node Feature Discovery](https://kubernetes-sigs.github.io/nod
 / GPU node labeling when installing either GPU plugin or DRA driver, to avoid `Pending` daemon
 pods on cluster nodes that do not have Intel GPUs.
 
+For stub-driver or other non-GPU test deployments, the chart can also run with
+`gpuAccess=none`, which skips GPU resource requests entirely.
+
 [^1]: [Intel GPU plugin](https://intel.github.io/intel-device-plugins-for-kubernetes/cmd/gpu_plugin/README.html)
 [^2]: [Intel GPU resource driver](https://github.com/intel/intel-resource-drivers-for-kubernetes/tree/main/doc/gpu#readme)
 
@@ -25,6 +28,7 @@ Specify which type of Intel [GPU monitoring access](#other-values) is used in th
 * `i915`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
 * `xe`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
+* `none`: Do not request GPU resources. Useful for stub-driver testing on generic clusters.
 
 For example:
 

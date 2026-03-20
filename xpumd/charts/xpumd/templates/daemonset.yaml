@@ -35,6 +35,10 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -43,6 +47,10 @@ spec:
         - "--config=/etc/xpumd/config-processor-xpustatus.yaml"
         - "--config=/etc/xpumd/config-exporter-xpuinfo.yaml"
         - "--config=/etc/xpumd/config.yaml"
+        {{- with .Values.extraEnv }}
+        env:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         securityContext:
           {{- if .Values.securityContextOverride }}
           {{- toYaml .Values.securityContextOverride | nindent 10 }}
@@ -91,6 +99,9 @@ spec:
           readOnly: true
         - name: rundir
           mountPath: /run/xpumd
+        {{- with .Values.extraVolumeMounts }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -111,3 +122,6 @@ spec:
         hostPath:
           path: /run/xpumd
           type: DirectoryOrCreate
+      {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
