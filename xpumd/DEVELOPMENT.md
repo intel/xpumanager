@@ -222,9 +222,38 @@ devices without Kubernetes resource drivers:
 
 ```bash
 helm install xpumd charts/xpumd --set image.repository=registry.local/xpumd --set image.pullPolicy=Never \
-        --set gpuAccess=null \
+        --set gpuAccess=none \
         --set securityContextOverride.runAsUser=0 --set securityContextOverride.privileged=true
 ```
 
 See [Helm chart README](charts/xpumd/README.md) for other deployment scenarios
 and detailed configuration options.
+
+## Integration tests
+
+The project includes a suite of Kubernetes integration tests that verify the
+deployment and basic functionality using the
+[stub Level-Zero driver](receiver/internal/level-zero-go/level-zero-stub).
+
+### Kind cluster
+
+Run with:
+
+```bash
+make test-integration-kind
+```
+
+This runs everything locally: builds the container image, creates a disposable
+Kind cluster, deploys xpumd via the Helm chart (with stub driver enabled), and
+runs the tests.
+
+### Existing cluster
+
+To run the integration tests against an existing cluster:
+
+```bash
+make test-integration-existing-cluster IMAGE_REPOSITORY=ghcr.io/intel/xpumanager/xpumd IMAGE_TAG=latest
+```
+
+> [!IMPORTANT]
+> Ensure that the container image is present in/reachable by the cluster.

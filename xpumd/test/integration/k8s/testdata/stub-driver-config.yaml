@@ -1,0 +1,137 @@
+# SPDX-License-Identifier: MIT
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_extension_power_limits"
+        Version: 65536
+    Devices:
+      - Properties:
+          Core:
+            Type: 1       # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "12345678-0000-0000-0000-000000000000"
+          NumSubdevices: 2
+          ModelName: "Super 3000"
+          VendorName: "ACME Inc."
+          SerialNumber: "SN-0001"
+          Flags: 1  # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 0
+            HaveBandwidthCounters: true
+          Stats:
+            RxCounter: 1000000
+            TxCounter: 2000000
+
+        Firmwares:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Name: "GFX"
+              Version: "1.2.3.4"
+
+        ECC:
+          Available: true
+          Configurable: true
+          State:
+            CurrentState: 2  # ZES_DEVICE_ECC_STATE_DISABLED
+            PendingState: 2
+            PendingAction: 0
+
+        FrequencyDomains:
+          - Properties:
+              Type: 0  # ZES_FREQ_DOMAIN_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Min: 300
+              Max: 1600
+            Range:
+              Min: 300
+              Max: 1600
+            State:
+              Request: 1400
+              Tdp: 1600
+              Efficient: 300
+              Actual: 1200
+              ThrottleReasons: 0
+
+        MemoryModules:
+          - Properties:
+              Type: 0  # ZES_MEM_TYPE_HBM
+              OnSubdevice: false
+              SubdeviceId: 0
+              Location: 1  # ZES_MEM_LOC_DEVICE
+              PhysicalSize: 17179869184
+            State:
+              Health: 1  # ZES_MEM_HEALTH_OK
+              Free: 8589934592
+              Size: 17179869184
+            Bandwidth:
+              ReadCounter: 1073741824
+              WriteCounter: 536870912
+              MaxBandwidth: 512000000000
+              Timestamp: 123456789
+
+        PowerDomains:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              IsEnergyThresholdSupported: true
+              ExtendedProperties:
+                Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 150000
+            EnergyCounter:
+              Energy: 5000000
+              Timestamp: 123456789
+            Limits:
+              - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0
+                LimitUnit: 0
+                EnabledStateLocked: false
+                Enabled: true
+                IntervalValueLocked: false
+                Interval: 1000
+                LimitValueLocked: false
+                Limit: 200000
+
+        TemperatureSensors:
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 110.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+          - Properties:
+              Type: 1  # ZES_TEMP_SENSORS_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 110.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+          - Properties:
+              Type: 2  # ZES_TEMP_SENSORS_MEMORY
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 100.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
