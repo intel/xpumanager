@@ -39,15 +39,15 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 
 	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate engine groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate engine groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("Device has %u engine groups.\n", engineGroupCount);
+	DBG("Device has {} engine groups.\n", engineGroupCount);
 
 	engineGroups = new zes_engine_handle_t[engineGroupCount];
 	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, engineGroups);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get engine group handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get engine group handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 	}
 	return result;
 }
@@ -70,10 +70,10 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 
 	result = zesEngineGetProperties(engineGroup, engineProperties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get engine properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get engine properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Engine SType: %d\n", engineProperties->stype);
+	DBG("  - Engine SType: {}\n", engineProperties->stype);
 	switch (engineProperties->type) {
 	case ZES_ENGINE_GROUP_ALL:
 		DBG("  - Engine Type: All\n");
@@ -121,11 +121,11 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 		DBG("  - Engine Type: Media Codec Single\n");
 		break;
 	default:
-		DBG("  - Engine Type: Unknown (%d)\n", engineProperties->type);
+		DBG("  - Engine Type: Unknown ({})\n", engineProperties->type);
 		break;
 	}
 
-	DBG("  - Engine Subdevice ID: %u\n", engineProperties->subdeviceId);
+	DBG("  - Engine Subdevice ID: {}\n", engineProperties->subdeviceId);
 	return result;
 }
 
@@ -148,11 +148,11 @@ ze_result_t enginegroup::getActivity(zes_engine_handle_t engineGroup, zes_engine
 	memset(engineStats, 0, sizeof(zes_engine_stats_t));
 	result = zesEngineGetActivity(engineGroup, engineStats);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get engine activity: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get engine activity: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Timestamp: %" PRIu64 "\n", engineStats->timestamp);
-	DBG("  - Active Time: %" PRIu64 "ns\n", engineStats->activeTime);
+	DBG("  - Timestamp: {}\n", engineStats->timestamp);
+	DBG("  - Active Time: {}ns\n", engineStats->activeTime);
 	return result;
 }
 
@@ -174,11 +174,11 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
 
 	result = zesEngineGetActivityExt(engineGroup, 0, &engineStats);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get extended engine activity: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get extended engine activity: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Timestamp: %" PRIu64 "\n", engineStats.timestamp);
-	DBG("  - Active Time: %" PRIu64 "ns\n", engineStats.activeTime);
+	DBG("  - Timestamp: {}\n", engineStats.timestamp);
+	DBG("  - Active Time: {}ns\n", engineStats.activeTime);
 	return result;
 }
 
@@ -209,11 +209,11 @@ ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
-		DBG("  - Engine Group %u Type: %d\n", i, engineProperties.type);
+		DBG("  - Engine Group {} Type: {}\n", i, engineProperties.type);
 		if (engineProperties.type == type) {
 			(*count)++;
 		}
@@ -257,7 +257,7 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t 
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -272,13 +272,12 @@ ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t 
 		if (found) {
 			result = getActivity(engineGroup, &engineStats);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get engine activity for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+				ERR("Failed to get engine activity for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 				return result;
 			}
 			*utilization = engineStats.activeTime;
 			*timestamp = engineStats.timestamp;
-			DBG("  - Engine Group %u Utilization: %" PRIu64 "%%, Timestamp: %" PRIu64 "\n", i, *utilization,
-				*timestamp);
+			DBG("  - Engine Group {} Utilization: {}%, Timestamp: {}\n", i, *utilization, *timestamp);
 			break;
 		}
 	}
@@ -321,7 +320,7 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -329,7 +328,7 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 			if (matchIndex == engineIndex) {
 				result = getActivity(engineGroup, &engineStats);
 				if (result != ZE_RESULT_SUCCESS) {
-					ERR("Failed to get engine activity for group %u: 0x%X (%s)\n", i, result,
+					ERR("Failed to get engine activity for group {}: 0x{:X} ({})\n", i, result,
 						l0_error_to_string(result));
 					return result;
 				}
@@ -337,15 +336,15 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 				*activeTime = engineStats.activeTime;
 				*timestamp = engineStats.timestamp;
 
-				DBG("Engine type %d index %u: activeTime=%" PRIu64 ", timestamp=%" PRIu64 "\n", type, engineIndex,
-					*activeTime, *timestamp);
+				DBG("Engine type {} index {}: activeTime={}, timestamp={}\n", type, engineIndex, *activeTime,
+					*timestamp);
 				return ZE_RESULT_SUCCESS;
 			}
 			matchIndex++;
 		}
 	}
 
-	ERR("Engine type %d index %u not found (only %u engines of this type)\n", type, engineIndex, matchIndex);
+	ERR("Engine type {} index {} not found (only {} engines of this type)\n", type, engineIndex, matchIndex);
 	return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
@@ -376,14 +375,14 @@ ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get engine properties for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get engine properties for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
 		if (engineProperties.type == type) {
 			result = getActivity(engineGroup, &engineStats);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get engine activity for group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+				ERR("Failed to get engine activity for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 				return result;
 			}
 
@@ -392,8 +391,8 @@ ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 			entry.first = engineStats.activeTime;
 			entry.second = engineStats.timestamp;
 
-			DBG("Engine type %d tile %u: activeTime=%" PRIu64 ", timestamp=%" PRIu64 "\n", type, tileId,
-				engineStats.activeTime, engineStats.timestamp);
+			DBG("Engine type {} tile {}: activeTime={}, timestamp={}\n", type, tileId, engineStats.activeTime,
+				engineStats.timestamp);
 		}
 	}
 
@@ -434,7 +433,7 @@ ze_result_t enginegroup::zesRun(UNUSED zes_device_handle_t device)
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
-		DBG("  - Engine Group handle: %p\n", (void *)engineGroup);
+		DBG("  - Engine Group handle: {}\n", (void *)engineGroup);
 
 		getProperties(engineGroup, &engineProperties);
 		getActivity(engineGroup, &engineStats);

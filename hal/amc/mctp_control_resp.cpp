@@ -93,7 +93,7 @@ uint8_t mctp::getRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 
 	if (mI2cMctpRead->respPayload[BYTE_0] != MCTP_COMPLETION_SUCCESS) {
 		ERR("mctp : Command Completion Error!!!\n");
-		ERR("Error Code : 0x%02x\n", mI2cMctpRead->respPayload[BYTE_0]);
+		ERR("Error Code : 0x{:02x}\n", mI2cMctpRead->respPayload[BYTE_0]);
 		return MCTP_FAILURE;
 	}
 

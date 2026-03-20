@@ -71,7 +71,7 @@ bool PciDatabase::init()
 		}
 		infile.close();
 	} else {
-		ERR("PciDatabase::init()- open file %s error.\n", fileName.c_str());
+		ERR("PciDatabase::init()- open file {} error.\n", fileName.c_str());
 		ret = false;
 	}
 
@@ -84,7 +84,7 @@ bool PciDatabase::init()
 		infile.close();
 	} else {
 		ret = false;
-		ERR("PciDatabase::init()- open file %s error.\n", fileName.c_str());
+		ERR("PciDatabase::init()- open file {} error.\n", fileName.c_str());
 	}
 
 	return ret;
@@ -403,7 +403,7 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 
 				if (info.at(start) == '0') {
 					auto ret = devices.erase(std::make_pair(vendorId, deviceId));
-					DBG("PciDatabase::parse_switch_config()- remove d_id:v_id = [0x%X:0x%X] count:%zu\n", vendorId,
+					DBG("PciDatabase::parse_switch_config()- remove d_id:v_id = [0x{:X}:0x{:X}] count:{}\n", vendorId,
 						deviceId, ret);
 				} else if (info.at(start) == '1') {
 					device.type = DV_SWITCH;
@@ -433,7 +433,7 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 					}
 					if (start < len) {
 						device.deviceName = info.substr(start);
-						DBG("PciDatabase::parse_switch_config()- deviceName: %s\n", device.deviceName.c_str());
+						DBG("PciDatabase::parse_switch_config()- deviceName: {}\n", device.deviceName.c_str());
 					}
 					devices[std::make_pair(vendorId, deviceId)] = device;
 				} else {
@@ -473,7 +473,7 @@ void PciDatabase::addSwitchDevice(int32_t vendorId, int32_t deviceId, const std:
 			devices[std::make_pair(vendorId, deviceId)] = device;
 		}
 	} else {
-		ERR("PciDatabase::addSwitchDevice() error- unknown device %s.\n", device.tostring().c_str());
+		ERR("PciDatabase::addSwitchDevice() error- unknown device {}.\n", device.tostring().c_str());
 	}
 }
 

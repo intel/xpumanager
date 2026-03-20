@@ -52,7 +52,7 @@ PerfMetricTypes::MetricGroupVector getDevicePerfMetricGroups(ze_device_handle_t 
 	std::vector<zet_metric_group_handle_t> groupHandles(groupCount);
 	result = zetMetricGroupGet(dev, &groupCount, groupHandles.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate metric groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return std::make_shared<std::vector<PerfMetricTypes::MetricGroupPtr>>();
 	}
 
@@ -114,7 +114,7 @@ PerfMetricTypes::MetricGroupVector getDevicePerfMetricGroups(ze_device_handle_t 
 		}
 	}
 
-	DBG("Device has %u performance metric groups\n", (uint32_t)resultGroups->size());
+	DBG("Device has {} performance metric groups\n", (uint32_t)resultGroups->size());
 
 	// Update cache with lock
 	{
@@ -156,7 +156,7 @@ void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &dri
 
 		result = zeContextCreate(driver, &contextDescriptor, &ctx);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to create context: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to create context: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return;
 		}
 		contexts[dev] = ctx;
@@ -171,7 +171,7 @@ void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &dri
 	// Activate the metric groups
 	result = zetContextActivateMetricGroups(ctx, dev, static_cast<uint32_t>(groupHandles.size()), groupHandles.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to activate metric groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return;
 	}
 
@@ -187,7 +187,7 @@ void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &dri
 
 		result = zeEventPoolCreate(ctx, &poolDescriptor, 1, &dev, &eventPool);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to create event pool: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to create event pool: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return;
 		}
 		eventPools[dev] = eventPool;
@@ -207,7 +207,7 @@ void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &dri
 
 		result = zeEventCreate(eventPool, &eventDescriptor, &notificationEvent);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to create event: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to create event: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return;
 		}
 		events[dev] = notificationEvent;
@@ -223,7 +223,7 @@ void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &dri
 		result =
 			zetMetricStreamerOpen(ctx, dev, group->metricGroup, &streamerConfig, notificationEvent, &group->streamer);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to open metric streamer for domain %u: 0x%X (%s)\n", domain, result,
+			ERR("Failed to open metric streamer for domain {}: 0x{:X} ({})\n", domain, result,
 				l0_error_to_string(result));
 		}
 	}
@@ -245,7 +245,7 @@ void readPerfMetricsData(PerfMetricTypes::ActiveGroupMap &metricGroups, PerfMetr
 		size_t dataSize = 0;
 		ze_result_t result = zetMetricStreamerReadData(group->streamer, UINT32_MAX, &dataSize, nullptr);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("No metric data available for domain %u\n", domain);
+			DBG("No metric data available for domain {}\n", domain);
 			continue;
 		}
 
@@ -253,7 +253,8 @@ void readPerfMetricsData(PerfMetricTypes::ActiveGroupMap &metricGroups, PerfMetr
 		std::vector<uint8_t> rawBuffer(dataSize);
 		result = zetMetricStreamerReadData(group->streamer, UINT32_MAX, &dataSize, rawBuffer.data());
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to read streamer data for domain %u: 0x%X (%s)\n", domain, result, l0_error_to_string(result));
+			ERR("Failed to read streamer data for domain {}: 0x{:X} ({})\n", domain, result,
+				l0_error_to_string(result));
 			continue;
 		}
 
@@ -263,7 +264,7 @@ void readPerfMetricsData(PerfMetricTypes::ActiveGroupMap &metricGroups, PerfMetr
 			zetMetricGroupCalculateMetricValues(group->metricGroup, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
 												dataSize, rawBuffer.data(), &calculatedCount, nullptr);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to calculate metric value count for domain %u: 0x%X (%s)\n", domain, result,
+			ERR("Failed to calculate metric value count for domain {}: 0x{:X} ({})\n", domain, result,
 				l0_error_to_string(result));
 			continue;
 		}
@@ -274,7 +275,7 @@ void readPerfMetricsData(PerfMetricTypes::ActiveGroupMap &metricGroups, PerfMetr
 			zetMetricGroupCalculateMetricValues(group->metricGroup, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
 												dataSize, rawBuffer.data(), &calculatedCount, calculatedValues.data());
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to calculate metric values for domain %u: 0x%X (%s)\n", domain, result,
+			ERR("Failed to calculate metric values for domain {}: 0x{:X} ({})\n", domain, result,
 				l0_error_to_string(result));
 			continue;
 		}
@@ -507,7 +508,7 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 	// Retrieve the metrics
 	result = zetMetricGet(metricGroup, &metricCount, localMetrics.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get metrics: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get metrics: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -516,16 +517,16 @@ ze_result_t metric::getMetric(zet_metric_group_handle_t metricGroup)
 		zet_metric_properties_t metricProperties = {};
 		result = zetMetricGetProperties(localMetrics[i], &metricProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get metric properties for metric %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get metric properties for metric {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
-		DBG("Metric %u:\n", i);
-		DBG("  - Name: %s\n", metricProperties.name);
-		DBG("  - Description: %s\n", metricProperties.description);
-		DBG("  - Metric Type: %u\n", (unsigned int)metricProperties.metricType);
+		DBG("Metric {}:\n", i);
+		DBG("  - Name: {}\n", metricProperties.name);
+		DBG("  - Description: {}\n", metricProperties.description);
+		DBG("  - Metric Type: {}\n", (unsigned int)metricProperties.metricType);
 		printMetricType(metricProperties.metricType);
-		DBG("  - Result Type: %u\n", (unsigned int)metricProperties.resultType);
+		DBG("  - Result Type: {}\n", (unsigned int)metricProperties.resultType);
 		printResultType(metricProperties.resultType);
 	}
 
@@ -558,7 +559,7 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	uint32_t groupCount = 0;
 	result = zetMetricGroupGet(device, &groupCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || groupCount == 0) {
-		ERR("Failed to get metric group count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get metric group count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -568,13 +569,13 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	// Retrieve the metric groups
 	result = zetMetricGroupGet(device, &groupCount, metricGroups.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get metric groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	result = zetContextActivateMetricGroups(context, device, groupCount, metricGroups.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to activate metric groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -584,15 +585,15 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 		groupProperties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
 		result = zetMetricGroupGetProperties(metricGroups[i], &groupProperties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get properties for metric group %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get properties for metric group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
-		DBG("Metric Group %u:\n", i);
-		DBG("  - Name: %s\n", groupProperties.name);
-		DBG("  - Description: %s\n", groupProperties.description);
-		DBG("  - Domain: %u\n", groupProperties.domain);
-		DBG("  - metricCount: %u\n", groupProperties.metricCount);
+		DBG("Metric Group {}:\n", i);
+		DBG("  - Name: {}\n", groupProperties.name);
+		DBG("  - Description: {}\n", groupProperties.description);
+		DBG("  - Domain: {}\n", groupProperties.domain);
+		DBG("  - metricCount: {}\n", groupProperties.metricCount);
 		printMetricGroupSamplingType(groupProperties.samplingType);
 		metricCount = groupProperties.metricCount;
 		getMetric(metricGroups[i]);
@@ -601,7 +602,7 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	// Deconfigure HW
 	result = zetContextActivateMetricGroups(context, device, 0, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to activate metric groups: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to activate metric groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -631,14 +632,14 @@ findEuMetricGroupLocked(ze_device_handle_t device,
 	uint32_t metricGroupCount = 0;
 	ze_result_t res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
 	if (res != ZE_RESULT_SUCCESS || metricGroupCount == 0) {
-		ERR("Failed to get metric group count: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get metric group count: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return nullptr;
 	}
 
 	std::vector<zet_metric_group_handle_t> metricGroups(metricGroupCount);
 	res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data());
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get metric groups: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get metric groups: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return nullptr;
 	}
 
@@ -756,7 +757,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 			ze_context_desc_t contextDesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
 			res = zeContextCreate(driver, &contextDesc, &hContext);
 			if (res != ZE_RESULT_SUCCESS) {
-				ERR("Failed to create context: 0x%X (%s)\n", res, l0_error_to_string(res));
+				ERR("Failed to create context: 0x{:X} ({})\n", res, l0_error_to_string(res));
 				return res;
 			}
 			targetMetricContexts[device] = hContext;
@@ -766,7 +767,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 		// Activate metric group
 		res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to activate metric groups: 0x%X (%s)\n", res, l0_error_to_string(res));
+			ERR("Failed to activate metric groups: 0x{:X} ({})\n", res, l0_error_to_string(res));
 			if (contextCreate) {
 				zeContextDestroy(hContext);
 				targetMetricContexts.erase(device);
@@ -781,7 +782,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 
 	res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &streamerDesc, nullptr, &hMetricStreamer);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to open metric streamer: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to open metric streamer: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		std::lock_guard<std::mutex> lock(metricMutex);
 		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
 		if (contextCreate) {
@@ -798,7 +799,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	size_t rawSize = 0;
 	res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get raw data size: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get raw data size: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		zetMetricStreamerClose(hMetricStreamer);
 		std::lock_guard<std::mutex> lock(metricMutex);
 		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
@@ -812,7 +813,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	std::vector<uint8_t> rawData(rawSize);
 	res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to read metric data: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to read metric data: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		zetMetricStreamerClose(hMetricStreamer);
 		std::lock_guard<std::mutex> lock(metricMutex);
 		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
@@ -837,7 +838,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues,
 											  nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to calculate metric values size: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to calculate metric values size: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		if (contextCreate) {
 			std::lock_guard<std::mutex> lock(metricMutex);
 			zeContextDestroy(hContext);
@@ -850,7 +851,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues,
 											  metricValues.data());
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to calculate metric values: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to calculate metric values: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		if (contextCreate) {
 			std::lock_guard<std::mutex> lock(metricMutex);
 			zeContextDestroy(hContext);
@@ -863,7 +864,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	uint32_t numMetrics = 0;
 	res = zetMetricGet(hMetricGroup, &numMetrics, nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get metric count: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get metric count: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		if (contextCreate) {
 			std::lock_guard<std::mutex> lock(metricMutex);
 			zeContextDestroy(hContext);
@@ -874,7 +875,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	std::vector<zet_metric_handle_t> phMetrics(numMetrics);
 	res = zetMetricGet(hMetricGroup, &numMetrics, phMetrics.data());
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get metrics: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get metrics: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		if (contextCreate) {
 			std::lock_guard<std::mutex> lock(metricMutex);
 			zeContextDestroy(hContext);
@@ -938,7 +939,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 		currentEuStall = (std::max)(currentEuStall, currentXveStall);
 
 		if (currentEuActive > 100.0 || currentEuStall > 100.0) {
-			DBG("Abnormal EU data in report %u: euActive: %.2f, euStall: %.2f\n", report, currentEuActive,
+			DBG("Abnormal EU data in report {}: euActive: {:.2f}, euStall: {:.2f}\n", report, currentEuActive,
 				currentEuStall);
 			continue;
 		}
@@ -965,8 +966,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	// Ensure euIdle doesn't underflow
 	uint64_t euBusy = euActive + euStall;
 	if (euBusy > 100) {
-		ERR("euBusy (%" PRIu64 ") exceeds 100: possible data corruption or calculation error (euActive=%" PRIu64
-			", euStall=%" PRIu64 ")\n",
+		ERR("euBusy ({}) exceeds 100: possible data corruption or calculation error (euActive={}, euStall={})\n",
 			euBusy, euActive, euStall);
 	}
 	uint64_t euIdle = (euBusy > 100) ? 0 : (100 - euBusy);
@@ -1019,7 +1019,7 @@ ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_ha
 
 	res = zeDeviceGetSubDevices(device, &subDeviceCount, nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get subdevice count: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get subdevice count: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
@@ -1037,7 +1037,7 @@ ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_ha
 	std::vector<ze_device_handle_t> subDeviceHandles(subDeviceCount);
 	res = zeDeviceGetSubDevices(device, &subDeviceCount, subDeviceHandles.data());
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get subdevice handles: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get subdevice handles: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
@@ -1048,7 +1048,7 @@ ze_result_t metric::getEuActiveStallIdle(ze_device_handle_t device, ze_driver_ha
 		props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
 		res = zeDeviceGetProperties(subDevice, &props);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get subdevice properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+			ERR("Failed to get subdevice properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
 			overallResult = res;
 			continue;
 		}
@@ -1101,7 +1101,7 @@ ze_result_t metric::getPerfMetrics(ze_device_handle_t device, ze_driver_handle_t
 	uint32_t subdeviceCount = 0;
 	ze_result_t result = zeDeviceGetSubDevices(device, &subdeviceCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to query subdevice count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to query subdevice count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1112,7 +1112,7 @@ ze_result_t metric::getPerfMetrics(ze_device_handle_t device, ze_driver_handle_t
 		std::vector<ze_device_handle_t> subdevices(subdeviceCount);
 		result = zeDeviceGetSubDevices(device, &subdeviceCount, subdevices.data());
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to enumerate subdevices: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to enumerate subdevices: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
 		devicesToQuery.insert(devicesToQuery.end(), subdevices.begin(), subdevices.end());

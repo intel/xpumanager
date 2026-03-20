@@ -35,10 +35,10 @@ ze_result_t fabric::enumFabricPorts(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFabricPorts(device, &portCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate fabric ports: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate fabric ports: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("Device has %u fabric ports\n", portCount);
+	DBG("Device has {} fabric ports\n", portCount);
 
 	if (portCount == 0)
 		return ZE_RESULT_SUCCESS;
@@ -46,7 +46,7 @@ ze_result_t fabric::enumFabricPorts(zes_device_handle_t device)
 	ports = new zes_fabric_port_handle_t[portCount];
 	result = zesDeviceEnumFabricPorts(device, &portCount, ports);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get fabric port handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get fabric port handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -68,22 +68,22 @@ ze_result_t fabric::portGetProperties(zes_fabric_port_handle_t hFabricPort, zes_
 {
 	ze_result_t result = zesFabricPortGetProperties(hFabricPort, properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get fabric port properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get fabric port properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Ports Properties:\n");
-	DBG("  - Fabric Id: %u\n", properties->portId.fabricId);
-	DBG("  - Attach Id: %u\n", properties->portId.attachId);
-	DBG("  - Port Number: %u\n", properties->portId.portNumber);
-	DBG("  - Port SType: %d\n", properties->stype);
-	DBG("  - Port model: %s\n", properties->model);
-	DBG("  - Port OnSubdevice ID: %d\n", properties->onSubdevice);
-	DBG("  - Port Subdevice ID: %u\n", properties->subdeviceId);
-	DBG("  - Port maxRxSpeed bitRate: %llu\n", (unsigned long long)properties->maxRxSpeed.bitRate);
-	DBG("  - Port maxRxSpeed width: %d\n", properties->maxRxSpeed.width);
-	DBG("  - Port maxTxSpeed bitRate: %llu\n", (unsigned long long)properties->maxTxSpeed.bitRate);
-	DBG("  - Port maxTxSpeed width: %d\n", properties->maxTxSpeed.width);
+	DBG("  - Fabric Id: {}\n", properties->portId.fabricId);
+	DBG("  - Attach Id: {}\n", properties->portId.attachId);
+	DBG("  - Port Number: {}\n", properties->portId.portNumber);
+	DBG("  - Port SType: {}\n", properties->stype);
+	DBG("  - Port model: {}\n", properties->model);
+	DBG("  - Port OnSubdevice ID: {}\n", properties->onSubdevice);
+	DBG("  - Port Subdevice ID: {}\n", properties->subdeviceId);
+	DBG("  - Port maxRxSpeed bitRate: {}\n", (unsigned long long)properties->maxRxSpeed.bitRate);
+	DBG("  - Port maxRxSpeed width: {}\n", properties->maxRxSpeed.width);
+	DBG("  - Port maxTxSpeed bitRate: {}\n", (unsigned long long)properties->maxTxSpeed.bitRate);
+	DBG("  - Port maxTxSpeed width: {}\n", properties->maxTxSpeed.width);
 
 	return result;
 }
@@ -135,7 +135,7 @@ ze_result_t fabric::getFabricPorts(zes_device_handle_t device, std::vector<portI
 		info.portProps.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
 		res = zesFabricPortGetProperties(ports[i], &info.portProps);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get fabric port properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+			ERR("Failed to get fabric port properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
 			continue;
 		}
 
@@ -143,14 +143,14 @@ ze_result_t fabric::getFabricPorts(zes_device_handle_t device, std::vector<portI
 		info.portState.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
 		res = zesFabricPortGetState(ports[i], &info.portState);
 		if (res != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get fabric port state: 0x%X (%s) port:%u.%u.%u\n", res, l0_error_to_string(res),
+			DBG("Failed to get fabric port state: 0x{:X} ({}) port:{}.{}.{}\n", res, l0_error_to_string(res),
 				info.portProps.portId.fabricId, info.portProps.portId.attachId, info.portProps.portId.portNumber);
 		}
 
 		// Get link type
 		res = zesFabricPortGetLinkType(ports[i], &info.portLink);
 		if (res != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get fabric port link type: 0x%X (%s) port:%u.%u.%u\n", res, l0_error_to_string(res),
+			DBG("Failed to get fabric port link type: 0x{:X} ({}) port:{}.{}.{}\n", res, l0_error_to_string(res),
 				info.portProps.portId.fabricId, info.portProps.portId.attachId, info.portProps.portId.portNumber);
 		}
 
@@ -158,7 +158,7 @@ ze_result_t fabric::getFabricPorts(zes_device_handle_t device, std::vector<portI
 		info.portConf.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_CONFIG;
 		res = zesFabricPortGetConfig(ports[i], &info.portConf);
 		if (res != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get fabric port config: 0x%X (%s) port:%u.%u.%u\n", res, l0_error_to_string(res),
+			DBG("Failed to get fabric port config: 0x{:X} ({}) port:{}.{}.{}\n", res, l0_error_to_string(res),
 				info.portProps.portId.fabricId, info.portProps.portId.attachId, info.portProps.portId.portNumber);
 		}
 
@@ -218,7 +218,7 @@ ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet
 		props.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
 		res = zesFabricPortGetProperties(ports[i], &props);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get fabric port properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+			ERR("Failed to get fabric port properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
 			continue;
 		}
 
@@ -234,7 +234,7 @@ ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet
 		config.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_CONFIG;
 		res = zesFabricPortGetConfig(ports[i], &config);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get current fabric port config: 0x%X (%s)\n", res, l0_error_to_string(res));
+			ERR("Failed to get current fabric port config: 0x{:X} ({})\n", res, l0_error_to_string(res));
 			return res;
 		}
 
@@ -249,7 +249,7 @@ ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet
 		// Set new configuration
 		res = zesFabricPortSetConfig(ports[i], &config);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set fabric port config: 0x%X (%s)\n", res, l0_error_to_string(res));
+			ERR("Failed to set fabric port config: 0x{:X} ({})\n", res, l0_error_to_string(res));
 			return res;
 		}
 
@@ -257,7 +257,7 @@ ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet
 	}
 
 	if (!found) {
-		ERR("Fabric port not found: subdevice %u, port %u\n", portInfoSetIn.subdeviceId,
+		ERR("Fabric port not found: subdevice {}, port {}\n", portInfoSetIn.subdeviceId,
 			portInfoSetIn.portId.portNumber);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -281,9 +281,9 @@ ze_result_t fabric::portGetLinkType(zes_fabric_port_handle_t hFabricPort)
 	// Get the link type of the fabric port
 	ze_result_t result = zesFabricPortGetLinkType(hFabricPort, &linkType);
 	if (result == ZE_RESULT_SUCCESS) {
-		DBG("Fabric Port Link Type: %s\n", linkType.desc);
+		DBG("Fabric Port Link Type: {}\n", linkType.desc);
 	} else {
-		ERR("Error getting fabric port link type: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Error getting fabric port link type: 0x{:X} ({})\n", result, l0_error_to_string(result));
 	}
 	return result;
 }
@@ -302,13 +302,13 @@ ze_result_t fabric::portGetConfig(zes_fabric_port_handle_t hFabricPort)
 	zes_fabric_port_config_t portConfig = {};
 	ze_result_t result = zesFabricPortGetConfig(hFabricPort, &portConfig);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get fabric port configuration: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Port Configuration:");
-	DBG("  - Enabled: %s\n", (portConfig.enabled ? "Yes" : "No"));
-	DBG("  - Beaconing: %s\n", (portConfig.beaconing ? "Enabled" : "Disabled"));
+	DBG("  - Enabled: {}\n", (portConfig.enabled ? "Yes" : "No"));
+	DBG("  - Beaconing: {}\n", (portConfig.beaconing ? "Enabled" : "Disabled"));
 
 	return result;
 }
@@ -328,21 +328,21 @@ ze_result_t fabric::portGetState(zes_fabric_port_handle_t hFabricPort, zes_fabri
 {
 	ze_result_t result = zesFabricPortGetState(hFabricPort, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get fabric port state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get fabric port state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Port State:");
-	DBG("  - Status: %d\n", state->status);
-	DBG("  - Quality Issues: %u\n", state->qualityIssues);
-	DBG("  - Failure Reasons: %u\n", state->failureReasons);
-	DBG("  - Remote Port Id - Fabric Id: %u\n", state->remotePortId.fabricId);
-	DBG("  - Remote Port Id - Attach Id: %u\n", state->remotePortId.attachId);
-	DBG("  - Remote Port Id - Port Number: %u\n", state->remotePortId.portNumber);
-	DBG("  - Rx Speed - Bit Rate: %llu\n", (unsigned long long)state->rxSpeed.bitRate);
-	DBG("  - Rx Speed - Width: %d\n", state->rxSpeed.width);
-	DBG("  - Tx Speed - Bit Rate: %llu\n", (unsigned long long)state->txSpeed.bitRate);
-	DBG("  - Tx Speed - Width: %d\n", state->txSpeed.width);
+	DBG("  - Status: {}\n", state->status);
+	DBG("  - Quality Issues: {}\n", state->qualityIssues);
+	DBG("  - Failure Reasons: {}\n", state->failureReasons);
+	DBG("  - Remote Port Id - Fabric Id: {}\n", state->remotePortId.fabricId);
+	DBG("  - Remote Port Id - Attach Id: {}\n", state->remotePortId.attachId);
+	DBG("  - Remote Port Id - Port Number: {}\n", state->remotePortId.portNumber);
+	DBG("  - Rx Speed - Bit Rate: {}\n", (unsigned long long)state->rxSpeed.bitRate);
+	DBG("  - Rx Speed - Width: {}\n", state->rxSpeed.width);
+	DBG("  - Tx Speed - Bit Rate: {}\n", (unsigned long long)state->txSpeed.bitRate);
+	DBG("  - Tx Speed - Width: {}\n", state->txSpeed.width);
 
 	return result;
 }
@@ -362,14 +362,14 @@ ze_result_t fabric::portGetThroughput(zes_fabric_port_handle_t hFabricPort, zes_
 {
 	ze_result_t result = zesFabricPortGetThroughput(hFabricPort, throughput);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get fabric port throughput: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get fabric port throughput: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Port Throughput:");
-	DBG("  - Rx Counter: %" PRIu64 "\n", throughput->rxCounter);
-	DBG("  - Tx Counter: %" PRIu64 "\n", throughput->txCounter);
-	DBG("  - Timestamp: %" PRIu64 "\n", throughput->timestamp);
+	DBG("  - Rx Counter: {}\n", throughput->rxCounter);
+	DBG("  - Tx Counter: {}\n", throughput->txCounter);
+	DBG("  - Timestamp: {}\n", throughput->timestamp);
 
 	return result;
 }
@@ -389,15 +389,15 @@ ze_result_t fabric::portGetFabricErrorCounters(zes_fabric_port_handle_t hFabricP
 	zes_fabric_port_error_counters_t errorCounters = {};
 	ze_result_t result = zesFabricPortGetFabricErrorCounters(hFabricPort, &errorCounters);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get fabric port error counters: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get fabric port error counters: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Fabric Port Error Counters:");
-	DBG("  - Link Failure Count: %" PRIu64 "\n", errorCounters.linkFailureCount);
-	DBG("  - Link Degrade Count: %" PRIu64 "\n", errorCounters.linkDegradeCount);
-	DBG("  - Firmware reported Error Count: %" PRIu64 "\n", errorCounters.fwErrorCount);
-	DBG("  - Firmware Communication Error Count: %" PRIu64 "\n", errorCounters.fwCommErrorCount);
+	DBG("  - Link Failure Count: {}\n", errorCounters.linkFailureCount);
+	DBG("  - Link Degrade Count: {}\n", errorCounters.linkDegradeCount);
+	DBG("  - Firmware reported Error Count: {}\n", errorCounters.fwErrorCount);
+	DBG("  - Firmware Communication Error Count: {}\n", errorCounters.fwCommErrorCount);
 
 	return result;
 }
@@ -424,16 +424,16 @@ ze_result_t fabric::portGetMultiPortThroughput(zes_device_handle_t device, uint3
 
 	ze_result_t result = zesFabricPortGetMultiPortThroughput(device, count, ports, &throughputs);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get multi-port throughput: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get multi-port throughput: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Multi-Port Throughput:");
 	for (uint32_t i = 0; i < count; i++) {
-		DBG("Port %u:\n", i);
-		DBG("  - Rx Counter: %" PRIu64 "\n", throughputs[i].rxCounter);
-		DBG("  - Tx Counter: %" PRIu64 "\n", throughputs[i].txCounter);
-		DBG("  - Timestamp: %" PRIu64 "\n", throughputs[i].timestamp);
+		DBG("Port {}:\n", i);
+		DBG("  - Rx Counter: {}\n", throughputs[i].rxCounter);
+		DBG("  - Tx Counter: {}\n", throughputs[i].txCounter);
+		DBG("  - Timestamp: {}\n", throughputs[i].timestamp);
 	}
 
 	return result;
@@ -474,7 +474,7 @@ ze_result_t fabric::setPortConfig(bool enabled)
 	for (uint32_t i = 0; i < portCount; i++) {
 		result = zesFabricPortGetConfig(ports[i], &config);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to get fabric port configuration: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -482,10 +482,10 @@ ze_result_t fabric::setPortConfig(bool enabled)
 
 		result = zesFabricPortSetConfig(ports[i], &config);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to set fabric port configuration: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Fabric Port %u configuration set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
+		DBG("Fabric Port {} configuration set to {}\n", i, (enabled ? "Enabled" : "Disabled"));
 	}
 	return result;
 }
@@ -508,7 +508,7 @@ ze_result_t fabric::setPortBeaconing(bool enabled)
 	for (uint32_t i = 0; i < portCount; i++) {
 		result = zesFabricPortGetConfig(ports[i], &config);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get fabric port configuration: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to get fabric port configuration: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -516,10 +516,10 @@ ze_result_t fabric::setPortBeaconing(bool enabled)
 
 		result = zesFabricPortSetConfig(ports[i], &config);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set fabric port beaconing: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to set fabric port beaconing: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Fabric Port %u beaconing set to %s\n", i, (enabled ? "Enabled" : "Disabled"));
+		DBG("Fabric Port {} beaconing set to {}\n", i, (enabled ? "Enabled" : "Disabled"));
 	}
 	return result;
 }

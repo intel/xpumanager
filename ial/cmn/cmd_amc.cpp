@@ -65,7 +65,7 @@ void AmcTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 		table.addRow(item.key(), value);
 	}
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 
 /**
@@ -200,14 +200,14 @@ int cmdAmc::run(arg_struct *args)
 				}
 			}
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			break;
 		}
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -215,7 +215,7 @@ int cmdAmc::run(arg_struct *args)
 	}
 
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -248,7 +248,7 @@ int cmdAmc::run(arg_struct *args)
 
 	int ret = amc.amcInitialize();
 	if (ret != AMC_SUCCESS) {
-		ERR("Failed to initialize AMC devices (error code: %d)\n", ret);
+		ERR("Failed to initialize AMC devices (error code: {})\n", ret);
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
@@ -293,7 +293,7 @@ ze_result_t cmdAmc::getDeviceIndex(amclib *amc, const std::string &val, int numC
 		int parsed = std::stoi(val, &pos);
 		if (pos == val.size()) {
 			if (parsed < 0 || parsed >= numCards) {
-				ERR("Device index %d is out of range. Valid range is 0 to %d.\n", parsed, numCards - 1);
+				ERR("Device index {} is out of range. Valid range is 0 to {}.\n", parsed, numCards - 1);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			deviceIndex = parsed;
@@ -308,7 +308,7 @@ ze_result_t cmdAmc::getDeviceIndex(amclib *amc, const std::string &val, int numC
 
 	deviceIndex = amc->amcGetIndex(val);
 	if (deviceIndex < 0 || deviceIndex >= numCards) {
-		ERR("No AMC card found for GPU BDF: %s\n", val.c_str());
+		ERR("No AMC card found for GPU BDF: {}\n", val.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	return ZE_RESULT_SUCCESS;
@@ -334,7 +334,7 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		try {
 			deviceId = std::stoi(amcCmds[AMC_DEVICE].val);
 		} catch (const std::exception &) {
-			ERR("Invalid device ID: %s\n", amcCmds[AMC_DEVICE].val.c_str());
+			ERR("Invalid device ID: {}\n", amcCmds[AMC_DEVICE].val.c_str());
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -346,7 +346,7 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		if (deviceId < 0) {
 			PRINT("\nWARNING: This operation will reset ALL GPU devices via AMC\n");
 		} else {
-			PRINT("\nWARNING: This operation will reset the GPU device %d via AMC\n", deviceId);
+			PRINT("\nWARNING: This operation will reset the GPU device {} via AMC\n", deviceId);
 		}
 		PRINT("Do you want to continue? (yes/no): ");
 
@@ -362,9 +362,9 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	// Validate device ID against available cards
 	if (deviceId >= 0 && deviceId >= numCards) {
 		if (numCards == 1) {
-			ERR("Invalid device ID %d. Only device 0 is available\n", deviceId);
+			ERR("Invalid device ID {}. Only device 0 is available\n", deviceId);
 		} else {
-			ERR("Invalid device ID %d. Valid range: 0-%d\n", deviceId, numCards - 1);
+			ERR("Invalid device ID {}. Valid range: 0-{}\n", deviceId, numCards - 1);
 		}
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -374,24 +374,24 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	std::atomic<int> successCount{0};
 
 	if (deviceId < 0) {
-		DBG("Executing GPU reset via AMC for all %d devices...\n", numCards);
+		DBG("Executing GPU reset via AMC for all {} devices...\n", numCards);
 		for (int i = 0; i < numCards; i++) {
 			workers.emplace_back([amc, i, &failureCount, &successCount]() {
-				DBG("Resetting GPU device %d via AMC...\n", i);
+				DBG("Resetting GPU device {} via AMC...\n", i);
 				if (amc->amcGpuReset(i) != AMC_SUCCESS) {
-					ERR("Failed to reset GPU device %d via AMC\n", i);
+					ERR("Failed to reset GPU device {} via AMC\n", i);
 					failureCount.fetch_add(1, std::memory_order_relaxed);
 				} else {
-					DBG("Successfully reset GPU device %d via AMC\n", i);
+					DBG("Successfully reset GPU device {} via AMC\n", i);
 					successCount.fetch_add(1, std::memory_order_relaxed);
 				}
 			});
 		}
 	} else {
-		DBG("Executing GPU reset via AMC for device %d...\n", deviceId);
+		DBG("Executing GPU reset via AMC for device {}...\n", deviceId);
 		workers.emplace_back([amc, deviceId, &failureCount, &successCount]() {
 			if (amc->amcGpuReset(deviceId) != AMC_SUCCESS) {
-				ERR("Failed to reset GPU device %d via AMC\n", deviceId);
+				ERR("Failed to reset GPU device {} via AMC\n", deviceId);
 				failureCount.fetch_add(1, std::memory_order_relaxed);
 			} else {
 				successCount.fetch_add(1, std::memory_order_relaxed);
@@ -406,9 +406,9 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	}
 
 	if (failureCount.load() > 0) {
-		ERR("Failed to reset %d GPU device(s) via AMC\n", failureCount.load());
+		ERR("Failed to reset {} GPU device(s) via AMC\n", failureCount.load());
 		if (successCount.load() > 0) {
-			PRINT("Successfully reset %d GPU device(s) via AMC\n", successCount.load());
+			PRINT("Successfully reset {} GPU device(s) via AMC\n", successCount.load());
 		}
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
@@ -416,7 +416,7 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	if (deviceId < 0) {
 		PRINT("\nGPU reset successfully completed on all devices via AMC\n");
 	} else {
-		PRINT("\nGPU reset successfully completed on device %d via AMC\n", deviceId);
+		PRINT("\nGPU reset successfully completed on device {} via AMC\n", deviceId);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -455,7 +455,7 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 	nlohmann::ordered_json outputJson;
 	if (amcCmds[AMC_SENSORID].enabled) {
 		if (!std::all_of(amcCmds[AMC_SENSORID].val.begin(), amcCmds[AMC_SENSORID].val.end(), ::isdigit)) {
-			ERR("Invalid sensor ID: %s. Sensor ID must be a numeric value.\n", amcCmds[AMC_SENSORID].val.c_str());
+			ERR("Invalid sensor ID: {}. Sensor ID must be a numeric value.\n", amcCmds[AMC_SENSORID].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 
@@ -466,14 +466,14 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 				throw std::out_of_range("Sensor ID exceeds 16-bit limit");
 			}
 		} catch (const std::exception &) {
-			ERR("Sensor ID '%s' is out of range (0-65535).\n", amcCmds[AMC_SENSORID].val.c_str());
+			ERR("Sensor ID '{}' is out of range (0-65535).\n", amcCmds[AMC_SENSORID].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 
 		std::vector<amcSensorInfo> sensorInfo;
 		int ret = amc->amcGetSensorInfoBySensorId(deviceIndex, static_cast<uint16_t>(sensorId), sensorInfo);
 		if (ret != AMC_SUCCESS) {
-			ERR("Failed to get AMC sensor info for sensor ID %d on device %s.\n", sensorId,
+			ERR("Failed to get AMC sensor info for sensor ID {} on device {}.\n", sensorId,
 				amcCmds[AMC_DEVICE].val.c_str());
 			return ZE_RESULT_ERROR_UNINITIALIZED;
 		}
@@ -541,32 +541,32 @@ ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
 	try {
 		filePdrId = static_cast<uint32_t>(std::stoul(amcCmds[AMC_FILE_TYPE].val));
 	} catch (const std::exception &) {
-		ERR("Invalid file type: %s. File type must be a numeric value.\n", amcCmds[AMC_FILE_TYPE].val.c_str());
+		ERR("Invalid file type: {}. File type must be a numeric value.\n", amcCmds[AMC_FILE_TYPE].val.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	std::vector<uint8_t> fileData;
 	int ret = amc->amcReadFile(deviceIndex, filePdrId, fileData);
 	if (ret != AMC_SUCCESS) {
-		ERR("Failed to read AMC file of type %u on device %s.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
+		ERR("Failed to read AMC file of type {} on device {}.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
 	if (!fileData.empty()) {
 		std::ofstream outFile(opFilename, std::ios::binary);
 		if (!outFile) {
-			ERR("Failed to open output file: %s\n", opFilename.c_str());
+			ERR("Failed to open output file: {}\n", opFilename.c_str());
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 		outFile.write(reinterpret_cast<const char *>(fileData.data()), fileData.size());
 		if (!outFile) {
-			ERR("Failed to write data to output file: %s\n", opFilename.c_str());
+			ERR("Failed to write data to output file: {}\n", opFilename.c_str());
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 		outFile.close();
-		PRINT("Successfully read AMC file of type %u on device %s and saved to %s\n", filePdrId,
+		PRINT("Successfully read AMC file of type {} on device {} and saved to {}\n", filePdrId,
 			  amcCmds[AMC_DEVICE].val.c_str(), opFilename.c_str());
 	} else {
-		ERR("AMC file of type %u on device %s is empty.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
+		ERR("AMC file of type {} on device {} is empty.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 	return ZE_RESULT_SUCCESS;

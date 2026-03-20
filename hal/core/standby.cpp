@@ -35,18 +35,18 @@ ze_result_t standby::enumStandbyDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumStandbyDomains(device, &standbyCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || standbyCount == 0) {
-		ERR("Failed to enumerate standby domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate standby domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	standbyHandles = new zes_standby_handle_t[standbyCount];
 	result = zesDeviceEnumStandbyDomains(device, &standbyCount, standbyHandles);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get standby domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get standby domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Found %u standby domains.\n", standbyCount);
+	DBG("Found {} standby domains.\n", standbyCount);
 	return result;
 }
 
@@ -65,14 +65,14 @@ ze_result_t standby::getProperties(zes_standby_handle_t standbyHandle)
 	zes_standby_properties_t properties = {};
 	ze_result_t result = zesStandbyGetProperties(standbyHandle, &properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get properties for standby domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get properties for standby domain 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Standby Properties:\n");
-	DBG("  onSubdevice: %d\n", properties.onSubdevice);
-	DBG("  subdeviceId: %u\n", properties.subdeviceId);
-	DBG("  type: %d\n", properties.type);
+	DBG("  onSubdevice: {}\n", properties.onSubdevice);
+	DBG("  subdeviceId: {}\n", properties.subdeviceId);
+	DBG("  type: {}\n", properties.type);
 
 	return result;
 }
@@ -92,7 +92,7 @@ ze_result_t standby::getMode(zes_standby_handle_t standbyHandle)
 	zes_standby_promo_mode_t mode = {};
 	ze_result_t result = zesStandbyGetMode(standbyHandle, &mode);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get state for standby domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get state for standby domain 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -134,7 +134,7 @@ ze_result_t standby::setMode(zes_standby_promo_mode_t mode)
 	for (uint32_t i = 0; i < standbyCount; ++i) {
 		result = zesStandbySetMode(standbyHandles[i], mode);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set standby mode. 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to set standby mode. 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
 	}

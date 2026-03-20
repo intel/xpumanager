@@ -20,35 +20,11 @@
  *
  * @param lvl Debug level to set (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
  */
-void driver::setPrintLvl(int lvl)
-{
-	// Set the global dbgLvl variable using the enhanced function from debug.cpp
-	setDbgLvlExtended(lvl);
-}
+void driver::setPrintLvl(LogLevel lvl) { setDbgLvlExtended(static_cast<int>(lvl)); }
 
-/**
- * @brief Gets the current print/debug level for the driver
- *
- * @return int Current debug level
- */
-int driver::getPrintLvl() { return getDbgLvlExtended(); }
+LogLevel driver::getPrintLvl() { return static_cast<LogLevel>(getDbgLvlExtended()); }
 
-/**
- * @brief Forces debug level synchronization across modules
- *
- * This function provides a more aggressive way to synchronize debug levels
- * between CLI and library modules, especially useful for meson builds where
- * they are separate compilation units.
- *
- * @param lvl Debug level to force (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
- */
-void driver::forceDebugSync(int lvl)
-{
-	// Use the enhanced synchronization function multiple times
-	for (int i = 0; i < 5; i++) {
-		setDbgLvlExtended(lvl);
-	}
-}
+void driver::forceDebugSync(LogLevel lvl) { setDbgLvlExtended(static_cast<int>(lvl)); }
 
 /**
  * @brief Initializes the Level Zero API.
@@ -63,7 +39,7 @@ ze_result_t driver::zeInitialize()
 	TRACING();
 	ze_result_t result = zeInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize Level Zero. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to initialize Level Zero. Error code: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -72,7 +48,7 @@ ze_result_t driver::zeInitialize()
 	// Discover the number of ze driver instances
 	result = zeDriverGet(&driverCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get driver handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -84,12 +60,12 @@ ze_result_t driver::zeInitialize()
 	}
 	memset(zeDrivers, 0, sizeof(ze_driver_handle_t) * driverCount);
 
-	DBG("Number of zeDrivers: %u\n", driverCount);
+	DBG("Number of zeDrivers: {}\n", driverCount);
 
 	// Retrieve driver handles
 	result = zeDriverGet(&driverCount, zeDrivers);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get driver handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -111,7 +87,7 @@ ze_result_t driver::zesInitialize()
 
 	ze_result_t result = zesInit(ZE_INIT_FLAG_GPU_ONLY);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize ZES API: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to initialize ZES API: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -120,11 +96,11 @@ ze_result_t driver::zesInitialize()
 	// Discover the number of zes driver instances
 	result = zesDriverGet(&zesDriverCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || zesDriverCount == 0) {
-		ERR("Failed to get driver count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get driver count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Number of zesDrivers: %u\n", zesDriverCount);
+	DBG("Number of zesDrivers: {}\n", zesDriverCount);
 
 	// Allocate space for zes driver handles
 	zesDrivers = new zes_driver_handle_t[zesDriverCount];
@@ -137,7 +113,7 @@ ze_result_t driver::zesInitialize()
 	// Retrieve driver handles
 	result = zesDriverGet(&zesDriverCount, zesDrivers);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get driver handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -146,7 +122,7 @@ ze_result_t driver::zesInitialize()
 	// There we can associate the zesDevices with the zeDevices.
 	result = zesDeviceGet(zesDrivers[0], &totalZesDevicesCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || totalZesDevicesCount == 0) {
-		ERR("Failed to get device count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -160,7 +136,7 @@ ze_result_t driver::zesInitialize()
 	result = zesDeviceGet(zesDrivers[0], &totalZesDevicesCount, totalZesDevices);
 
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	return ZE_RESULT_SUCCESS;
@@ -213,7 +189,7 @@ ze_result_t driver::init()
 			if (result == ZE_RESULT_SUCCESS) {
 #define PRINT_API_VERSION(i, x)                                                                                        \
 	case x:                                                                                                            \
-		DBG("Driver %u API Version: %s\n", i, #x);                                                                     \
+		DBG("Driver {} API Version: {}\n", i, #x);                                                                     \
 		break;
 
 				switch (apiVersion) {
@@ -235,7 +211,7 @@ ze_result_t driver::init()
 					break;
 				}
 			} else {
-				ERR("Failed to get API version for driver %u. Error code: %d\n", i, result);
+				ERR("Failed to get API version for driver {}. Error code: {}\n", i, result);
 				return result;
 			}
 
@@ -244,7 +220,7 @@ ze_result_t driver::init()
 			// Get zeDevices associated with the driver
 			result = zeDeviceGet(zeDrivers[i], &localDevs[i].totalDevicesCount, nullptr);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get driver handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+				ERR("Failed to get driver handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 				return result;
 			}
 
@@ -255,19 +231,19 @@ ze_result_t driver::init()
 			// Retrieve zeDevices for the driver
 			result = zeDeviceGet(zeDrivers[i], &localDevs[i].totalDevicesCount, localDevs[i].zeDevices.data());
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get device handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+				ERR("Failed to get device handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 				return result;
 			}
 
 			for (uint32_t j = 0; j < localDevs[i].totalDevicesCount; j++) {
-				DBG("Driver %u Device %u: %p\n", i, j, (void *)localDevs[i].zeDevices[j]);
+				DBG("Driver {} Device {}: {}\n", i, j, (void *)localDevs[i].zeDevices[j]);
 
 				// Initialize each device in the group
 				result = localDevs[i].dev[j].init(zeDrivers[i], zesDrivers[0], localDevs[i].zeDevices[j],
 												  totalZesDevices, +totalZesDevicesCount);
 				devBdfs.insert(localDevs[i].dev[j].getBDFStr());
 				if (result != ZE_RESULT_SUCCESS) {
-					ERR("Failed to initialize device for driver %u. Error code: %d\n", i, result);
+					ERR("Failed to initialize device for driver {}. Error code: {}\n", i, result);
 					return result;
 				}
 			}
@@ -354,7 +330,7 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t drvr)
 	uint32_t extensionCount = 0;
 	ze_result_t result = zeDriverGetExtensionProperties(drvr, &extensionCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get extension count. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get extension count. Error code: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -367,13 +343,13 @@ ze_result_t driver::getExtensionProperties(ze_driver_handle_t drvr)
 
 	result = zeDriverGetExtensionProperties(drvr, &extensionCount, extensions.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get extension properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get extension properties. Error code: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Extension Properties:\n");
 	for (uint32_t i = 0; i < extensionCount; ++i) {
-		DBG("  Extension %u: %s, version 0x%X\n", i + 1, extensions[i].name, extensions[i].version);
+		DBG("  Extension {}: {}, version 0x{:X}\n", i + 1, extensions[i].name, extensions[i].version);
 	}
 	return ZE_RESULT_SUCCESS;
 }
@@ -392,17 +368,17 @@ ze_result_t driver::getDriverProperties(ze_driver_handle_t drvr)
 	ze_driver_properties_t driverProperties = {};
 	ze_result_t result = zeDriverGetProperties(drvr, &driverProperties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get driver properties. Error code: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Driver Properties:\n");
 	DBG("  UUID: ");
 	for (int j = 0; j < ZE_MAX_DRIVER_UUID_SIZE; ++j) {
-		DBG("%02x", driverProperties.uuid.id[j]);
+		DBG("{:02x}", driverProperties.uuid.id[j]);
 	}
 	DBG("\n");
-	DBG("  Driver Version: 0x%X\n", driverProperties.driverVersion);
+	DBG("  Driver Version: 0x{:X}\n", driverProperties.driverVersion);
 	return result;
 }
 
@@ -420,15 +396,15 @@ ze_result_t driver::getIpcProperties(ze_driver_handle_t drvr)
 	ze_driver_ipc_properties_t ipcProperties;
 	ze_result_t result = zeDriverGetIpcProperties(drvr, &ipcProperties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get IPC properties. Error code: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get IPC properties. Error code: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	// If successful, print the IPC properties
 	DBG("IPC Properties:\n");
-	DBG("  Supports passing memory allocations between processes: %s\n",
+	DBG("  Supports passing memory allocations between processes: {}\n",
 		ipcProperties.flags & ZE_IPC_PROPERTY_FLAG_MEMORY ? "Yes" : "No");
-	DBG("  Supports passing event pools between processes: %s\n",
+	DBG("  Supports passing event pools between processes: {}\n",
 		ipcProperties.flags & ZE_IPC_PROPERTY_FLAG_EVENT_POOL ? "Yes" : "No");
 
 	return ZE_RESULT_SUCCESS;
@@ -461,7 +437,7 @@ ze_result_t driver::run()
 		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
 			result = devs[i].dev[j].run();
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to run device operations: 0x%X (%s)\n", result, l0_error_to_string(result));
+				ERR("Failed to run device operations: 0x{:X} ({})\n", result, l0_error_to_string(result));
 			}
 		}
 	}
@@ -478,7 +454,7 @@ void driver::getLoaderVersion(std::string *lzVersion)
 	zel_component_version_t *versions;
 	size_t size = 0;
 	zelLoaderGetVersions(&size, nullptr);
-	DBG("zelLoaderGetVersions number of components found: %zd\n", size);
+	DBG("zelLoaderGetVersions number of components found: {}\n", size);
 	versions = new zel_component_version_t[size];
 	zelLoaderGetVersions(&size, versions);
 
@@ -542,7 +518,7 @@ ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 				dev.addInfo(devList, deviceIndex);
 				return ZE_RESULT_SUCCESS;
 			} else if (numericId && *numericId == deviceIndex) {
-				DBG("Found device with index: %u\n", *numericId);
+				DBG("Found device with index: {}\n", *numericId);
 				dev.addInfo(devList, deviceIndex);
 				return ZE_RESULT_SUCCESS;
 			}

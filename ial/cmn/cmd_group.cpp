@@ -202,7 +202,7 @@ int cmdGroup::run(arg_struct *args)
 			groupCmds[groupCmdType::GROUP_DEVICE].val = optarg;
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -212,14 +212,14 @@ int cmdGroup::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(groupCmds[groupCmdType::GROUP_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", groupCmds[groupCmdType::GROUP_DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", groupCmds[groupCmdType::GROUP_DEVICE].val.c_str());
 		return result;
 	}
 
@@ -230,7 +230,7 @@ int cmdGroup::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : groupCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: %s\n", cmd.second.opt.name);
+				DBG("Running command: {}\n", cmd.second.opt.name);
 				ze_result_t cmdResult = (this->*cmd.second.func)(&device);
 				if (cmdResult != ZE_RESULT_SUCCESS && firstError == ZE_RESULT_SUCCESS) {
 					firstError = cmdResult;

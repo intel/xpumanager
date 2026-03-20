@@ -109,10 +109,10 @@ int amclib::amcInitialize()
 	}
 
 	for (int i = 0; i < numCards; ++i) {
-		DBG("############ CARD : %02d ############\n", i);
+		DBG("############ CARD : {:02} ############\n", i);
 		pldmobj[i] = new pldm(amcDeviceList->at(i).amcDevicePath, i);
 		if (pldmobj[i] == nullptr) {
-			ERR("Failed to allocate memory for pldm object for card : %d\n", i);
+			ERR("Failed to allocate memory for pldm object for card : {}\n", i);
 			for (int j = 0; j < i; ++j) {
 				delete pldmobj[j];
 			}
@@ -124,9 +124,9 @@ int amclib::amcInitialize()
 	}
 
 	for (int i = 0; i < numCards; i++) {
-		DBG("############ CARD : %02d ############\n", i);
+		DBG("############ CARD : {:02} ############\n", i);
 		if (pldmobj[i]->initialize() != PLDM_SUCCESS) {
-			ERR("Failed to initialize pldm Object for card: %d\n", i);
+			ERR("Failed to initialize pldm Object for card: {}\n", i);
 			return AMC_ERROR;
 		}
 		DBG("#####################################\n");
@@ -177,7 +177,7 @@ int amclib::amcFirmwareProgress(uint32_t cardNum)
 {
 	TRACING();
 	if (cardNum >= (uint32_t)numCards) {
-		ERR("Invalid cardNum specified: %u. Max cards: %d\n", cardNum, numCards);
+		ERR("Invalid cardNum specified: {}. Max cards: {}\n", cardNum, numCards);
 		return -1;
 	}
 	if (!pldmobj) {
@@ -242,13 +242,13 @@ int amclib::amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::s
 			uint8_t cardNum = static_cast<uint8_t>(i);
 			size_t bufferSize = sizeof(serialNum);
 			if (amcGetSerialNumber(cardNum, serialNum, &bufferSize) != AMC_SUCCESS) {
-				ERR("Failed to get serial number for card %zu\n", i);
+				ERR("Failed to get serial number for card {}\n", i);
 				return -1;
 			}
 			serialNumStr = std::string(serialNum);
 
 			if (amcGetVersion(cardNum, amcVersion, &bufferSize) != AMC_SUCCESS) {
-				ERR("Failed to get version for card %zu\n", i);
+				ERR("Failed to get version for card {}\n", i);
 				return -1;
 			}
 			versionStr = std::string(amcVersion);
@@ -281,13 +281,13 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 	TRACING();
 
 	if (!pldmobj || !pldmobj[cardIndex]) {
-		ERR("PLDM object not initialized for card index: %d\n", cardIndex);
+		ERR("PLDM object not initialized for card index: {}\n", cardIndex);
 		return AMC_ERROR;
 	}
 
 	uint8_t ret = pldmobj[cardIndex]->getSensorInfoById(sensorId);
 	if (ret != PLDM_SUCCESS) {
-		ERR("Failed to get sensor info for sensor ID %d on card index %d\n", sensorId, cardIndex);
+		ERR("Failed to get sensor info for sensor ID {} on card index {}\n", sensorId, cardIndex);
 		return AMC_ERROR;
 	}
 	std::vector<pldmSensorInfo> &sensorInfoList = pldmobj[cardIndex]->getSensorInfoList();
@@ -321,7 +321,7 @@ int amclib::oemVrsync(uint8_t cmd)
 	TRACING();
 	for (int i = 0; i < numCards; i++) {
 		if (pldmobj[i]->oemVrsyncCmd(cmd) != PLDM_SUCCESS) {
-			ERR("Failed to perform VRSync for card : %d\n", i);
+			ERR("Failed to perform VRSync for card : {}\n", i);
 			return AMC_ERROR;
 		}
 	}
@@ -353,25 +353,25 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 
 	// Validate card number is within valid range
 	if (cardNum >= numCards) {
-		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
+		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
 		return AMC_ERROR;
 	}
 
 	// Ensure PLDM object exists for the specified card
 	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card %d\n", cardNum);
+		ERR("PLDM object not initialized for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
 	// Call the underlying PLDM function directly
 	if (pldmobj[cardNum]->getFruSerialNum(serialNum, bufferSize) != PLDM_SUCCESS) {
-		ERR("Failed to get serial number for card %d\n", cardNum);
+		ERR("Failed to get serial number for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
 	// Log the serial number if fetched successfully
 	if (serialNum != nullptr && bufferSize != nullptr) {
-		DBG("Serial Number of card %d: %s\n", cardNum, serialNum);
+		DBG("Serial Number of card {}: {}\n", cardNum, serialNum);
 	}
 
 	return AMC_SUCCESS;
@@ -402,25 +402,25 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 
 	// Validate card number is within valid range
 	if (cardNum >= numCards) {
-		ERR("Invalid card number %d (valid range: 0-%d)\n", cardNum, numCards - 1);
+		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
 		return AMC_ERROR;
 	}
 
 	// Ensure PLDM object exists for the specified card
 	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card %d\n", cardNum);
+		ERR("PLDM object not initialized for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
 	// Call the underlying PLDM function directly
 	if (pldmobj[cardNum]->getAmcVersion(amcVersion, bufferSize) != PLDM_SUCCESS) {
-		ERR("Failed to get version for card %d\n", cardNum);
+		ERR("Failed to get version for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
 	// Log the amc version if fetched successfully
 	if (amcVersion != nullptr && bufferSize != nullptr) {
-		DBG("AMC Version of card %d: %s\n", cardNum, amcVersion);
+		DBG("AMC Version of card {}: {}\n", cardNum, amcVersion);
 	}
 
 	return AMC_SUCCESS;
@@ -443,20 +443,20 @@ int amclib::amcGpuReset(uint32_t cardNum)
 	TRACING();
 
 	if (cardNum >= static_cast<uint32_t>(numCards)) {
-		ERR("Invalid card number %u (valid range: 0-%d)\n", cardNum, numCards - 1);
+		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
 		return AMC_ERROR;
 	}
 
 	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card %u\n", cardNum);
+		ERR("PLDM object not initialized for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
-	DBG("Initiating AMC reset for card %u\n", cardNum);
+	DBG("Initiating AMC reset for card {}\n", cardNum);
 
 	// Execute the AMC reset command
 	if (pldmobj[cardNum]->amcGpuReset() != PLDM_SUCCESS) {
-		ERR("Failed to reset AMC for card %u\n", cardNum);
+		ERR("Failed to reset AMC for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
@@ -485,12 +485,12 @@ int amclib::amcReadFile(int deviceIndex, uint32_t filePdrId, std::vector<uint8_t
 	TRACING();
 
 	if (deviceIndex < 0 || deviceIndex >= numCards) {
-		ERR("Invalid device index %d (valid range: 0-%d)\n", deviceIndex, numCards - 1);
+		ERR("Invalid device index {} (valid range: 0-{})\n", deviceIndex, numCards - 1);
 		return AMC_ERROR;
 	}
 
 	if (!pldmobj || !pldmobj[deviceIndex]) {
-		ERR("PLDM object not initialized for device index: %d\n", deviceIndex);
+		ERR("PLDM object not initialized for device index: {}\n", deviceIndex);
 		return AMC_ERROR;
 	}
 

@@ -38,7 +38,7 @@ void temperature::loadThresholdSection(const nlohmann::json &thresholdsJson, con
 				uint64_t threshold = it.value().get<uint64_t>();
 				setter(deviceId, threshold);
 			} catch (const std::exception &e) {
-				ERR("Error parsing %s threshold for device %s: %s\n", key.c_str(), it.key().c_str(), e.what());
+				ERR("Error parsing {} threshold for device {}: {}\n", key.c_str(), it.key().c_str(), e.what());
 			}
 		}
 	}
@@ -96,7 +96,7 @@ void temperature::loadTemperatureThresholds()
 			DBG("Temperature thresholds config file not found, using defaults\n");
 		}
 	} catch (const std::exception &e) {
-		ERR("Error loading temperature thresholds config: %s\n", e.what());
+		ERR("Error loading temperature thresholds config: {}\n", e.what());
 		DBG("Using default temperature thresholds\n");
 	}
 }
@@ -231,18 +231,18 @@ ze_result_t temperature::enumTemperatureDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumTemperatureSensors(device, &temperatureCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || temperatureCount == 0) {
-		ERR("Failed to enumerate temperature domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate temperature domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	temperatureHandles = new zes_temp_handle_t[temperatureCount];
 	result = zesDeviceEnumTemperatureSensors(device, &temperatureCount, temperatureHandles);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get temperature domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get temperature domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Found %u temperature domains.\n", temperatureCount);
+	DBG("Found {} temperature domains.\n", temperatureCount);
 	return result;
 }
 
@@ -260,13 +260,13 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_
 {
 	ze_result_t result = zesTemperatureGetProperties(temperatureHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get properties for temperature domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get properties for temperature domain 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Temperature Properties:\n");
-	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %u\n", properties->subdeviceId);
+	DBG("  onSubdevice: {}\n", properties->onSubdevice);
+	DBG("  subdeviceId: {}\n", properties->subdeviceId);
 	switch (properties->type) {
 	case ZES_TEMP_SENSORS_GLOBAL:
 		DBG("  type: Global\n");
@@ -293,13 +293,13 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_
 		DBG("  type: GPU Board Min\n");
 		break;
 	default:
-		DBG("  type: Unknown (%d)\n", properties->type);
+		DBG("  type: Unknown ({})\n", properties->type);
 		break;
 	}
-	DBG("  maxTemperature: %f C\n", properties->maxTemperature);
-	DBG("  isCriticalTempSupported: %d\n", properties->isCriticalTempSupported);
-	DBG("  isThreshold1Supported: %d\n", properties->isThreshold1Supported);
-	DBG("  isThreshold2Supported: %d\n", properties->isThreshold2Supported);
+	DBG("  maxTemperature: {:f} C\n", properties->maxTemperature);
+	DBG("  isCriticalTempSupported: {}\n", properties->isCriticalTempSupported);
+	DBG("  isThreshold1Supported: {}\n", properties->isThreshold1Supported);
+	DBG("  isThreshold2Supported: {}\n", properties->isThreshold2Supported);
 
 	return result;
 }
@@ -319,12 +319,12 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
 {
 	ze_result_t result = zesTemperatureGetState(temperatureHandle, temp);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get state for temperature domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get state for temperature domain 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Temperature State:\n");
-	DBG("  Current Temperature: %f C\n", *temp);
+	DBG("  Current Temperature: {:f} C\n", *temp);
 
 	return result;
 }
@@ -351,7 +351,7 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		result = getProperties(temperatureHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for temperature sensor %u: 0x%X (%s)\n", i, result,
+			DBG("Failed to get properties for temperature sensor {}: 0x{:X} ({})\n", i, result,
 				l0_error_to_string(result));
 			continue;
 		}
@@ -362,7 +362,7 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 			if (result == ZE_RESULT_SUCCESS) {
 				return result;
 			} else {
-				DBG("Failed to get state for temperature sensor %u (type %d): 0x%X (%s)\n", i, type, result,
+				DBG("Failed to get state for temperature sensor {} (type {}): 0x{:X} ({})\n", i, type, result,
 					l0_error_to_string(result));
 			}
 		}
@@ -391,7 +391,7 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 		zes_temp_properties_t properties = {};
 		ze_result_t result = getProperties(temperatureHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for temperature sensor %u\n", i);
+			DBG("Failed to get properties for temperature sensor {}\n", i);
 			continue;
 		}
 
@@ -407,14 +407,14 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 		double temp = 0.0;
 		result = getState(temperatureHandles[i], &temp);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get state for temperature sensor %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			DBG("Failed to get state for temperature sensor {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
 		// Filter abnormal temperatures
 		if (temp < MAX_REASONABLE_TEMP_CELSIUS) {
 			tileTemperatures[tileId] = temp;
-			DBG("Tile %u %s temperature: %.2f C\n", tileId,
+			DBG("Tile {} {} temperature: {:.2f} C\n", tileId,
 				type == ZES_TEMP_SENSORS_GPU ? "GPU" : (type == ZES_TEMP_SENSORS_MEMORY ? "Memory" : "Other"), temp);
 		}
 	}

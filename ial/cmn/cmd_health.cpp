@@ -113,7 +113,7 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 		}
 	}
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 /**
  * @brief Prints text output with custom formatting for health command
@@ -128,7 +128,7 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 void HealthTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	if (jsonObj->contains("error")) {
-		PRINT("Error: %s\n", (*jsonObj)["error"].get<std::string>().c_str());
+		PRINT("Error: {}\n", (*jsonObj)["error"].get<std::string>().c_str());
 	} else if (jsonObj->contains("device_list")) {
 		for (auto &device : (*jsonObj)["device_list"]) {
 			printDeviceInfo(&device);
@@ -166,7 +166,7 @@ ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nl
 		// Run all component tests and collect results in the device JSON
 		result = this->allComponents(&d, &deviceJson);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Health check failed for device id: %u\n", d.index);
+			ERR("Health check failed for device id: {}\n", d.index);
 		}
 
 		deviceListJson->push_back(deviceJson);
@@ -195,10 +195,10 @@ ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::ordered_json *jsonObj
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	for (const auto &test : componentCmds) {
-		DBG("Running test: %d\n", test.type);
+		DBG("Running test: {}\n", test.type);
 		result = (this->*test.func)(d, jsonObj);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Health check failed for device id: %u\n", d->index);
+			ERR("Health check failed for device id: {}\n", d->index);
 			break;
 		}
 	}
@@ -225,7 +225,7 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	for (const auto &test : componentCmds) {
 		if (test.type == stoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val)) {
-			DBG("Running test: %d\n", test.type);
+			DBG("Running test: {}\n", test.type);
 			found = true;
 			result = (this->*test.func)(d, jsonObj);
 			break;
@@ -233,7 +233,7 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
 	}
 
 	if (!found) {
-		ERR("The following argument was not expected: '%s'.\n",
+		ERR("The following argument was not expected: '{}'.\n",
 			healthCmds[healthCmdType::HEALTH_COMPONENT].val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -278,7 +278,7 @@ ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *
 
 	result = (t->*getThresholdFunc)(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("%s: 0x%X (%s)\n", thresholdErrorMsg.c_str(), result, l0_error_to_string(result));
+		ERR("{}: 0x{:X} ({})\n", thresholdErrorMsg.c_str(), result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -286,7 +286,7 @@ ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *
 	std::string description = "Health cannot be determined for temperature sensors.";
 	result = (t->*getTempFunc)(&tempVal);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("%s: 0x%X (%s)\n", tempErrorMsg.c_str(), result, l0_error_to_string(result));
+		ERR("{}: 0x{:X} ({})\n", tempErrorMsg.c_str(), result, l0_error_to_string(result));
 		return result;
 	}
 	if (tempVal > 0 && tempVal < throttleThreshold) {
@@ -371,7 +371,7 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 	power *pwr = d->dev->getPower();
 	res = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
@@ -410,8 +410,8 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 				}
 			}
 		}
-		DBG("health: current device max domain power value: %" PRIu64, currentDeviceMaxDomainValue);
-		DBG("health: current sum of sub-device power values: %" PRIu64, currentSubDeviceValueSum);
+		DBG("health: current device max domain power value: {}", currentDeviceMaxDomainValue);
+		DBG("health: current sum of sub-device power values: {}", currentSubDeviceValueSum);
 		auto powerVal = std::max(currentDeviceMaxDomainValue, currentSubDeviceValueSum);
 		if (powerVal < powerThreshold && status < xpumHealthStatus::XPUM_HEALTH_STATUS_OK) {
 			status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
@@ -536,7 +536,7 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	result = mem->getMemoryHealth(&health);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory temperature thresholds: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory temperature thresholds: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -809,7 +809,7 @@ int cmdHealth::run(arg_struct *args)
 			healthCmds[healthCmdType::HEALTH_COMPONENT].val = optarg;
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -819,7 +819,7 @@ int cmdHealth::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -840,7 +840,7 @@ int cmdHealth::run(arg_struct *args)
 	if (!healthCmds[healthCmdType::HEALTH_LIST].enabled && !healthCmds[healthCmdType::HEALTH_DEVICE].enabled) {
 		result = ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		std::string err = "Wrong argument or unknown operation, run with --help for more information.";
-		DBG("Error: %s\n", err.c_str());
+		DBG("Error: {}\n", err.c_str());
 		(*jsonObj)["error"] = err;
 		(*jsonObj)["errno"] = result;
 		printer->print(jsonObj.get());
@@ -850,7 +850,7 @@ int cmdHealth::run(arg_struct *args)
 	// Find the device based on the provided device ID or PCI BDF address
 	result = args->sm.findDevice(healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS || deviceList.empty()) {
-		DBG("Error: Device handle not found for device ID '%s'.\n",
+		DBG("Error: Device handle not found for device ID '{}'.\n",
 			healthCmds[healthCmdType::HEALTH_DEVICE].val.c_str());
 		(*jsonObj)["error"] = "device not found";
 		(*jsonObj)["errno"] = ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -863,7 +863,7 @@ int cmdHealth::run(arg_struct *args)
 		result = this->allComponentsAllDevices(&deviceList, jsonObj.get());
 		if (result != ZE_RESULT_SUCCESS) {
 			std::string err = "Unable to retrieve health info for devices.";
-			DBG("Error: %s\n", err.c_str());
+			DBG("Error: {}\n", err.c_str());
 			(*jsonObj)["error"] = err;
 			(*jsonObj)["errno"] = result;
 		}

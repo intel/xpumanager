@@ -65,7 +65,7 @@ std::vector<std::string> findI2CDevices()
 
 	// Check if the directory exists
 	if (!std::filesystem::exists(devicesPath)) {
-		ERR("I2C devices directory does not exist: %s\n", devicesPath.c_str());
+		ERR("I2C devices directory does not exist: {}\n", devicesPath.c_str());
 		return devices;
 	}
 
@@ -117,7 +117,7 @@ bool I2CInterface::openAmc(const std::string &devpath)
 	}
 	amchandle = open(devpath.c_str(), O_RDWR | O_NONBLOCK);
 	if (amchandle < 0) {
-		ERR("Failed to open I2C device %s: %s\n", devpath.c_str(), strerror(errno));
+		ERR("Failed to open I2C device {}: {}\n", devpath.c_str(), strerror(errno));
 		return false;
 	}
 	return true;
@@ -135,7 +135,7 @@ bool I2CInterface::open_amc_peripheral()
 	TRACING();
 	int rv;
 	if ((rv = ioctl(amchandle, I2C_SLAVE, AMC_I2C_ADDR)) < 0) {
-		ERR("Failed to acquire bus access and/or talk to slave. Error code: %d\n", rv);
+		ERR("Failed to acquire bus access and/or talk to slave. Error code: {}\n", rv);
 		return false;
 	}
 	return true;
@@ -159,7 +159,7 @@ bool I2CInterface::writeAmc(void *writeBuffer, size_t writeSize)
 
 	ssize_t bytesWritten = write(amchandle, writeBuffer, writeSize);
 	if (bytesWritten < 0) {
-		ERR("Failed to write to I2C device: %s\n", strerror(errno));
+		ERR("Failed to write to I2C device: {}\n", strerror(errno));
 		return false;
 	}
 	return true;
@@ -182,9 +182,9 @@ bool I2CInterface::readAmc(void *readBuffer, size_t readSize)
 	}
 
 	ssize_t bytesRead = read(amchandle, readBuffer, readSize);
-	DBG("Number of bytes read from AMC: %zd\n", bytesRead);
+	DBG("Number of bytes read from AMC: {}\n", bytesRead);
 	if (bytesRead < 0) {
-		ERR("Failed to read from I2C device: %s\n", strerror(errno));
+		ERR("Failed to read from I2C device: {}\n", strerror(errno));
 		return false;
 	}
 	return true;
@@ -222,7 +222,7 @@ std::string getGpuDeviceFromI2C(const std::string &i2cDevicePath)
 		// Return the basename (filename) of the resolved path
 		return realPath.filename().string();
 	} catch (const std::filesystem::filesystem_error &ex) {
-		ERR("Failed to resolve GPU device path for %s: %s\n", i2cDevicePath.c_str(), ex.what());
+		ERR("Failed to resolve GPU device path for {}: {}\n", i2cDevicePath.c_str(), ex.what());
 		return "";
 	}
 }
@@ -261,7 +261,7 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 			info.amcDevicePath = i2cDevice;
 			info.gpuParentPath = getGpuDeviceFromI2C("/sys/bus/i2c/devices/i2c-" + busNumber);
 			amcDeviceList->push_back(info);
-			DBG("Found AMC device: %s\n", i2cDevice.c_str());
+			DBG("Found AMC device: {}\n", i2cDevice.c_str());
 			cardsCount++;
 		}
 	}

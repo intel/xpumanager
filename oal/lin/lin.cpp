@@ -158,7 +158,7 @@ thread_id *create_thread(funcptr thread, void *args)
 	pthread_t threadHdl;
 	pthread_create(&threadHdl, NULL, thread, args);
 
-	DBG("%s: thread handle is %ld\n", __func__, threadHdl);
+	DBG("{}: thread handle is {}\n", __func__, threadHdl);
 	thread_id *newThreadId = new thread_id(threadHdl);
 	return newThreadId;
 }
@@ -171,7 +171,7 @@ thread_id *create_thread(funcptr thread, void *args)
 void wait_for_thread(thread_id *tid)
 {
 	if (tid->ret_thread_uid()) {
-		DBG("%s: thread handle is %ld\n", __func__, tid->ret_thread_uid());
+		DBG("{}: thread handle is {}\n", __func__, tid->ret_thread_uid());
 		pthread_join(tid->ret_thread_uid(), NULL);
 		delete tid; // Clean up the thread_id object after waiting
 	}
@@ -319,7 +319,7 @@ std::string getSysfsLine(const std::string &bdf, const std::string &suffix)
 {
 	TRACING();
 	if (!isValidBdf(bdf)) {
-		ERR("Rejecting suspicious BDF address: %s\n", bdf.c_str());
+		ERR("Rejecting suspicious BDF address: {}\n", bdf.c_str());
 		return "";
 	}
 	std::string affinity = "";
@@ -420,11 +420,11 @@ int getSwitchCount(hwloc_obj_t pcidev)
 					preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
 					preDeviceId = obj->attr->bridge.upstream.pci.device_id;
 					count++;
-					DBG("Found Switch count %d.\n", count);
+					DBG("Found Switch count {}.\n", count);
 				}
 			}
 		} else {
-			DBG("Unknown hwloc-obj type  %d.\n", obj->type);
+			DBG("Unknown hwloc-obj type  {}.\n", obj->type);
 		}
 		obj = obj->parent;
 	}
@@ -476,7 +476,7 @@ std::string getDevicePath(const std::string &bdfAddress)
 			}
 		}
 	} catch (const stdfs::filesystem_error &e) {
-		ERR("Error searching /sys/devices for %s: %s\n", bdfAddress.c_str(), e.what());
+		ERR("Error searching /sys/devices for {}: {}\n", bdfAddress.c_str(), e.what());
 	}
 
 	return result;
@@ -525,7 +525,7 @@ void getSwitchDevicePath(hwloc_obj_t parObj, std::string *switchDevicePath)
 				}
 			}
 		} else {
-			ERR("Unknown hwloc-obj type  %d.\n", obj->type);
+			ERR("Unknown hwloc-obj type  {}.\n", obj->type);
 		}
 		obj = obj->parent;
 	}
@@ -619,7 +619,7 @@ std::string getDrmPath(const std::string &bdf)
 		}
 	} catch (const std::filesystem::filesystem_error &e) {
 		// Handle filesystem errors (e.g. permission denied)
-		ERR("Error accessing /sys/class/drm: %s\n", e.what());
+		ERR("Error accessing /sys/class/drm: {}\n", e.what());
 	}
 
 	return drmPath;
@@ -716,7 +716,7 @@ std::string findResourceFile(const std::string &relativePath)
 			if (mismatch_it == canonicalExeDir.end()) {
 				return canonicalCandidate.string();
 			}
-			ERR("findResourceFile: exe-relative path escapes exe directory: %s\n", canonicalCandidate.c_str());
+			ERR("findResourceFile: exe-relative path escapes exe directory: {}\n", canonicalCandidate.c_str());
 		}
 	} catch (...) {
 		DBG("Could not read /proc/self/exe to determine executable path\n");
@@ -739,7 +739,7 @@ std::string findResourceFile(const std::string &relativePath)
 
 	// Callers should guard against a non-empty string as well as `exists` to handle the case where a file is found but
 	// becomes inaccessible (e.g. permissions change, NFS issue, etc.)
-	ERR("findResourceFile: resource not found in any allowed location: %s\n", relativePath.c_str());
+	ERR("findResourceFile: resource not found in any allowed location: {}\n", relativePath.c_str());
 	return "";
 }
 
@@ -774,7 +774,7 @@ std::string getKernelVersion()
 std::string getPciSlotLabel(const std::string &bdf)
 {
 	if (!isValidBdf(bdf)) {
-		ERR("Rejecting suspicious BDF address: %s\n", bdf.c_str());
+		ERR("Rejecting suspicious BDF address: {}\n", bdf.c_str());
 		return "";
 	}
 
@@ -801,7 +801,7 @@ std::string getPciSlotLabel(const std::string &bdf)
 		}
 	} catch (const std::exception &e) {
 		// DMI reader initialization failed, continue with empty result
-		ERR("DMI reader failed for %s: %s\n", bdf.c_str(), e.what());
+		ERR("DMI reader failed for {}: {}\n", bdf.c_str(), e.what());
 	}
 
 	return "";

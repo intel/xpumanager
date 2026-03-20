@@ -317,11 +317,11 @@ XPUM_API xpum_result_t xpumInit()
 			return XPUM_NOT_INITIALIZED;
 		}
 
-		INFO("xpumInit: Successfully initialized with %zu devices\n", state.context->devices.size());
+		INFO("xpumInit: Successfully initialized with {} devices\n", state.context->devices.size());
 		return XPUM_OK;
 
 	} catch (const std::exception &e) {
-		ERR("xpumInit: Exception: %s\n", e.what());
+		ERR("xpumInit: Exception: {}\n", e.what());
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -343,7 +343,7 @@ XPUM_API xpum_result_t xpumShutdown(void)
 		return XPUM_OK;
 
 	} catch (const std::exception &e) {
-		ERR("xpumShutdown: Exception: %s\n", e.what());
+		ERR("xpumShutdown: Exception: {}\n", e.what());
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -668,7 +668,7 @@ XPUM_API xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t devic
 XPUM_API xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, UNUSED bool force)
 {
 	try {
-		INFO("xpumResetDevice: deviceId=%d\n", deviceId);
+		INFO("xpumResetDevice: deviceId={}\n", deviceId);
 		auto &state = getState();
 		const std::scoped_lock lock(state.mutex);
 
@@ -676,7 +676,7 @@ XPUM_API xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, UNUSED bool fo
 		xpum_result_t result = getDevice(state, deviceId, &dev);
 		if (result != XPUM_OK) {
 			if (result == XPUM_RESULT_DEVICE_NOT_FOUND) {
-				ERR("xpumResetDevice: Invalid device ID %d\n", deviceId);
+				ERR("xpumResetDevice: Invalid device ID {}\n", deviceId);
 			}
 			return result;
 		}
@@ -684,14 +684,14 @@ XPUM_API xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, UNUSED bool fo
 		ze_device_handle_t zeDevice = state.context->devices[deviceId].deviceHdl;
 		xpum_result_t resetResult = toXpumResult(dev->resetDevice(zeDevice));
 		if (resetResult == XPUM_OK) {
-			INFO("xpumResetDevice: Successfully reset device %d\n", deviceId);
+			INFO("xpumResetDevice: Successfully reset device {}\n", deviceId);
 		} else {
-			ERR("xpumResetDevice: Failed to reset device %d, result=%d\n", deviceId, resetResult);
+			ERR("xpumResetDevice: Failed to reset device {}, result={}\n", deviceId, resetResult);
 		}
 		return resetResult;
 
 	} catch (UNUSED const std::exception &e) {
-		ERR("xpumResetDevice: Exception: %s\n", e.what());
+		ERR("xpumResetDevice: Exception: {}\n", e.what());
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -703,7 +703,7 @@ XPUM_API xpum_result_t xpumSetPowerLimit(xpum_device_id_t deviceId, int32_t tile
 										 UNUSED uint32_t intervalWindow)
 {
 	try {
-		INFO("xpumSetPowerLimit: deviceId=%d, tileId=%d, limit=%uW\n", deviceId, tileId, powerLimit);
+		INFO("xpumSetPowerLimit: deviceId={}, tileId={}, limit={}W\n", deviceId, tileId, powerLimit);
 		auto &state = getState();
 		const std::scoped_lock lock(state.mutex);
 
@@ -724,12 +724,12 @@ XPUM_API xpum_result_t xpumSetPowerLimit(xpum_device_id_t deviceId, int32_t tile
 		if (setPowerResult == XPUM_OK) {
 			INFO("xpumSetPowerLimit: Successfully set power limit\n");
 		} else {
-			ERR("xpumSetPowerLimit: Failed, result=%d\n", setPowerResult);
+			ERR("xpumSetPowerLimit: Failed, result={}\n", setPowerResult);
 		}
 		return setPowerResult;
 
 	} catch (UNUSED const std::exception &e) {
-		ERR("xpumSetPowerLimit: Exception: %s\n", e.what());
+		ERR("xpumSetPowerLimit: Exception: {}\n", e.what());
 		return XPUM_GENERIC_ERROR;
 	}
 }
@@ -1533,7 +1533,7 @@ XPUM_API xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId, xpum_
 XPUM_API xpum_result_t xpumGetHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t *data)
 {
 	try {
-		DBG("xpumGetHealth: deviceId=%d, type=%d\n", deviceId, type);
+		DBG("xpumGetHealth: deviceId={}, type={}\n", deviceId, type);
 		if (data == nullptr) {
 			return XPUM_RESULT_INVALID_DIR;
 		}

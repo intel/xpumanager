@@ -111,12 +111,12 @@ bool I2CInterface::openAmc(const std::string &devpath)
 
 	// Convert UTF-8/narrow std::string to wide string (naive widening)
 	std::wstring wdevpath(devpath.begin(), devpath.end());
-	DBG("openAmc called with devpath: %ls\n", wdevpath.c_str());
+	DBG("openAmc called with devpath: {}\n", devpath);
 	amchandle = CreateFileW(wdevpath.c_str(), (GENERIC_READ | GENERIC_WRITE), 0, nullptr, OPEN_EXISTING,
 							FILE_FLAG_OVERLAPPED, nullptr);
 
 	if (amchandle == INVALID_HANDLE_VALUE) {
-		ERR("Error openAmc - %lu\n", GetLastError());
+		ERR("Error openAmc - {}\n", GetLastError());
 		return false;
 	}
 
@@ -153,7 +153,7 @@ bool I2CInterface::open_amc_peripheral()
 	DeviceIoControl(amchandle, IOCTL_SPBTESTTOOL_OPEN, &peripheralindex, sizeof(ULONG), nullptr, 0, &bytesReturned,
 					&overlapped);
 	if (GetLastError() != ERROR_IO_PENDING) {
-		ERR("Error open_amc_peripheral - %lu\n", GetLastError());
+		ERR("Error open_amc_peripheral - {}\n", GetLastError());
 		return false;
 	}
 	DBG("open_amc_peripheral Success\n");
@@ -201,21 +201,21 @@ bool I2CInterface::writeAmc(void *writebuffer, size_t writesize)
 			DWORD waitResult = WaitForSingleObject(overlapped.hEvent, 5000); // 5 sec timeout
 			if (waitResult == WAIT_OBJECT_0) {
 				if (!GetOverlappedResult(amchandle, &overlapped, &byteswritten, FALSE)) {
-					ERR("GetOverlappedResult failed: %lu\n", GetLastError());
+					ERR("GetOverlappedResult failed: {}\n", GetLastError());
 					return false;
 				}
 			} else {
-				ERR("WaitForSingleObject timeout or error: %lu\n", GetLastError());
+				ERR("WaitForSingleObject timeout or error: {}\n", GetLastError());
 				CancelIo(amchandle);
 				return false;
 			}
 		} else {
-			ERR("WriteFile failed: %lu\n", GetLastError());
+			ERR("WriteFile failed: {}\n", GetLastError());
 			return false;
 		}
 	} else {
 		// Operation completed immediately
-		DBG("WriteFile success, %lu bytes written\n", byteswritten);
+		DBG("WriteFile success, {} bytes written\n", byteswritten);
 	}
 
 	return true;
@@ -265,21 +265,21 @@ bool I2CInterface::readAmc(void *readbuffer, size_t readsize)
 			DWORD waitResult = WaitForSingleObject(overlapped.hEvent, 5000); // 5 sec timeout
 			if (waitResult == WAIT_OBJECT_0) {
 				if (!GetOverlappedResult(amchandle, &overlapped, &bytesread, FALSE)) {
-					ERR("GetOverlappedResult failed: %lu\n", GetLastError());
+					ERR("GetOverlappedResult failed: {}\n", GetLastError());
 					return false;
 				}
 			} else {
-				ERR("WaitForSingleObject timeout or error: %lu\n", GetLastError());
+				ERR("WaitForSingleObject timeout or error: {}\n", GetLastError());
 				CancelIo(amchandle);
 				return false;
 			}
 		} else {
-			ERR("ReadFile failed: %lu\n", GetLastError());
+			ERR("ReadFile failed: {}\n", GetLastError());
 			return false;
 		}
 	} else {
 		// Operation completed immediately
-		DBG("ReadFile success: %lu bytes read\n", bytesread);
+		DBG("ReadFile success: {} bytes read\n", bytesread);
 	}
 
 	return true;
@@ -341,10 +341,10 @@ std::string getGpuDeviceFromI2C(const std::basic_string<TCHAR> &dosLink)
 	}
 
 	if (!QueryDosDeviceW(devName, ntPath, MAX_PATH)) {
-		ERR("QueryDosDevice failed for %ls (%lu)\n", dosLink.c_str(), GetLastError());
+		ERR("QueryDosDevice failed for {} ({})\n", wtos(dosLink.c_str()), GetLastError());
 		return std::string();
 	}
-	DBG("[+] %ls -> NT Path: %ls\n", dosLink.c_str(), ntPath);
+	DBG("[+] {} -> NT Path: {}\n", wtos(dosLink.c_str()), wtos(ntPath));
 
 	devInfo = SetupDiGetClassDevsW(NULL, NULL, NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
 	if (devInfo == INVALID_HANDLE_VALUE) {
@@ -368,7 +368,7 @@ std::string getGpuDeviceFromI2C(const std::basic_string<TCHAR> &dosLink)
 
 	SetupDiDestroyDeviceInfoList(devInfo);
 	if (!found) {
-		ERR("[-] Could not find device instance for %ls\n", dosLink.c_str());
+		ERR("[-] Could not find device instance for {}\n", wtos(dosLink.c_str()));
 		return std::string();
 	}
 
@@ -393,7 +393,7 @@ std::string getGpuDeviceFromI2C(const std::basic_string<TCHAR> &dosLink)
 				ULONG function = slotInfo & 0x7;
 				// Format as domain:bus:device.function with bus & device two hex digits, domain fixed 0000
 				bdfResult = std::format("0000:{:02x}:{:02x}.{}", (busNumber & 0xFF), (device & 0xFF), function);
-				DBG("   PCI BDF: %s\n", bdfResult.c_str());
+				DBG("   PCI BDF: {}\n", bdfResult.c_str());
 				break;
 			}
 		}
@@ -436,7 +436,7 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 
 	DWORD result = QueryDosDevice(NULL, devices, MAX_BUFFER_SIZE);
 	if (result == 0) {
-		ERR("QueryDosDevice failed with error: %lu\n", GetLastError());
+		ERR("QueryDosDevice failed with error: {}\n", GetLastError());
 		delete[] devices;
 		return -1;
 	}
@@ -466,7 +466,7 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 				else
 					narrowPath.push_back('?');
 			}
-			DBG("%s\n", narrowPath.c_str());
+			DBG("{}\n", narrowPath.c_str());
 			amcCardInfo info;
 			info.amcDevicePath = narrowPath;
 			info.gpuParentPath = getGpuDeviceFromI2C(fullPath);
@@ -479,7 +479,7 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 		ERR("No matching AMC devices found.\n");
 		return -1;
 	} else {
-		INFO("Total AMC devices found: %d\n", static_cast<int>(amcDeviceList->size()));
+		INFO("Total AMC devices found: {}\n", static_cast<int>(amcDeviceList->size()));
 	}
 
 	return static_cast<int>(amcDeviceList->size());

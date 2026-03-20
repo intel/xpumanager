@@ -38,7 +38,7 @@ public:
 		createdSuccessfully = std::filesystem::create_directory(dirPath, ec);
 
 		if (!createdSuccessfully) {
-			ERR("Failed to create directory %s: %s\n", dirPath.string().c_str(), ec.message().c_str());
+			ERR("Failed to create directory {}: {}\n", dirPath.string().c_str(), ec.message().c_str());
 		}
 	}
 
@@ -48,7 +48,7 @@ public:
 			std::error_code ec;
 			std::filesystem::remove_all(dirPath, ec);
 			if (ec) {
-				ERR("Warning: Failed to cleanup %s: %s\n", dirPath.string().c_str(), ec.message().c_str());
+				ERR("Warning: Failed to cleanup {}: {}\n", dirPath.string().c_str(), ec.message().c_str());
 			}
 		}
 	}
@@ -122,7 +122,7 @@ static bool safeCopyFile(const std::string &source, const std::string &destinati
 		return true;
 	} catch (const std::exception &ex) {
 		// Log the error but don't terminate the program
-		ERR("Cannot copy %s: %s\n", source.c_str(), ex.what());
+		ERR("Cannot copy {}: {}\n", source.c_str(), ex.what());
 		return false;
 	}
 }
@@ -154,12 +154,12 @@ static void copyFilesFromDirectory(const std::string &sourceDir, const std::stri
 		for (const auto &entry : std::filesystem::directory_iterator(sourceDir)) {
 			if (entry.is_regular_file()) {
 				const auto destFile = std::filesystem::path(destDir) / entry.path().filename();
-				DBG("Copying %s to %s\n", entry.path().string().c_str(), destFile.string().c_str());
+				DBG("Copying {} to {}\n", entry.path().string().c_str(), destFile.string().c_str());
 				safeCopyFile(entry.path().string(), destFile);
 			}
 		}
 	} catch (const std::filesystem::filesystem_error &ex) {
-		ERR("Error accessing directory %s: %s\n", sourceDir.c_str(), ex.what());
+		ERR("Error accessing directory {}: {}\n", sourceDir.c_str(), ex.what());
 	}
 }
 
@@ -193,7 +193,7 @@ static void copyFilesFromSubdirectories(const std::string &baseDir, const std::s
 			}
 		}
 	} catch (const std::filesystem::filesystem_error &ex) {
-		ERR("Error accessing base directory %s: %s\n", baseDir.c_str(), ex.what());
+		ERR("Error accessing base directory {}: {}\n", baseDir.c_str(), ex.what());
 	}
 }
 
@@ -236,13 +236,13 @@ static void copySpecificDirectories(const std::string &baseDir, const std::strin
 											  std::filesystem::copy_options::recursive |
 												  std::filesystem::copy_options::overwrite_existing);
 					} catch (const std::filesystem::filesystem_error &ex) {
-						ERR("Failed to copy directory %s: %s\n", targetPath.c_str(), ex.what());
+						ERR("Failed to copy directory {}: {}\n", targetPath.c_str(), ex.what());
 					}
 				}
 			}
 		}
 	} catch (const std::filesystem::filesystem_error &ex) {
-		ERR("Error accessing base directory %s: %s\n", baseDir.c_str(), ex.what());
+		ERR("Error accessing base directory {}: {}\n", baseDir.c_str(), ex.what());
 	}
 }
 
@@ -300,7 +300,7 @@ static bool copyFileIfExists(const std::string &source, const std::string &desti
 		}
 	} catch (const std::filesystem::filesystem_error &ex) {
 		// Log error if needed, but continue with other files
-		ERR("Failed to copy %s: %s\n", source.c_str(), ex.what());
+		ERR("Failed to copy {}: {}\n", source.c_str(), ex.what());
 	}
 	return false;
 }
@@ -363,7 +363,7 @@ static int copyFiles(const std::string &uuid)
 	// Create directory using std::filesystem instead of mkdir
 	std::error_code ec;
 	if (!std::filesystem::create_directories(dirName, ec)) {
-		ERR("Failed to create directory %s: %s\n", dirName.c_str(), ec.message().c_str());
+		ERR("Failed to create directory {}: {}\n", dirName.c_str(), ec.message().c_str());
 		return -1;
 	}
 
@@ -397,7 +397,7 @@ static int copyFiles(const std::string &uuid)
 		}
 	} catch (const std::filesystem::filesystem_error &ex) {
 		// Continue if directory doesn't exist or can't be accessed
-		ERR("Failed to scan /var/log for kern*.log files: %s\n", ex.what());
+		ERR("Failed to scan /var/log for kern*.log files: {}\n", ex.what());
 	}
 
 	// Copy system files from /sys directories
@@ -817,7 +817,7 @@ static int writeToFile(const std::string &uuid, const std::string &fileName)
 
 	std::ofstream out{fileName};
 	if (!out) {
-		ERR("Failed to open output file: %s\n", fileName.c_str());
+		ERR("Failed to open output file: {}\n", fileName.c_str());
 		return -1;
 	}
 

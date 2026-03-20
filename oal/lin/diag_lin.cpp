@@ -286,7 +286,7 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 	if (functionalCheck && h264LightFileExist) {
 		testCommand = MEDIA_CODER_TOOLS + " -device " + devicePath + " -hw -i::h264 " + mediaDataPath +
 					  MEDIA_CODEC_TOOLS_LIGHT_FILE + " -o::h264 null -n 2 2>&1";
-		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
+		DBG("Transcoding capability check command: {}\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
 		if (cResult.exitStatus()) {
 			finalResult = MEDIA_CODEC_TOOLS_LIGHT_FILE + ":" + cResult.output();
@@ -298,7 +298,7 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 
 		testCommand = MEDIA_CODER_TOOLS + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
 					  MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
-		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
+		DBG("Transcoding capability check command: {}\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
 		if (cResult.exitStatus()) {
 			finalResult = MEDIA_CODER_TOOLS_1080P_FILE + ":" + cResult.output();
@@ -310,7 +310,7 @@ bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &fin
 		testCommand = MEDIA_CODER_TOOLS + " -device " + devicePath + " -hw -i::h265 " + mediaDataPath +
 					  MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/MEDIA_CODER_TOOLS_4K_FILE 2>&1";
 
-		DBG("Transcoding capability check command: %s\n", testCommand.c_str());
+		DBG("Transcoding capability check command: {}\n", testCommand.c_str());
 		SystemCommandResult cResult = execCommand(testCommand.c_str());
 		if (cResult.exitStatus()) {
 			finalResult = MEDIA_CODER_TOOLS_4K_FILE + ":" + cResult.output();

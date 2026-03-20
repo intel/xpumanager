@@ -50,7 +50,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 				hexdump(reinterpret_cast<uint8_t *>(&frame), PLDM_MAX_RESPONSE_SIZE);
 				break;
 			}
-			ERR("PLDM File Transfer: Retry read I2C MCTP response (%d/%d)\n", retry + 1, MAX_NUM_RETRIES);
+			ERR("PLDM File Transfer: Retry read I2C MCTP response ({}/{})\n", retry + 1, MAX_NUM_RETRIES);
 		}
 
 		if (retry == MAX_NUM_RETRIES) {
@@ -59,7 +59,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 		}
 
 		if (frame.mctpSmbusHdr.cmdCode != MCTP_CMD_CODE) {
-			ERR("PLDM File Transfer: Invalid I2C MCTP command code 0x%02x\n", frame.mctpSmbusHdr.cmdCode);
+			ERR("PLDM File Transfer: Invalid I2C MCTP command code 0x{:02x}\n", frame.mctpSmbusHdr.cmdCode);
 			return PLDM_ERROR;
 		}
 
@@ -71,7 +71,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 			DBG("PLDM File Transfer: Received single-packet MCTP message\n");
 			const size_t frameBytes = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
 			if (frameBytes > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Single frame exceeds max assembled size (%zu)\n", frameBytes);
+				ERR("PLDM File Transfer: Single frame exceeds max assembled size ({})\n", frameBytes);
 				return PLDM_ERROR;
 			}
 
@@ -84,7 +84,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 		if (som) {
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
 			if (fragmentLen == 0 || fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Invalid SOM fragment length %zu\n", fragmentLen);
+				ERR("PLDM File Transfer: Invalid SOM fragment length {}\n", fragmentLen);
 				return PLDM_ERROR;
 			}
 
@@ -98,18 +98,17 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 				return PLDM_ERROR;
 			}
 			if (seq != expectedSeq) {
-				ERR("PLDM File Transfer: Unexpected MCTP sequence (got %u expected %u)\n", seq, expectedSeq);
+				ERR("PLDM File Transfer: Unexpected MCTP sequence (got {} expected {})\n", seq, expectedSeq);
 				return PLDM_ERROR;
 			}
 			if (frame.mctpSmbusHdr.byteCount < mctpContinuationTailAdjust) {
-				ERR("PLDM File Transfer: Invalid middle packet byteCount %u\n", frame.mctpSmbusHdr.byteCount);
+				ERR("PLDM File Transfer: Invalid middle packet byteCount {}\n", frame.mctpSmbusHdr.byteCount);
 				return PLDM_ERROR;
 			}
 
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
 			if (assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Assembled frame exceeds max size (%zu)\n",
-					assembledFrame.size() + fragmentLen);
+				ERR("PLDM File Transfer: Assembled frame exceeds max size ({})\n", assembledFrame.size() + fragmentLen);
 				return PLDM_ERROR;
 			}
 
@@ -122,19 +121,18 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 				return PLDM_ERROR;
 			}
 			if (seq != expectedSeq) {
-				ERR("PLDM File Transfer: Unexpected MCTP sequence in EOM packet (got %u expected %u)\n", seq,
+				ERR("PLDM File Transfer: Unexpected MCTP sequence in EOM packet (got {} expected {})\n", seq,
 					expectedSeq);
 				return PLDM_ERROR;
 			}
 			if (frame.mctpSmbusHdr.byteCount < mctpContinuationTailAdjust) {
-				ERR("PLDM File Transfer: Invalid EOM packet byteCount %u\n", frame.mctpSmbusHdr.byteCount);
+				ERR("PLDM File Transfer: Invalid EOM packet byteCount {}\n", frame.mctpSmbusHdr.byteCount);
 				return PLDM_ERROR;
 			}
 
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
 			if (assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Assembled frame exceeds max size (%zu)\n",
-					assembledFrame.size() + fragmentLen);
+				ERR("PLDM File Transfer: Assembled frame exceeds max size ({})\n", assembledFrame.size() + fragmentLen);
 				return PLDM_ERROR;
 			}
 
@@ -156,7 +154,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 
 	const size_t payloadStart = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr);
 	if (assembledFrame.size() < payloadStart + 1) {
-		ERR("PLDM File Transfer: Assembled response too short (%zu)\n", assembledFrame.size());
+		ERR("PLDM File Transfer: Assembled response too short ({})\n", assembledFrame.size());
 		return PLDM_ERROR;
 	}
 
@@ -177,7 +175,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 	mI2cPldmRead->mctpSmbusHdr.byteCount =
 		static_cast<uint8_t>(std::min(byteCount, sizeof(mI2cPldmRead) - mctpFirstPacketExtraBytes));
 
-	DBG("PLDM File Transfer: Assembled frame=%zu bytes, payload=%zu bytes\n", assembledFrame.size(),
+	DBG("PLDM File Transfer: Assembled frame={} bytes, payload={} bytes\n", assembledFrame.size(),
 		assembledPayload.size());
 
 	return PLDM_SUCCESS;
@@ -203,7 +201,7 @@ uint8_t pldm::PldmFillFileTxPayload(uint8_t cmd, uint8_t size)
 	}
 
 	if (size < PLDM_FT_CMD_BASE_SIZE) {
-		ERR("PLDM File Transfer: Invalid command size %u\n", size);
+		ERR("PLDM File Transfer: Invalid command size {}\n", size);
 		return PLDM_ERROR;
 	}
 
@@ -273,7 +271,7 @@ uint8_t pldm::PldmFillFileTxPayload(uint8_t cmd, uint8_t size)
 		break;
 
 	default:
-		ERR("PLDM File Transfer: Unsupported command 0x%02x\n", cmd);
+		ERR("PLDM File Transfer: Unsupported command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
@@ -299,7 +297,7 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 	}
 
 	if (size < PLDM_FT_CMD_BASE_SIZE) {
-		ERR("PLDM File Transfer: Invalid command size %u\n", size);
+		ERR("PLDM File Transfer: Invalid command size {}\n", size);
 		return PLDM_ERROR;
 	}
 
@@ -349,7 +347,7 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 
 	ret = pldmFileTransferResp(cmd, instanceID);
 	if (ret != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: Response handling failed for command 0x%02x\n", cmd);
+		ERR("PLDM File Transfer: Response handling failed for command 0x{:02x}\n", cmd);
 		return ret;
 	}
 
@@ -379,7 +377,7 @@ uint8_t pldm::pldmFileTransferResp(uint8_t cmd, uint8_t id)
 									  : mRxAssembledFrame.size();
 
 	if (pldmFileTransferRespPayload(respPayload, respPayloadLen, cmd, id) != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: Response payload handling failed for command 0x%02x\n", cmd);
+		ERR("PLDM File Transfer: Response payload handling failed for command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
@@ -398,11 +396,11 @@ uint8_t pldm::pldmFileTransferResp(uint8_t cmd, uint8_t id)
 	case PLDM_FT_CMDCODE_DF_PROPERTIES:
 	case PLDM_FT_CMDCODE_DF_GET_FILE_ATTRIBUTE:
 	case PLDM_FT_CMDCODE_DF_SET_FILE_ATTRIBUTE:
-		DBG("PLDM File Transfer response handled for command 0x%02x\n", cmd);
+		DBG("PLDM File Transfer response handled for command 0x{:02x}\n", cmd);
 		break;
 
 	default:
-		ERR("PLDM File Transfer: Unsupported response command 0x%02x\n", cmd);
+		ERR("PLDM File Transfer: Unsupported response command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
@@ -419,18 +417,18 @@ uint8_t pldm::pldmFileTransferResp(uint8_t cmd, uint8_t id)
 uint8_t pldm::handleDfOpenResp(const uint8_t *respPayload, size_t respPayloadLen)
 {
 	if (respPayloadLen < (sizeof(mDfOpenResp.completionCode) + sizeof(mDfOpenResp.fileDescriptor))) {
-		ERR("PLDM File Transfer: DF_OPEN response payload too short (%zu)\n", respPayloadLen);
+		ERR("PLDM File Transfer: DF_OPEN response payload too short ({})\n", respPayloadLen);
 		return PLDM_ERROR;
 	}
 
 	memcpy(&mDfOpenResp.completionCode, &respPayload[0], sizeof(mDfOpenResp.completionCode));
 	memcpy(&mDfOpenResp.fileDescriptor, &respPayload[1], sizeof(mDfOpenResp.fileDescriptor));
 	if (mDfOpenResp.completionCode != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: DF_OPEN command failed with completion code 0x%02x\n", mDfOpenResp.completionCode);
+		ERR("PLDM File Transfer: DF_OPEN command failed with completion code 0x{:02x}\n", mDfOpenResp.completionCode);
 		return PLDM_ERROR;
 	}
 
-	DBG("PLDM File Transfer DF_OPEN response: completion=0x%02x fd=0x%04x\n", mDfOpenResp.completionCode,
+	DBG("PLDM File Transfer DF_OPEN response: completion=0x{:02x} fd=0x{:04x}\n", mDfOpenResp.completionCode,
 		mDfOpenResp.fileDescriptor);
 	return PLDM_SUCCESS;
 }
@@ -445,12 +443,12 @@ uint8_t pldm::handleDfOpenResp(const uint8_t *respPayload, size_t respPayloadLen
 uint8_t pldm::handleDfCloseResp(const uint8_t *respPayload, size_t respPayloadLen)
 {
 	if (respPayloadLen < sizeof(mDfCloseResp.completionCode)) {
-		ERR("PLDM File Transfer: DF_CLOSE response payload too short (%zu)\n", respPayloadLen);
+		ERR("PLDM File Transfer: DF_CLOSE response payload too short ({})\n", respPayloadLen);
 		return PLDM_ERROR;
 	}
 
 	memcpy(&mDfCloseResp.completionCode, &respPayload[0], sizeof(mDfCloseResp.completionCode));
-	DBG("PLDM File Transfer DF_CLOSE response: completion=0x%02x\n", mDfCloseResp.completionCode);
+	DBG("PLDM File Transfer DF_CLOSE response: completion=0x{:02x}\n", mDfCloseResp.completionCode);
 	return PLDM_SUCCESS;
 }
 
@@ -464,13 +462,13 @@ uint8_t pldm::handleDfCloseResp(const uint8_t *respPayload, size_t respPayloadLe
 uint8_t pldm::handleDfHeartbeatResp(const uint8_t *respPayload, size_t respPayloadLen)
 {
 	if (respPayloadLen < (sizeof(mDfHeartbeatResp.completionCode) + sizeof(mDfHeartbeatResp.responderMaxInterval))) {
-		ERR("PLDM File Transfer: DF_HEARTBEAT response payload too short (%zu)\n", respPayloadLen);
+		ERR("PLDM File Transfer: DF_HEARTBEAT response payload too short ({})\n", respPayloadLen);
 		return PLDM_ERROR;
 	}
 
 	memcpy(&mDfHeartbeatResp.completionCode, &respPayload[0], sizeof(mDfHeartbeatResp.completionCode));
 	memcpy(&mDfHeartbeatResp.responderMaxInterval, &respPayload[1], sizeof(mDfHeartbeatResp.responderMaxInterval));
-	DBG("PLDM File Transfer DF_HEARTBEAT response: completion=0x%02x max_interval=%u\n",
+	DBG("PLDM File Transfer DF_HEARTBEAT response: completion=0x{:02x} max_interval={}\n",
 		mDfHeartbeatResp.completionCode, mDfHeartbeatResp.responderMaxInterval);
 	return PLDM_SUCCESS;
 }
@@ -487,7 +485,7 @@ uint8_t pldm::handleDfReadResp(const uint8_t *respPayload, size_t respPayloadLen
 {
 	const size_t payloadHeaderSize = sizeof(mDfReadResp.completionCode) + sizeof(mDfReadResp.dataLength);
 	if (respPayloadLen < payloadHeaderSize) {
-		ERR("PLDM File Transfer: DF_READ response payload too short (%zu)\n", respPayloadLen);
+		ERR("PLDM File Transfer: DF_READ response payload too short ({})\n", respPayloadLen);
 		return PLDM_ERROR;
 	}
 
@@ -502,13 +500,13 @@ uint8_t pldm::handleDfReadResp(const uint8_t *respPayload, size_t respPayloadLen
 
 	const size_t dataInFrame = respPayloadLen - payloadHeaderSize;
 	if (mDfReadResp.dataLength > sizeof(mDfReadResp.data) || mDfReadResp.dataLength > dataInFrame) {
-		ERR("PLDM File Transfer: DF_READ data length mismatch (%u, frame %u)\n", mDfReadResp.dataLength,
+		ERR("PLDM File Transfer: DF_READ data length mismatch ({}, frame {})\n", mDfReadResp.dataLength,
 			static_cast<unsigned int>(dataInFrame));
 		return PLDM_ERROR;
 	}
 
 	memcpy(mDfReadResp.data, &respPayload[payloadHeaderSize], mDfReadResp.dataLength);
-	DBG("PLDM File Transfer DF_READ response: completion=0x%02x len=%u\n", mDfReadResp.completionCode,
+	DBG("PLDM File Transfer DF_READ response: completion=0x{:02x} len={}\n", mDfReadResp.completionCode,
 		mDfReadResp.dataLength);
 	return PLDM_SUCCESS;
 }
@@ -547,7 +545,7 @@ uint8_t pldm::handleMultipartReceiveResp(const uint8_t *respPayload, size_t resp
 	const size_t payloadDataBytes = respPayloadLen - payloadHeaderSize;
 	if (mMultipartReceiveResp.dataLengthBytes > sizeof(mDfReadResp.data) ||
 		mMultipartReceiveResp.dataLengthBytes > payloadDataBytes) {
-		ERR("PLDM File Transfer: Multipart Receive data length mismatch (%u, frame %u)\n",
+		ERR("PLDM File Transfer: Multipart Receive data length mismatch ({}, frame {})\n",
 			mMultipartReceiveResp.dataLengthBytes, static_cast<unsigned int>(payloadDataBytes));
 		return PLDM_ERROR;
 	}
@@ -555,7 +553,7 @@ uint8_t pldm::handleMultipartReceiveResp(const uint8_t *respPayload, size_t resp
 	memcpy(mDfReadResp.data, &respPayload[payloadHeaderSize], mMultipartReceiveResp.dataLengthBytes);
 	mDfReadResp.dataLength = mMultipartReceiveResp.dataLengthBytes;
 
-	DBG("PLDM Multipart Receive response: completion=0x%02x flag=0x%02x len=%u next=0x%08x\n",
+	DBG("PLDM Multipart Receive response: completion=0x{:02x} flag=0x{:02x} len={} next=0x{:08x}\n",
 		mMultipartReceiveResp.completionCode, mMultipartReceiveResp.transferFlag, mMultipartReceiveResp.dataLengthBytes,
 		mMultipartReceiveResp.nextDataTransferHandle);
 	return PLDM_SUCCESS;
@@ -592,17 +590,19 @@ uint8_t pldm::pldmFileTransferRespPayload(const uint8_t *respPayload, const size
 		const struct pldmHdr *rxPldmHdr =
 			reinterpret_cast<const struct pldmHdr *>(mRxAssembledFrame.data() + pldmHdrOffset);
 		if (rxPldmHdr->cmdCode != cmd) {
-			ERR("PLDM File Transfer: Invalid response command (cmd=0x%02x expected=0x%02x)\n", rxPldmHdr->cmdCode, cmd);
+			ERR("PLDM File Transfer: Invalid response command (cmd=0x{:02x} expected=0x{:02x})\n", rxPldmHdr->cmdCode,
+				cmd);
 			return PLDM_ERROR;
 		}
 
 		if (rxPldmHdr->request != PLDM_RESPONSE) {
-			DBG("PLDM File Transfer: Response request bit is 0x%02x (continuing due platform bitfield layout)\n",
+			DBG("PLDM File Transfer: Response request bit is 0x{:02x} (continuing due platform bitfield layout)\n",
 				rxPldmHdr->request);
 		}
 
 		if (rxPldmHdr->instanceID != id) {
-			DBG("PLDM File Transfer: Instance ID mismatch (rx=0x%02x expected=0x%02x)\n", rxPldmHdr->instanceID, id);
+			DBG("PLDM File Transfer: Instance ID mismatch (rx=0x{:02x} expected=0x{:02x})\n", rxPldmHdr->instanceID,
+				id);
 		}
 	} else {
 		hexdump((uint8_t *)mI2cPldmRead, totalSize + 14);
@@ -619,9 +619,9 @@ uint8_t pldm::pldmFileTransferRespPayload(const uint8_t *respPayload, const size
 
 		if (cmd != PLDM_MULTIPART_RECEIVE && (respPayload[0] >= PLDM_FT_COMPLCODE_INVALID_FILE_DESCRIPTOR) &&
 			(respPayload[0] <= PLDM_FT_COMPLCODE_UNABLE_TO_OPEN_FILE)) {
-			ERR("PLDM File Transfer: File transfer completion code 0x%02x\n", respPayload[0]);
+			ERR("PLDM File Transfer: File transfer completion code 0x{:02x}\n", respPayload[0]);
 		} else {
-			ERR("PLDM File Transfer: Generic completion code 0x%02x\n", respPayload[0]);
+			ERR("PLDM File Transfer: Generic completion code 0x{:02x}\n", respPayload[0]);
 		}
 		return PLDM_ERROR;
 	}
@@ -655,7 +655,7 @@ uint8_t pldm::pldmDfOpenCommand(uint16_t fileIdentifier, uint16_t &fileDescripto
 	uint8_t size = sizeof(mctpSmbusI2cHdr) + sizeof(struct pldmHdr) + sizeof(struct pldm_file_df_open_req);
 	uint8_t ret = pldmFileTransferCmd(PLDM_FT_CMDCODE_DF_OPEN, size);
 	if (ret != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: DF_OPEN command failed for file identifier 0x%04x\n", fileIdentifier);
+		ERR("PLDM File Transfer: DF_OPEN command failed for file identifier 0x{:04x}\n", fileIdentifier);
 		return ret;
 	}
 
@@ -718,12 +718,12 @@ uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<u
 
 		ret = pldmFileTransferCmd(PLDM_MULTIPART_RECEIVE, size);
 		if (ret != PLDM_SUCCESS) {
-			ERR("PLDM File Transfer: Multipart Receive failed for descriptor 0x%04x\n", fileDescriptor);
+			ERR("PLDM File Transfer: Multipart Receive failed for descriptor 0x{:04x}\n", fileDescriptor);
 			return ret;
 		}
 
 		if (mMultipartReceiveResp.dataLengthBytes > maxReadChunk) {
-			ERR("PLDM File Transfer: Multipart Receive data length %u exceeds request chunk %u\n",
+			ERR("PLDM File Transfer: Multipart Receive data length {} exceeds request chunk {}\n",
 				mMultipartReceiveResp.dataLengthBytes, maxReadChunk);
 			return PLDM_ERROR;
 		}
@@ -734,7 +734,7 @@ uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<u
 			totalBytesRead += mMultipartReceiveResp.dataLengthBytes;
 			currentOffset += mMultipartReceiveResp.dataLengthBytes;
 
-			INFO("PLDM File Transfer: Read %u bytes this chunk, total read=%u bytes\n",
+			INFO("PLDM File Transfer: Read {} bytes this chunk, total read={} bytes\n",
 				 mMultipartReceiveResp.dataLengthBytes, totalBytesRead);
 		}
 
@@ -746,7 +746,8 @@ uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<u
 		}
 
 		if (mMultipartReceiveResp.transferFlag != PLDM_START && mMultipartReceiveResp.transferFlag != PLDM_MIDDLE) {
-			ERR("PLDM File Transfer: Unexpected multipart transfer flag 0x%02x\n", mMultipartReceiveResp.transferFlag);
+			ERR("PLDM File Transfer: Unexpected multipart transfer flag 0x{:02x}\n",
+				mMultipartReceiveResp.transferFlag);
 			return PLDM_ERROR;
 		}
 
@@ -755,7 +756,7 @@ uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<u
 	}
 
 	fileData.assign(mMultipartReceiveData.begin(), mMultipartReceiveData.end());
-	DBG("PLDM File Transfer: Multipart transfer completed, total bytes=%u\n", totalBytesRead);
+	DBG("PLDM File Transfer: Multipart transfer completed, total bytes={}\n", totalBytesRead);
 	return PLDM_SUCCESS;
 }
 
@@ -780,14 +781,14 @@ const PdrRecord *pldm::getFilePdrById(uint32_t filePdrId)
 	}
 
 	if (filePdrId >= filePdrs.size()) {
-		ERR("PLDM File Transfer: Invalid file PDR ID %u\n", filePdrId);
+		ERR("PLDM File Transfer: Invalid file PDR ID {}\n", filePdrId);
 		return nullptr;
 	}
 
 	const PdrRecord *filePdr = filePdrs[filePdrId];
 	const size_t minFilePdrSize = sizeof(struct pldmFileDescriptorPdr) - 1;
 	if (filePdr->data.size() < minFilePdrSize) {
-		ERR("PLDM File Transfer: Invalid file PDR size (%zu)\n", filePdr->data.size());
+		ERR("PLDM File Transfer: Invalid file PDR size ({})\n", filePdr->data.size());
 		return nullptr;
 	}
 
@@ -808,7 +809,7 @@ uint8_t pldm::getFile(uint32_t filePdrId, std::vector<uint8_t> &fileData)
 {
 	TRACING();
 
-	INFO("PLDM File Transfer: Initiating file read for file PDR ID %u\n", filePdrId);
+	INFO("PLDM File Transfer: Initiating file read for file PDR ID {}\n", filePdrId);
 	uint8_t ret = pfMonCtrlInitialize();
 	if (ret != PLDM_SUCCESS) {
 		ERR("PLDM File Transfer: Failed to initialize platform monitoring\n");
@@ -818,35 +819,36 @@ uint8_t pldm::getFile(uint32_t filePdrId, std::vector<uint8_t> &fileData)
 
 	const PdrRecord *filePdr = getFilePdrById(filePdrId);
 	if (filePdr == nullptr) {
-		ERR("PLDM File Transfer: Failed to retrieve file PDR with ID %u\n", filePdrId);
+		ERR("PLDM File Transfer: Failed to retrieve file PDR with ID {}\n", filePdrId);
 		return PLDM_ERROR;
 	}
 
 	const auto *fileDescPdr = reinterpret_cast<const struct pldmFileDescriptorPdr *>(filePdr->data.data());
 	uint16_t fileIdentifier = fileDescPdr->fileIdentifier;
-	INFO("PLDM File Transfer: Found file PDR with ID %u, file identifier=0x%04x\n", filePdrId, fileIdentifier);
+	INFO("PLDM File Transfer: Found file PDR with ID {}, file identifier=0x{:04x}\n", filePdrId, fileIdentifier);
 
 	uint16_t fileDescriptor = 0;
 	ret = pldmDfOpenCommand(fileIdentifier, fileDescriptor);
 	if (ret != PLDM_SUCCESS) {
 		return ret;
 	}
-	INFO("PLDM File Transfer: Opened file identifier 0x%04x with descriptor 0x%04x\n", fileIdentifier, fileDescriptor);
+	INFO("PLDM File Transfer: Opened file identifier 0x{:04x} with descriptor 0x{:04x}\n", fileIdentifier,
+		 fileDescriptor);
 
 	fileData.clear();
 	ret = pldmMultipartReceiveCommand(fileDescriptor, fileData);
 
 	uint8_t closeRet = pldmDfCloseCommand(fileDescriptor);
 	if (closeRet != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: DF_CLOSE failed for descriptor 0x%04x\n", fileDescriptor);
+		ERR("PLDM File Transfer: DF_CLOSE failed for descriptor 0x{:04x}\n", fileDescriptor);
 		if (ret == PLDM_SUCCESS) {
 			ret = closeRet;
 		}
 	}
-	INFO("PLDM File Transfer: Closed file descriptor 0x%04x\n", fileDescriptor);
+	INFO("PLDM File Transfer: Closed file descriptor 0x{:04x}\n", fileDescriptor);
 
 	if (ret == PLDM_SUCCESS) {
-		INFO("PLDM File Transfer: File read completed, total bytes=%zu\n", fileData.size());
+		INFO("PLDM File Transfer: File read completed, total bytes={}\n", fileData.size());
 	}
 
 	return ret;

@@ -37,17 +37,17 @@ ze_result_t frequency::enumFrequencies(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFrequencyDomains(device, &frequencyCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || frequencyCount == 0) {
-		ERR("Failed to enumerate frequency domains or no frequency domains found. 0x%X (%s)\n", result,
+		ERR("Failed to enumerate frequency domains or no frequency domains found. 0x{:X} ({})\n", result,
 			l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Found %u frequency domains.\n", frequencyCount);
+	DBG("Found {} frequency domains.\n", frequencyCount);
 
 	frequencyHandles = new zes_freq_handle_t[frequencyCount];
 	result = zesDeviceEnumFrequencyDomains(device, &frequencyCount, frequencyHandles);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get frequency domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get frequency domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -89,10 +89,10 @@ ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq
 		DBG("Other\n");
 		break;
 	}
-	DBG("  Max Frequency: %f MHz\n", properties->max);
-	DBG("  Min Frequency: %f MHz\n", properties->min);
-	DBG("  Is throttle supported: %d\n", properties->isThrottleEventSupported);
-	DBG("  Can control: %d\n", properties->canControl);
+	DBG("  Max Frequency: {:f} MHz\n", properties->max);
+	DBG("  Min Frequency: {:f} MHz\n", properties->min);
+	DBG("  Is throttle supported: {}\n", properties->isThrottleEventSupported);
+	DBG("  Can control: {}\n", properties->canControl);
 
 	return result;
 }
@@ -112,7 +112,7 @@ ze_result_t frequency::getAvailableClocks(zes_freq_handle_t frequencyHandle)
 	uint32_t count = 0;
 	ze_result_t result = zesFrequencyGetAvailableClocks(frequencyHandle, &count, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get available clock count. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get available clock count. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -124,13 +124,13 @@ ze_result_t frequency::getAvailableClocks(zes_freq_handle_t frequencyHandle)
 	std::vector<double> clocks(count);
 	result = zesFrequencyGetAvailableClocks(frequencyHandle, &count, clocks.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get available clocks. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get available clocks. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Available Clocks:\n");
 	for (uint32_t i = 0; i < count; ++i) {
-		DBG("  Clock %u: %f MHz\n", i, clocks[i]);
+		DBG("  Clock {}: {:f} MHz\n", i, clocks[i]);
 	}
 
 	return result;
@@ -151,13 +151,13 @@ ze_result_t frequency::getRange(zes_freq_handle_t frequencyHandle)
 	zes_freq_range_t range;
 	ze_result_t result = zesFrequencyGetRange(frequencyHandle, &range);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get frequency range. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get frequency range. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Frequency Range:\n");
-	DBG("  Min Frequency: %f MHz\n", range.min);
-	DBG("  Max Frequency: %f MHz\n", range.max);
+	DBG("  Min Frequency: {:f} MHz\n", range.min);
+	DBG("  Max Frequency: {:f} MHz\n", range.max);
 
 	return result;
 }
@@ -221,7 +221,7 @@ ze_result_t frequency::getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint
 		zes_freq_properties_t properties = {};
 		ze_result_t result = getProperties(frequencyHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get properties for frequency domain %u\n", i);
+			DBG("Failed to get properties for frequency domain {}\n", i);
 			continue;
 		}
 
@@ -237,12 +237,12 @@ ze_result_t frequency::getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint
 		zes_freq_state_t state = {};
 		result = getState(frequencyHandles[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get state for frequency domain %u: 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			DBG("Failed to get state for frequency domain {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
 		tileFrequencies[tileId] = state.actual;
-		DBG("Tile %u %s frequency: %.2f MHz\n", tileId,
+		DBG("Tile {} {} frequency: {:.2f} MHz\n", tileId,
 			domain == ZES_FREQ_DOMAIN_GPU ? "GPU" : (domain == ZES_FREQ_DOMAIN_MEDIA ? "Media" : "Other"),
 			state.actual);
 	}
@@ -271,13 +271,13 @@ ze_result_t frequency::setRange(double minFreq, double maxFreq)
 	for (uint32_t i = 0; i < frequencyCount; ++i) {
 		result = zesFrequencySetRange(frequencyHandles[i], &range);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set frequency range. 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to set frequency range. 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
 
 		DBG("Successfully set frequency range:\n");
-		DBG("  Min Frequency: %f MHz\n", range.min);
-		DBG("  Max Frequency: %f MHz\n", range.max);
+		DBG("  Min Frequency: {:f} MHz\n", range.min);
+		DBG("  Max Frequency: {:f} MHz\n", range.max);
 	}
 
 	return result;
@@ -298,17 +298,17 @@ ze_result_t frequency::getState(zes_freq_handle_t frequencyHandle, zes_freq_stat
 {
 	ze_result_t result = zesFrequencyGetState(frequencyHandle, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get frequency state. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get frequency state. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Frequency State:\n");
-	DBG("  Current voltage: %f V\n", state->currentVoltage);
-	DBG("  Requested Frequency: %f MHz\n", state->request);
-	DBG("  TDP Frequency: %f MHz\n", state->tdp);
-	DBG("  Efficient Frequency: %f MHz\n", state->efficient);
-	DBG("  Current Frequency: %f MHz\n", state->actual);
-	DBG("  Throttle Reasons: %u\n", state->throttleReasons);
+	DBG("  Current voltage: {:f} V\n", state->currentVoltage);
+	DBG("  Requested Frequency: {:f} MHz\n", state->request);
+	DBG("  TDP Frequency: {:f} MHz\n", state->tdp);
+	DBG("  Efficient Frequency: {:f} MHz\n", state->efficient);
+	DBG("  Current Frequency: {:f} MHz\n", state->actual);
+	DBG("  Throttle Reasons: {}\n", state->throttleReasons);
 
 	return result;
 }
@@ -328,13 +328,13 @@ ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 	zes_freq_throttle_time_t throttleTime;
 	ze_result_t result = zesFrequencyGetThrottleTime(frequencyHandle, &throttleTime);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get throttle time. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get throttle time. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Throttle Time:\n");
-	DBG("  Timestamp: %" PRIu64 " microseconds\n", throttleTime.timestamp);
-	DBG("  Throttle Time: %" PRIu64 " microseconds\n", throttleTime.throttleTime);
+	DBG("  Timestamp: {} microseconds\n", throttleTime.timestamp);
+	DBG("  Throttle Time: {} microseconds\n", throttleTime.throttleTime);
 
 	return result;
 }
@@ -473,7 +473,7 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 
 	// Validate subdeviceId parameter
 	if (subdeviceId < -1) {
-		ERR("Invalid subdeviceId %d. Must be -1 (all) or >= 0 (specific subdevice).\n", subdeviceId);
+		ERR("Invalid subdeviceId {}. Must be -1 (all) or >= 0 (specific subdevice).\n", subdeviceId);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -499,7 +499,7 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 	if (!setAll) {
 		if (!hasSubdevices) {
 			if (subdeviceId != 0) {
-				ERR("Invalid tileId %d. Device exposes no subdevices.\n", subdeviceId);
+				ERR("Invalid tileId {}. Device exposes no subdevices.\n", subdeviceId);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			useDeviceLevel = true;
@@ -552,12 +552,12 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 			if (result == ZE_RESULT_SUCCESS) {
 				anySuccess = true;
 				if (props.onSubdevice) {
-					DBG("Successfully set frequency range for subdevice %u:\n", props.subdeviceId);
+					DBG("Successfully set frequency range for subdevice {}:\n", props.subdeviceId);
 				} else {
 					DBG("Successfully set frequency range for device-level GPU domain:\n");
 				}
-				DBG("  Min Frequency: %f MHz\n", range.min);
-				DBG("  Max Frequency: %f MHz\n", range.max);
+				DBG("  Min Frequency: {:f} MHz\n", range.min);
+				DBG("  Max Frequency: {:f} MHz\n", range.max);
 
 				// If we're setting a specific subdevice and found it, we can return
 				if (!setAll) {
@@ -566,10 +566,10 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 			} else {
 				lastError = result;
 				if (props.onSubdevice) {
-					ERR("Failed to set frequency range for subdevice %u. 0x%X (%s)\n", props.subdeviceId, result,
+					ERR("Failed to set frequency range for subdevice {}. 0x{:X} ({})\n", props.subdeviceId, result,
 						l0_error_to_string(result));
 				} else {
-					ERR("Failed to set frequency range for device-level GPU domain. 0x%X (%s)\n", result,
+					ERR("Failed to set frequency range for device-level GPU domain. 0x{:X} ({})\n", result,
 						l0_error_to_string(result));
 				}
 			}
@@ -586,7 +586,7 @@ ze_result_t frequency::setFrequencyRange(double minFreq, double maxFreq, int32_t
 		if (useDeviceLevel) {
 			ERR("No matching device-level GPU frequency domain found.\n");
 		} else {
-			ERR("No matching GPU frequency domain found for subdevice %d\n", subdeviceId);
+			ERR("No matching GPU frequency domain found for subdevice {}\n", subdeviceId);
 		}
 		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
@@ -642,7 +642,7 @@ ze_result_t frequency::getFreqAvailableClocks(uint32_t subdeviceId, std::vector<
 	bool useDeviceLevel = false;
 	if (!hasSubdevices) {
 		if (subdeviceId != 0) {
-			ERR("Invalid tileId %u. Device exposes no subdevices.\n", subdeviceId);
+			ERR("Invalid tileId {}. Device exposes no subdevices.\n", subdeviceId);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 		useDeviceLevel = true;
@@ -674,33 +674,33 @@ ze_result_t frequency::getFreqAvailableClocks(uint32_t subdeviceId, std::vector<
 			uint32_t count = 0;
 			result = zesFrequencyGetAvailableClocks(frequencyHandles[i], &count, nullptr);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get available clock count for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+				ERR("Failed to get available clock count for subdevice {}. 0x{:X} ({})\n", subdeviceId, result,
 					l0_error_to_string(result));
 				return result;
 			}
 
 			if (count == 0) {
-				DBG("No available clocks found for subdevice %u.\n", subdeviceId);
+				DBG("No available clocks found for subdevice {}.\n", subdeviceId);
 				return ZE_RESULT_SUCCESS;
 			}
 
 			clocks.resize(count);
 			result = zesFrequencyGetAvailableClocks(frequencyHandles[i], &count, clocks.data());
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get available clocks for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+				ERR("Failed to get available clocks for subdevice {}. 0x{:X} ({})\n", subdeviceId, result,
 					l0_error_to_string(result));
 				return result;
 			}
 
-			DBG("Available Clocks for subdevice %u:\n", subdeviceId);
+			DBG("Available Clocks for subdevice {}:\n", subdeviceId);
 			for (uint32_t j = 0; j < count; ++j) {
-				DBG("  Clock %u: %f MHz\n", j, clocks[j]);
+				DBG("  Clock {}: {:f} MHz\n", j, clocks[j]);
 			}
 			return ZE_RESULT_SUCCESS;
 		}
 	}
 
-	ERR("No matching GPU frequency domain found for subdevice %u\n", subdeviceId);
+	ERR("No matching GPU frequency domain found for subdevice {}\n", subdeviceId);
 	return ZE_RESULT_ERROR_NOT_AVAILABLE;
 }
 
@@ -743,7 +743,7 @@ ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_
 	uint32_t schedulerCount = 0;
 	result = zesDeviceEnumSchedulers(deviceHandle, &schedulerCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate schedulers. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate schedulers. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -755,7 +755,7 @@ ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_
 	std::vector<zes_sched_handle_t> schedulers(schedulerCount);
 	result = zesDeviceEnumSchedulers(deviceHandle, &schedulerCount, schedulers.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get scheduler handles. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get scheduler handles. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -771,7 +771,7 @@ ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_
 		// Check onSubdevice flag before accessing subdeviceId per L0 spec
 		if (props.onSubdevice && props.subdeviceId == targetSubdeviceId) {
 			schedulerHandle = sched;
-			DBG("Found scheduler for tile %u (subdeviceId %u)\n", subdeviceId, targetSubdeviceId);
+			DBG("Found scheduler for tile {} (subdeviceId {})\n", subdeviceId, targetSubdeviceId);
 			return ZE_RESULT_SUCCESS;
 		}
 
@@ -784,11 +784,11 @@ ze_result_t frequency::getSchedulerForSubdevice(uint32_t subdeviceId, zes_sched_
 	// If no tile-specific scheduler found, use device-level scheduler for client GPUs
 	if (deviceLevelScheduler != nullptr) {
 		schedulerHandle = deviceLevelScheduler;
-		DBG("Using device-level scheduler for tile %u (client GPU)\n", subdeviceId);
+		DBG("Using device-level scheduler for tile {} (client GPU)\n", subdeviceId);
 		return ZE_RESULT_SUCCESS;
 	}
 
-	ERR("No scheduler found for tile %u (subdeviceId %u)\n", subdeviceId, targetSubdeviceId);
+	ERR("No scheduler found for tile {} (subdeviceId {})\n", subdeviceId, targetSubdeviceId);
 	return ZE_RESULT_ERROR_NOT_AVAILABLE;
 }
 
@@ -823,14 +823,14 @@ ze_result_t frequency::setSchedulerTimeoutMode(uint32_t subdeviceId, uint64_t wa
 
 	result = zesSchedulerSetTimeoutMode(scheduler, &timeoutProps, &needReload);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set scheduler timeout mode for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+		ERR("Failed to set scheduler timeout mode for subdevice {}. 0x{:X} ({})\n", subdeviceId, result,
 			l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Successfully set scheduler timeout mode for subdevice %u\n", subdeviceId);
-	DBG("  Watchdog Timeout: %" PRIu64 " microseconds\n", watchdogTimeout);
-	DBG("  Need Reload: %s\n", needReload ? "true" : "false");
+	DBG("Successfully set scheduler timeout mode for subdevice {}\n", subdeviceId);
+	DBG("  Watchdog Timeout: {} microseconds\n", watchdogTimeout);
+	DBG("  Need Reload: {}\n", needReload ? "true" : "false");
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -869,15 +869,15 @@ ze_result_t frequency::setSchedulerTimesliceMode(uint32_t subdeviceId, uint64_t 
 
 	result = zesSchedulerSetTimesliceMode(scheduler, &timesliceProps, &needReload);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set scheduler timeslice mode for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+		ERR("Failed to set scheduler timeslice mode for subdevice {}. 0x{:X} ({})\n", subdeviceId, result,
 			l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Successfully set scheduler timeslice mode for subdevice %u\n", subdeviceId);
-	DBG("  Interval: %" PRIu64 " microseconds\n", interval);
-	DBG("  Yield Timeout: %" PRIu64 " microseconds\n", yieldTimeout);
-	DBG("  Need Reload: %s\n", needReload ? "true" : "false");
+	DBG("Successfully set scheduler timeslice mode for subdevice {}\n", subdeviceId);
+	DBG("  Interval: {} microseconds\n", interval);
+	DBG("  Yield Timeout: {} microseconds\n", yieldTimeout);
+	DBG("  Need Reload: {}\n", needReload ? "true" : "false");
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -907,13 +907,13 @@ ze_result_t frequency::setSchedulerExclusiveMode(uint32_t subdeviceId)
 	ze_bool_t needReload = false;
 	result = zesSchedulerSetExclusiveMode(scheduler, &needReload);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set scheduler exclusive mode for subdevice %u. 0x%X (%s)\n", subdeviceId, result,
+		ERR("Failed to set scheduler exclusive mode for subdevice {}. 0x{:X} ({})\n", subdeviceId, result,
 			l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Successfully set scheduler exclusive mode for subdevice %u\n", subdeviceId);
-	DBG("  Need Reload: %s\n", needReload ? "true" : "false");
+	DBG("Successfully set scheduler exclusive mode for subdevice {}\n", subdeviceId);
+	DBG("  Need Reload: {}\n", needReload ? "true" : "false");
 
 	return ZE_RESULT_SUCCESS;
 }

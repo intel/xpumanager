@@ -22,7 +22,7 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 	// Get the perfCount of performance factor domains
 	ze_result_t result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || perfCount == 0) {
-		ERR("Failed to get performance factor domains perfCount or no domains available. 0x%X (%s)\n", result,
+		ERR("Failed to get performance factor domains perfCount or no domains available. 0x{:X} ({})\n", result,
 			l0_error_to_string(result));
 		return result;
 	}
@@ -33,11 +33,11 @@ ze_result_t performance::enumPerformanceFactorDomains(zes_device_handle_t device
 	// Retrieve the performance factor domain handles
 	result = zesDeviceEnumPerformanceFactorDomains(device, &perfCount, perfHandles->data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate performance factor domains. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate performance factor domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Found %u performance factor domains.\n", perfCount);
+	DBG("Found {} performance factor domains.\n", perfCount);
 	return result;
 }
 
@@ -62,13 +62,13 @@ ze_result_t performance::getProperties(zes_perf_handle_t perfHandle, zes_perf_pr
 
 	ze_result_t result = zesPerformanceFactorGetProperties(perfHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get properties for performance factor domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get properties for performance factor domain 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Performance Factor Properties:\n");
-	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %u\n", properties->subdeviceId);
+	DBG("  onSubdevice: {}\n", properties->onSubdevice);
+	DBG("  subdeviceId: {}\n", properties->subdeviceId);
 	printEngines(properties->engines);
 
 	return result;
@@ -89,12 +89,12 @@ ze_result_t performance::getConfig(zes_perf_handle_t perfHandle)
 	double factor = 0.0;
 	ze_result_t result = zesPerformanceFactorGetConfig(perfHandle, &factor);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get config for performance factor domain 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get config for performance factor domain 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Performance Factor Config:\n");
-	DBG("  Factor: %f\n", factor);
+	DBG("  Factor: {:f}\n", factor);
 
 	return result;
 }
@@ -119,7 +119,7 @@ ze_result_t performance::setConfig(zes_engine_type_flag_t engineType, double fac
 
 	// Validate the factor value
 	if (factor < 0 || factor > 100) {
-		ERR("Invalid performance factor value: %f. Must be between 0 and 100.\n", factor);
+		ERR("Invalid performance factor value: {:f}. Must be between 0 and 100.\n", factor);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -134,11 +134,11 @@ ze_result_t performance::setConfig(zes_engine_type_flag_t engineType, double fac
 		// Check if the engine type matches the properties of the performance factor domain
 		if (properties.engines & engineType) {
 
-			DBG("Setting config for performance factor domain %u with factor %f\n", i, factor);
+			DBG("Setting config for performance factor domain {} with factor {:f}\n", i, factor);
 			// Set the performance factor configuration
 			result = zesPerformanceFactorSetConfig(perfHandles->at(i), factor);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to set config for performance factor domain 0x%X (%s)\n", result,
+				ERR("Failed to set config for performance factor domain 0x{:X} ({})\n", result,
 					l0_error_to_string(result));
 				return result;
 			}

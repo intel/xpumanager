@@ -154,18 +154,18 @@ uint8_t pldm::pfPdrRepoRespPayload()
 {
 	DBG("Handling PDR Repository Info response\n");
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
-		ERR("PLDM Platform: Get PDR Repository Info command failed with code 0x%02x\n", mI2cPldmRead->respPayload[0]);
+		ERR("PLDM Platform: Get PDR Repository Info command failed with code 0x{:02x}\n", mI2cPldmRead->respPayload[0]);
 		return PLDM_ERROR;
 	}
 	memcpy(&pfPdrRepoInfo, &mI2cPldmRead->respPayload, sizeof(pdrRepositoryInfoResp));
-	DBG("PDR Repository Info - Repository Size: %u, Record Count: %u\n", pfPdrRepoInfo.repositorySize,
+	DBG("PDR Repository Info - Repository Size: {}, Record Count: {}\n", pfPdrRepoInfo.repositorySize,
 		pfPdrRepoInfo.recordCount);
 	if (pfPdrRepoInfo.repositorySize == 0 || pfPdrRepoInfo.recordCount == 0) {
 		ERR("PLDM Platform: Invalid PDR Repository Info received\n");
 		return PLDM_ERROR;
 	}
 	if (pfPdrRepoInfo.repositoryState != PLDM_PDR_REPO_AVAILABLE) {
-		DBG("PLDM Platform: PDR Repository not available, state: 0x%02x\n", pfPdrRepoInfo.repositoryState);
+		DBG("PLDM Platform: PDR Repository not available, state: 0x{:02x}\n", pfPdrRepoInfo.repositoryState);
 		return PLDM_ERROR;
 	}
 	return PLDM_SUCCESS;
@@ -183,7 +183,7 @@ uint8_t pldm::pfPdrRespPayload()
 {
 	DBG("Handling PDR response\n");
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
-		ERR("PLDM Platform: Get PDR command failed with code 0x%02x\n", mI2cPldmRead->respPayload[0]);
+		ERR("PLDM Platform: Get PDR command failed with code 0x{:02x}\n", mI2cPldmRead->respPayload[0]);
 		return PLDM_ERROR;
 	}
 
@@ -213,7 +213,7 @@ uint8_t pldm::pfSensorReadingRespPayload()
 {
 	DBG("Handling Sensor Reading response\n");
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
-		ERR("PLDM Platform: Get Sensor Reading command failed with code 0x%02x\n", mI2cPldmRead->respPayload[0]);
+		ERR("PLDM Platform: Get Sensor Reading command failed with code 0x{:02x}\n", mI2cPldmRead->respPayload[0]);
 		return PLDM_ERROR;
 	}
 
@@ -327,7 +327,7 @@ uint8_t pldm::pfGetTotalPdrs()
 	pfPdrReq.recordChangeNumber = 0;
 	for (uint32_t i = 0; i < pfPdrRepoInfo.recordCount; i++) {
 		if (pfMonCtrlCmd(cmd, size) != PLDM_SUCCESS) {
-			ERR("Failed to retrieve PDR record %u\n", i);
+			ERR("Failed to retrieve PDR record {}\n", i);
 			return PLDM_ERROR;
 		}
 	}
@@ -359,7 +359,7 @@ uint8_t pldm::pfGetSensorValue(const pldmNumericSensorValuePdr *sensor)
 
 	auto optValue = mPdrManager.convertReading(sensor, mSensorReading);
 	if (!optValue.has_value()) {
-		ERR("Failed to convert sensor reading for Sensor ID: %u\n", sensor->sensorId);
+		ERR("Failed to convert sensor reading for Sensor ID: {}\n", sensor->sensorId);
 		return PLDM_ERROR;
 	}
 	double value = optValue.value();
@@ -411,12 +411,12 @@ uint8_t pldm::pfGetSensorValuesByUnit(sensorUnits unit)
 		return PLDM_ERROR;
 	}
 	for (const auto *record : sensorRecords) {
-		DBG("Found Sensor Handle: %u\n", record->header.recordHandle);
+		DBG("Found Sensor Handle: {}\n", record->header.recordHandle);
 		const pldmNumericSensorValuePdr *sensor =
 			reinterpret_cast<const pldmNumericSensorValuePdr *>(record->data.data());
 
 		if (pfGetSensorValue(sensor) != PLDM_SUCCESS) {
-			ERR("Failed to get sensor value for handle: %u\n", record->header.recordHandle);
+			ERR("Failed to get sensor value for handle: {}\n", record->header.recordHandle);
 			continue;
 		}
 	}

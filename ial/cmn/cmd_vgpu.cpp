@@ -91,9 +91,9 @@ ze_result_t cmdVgpu::precheck(devInfo *d)
 	deviceInfo.bdfAddress = p->getBDFStr();
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
-	PRINT("VMX is %s\n", v->vmxSupport() ? "supported" : "not supported");
-	PRINT("IOMMU is %s\n", v->iommuSupport() ? "supported" : "not supported");
-	PRINT("SR-IOV %s supported on device\n", v->sriovSupport(&deviceInfo) ? "is" : "is not");
+	PRINT("VMX is {}\n", v->vmxSupport() ? "supported" : "not supported");
+	PRINT("IOMMU is {}\n", v->iommuSupport() ? "supported" : "not supported");
+	PRINT("SR-IOV {} supported on device\n", v->sriovSupport(&deviceInfo) ? "is" : "is not");
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -158,10 +158,10 @@ ze_result_t cmdVgpu::create(devInfo *d)
 	result = v->createVFs(&deviceInfo);
 
 	if (result == 0) {
-		PRINT("Successfully created %u virtual GPUs with %" PRIu64 " MiB memory each on device %s.\n",
-			  deviceInfo.vGpuNumber, deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
+		PRINT("Successfully created {} virtual GPUs with {} MiB memory each on device {}.\n", deviceInfo.vGpuNumber,
+			  deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
 	} else {
-		ERR("Failed to create virtual GPUs on device %s.\n", p->getBDFStr().c_str());
+		ERR("Failed to create virtual GPUs on device {}.\n", p->getBDFStr().c_str());
 	}
 
 	return result == 0 ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
@@ -190,9 +190,9 @@ ze_result_t cmdVgpu::remove(devInfo *d)
 	// Remove the VFs
 	result = vfHandle->removeVFs(&deviceInfo);
 	if (result == 0) {
-		PRINT("Successfully removed virtual GPUs on device %s.\n", pciHandle->getBDFStr().c_str());
+		PRINT("Successfully removed virtual GPUs on device {}.\n", pciHandle->getBDFStr().c_str());
 	} else {
-		ERR("Failed to remove virtual GPUs on device %s.\n", pciHandle->getBDFStr().c_str());
+		ERR("Failed to remove virtual GPUs on device {}.\n", pciHandle->getBDFStr().c_str());
 	}
 	return result == 0 ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
 }
@@ -232,7 +232,7 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 		table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
 		table.addRow("Memory Physical Size", std::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -265,7 +265,7 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 	}
 
 	if (vfStatsList.empty()) {
-		PRINT("No virtual GPUs found on device %s.\n", pciHandle->getBDFStr().c_str());
+		PRINT("No virtual GPUs found on device {}.\n", pciHandle->getBDFStr().c_str());
 		return ZE_RESULT_SUCCESS;
 	}
 
@@ -304,7 +304,7 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 
 		table.addSeparator();
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -373,14 +373,14 @@ int cmdVgpu::run(arg_struct *args)
 			}
 
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			break;
 		}
@@ -390,7 +390,7 @@ int cmdVgpu::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -405,7 +405,7 @@ int cmdVgpu::run(arg_struct *args)
 
 	result = args->sm.findDevice(vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", vgpuCmds[vgpuCmdType::VGPU_DEVICE].val.c_str());
 		return result;
 	}
 
@@ -414,7 +414,7 @@ int cmdVgpu::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : vgpuCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: %s\n", cmd.second.opt.name);
+				DBG("Running command: {}\n", cmd.second.opt.name);
 				result = (this->*cmd.second.func)(&device);
 				break;
 			}

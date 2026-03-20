@@ -51,7 +51,7 @@ uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
 	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_FRU, cmd, PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
 
 	if (pldmFruFillPayload(cmd, pldmCmdLen) != PLDM_SUCCESS) {
-		ERR("PLDM FRU : Fill payload failed for command 0x%02x\n", cmd);
+		ERR("PLDM FRU : Fill payload failed for command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
@@ -147,7 +147,7 @@ uint8_t pldm::getFruRecordTableMetadata()
 {
 	TRACING();
 
-	DBG("\n=====================PLDM FRU TABLE METADATA CARD %i===============================\n", mCardNum);
+	DBG("\n=====================PLDM FRU TABLE METADATA CARD {}===============================\n", mCardNum);
 	DBG(">>> Send GetFRURecordTableMetadata\n");
 
 	if (pldmFruCommand(PLDM_GET_FRU_RECORD_TABLE_METADATA, PLDM_GETFRUTABLEMETADATA_SIZE) != PLDM_SUCCESS) {
@@ -156,13 +156,13 @@ uint8_t pldm::getFruRecordTableMetadata()
 	}
 
 	DBG("<<< PLDM GetFRURecordTableMetadata Success...\n");
-	DBG("FRU Data Major Version: %u\n", mFruMetadata.fruDataMajorVersion);
-	DBG("FRU Data Minor Version: %u\n", mFruMetadata.fruDataMinorVersion);
-	DBG("FRU Table Maximum Size: %u bytes\n", mFruMetadata.fruTableMaxSize);
-	DBG("FRU Table Length: %u bytes\n", mFruMetadata.fruTableLen);
-	DBG("Total Record Set Identifiers: %u\n", mFruMetadata.totalRecordSetIdentifiers);
-	DBG("Total Table Records: %u\n", mFruMetadata.totalNumRecords);
-	DBG("FRU Data Structure Table Integrity Checksum: 0x%08X\n", mFruMetadata.checksum);
+	DBG("FRU Data Major Version: {}\n", mFruMetadata.fruDataMajorVersion);
+	DBG("FRU Data Minor Version: {}\n", mFruMetadata.fruDataMinorVersion);
+	DBG("FRU Table Maximum Size: {} bytes\n", mFruMetadata.fruTableMaxSize);
+	DBG("FRU Table Length: {} bytes\n", mFruMetadata.fruTableLen);
+	DBG("Total Record Set Identifiers: {}\n", mFruMetadata.totalRecordSetIdentifiers);
+	DBG("Total Table Records: {}\n", mFruMetadata.totalNumRecords);
+	DBG("FRU Data Structure Table Integrity Checksum: 0x{:08X}\n", mFruMetadata.checksum);
 
 	return PLDM_SUCCESS;
 }
@@ -189,9 +189,9 @@ uint8_t pldm::getFruRecordTable(uint32_t dataXferHandle, uint8_t xferOpFlag)
 {
 	TRACING();
 
-	DBG("\n=====================PLDM FRU RECORD TABLE CARD %i PACKET %u===============================\n", mCardNum,
+	DBG("\n=====================PLDM FRU RECORD TABLE CARD {} PACKET {}===============================\n", mCardNum,
 		dataXferHandle + 1);
-	DBG(">>> Send GetFRURecordTable (Handle: 0x%08X, Flag: 0x%02X)\n", dataXferHandle, xferOpFlag);
+	DBG(">>> Send GetFRURecordTable (Handle: 0x{:08X}, Flag: 0x{:02X})\n", dataXferHandle, xferOpFlag);
 
 	// Set up request parameters
 	mFruTableRequest.dataXferHandle = dataXferHandle;
@@ -203,8 +203,8 @@ uint8_t pldm::getFruRecordTable(uint32_t dataXferHandle, uint8_t xferOpFlag)
 	}
 
 	DBG("<<< PLDM GetFRURecordTable Success...\n");
-	DBG("Next Data Transfer Handle: 0x%08X\n", mFruTableResponse.nextDataXferHandle);
-	DBG("Transfer Flag: 0x%02X\n", mFruTableResponse.xferFlag);
+	DBG("Next Data Transfer Handle: 0x{:08X}\n", mFruTableResponse.nextDataXferHandle);
+	DBG("Transfer Flag: 0x{:02X}\n", mFruTableResponse.xferFlag);
 
 	return PLDM_SUCCESS;
 }
@@ -233,7 +233,7 @@ uint8_t pldm::pldmFruInitialize()
 {
 	TRACING();
 
-	DBG("\n===================PLDM FRU INIT CARD %i=======================\n", mCardNum);
+	DBG("\n===================PLDM FRU INIT CARD {}=======================\n", mCardNum);
 
 	// Step 1: Get FRU Record Table Metadata
 	if (getFruRecordTableMetadata() != PLDM_SUCCESS) {
@@ -269,7 +269,7 @@ uint8_t pldm::pldmFruInitialize()
 
 	// Verify size of complete FRU data with expected size from metadata
 	if (completeFruData.size() != mFruMetadata.fruTableLen) {
-		ERR("FRU table size mismatch: expected %u, got %u\n", static_cast<unsigned int>(mFruMetadata.fruTableLen),
+		ERR("FRU table size mismatch: expected {}, got {}\n", static_cast<unsigned int>(mFruMetadata.fruTableLen),
 			static_cast<unsigned int>(completeFruData.size()));
 		return PLDM_ERROR;
 	}
@@ -355,7 +355,7 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 
 	// Check if buffer is large enough
 	if (*bufferSize < requiredLength) {
-		ERR("Buffer too small: need %zu, got %zu\n", requiredLength, *bufferSize);
+		ERR("Buffer too small: need {}, got {}\n", requiredLength, *bufferSize);
 		*bufferSize = requiredLength; // Return required size
 		return PLDM_ERROR;
 	}
@@ -436,7 +436,7 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 
 	// Check if buffer is large enough
 	if (*bufferSize < requiredLength) {
-		ERR("Buffer too small: need %zu, got %zu\n", requiredLength, *bufferSize);
+		ERR("Buffer too small: need {}, got {}\n", requiredLength, *bufferSize);
 		*bufferSize = requiredLength; // Return required size
 		return PLDM_ERROR;
 	}

@@ -30,7 +30,7 @@ void commonProgressCallback(uint32_t done, uint32_t total, void *ctx)
 
 	uint32_t percent = (done * 100) / total;
 
-	DBG("Firmware update progress: %u%%\n", percent);
+	DBG("Firmware update progress: {}%\n", percent);
 
 	// Store percent in firmwareInfo structure
 	if (ctx != nullptr) {
@@ -99,7 +99,10 @@ uint8_t crc8Smbus(const uint8_t *data, size_t len)
  */
 void hexdump(const uint8_t buff[], unsigned int len)
 {
-	if (dbgLvl < DBG || buff == nullptr || len == 0) {
+	if (buff == nullptr || len == 0) {
+		return;
+	}
+	if (!Logger::instance().isEnabled(LogLevel::DBG)) {
 		return;
 	}
 
@@ -109,12 +112,12 @@ void hexdump(const uint8_t buff[], unsigned int len)
 	for (i = 0; i < len; i++) {
 		ss << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(buff[i]) << " ";
 		if ((i + 1) % 16 == 0) {
-			DBG("%s\n", ss.str().c_str());
+			DBG("{}\n", ss.str().c_str());
 			ss.str("");
 		}
 	}
 	if (!ss.str().empty()) {
-		DBG("%s\n", ss.str().c_str());
+		DBG("{}\n", ss.str().c_str());
 	}
 }
 

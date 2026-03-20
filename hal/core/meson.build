@@ -139,8 +139,19 @@ if get_option('install_headers')
     'temperature.h',
     'vf.h'
   )
-  
   install_headers(hal_headers, subdir : 'xpum')
+
+  logger_headers = files(
+    'logger/log_level.h',
+    'logger/log_record.h',
+    'logger/formatters.h',
+    'logger/sink_base.h',
+    'logger/ostream_sink.h',
+    'logger/filestream_sink.h',
+    'logger/async_sink.h',
+    'logger/logger.h',
+  )
+  install_headers(logger_headers, subdir : 'xpum/logger')
   
   c_api_headers = files(
     '../../ial/api/xpum_api.h',
@@ -158,3 +169,23 @@ pkg.generate(
   version: xpum_version,
   subdirs: 'xpum',
 )
+
+# Unit tests for the Logger (optional — enable with -Dwith_tests=true)
+if get_option('with_tests')
+    doctest_dep = dependency('doctest', required: true)
+    logger_test = executable(
+        'logger_test',
+        # Compile debug.cpp directly so dbgLvl and the extended helpers are
+        # defined without linking the full xpum library.
+        files('logger/test/logger_test.cpp', 'debug.cpp'),
+        include_directories: [global_inc, hal_core_inc],
+        dependencies: [doctest_dep],
+        link_args: is_linux ? ['-pie'] : [],
+        build_by_default: true,
+        install: false,
+    )
+    test('logger_tests', logger_test)
+    message('Logger unit tests enabled')
+else
+    message('Skipping logger tests (pass -Dwith_tests=true to enable)')
+endif

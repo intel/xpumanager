@@ -231,7 +231,7 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 
 	auto *rasHandler = reinterpret_cast<::ras *>(device->dev->getRAS());
 	if (rasHandler == nullptr) {
-		DBG("RAS handler not available for device %u.\n", device->index);
+		DBG("RAS handler not available for device {}.\n", device->index);
 		return ZE_RESULT_SUCCESS; // Not an error, just not supported
 	}
 
@@ -257,8 +257,8 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 
 		metrics.rasCounters[categoryInfo.category] = counter;
 
-		DBG("RAS Category %s: correctable=%" PRIu64 ", uncorrectable=%" PRIu64 ", total=%" PRIu64 "\n",
-			counter.categoryName, counter.correctableTotal, counter.uncorrectableTotal, counter.total);
+		DBG("RAS Category {}: correctable={}, uncorrectable={}, total={}\n", counter.categoryName,
+			counter.correctableTotal, counter.uncorrectableTotal, counter.total);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -288,7 +288,7 @@ ze_result_t cmdStats::collectPowerMetricsPerTile(power *powerHandler, TilePowerS
 	std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
 	ze_result_t result = powerHandler->getEnergyPerTile(tileEnergy);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get per-tile power energy: 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get per-tile power energy: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return ZE_RESULT_SUCCESS; // Not fatal, device may not support power monitoring
 	}
 
@@ -307,8 +307,8 @@ ze_result_t cmdStats::collectPowerMetricsPerTile(power *powerHandler, TilePowerS
 				double powerWatts = static_cast<double>(deltaEnergy) / static_cast<double>(deltaTime);
 				powerSamplesPerTile[tileId].push_back(powerWatts);
 
-				DBG("Tile %u power sample: %.2f W (deltaEnergy=%" PRIu64 " µJ, deltaTime=%" PRIu64 " µs)\n", tileId,
-					powerWatts, deltaEnergy, deltaTime);
+				DBG("Tile {} power sample: {:.2f} W (deltaEnergy={} µJ, deltaTime={} µs)\n", tileId, powerWatts,
+					deltaEnergy, deltaTime);
 			}
 		}
 
@@ -349,7 +349,7 @@ ze_result_t cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler
 		for (const auto &[tileId, freq] : gpuTileFreqs) {
 			if (freq > 0.0) {
 				gpuFreqSamplesPerTile[tileId].push_back(freq);
-				DBG("Tile %u GPU frequency sample: %.2f MHz\n", tileId, freq);
+				DBG("Tile {} GPU frequency sample: {:.2f} MHz\n", tileId, freq);
 			}
 		}
 	}
@@ -360,7 +360,7 @@ ze_result_t cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler
 		for (const auto &[tileId, freq] : mediaTileFreqs) {
 			if (freq > 0.0) {
 				mediaFreqSamplesPerTile[tileId].push_back(freq);
-				DBG("Tile %u Media frequency sample: %.2f MHz\n", tileId, freq);
+				DBG("Tile {} Media frequency sample: {:.2f} MHz\n", tileId, freq);
 			}
 		}
 	}
@@ -395,7 +395,7 @@ ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 	if (result == ZE_RESULT_SUCCESS) {
 		for (const auto &[tileId, temp] : gpuTileTemps) {
 			gpuCoreTempPerTile[tileId].push_back(temp);
-			DBG("Tile %u GPU core temperature sample: %.2f C\n", tileId, temp);
+			DBG("Tile {} GPU core temperature sample: {:.2f} C\n", tileId, temp);
 		}
 	}
 
@@ -404,7 +404,7 @@ ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 	if (result == ZE_RESULT_SUCCESS) {
 		for (const auto &[tileId, temp] : memoryTileTemps) {
 			memoryTempPerTile[tileId].push_back(temp);
-			DBG("Tile %u memory temperature sample: %.2f C\n", tileId, temp);
+			DBG("Tile {} memory temperature sample: {:.2f} C\n", tileId, temp);
 		}
 	}
 
@@ -487,7 +487,7 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidth
 
 					memoryReadKBpsPerTile[tileId].push_back(readKBps);
 					memoryWriteKBpsPerTile[tileId].push_back(writeKBps);
-					DBG("Tile %u memory read: %.2f kB/s, write: %.2f kB/s\n", tileId, readKBps, writeKBps);
+					DBG("Tile {} memory read: {:.2f} kB/s, write: {:.2f} kB/s\n", tileId, readKBps, writeKBps);
 
 					if (data.maxBandwidth > 0) {
 						double bytesPerSec = (static_cast<double>(deltaRead) + static_cast<double>(deltaWrite)) *
@@ -495,13 +495,13 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidth
 						double bandwidthPercent = (bytesPerSec / static_cast<double>(data.maxBandwidth)) * 100.0;
 
 						if (bandwidthPercent > 100.0) {
-							INFO("Tile %u memory bandwidth %.2f%% exceeds 100%% (bytes/sec: %.0f, max: %" PRIu64
-								 ") - possible counter overflow or measurement error, capping to 100%%\n",
+							INFO("Tile {} memory bandwidth {:.2f}% exceeds 100% (bytes/sec: {:.0f}, max: {}) - "
+								 "possible counter overflow or measurement error, capping to 100%\n",
 								 tileId, bandwidthPercent, bytesPerSec, data.maxBandwidth);
 							bandwidthPercent = 100.0;
 						}
 						memoryBandwidthPercentPerTile[tileId].push_back(bandwidthPercent);
-						DBG("Tile %u memory bandwidth: %.2f%%\n", tileId, bandwidthPercent);
+						DBG("Tile {} memory bandwidth: {:.2f}%\n", tileId, bandwidthPercent);
 					}
 				}
 			}
@@ -521,7 +521,7 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidth
 			double usedMiB = static_cast<double>(usage.usedBytes) / BYTES_PER_MIB;
 			memoryUsedMiBPerTile[tileId].push_back(usedMiB);
 			memoryUtilPercentPerTile[tileId].push_back(usage.utilizationPercent);
-			DBG("Tile %u memory used: %.2f MiB, utilization: %.2f%%\n", tileId, usedMiB, usage.utilizationPercent);
+			DBG("Tile {} memory used: {:.2f} MiB, utilization: {:.2f}%\n", tileId, usedMiB, usage.utilizationPercent);
 		}
 	}
 
@@ -556,7 +556,7 @@ ze_result_t cmdStats::collectPcieMetrics(pci *pciHandler, zes_device_handle_t de
 	zes_pci_stats_t pciStats = {};
 	ze_result_t result = pciHandler->getStats(device, &pciStats);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get PCIe stats: 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get PCIe stats: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return ZE_RESULT_SUCCESS; // Not fatal, device may not support PCIe stats
 	}
 
@@ -579,7 +579,7 @@ ze_result_t cmdStats::collectPcieMetrics(pci *pciHandler, zes_device_handle_t de
 
 		pcieReadKBpsSamples.push_back(readKBps);
 		pcieWriteKBpsSamples.push_back(writeKBps);
-		DBG("PCIe read: %.2f kB/s, write: %.2f kB/s\n", readKBps, writeKBps);
+		DBG("PCIe read: {:.2f} kB/s, write: {:.2f} kB/s\n", readKBps, writeKBps);
 	}
 
 	baseline.rxCounter = pciStats.rxCounter;
@@ -636,7 +636,7 @@ ze_result_t cmdStats::collectEngineUtilPerTile(enginegroup *engineGroup, zes_eng
 				double util = (static_cast<double>(deltaActive) / static_cast<double>(deltaTime)) * 100.0;
 				util = std::clamp(util, 0.0, 100.0);
 				utilPerTile[tileId].push_back(util);
-				DBG("Engine type %d tile %u util: %.2f%%\n", engineType, tileId, util);
+				DBG("Engine type {} tile {} util: {:.2f}%\n", engineType, tileId, util);
 			}
 		}
 
@@ -676,7 +676,7 @@ ze_result_t cmdStats::collectEuMetricsPerTile(metric *metricHandler, ze_device_h
 	std::vector<EuMetricsData> metricsData;
 	ze_result_t result = metricHandler->getEuActiveStallIdle(device, driver, metricsData);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to collect EU metrics: 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to collect EU metrics: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -703,7 +703,7 @@ ze_result_t cmdStats::collectEuMetricsPerTile(metric *metricHandler, ze_device_h
 		euMetrics.stallPerTile[tileId].push_back(stallPercent);
 		euMetrics.idlePerTile[tileId].push_back(idlePercent);
 
-		DBG("EU metrics tile %u: Active=%.2f%%, Stall=%.2f%%, Idle=%.2f%%\n", tileId, activePercent, stallPercent,
+		DBG("EU metrics tile {}: Active={:.2f}%, Stall={:.2f}%, Idle={:.2f}%\n", tileId, activePercent, stallPercent,
 			idlePercent);
 	}
 
@@ -738,12 +738,12 @@ ze_result_t cmdStats::enumerateEnginesByType(enginegroup *engineGroup, zes_engin
 	uint32_t engineCount = 0;
 	ze_result_t result = engineGroup->getEngineCountByType(&engineCount, engineType);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get engine count for type %d: 0x%X (%s)\n", engineType, result, l0_error_to_string(result));
+		DBG("Failed to get engine count for type {}: 0x{:X} ({})\n", engineType, result, l0_error_to_string(result));
 		return result;
 	}
 
 	if (engineCount == 0) {
-		DBG("No engines found for type %d\n", engineType);
+		DBG("No engines found for type {}\n", engineType);
 		return ZE_RESULT_SUCCESS;
 	}
 
@@ -753,7 +753,7 @@ ze_result_t cmdStats::enumerateEnginesByType(enginegroup *engineGroup, zes_engin
 		trackers.push_back(tracker);
 	}
 
-	DBG("Enumerated %u engines of type %d\n", engineCount, engineType);
+	DBG("Enumerated {} engines of type {}\n", engineCount, engineType);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -792,7 +792,7 @@ ze_result_t cmdStats::captureEnginesByType(enginegroup *engineGroup, zes_engine_
 			tracker.baseline.timestamp = timestamp;
 			tracker.baseline.valid = (timestamp != 0);
 		} else if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-			DBG("Engine type %d index %u not supported\n", engineType, tracker.engineIndex);
+			DBG("Engine type {} index {} not supported\n", engineType, tracker.engineIndex);
 			tracker.baseline.valid = false;
 		} else {
 			tracker.baseline.valid = false;
@@ -1412,7 +1412,7 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	table.addSeparator();
 	addEngineInstanceRows(table, deviceJson, "Media EM Engine Util (%)", {"utilization", "media_em_engines"});
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 
 /**
@@ -1850,13 +1850,13 @@ int cmdStats::run(arg_struct *args)
 			}
 
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1866,14 +1866,14 @@ int cmdStats::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(statsCmds[STATS_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", statsCmds[STATS_DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", statsCmds[STATS_DEVICE].val.c_str());
 		return result;
 	}
 
@@ -1892,7 +1892,7 @@ int cmdStats::run(arg_struct *args)
 			}
 			sampleCount = parsed;
 		} catch (const std::exception &) {
-			ERR("Invalid samples value: '%s'. Must be a positive integer.\n", statsCmds[STATS_SAMPLES].val.c_str());
+			ERR("Invalid samples value: '{}'. Must be a positive integer.\n", statsCmds[STATS_SAMPLES].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
@@ -1907,7 +1907,7 @@ int cmdStats::run(arg_struct *args)
 			}
 			sampleInterval = std::chrono::milliseconds{parsed};
 		} catch (const std::exception &) {
-			ERR("Invalid interval value: '%s'. Must be a positive integer (milliseconds).\n",
+			ERR("Invalid interval value: '{}'. Must be a positive integer (milliseconds).\n",
 				statsCmds[STATS_INTERVAL].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1934,7 +1934,7 @@ int cmdStats::run(arg_struct *args)
 		result = collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson,
 									statsCmds[STATS_RAS].enabled, statsCmds[STATS_EU].enabled);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to collect stats for device %u.\n", device.index);
+			ERR("Failed to collect stats for device {}.\n", device.index);
 			continue;
 		}
 

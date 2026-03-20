@@ -36,7 +36,7 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd, uint8_t size)
 
 	// Fill the payload based on command
 	if (pldmFwUpdFillPayload(cmd, mFwuCmdLen) != PLDM_SUCCESS) {
-		ERR("FWU : Failed to fill payload for command 0x%02x\n", cmd);
+		ERR("FWU : Failed to fill payload for command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
@@ -185,34 +185,34 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 
 	DBG("\n=====================AMC Firmware File Parser===============================\n");
 	if (FOPEN_S(&mCompFp, pkgFilePath, "rb") != 0 || mCompFp == NULL) {
-		ERR("Failed to open package file: %s\n", pkgFilePath);
+		ERR("Failed to open package file: {}\n", pkgFilePath);
 		return PLDM_ERROR;
 	}
 
 	uint8_t result = fwpkgParseInfo(pkgFilePath);
 	if (result != PLDM_SUCCESS) {
-		ERR("Failed to parse firmware package info from file: %s\n", pkgFilePath);
+		ERR("Failed to parse firmware package info from file: {}\n", pkgFilePath);
 		return PLDM_ERROR;
 	} else {
-		DBG("Firmware package info parsed successfully from file: %s\n", pkgFilePath);
+		DBG("Firmware package info parsed successfully from file: {}\n", pkgFilePath);
 	}
-	DBG("Firmware package info parsed successfully from AMC img file for card : %02d\n", mCardNum);
+	DBG("Firmware package info parsed successfully from AMC img file for card : {:02}\n", mCardNum);
 
 	for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
-		DBG("Component Number = %d\n", i + 1);
-		DBG("Offset = %u & Size = %u\n", pkg->compImagesInfo.compImages[i].compLocOffset,
+		DBG("Component Number = {}\n", i + 1);
+		DBG("Offset = {} & Size = {}\n", pkg->compImagesInfo.compImages[i].compLocOffset,
 			pkg->compImagesInfo.compImages[i].compSize);
 	}
 
 	// Firmware Update Inventory Commands
 	for (uint8_t n = 0; n < pkg->compImagesInfo.compImageCount; n++) {
-		DBG("\n========= Firmware Update Inventory for Component :: %d =========\n", n + 1);
+		DBG("\n========= Firmware Update Inventory for Component :: {} =========\n", n + 1);
 		mCurComp = n;
 		for (uint8_t i = 0; i < ARRAY_SIZE(cmdTable); i++) {
-			DBG(">>> Send %s\n", cmdTable[i].name.c_str());
+			DBG(">>> Send {}\n", cmdTable[i].name.c_str());
 			ret = fwUpdCmd((uint8_t)cmdTable[i].cmd, cmdTable[i].size);
 			if (ret != PLDM_SUCCESS) {
-				ERR("FWU : %s Failed!!! \n", cmdTable[i].name.c_str());
+				ERR("FWU : {} Failed!!! \n", cmdTable[i].name.c_str());
 				if (((uint8_t)cmdTable[i].cmd == REQUEST_UPDATE) ||
 					((uint8_t)cmdTable[i].cmd == PASS_COMPONENT_TABLE) ||
 					((uint8_t)cmdTable[i].cmd == UPDATE_COMPONENT)) {
@@ -227,12 +227,12 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 				fclose(mCompFp);
 				return ret;
 			}
-			DBG("<<< %s Success...\n", cmdTable[i].name.c_str());
+			DBG("<<< {} Success...\n", cmdTable[i].name.c_str());
 		}
 
-		DBG("Firmware Inventory commands completed, starting firmware update now for card : %02d\n", mCardNum);
+		DBG("Firmware Inventory commands completed, starting firmware update now for card : {:02}\n", mCardNum);
 
-		DBG("\n========= Firmware Update Read from FirmwareDevice(FD) for Component :: %d =========\n", n + 1);
+		DBG("\n========= Firmware Update Read from FirmwareDevice(FD) for Component :: {} =========\n", n + 1);
 		if (readFromFD() != PLDM_SUCCESS) {
 			PRINT(">>> Send CANCEL UPDATE\n");
 			// Send CANCEL commands to pldm
@@ -263,7 +263,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 		return ret;
 	}
 	DBG("<<< ActivateFirmware Success...\n");
-	DBG("Firmware Update and Activation completed successfully for card : %02d\n", mCardNum);
+	DBG("Firmware Update and Activation completed successfully for card : {:02}\n", mCardNum);
 
 	fclose(mCompFp);
 	return PLDM_SUCCESS;

@@ -68,15 +68,15 @@ void printVersion(arg_struct *arg)
 	const std::string fullVersion = std::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
 	std::string lzVersion;
 
-	PRINT("%-*sCLI:\n", TITLE, "");
-	PRINT("%-*sVersion: %s\n", HEADING, "", fullVersion.c_str());
-	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
-	PRINT("%-*s\n", TITLE, "");
-	PRINT("%-*sService:\n", TITLE, "");
-	PRINT("%-*sVersion: %s\n", HEADING, "", fullVersion.c_str());
-	PRINT("%-*sBuild ID: 8389eee7\n", HEADING, "");
+	PRINT("{0:<{1}}CLI:\n", "", static_cast<int>(TITLE));
+	PRINT("{0:<{1}}Version: {2}\n", "", static_cast<int>(HEADING), fullVersion.c_str());
+	PRINT("{0:<{1}}Build ID: 8389eee7\n", "", static_cast<int>(HEADING));
+	PRINT("{0:<{1}}\n", "", static_cast<int>(TITLE));
+	PRINT("{0:<{1}}Service:\n", "", static_cast<int>(TITLE));
+	PRINT("{0:<{1}}Version: {2}\n", "", static_cast<int>(HEADING), fullVersion.c_str());
+	PRINT("{0:<{1}}Build ID: 8389eee7\n", "", static_cast<int>(HEADING));
 	arg->sm.getLoaderVersion(&lzVersion);
-	PRINT("%-*sLevel Zero Version: %s\n", HEADING, "", lzVersion.c_str());
+	PRINT("{0:<{1}}Level Zero Version: {2}\n", "", static_cast<int>(HEADING), lzVersion.c_str());
 }
 
 /**
@@ -96,7 +96,7 @@ void printSubCommands(std::list<cmds *> *cmdList)
 void helpcli()
 {
 	const std::string shortVersion = std::format("v{}.{}", MAJOR, MINOR);
-	PRINT("Intel XPU Manager Command Line Interface -- %s\n", shortVersion.c_str());
+	PRINT("Intel XPU Manager Command Line Interface -- {}\n", shortVersion.c_str());
 	PRINT("Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring "
 		  "capabilities.\n");
 	PRINT("It can also be used to change the Intel data center GPU settings and update the firmware.\n");
@@ -110,7 +110,7 @@ void helpcli()
 void helpsmi()
 {
 	const std::string shortVersion = std::format("v{}.{}", MAJOR, MINOR);
-	PRINT("Intel XPU System Management Interface -- %s\n", shortVersion.c_str());
+	PRINT("Intel XPU System Management Interface -- {}\n", shortVersion.c_str());
 	PRINT("Intel XPU System Management Interface provides the Intel data center GPU model."
 		  " It can also be used to update the firmware.\n");
 	PRINT("Intel XPU System Management Interface is based on Intel oneAPI Level Zero.\n");
@@ -133,11 +133,11 @@ void help(std::list<cmds *> *cmdList)
 	PRINT("Supported devices:\n");
 	PRINT(" - Intel Arc B series GPU\n\n");
 
-	PRINT("Usage: %s [Options]\n", progName.c_str());
-	PRINT("  %s -v\n", progName.c_str());
-	PRINT("  %s -h\n", progName.c_str());
-	PRINT("  %s help\n", progName.c_str());
-	PRINT("  %s discovery\n\n", progName.c_str());
+	PRINT("Usage: {} [Options]\n", progName.c_str());
+	PRINT("  {} -v\n", progName.c_str());
+	PRINT("  {} -h\n", progName.c_str());
+	PRINT("  {} help\n", progName.c_str());
+	PRINT("  {} discovery\n\n", progName.c_str());
 
 	PRINT("Options:\n");
 	PRINT("  -h,--help                   Print this help message and exit\n");
@@ -157,34 +157,10 @@ void help(std::list<cmds *> *cmdList)
  * @param arg Pointer to argument structure containing system manager instance
  * @param lvl Debug level to set (e.g., DBG, INFO, WARN, ERR, NO_PRINT)
  */
-void setPrintLvl(arg_struct *arg, int lvl)
+void setPrintLvl(arg_struct *arg, LogLevel lvl)
 {
-	// Set the CLI's debug level first using the enhanced function
-	setDbgLvlExtended(lvl);
-
-	// Set the library's debug level using standard method
+	setDbgLvl(lvl);
 	arg->sm.setPrintLvl(lvl);
-
-	// For meson builds, we need additional synchronization for critical levels
-	if (lvl == NO_PRINT) {
-		// Use the forced synchronization method for NO_PRINT level
-		// This is especially important during initialization when we want
-		// to suppress library initialization messages
-		arg->sm.forceDebugSync(lvl);
-
-		// Also force the CLI level multiple times to ensure consistency
-		setDbgLvlExtended(lvl);
-
-		// Verify synchronization by checking if both levels match
-		int cliLevel = getDbgLvlExtended();
-		int libLevel = arg->sm.getPrintLvl();
-
-		// If levels don't match, try one more aggressive sync
-		if (cliLevel != libLevel && cliLevel != NO_PRINT) {
-			arg->sm.forceDebugSync(NO_PRINT);
-			setDbgLvlExtended(NO_PRINT);
-		}
-	}
 }
 
 /**
@@ -198,7 +174,7 @@ int main(int argc, char *argv[])
 	TRACING();
 	bool found = false;
 	arg_struct arg;
-	int dbglvl;
+	LogLevel dbglvl;
 	bool priv = PRIVILEGECHECK();
 	UNUSED_VAR(priv);
 
@@ -207,8 +183,8 @@ int main(int argc, char *argv[])
 
 	// If we are in < debug mode, set the debug level to NO_PRINT.
 	// That's because we don't want to see all the sysman initialization messages in release mode
-	if (dbglvl < DBG) {
-		setPrintLvl(&arg, NO_PRINT);
+	if (dbglvl < LogLevel::DBG) {
+		setPrintLvl(&arg, LogLevel::NO_PRINT);
 	}
 
 	// Create sysman driver instance
@@ -250,7 +226,7 @@ int main(int argc, char *argv[])
 	};
 
 	OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;
-	DBG("Is Daemon mode: %s\n", (curDaemonMode == DAEMONCAP::DAEMON) ? "true" : "false");
+	DBG("Is Daemon mode: {}\n", (curDaemonMode == DAEMONCAP::DAEMON) ? "true" : "false");
 	arg.argc = argc;
 	arg.argv = argv;
 
@@ -259,7 +235,7 @@ int main(int argc, char *argv[])
 			(entry.daemonCap == DAEMONCAP::BOTH || entry.daemonCap == curDaemonMode)) {
 			/* Create an instance of the command and add it to the list */
 			cmds *cmd = entry.createFunc();
-			DBG("Adding %s to command list\n", cmd->getName());
+			DBG("Adding {} to command list\n", cmd->getName());
 			cmdList->push_back(cmd);
 		}
 	}
@@ -280,7 +256,7 @@ int main(int argc, char *argv[])
 	/* Print top-level help if -h, --help, or help is specified */
 	if (!STRCASECMP(argv[1], "-h") || !STRCASECMP(argv[1], "--help") || !STRCASECMP(argv[1], "help")) {
 		if (argc > 2) {
-			PRINT("The following argument was not expected: '%s'.\n", argv[2]);
+			PRINT("The following argument was not expected: '{}'.\n", argv[2]);
 			help(cmdList);
 			deleteList(cmdList);
 			return 1;

@@ -23,7 +23,7 @@ int readFile(const std::string &path, std::string &content)
 
 	ifs.open(path);
 	if (!ifs) {
-		ERR("read: %s open failed\n", path.c_str());
+		ERR("read: {} open failed\n", path.c_str());
 		ifs.close();
 		return -1;
 	}
@@ -34,7 +34,7 @@ int readFile(const std::string &path, std::string &content)
 	content.erase(content.find_last_not_of(" \t\n\r\f\v") + 1);
 
 	ifs.close();
-	DBG("read: %s %s\n", path.c_str(), content.c_str());
+	DBG("read: {} {}\n", path.c_str(), content.c_str());
 	return 0;
 }
 
@@ -51,7 +51,7 @@ int writeFile(const std::string &path, const std::string &content)
 
 	ofs.open(path, std::ios::out | std::ios::trunc);
 	if (!ofs) {
-		ERR("write: %s open failed\n", path.c_str());
+		ERR("write: {} open failed\n", path.c_str());
 		ofs.close();
 		return -1;
 	}

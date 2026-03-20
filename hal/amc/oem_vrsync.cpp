@@ -141,7 +141,7 @@ uint8_t pldm::oemVrsyncRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 	hexdump((uint8_t *)mI2cPldmRead, totalSize);
 
 	if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
-		ERR("OEM Cmd : Completion Error Code : 0x%02x\n", mI2cPldmRead->respPayload[BYTE_0]);
+		ERR("OEM Cmd : Completion Error Code : 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
 		return PLDM_ERROR;
 	}
 

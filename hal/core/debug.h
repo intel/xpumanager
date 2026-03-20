@@ -4,103 +4,90 @@
  *
  */
 
-#ifndef _DEBUG_H
-#define _DEBUG_H
+#ifndef DEBUG_H
+#define DEBUG_H
 
+// ── C++ path: pull in the modular logger headers ──────────────────────────────
+#ifdef __cplusplus
+#include "logger/log_level.h"
+#include "logger/log_record.h"
+#include "logger/formatters.h"
+#include "logger/sink_base.h"
+#include "logger/ostream_sink.h"
+#include "logger/filestream_sink.h"
+#include "logger/logger.h"
+#else
+// ── C fallback — no Logger, no source_location ────────────────────────────────
 #include <stdio.h>
 
-// Check for C++20 source_location support
-#if __cplusplus >= 202002L && __has_include(<source_location>)
-#include <source_location>
-#define HAS_SOURCE_LOCATION 1
-#else
-#define HAS_SOURCE_LOCATION 0
-#endif
-
-#ifdef _WIN32
-static int is_windows = 1;
-#else
-static int is_windows __attribute__((unused)) = 0;
-#endif
-
+/* Plain integer enum for C code; values match C++ LogLevel. */
 enum
 {
 	NO_PRINT = -1,
 	ERR,
 	INFO,
 	DBG,
-	TRACE,
+	TRACE
 };
 
-/**
- * Set it to 0 or higher with 0 being lowest number of messages
- * 0 = Only errors show up
- * 1 = Errors + Info messages
- * 2 = Errors + Info messages + Debug messages
- * 3 = Errors + Info messages + Debug messages + Trace calls
- */
 extern int dbgLvl;
 
-#define _PRINT(prefix, fmt, ...)                                                                                       \
-	if (1) {                                                                                                           \
-		printf("%s", prefix);                                                                                          \
+#define PRINT(fmt, ...)                                                                                                \
+	do {                                                                                                               \
 		printf(fmt, ##__VA_ARGS__);                                                                                    \
 		fflush(stdout);                                                                                                \
-	}
-
-#define PRINT(fmt, ...) _PRINT("", fmt, ##__VA_ARGS__)
+	} while (0)
 #define ERR(fmt, ...)                                                                                                  \
-	if (dbgLvl >= ERR)                                                                                                 \
-	_PRINT("[Error] ", fmt, ##__VA_ARGS__)
+	do {                                                                                                               \
+		if (dbgLvl >= ERR) {                                                                                           \
+			printf("[Error] ");                                                                                        \
+			printf(fmt, ##__VA_ARGS__);                                                                                \
+			fflush(stdout);                                                                                            \
+		}                                                                                                              \
+	} while (0)
 #define INFO(fmt, ...)                                                                                                 \
-	if (dbgLvl >= INFO)                                                                                                \
-	_PRINT("[Info] ", fmt, ##__VA_ARGS__)
+	do {                                                                                                               \
+		if (dbgLvl >= INFO) {                                                                                          \
+			printf("[Info] ");                                                                                         \
+			printf(fmt, ##__VA_ARGS__);                                                                                \
+			fflush(stdout);                                                                                            \
+		}                                                                                                              \
+	} while (0)
 #define DBG(fmt, ...)                                                                                                  \
-	if (dbgLvl >= DBG)                                                                                                 \
-	_PRINT("[DBG] ", fmt, ##__VA_ARGS__)
+	do {                                                                                                               \
+		if (dbgLvl >= DBG) {                                                                                           \
+			printf("[DBG] ");                                                                                          \
+			printf(fmt, ##__VA_ARGS__);                                                                                \
+			fflush(stdout);                                                                                            \
+		}                                                                                                              \
+	} while (0)
 #define TRACE(fmt, ...)                                                                                                \
-	if (dbgLvl >= TRACE)                                                                                               \
-	PRINT(fmt, ##__VA_ARGS__)
-
-#ifdef __cplusplus
-#if HAS_SOURCE_LOCATION
-#define TRACING() tracer trace{};
-#else
-#define TRACING() tracer trace(__FUNCTION__);
-#endif
-#else
+	do {                                                                                                               \
+		if (dbgLvl >= TRACE) {                                                                                         \
+			printf(fmt, ##__VA_ARGS__);                                                                                \
+			fflush(stdout);                                                                                            \
+		}                                                                                                              \
+	} while (0)
 #define TRACING()
+#endif /* __cplusplus */
+
+// ── Windows helpers ───────────────────────────────────────────────────────────
+#ifdef _WIN32
+static int is_windows = 1;
+#else
+static int is_windows __attribute__((unused)) = 0; // NOLINT(readability-identifier-naming)
 #endif
 
+// ── Level helpers — unchanged interface ──────────────────────────────────────
 #ifdef __cplusplus
-class tracer
+inline int setDbgLvl(LogLevel lvl)
 {
-private:
-	const char *m_func_name;
+	Logger::instance().setLevel(lvl);
+	return 0;
+}
 
-public:
-#if HAS_SOURCE_LOCATION
-	// C++20 source_location constructor
-	explicit tracer(const std::source_location &loc = std::source_location::current())
-		: m_func_name(loc.function_name())
-	{
-		TRACE(">>> %s\n", m_func_name);
-	}
-#endif
-
-	// Fallback constructor for older C++ standards
-	explicit tracer(const char *func_name) : m_func_name(func_name) { TRACE(">>> %s\n", m_func_name); }
-
-	~tracer() { TRACE("<<< %s\n", m_func_name); }
-
-	// Prevents additional room for dangling references
-	tracer(const tracer &) = delete;
-	tracer &operator=(const tracer &) = delete;
-	tracer(tracer &&) = delete;
-	tracer &operator=(tracer &&) = delete;
-};
-#endif
-
+[[nodiscard]] inline LogLevel getDbgLvl() { return Logger::instance().getLevel(); }
+#else
 inline int setDbgLvl(int lvl)
 {
 	int ret = 1;
@@ -112,9 +99,10 @@ inline int setDbgLvl(int lvl)
 }
 
 inline int getDbgLvl() { return dbgLvl; }
+#endif
 
 // Enhanced debug level functions for cross-module synchronization
 int setDbgLvlExtended(int lvl);
 int getDbgLvlExtended();
 
-#endif
+#endif /* DEBUG_H */

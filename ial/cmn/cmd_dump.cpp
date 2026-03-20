@@ -307,7 +307,7 @@ THREAD_RET cmdDump::metrics(void *args)
 	}
 
 	if (!found) {
-		ERR("The following metric ID was not expected: '%s'.\n", metricArgs->cmdName.c_str());
+		ERR("The following metric ID was not expected: '{}'.\n", metricArgs->cmdName.c_str());
 		ERR("Run with --help for more information.\n");
 	}
 
@@ -371,7 +371,7 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
 
 	ze_result_t result = p->getEnergy(gpuPower, timeStamp, forGPU);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU power: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU power: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -503,7 +503,7 @@ ze_result_t cmdDump::gpuFrequency(devInfo *d, std::string *outputLine, UNUSED th
 
 	ze_result_t result = fq->getCurFreq(&curFreq, ZES_FREQ_DOMAIN_GPU);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU frequency: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -534,7 +534,7 @@ ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, UNU
 
 	ze_result_t result = t->getCoreTemp(&coreTemp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get core temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get core temperature: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -565,7 +565,7 @@ ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, U
 
 	ze_result_t result = t->getMemoryTemp(&memoryTemp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory temperature: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory temperature: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -595,7 +595,7 @@ ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, std::string *outputLine, U
 
 	ze_result_t result = mem->getMemoryUsed(nullptr, &memoryUtilization);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory used: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -624,7 +624,7 @@ ze_result_t cmdDump::gpuMemoryRead(devInfo *d, std::string *outputLine, threadDa
 
 	ze_result_t result = mem->getMemoryRW(&td->m[0].read, nullptr, nullptr, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -664,7 +664,7 @@ ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, std::string *outputLine, threadD
 
 	ze_result_t result = mem->getMemoryRW(nullptr, &td->m[0].write, nullptr, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory write: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU memory write: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -742,7 +742,7 @@ ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, std::string *outputLine, threa
 	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
 
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("getEuActiveStallIdle failed: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("getEuActiveStallIdle failed: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -861,7 +861,7 @@ ze_result_t cmdDump::gpuEuArrayResetCounter(devInfo *d, std::string *outputLine,
 
 	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS reset counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS reset counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -892,7 +892,7 @@ ze_result_t cmdDump::gpuEuArrayProgrammingErrors(devInfo *d, std::string *output
 	ze_result_t result =
 		r->getErrors(ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS programming counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS programming counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -922,7 +922,7 @@ ze_result_t cmdDump::gpuEuArrayDriverErrors(devInfo *d, std::string *outputLine,
 
 	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS driver counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS driver counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -953,7 +953,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(devInfo *d, std::string *o
 
 	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS cache correctable counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS cache correctable counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -984,7 +984,7 @@ ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(devInfo *d, std::string 
 
 	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS cache uncorrectable counter: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS cache uncorrectable counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1017,7 +1017,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, std::string *outp
 
 	ze_result_t result = mem->getMemoryRW(&td->m[0].read, &td->m[0].write, &maxBandwidth, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory read: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1063,7 +1063,7 @@ ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, std::string *outputLine, UNUSED t
 
 	ze_result_t result = mem->getMemoryUsed(&memoryUsed, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory used: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1333,7 +1333,7 @@ ze_result_t cmdDump::gpuMemoryErrorsCorrectable(devInfo *d, std::string *outputL
 	ze_result_t result =
 		r->getErrors(ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS non-compute correctable errors: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS non-compute correctable errors: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1367,7 +1367,7 @@ ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(devInfo *d, std::string *outpu
 	ze_result_t result =
 		r->getErrors(ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &rasCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS non-compute uncorrectable errors: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS non-compute uncorrectable errors: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1471,7 +1471,7 @@ ze_result_t cmdDump::throttleReason(devInfo *d, std::string *outputLine, UNUSED 
 
 	ze_result_t result = fq->getThrottleReason(&throttleReasons);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get GPU frequency: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1503,7 +1503,7 @@ ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, U
 
 	ze_result_t result = fq->getCurFreq(&curFreq, ZES_FREQ_DOMAIN_MEDIA);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Media frequency: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Media frequency: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1619,14 +1619,14 @@ int cmdDump::run(arg_struct *args)
 			}
 
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1636,7 +1636,7 @@ int cmdDump::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -1672,7 +1672,7 @@ int cmdDump::run(arg_struct *args)
 					throw std::invalid_argument("trailing characters");
 				}
 			} catch (const std::exception &) {
-				ERR("The following metric ID was not expected: '%s'.\n", trimmed.c_str());
+				ERR("The following metric ID was not expected: '{}'.\n", trimmed.c_str());
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
@@ -1691,7 +1691,7 @@ int cmdDump::run(arg_struct *args)
 
 		if (!duplicatedMetricIds.empty()) {
 			for (const auto duplicateMetricId : duplicatedMetricIds) {
-				ERR("Duplicate metric ID: %d.\n", duplicateMetricId);
+				ERR("Duplicate metric ID: {}.\n", duplicateMetricId);
 			}
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -1704,12 +1704,12 @@ int cmdDump::run(arg_struct *args)
 			size_t pos = 0;
 			iter = stoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val, &pos);
 			if (pos != dumpCmds[dumpCmdType::DUMP_NUMBER].val.size() || iter <= 0) {
-				ERR("Invalid value for -n/--number: '%s'. Must be a positive integer.\n",
+				ERR("Invalid value for -n/--number: '{}'. Must be a positive integer.\n",
 					dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 		} catch (const std::exception &) {
-			ERR("Invalid value for -n/--number: '%s'. Must be a positive integer.\n",
+			ERR("Invalid value for -n/--number: '{}'. Must be a positive integer.\n",
 				dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1727,13 +1727,13 @@ int cmdDump::run(arg_struct *args)
 
 			// intervalSec.count() now contains the parsed integer. Check for valid range
 			if (intervalSec.count() <= 0 || intervalSec > MAX_INTERVAL) {
-				ERR("Invalid value for -i/--interval: '%s'. Must be a positive integer and less than %lld.\n",
+				ERR("Invalid value for -i/--interval: '{}'. Must be a positive integer and less than {}.\n",
 					dumpCmds[dumpCmdType::DUMP_INTERVAL].val.c_str(), static_cast<long long>(MAX_INTERVAL.count()));
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			interval = std::chrono::duration_cast<std::chrono::milliseconds>(intervalSec);
 		} catch (const std::exception &) {
-			ERR("Invalid value for -i/--interval: '%s'. Must be a positive integer.\n",
+			ERR("Invalid value for -i/--interval: '{}'. Must be a positive integer.\n",
 				dumpCmds[dumpCmdType::DUMP_INTERVAL].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1749,7 +1749,7 @@ int cmdDump::run(arg_struct *args)
 			}
 
 			if (msIntervalValue < 10 || msIntervalValue > 1000) {
-				ERR("Invalid value for --ims: '%s'. Must be an integer between 10 and 1000.\n",
+				ERR("Invalid value for --ims: '{}'. Must be an integer between 10 and 1000.\n",
 					dumpCmds[dumpCmdType::DUMP_IMS].val.c_str());
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
@@ -1761,7 +1761,7 @@ int cmdDump::run(arg_struct *args)
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 		} catch (const std::exception &) {
-			ERR("Invalid value for --ims: '%s'. Must be an integer between 10 and 1000.\n",
+			ERR("Invalid value for --ims: '{}'. Must be an integer between 10 and 1000.\n",
 				dumpCmds[dumpCmdType::DUMP_IMS].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1778,7 +1778,7 @@ int cmdDump::run(arg_struct *args)
 			}
 
 			if (dumpTotalTime < 1 || dumpTotalTime > MAX_DUMP_TIME_SECONDS) {
-				ERR("Invalid value for --time: '%s'. Must be an integer between 1 and %lld.\n",
+				ERR("Invalid value for --time: '{}'. Must be an integer between 1 and {}.\n",
 					dumpCmds[dumpCmdType::DUMP_TIME].val.c_str(), (long long)MAX_DUMP_TIME_SECONDS);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
@@ -1795,7 +1795,7 @@ int cmdDump::run(arg_struct *args)
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 		} catch (const std::exception &) {
-			ERR("Invalid value for --time: '%s'. Must be an integer between 1 and %lld.\n",
+			ERR("Invalid value for --time: '{}'. Must be an integer between 1 and {}.\n",
 				dumpCmds[dumpCmdType::DUMP_TIME].val.c_str(), (long long)MAX_DUMP_TIME_SECONDS);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1805,7 +1805,7 @@ int cmdDump::run(arg_struct *args)
 
 	result = args->sm.findDevice(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
 		return result;
 	}
 
@@ -1841,21 +1841,21 @@ int cmdDump::run(arg_struct *args)
 	if (useFile) {
 		dumpFile.open(dumpCmds[dumpCmdType::DUMP_FILE].val, std::ios::out | std::ios::trunc);
 		if (!dumpFile.is_open()) {
-			ERR("Failed to open file '%s' for writing.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
+			ERR("Failed to open file '{}' for writing.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 		// Write header to file
 		dumpFile << header << std::endl;
 		if (!dumpCmds[dumpCmdType::DUMP_TIME].enabled && STDIN_ISATTY()) {
-			PRINT("Dump data to file %s. Press 'q' or ESC to stop dumping. On some systems, Ctrl+C may terminate the "
+			PRINT("Dump data to file {}. Press 'q' or ESC to stop dumping. On some systems, Ctrl+C may terminate the "
 				  "program immediately.\n",
 				  dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
 		} else {
-			PRINT("Dump data to file %s.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
+			PRINT("Dump data to file {}.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
 		}
 	} else {
 		// Print header to screen
-		PRINT("%s\n", header.c_str());
+		PRINT("{}\n", header.c_str());
 	}
 
 	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()] {};
@@ -1942,7 +1942,7 @@ int cmdDump::run(arg_struct *args)
 					dumpFile.flush(); // Ensure data is written immediately
 				} else {
 					// Print to screen
-					PRINT("%s, %8u, %s\n", timestampStr.c_str(), argsList[i * dumpArgs.size()]->d->index,
+					PRINT("{}, {:8}, {}\n", timestampStr.c_str(), argsList[i * dumpArgs.size()]->d->index,
 						  outputLine.c_str());
 				}
 			}
