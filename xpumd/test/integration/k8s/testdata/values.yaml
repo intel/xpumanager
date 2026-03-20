@@ -1,0 +1,54 @@
+gpuAccess: none
+
+service:
+  create: true
+
+config:
+  receivers:
+    intelxpu:
+      collection_interval: 2s
+      initial_delay: 0s
+      sampling_interval: 1s
+  service:
+    pipelines:
+      metrics:
+        exporters: [prometheus]
+
+extraEnv:
+  - name: LD_LIBRARY_PATH
+    value: /usr/local/lib/xpumd/level-zero-stub
+  - name: SYSMAN_STUB_CONFIG
+    value: /etc/level-zero-stub/stub.yaml
+
+# Native sidecar for handling the stub driver configuration:
+#   1. Copies the initial stub config from the ConfigMap into the emptyDir
+#   2. Sleeps indefinitely so the test can stream an updated config into it
+#   3. Startup probe ensures the main container starts only after the config is in place
+initContainers:
+  - name: stub-driver-config-writer
+    image: busybox:1.37.0
+    restartPolicy: Always
+    command: ["sh", "-c", "cp /etc/level-zero-stub-cm/stub.yaml /etc/level-zero-stub/stub.yaml && sleep inf"]
+    volumeMounts:
+      - name: stub-driver-config-cm
+        mountPath: /etc/level-zero-stub-cm
+        readOnly: true
+      - name: stub-driver-config
+        mountPath: /etc/level-zero-stub
+    startupProbe:
+      exec:
+        command: ["test", "-f", "/etc/level-zero-stub/stub.yaml"]
+      initialDelaySeconds: 1
+      periodSeconds: 1
+
+extraVolumeMounts:
+  - name: stub-driver-config
+    mountPath: /etc/level-zero-stub
+    readOnly: true
+
+extraVolumes:
+  - name: stub-driver-config
+    emptyDir: {}
+  - name: stub-driver-config-cm
+    configMap:
+      name: level-zero-stub-driver-config

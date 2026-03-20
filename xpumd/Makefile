@@ -8,7 +8,8 @@
 # Skip the main module at the repo root as it's currently empty and makes some checks to fail.
 GO_MODULES := $(shell (git ls-files '*/go.mod' 2> /dev/null || find -mindepth 2 -name go.mod) | xargs dirname)
 LEVEL_ZERO_GO_MODULES := $(foreach m,$(GO_MODULES),$(if $(findstring level-zero-go,$(m)),$(m)))
-XPUMD_GO_MODULES := $(filter-out $(LEVEL_ZERO_GO_MODULES),$(GO_MODULES))
+# Filter out level-zero-go and test/
+XPUMD_GO_MODULES := $(filter-out $(LEVEL_ZERO_GO_MODULES) $(filter test/%,$(GO_MODULES)),$(GO_MODULES))
 
 .PHONY: help
 help:
@@ -26,6 +27,9 @@ stats:
 # --- Build targets ---
 
 OTEL_VERSION ?= 0.153.0
+IMAGE_REPOSITORY ?= registry.local/xpumd
+IMAGE_TAG ?= latest
+IMAGE_PULL_POLICY ?= IfNotPresent
 
 .PHONY: build
 # Build xpumd + xpuinfo-cli
@@ -33,6 +37,10 @@ build:
 	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
 	go tool -modfile tools/go.mod builder --config=builder-config.yaml
 	go -C dist build github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
+
+.PHONY: docker-build
+docker-build:
+	docker build -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate
 generate: generate-bindings generate-mods generate-proto
@@ -75,10 +83,26 @@ test-daemon:
 	fi; \
 	echo "✓ All tests passed"
 
+
 .PHONY: test-bindings
 test-bindings:
 	@echo "Running Level-Zero Go bindings tests..."
 	make -C level-zero-go test
+
+.PHONY: test-integration-kind
+test-integration-kind: docker-build
+	scripts/run-integration-tests.sh \
+		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-tag=$(IMAGE_TAG) \
+		--kind-load-image
+
+.PHONY: test-integration-existing-cluster
+test-integration-existing-cluster:
+	scripts/run-integration-tests.sh \
+		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-tag=$(IMAGE_TAG) \
+		--use-existing-cluster \
+		--image-pull-policy=$(IMAGE_PULL_POLICY)
 
 .PHONY: golint
 golint:
