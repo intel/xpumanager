@@ -12,6 +12,9 @@ NOTE: Enable NFD ([Node Feature Discovery](https://kubernetes-sigs.github.io/nod
 / GPU node labeling when installing either GPU plugin or DRA driver, to avoid `Pending` daemon
 pods on cluster nodes that do not have Intel GPUs.
 
+For stub-driver or other non-GPU test deployments, the chart can also run with
+`gpuAccess=none`, which skips GPU resource requests entirely.
+
 [^1]: [Intel GPU plugin](https://intel.github.io/intel-device-plugins-for-kubernetes/cmd/gpu_plugin/README.html)
 [^2]: [Intel GPU resource driver](https://github.com/intel/intel-resource-drivers-for-kubernetes/tree/main/doc/gpu#readme)
 
@@ -22,6 +25,7 @@ Specify which type of Intel [GPU monitoring access](#other-values) is used in th
 * `i915`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
 * `xe`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
+* `none`: Do not request GPU resources. Useful for stub-driver testing on generic clusters.
 
 For example:
 
@@ -138,14 +142,18 @@ And add following option to chart install:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
+| extraEnv | list | `[]` | Extra environment variables for the xpumd container |
+| extraVolumeMounts | list | `[]` | Additional volume mounts for the xpumd container |
+| extraVolumes | list | `[]` | Additional volumes for the xpumd pod |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
-| gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin) |
+| gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `i915` / `xe` (K8s GPU plugin), `none` (no GPU resource request, useful for stub-driver testing) |
 | grafana.dashboards | bool | `false` | Install XPUMD dashboard(s) for Grafana |
 | grafana.namespace | string | `"monitoring"` | Namespace for Grafana install. Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used |
 | image.pullPolicy | string | `"Always"` | Image pull policy |
 | image.repository | string | `"ghcr.io/intel/xpumanager/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
+| initContainers | list | `[]` | Init containers to run |
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |

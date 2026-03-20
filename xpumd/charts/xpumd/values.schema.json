@@ -86,6 +86,21 @@
             },
             "additionalProperties": false
         },
+        "extraEnv": {
+            "description": "Extra environment variables for the xpumd container",
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env",
+            "type": "array"
+        },
+        "extraVolumeMounts": {
+            "description": "Additional volume mounts for the xpumd container",
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/volumeMounts",
+            "type": "array"
+        },
+        "extraVolumes": {
+            "description": "Additional volumes for the xpumd pod",
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/volumes",
+            "type": "array"
+        },
         "fullnameOverride": {
             "description": "Override the fully qualified app name",
             "type": "string"
@@ -99,12 +114,13 @@
             ]
         },
         "gpuAccess": {
-            "description": "method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin)",
+            "description": "method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `i915` / `xe` (K8s GPU plugin), `none` (no GPU resource request, useful for stub-driver testing)",
             "type": "string",
             "enum": [
                 "dra",
                 "i915",
-                "xe"
+                "xe",
+                "none"
             ]
         },
         "grafana": {
@@ -147,6 +163,11 @@
         "imagePullSecrets": {
             "description": "[Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod)",
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets",
+            "type": "array"
+        },
+        "initContainers": {
+            "description": "Init containers to run",
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers",
             "type": "array"
         },
         "nameOverride": {

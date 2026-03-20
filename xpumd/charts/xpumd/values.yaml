@@ -31,6 +31,18 @@ serviceAccount:
 # -- Annotations to add to the pod
 podAnnotations: {}
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
+# -- Extra environment variables for the xpumd container
+extraEnv: []
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/volumeMounts
+# -- Additional volume mounts for the xpumd container
+extraVolumeMounts: []
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/volumes
+# -- Additional volumes for the xpumd pod
+extraVolumes: []
+
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext
 # -- [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
 # NOTE: security settings control to what GPU metrics container has access to
@@ -40,6 +52,10 @@ podSecurityContextOverride: {}
 # -- [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container).
 # NOTE: security settings control to what GPU metrics container has access to
 securityContextOverride: {}
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers
+# -- Init containers to run
+initContainers: []
 
 # @schema additionalProperties:false
 service:
@@ -51,8 +67,8 @@ service:
   # -- Service port
   port: 8080
 
-# @schema enum: [dra, i915, xe]
-# -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver) `i915` / `xe` (K8s GPU plugin)
+# @schema enum: [dra, i915, xe, none]
+# -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `i915` / `xe` (K8s GPU plugin), `none` (no GPU resource request, useful for stub-driver testing)
 gpuAccess: xe
 
 # @schema additionalProperties:false
