@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Trivy Fs Scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           exit-code: 1
           scan-type: fs
@@ -54,7 +54,7 @@ jobs:
           output: trivy-report.json
 
       - name: Print Trivy report in human-readable format
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: convert
           scanners: vuln,secret
@@ -62,7 +62,7 @@ jobs:
           format: table
 
       - name: Convert Trivy report to CSV format
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: convert
           image-ref: trivy-report.json
@@ -91,7 +91,7 @@ jobs:
         run: ./xpumd/scripts/trivy-warmup.sh
 
       - name: Run Trivy License Scan
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         env:
           TRIVY_IGNORED_LICENSES: MPL-2.0
         with:
