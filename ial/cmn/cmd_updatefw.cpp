@@ -19,23 +19,23 @@ static ze_result_t validateFirmwareImageFile(const std::string &filePath)
 {
 	struct stat fileStat;
 	if (stat(filePath.c_str(), &fileStat) != 0) {
-		ERR("Error: Invalid firmware file path '%s': %s.\n", filePath.c_str(), std::strerror(errno));
+		ERR("Error: Invalid firmware file path '{}': {}.\n", filePath.c_str(), std::strerror(errno));
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	if (!(fileStat.st_mode & S_IFREG)) {
-		ERR("Error: Firmware file '%s' is not a regular file.\n", filePath.c_str());
+		ERR("Error: Firmware file '{}' is not a regular file.\n", filePath.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	if (fileStat.st_size <= 0) {
-		ERR("Error: Firmware file '%s' is empty.\n", filePath.c_str());
+		ERR("Error: Firmware file '{}' is empty.\n", filePath.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file.good()) {
-		ERR("Error: Firmware file '%s' is not readable.\n", filePath.c_str());
+		ERR("Error: Firmware file '{}' is not readable.\n", filePath.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -150,12 +150,12 @@ int cmdUpdateFW::run(arg_struct *args)
 			} else if (STRCASECMP("recovery", longOpts[optionIndex].name) == 0) {
 				fwInfo.recoveryMode = true;
 			} else {
-				ERR("Unknown command: %s\n", longOpts[optionIndex].name);
+				ERR("Unknown command: {}\n", longOpts[optionIndex].name);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -165,7 +165,7 @@ int cmdUpdateFW::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -189,7 +189,7 @@ int cmdUpdateFW::run(arg_struct *args)
 
 	result = args->sm.findDevice(fwInfo.deviceId.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", fwInfo.deviceId.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", fwInfo.deviceId.c_str());
 		return result;
 	}
 
@@ -220,13 +220,13 @@ int cmdUpdateFW::run(arg_struct *args)
 
 				firmware *fw = devPtr->dev->getFirmware();
 				if (fw == nullptr) {
-					ERR("Error: Firmware pointer not found (device %u).\n", devPtr->index);
+					ERR("Error: Firmware pointer not found (device {}).\n", devPtr->index);
 					ze_result_t expected = ZE_RESULT_SUCCESS;
 					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 					return;
 				}
 				if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
-					ERR("Error: Failed to update firmware for device %u.\n", devPtr->index);
+					ERR("Error: Failed to update firmware for device {}.\n", devPtr->index);
 					ze_result_t expected = ZE_RESULT_SUCCESS;
 					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 					return;

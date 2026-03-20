@@ -55,7 +55,7 @@ uint8_t pldm::discoveryCmd(uint8_t cmd, uint8_t size, uint8_t pldmVersionType)
 		pldmDiscoveryGetCmdPayload(pldmVersionType, pldmCmdLen);
 	} else {
 		if (pldmDiscoveryFillPayload(cmd, pldmCmdLen) != PLDM_SUCCESS) {
-			ERR("pldm Discovery : Fill payload failed for command 0x%02x\n", cmd);
+			ERR("pldm Discovery : Fill payload failed for command 0x{:02x}\n", cmd);
 			return PLDM_ERROR;
 		}
 	}
@@ -235,9 +235,9 @@ uint8_t pldm::pldmDiscInitialize()
 	// GET VERSION
 	DBG(">>> Send GetVersion\n");
 	for (int i = 0; i < mPldmRespInfo.totalSupportedTypes; i++) {
-		DBG("PLDM_GETVERSION for 0x%02x\n", versionInfo[i].type);
+		DBG("PLDM_GETVERSION for 0x{:02x}\n", versionInfo[i].type);
 		if (discoveryCmd(PLDM_GETVERSION, PLDM_GETVERSION_SIZE, versionInfo[i].type) != PLDM_SUCCESS) {
-			ERR("pldm Discovery : GETVERSION command failed for type 0x%02x\n", versionInfo[i].type);
+			ERR("pldm Discovery : GETVERSION command failed for type 0x{:02x}\n", versionInfo[i].type);
 			return PLDM_ERROR;
 		}
 	}
@@ -250,9 +250,9 @@ uint8_t pldm::pldmDiscInitialize()
 		if (versionInfo[i].type == 0x07) {
 			continue;
 		}
-		DBG("PLDM_GETCOMMANDS for 0x%02x\n", versionInfo[i].type);
+		DBG("PLDM_GETCOMMANDS for 0x{:02x}\n", versionInfo[i].type);
 		if (discoveryCmd(PLDM_GETCOMMANDS, PLDM_GETCOMMANDS_SIZE, versionInfo[i].type) != PLDM_SUCCESS) {
-			ERR("pldm Discovery : GETCOMMANDS command failed for type 0x%02x\n", versionInfo[i].type);
+			ERR("pldm Discovery : GETCOMMANDS command failed for type 0x{:02x}\n", versionInfo[i].type);
 			return PLDM_ERROR;
 		}
 	}

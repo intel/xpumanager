@@ -69,7 +69,7 @@ int cmdLogs::run(arg_struct *args)
 				fileName = optarg;
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -79,7 +79,7 @@ int cmdLogs::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -93,24 +93,24 @@ int cmdLogs::run(arg_struct *args)
 
 	// Check to make sure that the file doesn't exist in the current folder
 	if (std::filesystem::exists(fileName)) {
-		ERR("File '%s' already exists. Please choose a different name or remove the existing file.\n",
+		ERR("File '{}' already exists. Please choose a different name or remove the existing file.\n",
 			fileName.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	DBG("fileName: %s, jsonOutput: %d", fileName.c_str(), jsonOutput);
+	DBG("fileName: {}, jsonOutput: {}", fileName.c_str(), jsonOutput);
 	result = args->sm.getLogs(fileName);
 	if (result == ZE_RESULT_SUCCESS) {
 		if (jsonOutput) {
-			PRINT("{\n    \"status\": \"OK\"\n}\n");
+			PRINT("{{\n    \"status\": \"OK\"\n}}\n");
 		} else {
-			PRINT("Logs collected successfully in file: %s\n", fileName.c_str());
+			PRINT("Logs collected successfully in file: {}\n", fileName.c_str());
 		}
 	} else {
 		if (jsonOutput) {
-			PRINT("{\n    \"errno\": %d,\n    \"error\": \"Error\"\n}\n", result);
+			PRINT("{{\n    \"errno\": {},\n    \"error\": \"Error\"\n}}\n", result);
 		} else {
-			ERR("Error collecting logs in file: %s, error code: %d\n", fileName.c_str(), result);
+			ERR("Error collecting logs in file: {}, error code: {}\n", fileName.c_str(), result);
 		}
 	}
 

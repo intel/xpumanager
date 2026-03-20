@@ -45,7 +45,7 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 	// Enumerate diagnostic test suites
 	ze_result_t result = zesDeviceEnumDiagnosticTestSuites(device, &testSuiteCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || testSuiteCount == 0) {
-		ERR("Failed to enumerate diagnostic test suites or no test suites found: 0x%X (%s)\n", result,
+		ERR("Failed to enumerate diagnostic test suites or no test suites found: 0x{:X} ({})\n", result,
 			l0_error_to_string(result));
 		return result;
 	}
@@ -53,11 +53,11 @@ ze_result_t diagnostic::enumDiag(zes_device_handle_t device)
 	testSuites = new zes_diag_handle_t[testSuiteCount];
 	result = zesDeviceEnumDiagnosticTestSuites(device, &testSuiteCount, testSuites);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get diagnostic test suite handles: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get diagnostic test suite handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("  - Device has %u diagnostic test suites:\n", testSuiteCount);
+	DBG("  - Device has {} diagnostic test suites:\n", testSuiteCount);
 	return result;
 }
 
@@ -77,14 +77,14 @@ ze_result_t diagnostic::getProperties(zes_diag_handle_t testSuite)
 	zes_diag_properties_t diagProperties = {};
 	result = zesDiagnosticsGetProperties(testSuite, &diagProperties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get diagnostic test suite properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get diagnostic test suite properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("    - Test Suite Name: %s\n", diagProperties.name);
-	DBG("    - Type : %d\n", diagProperties.stype);
-	DBG("    - have Tests : %d\n", diagProperties.haveTests);
-	DBG("    - onSubDevice : %d\n", diagProperties.onSubdevice);
-	DBG("    - subdeviceId : %u\n", diagProperties.subdeviceId);
+	DBG("    - Test Suite Name: {}\n", diagProperties.name);
+	DBG("    - Type : {}\n", diagProperties.stype);
+	DBG("    - have Tests : {}\n", diagProperties.haveTests);
+	DBG("    - onSubDevice : {}\n", diagProperties.onSubdevice);
+	DBG("    - subdeviceId : {}\n", diagProperties.subdeviceId);
 	return result;
 }
 
@@ -173,13 +173,13 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 
 	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	result = d->dev->getComputeProps(d->deviceHdl, &zeComputeProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -187,7 +187,7 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 	std::vector<uint8_t> binaryFile;
 	ze_result_t ret = loadBinaryFile(fileName, &binaryFile);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
+		ERR("Failed to load binary file: {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 	ze_module_handle_t moduleHandle;
@@ -239,7 +239,7 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 
 	ret = zeCommandListAppendMemoryCopy(commandList, deviceOutputBuffer, srcPtr, srcSize, nullptr, 0, nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't append memory copy: {}\n", l0_error_to_string(ret));
 		memoryFree(context, deviceInputValue);
 		memoryFree(context, deviceOutputBuffer);
 		moduleDestroy(moduleHandle);
@@ -248,7 +248,7 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 
 	ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't append barrier: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't append barrier: {}\n", l0_error_to_string(ret));
 		memoryFree(context, deviceInputValue);
 		memoryFree(context, deviceOutputBuffer);
 		moduleDestroy(moduleHandle);
@@ -257,7 +257,7 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 
 	ret = zeCommandListClose(commandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't close command list: {}\n", l0_error_to_string(ret));
 		memoryFree(context, deviceInputValue);
 		memoryFree(context, deviceOutputBuffer);
 		moduleDestroy(moduleHandle);
@@ -280,17 +280,17 @@ ze_result_t diagnostic::computationTest(devInfo *d, std::size_t flopsPerWorkItem
 	//	all_gflops[i] = std::max(all_gflops[i], current);
 	ret = zeKernelDestroy(computeSpV1);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+		ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 	}
 
 	ret = zeCommandListDestroy(commandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error destroying command list: %s\n", l0_error_to_string(ret));
+		ERR("Error destroying command list: {}\n", l0_error_to_string(ret));
 	}
 
 	ret = zeCommandQueueDestroy(commandQueue);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error destroying command queue: %s\n", l0_error_to_string(ret));
+		ERR("Error destroying command queue: {}\n", l0_error_to_string(ret));
 	}
 
 	memoryFree(context, deviceInputValue);
@@ -328,7 +328,7 @@ ze_result_t diagnostic::moduleCreate(const ze_context_handle_t &contextHandle, z
 	ret = zeModuleCreate(contextHandle, zeDevice, &moduleDescription, moduleHandle, nullptr);
 
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't create module: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't create module: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -346,7 +346,7 @@ void diagnostic::moduleDestroy(ze_module_handle_t hModule)
 {
 	ze_result_t ret = zeModuleDestroy(hModule);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't destroy module: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't destroy module: {}\n", l0_error_to_string(ret));
 	}
 }
 
@@ -375,7 +375,7 @@ ze_result_t diagnostic::memoryAlloc(const ze_context_handle_t contextHandle, ze_
 	ze_result_t ret;
 	ret = zeMemAllocDevice(contextHandle, &deviceDesc, size, alignment, zeDevice, ptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't allocate memory: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -404,7 +404,7 @@ ze_result_t diagnostic::memoryAllocHost(const ze_context_handle_t contextHandle,
 
 	ret = zeMemAllocHost(contextHandle, &hostDesc, size, alignment, ptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't allocate memory: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -440,7 +440,7 @@ ze_result_t diagnostic::memoryAllocShared(const ze_context_handle_t &context, ze
 
 	ret = zeMemAllocShared(context, &deviceDescOutput, &hostDescOutput, size, alignment, zeDevice, ptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't allocate memory: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't allocate memory: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -471,7 +471,7 @@ ze_result_t diagnostic::commandListCreate(const ze_context_handle_t contextHandl
 	ze_result_t ret;
 	ret = zeCommandListCreate(contextHandle, zeDevice, &commandListDescription, phCommandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't create command list: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't create command list: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -506,7 +506,7 @@ ze_result_t diagnostic::commandQueueCreate(const ze_context_handle_t contextHand
 	ze_result_t ret;
 	ret = zeCommandQueueCreate(contextHandle, zeDevice, &commandQueueDescription, phCommandQueue);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't create command queue: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't create command queue: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -571,7 +571,7 @@ ze_result_t diagnostic::loadBinaryFile(const std::string &filePath, std::vector<
 {
 	std::string folder = FINDRESOURCEFILE(std::string(XPUM_RESOURCES_DIR) + std::string("kernels/"));
 	if (!fileExists(folder)) {
-		ERR("Kernel folder does not exist: %s\n", folder.c_str());
+		ERR("Kernel folder does not exist: {}\n", folder.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -579,7 +579,7 @@ ze_result_t diagnostic::loadBinaryFile(const std::string &filePath, std::vector<
 	std::ifstream stream(absoluteFilePath, std::ios::in | std::ios::binary);
 
 	if (!stream.good()) {
-		ERR("Failed to open kernel file: %s\n", absoluteFilePath.c_str());
+		ERR("Failed to open kernel file: {}\n", absoluteFilePath.c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -609,7 +609,7 @@ ze_result_t diagnostic::commandQueueExecuteCommandLists(ze_command_queue_handle_
 {
 	ze_result_t ret = zeCommandQueueExecuteCommandLists(hCommandQueue, 1, &hCommandList, nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't execute command lists: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't execute command lists: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -627,7 +627,7 @@ ze_result_t diagnostic::commandQueueSynchronize(ze_command_queue_handle_t hComma
 {
 	ze_result_t ret = zeCommandQueueSynchronize(hCommandQueue, UINT64_MAX);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't synchronize command queue: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't synchronize command queue: {}\n", l0_error_to_string(ret));
 	}
 
 	return ret;
@@ -646,7 +646,7 @@ ze_result_t diagnostic::commandListReset(ze_command_list_handle_t hCommandList)
 {
 	ze_result_t ret = zeCommandListReset(hCommandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't reset command list: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't reset command list: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -673,7 +673,7 @@ ze_result_t diagnostic::kernelCreate(ze_module_handle_t hModule, std::string nam
 
 	ze_result_t ret = zeKernelCreate(hModule, &testFunctionDescription, hKernel);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error creating kernel: %s\n", l0_error_to_string(ret));
+		ERR("Error creating kernel: {}\n", l0_error_to_string(ret));
 	}
 	return ret;
 }
@@ -692,7 +692,7 @@ ze_result_t diagnostic::memoryFree(const ze_context_handle_t &contextHandle, con
 {
 	ze_result_t ret = zeMemFree(contextHandle, const_cast<void *>(ptr));
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error freeing memory: %s\n", l0_error_to_string(ret));
+		ERR("Error freeing memory: {}\n", l0_error_to_string(ret));
 	}
 
 	return ret;
@@ -721,12 +721,12 @@ ze_result_t diagnostic::setupFunction(ze_module_handle_t moduleHandle, ze_kernel
 
 	ret = zeKernelSetArgumentValue(function, 0, sizeof(input), &input);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error setting kernel argument value: %s\n", l0_error_to_string(ret));
+		ERR("Error setting kernel argument value: {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 	ret = zeKernelSetArgumentValue(function, 1, sizeof(output), &output);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error setting kernel argument value: %s\n", l0_error_to_string(ret));
+		ERR("Error setting kernel argument value: {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 	return ret;
@@ -748,7 +748,7 @@ void diagnostic::commandListAppendLaunchKernel(ze_command_list_handle_t hCommand
 {
 	ze_result_t ret = zeCommandListAppendLaunchKernel(hCommandList, hKernel, pLaunchFuncArgs, nullptr, 0, nullptr);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error appending launch kernel: %s\n", l0_error_to_string(ret));
+		ERR("Error appending launch kernel: {}\n", l0_error_to_string(ret));
 	}
 }
 
@@ -774,7 +774,7 @@ long double diagnostic::runKernel(ze_command_queue_handle_t commandQueue, ze_com
 	ze_result_t ret = zeKernelSetGroupSize(function, workgroupInfo.group_size_x, workgroupInfo.group_size_y,
 										   workgroupInfo.group_size_z);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Error setting kernel group size: %s\n", l0_error_to_string(ret));
+		ERR("Error setting kernel group size: {}\n", l0_error_to_string(ret));
 		return -1;
 	}
 
@@ -786,7 +786,7 @@ long double diagnostic::runKernel(ze_command_queue_handle_t commandQueue, ze_com
 
 	ret = zeCommandListClose(commandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+		ERR("Couldn't close command list: {}\n", l0_error_to_string(ret));
 		return -1;
 	}
 
@@ -879,7 +879,7 @@ ze_result_t diagnostic::calculatePowerConsumption(devInfo *d, int &totalPowerVal
 		}
 	}
 	totalPowerValue = std::max(currentDevicePowerValueSum, currentSubDevicePowerValueSum);
-	DBG("update peak power value: %d\n", totalPowerValue);
+	DBG("update peak power value: {}\n", totalPowerValue);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -955,7 +955,7 @@ ze_result_t diagnostic::pcieBandwidthTest(devInfo *d, long double &totalBandwidt
 		std::size_t bufferSize = elementSize * size;
 		ret = zeCommandListAppendMemoryCopy(commandList, deviceBuffer, hostBuffer, bufferSize, nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
+			ERR("Couldn't append memory copy: {}\n", l0_error_to_string(ret));
 			memoryFree(context, deviceBuffer);
 			memoryFree(context, hostBuffer);
 			return ret;
@@ -963,7 +963,7 @@ ze_result_t diagnostic::pcieBandwidthTest(devInfo *d, long double &totalBandwidt
 
 		ret = zeCommandListClose(commandList);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+			ERR("Couldn't close command list: {}\n", l0_error_to_string(ret));
 			memoryFree(context, deviceBuffer);
 			memoryFree(context, hostBuffer);
 			return ret;
@@ -981,7 +981,7 @@ ze_result_t diagnostic::pcieBandwidthTest(devInfo *d, long double &totalBandwidt
 
 		ret = zeCommandListDestroy(commandList);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying command list: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying command list: {}\n", l0_error_to_string(ret));
 		}
 		ret = zeCommandQueueDestroy(commandQueue);
 		memoryFree(context, deviceBuffer);
@@ -1033,7 +1033,7 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 	ze_command_list_handle_t commandList = nullptr;
 	ret = commandListCreate(context, d->deviceHdl, 0, &commandList, 0);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to create command list : %s\n", l0_error_to_string(ret));
+		ERR("Failed to create command list : {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 	for (uint64_t dispatchId = 0; dispatchId < numberOfDispatch; dispatchId++) {
@@ -1044,17 +1044,17 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 		kernelCreate(module, testKernelNames[static_cast<unsigned int>(dispatchId)], &testFunction);
 		ret = zeKernelSetGroupSize(testFunction, workgroupSizeX, 1, 1);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set kernel group size: %s\n", l0_error_to_string(ret));
+			ERR("Failed to set kernel group size: {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 		ret = zeKernelSetArgumentValue(testFunction, 0, sizeof(srcAllocation), &srcAllocation);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set kernel argument value : %s\n", l0_error_to_string(ret));
+			ERR("Failed to set kernel argument value : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 		ret = zeKernelSetArgumentValue(testFunction, 1, sizeof(dstAllocation), &dstAllocation);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to set kernel argument value : %s\n", l0_error_to_string(ret));
+			ERR("Failed to set kernel argument value : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 		uint32_t groupCountX = static_cast<uint32_t>(allocationCount / workgroupSizeX);
@@ -1064,13 +1064,13 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 			zeCommandListAppendMemoryFill(commandList, srcAllocation, &initValue2, sizeof(uint8_t),
 										  static_cast<size_t>(allocationCount) * sizeof(uint8_t), nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to fill command list append memory : %s\n", l0_error_to_string(ret));
+			ERR("Failed to fill command list append memory : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
 		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to append command list barrier: %s\n", l0_error_to_string(ret));
+			ERR("Failed to append command list barrier: {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
@@ -1078,20 +1078,20 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 			zeCommandListAppendMemoryFill(commandList, dstAllocation, &initValue3, sizeof(uint8_t),
 										  static_cast<size_t>(allocationCount) * sizeof(uint8_t), nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to fill command list append memory : %s\n", l0_error_to_string(ret));
+			ERR("Failed to fill command list append memory : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
 		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to append command list barrier : %s\n", l0_error_to_string(ret));
+			ERR("Failed to append command list barrier : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
 		commandListAppendLaunchKernel(commandList, testFunction, &threadGroupDimensions);
 		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to append command list barrier: %s\n", l0_error_to_string(ret));
+			ERR("Failed to append command list barrier: {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
@@ -1099,13 +1099,13 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 			commandList, dataOut[static_cast<unsigned int>(dispatchId)].data(), dstAllocation,
 			dataOut[static_cast<unsigned int>(dispatchId)].size() * sizeof(uint8_t), nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to copy command list append memory : %s\n", l0_error_to_string(ret));
+			ERR("Failed to copy command list append memory : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
 		ret = zeCommandListAppendBarrier(commandList, nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to append command list barrier : %s\n", l0_error_to_string(ret));
+			ERR("Failed to append command list barrier : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
@@ -1113,14 +1113,14 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 	}
 	ret = zeCommandListClose(commandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to close command list : %s\n", l0_error_to_string(ret));
+		ERR("Failed to close command list : {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 
 	ze_command_queue_handle_t commandQueue;
 	ret = commandQueueCreate(context, d->deviceHdl, 0, 0, &commandQueue, ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to create command queue : %s\n", l0_error_to_string(ret));
+		ERR("Failed to create command queue : {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 
@@ -1128,20 +1128,20 @@ ze_result_t diagnostic::dispatchKernelsForMemoryTest(
 	commandQueueSynchronize(commandQueue);
 	ret = zeCommandQueueDestroy(commandQueue);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to destroy command queue  : %s\n", l0_error_to_string(ret));
+		ERR("Failed to destroy command queue  : {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 
 	ret = zeCommandListDestroy(commandList);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to destroy command list : %s\n", l0_error_to_string(ret));
+		ERR("Failed to destroy command list : {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 
 	for (uint64_t dispatchId = 0; dispatchId < testFunctions.size(); dispatchId++) {
 		ret = zeKernelDestroy(testFunctions[static_cast<unsigned int>(dispatchId)]);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to run kernel destroy : %s\n", l0_error_to_string(ret));
+			ERR("Failed to run kernel destroy : {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 	}
@@ -1203,7 +1203,7 @@ ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
 		for (auto &memoryType : memoryTypes) {
 			ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 			if (ret != ZE_RESULT_SUCCESS) {
-				ERR("Failed to get device properties : %s\n", l0_error_to_string(ret));
+				ERR("Failed to get device properties : {}\n", l0_error_to_string(ret));
 				return ret;
 			}
 			uint64_t targetTestMemorySize = zeDevProp.maxMemAllocSize;
@@ -1296,21 +1296,21 @@ ze_result_t diagnostic::peformanceMemoryAllocation(devInfo *d)
 			std::vector<uint8_t> binaryFile;
 			ret = loadBinaryFile("test_multiple_memory_allocations.spv", &binaryFile);
 			if (ret != ZE_RESULT_SUCCESS) {
-				ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
+				ERR("Failed to load binary file: {}\n", l0_error_to_string(ret));
 				freeResources(context, inputAllocations, outputAllocations, NULL);
 				return ret;
 			}
 			ze_module_handle_t moduleHandle = nullptr;
 			ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
 			if (ret != ZE_RESULT_SUCCESS) {
-				ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
+				ERR("Failed to run memory allocation test : {}\n", l0_error_to_string(ret));
 				freeResources(context, inputAllocations, outputAllocations, NULL);
 				return ret;
 			}
 			ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
 											   testKernelNames, numberOfDispatch, allocationCount, context);
 			if (ret != ZE_RESULT_SUCCESS) {
-				ERR("Failed to run dispatch kernels for memory test : %s\n", l0_error_to_string(ret));
+				ERR("Failed to run dispatch kernels for memory test : {}\n", l0_error_to_string(ret));
 				freeResources(context, inputAllocations, outputAllocations, moduleHandle);
 				return ret;
 			}
@@ -1349,7 +1349,7 @@ ze_result_t diagnostic::memoryErrorTest(devInfo *d, int &errorCount)
 
 	ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties : %s\n", l0_error_to_string(ret));
+		ERR("Failed to get device properties : {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 	// Retrieves target test memory size from device max mem allocation size and real host memory size
@@ -1403,7 +1403,7 @@ ze_result_t diagnostic::memoryErrorTest(devInfo *d, int &errorCount)
 	ze_module_handle_t moduleHandle = nullptr;
 	ret = moduleCreate(context, d->deviceHdl, binaryFile, &moduleHandle);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to run memory allocation test : %s\n", l0_error_to_string(ret));
+		ERR("Failed to run memory allocation test : {}\n", l0_error_to_string(ret));
 		for (auto eachAllocation : inputAllocations) {
 			memoryFree(context, eachAllocation);
 		}
@@ -1416,7 +1416,7 @@ ze_result_t diagnostic::memoryErrorTest(devInfo *d, int &errorCount)
 	ret = dispatchKernelsForMemoryTest(d, moduleHandle, inputAllocations, outputAllocations, dataOutVector,
 									   testKernelNames, numberOfDispatch, allocationCount, context);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Failed to run dispatch kernels for memory test : %s\n", l0_error_to_string(ret));
+		ERR("Failed to run dispatch kernels for memory test : {}\n", l0_error_to_string(ret));
 		for (auto eachAllocation : inputAllocations) {
 			memoryFree(context, eachAllocation);
 		}
@@ -1545,13 +1545,13 @@ ze_result_t diagnostic::memoryBandwidthTest(devInfo *d, std::vector<long double>
 
 		ret = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get device properties: 0x%X (%s)\n", ret, l0_error_to_string(ret));
+			ERR("Failed to get device properties: 0x{:X} ({})\n", ret, l0_error_to_string(ret));
 			return ret;
 		}
 
 		ret = d->dev->getComputeProps(d->deviceHdl, &zeComputeProp);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get device properties: 0x%X (%s)\n", ret, l0_error_to_string(ret));
+			ERR("Failed to get device properties: 0x{:X} ({})\n", ret, l0_error_to_string(ret));
 			return ret;
 		}
 
@@ -1559,7 +1559,7 @@ ze_result_t diagnostic::memoryBandwidthTest(devInfo *d, std::vector<long double>
 		ze_module_handle_t moduleHandle;
 		ret = loadBinaryFile("ze_global_bw.spv", &binaryFile);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Failed to load binary file: %s\n", l0_error_to_string(ret));
+			ERR("Failed to load binary file: {}\n", l0_error_to_string(ret));
 			return ret;
 		}
 
@@ -1609,21 +1609,21 @@ ze_result_t diagnostic::memoryBandwidthTest(devInfo *d, std::vector<long double>
 		ret = zeCommandListAppendMemoryCopy(copyCommandList, inputBuf, arr.data(), (arr.size() * sizeof(float)),
 											nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Couldn't append memory copy: %s\n", l0_error_to_string(ret));
+			ERR("Couldn't append memory copy: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeCommandListAppendBarrier(copyCommandList, nullptr, 0, nullptr);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Couldn't append barrier: %s\n", l0_error_to_string(ret));
+			ERR("Couldn't append barrier: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeCommandListClose(copyCommandList);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Couldn't close command list: %s\n", l0_error_to_string(ret));
+			ERR("Couldn't close command list: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
@@ -1690,98 +1690,98 @@ ze_result_t diagnostic::memoryBandwidthTest(devInfo *d, std::vector<long double>
 
 		ret = zeKernelDestroy(localOffsetV1);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(globalOffsetV1);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(localOffsetV2);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(globalOffsetV2);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(localOffsetV4);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(globalOffsetV4);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(localOffsetV8);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(globalOffsetV8);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(localOffsetV16);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeKernelDestroy(globalOffsetV16);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying kernel: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying kernel: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeCommandListDestroy(commandList);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying command list: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying command list: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeCommandQueueDestroy(commandQueue);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying command queue: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying command queue: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeCommandListDestroy(copyCommandList);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying copy command list: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying copy command list: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
 
 		ret = zeCommandQueueDestroy(copyCommandQueue);
 		if (ret != ZE_RESULT_SUCCESS) {
-			ERR("Error destroying copy command queue: %s\n", l0_error_to_string(ret));
+			ERR("Error destroying copy command queue: {}\n", l0_error_to_string(ret));
 			freeResource(context, inputBuf, outputBuf, moduleHandle);
 			return ret;
 		}
@@ -1811,22 +1811,22 @@ int diagnostic::getTests(zes_diag_handle_t testSuite)
 	// Get tests within the diagnostic test suite
 	ze_result_t result = zesDiagnosticsGetTests(testSuite, &testCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get diagnostic tests count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get diagnostic tests count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return 0;
 	}
 
 	std::vector<zes_diag_test_t> tests(testCount);
 	result = zesDiagnosticsGetTests(testSuite, &testCount, tests.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get diagnostic tests: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get diagnostic tests: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return 0;
 	}
 
-	DBG("    - Test Suite has %u tests:\n", testCount);
+	DBG("    - Test Suite has {} tests:\n", testCount);
 
 	for (const auto &test : tests) {
-		DBG("      - Test Index: %u\n", test.index);
-		DBG("      - Test Name: %s\n", test.name);
+		DBG("      - Test Index: {}\n", test.index);
+		DBG("      - Test Name: {}\n", test.name);
 	}
 	return testSuiteCount;
 }
@@ -1847,7 +1847,7 @@ ze_result_t diagnostic::runTests(zes_diag_handle_t testSuite, uint32_t testCount
 	// Run diagnostic tests
 	ze_result_t result = zesDiagnosticsRunTests(testSuite, 0, testCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to run diagnostic tests: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to run diagnostic tests: 0x{:X} ({})\n", result, l0_error_to_string(result));
 	} else {
 		DBG("    - Diagnostic tests run successfully.\n");
 	}

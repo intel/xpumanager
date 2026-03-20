@@ -35,18 +35,18 @@ ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumMemoryModules(device, &memoryModulesCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || memoryModulesCount == 0) {
-		ERR("Failed to enumerate Memory modules. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate Memory modules. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	memoryModules = new zes_mem_handle_t[memoryModulesCount];
 	result = zesDeviceEnumMemoryModules(device, &memoryModulesCount, memoryModules);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Memory modules. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory modules. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Found %u memory modules\n", memoryModulesCount);
+	DBG("Found {} memory modules\n", memoryModulesCount);
 	return result;
 }
 
@@ -66,7 +66,7 @@ ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties
 {
 	ze_result_t result = zesMemoryGetProperties(memhandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Memory properties. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -139,7 +139,7 @@ ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties
 		break;
 	}
 
-	DBG("Subdevice ID: %u\n", properties->subdeviceId);
+	DBG("Subdevice ID: {}\n", properties->subdeviceId);
 	DBG("Location: ");
 	switch (properties->location) {
 	case ZES_MEM_LOC_SYSTEM:
@@ -152,9 +152,9 @@ ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties
 		DBG("Unknown\n");
 		break;
 	}
-	DBG("Physical size: %" PRIu64 " bytes\n", properties->physicalSize);
-	DBG("Bus width: %d bits\n", properties->busWidth);
-	DBG("Number of channels: %d\n", properties->numChannels);
+	DBG("Physical size: {} bytes\n", properties->physicalSize);
+	DBG("Bus width: {} bits\n", properties->busWidth);
+	DBG("Number of channels: {}\n", properties->numChannels);
 
 	return result;
 }
@@ -174,13 +174,13 @@ ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 {
 	ze_result_t result = zesMemoryGetState(memhandle, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Memory state. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory state. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Memory state retrieved successfully.\n");
-	DBG("Free memory: %" PRIu64 " bytes\n", state->free);
-	DBG("Size: %" PRIu64 " bytes\n", state->size);
+	DBG("Free memory: {} bytes\n", state->free);
+	DBG("Size: {} bytes\n", state->size);
 	DBG("Health: ");
 	switch (state->health) {
 	case ZES_MEM_HEALTH_OK:
@@ -218,15 +218,15 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t
 {
 	ze_result_t result = zesMemoryGetBandwidth(memhandle, bandwidth);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Memory bandwidth. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Memory bandwidth. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Memory bandwidth retrieved successfully.\n");
-	DBG("Read counter: %" PRIu64 " bytes\n", bandwidth->readCounter);
-	DBG("Write counter: %" PRIu64 " bytes\n", bandwidth->writeCounter);
-	DBG("Max bandwidth: %" PRIu64 " bytes/sec\n", bandwidth->maxBandwidth);
-	DBG("Timestamp: %" PRIu64 " ns\n", bandwidth->timestamp);
+	DBG("Read counter: {} bytes\n", bandwidth->readCounter);
+	DBG("Write counter: {} bytes\n", bandwidth->writeCounter);
+	DBG("Max bandwidth: {} bytes/sec\n", bandwidth->maxBandwidth);
+	DBG("Timestamp: {} ns\n", bandwidth->timestamp);
 
 	return result;
 }
@@ -255,7 +255,7 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory state for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		*size += state.size;
@@ -287,16 +287,16 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory state for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		if (state.health == ZES_MEM_HEALTH_CRITICAL || state.health == ZES_MEM_HEALTH_REPLACE) {
 			*health = state.health;
-			DBG("Memory health is critical or replace for module %u.\n", i);
+			DBG("Memory health is critical or replace for module {}.\n", i);
 			return result;
 		} else if (state.health == ZES_MEM_HEALTH_DEGRADED) {
 			*health = ZES_MEM_HEALTH_DEGRADED;
-			DBG("Memory health is degraded for module %u.\n", i);
+			DBG("Memory health is degraded for module {}.\n", i);
 			return result;
 		} else if (state.health == ZES_MEM_HEALTH_OK) {
 			// Only in this case we continue the for loop because the health of this module is OK
@@ -308,10 +308,10 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 			// This is a design choice to ensure we report the most severe health status
 			// across all memory modules.
 			*health = ZES_MEM_HEALTH_OK;
-			DBG("Memory health is OK for module %u.\n", i);
+			DBG("Memory health is OK for module {}.\n", i);
 		} else {
 			*health = ZES_MEM_HEALTH_UNKNOWN;
-			DBG("Memory health is unknown for module %u.\n", i);
+			DBG("Memory health is unknown for module {}.\n", i);
 			return result;
 		}
 	}
@@ -342,10 +342,10 @@ ze_result_t memory::getMemoryChannels(uint32_t *channels)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory properties for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Memory properties for module %u: numChannels=%d\n", i, properties.numChannels);
+		DBG("Memory properties for module {}: numChannels={}\n", i, properties.numChannels);
 		*channels = properties.numChannels;
 	}
 	return result;
@@ -375,10 +375,10 @@ ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory properties for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Memory properties for module %u: busWidth=%d\n", i, properties.busWidth);
+		DBG("Memory properties for module {}: busWidth={}\n", i, properties.busWidth);
 		*busWidth = properties.busWidth;
 	}
 	return result;
@@ -415,12 +415,12 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory properties for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory state for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -480,7 +480,7 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBa
 
 		result = getBandwidth(memoryModules[i], &bandwidth);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory bandwidth for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory bandwidth for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -524,7 +524,7 @@ ze_result_t memory::getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidth
 		zes_mem_properties_t properties = {};
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory properties for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
@@ -535,7 +535,7 @@ ze_result_t memory::getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidth
 		zes_mem_bandwidth_t bandwidth = {};
 		result = getBandwidth(memoryModules[i], &bandwidth);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory bandwidth for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory bandwidth for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
@@ -584,7 +584,7 @@ ze_result_t memory::getMemoryUsagePerTile(std::map<uint32_t, MemoryUsageData> &t
 		zes_mem_properties_t properties = {};
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory properties for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
@@ -595,7 +595,7 @@ ze_result_t memory::getMemoryUsagePerTile(std::map<uint32_t, MemoryUsageData> &t
 		zes_mem_state_t state = {};
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory state for module %u. 0x%X (%s)\n", i, result, l0_error_to_string(result));
+			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 

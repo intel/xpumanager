@@ -357,11 +357,10 @@ ze_result_t cmdDiag::stress(devInfo *d, UNUSED nlohmann::ordered_json *jsonObj)
 		round++;
 		res = diag->computationTest(d, 2048, &inputValue, sizeof(int), filename, moduleName, current, featureOnly);
 		if (res != ZE_RESULT_SUCCESS) {
-			ERR("Failed to run stress: %s\n", l0_error_to_string(res));
+			ERR("Failed to run stress: {}\n", l0_error_to_string(res));
 			return res;
 		} else {
-			PRINT("Stress on GPU: %s; Round %" PRIu64 "; Integer compute: %Lf GIOPS.\n", outputLine.c_str(), round,
-				  current);
+			PRINT("Stress on GPU: {}; Round {}; Integer compute: {:f} GIOPS.\n", outputLine.c_str(), round, current);
 			if (diagCmds[diagCmdType::STRESSTIME].enabled) {
 				if ((stoi(diagCmds[diagCmdType::STRESSTIME].val) != 0) &&
 					(round >= static_cast<uint64_t>(stoi(diagCmds[diagCmdType::STRESSTIME].val)))) {
@@ -612,7 +611,7 @@ ze_result_t cmdDiag::level(devInfo *d, nlohmann::ordered_json *jsonObj)
 	for (int le = 1; le <= level; le++) {
 		for (auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
 
-			DBG("Preparing to run test for level %d\n", le);
+			DBG("Preparing to run test for level {}\n", le);
 			result = (this->*test.second.func)(d, jsonObj);
 			if (result != ZE_RESULT_SUCCESS) {
 				finalResult = false;
@@ -630,7 +629,7 @@ ze_result_t cmdDiag::level(devInfo *d, nlohmann::ordered_json *jsonObj)
 	auto componentListJson = std::make_unique<nlohmann::ordered_json>();
 	for (int le = 1; le <= level; le++) {
 		for (const auto &test : levelToDiagTests.at(static_cast<diagLevel>(le))) {
-			DBG("Preparing to run test for level %d\n", le);
+			DBG("Preparing to run test for level {}\n", le);
 			bool testFinished = test.second.result;
 			resultLine = testFinished ? "Pass" : "Fail";
 
@@ -714,7 +713,7 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d, nlohmann::ordered_json *jsonObj)
 		int testId = 0;
 		const auto [ptr, ec] = std::from_chars(tokenView.data(), tokenView.data() + tokenView.size(), testId);
 		if (ec != std::errc{}) {
-			ERR("Invalid test ID: '%.*s'\n", static_cast<int>(tokenView.size()), tokenView.data());
+			ERR("Invalid test ID: '{}'\n", tokenView);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 		testList.push_back(testId);
@@ -736,14 +735,14 @@ ze_result_t cmdDiag::runSingleTest(devInfo *d, nlohmann::ordered_json *jsonObj)
 	for (const int testId : testList) {
 		if (const auto testTypeIt = testIdMap.find(testId); testTypeIt != testIdMap.end()) {
 			if (const auto testIt = diagSingleTests.find(testTypeIt->second); testIt != diagSingleTests.end()) {
-				INFO("Running test: %d\n", testId);
+				INFO("Running test: {}\n", testId);
 				const ze_result_t testResult = (this->*testIt->second.func)(d, jsonObj);
 				if (testResult != ZE_RESULT_SUCCESS) {
 					anyFailed = true;
 				}
 			}
 		} else {
-			ERR("Invalid test ID: %d. Valid test IDs are 1-9.\n", testId);
+			ERR("Invalid test ID: {}. Valid test IDs are 1-9.\n", testId);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
@@ -1094,7 +1093,7 @@ ze_result_t cmdDiag::powerTest(devInfo *d, nlohmann::ordered_json *jsonObj)
 	featureOnly = false;
 	ret = diag->computationTest(d, 2048, &inputValue, sizeof(int), filename, moduleName, current, featureOnly);
 	if (ret != ZE_RESULT_SUCCESS) {
-		ERR("Computation test failed: %s\n", l0_error_to_string(ret));
+		ERR("Computation test failed: {}\n", l0_error_to_string(ret));
 		return ret;
 	}
 
@@ -1347,7 +1346,7 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			}
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	} else if (jsonObj->contains("device_id")) {
 		maxCol1Width = std::max(maxCol1Width, static_cast<int>(getKeyDisplayName("device_id").length()));
 		for (const auto &component : (*jsonObj)["component_list"]) {
@@ -1378,7 +1377,7 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			}
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	} else if (jsonObj->contains("error_type_list")) {
 		TableBuilder table;
 		table.addColumn("Error ID", 10);
@@ -1391,7 +1390,7 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 						 valueToString(component["error_category"]), valueToString(component["error_severity"]));
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	} else if (jsonObj->contains("component_list")) {
 		const int col2 = std::max(minCol2Width, totalWidth - maxCol1Width - 25);
 
@@ -1419,7 +1418,7 @@ void DiagTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			}
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	}
 }
 
@@ -1494,14 +1493,14 @@ int cmdDiag::run(arg_struct *args)
 			}
 
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1535,14 +1534,14 @@ int cmdDiag::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(diagCmds[diagCmdType::DIAGDEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", diagCmds[diagCmdType::DIAGDEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", diagCmds[diagCmdType::DIAGDEVICE].val.c_str());
 		return result;
 	}
 
@@ -1561,17 +1560,17 @@ int cmdDiag::run(arg_struct *args)
 		// JSON object to collect diagnostic results for all devices and commands
 		for (auto &device : deviceList) {
 			if (device.dev->isIGPU()) {
-				DBG("Diagnostics are only supported on discrete GPUs so skipping device %u.\n", device.index);
+				DBG("Diagnostics are only supported on discrete GPUs so skipping device {}.\n", device.index);
 				continue;
 			}
 
 			// Call the appropriate command function based on the command type
 			for (const auto &cmd : diagCmds) {
 				if (cmd.second.enabled && cmd.second.func != nullptr) {
-					DBG("Running command: %s\n", cmd.second.opt.name);
+					DBG("Running command: {}\n", cmd.second.opt.name);
 					result = (this->*cmd.second.func)(&device, jsonObj.get());
 					if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
-						DBG("Exiting command: %s\n", cmd.second.opt.name);
+						DBG("Exiting command: {}\n", cmd.second.opt.name);
 						break;
 					}
 				}

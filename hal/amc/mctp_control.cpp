@@ -176,10 +176,10 @@ int mctp::initialize()
 		for (uint8_t i = 0; i < RETRY_COUNT; i++) {
 			DBG(">>> Send SetEID\n");
 			mDestNewEid = MCTP_DEST_SET_EID + i;
-			DBG("Mctp SetEID:: 0x%02x\n", mDestNewEid);
+			DBG("Mctp SetEID:: 0x{:02x}\n", mDestNewEid);
 			if (command(MCTP_SET_ENDPOINT_ID, MCTP_SET_EID_CMD_SIZE) != MCTP_SUCCESS) {
 				if (i == (RETRY_COUNT - 1)) {
-					ERR("MCTP_SET_ENDPOINT_ID command failed after %d retries\n", RETRY_COUNT);
+					ERR("MCTP_SET_ENDPOINT_ID command failed after {} retries\n", RETRY_COUNT);
 					return MCTP_FAILURE;
 				}
 				DBG("Retry setting MCTP_SET_ENDPOINT_ID again...\n");
@@ -189,7 +189,7 @@ int mctp::initialize()
 			}
 		}
 	} else {
-		DBG("Mctp EID already set to 0x%02x, Skipping SET EID CMD \n", mDestEid);
+		DBG("Mctp EID already set to 0x{:02x}, Skipping SET EID CMD \n", mDestEid);
 	}
 
 	// GET MESSAGE TYPE

@@ -168,81 +168,81 @@ uint8_t pldm::dumpPldmFwpkgInfo()
 	}
 	DBG("Firmware Package UUID: ");
 	for (int i = 0; i < PLDM_UUID_LEN; i++) {
-		DBG("%02x", pkg->hdr.uuid[i]);
+		DBG("{:02x}", pkg->hdr.uuid[i]);
 	}
-	DBG("\nRevision: %d\n", pkg->hdr.revision);
-	DBG("Size: %d\n", pkg->hdr.size);
+	DBG("\nRevision: {}\n", pkg->hdr.revision);
+	DBG("Size: {}\n", pkg->hdr.size);
 	DBG("Release Date Time: ");
 	for (int i = 0; i < PLDM_TIMESTAMP104_SIZE; i++) {
-		DBG("%02x", pkg->hdr.rlsDateTime[i]);
+		DBG("{:02x}", pkg->hdr.rlsDateTime[i]);
 	}
-	DBG("\nComponent Bitmap Length: %d\n", pkg->hdr.compBitmapLen);
-	DBG("Package Version String Type: %d\n", pkg->hdr.pkgVerStrType);
-	DBG("Package Version String Length: %d\n", pkg->hdr.pkgVerStrLen);
+	DBG("\nComponent Bitmap Length: {}\n", pkg->hdr.compBitmapLen);
+	DBG("Package Version String Type: {}\n", pkg->hdr.pkgVerStrType);
+	DBG("Package Version String Length: {}\n", pkg->hdr.pkgVerStrLen);
 	DBG("Package Version: ");
 	for (int i = 0; i < pkg->hdr.pkgVerStrLen; i++) {
-		DBG("%02x", pkg->hdr.pkgVersion[i]);
+		DBG("{:02x}", pkg->hdr.pkgVersion[i]);
 	}
 	DBG("\n\n");
 
 	fwDevID *deviceID = &pkg->deviceID;
 
-	DBG("Device Record Count: %d\n", deviceID->recordCount);
+	DBG("Device Record Count: {}\n", deviceID->recordCount);
 	for (int i = 0; i < deviceID->recordCount; i++) {
 		fwDevRecord *record = &deviceID->records[i];
-		DBG("Record %d:\n", i);
-		DBG("  Record Length: %d\n", record->recordLen);
-		DBG("  Descriptor Count: %d\n", record->descCount);
-		DBG("  Device Update Option Flags: %08x\n", record->devUpdateOptionFlags.value);
-		DBG("  Component Image Set Version String Type: %d\n", record->compImageSetVerStrType);
-		DBG("  Component Image Set Version String Length: %d\n", record->compImageSetVerStrLen);
-		DBG("  Firmware Device Package Data Length: %d\n", record->fwDevPkgDataLen);
-		DBG("  Applicable Components: %d\n", record->applicableComp);
+		DBG("Record {}:\n", i);
+		DBG("  Record Length: {}\n", record->recordLen);
+		DBG("  Descriptor Count: {}\n", record->descCount);
+		DBG("  Device Update Option Flags: {:08x}\n", record->devUpdateOptionFlags.value);
+		DBG("  Component Image Set Version String Type: {}\n", record->compImageSetVerStrType);
+		DBG("  Component Image Set Version String Length: {}\n", record->compImageSetVerStrLen);
+		DBG("  Firmware Device Package Data Length: {}\n", record->fwDevPkgDataLen);
+		DBG("  Applicable Components: {}\n", record->applicableComp);
 		DBG("  Component Image Set Version String: ");
 		for (int j = 0; j < record->compImageSetVerStrLen; j++) {
-			DBG("%02x", record->compImageSetVerStr[j]);
+			DBG("{:02x}", record->compImageSetVerStr[j]);
 		}
 		for (int j = 0; j < record->descCount; j++) {
-			DBG("\n    Descriptor %d:\n", j);
-			DBG("      Descriptor Type: %d\n", record->recordDesc[j].descType);
-			DBG("      Descriptor Length: %d\n", record->recordDesc[j].descLength);
+			DBG("\n    Descriptor {}:\n", j);
+			DBG("      Descriptor Type: {}\n", record->recordDesc[j].descType);
+			DBG("      Descriptor Length: {}\n", record->recordDesc[j].descLength);
 			DBG("      Descriptor Data: ");
 			for (int k = 0; k < record->recordDesc[j].descLength; k++) {
-				DBG("%02x ", record->recordDesc[j].descData[k]);
+				DBG("{:02x} ", record->recordDesc[j].descData[k]);
 			}
 		}
 		if (record->fwDevPkgDataLen > 0) {
 			DBG("\n  Firmware Device Package Data: ");
 			for (int k = 0; k < record->fwDevPkgDataLen; k++) {
-				DBG("%02x ", record->compImageSetVerStr[k]);
+				DBG("{:02x} ", record->compImageSetVerStr[k]);
 			}
 		}
 		DBG("\n");
 	}
-	DBG("Component Image Count: %d\n", pkg->compImagesInfo.compImageCount);
+	DBG("Component Image Count: {}\n", pkg->compImagesInfo.compImageCount);
 	for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
 		compImageInfo *compImage = &pkg->compImagesInfo.compImages[i];
-		DBG("Component Image %d:\n", i);
-		DBG("  Component Classification: %d\n", compImage->compClassification);
-		DBG("  Component Identifier: %d\n", compImage->id);
-		DBG("  Component Comparison Stamp: %u\n", compImage->compComparisionStamp);
-		DBG("  Component Options: %04x\n", compImage->compOptions.value);
-		DBG("  Requested Component Activation Method: %d\n", compImage->rqstdCompActivMethod.value);
-		DBG("  Location Offset: %u\n", compImage->compLocOffset);
-		DBG("  Component Size: %u\n", compImage->compSize);
-		DBG("  Component Version String Type: %d\n", compImage->verStrType);
-		DBG("  Component Version String Length: %d\n", compImage->verStrLen);
+		DBG("Component Image {}:\n", i);
+		DBG("  Component Classification: {}\n", compImage->compClassification);
+		DBG("  Component Identifier: {}\n", compImage->id);
+		DBG("  Component Comparison Stamp: {}\n", compImage->compComparisionStamp);
+		DBG("  Component Options: {:04x}\n", compImage->compOptions.value);
+		DBG("  Requested Component Activation Method: {}\n", compImage->rqstdCompActivMethod.value);
+		DBG("  Location Offset: {}\n", compImage->compLocOffset);
+		DBG("  Component Size: {}\n", compImage->compSize);
+		DBG("  Component Version String Type: {}\n", compImage->verStrType);
+		DBG("  Component Version String Length: {}\n", compImage->verStrLen);
 		DBG("  Component Version String: ");
 		for (int j = 0; j < compImage->verStrLen; j++) {
-			DBG("%02x", compImage->verStr[j]);
+			DBG("{:02x}", compImage->verStr[j]);
 		}
 		DBG("\n");
 	}
 
-	DBG("Checksum: %08x\n", pkg->checksum);
+	DBG("Checksum: {:08x}\n", pkg->checksum);
 
-	DBG("Firmware Package Size: %u bytes\n", pkg->pkgInfoSize);
-	DBG("Firmware Package File Path: %s\n", pkg->filePath);
+	DBG("Firmware Package Size: {} bytes\n", pkg->pkgInfoSize);
+	DBG("Firmware Package File Path: {}\n", pkg->filePath);
 	DBG("Firmware Package Info Dump Complete\n");
 
 	DBG("\n");

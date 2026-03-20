@@ -91,7 +91,7 @@ std::string getProcessName(uint32_t processId)
 		// Close the process handle
 		CloseHandle(hProcess);
 	} else {
-		ERR("Unable to open process with ID: %u\n", processId);
+		ERR("Unable to open process with ID: {}\n", processId);
 	}
 	return processName;
 }

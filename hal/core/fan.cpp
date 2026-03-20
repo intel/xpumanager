@@ -61,7 +61,7 @@ ze_result_t fan::enumFans(zes_device_handle_t device)
  */
 void fan::printSupportedModes(const uint32_t mode)
 {
-	DBG("    - Supported Modes: %u\n", mode);
+	DBG("    - Supported Modes: {}\n", mode);
 	DBG("      - ");
 	if ((mode & ZES_FAN_SPEED_MODE_DEFAULT) != 0)
 		DBG("Default ");
@@ -91,12 +91,12 @@ ze_result_t fan::getProperties(zes_fan_handle_t fanHandle)
 		return result;
 	}
 	DBG("  - Fan Properties:\n");
-	DBG("    - Fan SType: %d\n", properties.stype);
-	DBG("    - Fan onSubdevice: %d\n", properties.onSubdevice);
-	DBG("    - Fan Can Control: %d\n", properties.canControl);
-	DBG("    - Fan Subdevice ID: %u\n", properties.subdeviceId);
-	DBG("    - Fan Max Speed: %d RPM\n", properties.maxRPM);
-	DBG("    - Fan Max Points: %d\n", properties.maxPoints);
+	DBG("    - Fan SType: {}\n", properties.stype);
+	DBG("    - Fan onSubdevice: {}\n", properties.onSubdevice);
+	DBG("    - Fan Can Control: {}\n", properties.canControl);
+	DBG("    - Fan Subdevice ID: {}\n", properties.subdeviceId);
+	DBG("    - Fan Max Speed: {} RPM\n", properties.maxRPM);
+	DBG("    - Fan Max Points: {}\n", properties.maxPoints);
 	printSupportedModes(properties.supportedModes);
 
 	return result;
@@ -120,14 +120,14 @@ ze_result_t fan::getConfig(zes_fan_handle_t fanHandle)
 		return result;
 	}
 	DBG("  - Fan Configuration:\n");
-	DBG("    - Fan Speed Mode: %d\n", config.mode);
+	DBG("    - Fan Speed Mode: {}\n", config.mode);
 	if (config.mode == ZES_FAN_SPEED_MODE_FIXED) {
-		DBG("    - Fixed Speed (RPM): %d %s\n", config.speedFixed.speed,
+		DBG("    - Fixed Speed (RPM): {} {}\n", config.speedFixed.speed,
 			config.speedFixed.units == ZES_FAN_SPEED_UNITS_PERCENT ? "%" : "RPM");
 	} else if (config.mode == ZES_FAN_SPEED_MODE_TABLE) {
-		DBG("    - Table Points Count: %d\n", config.speedTable.numPoints);
+		DBG("    - Table Points Count: {}\n", config.speedTable.numPoints);
 		for (int32_t i = 0; i < config.speedTable.numPoints; i++) {
-			DBG("      - Point %d: Temperature: %d, Speed: %d %s\n", i, (int32_t)config.speedTable.table[i].temperature,
+			DBG("      - Point {}: Temperature: {}, Speed: {} {}\n", i, (int32_t)config.speedTable.table[i].temperature,
 				config.speedTable.table[i].speed.speed,
 				config.speedTable.table[i].speed.units == ZES_FAN_SPEED_UNITS_PERCENT ? "%" : "RPM");
 		}

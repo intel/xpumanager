@@ -42,9 +42,9 @@ public:
 		  totalZesDevices(nullptr), devs(nullptr), svZesDevs{}
 	{}
 	~driver();
-	void setPrintLvl(int lvl);
-	int getPrintLvl();			  // Add getter for current debug level
-	void forceDebugSync(int lvl); // Add forced synchronization method
+	void setPrintLvl(LogLevel lvl);
+	LogLevel getPrintLvl();
+	void forceDebugSync(LogLevel lvl);
 	ze_result_t init();
 	bool isDriverLoaded() { return initialized; }
 	ze_result_t zeInitialize();

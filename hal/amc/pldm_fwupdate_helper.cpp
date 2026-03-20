@@ -24,11 +24,11 @@
 static void printFwuCmdInfo(const char str[], uint8_t cmd)
 {
 	if (cmd == TRANSFER_COMPLETE) {
-		DBG("%s TransferComplete \n", str);
+		DBG("{} TransferComplete \n", str);
 	} else if (cmd == VERIFY_COMPLETE) {
-		DBG("%s VerifyComplete \n", str);
+		DBG("{} VerifyComplete \n", str);
 	} else if (cmd == APPLY_COMPLETE) {
-		DBG("%s ApplyComplete \n", str);
+		DBG("{} ApplyComplete \n", str);
 	}
 }
 
@@ -197,7 +197,7 @@ uint8_t pldm::readFromFD()
 		totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
 
 		if (mI2cPldmRead->pldmHdr.cmdType != PLDM_FIRMWARE_UPDATE) {
-			ERR("FWU : Invalid Command Type %d, expected %d\n", mI2cPldmRead->pldmHdr.cmdType, PLDM_FIRMWARE_UPDATE);
+			ERR("FWU : Invalid Command Type {}, expected {}\n", mI2cPldmRead->pldmHdr.cmdType, PLDM_FIRMWARE_UPDATE);
 			return PLDM_ERROR;
 		}
 
@@ -209,7 +209,7 @@ uint8_t pldm::readFromFD()
 
 			mProgPercent = (int)(offset * 100) / pkg->compImagesInfo.compImages[mCurComp].compSize;
 
-			DBG("Card - %02d :: offset = %u, lenToSend = %u, mProgPercent = %d\n", mCardNum, offset, lenToSend,
+			DBG("Card - {:02} :: offset = {}, lenToSend = {}, mProgPercent = {}\n", mCardNum, offset, lenToSend,
 				mProgPercent);
 			if (offset >= pkg->compImagesInfo.compImages[mCurComp].compSize) {
 				DBG("FWU : Offset exceeds component size, Respond back to AMC!!!\n");
@@ -240,7 +240,7 @@ uint8_t pldm::readFromFD()
 
 			// Check for Completion Code
 			if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
-				ERR("FWU Err :0x%02x, respond COMMAND_NOT_EXPECTED to AMC and exit XPUM!!!\n",
+				ERR("FWU Err :0x{:02x}, respond COMMAND_NOT_EXPECTED to AMC and exit XPUM!!!\n",
 					mI2cPldmRead->respPayload[BYTE_0]);
 				if (respondtoamc(COMMAND_NOT_EXPECTED) != PLDM_SUCCESS) {
 					ERR("FWU : Respond to AMC failed!!!\n");
@@ -259,7 +259,7 @@ uint8_t pldm::readFromFD()
 				}
 			}
 		} else {
-			DBG("FWU : Invalid Command Code %d.. respond AMC with COMMAND_NOT_EXPECTED\n",
+			DBG("FWU : Invalid Command Code {}.. respond AMC with COMMAND_NOT_EXPECTED\n",
 				mI2cPldmRead->pldmHdr.cmdCode);
 			if (respondtoamc(COMMAND_NOT_EXPECTED) != PLDM_SUCCESS) {
 				ERR("FWU : Respond to AMC failed...\n");

@@ -74,7 +74,7 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 	TRACING();
 	if (dev == nullptr) {
 		if (isInSurvMode()) {
-			DBG("  - Device in survivability mode: %s\n", getBDFStr().c_str());
+			DBG("  - Device in survivability mode: {}\n", getBDFStr().c_str());
 			return ZE_RESULT_ERROR_SURVIVABILITY_MODE_DETECTED;
 		}
 		DBG(" - Device is not initialized\n");
@@ -87,15 +87,15 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 
 	ze_result_t result = zeDeviceGetProperties(dev, zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("  - Device ID: 0x%X\n", zeDevProp->deviceId);
-	DBG("  - Device Type: %d\n", zeDevProp->type);
+	DBG("  - Device ID: 0x{:X}\n", zeDevProp->deviceId);
+	DBG("  - Device Type: {}\n", zeDevProp->type);
 	DBG("  - Device UUID: ");
 	for (int j = 0; j < ZE_MAX_DEVICE_UUID_SIZE; ++j) {
-		DBG("%02X", zeDevProp->uuid.id[j]);
+		DBG("{:02X}", zeDevProp->uuid.id[j]);
 	}
 	DBG("\n");
 
@@ -123,22 +123,22 @@ ze_result_t device::getDevProps(ze_device_handle_t dev, ze_device_properties_t *
 		DBG("  - Device does NOT support on-demand page-faulting\n");
 	}
 
-	DBG("  - Vendor ID: 0x%X\n", zeDevProp->vendorId);
-	DBG("  - Device ID: 0x%X\n", zeDevProp->deviceId);
-	DBG("  - Subdevice ID: 0x%X\n", zeDevProp->subdeviceId);
-	DBG("  - Core Clock Rate: %u\n", zeDevProp->coreClockRate);
-	DBG("  - Max Memory Allocation Size: %" PRIu64 "\n", zeDevProp->maxMemAllocSize);
-	DBG("  - Max Hardware Contexts: %u\n", zeDevProp->maxHardwareContexts);
-	DBG("  - Max Command Queue Priority: %u\n", zeDevProp->maxCommandQueuePriority);
-	DBG("  - Number of Threads per EU: %u\n", zeDevProp->numThreadsPerEU);
-	DBG("  - Physical EU SIMD Width: %u\n", zeDevProp->physicalEUSimdWidth);
-	DBG("  - Number of EUs per Subslice: %u\n", zeDevProp->numEUsPerSubslice);
-	DBG("  - Number of Subslices per Slice: %u\n", zeDevProp->numSubslicesPerSlice);
-	DBG("  - Number of Slices: %u\n", zeDevProp->numSlices);
-	DBG("  - Timer Resolution: %" PRIu64 "\n", zeDevProp->timerResolution);
-	DBG("  - Timestamp Valid Bits: %u\n", zeDevProp->timestampValidBits);
-	DBG("  - Kernel Timestamp Valid Bits: %u\n", zeDevProp->kernelTimestampValidBits);
-	DBG("  - Name: %s\n", zeDevProp->name);
+	DBG("  - Vendor ID: 0x{:X}\n", zeDevProp->vendorId);
+	DBG("  - Device ID: 0x{:X}\n", zeDevProp->deviceId);
+	DBG("  - Subdevice ID: 0x{:X}\n", zeDevProp->subdeviceId);
+	DBG("  - Core Clock Rate: {}\n", zeDevProp->coreClockRate);
+	DBG("  - Max Memory Allocation Size: {}\n", zeDevProp->maxMemAllocSize);
+	DBG("  - Max Hardware Contexts: {}\n", zeDevProp->maxHardwareContexts);
+	DBG("  - Max Command Queue Priority: {}\n", zeDevProp->maxCommandQueuePriority);
+	DBG("  - Number of Threads per EU: {}\n", zeDevProp->numThreadsPerEU);
+	DBG("  - Physical EU SIMD Width: {}\n", zeDevProp->physicalEUSimdWidth);
+	DBG("  - Number of EUs per Subslice: {}\n", zeDevProp->numEUsPerSubslice);
+	DBG("  - Number of Subslices per Slice: {}\n", zeDevProp->numSubslicesPerSlice);
+	DBG("  - Number of Slices: {}\n", zeDevProp->numSlices);
+	DBG("  - Timer Resolution: {}\n", zeDevProp->timerResolution);
+	DBG("  - Timestamp Valid Bits: {}\n", zeDevProp->timestampValidBits);
+	DBG("  - Kernel Timestamp Valid Bits: {}\n", zeDevProp->kernelTimestampValidBits);
+	DBG("  - Name: {}\n", zeDevProp->name);
 
 	return result;
 }
@@ -157,23 +157,23 @@ ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_pr
 {
 	ze_result_t result = zeDeviceGetComputeProperties(dev, zeComputeProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get compute properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get compute properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	// Print the compute properties
 	DBG("Compute Properties:\n");
-	DBG("  Max Total Group Size: %u\n", zeComputeProps->maxTotalGroupSize);
-	DBG("  Max Group Size X: %u\n", zeComputeProps->maxGroupSizeX);
-	DBG("  Max Group Size Y: %u\n", zeComputeProps->maxGroupSizeY);
-	DBG("  Max Group Size Z: %u\n", zeComputeProps->maxGroupSizeZ);
-	DBG("  Max Group Count X: %u\n", zeComputeProps->maxGroupCountX);
-	DBG("  Max Group Count Y: %u\n", zeComputeProps->maxGroupCountY);
-	DBG("  Max Group Count Z: %u\n", zeComputeProps->maxGroupCountZ);
-	DBG("  Max Shared Local Memory: %u\n", zeComputeProps->maxSharedLocalMemory);
-	DBG("  Number of Sub-Group Sizes: %u\n", zeComputeProps->numSubGroupSizes);
+	DBG("  Max Total Group Size: {}\n", zeComputeProps->maxTotalGroupSize);
+	DBG("  Max Group Size X: {}\n", zeComputeProps->maxGroupSizeX);
+	DBG("  Max Group Size Y: {}\n", zeComputeProps->maxGroupSizeY);
+	DBG("  Max Group Size Z: {}\n", zeComputeProps->maxGroupSizeZ);
+	DBG("  Max Group Count X: {}\n", zeComputeProps->maxGroupCountX);
+	DBG("  Max Group Count Y: {}\n", zeComputeProps->maxGroupCountY);
+	DBG("  Max Group Count Z: {}\n", zeComputeProps->maxGroupCountZ);
+	DBG("  Max Shared Local Memory: {}\n", zeComputeProps->maxSharedLocalMemory);
+	DBG("  Number of Sub-Group Sizes: {}\n", zeComputeProps->numSubGroupSizes);
 	for (uint32_t i = 0; i < zeComputeProps->numSubGroupSizes; ++i) {
-		DBG("  Sub-Group Size %u: %u\n", i, zeComputeProps->subGroupSizes[i]);
+		DBG("  Sub-Group Size {}: {}\n", i, zeComputeProps->subGroupSizes[i]);
 	}
 
 	return result;
@@ -190,7 +190,7 @@ ze_result_t device::getComputeProps(ze_device_handle_t dev, ze_device_compute_pr
 void device::printFlag(const char *flagName, ze_device_fp_flags_t flag)
 {
 	if (flag) {
-		DBG("  %s:\n", flagName);
+		DBG("  {}:\n", flagName);
 	}
 
 	if (flag & ZE_DEVICE_FP_FLAG_DENORM) {
@@ -230,7 +230,7 @@ void device::printFlag(const char *flagName, ze_device_fp_flags_t flag)
 void device::printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_t cap)
 {
 	if (cap) {
-		DBG("  %s:\n", capName);
+		DBG("  {}:\n", capName);
 	}
 
 	if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_RW) {
@@ -258,7 +258,7 @@ void device::printMemAccessCaps(const char *capName, ze_memory_access_cap_flags_
 void device::printExtMemTypeFlags(const char *flagName, ze_external_memory_type_flags_t flag)
 {
 	if (flag) {
-		DBG("  %s:\n", flagName);
+		DBG("  {}:\n", flagName);
 	}
 
 	if (flag & ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD) {
@@ -301,12 +301,12 @@ ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_prop
 {
 	ze_result_t result = zeDeviceGetModuleProperties(dev, zeModuleProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get module properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get module properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Module Properties:\n");
-	DBG("  SPIRV version supported: %u\n", zeModuleProps->spirvVersionSupported);
+	DBG("  SPIRV version supported: {}\n", zeModuleProps->spirvVersionSupported);
 	if (zeModuleProps->flags & ZE_DEVICE_MODULE_FLAG_FP16) {
 		DBG("  Device supports 16-bit floating-point operations\n");
 	}
@@ -323,8 +323,8 @@ ze_result_t device::getModuleProps(ze_device_handle_t dev, ze_device_module_prop
 	printFlag("FP16 flags", zeModuleProps->fp16flags);
 	printFlag("FP32 flags", zeModuleProps->fp32flags);
 	printFlag("FP64 flags", zeModuleProps->fp64flags);
-	DBG("  - Max kernel argument size: %u\n", zeModuleProps->maxArgumentsSize);
-	DBG("  - Maximum size of internal buffer that holds output of printf calls from kernel: %u\n",
+	DBG("  - Max kernel argument size: {}\n", zeModuleProps->maxArgumentsSize);
+	DBG("  - Maximum size of internal buffer that holds output of printf calls from kernel: {}\n",
 		zeModuleProps->printfBufferSize);
 
 	return result;
@@ -344,7 +344,7 @@ ze_result_t device::getMemAccessProps(ze_device_handle_t dev, ze_device_memory_a
 {
 	ze_result_t result = zeDeviceGetMemoryAccessProperties(dev, zeMemAccessProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory access properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory access properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -373,20 +373,20 @@ ze_result_t device::getImageProps(ze_device_handle_t dev, ze_device_image_proper
 {
 	ze_result_t result = zeDeviceGetImageProperties(dev, zeImageProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get image properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get image properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Image Properties:\n");
-	DBG("  Maximum image dimensions for 1D resources: %u\n", zeImageProps->maxImageDims1D);
-	DBG("  Maximum image dimensions for 2D resources: %u\n", zeImageProps->maxImageDims2D);
-	DBG("  Maximum image dimensions for 3D resources: %u\n", zeImageProps->maxImageDims3D);
-	DBG("  Maximum image buffer size in bytes: %" PRIu64 "\n", zeImageProps->maxImageBufferSize);
-	DBG("  Maximum image array slices: %u\n", zeImageProps->maxImageArraySlices);
-	DBG("  Max samplers that can be used in kernel: %u\n", zeImageProps->maxSamplers);
-	DBG("  maximum number of simultaneous image objects that can be read from by a kernel: %u\n",
+	DBG("  Maximum image dimensions for 1D resources: {}\n", zeImageProps->maxImageDims1D);
+	DBG("  Maximum image dimensions for 2D resources: {}\n", zeImageProps->maxImageDims2D);
+	DBG("  Maximum image dimensions for 3D resources: {}\n", zeImageProps->maxImageDims3D);
+	DBG("  Maximum image buffer size in bytes: {}\n", zeImageProps->maxImageBufferSize);
+	DBG("  Maximum image array slices: {}\n", zeImageProps->maxImageArraySlices);
+	DBG("  Max samplers that can be used in kernel: {}\n", zeImageProps->maxSamplers);
+	DBG("  maximum number of simultaneous image objects that can be read from by a kernel: {}\n",
 		zeImageProps->maxReadImageArgs);
-	DBG("  maximum number of simultaneous image objects that can be written to by a kernel: %u\n",
+	DBG("  maximum number of simultaneous image objects that can be written to by a kernel: {}\n",
 		zeImageProps->maxWriteImageArgs);
 
 	return result;
@@ -407,7 +407,7 @@ ze_result_t device::getExtMemProps(ze_device_handle_t dev,
 {
 	ze_result_t result = zeDeviceGetExternalMemoryProperties(dev, zeExternalMemoryProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get external memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get external memory properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -437,7 +437,7 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 {
 	ze_result_t result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to command queue group count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to command queue group count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -450,17 +450,17 @@ ze_result_t device::getCmdQueueProps(ze_device_handle_t dev, ze_command_queue_gr
 
 	result = zeDeviceGetCommandQueueGroupProperties(dev, cmdQueuePropsCount, localCmdQueueProps.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get command queue group properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get command queue group properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Command Queue Group Properties:\n");
 	for (uint32_t i = 0; i < *cmdQueuePropsCount; ++i) {
-		DBG("  Group %u:\n", i);
-		DBG("    Flags: %u\n", localCmdQueueProps[i].flags);
-		DBG("    maximum pattern_size supported by command queue group: %zu\n",
+		DBG("  Group {}:\n", i);
+		DBG("    Flags: {}\n", localCmdQueueProps[i].flags);
+		DBG("    maximum pattern_size supported by command queue group: {}\n",
 			localCmdQueueProps[i].maxMemoryFillPatternSize);
-		DBG("    The number of physical engines within the group: %u\n", localCmdQueueProps[i].numQueues);
+		DBG("    The number of physical engines within the group: {}\n", localCmdQueueProps[i].numQueues);
 	}
 
 	// Allocate and copy data for output parameter
@@ -490,13 +490,13 @@ ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_propert
 	}
 
 	if (memPropsCount == nullptr) {
-		ERR("Failed to get memory properties: invalid arguments (memPropsCount=%p)\n", (void *)memPropsCount);
+		ERR("Failed to get memory properties: invalid arguments (memPropsCount={})\n", (void *)memPropsCount);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	ze_result_t result = zeDeviceGetMemoryProperties(dev, memPropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -509,19 +509,18 @@ ze_result_t device::getMemProps(ze_device_handle_t dev, ze_device_memory_propert
 
 	result = zeDeviceGetMemoryProperties(dev, memPropsCount, localMemProps.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Memory Properties:\n");
 	for (uint32_t i = 0; i < *memPropsCount; ++i) {
-		DBG("  Group %u:\n", i);
-		DBG("    Name: %s\n", localMemProps[i].name);
-		DBG("    Flags: %u\n", localMemProps[i].flags);
-		DBG("    Maximum clock rate for device memory: %u\n", localMemProps[i].maxClockRate);
-		DBG("    Maximum bus width between device and memory: %u\n", localMemProps[i].maxBusWidth);
-		DBG("    Total memory size in bytes that is available to the device: %" PRIu64 "\n",
-			localMemProps[i].totalSize);
+		DBG("  Group {}:\n", i);
+		DBG("    Name: {}\n", localMemProps[i].name);
+		DBG("    Flags: {}\n", localMemProps[i].flags);
+		DBG("    Maximum clock rate for device memory: {}\n", localMemProps[i].maxClockRate);
+		DBG("    Maximum bus width between device and memory: {}\n", localMemProps[i].maxBusWidth);
+		DBG("    Total memory size in bytes that is available to the device: {}\n", localMemProps[i].totalSize);
 	}
 
 	// Clean up any existing allocation to prevent leaks
@@ -552,7 +551,7 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 {
 	ze_result_t result = zeDeviceGetCacheProperties(dev, cachePropsCount, NULL);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get cache properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get cache properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -565,14 +564,14 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 
 	result = zeDeviceGetCacheProperties(dev, cachePropsCount, localCacheProps.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get cache properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get cache properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("Cache Properties:\n");
 	for (uint32_t i = 0; i < *cachePropsCount; ++i) {
-		DBG("    Flags: %u\n", localCacheProps[i].flags);
-		DBG("    Per-cache size, in bytes: %zu\n", localCacheProps[i].cacheSize);
+		DBG("    Flags: {}\n", localCacheProps[i].flags);
+		DBG("    Per-cache size, in bytes: {}\n", localCacheProps[i].cacheSize);
 	}
 
 	// Clean up any existing allocation to prevent leaks
@@ -600,7 +599,7 @@ ze_result_t device::resetDevice(zes_device_handle_t dev)
 {
 	ze_result_t result = zesDeviceReset(dev, true);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to reset device: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -622,15 +621,15 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 {
 	ze_result_t result = zesDeviceGetProperties(dev, zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("  - Serial Number: %s\n", zesDevProp->serialNumber);
-	DBG("  - Board Number: %s\n", zesDevProp->boardNumber);
-	DBG("  - Brand Name: %s\n", zesDevProp->brandName);
-	DBG("  - Model Name: %s\n", zesDevProp->modelName);
-	DBG("  - Vendor Name: %s\n", zesDevProp->vendorName);
-	DBG("  - Driver Version: %s\n", zesDevProp->driverVersion);
+	DBG("  - Serial Number: {}\n", zesDevProp->serialNumber);
+	DBG("  - Board Number: {}\n", zesDevProp->boardNumber);
+	DBG("  - Brand Name: {}\n", zesDevProp->brandName);
+	DBG("  - Model Name: {}\n", zesDevProp->modelName);
+	DBG("  - Vendor Name: {}\n", zesDevProp->vendorName);
+	DBG("  - Driver Version: {}\n", zesDevProp->driverVersion);
 
 	return result;
 }
@@ -703,7 +702,7 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 	contextDesc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
 	ze_result_t result = zeContextCreate(zeDriver, &contextDesc, &context);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to create context: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to create context: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -935,27 +934,27 @@ ze_result_t device::getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_pr
 	// Get count of subdevices
 	ze_result_t res = zesDeviceGetSubDevicePropertiesExp(zesDevice, &subdeviceCount, nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate subdevices. 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to enumerate subdevices. 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
 	// If no subdevices are exposed, treat device as a single tile (tileId must be 0)
 	if (subdeviceCount == 0) {
 		if (tileId != 0) {
-			ERR("Invalid tileId %u. Device exposes no subdevices.\n", tileId);
+			ERR("Invalid tileId {}. Device exposes no subdevices.\n", tileId);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 		subdeviceProps = {};
 		subdeviceProps.stype = ZES_STRUCTURE_TYPE_SUBDEVICE_EXP_PROPERTIES;
 		subdeviceProps.pNext = nullptr;
 		subdeviceProps.subdeviceId = 0;
-		DBG("Device has no subdevices; using device-level subdeviceId 0 for tile %u\n", tileId);
+		DBG("Device has no subdevices; using device-level subdeviceId 0 for tile {}\n", tileId);
 		return ZE_RESULT_SUCCESS;
 	}
 
 	// Validate tileId is in range
 	if (tileId >= subdeviceCount) {
-		ERR("Invalid tileId %u. Device only has %u tiles.\n", tileId, subdeviceCount);
+		ERR("Invalid tileId {}. Device only has {} tiles.\n", tileId, subdeviceCount);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -968,14 +967,14 @@ ze_result_t device::getSubdeviceProperties(uint32_t tileId, zes_subdevice_exp_pr
 
 	res = zesDeviceGetSubDevicePropertiesExp(zesDevice, &subdeviceCount, subdevicePropsList.data());
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get subdevice properties. 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get subdevice properties. 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
 	// Return the requested tile's properties
 	subdeviceProps = subdevicePropsList[tileId];
 
-	DBG("Tile %u mapped to subdeviceId %u\n", tileId, subdeviceProps.subdeviceId);
+	DBG("Tile {} mapped to subdeviceId {}\n", tileId, subdeviceProps.subdeviceId);
 	return ZE_RESULT_SUCCESS;
 }
 

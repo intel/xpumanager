@@ -42,19 +42,19 @@ ze_result_t pci::getProperties(zes_device_handle_t device, zes_pci_properties_t 
 
 	ze_result_t result = zesDevicePciGetProperties(device, pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - PCI Properties:\n");
-	DBG("    - Address: %u:%u:%u.%u\n", pciProps->address.domain, pciProps->address.bus, pciProps->address.device,
+	DBG("    - Address: {}:{}:{}.{}\n", pciProps->address.domain, pciProps->address.bus, pciProps->address.device,
 		pciProps->address.function);
-	DBG("    - Max Speed: %d Gen, %d lanes, Max bandwidth: %llu\n", pciProps->maxSpeed.gen, pciProps->maxSpeed.width,
+	DBG("    - Max Speed: {} Gen, {} lanes, Max bandwidth: {}\n", pciProps->maxSpeed.gen, pciProps->maxSpeed.width,
 		(unsigned long long)pciProps->maxSpeed.maxBandwidth);
 
-	DBG("    - haveBandwidthCounters: %d\n", pciProps->haveBandwidthCounters);
-	DBG("    - havePacketCounters: %d\n", pciProps->havePacketCounters);
-	DBG("    - haveReplayCounters: %d\n", pciProps->haveReplayCounters);
+	DBG("    - haveBandwidthCounters: {}\n", pciProps->haveBandwidthCounters);
+	DBG("    - havePacketCounters: {}\n", pciProps->havePacketCounters);
+	DBG("    - haveReplayCounters: {}\n", pciProps->haveReplayCounters);
 	return result;
 }
 
@@ -73,17 +73,17 @@ ze_result_t pci::getState(zes_device_handle_t device, zes_pci_link_status_t &pci
 	zes_pci_state_t pciState = {};
 	ze_result_t result = zesDevicePciGetState(device, &pciState);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	pciLinkStatus = pciState.status;
 
 	DBG("  - PCI State:");
-	DBG("    - Status: %d\n", pciState.status);
-	DBG("    - Stability Issues: %u\n", pciState.stabilityIssues);
-	DBG("    - Quality Issues: %u\n", pciState.qualityIssues);
-	DBG("    - Current Speed: %d Gen, %d lanes, %lluMax bandwidth\n", pciState.speed.gen, pciState.speed.width,
+	DBG("    - Status: {}\n", pciState.status);
+	DBG("    - Stability Issues: {}\n", pciState.stabilityIssues);
+	DBG("    - Quality Issues: {}\n", pciState.qualityIssues);
+	DBG("    - Current Speed: {} Gen, {} lanes, {}Max bandwidth\n", pciState.speed.gen, pciState.speed.width,
 		(unsigned long long)pciState.speed.maxBandwidth);
 	return result;
 }
@@ -105,22 +105,22 @@ ze_result_t pci::getBars(zes_device_handle_t device)
 	uint32_t barCount = 0;
 	ze_result_t result = zesDevicePciGetBars(device, &barCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI BAR count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI BAR count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	std::vector<zes_pci_bar_properties_t> bars(barCount);
 	result = zesDevicePciGetBars(device, &barCount, bars.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI BAR properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI BAR properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - PCI BARs:\n");
 	for (const auto &bar : bars) {
-		DBG("    - Index: %u\n", bar.index);
-		DBG("    - Base Address: 0x%" PRIx64 "\n", bar.base);
-		DBG("    - Size: 0x%" PRIx64 "bytes\n", bar.size);
+		DBG("    - Index: {}\n", bar.index);
+		DBG("    - Base Address: 0x{:x}\n", bar.base);
+		DBG("    - Size: 0x{:x}bytes\n", bar.size);
 		DBG("    - Type: ");
 		if (bar.type == ZES_PCI_BAR_TYPE_MMIO) {
 			DBG("MMIO");
@@ -159,16 +159,16 @@ ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 
 	ze_result_t result = zesDevicePciGetStats(device, pciStats);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI stats: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI stats: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("  - PCI Stats:");
-	DBG("    - Timestamp: %" PRIu64 "\n", pciStats->timestamp);
-	DBG("    - Replay counter: %" PRIu64 "\n", pciStats->replayCounter);
-	DBG("    - Packet counter: %" PRIu64 "\n", pciStats->packetCounter);
-	DBG("    - Received Bytes: %" PRIu64 "\n", pciStats->rxCounter);
-	DBG("    - Transmitted Bytes: %" PRIu64 "\n", pciStats->txCounter);
+	DBG("    - Timestamp: {}\n", pciStats->timestamp);
+	DBG("    - Replay counter: {}\n", pciStats->replayCounter);
+	DBG("    - Packet counter: {}\n", pciStats->packetCounter);
+	DBG("    - Received Bytes: {}\n", pciStats->rxCounter);
+	DBG("    - Transmitted Bytes: {}\n", pciStats->txCounter);
 
 	return result;
 }
@@ -195,7 +195,7 @@ ze_result_t pci::getPciDowngradeState(const zes_device_handle_t &device, PciDown
 	pciProps.pNext = &downProps;
 	res = zesDevicePciGetProperties(device, &pciProps);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get PCI properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
@@ -212,16 +212,16 @@ ze_result_t pci::getPciDowngradeState(const zes_device_handle_t &device, PciDown
 	pciState.pNext = &downState;
 	res = zesDevicePciGetState(device, &pciState);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI State: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get PCI State: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
 	state.downgradeEnabled = downState.pciLinkSpeedDowngradeStatus;
 
 	DBG("  - PCIe Downgrade State:\n");
-	DBG("    - Downgrade Supported: %s\n", state.downgradeSupported ? "Yes" : "No");
-	DBG("    - Downgrade Enabled: %s\n", state.downgradeEnabled ? "Yes" : "No");
-	DBG("    - Pending Action: %d\n", state.pendingAction);
+	DBG("    - Downgrade Supported: {}\n", state.downgradeSupported ? "Yes" : "No");
+	DBG("    - Downgrade Enabled: {}\n", state.downgradeEnabled ? "Yes" : "No");
+	DBG("    - Pending Action: {}\n", state.pendingAction);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -246,7 +246,7 @@ ze_result_t pci::setPciDowngradeState(const zes_device_handle_t &device, bool en
 	PciDowngradeState currentState = {};
 	ze_result_t res = getPciDowngradeState(device, currentState);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get current PCIe downgrade state: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to get current PCIe downgrade state: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
@@ -259,7 +259,7 @@ ze_result_t pci::setPciDowngradeState(const zes_device_handle_t &device, bool en
 	zes_device_action_t pendingAction = {};
 	res = zesDevicePciLinkSpeedUpdateExt(device, downState, &pendingAction);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", res, l0_error_to_string(res));
+		ERR("Failed to set PCIe downgrade state: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		return res;
 	}
 
@@ -268,8 +268,8 @@ ze_result_t pci::setPciDowngradeState(const zes_device_handle_t &device, bool en
 	state.downgradeEnabled = enabled;
 	state.pendingAction = pendingAction;
 
-	DBG("PCIe downgrade state set to: %s\n", enabled ? "enabled" : "disabled");
-	DBG("Pending Action: %d\n", pendingAction);
+	DBG("PCIe downgrade state set to: {}\n", enabled ? "enabled" : "disabled");
+	DBG("Pending Action: {}\n", pendingAction);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -300,7 +300,7 @@ bool pci::isBDF(const char *bdf)
 		if (dmn.length() > 4 || b.length() > 2 || device.length() > 2 || function.length() > 1) {
 			ERR("Invalid PCI address format. Correct format example: 1234:05:06.7\n");
 		} else {
-			DBG("Valid PCI address format: %s\n", bdf);
+			DBG("Valid PCI address format: {}\n", bdf);
 			if (deviceProperties.pciProps.address.domain == strtoul(dmn.c_str(), nullptr, 16) &&
 				deviceProperties.pciProps.address.bus == strtoul(b.c_str(), nullptr, 16) &&
 				deviceProperties.pciProps.address.device == strtoul(device.c_str(), nullptr, 16) &&
@@ -340,7 +340,7 @@ ze_result_t pci::init(zes_device_handle_t device)
 	ze_result_t result;
 	result = getProperties(device, &deviceProperties.pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -360,7 +360,7 @@ ze_result_t pci::init(zes_device_handle_t device)
 			dv.pciProps.address.bus == deviceProperties.pciProps.address.bus &&
 			dv.pciProps.address.device == deviceProperties.pciProps.address.device &&
 			dv.pciProps.address.function == deviceProperties.pciProps.address.function) {
-			DBG("Found matching device: %s\n", dv.meiDevicePath.c_str());
+			DBG("Found matching device: {}\n", dv.meiDevicePath.c_str());
 
 			// Found a matching device so copy the meiDevicePath
 			deviceProperties.meiDevicePath = dv.meiDevicePath;

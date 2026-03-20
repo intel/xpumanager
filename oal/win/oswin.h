@@ -68,6 +68,29 @@ struct option
 	CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x716, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_SPBTESTTOOL_PDI CTL_CODE(FILE_DEVICE_SPB_PERIPHERAL, 0x717, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define STRCPY_S(dest, sz, src) strcpy_s(dest, sz, src)
+
+/**
+ * @brief Convert a wide string (UTF-16LE) to a UTF-8 std::string.
+ *
+ * Intended for logging only — wide-character values must not be passed
+ * directly to the logger's narrow std::format strings.
+ *
+ * @param ws Wide-character string to convert.  May be null; returns "(null)".
+ * @return UTF-8 encoded std::string.
+ */
+[[nodiscard]] inline std::string wtos(const wchar_t *ws)
+{
+	if (!ws)
+		return "(null)";
+	if (*ws == L'\0')
+		return {};
+	const int len = WideCharToMultiByte(CP_UTF8, 0, ws, -1, nullptr, 0, nullptr, nullptr);
+	if (len <= 0)
+		return "(invalid wide string)";
+	std::string out(static_cast<std::size_t>(len - 1), '\0');
+	WideCharToMultiByte(CP_UTF8, 0, ws, -1, out.data(), len, nullptr, nullptr);
+	return out;
+}
 #define STRNCPY_S(dest, src, sz) strncpy_s(dest, sz, src, _TRUNCATE)
 #define STRCASECMP _stricmp
 #define THREAD_RET DWORD WINAPI

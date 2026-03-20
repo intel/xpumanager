@@ -1003,7 +1003,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 		}
 	}
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 
 ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
@@ -1064,8 +1064,8 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 	ze_result_t result = fq->setFrequencyRange(minFreq, maxFreq, tileId);
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing the core frequency range on GPU %u tile %u to %.0f-%.0f MHz.\n", d->index, tileId,
-			  minFreq, maxFreq);
+		PRINT("Succeeded in changing the core frequency range on GPU {} tile {} to {:.0f}-{:.0f} MHz.\n", d->index,
+			  tileId, minFreq, maxFreq);
 	}
 
 	return result;
@@ -1115,7 +1115,7 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 	}
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in setting the %s power limit to %.1f W on GPU %u\n",
+		PRINT("Succeeded in setting the {} power limit to {:.1f} W on GPU {}\n",
 			  powerType.empty() ? "sustain" : powerType.c_str(), powerLimit, d->index);
 	}
 
@@ -1152,10 +1152,10 @@ ze_result_t cmdConfig::setStandby(devInfo *d)
 
 	if (result == ZE_RESULT_SUCCESS) {
 		if (configCmds[configCmdType::TILE].enabled) {
-			PRINT("Succeeded in changing the standby mode on GPU %u tile %s to %s.\n", d->index,
+			PRINT("Succeeded in changing the standby mode on GPU {} tile {} to {}.\n", d->index,
 				  configCmds[configCmdType::TILE].val.c_str(), standbyMode.c_str());
 		} else {
-			PRINT("Succeeded in changing the standby mode on GPU %u to %s.\n", d->index, standbyMode.c_str());
+			PRINT("Succeeded in changing the standby mode on GPU {} to {}.\n", d->index, standbyMode.c_str());
 		}
 	}
 
@@ -1221,8 +1221,7 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 
 		uint64_t timeoutValue = std::stoull(timeoutStr);
 		if (timeoutValue < SCHEDULER_TIME_MIN || timeoutValue > SCHEDULER_TIME_MAX) {
-			ERR("Timeout value must be between %" PRIu64 " and %" PRIu64 " us\n", SCHEDULER_TIME_MIN,
-				SCHEDULER_TIME_MAX);
+			ERR("Timeout value must be between {} and {} us\n", SCHEDULER_TIME_MIN, SCHEDULER_TIME_MAX);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 		result = fq->setSchedulerTimeoutMode(tileId, timeoutValue);
@@ -1251,7 +1250,7 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 
 		if (interval < SCHEDULER_TIME_MIN || interval > SCHEDULER_TIME_MAX || yieldTimeout < SCHEDULER_TIME_MIN ||
 			yieldTimeout > SCHEDULER_TIME_MAX) {
-			ERR("Time values must be between %" PRIu64 " and %" PRIu64 " us\n", SCHEDULER_TIME_MIN, SCHEDULER_TIME_MAX);
+			ERR("Time values must be between {} and {} us\n", SCHEDULER_TIME_MIN, SCHEDULER_TIME_MAX);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 		result = fq->setSchedulerTimesliceMode(tileId, interval, yieldTimeout);
@@ -1263,7 +1262,7 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 	}
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing the scheduler mode on GPU %u tile %u to %s\n", d->index, tileId, mode.c_str());
+		PRINT("Succeeded in changing the scheduler mode on GPU {} tile {} to {}\n", d->index, tileId, mode.c_str());
 	}
 
 	return result;
@@ -1323,10 +1322,10 @@ ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
 
 	if (result == ZE_RESULT_SUCCESS) {
 		if (configCmds[configCmdType::TILE].enabled) {
-			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %u tile %s\n", engineType.c_str(),
+			PRINT("Succeeded in changing the {} performance factor to {:.1f} on GPU {} tile {}\n", engineType.c_str(),
 				  factorValue, d->index, configCmds[configCmdType::TILE].val.c_str());
 		} else {
-			PRINT("Succeeded in changing the %s performance factor to %.1f on GPU %u\n", engineType.c_str(),
+			PRINT("Succeeded in changing the {} performance factor to {:.1f} on GPU {}\n", engineType.c_str(),
 				  factorValue, d->index);
 		}
 	}
@@ -1360,7 +1359,7 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 	ecc_state_t state = {};
 	ze_result_t result = e->setState(d->zesDeviceHdl, memoryEcc, &state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set memory ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to set memory ECC state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1368,13 +1367,13 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 		(memoryEcc == 1) ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
 
 	if (state.currentState == requestedState) {
-		PRINT("Memory ECC is already %s on GPU %u \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
+		PRINT("Memory ECC is already {} on GPU {} \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
 	} else if (state.pendingState == requestedState) {
-		PRINT("Successfully %s ECC memory setting on GPU %u \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
-		PRINT("Please perform %s for the change to take effect.\n",
+		PRINT("Successfully {} ECC memory setting on GPU {} \n", (memoryEcc == 1 ? "enabled" : "disabled"), d->index);
+		PRINT("Please perform {} for the change to take effect.\n",
 			  e->printEccPendingAction(state.pendingAction).c_str());
 	} else {
-		ERR("Failed to %s ECC memory setting on GPU %u\n", (memoryEcc == 1 ? "enable" : "disable"), d->index);
+		ERR("Failed to {} ECC memory setting on GPU {}\n", (memoryEcc == 1 ? "enable" : "disable"), d->index);
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
@@ -1440,7 +1439,7 @@ ze_result_t cmdConfig::setPCIeGenUpdate(devInfo *d)
 	PciDowngradeState state = {};
 	ze_result_t result = d->dev->getPCI()->getPciDowngradeState(d->zesDeviceHdl, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to set PCIe downgrade state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	if (!state.downgradeSupported) {
@@ -1459,11 +1458,11 @@ ze_result_t cmdConfig::setPCIeGenUpdate(devInfo *d)
 	state = {};
 	result = d->dev->getPCI()->setPciDowngradeState(d->zesDeviceHdl, enabled, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set PCIe downgrade state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to set PCIe downgrade state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	PRINT("PCIe downgrade %s successfully. please complete %s for change to take effect\n",
+	PRINT("PCIe downgrade {} successfully. please complete {} for change to take effect\n",
 		  (enabled ? "enabled" : "disabled"), pciDownGradePendingActionToString(state.pendingAction).c_str());
 
 	return ZE_RESULT_SUCCESS;
@@ -1480,15 +1479,15 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 {
 	TRACING();
 
-	PRINT("It may take one minute to reset GPU %u. Please wait ...\n", d->index);
+	PRINT("It may take one minute to reset GPU {}. Please wait ...\n", d->index);
 
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to reset device: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to reset device: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	PRINT("Succeed to reset the GPU %u\n", d->index);
+	PRINT("Succeed to reset the GPU {}\n", d->index);
 	std::_Exit(0);
 	return ZE_RESULT_SUCCESS;
 }
@@ -1550,14 +1549,14 @@ int cmdConfig::run(arg_struct *args)
 			}
 
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -1566,7 +1565,7 @@ int cmdConfig::run(arg_struct *args)
 
 	// Check for extra arguments
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -1579,7 +1578,7 @@ int cmdConfig::run(arg_struct *args)
 
 	result = args->sm.findDevice(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n",
+		ERR("Error: Device handle not found for device ID '{}'.\n",
 			configCmds[configCmdType::CONFIGDEVICE].val.c_str());
 		return result;
 	}
@@ -1600,7 +1599,7 @@ int cmdConfig::run(arg_struct *args)
 		if (configCmds[configCmdType::CONFIGJSON].enabled) {
 			if (deviceList.size() == 1) {
 				std::string jsonOut = buildDeviceConfigJson(&deviceList[0], 0);
-				PRINT("%s\n", jsonOut.c_str());
+				PRINT("{}\n", jsonOut.c_str());
 			} else {
 				std::ostringstream out;
 				out << "[\n";
@@ -1612,7 +1611,7 @@ int cmdConfig::run(arg_struct *args)
 					out << "\n";
 				}
 				out << "]\n";
-				PRINT("%s", out.str().c_str());
+				PRINT("{}", out.str().c_str());
 			}
 		} else {
 			for (auto &device : deviceList) {
@@ -1636,7 +1635,7 @@ int cmdConfig::run(arg_struct *args)
 						hadError = true;
 					}
 					// Continue processing other devices/commands instead of early return
-					ERR("Failed to apply configuration to GPU %u, continuing with remaining devices...\n",
+					ERR("Failed to apply configuration to GPU {}, continuing with remaining devices...\n",
 						device.index);
 				}
 			}

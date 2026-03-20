@@ -455,7 +455,7 @@ int cmdSmi::run(arg_struct *args)
 	std::vector<devInfo> deviceList;
 	ze_result_t result = args->sm.findDevice("", &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate GPU devices (error 0x%x).\n", result);
+		ERR("Failed to enumerate GPU devices (error 0x{:x}).\n", result);
 		return result;
 	}
 	if (deviceList.empty()) {
@@ -490,12 +490,12 @@ int cmdSmi::run(arg_struct *args)
 
 	// ── 6. Render output ────────────────────────────────────────────────
 	TableBuilder gpuTable = buildGpuTable(devStats, lzVersion);
-	PRINT("%s\n", gpuTable.toString().c_str());
+	PRINT("{}\n", gpuTable.toString().c_str());
 
 	TableBuilder procTable = buildProcessTable(deviceList);
 	int const tableWidth = gpuTable.getTotalWidth();
 	procTable.padToWidth(tableWidth);
-	PRINT("%s\n", procTable.toString().c_str());
+	PRINT("{}\n", procTable.toString().c_str());
 
 	return result;
 }

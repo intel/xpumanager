@@ -35,18 +35,18 @@ ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumRasErrorSets(device, &rasCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || rasCount == 0) {
-		ERR("Failed to enumerate RAS error sets. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate RAS error sets. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	rasHandles = new zes_ras_handle_t[rasCount];
 	result = zesDeviceEnumRasErrorSets(device, &rasCount, rasHandles);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS error sets. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS error sets. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Found %u RAS domains.\n", rasCount);
+	DBG("Found {} RAS domains.\n", rasCount);
 	return result;
 }
 
@@ -65,13 +65,13 @@ ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t 
 {
 	ze_result_t result = zesRasGetProperties(rasHandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS properties. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("RAS properties retrieved successfully.\n");
-	DBG("  onSubdevice: %d\n", properties->onSubdevice);
-	DBG("  subdeviceId: %u\n", properties->subdeviceId);
+	DBG("  onSubdevice: {}\n", properties->onSubdevice);
+	DBG("  subdeviceId: {}\n", properties->subdeviceId);
 
 	switch (properties->type) {
 	case ZES_RAS_ERROR_TYPE_CORRECTABLE:
@@ -102,15 +102,15 @@ ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
 {
 	ze_result_t result = zesRasGetConfig(rasHandle, config);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS config. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS config. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("RAS config retrieved successfully.\n");
-	DBG("  Total Threshold: %" PRIu64 "\n", config->totalThreshold);
+	DBG("  Total Threshold: {}\n", config->totalThreshold);
 	DBG("  Detailed Thresholds:\n");
 	for (uint32_t i = 0; i < ZES_MAX_RAS_ERROR_CATEGORY_COUNT; ++i) {
-		DBG("    Category %u: %" PRIu64 "\n", i, config->detailedThresholds.category[i]);
+		DBG("    Category {}: {}\n", i, config->detailedThresholds.category[i]);
 	}
 	return result;
 }
@@ -130,13 +130,13 @@ ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 {
 	ze_result_t result = zesRasGetState(rasHandle, 0, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS state. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get RAS state. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
 	DBG("RAS state retrieved successfully.\n");
 	for (uint32_t i = 0; i < ZES_MAX_RAS_ERROR_CATEGORY_COUNT; ++i) {
-		DBG("    Category %u: %" PRIu64 "\n", i, state->category[i]);
+		DBG("    Category {}: {}\n", i, state->category[i]);
 	}
 
 	return result;
@@ -171,7 +171,7 @@ ze_result_t ras::getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorT
 	ze_result_t result = getErrorsPerTile(type, errorType, countersPerTile, rasCounter);
 
 	if (result == ZE_RESULT_SUCCESS) {
-		DBG("RAS error count for category %d: %" PRIu64 "\n", type, *rasCounter);
+		DBG("RAS error count for category {}: {}\n", type, *rasCounter);
 	}
 
 	return result;
@@ -199,7 +199,7 @@ ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t
 	zes_ras_state_t states = {};
 
 	if (type < ZES_RAS_ERROR_CAT_RESET || type > ZES_RAS_ERROR_CAT_DISPLAY_ERRORS) {
-		ERR("Invalid RAS error category type: %d\n", type);
+		ERR("Invalid RAS error category type: {}\n", type);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 

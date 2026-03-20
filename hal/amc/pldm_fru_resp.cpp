@@ -93,8 +93,8 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
 
 			memcpy(mFruTableResponse.fruTableData, &mI2cPldmRead->respPayload[6], mFruCurrentDataLength);
 
-			DBG("FRU Table Data received: %u bytes\n", mFruCurrentDataLength);
-			DBG("Transfer flag: 0x%02X ", mFruTableResponse.xferFlag);
+			DBG("FRU Table Data received: {} bytes\n", mFruCurrentDataLength);
+			DBG("Transfer flag: 0x{:02X} ", mFruTableResponse.xferFlag);
 			if (mFruTableResponse.xferFlag & PLDM_START)
 				DBG("START ");
 			if (mFruTableResponse.xferFlag & PLDM_MIDDLE)
@@ -149,7 +149,7 @@ uint8_t pldm::pldmFruResponsePayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
 		ERR("PLDM : Command Completion Error!!!\n");
-		ERR("Error Code : 0x%02x\n", mI2cPldmRead->respPayload[0]);
+		ERR("Error Code : 0x{:02x}\n", mI2cPldmRead->respPayload[0]);
 		return PLDM_ERROR;
 	}
 

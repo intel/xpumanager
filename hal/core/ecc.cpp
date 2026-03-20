@@ -33,7 +33,7 @@ std::string ecc::printEccState(const zes_device_ecc_state_t state)
 		eccStateString = "Other";
 		break;
 	}
-	DBG("%s\n", eccStateString.c_str());
+	DBG("{}\n", eccStateString.c_str());
 	return eccStateString;
 }
 
@@ -65,7 +65,7 @@ std::string ecc::printEccPendingAction(const zes_device_action_t action)
 		eccPendingActionString = "Other";
 		break;
 	}
-	DBG("%s\n", eccPendingActionString.c_str());
+	DBG("{}\n", eccPendingActionString.c_str());
 	return eccPendingActionString;
 }
 
@@ -84,7 +84,7 @@ bool ecc::available(zes_device_handle_t device)
 	ze_bool_t eccAvailable;
 	result = zesDeviceEccAvailable(device, &eccAvailable);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to check ECC availability: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to check ECC availability: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return false;
 	}
 	return (bool)eccAvailable;
@@ -105,7 +105,7 @@ bool ecc::configurable(zes_device_handle_t device)
 	ze_bool_t eccConfigurable;
 	result = zesDeviceEccConfigurable(device, &eccConfigurable);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to check ECC configurability: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to check ECC configurability: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return false;
 	}
 	return (bool)eccConfigurable;
@@ -131,7 +131,7 @@ ze_result_t ecc::getState(zes_device_handle_t device, zes_device_ecc_properties_
 
 	ze_result_t result = zesDeviceGetEccState(device, eccState);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get ECC state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	} else {
 		DBG("  - ECC State:\n");
@@ -174,7 +174,7 @@ ze_result_t ecc::setState(zes_device_handle_t device, bool enable, ecc_state_t *
 	newState.state = enable ? ZES_DEVICE_ECC_STATE_ENABLED : ZES_DEVICE_ECC_STATE_DISABLED;
 	ze_result_t result = zesDeviceSetEccState(device, &newState, &pState);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to set ECC state: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to set ECC state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 

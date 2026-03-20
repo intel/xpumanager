@@ -195,7 +195,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		// Print CSV-style headers for dump command
 		const auto &headers = (*jsonObj)["heading"];
 		for (size_t i = 0; i < headers.size(); ++i) {
-			PRINT("%s", valueToString(headers[i]).c_str());
+			PRINT("{}", valueToString(headers[i]).c_str());
 			if (i < headers.size() - 1) {
 				PRINT(", ");
 			}
@@ -206,7 +206,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			if (deviceItem.key() != "heading") {
 				const auto &values = deviceItem.value();
 				for (size_t i = 0; i < values.size(); ++i) {
-					PRINT("%s", valueToString(values[i]).c_str());
+					PRINT("{}", valueToString(values[i]).c_str());
 					if (i < values.size() - 1) {
 						PRINT(", ");
 					}
@@ -247,7 +247,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			addField("device_function_type", "Function Type");
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	} else {
 		TableBuilder table;
 		table.addColumn("Device ID", 9, Align::Left).addColumn("Device Information", 84, Align::Left);
@@ -324,7 +324,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("number_of_media_engines", "Number of Media Engines");
 		addField("number_of_media_enh_engines", "Number of Media Enhancement Engines");
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	}
 }
 
@@ -466,7 +466,7 @@ ze_result_t cmdDiscovery::preCheck(std::vector<int> *dumpArgs)
 			if (ec == std::errc{}) {
 				dumpArgs->push_back(value);
 			} else {
-				ERR("Invalid dump command argument '%s'. Must be a valid integer\n", token.c_str());
+				ERR("Invalid dump command argument '{}'. Must be a valid integer\n", token.c_str());
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 		}
@@ -475,7 +475,7 @@ ze_result_t cmdDiscovery::preCheck(std::vector<int> *dumpArgs)
 	// Check if each dump command argument is a number between 1 and TOTAL_DISC_DUMPS
 	for (const auto arg : *dumpArgs) {
 		if (arg < DUMP_DEVICEID || arg > TOTAL_DISC_DUMPS) {
-			ERR("Invalid dump command argument '%d'. It must be between 1 and %d\n", arg, TOTAL_DISC_DUMPS);
+			ERR("Invalid dump command argument '{}'. It must be between 1 and {}\n", arg, TOTAL_DISC_DUMPS);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
@@ -514,7 +514,7 @@ ze_result_t cmdDiscovery::dumpHeading(nlohmann::ordered_json *jsonObj)
 	}
 
 	if (!found) {
-		ERR("The following argument was not expected: '%s'.\n", val.c_str());
+		ERR("The following argument was not expected: '{}'.\n", val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -550,7 +550,7 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 	for (const auto arg : dumpArgs) {
 		for (const auto &cmd : discDumpCmds) {
 			if (cmd.first == arg) {
-				DBG("Running command: %d\n", cmd.first);
+				DBG("Running command: {}\n", cmd.first);
 				result = (this->*cmd.second.func)(d, &outputLine);
 				if (result != ZE_RESULT_SUCCESS) {
 					return result;
@@ -564,7 +564,7 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 	}
 
 	if (!found) {
-		ERR("The following argument was not expected: '%s'.\n", val.c_str());
+		ERR("The following argument was not expected: '{}'.\n", val.c_str());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -816,7 +816,7 @@ ze_result_t cmdDiscovery::deviceName(devInfo *d, std::string *outputLine)
 	auto zeDevProp = ze_device_properties_t{};
 
 	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = zeDevProp.name;
@@ -841,7 +841,7 @@ ze_result_t cmdDiscovery::vendorName(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -868,7 +868,7 @@ ze_result_t cmdDiscovery::socUuid(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->getDevProps(d->deviceHdl, &devProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -900,7 +900,7 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -939,7 +939,7 @@ ze_result_t cmdDiscovery::coreClockRate(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -965,7 +965,7 @@ ze_result_t cmdDiscovery::stepping(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1004,7 +1004,7 @@ ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 	ze_driver_properties_t zeDriProp = {};
 	const auto result = zeDriverGetProperties(d->dev->getDriverHandle(), &zeDriProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Driver properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1122,7 +1122,7 @@ ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, std::string *outputLine)
 	auto *const p = d->dev->getPCI();
 	const auto result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1148,7 +1148,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
 	auto *const p = d->dev->getPCI();
 	const auto result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(pciProps.maxSpeed.width);
@@ -1192,7 +1192,7 @@ ze_result_t cmdDiscovery::memoryPhysicalSize(devInfo *d, std::string *outputLine
 	auto *const m = d->dev->getMemory();
 
 	if (const auto result = m->getMemorySize(&physicalSize); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory physical size: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory physical size: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1221,7 +1221,7 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 
 	const auto result = m->getMemoryChannels(&channels);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory channels: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory channels: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1247,7 +1247,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 	auto *const m = d->dev->getMemory();
 
 	if (const auto result = m->getMemoryBusWidth(&busWidth); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory bus width: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory bus width: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1278,7 +1278,7 @@ ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		delete extendedPropertiesPtr;
 		return result;
 	}
@@ -1313,7 +1313,7 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 	uint32_t mediaEnginesCount = 0;
 	const auto result = engineGroup->getEngineCountByType(&mediaEnginesCount, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get media engines count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1343,7 +1343,7 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
 	const auto result =
 		engineGroup->getEngineCountByType(&mediaEnhancementEnginesCount, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get media engines count: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get media engines count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1391,7 +1391,7 @@ ze_result_t cmdDiscovery::pciVendorID(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1419,7 +1419,7 @@ ze_result_t cmdDiscovery::pciDeviceID(devInfo *d, std::string *outputLine)
 
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1445,7 +1445,7 @@ ze_result_t cmdDiscovery::numberOfTiles(devInfo *d, std::string *outputLine)
 	auto zeDevProp = ze_device_properties_t{};
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(zeDevProp.numSlices > 0 ? 1 : 0); // Simplified - actual tile count may vary
@@ -1466,7 +1466,7 @@ ze_result_t cmdDiscovery::numberOfSlices(devInfo *d, std::string *outputLine)
 	TRACING();
 	auto zeDevProp = ze_device_properties_t{};
 	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(zeDevProp.numSlices);
@@ -1487,7 +1487,7 @@ ze_result_t cmdDiscovery::numberOfSubslicesPerSlice(devInfo *d, std::string *out
 	TRACING();
 	auto zeDevProp = ze_device_properties_t{};
 	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(zeDevProp.numSubslicesPerSlice);
@@ -1508,7 +1508,7 @@ ze_result_t cmdDiscovery::numberOfEUsPerSubslice(devInfo *d, std::string *output
 	TRACING();
 	auto zeDevProp = ze_device_properties_t{};
 	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(zeDevProp.numEUsPerSubslice);
@@ -1529,7 +1529,7 @@ ze_result_t cmdDiscovery::numberOfThreadsPerEU(devInfo *d, std::string *outputLi
 	TRACING();
 	auto zeDevProp = ze_device_properties_t{};
 	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(zeDevProp.numThreadsPerEU);
@@ -1550,7 +1550,7 @@ ze_result_t cmdDiscovery::physicalEUSimdWidth(devInfo *d, std::string *outputLin
 	TRACING();
 	auto zeDevProp = ze_device_properties_t{};
 	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	*outputLine = std::to_string(zeDevProp.physicalEUSimdWidth);
@@ -1594,7 +1594,7 @@ ze_result_t cmdDiscovery::maxHardwareContexts(devInfo *d, std::string *outputLin
 	auto zeDevProp = ze_device_properties_t{};
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	// Use the maxHardwareContexts directly from device properties
@@ -1617,7 +1617,7 @@ ze_result_t cmdDiscovery::maxMemAllocSize(devInfo *d, std::string *outputLine)
 	auto zeDevProp = ze_device_properties_t{};
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	// Use maxMemAllocSize directly from device properties
@@ -1686,7 +1686,7 @@ ze_result_t cmdDiscovery::memoryEccState(devInfo *d, std::string *outputLine)
 	auto zeDevProp = ze_device_properties_t{};
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	if (zeDevProp.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) {
@@ -1742,7 +1742,7 @@ ze_result_t cmdDiscovery::deviceType(devInfo *d, std::string *outputLine)
 	auto zeDevProp = ze_device_properties_t{};
 	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	switch (zeDevProp.type) {
@@ -1779,7 +1779,7 @@ ze_result_t cmdDiscovery::skuType(devInfo *d, std::string *outputLine)
 	zes_device_properties_t zesDevProp = {};
 	ze_result_t result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	// SKU type is typically derived from model name or board number
@@ -1804,7 +1804,7 @@ ze_result_t cmdDiscovery::pcieMaxBandwidth(devInfo *d, std::string *outputLine)
 	auto *const p = d->dev->getPCI();
 	const auto result = p->getProperties(d->zesDeviceHdl, &pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 	// If the PCI information is unavailable display -1
@@ -2168,14 +2168,14 @@ int cmdDiscovery::run(arg_struct *args)
 			}
 
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -2189,14 +2189,14 @@ int cmdDiscovery::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	auto result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
 		return result;
 	}
 
@@ -2232,7 +2232,7 @@ int cmdDiscovery::run(arg_struct *args)
 						}
 					}
 
-					DBG("Running command: %s\n", cmd.second.opt.name);
+					DBG("Running command: {}\n", cmd.second.opt.name);
 					result = (this->*cmd.second.func)(&device, jsonObj.get());
 					if (result != ZE_RESULT_SUCCESS) {
 						return result;

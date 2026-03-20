@@ -120,12 +120,12 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	TRACING();
 
 	if (jsonObj->contains("error")) {
-		PRINT("%s", std::format("Error: {}\n", jsonObj->value("error", "")).c_str());
+		PRINT("{}", std::format("Error: {}\n", jsonObj->value("error", "")).c_str());
 		return;
 	}
 
 	if (const auto msg = jsonObj->value("message", ""); !msg.empty()) {
-		PRINT("%s", std::format("{}\n", msg).c_str());
+		PRINT("{}", std::format("{}\n", msg).c_str());
 		return;
 	}
 
@@ -159,7 +159,7 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			table.addRowFromContainer(cells);
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 		return;
 	}
 
@@ -185,7 +185,7 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		table.addRow("PCIe Switch", pcieSwitch);
 	}
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 
 /**
@@ -208,7 +208,7 @@ void TopologyTextPrinter::print(const TopologyInfo &info)
 	table.addRow("PCIe Switch Count", std::to_string(info.pcieSwitchCount));
 	table.addRow("PCIe Switch", info.pcieSwitch);
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 
 static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
@@ -375,7 +375,7 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 	// Export topology to XML using OAL function (hwloc / linux only)
 	const int exportResult = EXPORT_TOPOLOGY_XML(filename, gpuDevices);
 	if (exportResult != 0) {
-		ERR("Failed to export topology to file '%s'\n", filename.c_str());
+		ERR("Failed to export topology to file '{}'\n", filename.c_str());
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
@@ -387,7 +387,7 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 		auto printer = std::make_unique<JsonPrinter>();
 		printer->print(jsonObj.get());
 	} else {
-		PRINT("%s\n", message.c_str());
+		PRINT("{}\n", message.c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -745,13 +745,13 @@ int cmdTopology::run(arg_struct *args)
 				}
 			}
 			if (!found) {
-				ERR("The following argument was not expected: '%s'.\n", longOpts[optionIndex].name);
+				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
 				ERR("Run with --help for more information.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			break;
 		}
@@ -759,7 +759,7 @@ int cmdTopology::run(arg_struct *args)
 	}
 
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -782,7 +782,7 @@ int cmdTopology::run(arg_struct *args)
 	if (topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled) {
 		result = args->sm.findDevice(topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str(), &deviceList);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Device handle not found for device ID '%s'.\n",
+			ERR("Device handle not found for device ID '{}'.\n",
 				topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val.c_str());
 			return result;
 		}

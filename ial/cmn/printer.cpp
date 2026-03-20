@@ -30,7 +30,7 @@ JsonPrinter::JsonPrinter() : Printer() {}
  */
 void JsonPrinter::print(nlohmann::ordered_json *jsonObj)
 {
-	PRINT("%s\n", jsonObj->dump(4).c_str()); // Pretty print JSON with 4 spaces
+	PRINT("{}\n", jsonObj->dump(4).c_str()); // Pretty print JSON with 4 spaces
 }
 
 /**
@@ -46,6 +46,6 @@ TextPrinter::TextPrinter() : Printer() {}
 void TextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	for (auto &item : jsonObj->items()) {
-		PRINT("%s: %s\n", item.key().c_str(), item.value().dump().c_str()); // Print key-value pairs
+		PRINT("{}: {}\n", item.key().c_str(), item.value().dump().c_str()); // Print key-value pairs
 	}
 }

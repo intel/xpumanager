@@ -85,13 +85,13 @@ uint8_t pldm::amcGpuReset()
 
 	// Verify instance ID matches
 	if (mI2cPldmRead->pldmHdr.instanceID != instanceID) {
-		ERR("AMC Reset: Instance ID mismatch - sent: %u, received: %u\n", instanceID, mI2cPldmRead->pldmHdr.instanceID);
+		ERR("AMC Reset: Instance ID mismatch - sent: {}, received: {}\n", instanceID, mI2cPldmRead->pldmHdr.instanceID);
 		return PLDM_ERROR;
 	}
 
 	// Check completion code (first byte of response payload per PLDM spec)
 	if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
-		ERR("AMC Reset: Command failed with completion code: 0x%02x\n", mI2cPldmRead->respPayload[BYTE_0]);
+		ERR("AMC Reset: Command failed with completion code: 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
 		return PLDM_ERROR;
 	}
 

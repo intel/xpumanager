@@ -64,7 +64,7 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 			SETPROGRESS((int)flashData->deviceIndex, (int)flashData->curThread, (int)flashData->totalThreads,
 						progressPercent);
 		} else {
-			PRINT("\rFirmware Flash Progress: %u %%", progressPercent);
+			PRINT("\rFirmware Flash Progress: {} %", progressPercent);
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(sleepTimeInMillisec));
@@ -84,7 +84,7 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 		SETPROGRESS((int)flashData->deviceIndex, (int)flashData->curThread, (int)flashData->totalThreads,
 					progressPercent);
 	} else {
-		PRINT("\rFirmware Flash Progress: %u %%\n", progressPercent);
+		PRINT("\rFirmware Flash Progress: {} %\n", progressPercent);
 	}
 }
 
@@ -105,7 +105,7 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 	// read image file
 	fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
 	if (fwInfo->buffer.empty()) {
-		ERR("Firmware image '%s' is empty or unreadable.\n", fwInfo->filePath.c_str());
+		ERR("Firmware image '{}' is empty or unreadable.\n", fwInfo->filePath.c_str());
 		return ZE_RESULT_ERROR_INVALID_SIZE;
 	}
 
@@ -117,7 +117,7 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 		ERR("Firmware interface is not initialized\n");
 		return result;
 	} else if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to query firmware interface: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to query firmware interface: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -139,12 +139,12 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 		progressThread.join();
 
 		if (result == ZE_RESULT_ERROR_INVALID_ARGUMENT || result == ZE_RESULT_ERROR_INVALID_SIZE) {
-			ERR("Firmware image '%s' may be invalid/incompatible.\n", fwInfo->filePath.c_str());
+			ERR("Firmware image '{}' may be invalid/incompatible.\n", fwInfo->filePath.c_str());
 		} else if (result == ZE_RESULT_ERROR_UNINITIALIZED) {
-			ERR("Firmware image '%s' may be invalid/Firmware interface is not initialized.\n",
+			ERR("Firmware image '{}' may be invalid/Firmware interface is not initialized.\n",
 				fwInfo->filePath.c_str());
 		} else {
-			ERR("Failed to flash firmware: 0x%X (%s)\n", result, l0_error_to_string(result));
+			ERR("Failed to flash firmware: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		}
 
 		return result;

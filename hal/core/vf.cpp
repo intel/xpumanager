@@ -70,7 +70,7 @@ ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumEnabledVFExp(device, &vfEnabledCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get enabled VF vfEnabledCount. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get enabled VF vfEnabledCount. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -82,7 +82,7 @@ ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
 	vfEnabledHandles = new zes_vf_handle_t[vfEnabledCount];
 	result = zesDeviceEnumEnabledVFExp(device, &vfEnabledCount, vfEnabledHandles);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to enumerate enabled VFs. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to enumerate enabled VFs. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -105,7 +105,7 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle, zes_vf_exp2_capabili
 	zes_vf_exp2_capabilities_t capabilities = {};
 	ze_result_t result = zesVFManagementGetVFCapabilitiesExp2(vfHandle, &capabilities);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get VF capabilities. 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get VF capabilities. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -114,12 +114,12 @@ ze_result_t vf::getVFCapabilities(zes_vf_handle_t vfHandle, zes_vf_exp2_capabili
 	}
 
 	DBG("Successfully retrieved VF capabilities.\n");
-	DBG("  - VF ID: %u\n", capabilities.vfID);
-	DBG("  - VF Domain: %u\n", capabilities.address.domain);
-	DBG("  - VF Bus: %u\n", capabilities.address.bus);
-	DBG("  - VF Device: %u\n", capabilities.address.device);
-	DBG("  - VF Function: %u\n", capabilities.address.function);
-	DBG("  - VF vfDeviceMemSize: %llu bytes\n", (unsigned long long)capabilities.vfDeviceMemSize);
+	DBG("  - VF ID: {}\n", capabilities.vfID);
+	DBG("  - VF Domain: {}\n", capabilities.address.domain);
+	DBG("  - VF Bus: {}\n", capabilities.address.bus);
+	DBG("  - VF Device: {}\n", capabilities.address.device);
+	DBG("  - VF Function: {}\n", capabilities.address.function);
+	DBG("  - VF vfDeviceMemSize: {} bytes\n", (unsigned long long)capabilities.vfDeviceMemSize);
 
 	return result;
 }
@@ -141,7 +141,7 @@ ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle, zes_vf_util_mem
 	zes_vf_util_mem_exp2_t memoryUtil = {};
 	ze_result_t result = zesVFManagementGetVFMemoryUtilizationExp2(vfHandle, &memoryUtilCount, &memoryUtil);
 	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get VF memory utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
+		DBG("Failed to get VF memory utilization. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -162,7 +162,7 @@ ze_result_t vf::getVFMemoryUtilization(zes_vf_handle_t vfHandle, zes_vf_util_mem
 		break;
 	}
 
-	DBG("  - VF Memory Utilized: %" PRIu64 "bytes\n", memoryUtil.vfMemUtilized);
+	DBG("  - VF Memory Utilized: {}bytes\n", memoryUtil.vfMemUtilized);
 
 	return result;
 }
@@ -184,7 +184,7 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle, zes_vf_util_eng
 	zes_vf_util_engine_exp2_t engineUtil = {};
 	ze_result_t result = zesVFManagementGetVFEngineUtilizationExp2(vfHandle, &engineUtilCount, &engineUtil);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get VF engine utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get VF engine utilization. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -244,8 +244,8 @@ ze_result_t vf::getVFEngineUtilization(zes_vf_handle_t vfHandle, zes_vf_util_eng
 		break;
 	}
 
-	DBG("  - VF Active counter value: %" PRIu64 "\n", engineUtil.activeCounterValue);
-	DBG("  - VF Sampling counter value: %" PRIu64 "\n", engineUtil.samplingCounterValue);
+	DBG("  - VF Active counter value: {}\n", engineUtil.activeCounterValue);
+	DBG("  - VF Sampling counter value: {}\n", engineUtil.samplingCounterValue);
 
 	return result;
 }
@@ -265,7 +265,7 @@ static ze_result_t getAllVFEngineUtilization(zes_vf_handle_t vfHandle, std::vect
 	uint32_t engineUtilCount = 0;
 	ze_result_t result = zesVFManagementGetVFEngineUtilizationExp2(vfHandle, &engineUtilCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get VF engine count. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get VF engine count. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -277,7 +277,7 @@ static ze_result_t getAllVFEngineUtilization(zes_vf_handle_t vfHandle, std::vect
 	std::vector<zes_vf_util_engine_exp2_t> engineUtils(engineUtilCount);
 	result = zesVFManagementGetVFEngineUtilizationExp2(vfHandle, &engineUtilCount, engineUtils.data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get VF engine utilization. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get VF engine utilization. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -408,7 +408,7 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 			snap.vfDeviceMemSize = caps.vfDeviceMemSize;
 		} else {
 			// Fallback: get BDF from vfListInfo (index i+1 since index 0 is PF)
-			DBG("VF capabilities API not supported, using LISTVFS fallback for VF %u.\n", i);
+			DBG("VF capabilities API not supported, using LISTVFS fallback for VF {}.\n", i);
 			uint32_t vfListIndex = i + 1;
 			if (vfListIndex < vfListInfo.size()) {
 				const auto &vfInfo = vfListInfo[vfListIndex];
@@ -423,7 +423,7 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 					snap.device = static_cast<uint8_t>(device);
 					snap.function = static_cast<uint8_t>(function);
 				} else {
-					DBG("Failed to parse BDF address '%s' for VF %u.\n", vfInfo.bdfAddress.c_str(), i);
+					DBG("Failed to parse BDF address '{}' for VF {}.\n", vfInfo.bdfAddress.c_str(), i);
 				}
 			}
 		}
@@ -439,7 +439,7 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 		}
 
 		if (getAllVFEngineUtilization(vfHandle, snap.engineSnapshots) != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get engine utilization for VF %u.\n", i);
+			DBG("Failed to get engine utilization for VF {}.\n", i);
 		}
 
 		snapshots.push_back(snap);
@@ -471,13 +471,13 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 		// Get second engine utilization snapshot
 		std::vector<VFEngineSnapshot> secondSnapshot;
 		if (getAllVFEngineUtilization(snap.vfHandle, secondSnapshot) != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get second engine snapshot for VF %u.\n", snap.vfId);
+			DBG("Failed to get second engine snapshot for VF {}.\n", snap.vfId);
 			statsList.push_back(stats);
 			continue;
 		}
 
 		if (secondSnapshot.size() != snap.engineSnapshots.size()) {
-			DBG("Engine count mismatch for VF %u.\n", snap.vfId);
+			DBG("Engine count mismatch for VF {}.\n", snap.vfId);
 			statsList.push_back(stats);
 			continue;
 		}
@@ -489,17 +489,17 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 			const auto &second = secondSnapshot[j];
 
 			if (first.engineType != second.engineType) {
-				DBG("Engine type mismatch at index %zu for VF %u.\n", j, snap.vfId);
+				DBG("Engine type mismatch at index {} for VF {}.\n", j, snap.vfId);
 				continue;
 			}
 
 			if (second.samplingCounterValue <= first.samplingCounterValue) {
-				DBG("Invalid sampling counter for engine %d on VF %u.\n", first.engineType, snap.vfId);
+				DBG("Invalid sampling counter for engine {} on VF {}.\n", first.engineType, snap.vfId);
 				continue;
 			}
 
 			if (second.activeCounterValue < first.activeCounterValue) {
-				DBG("Active counter wrap detected for engine %d on VF %u.\n", first.engineType, snap.vfId);
+				DBG("Active counter wrap detected for engine {} on VF {}.\n", first.engineType, snap.vfId);
 				continue;
 			}
 
@@ -525,7 +525,7 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 				maxCopy = std::max(maxCopy, utilPercent);
 				break;
 			default:
-				DBG("Unknown engine type %d for VF %u.\n", first.engineType, snap.vfId);
+				DBG("Unknown engine type {} for VF {}.\n", first.engineType, snap.vfId);
 				break;
 			}
 		}
@@ -549,7 +549,7 @@ ze_result_t vf::getVFStatsList(DeviceSriovInfo *deviceInfo, std::vector<VFStatsI
 		statsList.push_back(stats);
 	}
 
-	DBG("Successfully retrieved stats for %zu VFs.\n", statsList.size());
+	DBG("Successfully retrieved stats for {} VFs.\n", statsList.size());
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -567,7 +567,7 @@ bool vf::vmxSupport()
 {
 	TRACING();
 	bool ret = VMXSUPPORT();
-	DBG("VMX is%s supported on this system\n", ret ? "" : " not");
+	DBG("VMX is{} supported on this system\n", ret ? "" : " not");
 	return ret;
 }
 
@@ -584,7 +584,7 @@ bool vf::iommuSupport()
 {
 	TRACING();
 	bool ret = IOMMUSUPPORT();
-	DBG("IOMMU is%s supported on this system\n", ret ? "" : " not");
+	DBG("IOMMU is{} supported on this system\n", ret ? "" : " not");
 	return ret;
 }
 
@@ -601,7 +601,7 @@ bool vf::sriovSupport(DeviceSriovInfo *deviceInfo)
 {
 	TRACING();
 	bool ret = SRIOVSUPPORT(deviceInfo);
-	DBG("SRIOV is%s supported on this device\n", ret ? "" : " not");
+	DBG("SRIOV is{} supported on this device\n", ret ? "" : " not");
 	return ret;
 }
 

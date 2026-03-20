@@ -165,14 +165,14 @@ static PciDeviceInfo queryPciDevice(uint16_t domain, uint8_t bus, uint8_t device
 	// Find the device
 	struct pci_device *dev = pci_device_find_by_slot(domain, bus, device, function);
 	if (!dev) {
-		ERR("PCI device %04x:%02x:%02x.%d not found\n", domain, bus, device, function);
+		ERR("PCI device {:04x}:{:02x}:{:02x}.{} not found\n", domain, bus, device, function);
 		cleanupPciSystem();
 		return info;
 	}
 
 	// Probe the device to get detailed information
 	if (pci_device_probe(dev) != 0) {
-		ERR("Failed to probe PCI device %04x:%02x:%02x.%d\n", domain, bus, device, function);
+		ERR("Failed to probe PCI device {:04x}:{:02x}:{:02x}.{}\n", domain, bus, device, function);
 		cleanupPciSystem();
 		return info;
 	}
@@ -190,26 +190,26 @@ static PciDeviceInfo queryPciDevice(uint16_t domain, uint8_t bus, uint8_t device
 	info.deviceClass = dev->device_class;
 	info.revision = dev->revision;
 
-	DBG("PCI Device %04x:%02x:%02x.%d\n", info.domain, info.bus, info.dev, info.func);
-	DBG("  Vendor ID: 0x%04x\n", info.vendorId);
-	DBG("  Device ID: 0x%04x\n", info.deviceId);
-	DBG("  Class: 0x%06x\n", info.deviceClass);
+	DBG("PCI Device {:04x}:{:02x}:{:02x}.{}\n", info.domain, info.bus, info.dev, info.func);
+	DBG("  Vendor ID: 0x{:04x}\n", info.vendorId);
+	DBG("  Device ID: 0x{:04x}\n", info.deviceId);
+	DBG("  Class: 0x{:06x}\n", info.deviceClass);
 	// Read SRIOV capability
 	readSriovCapability(dev, info);
 
 	// Print SRIOV information if available
 	if (info.isSriovCapable) {
 		DBG("  SRIOV Capable: Yes\n");
-		DBG("  Total VFs: %d\n", info.totalVFs);
-		DBG("  Initial VFs: %d\n", info.initialVFs);
-		DBG("  Current VFs: %d\n", info.numVFs);
-		DBG("  VF Stride: %d\n", info.vfStride);
-		DBG("  VF Device ID: 0x%04x\n", info.vfDeviceId);
-		DBG("  First VF Offset: %d\n", info.firstVFOffset);
+		DBG("  Total VFs: {}\n", info.totalVFs);
+		DBG("  Initial VFs: {}\n", info.initialVFs);
+		DBG("  Current VFs: {}\n", info.numVFs);
+		DBG("  VF Stride: {}\n", info.vfStride);
+		DBG("  VF Device ID: 0x{:04x}\n", info.vfDeviceId);
+		DBG("  First VF Offset: {}\n", info.firstVFOffset);
 
 		for (int i = 0; i < 6; i++) {
 			if (info.vfBarSize[i] != 0) {
-				DBG("  VF BAR%d Size: 0x%08x\n", i, info.vfBarSize[i]);
+				DBG("  VF BAR{} Size: 0x{:08x}\n", i, info.vfBarSize[i]);
 			}
 		}
 	} else {
@@ -234,7 +234,7 @@ static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdfString)
 	// Parse BDF string
 	size_t colon1 = bdfString.find(':');
 	if (colon1 == std::string::npos) {
-		ERR("Invalid BDF format: %s (expected XXXX:XX:XX.X or XX:XX.X)\n", bdfString.c_str());
+		ERR("Invalid BDF format: {} (expected XXXX:XX:XX.X or XX:XX.X)\n", bdfString.c_str());
 		return {};
 	}
 
@@ -255,11 +255,11 @@ static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdfString)
 			device = static_cast<uint8_t>(std::stoul(bdfString.substr(colon1 + 1, dot - colon1 - 1), nullptr, 16));
 			function = static_cast<uint8_t>(std::stoul(bdfString.substr(dot + 1), nullptr, 16));
 		} else {
-			ERR("Invalid BDF format: %s (expected XXXX:XX:XX.X or XX:XX.X)\n", bdfString.c_str());
+			ERR("Invalid BDF format: {} (expected XXXX:XX:XX.X or XX:XX.X)\n", bdfString.c_str());
 			return {};
 		}
 	} catch (const std::exception &e) {
-		ERR("Error parsing BDF string %s: %s\n", bdfString.c_str(), e.what());
+		ERR("Error parsing BDF string {}: {}\n", bdfString.c_str(), e.what());
 		return {};
 	}
 
@@ -282,7 +282,7 @@ static uint64_t getFreeLmemSize(const std::string &path)
 	uint64_t freeSize = 0;
 
 	if (!ifs.is_open()) {
-		ERR("Failed to open %s/vram0_mm\n", path.c_str());
+		ERR("Failed to open {}/vram0_mm\n", path.c_str());
 		return 0;
 	}
 
@@ -415,7 +415,7 @@ static bool loadSriovData(DeviceSriovInfo *data)
 	data->ggttSizeFree += std::stoul(ggtt);
 	data->contextFree += std::stoi(context);
 	data->doorbellFree += std::stoi(doorbell);
-	DBG("   lmemSizeFree: %lu\n   ggttSizeFree: %lu\n   contextFree: %u\n   doorbellFree: %u\n", data->lmemSizeFree,
+	DBG("   lmemSizeFree: {}\n   ggttSizeFree: {}\n   contextFree: {}\n   doorbellFree: {}\n", data->lmemSizeFree,
 		data->ggttSizeFree, data->contextFree, data->doorbellFree);
 
 	return true;
@@ -501,7 +501,7 @@ static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromCon
 
 	std::string fileName = findResourceFile(std::string(VGPU_CONF_FILE));
 	if (!fileExists(fileName)) {
-		ERR("%s file does not exist\n", fileName.c_str());
+		ERR("{} file does not exist\n", fileName.c_str());
 		return false;
 	}
 
@@ -511,7 +511,7 @@ static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromCon
 
 	std::ifstream ifs(fileName);
 	if (ifs.fail()) {
-		ERR("Unable to open %s\n", fileName.c_str());
+		ERR("Unable to open {}\n", fileName.c_str());
 		return false;
 	}
 
@@ -624,7 +624,7 @@ int linCreateVFs(DeviceSriovInfo *di)
 	std::string numVfsPath;
 	std::string cardName = getCardNameFromDrmPath(di->drmPath);
 
-	DBG("Creating %d VFs with %" PRIu64 " MB memory\n", di->vGpuNumber, di->vGpuMemorySize);
+	DBG("Creating {} VFs with {} MB memory\n", di->vGpuNumber, di->vGpuMemorySize);
 	di->vGpuMemorySize *= ONE_MB_IN_BYTES;
 
 	if (!loadSriovData(di)) {
@@ -647,7 +647,7 @@ int linCreateVFs(DeviceSriovInfo *di)
 	if (info.valid) {
 		if (info.isSriovCapable) {
 			if (di->vGpuNumber == 0 || di->vGpuNumber > info.totalVFs) {
-				ERR("Number of VFs specified (%d) are out of range. Total permitted for this device is %d\n",
+				ERR("Number of VFs specified ({}) are out of range. Total permitted for this device is {}\n",
 					di->vGpuNumber, info.totalVFs);
 				return -1;
 			}
@@ -664,7 +664,7 @@ int linCreateVFs(DeviceSriovInfo *di)
 	}
 
 	if (attrs.vfLmem == 0) {
-		ERR("Configuration item for %d VFs not found\n", di->vGpuNumber);
+		ERR("Configuration item for {} VFs not found\n", di->vGpuNumber);
 		return -1;
 	}
 	uint64_t lmemToUse = 0;
@@ -746,7 +746,7 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 		return -1;
 	}
 
-	DBG("device Path: %s\n", devicePath.c_str());
+	DBG("device Path: {}\n", devicePath.c_str());
 	numvfsPath << "/sys/bus/pci/devices/" << di->bdfAddress << "/sriov_numvfs";
 	if (readFile(numvfsPath.str(), numVfsString) != 0) {
 		return -1;
@@ -757,7 +757,7 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 	} catch (std::invalid_argument &) {
 		return -1;
 	}
-	DBG("%d VFs detected.", numVfs);
+	DBG("{} VFs detected.", numVfs);
 	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + di->bdfAddress;
 	/*
 	 *  Put PF info into index 0, and VF1..n into index 1..n respectively
@@ -789,14 +789,14 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 		std::string line;
 		while (std::getline(ifs, line)) {
 			if (line.length() >= MAX_PATH) {
-				ERR("Invalid line length in %s", ueventPath.c_str());
+				ERR("Invalid line length in {}", ueventPath.c_str());
 				return -1;
 			}
 			char bdfBuffer[MAX_PATH] = {0};
 			sscanf(line.c_str(), "PCI_SLOT_NAME=%s", bdfBuffer);
 			if (bdfBuffer[0] != 0) {
 				info.bdfAddress = bdfBuffer;
-				DBG("BDF Address: %s\n", bdfBuffer);
+				DBG("BDF Address: {}\n", bdfBuffer);
 				break;
 			}
 		}

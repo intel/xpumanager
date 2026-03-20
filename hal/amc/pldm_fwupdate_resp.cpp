@@ -50,14 +50,14 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
 				DBG("FWU : ALREADY_IN_UPDATE_MODE, proceed with firmware update\n");
 				return PLDM_SUCCESS;
 			} else if (mI2cPldmRead->respPayload[BYTE_0] == UNABLE_TO_INITIATE_UPDATE) {
-				ERR("FWU : FD is not able to enter update mode - 0x%02x\n", mI2cPldmRead->respPayload[BYTE_0]);
+				ERR("FWU : FD is not able to enter update mode - 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			} else if (mI2cPldmRead->respPayload[BYTE_0] == RETRY_REQUEST_UPDATE) {
-				ERR("FWU : FD is not able to enter update mode immediately - 0x%02x\n",
+				ERR("FWU : FD is not able to enter update mode immediately - 0x{:02x}\n",
 					mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			} else {
-				ERR("FWU Unknown Err :: Error Code - 0x%02x!!!\n", mI2cPldmRead->respPayload[BYTE_0]);
+				ERR("FWU Unknown Err :: Error Code - 0x{:02x}!!!\n", mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			}
 		}
@@ -68,16 +68,17 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
 		ret = pldmFwUpdateRespPayload(cmd, id);
 		if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
 			if (mI2cPldmRead->respPayload[BYTE_0] == NOT_IN_UPDATE_MODE) {
-				ERR("FWU :FD not in update mode - 0x%02x\n", mI2cPldmRead->respPayload[BYTE_0]);
+				ERR("FWU :FD not in update mode - 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			} else if (mI2cPldmRead->respPayload[BYTE_0] == INVALID_STATE_FOR_COMMAND) {
-				ERR("FWU : FD is not in a state to expect this command - 0x%02x\n", mI2cPldmRead->respPayload[BYTE_0]);
+				ERR("FWU : FD is not in a state to expect this command - 0x{:02x}\n",
+					mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			} else if (mI2cPldmRead->respPayload[BYTE_0] == PACKAGE_DATA_ERROR) {
-				ERR("FWU : FD received invalid packet data - 0x%02x\n", mI2cPldmRead->respPayload[BYTE_0]);
+				ERR("FWU : FD received invalid packet data - 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			} else {
-				ERR("FWU Unknown Err :: Error Code - 0x%02x!!!\n", mI2cPldmRead->respPayload[BYTE_0]);
+				ERR("FWU Unknown Err :: Error Code - 0x{:02x}!!!\n", mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
 			}
 		}
@@ -129,12 +130,12 @@ uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, UNUSED uint8_t id)
 	if (cmd == GET_STATUS) {
 		// Current State
 		status = mI2cPldmRead->respPayload[1];
-		DBG("GET_STATUS CMD :  Current State --> %s\n", fwuStates[status].c_str());
+		DBG("GET_STATUS CMD :  Current State --> {}\n", fwuStates[status].c_str());
 		mFwuCurrentState = status;
 
 		// Previous State
 		status = mI2cPldmRead->respPayload[2];
-		DBG("GET_STATUS CMD :  Previous State --> %s\n", fwuStates[status].c_str());
+		DBG("GET_STATUS CMD :  Previous State --> {}\n", fwuStates[status].c_str());
 	}
 
 	return PLDM_SUCCESS;
@@ -175,7 +176,7 @@ uint8_t pldm::pldmFwGetParamPayload(uint8_t cmd, uint8_t id)
 		if ((mI2cPldmRead->pldmHdr.cmdCode != cmd) || (mI2cPldmRead->pldmHdr.instanceID != id) ||
 			(mI2cPldmRead->pldmHdr.request != PLDM_RESPONSE)) {
 			ERR("pldm Firmware Update : Command Response Error !!!\n");
-			ERR("cmd code : 0x%02x, id : 0x%02x, request / response : 0x%02x\n", mI2cPldmRead->pldmHdr.cmdCode,
+			ERR("cmd code : 0x{:02x}, id : 0x{:02x}, request / response : 0x{:02x}\n", mI2cPldmRead->pldmHdr.cmdCode,
 				mI2cPldmRead->pldmHdr.instanceID, mI2cPldmRead->pldmHdr.request);
 			return PLDM_ERROR;
 		}

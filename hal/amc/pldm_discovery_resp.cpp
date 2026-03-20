@@ -75,7 +75,7 @@ uint8_t pldm::discoveryResponse(uint8_t cmd, uint8_t id, uint8_t pldmVersionType
 			if (mI2cPldmRead->respPayload[1] == 0x00) {
 				DBG("pldm TID is not set\n");
 			} else {
-				DBG("pldm TID is already set to 0x%02x\n", mI2cPldmRead->respPayload[1]);
+				DBG("pldm TID is already set to 0x{:02x}\n", mI2cPldmRead->respPayload[1]);
 				mPldmRespInfo.tid = mI2cPldmRead->respPayload[1];
 				ret = PLDM_SUCCESS;
 			}
@@ -99,7 +99,7 @@ uint8_t pldm::discoveryResponse(uint8_t cmd, uint8_t id, uint8_t pldmVersionType
 					versionInfo[i].minor = mI2cPldmRead->respPayload[BYTE_8];
 					versionInfo[i].update = mI2cPldmRead->respPayload[BYTE_7];
 					versionInfo[i].alpha = mI2cPldmRead->respPayload[BYTE_6];
-					DBG("pldm Base version for 0x%02x is %d.%d.%d.%d\n", pldmVersionType, versionInfo[i].major & 0x0F,
+					DBG("pldm Base version for 0x{:02x} is {}.{}.{}.{}\n", pldmVersionType, versionInfo[i].major & 0x0F,
 						versionInfo[i].minor & 0x0F, versionInfo[i].update & 0x0F, versionInfo[i].alpha & 0x0F);
 					ret = PLDM_SUCCESS;
 					break;
@@ -150,7 +150,7 @@ uint8_t pldm::discoveryResponsePayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
 		ERR("pldm : Command Completion Error!!!\n");
-		ERR("Error Code : 0x%02x\n", mI2cPldmRead->respPayload[0]);
+		ERR("Error Code : 0x{:02x}\n", mI2cPldmRead->respPayload[0]);
 		return PLDM_ERROR;
 	}
 

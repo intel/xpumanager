@@ -77,7 +77,7 @@ void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 						 item["mem_size"].get<uint64_t>());
 		}
 
-		PRINT("%s", table.toString().c_str());
+		PRINT("{}", table.toString().c_str());
 	}
 }
 
@@ -91,7 +91,7 @@ void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	if (jsonObj->contains("error")) {
-		PRINT("Error: %s\n", (*jsonObj)["error"].get<std::string>().c_str());
+		PRINT("Error: {}\n", (*jsonObj)["error"].get<std::string>().c_str());
 	} else {
 		printDeviceInfo(jsonObj);
 	}
@@ -138,7 +138,7 @@ ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInf
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	std::vector<zes_process_state_t> processList;
-	DBG("Running ps command on device %u\n", dev->index);
+	DBG("Running ps command on device {}\n", dev->index);
 	process *ps = dev->dev->getProcess();
 	if (ps == nullptr) {
 		ERR("Error: Process pointer not found.\n");
@@ -190,7 +190,7 @@ int cmdPs::run(arg_struct *args)
 			psCmds[psCmdType::PS_DEVICE].val = optarg;
 			break;
 		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[startind]);
+			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
 			ERR("Run with --help for more information.\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
@@ -200,14 +200,14 @@ int cmdPs::run(arg_struct *args)
 	// If optind is not equal to args->argc, it means there are extra arguments
 	// that were not processed by getopt_long.
 	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(psCmds[psCmdType::PS_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '%s'.\n", psCmds[psCmdType::PS_DEVICE].val.c_str());
+		ERR("Error: Device handle not found for device ID '{}'.\n", psCmds[psCmdType::PS_DEVICE].val.c_str());
 		return result;
 	}
 
@@ -219,7 +219,7 @@ int cmdPs::run(arg_struct *args)
 			result = getProcessList(&dev, psInfoList);
 		}
 		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get process information. Returned with error: %d\n", result);
+			DBG("Failed to get process information. Returned with error: {}\n", result);
 			return result;
 		}
 		(*jsonObj)["device_util_by_proc_list"] = psInfoList;

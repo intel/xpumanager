@@ -34,7 +34,7 @@ bool pldm::parseTimestamp104(const uint8_t *timestampData, uint8_t fieldLength, 
 	}
 
 	if (fieldLength != sizeof(timestamp104_t)) {
-		ERR("Invalid timestamp field length: %d (expected: %zu)\n", fieldLength, sizeof(timestamp104_t));
+		ERR("Invalid timestamp field length: {} (expected: {})\n", fieldLength, sizeof(timestamp104_t));
 		memset(timestamp, 0, sizeof(timestamp104_t));
 		return false;
 	}
@@ -90,8 +90,8 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 	// Clear existing parsed data
 	clearFruTableData();
 
-	DBG("\n=====================FRU TABLE PARSER CARD %i===============================\n", mCardNum);
-	DBG("Parsing FRU table data: %zu bytes\n", dataLength);
+	DBG("\n=====================FRU TABLE PARSER CARD {}===============================\n", mCardNum);
+	DBG("Parsing FRU table data: {} bytes\n", dataLength);
 
 	size_t offset = 0;
 	uint16_t recordCount = 0;
@@ -99,7 +99,7 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 	while (offset < dataLength) {
 		// Check if we have enough data for FRU record set header
 		if (offset + sizeof(struct fruRecordSetHandler) > dataLength) {
-			DBG("Insufficient data for FRU record header at offset %zu\n", offset);
+			DBG("Insufficient data for FRU record header at offset {}\n", offset);
 			break;
 		}
 
@@ -107,14 +107,14 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 		const struct fruRecordSetHandler *header =
 			reinterpret_cast<const struct fruRecordSetHandler *>(fruData + offset);
 
-		DBG("\n--- FRU Record Set %u ---\n", recordCount);
-		DBG("Record Set ID: 0x%04X\n", header->fru_record_set_identifier);
-		DBG("Record Type: 0x%02X (%s)\n", header->fru_recordType,
+		DBG("\n--- FRU Record Set {} ---\n", recordCount);
+		DBG("Record Set ID: 0x{:04X}\n", header->fru_record_set_identifier);
+		DBG("Record Type: 0x{:02X} ({})\n", header->fru_recordType,
 			(header->fru_recordType == FRU_RECORD_TYPE_GENERAL) ? "General"
 			: (header->fru_recordType == FRU_RECORD_TYPE_OEM)	? "OEM"
 																: "Unknown");
-		DBG("Number of Fields: %u\n", header->number_of_fru_fields);
-		DBG("Encoding Type: 0x%02X (%s)\n", header->encodingType,
+		DBG("Number of Fields: {}\n", header->number_of_fru_fields);
+		DBG("Encoding Type: 0x{:02X} ({})\n", header->encodingType,
 			(header->encodingType == FRU_RECORD_ENCODING_TYPE_ASCII)   ? "ASCII"
 			: (header->encodingType == FRU_RECORD_ENCODING_TYPE_UTF8)  ? "UTF8"
 			: (header->encodingType == FRU_RECORD_ENCODING_TYPE_UTF16) ? "UTF16"
@@ -125,7 +125,7 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 		// Parse fields for this record
 		for (uint8_t fieldIdx = 0; fieldIdx < header->number_of_fru_fields; fieldIdx++) {
 			if (offset >= dataLength) {
-				ERR("Insufficient data for field %u\n", fieldIdx);
+				ERR("Insufficient data for field {}\n", fieldIdx);
 				return PLDM_ERROR;
 			}
 
@@ -138,14 +138,14 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 
 			uint8_t fieldLength = fruData[offset++];
 			if (offset + fieldLength > dataLength) {
-				ERR("Insufficient data for field data (need %u bytes)\n", fieldLength);
+				ERR("Insufficient data for field data (need {} bytes)\n", fieldLength);
 				return PLDM_ERROR;
 			}
 
 			// Parse individual field
 			if (parseFruField(fruData + offset, fieldType, header->fru_recordType, header->encodingType, fieldLength) !=
 				PLDM_SUCCESS) {
-				ERR("Failed to parse field %u of record %u\n", fieldIdx, recordCount);
+				ERR("Failed to parse field {} of record {}\n", fieldIdx, recordCount);
 			}
 
 			offset += fieldLength;
@@ -154,7 +154,7 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 		recordCount++;
 	}
 
-	DBG("\nFRU table parsing completed. Parsed %u records.\n", recordCount);
+	DBG("\nFRU table parsing completed. Parsed {} records.\n", recordCount);
 
 	return PLDM_SUCCESS;
 }
@@ -194,18 +194,18 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 	case FRU_RECORD_ENCODING_TYPE_ASCII:
 		// ASCII encoding - direct copy
 		decodedText.assign((const char *)fieldData, fieldLength);
-		DBG("  Field Type: 0x%02X, Length: %u bytes, Encoding: ASCII\n", fieldType, fieldLength);
+		DBG("  Field Type: 0x{:02X}, Length: {} bytes, Encoding: ASCII\n", fieldType, fieldLength);
 		break;
 
 	case FRU_RECORD_ENCODING_TYPE_UTF8:
 		// UTF-8 encoding - direct copy (most systems handle UTF-8 natively)
 		decodedText.assign((const char *)fieldData, fieldLength);
-		DBG("  Field Type: 0x%02X, Length: %u bytes, Encoding: UTF-8\n", fieldType, fieldLength);
+		DBG("  Field Type: 0x{:02X}, Length: {} bytes, Encoding: UTF-8\n", fieldType, fieldLength);
 		break;
 
 	case FRU_RECORD_ENCODING_TYPE_UTF16:
 		// UTF-16 encoding - simplified conversion (basic implementation)
-		DBG("  Field Type: 0x%02X, Length: %u bytes, Encoding: UTF-16\n", fieldType, fieldLength);
+		DBG("  Field Type: 0x{:02X}, Length: {} bytes, Encoding: UTF-16\n", fieldType, fieldLength);
 		for (uint8_t i = 0; i < fieldLength; i += 2) {
 			if (i + 1 < fieldLength) {
 				uint16_t utf16Char = fieldData[i] | (fieldData[i + 1] << 8);
@@ -219,7 +219,7 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 		break;
 
 	default:
-		DBG("  Field Type: 0x%02X, Length: %u bytes, Encoding: Unknown (0x%02X)\n", fieldType, fieldLength,
+		DBG("  Field Type: 0x{:02X}, Length: {} bytes, Encoding: Unknown (0x{:02X})\n", fieldType, fieldLength,
 			encodingType);
 		decodedText.assign((const char *)fieldData, fieldLength); // Default to raw copy
 		break;
@@ -234,31 +234,31 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 		case FRU_GENERAL_FIELD_TYPE_CHASSIS_TYPE:
 			STRNCPY_S(mFruTable.genChassisType, decodedText.c_str(), safeLength);
 			mFruTable.genChassisType[safeLength] = '\0';
-			DBG("    Chassis Type: %s\n", mFruTable.genChassisType);
+			DBG("    Chassis Type: {}\n", mFruTable.genChassisType);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_MODEL:
 			STRNCPY_S(mFruTable.genModel, decodedText.c_str(), safeLength);
 			mFruTable.genModel[safeLength] = '\0';
-			DBG("    Model: %s\n", mFruTable.genModel);
+			DBG("    Model: {}\n", mFruTable.genModel);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_PART_NUMBER:
 			STRNCPY_S(mFruTable.genPartNum, decodedText.c_str(), safeLength);
 			mFruTable.genPartNum[safeLength] = '\0';
-			DBG("    Part Number: %s\n", mFruTable.genPartNum);
+			DBG("    Part Number: {}\n", mFruTable.genPartNum);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_SERIAL_NUMBER:
 			STRNCPY_S(mFruTable.genSerialNum, decodedText.c_str(), safeLength);
 			mFruTable.genSerialNum[safeLength] = '\0';
-			DBG("    Serial Number: %s\n", mFruTable.genSerialNum);
+			DBG("    Serial Number: {}\n", mFruTable.genSerialNum);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_MANUFACTURER:
 			STRNCPY_S(mFruTable.genManufacturer, decodedText.c_str(), safeLength);
 			mFruTable.genManufacturer[safeLength] = '\0';
-			DBG("    Manufacturer: %s\n", mFruTable.genManufacturer);
+			DBG("    Manufacturer: {}\n", mFruTable.genManufacturer);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_MANUFACTURER_DATE:
@@ -270,7 +270,7 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 										  ((uint32_t)mFruTable.genManufacturerDate.microsecond[2] << 16);
 
 				// Print formatted manufacturer date
-				DBG("    Manufacturer Date: %04d-%02d-%02d %02d:%02d:%02d.%06u (UTC%+d)\n",
+				DBG("    Manufacturer Date: {:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:06} (UTC{:+})\n",
 					mFruTable.genManufacturerDate.year, mFruTable.genManufacturerDate.month,
 					mFruTable.genManufacturerDate.day, mFruTable.genManufacturerDate.hour,
 					mFruTable.genManufacturerDate.minute, mFruTable.genManufacturerDate.second, microsecondVal,
@@ -283,43 +283,43 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 		case FRU_GENERAL_FIELD_TYPE_VENDOR:
 			STRNCPY_S(mFruTable.genVendor, decodedText.c_str(), safeLength);
 			mFruTable.genVendor[safeLength] = '\0';
-			DBG("    Vendor: %s\n", mFruTable.genVendor);
+			DBG("    Vendor: {}\n", mFruTable.genVendor);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_NAME:
 			STRNCPY_S(mFruTable.genName, decodedText.c_str(), safeLength);
 			mFruTable.genName[safeLength] = '\0';
-			DBG("    Name: %s\n", mFruTable.genName);
+			DBG("    Name: {}\n", mFruTable.genName);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_SKU:
 			STRNCPY_S(mFruTable.genSku, decodedText.c_str(), safeLength);
 			mFruTable.genSku[safeLength] = '\0';
-			DBG("    SKU: %s\n", mFruTable.genSku);
+			DBG("    SKU: {}\n", mFruTable.genSku);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_VERSION:
 			STRNCPY_S(mFruTable.genVersion, decodedText.c_str(), safeLength);
 			mFruTable.genVersion[safeLength] = '\0';
-			DBG("    Version: %s\n", mFruTable.genVersion);
+			DBG("    Version: {}\n", mFruTable.genVersion);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_ASSET_TAG:
 			STRNCPY_S(mFruTable.genAssetTag, decodedText.c_str(), safeLength);
 			mFruTable.genAssetTag[safeLength] = '\0';
-			DBG("    Asset Tag: %s\n", mFruTable.genAssetTag);
+			DBG("    Asset Tag: {}\n", mFruTable.genAssetTag);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_DESCRIPTION:
 			STRNCPY_S(mFruTable.genDesc, decodedText.c_str(), safeLength);
 			mFruTable.genDesc[safeLength] = '\0';
-			DBG("    Description: %s\n", mFruTable.genDesc);
+			DBG("    Description: {}\n", mFruTable.genDesc);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_ENGINEERING_CHANGE_LEVEL:
 			STRNCPY_S(mFruTable.genEngChangeLevel, decodedText.c_str(), safeLength);
 			mFruTable.genEngChangeLevel[safeLength] = '\0';
-			DBG("    Engineering Change Level: %s\n", mFruTable.genEngChangeLevel);
+			DBG("    Engineering Change Level: {}\n", mFruTable.genEngChangeLevel);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_OTHER_INFORMATION:
@@ -328,7 +328,7 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 				STRNCPY_S(mFruTable.genOtherInfo[idx], decodedText.c_str(), safeLength);
 				mFruTable.genOtherInfo[idx][safeLength] = '\0';
 				mFruTable.genOtherInfoCount++;
-				DBG("    Other Information[%u]: %s\n", idx, mFruTable.genOtherInfo[idx]);
+				DBG("    Other Information[{}]: {}\n", idx, mFruTable.genOtherInfo[idx]);
 			} else {
 				DBG("    Other Information: (too many records, skipping)\n");
 			}
@@ -338,17 +338,17 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 			safeLength =
 				(fieldLength < sizeof(mFruTable.genVendorIana)) ? fieldLength : sizeof(mFruTable.genVendorIana);
 			memcpy(&mFruTable.genVendorIana, fieldData, safeLength);
-			DBG("    Vendor IANA: 0x%X\n", mFruTable.genVendorIana);
+			DBG("    Vendor IANA: 0x{:X}\n", mFruTable.genVendorIana);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_SPARE_PART_NUMBER:
 			STRNCPY_S(mFruTable.genSparePartNum, decodedText.c_str(), safeLength);
 			mFruTable.genSparePartNum[safeLength] = '\0';
-			DBG("    Spare Part Number: %s\n", mFruTable.genSparePartNum);
+			DBG("    Spare Part Number: {}\n", mFruTable.genSparePartNum);
 			break;
 
 		default:
-			DBG("    Unknown General field type: 0x%X\n", fieldType);
+			DBG("    Unknown General field type: 0x{:X}\n", fieldType);
 			return PLDM_ERROR;
 		}
 	} else if (recordType == FRU_RECORD_TYPE_OEM) {
@@ -357,19 +357,19 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 			safeLength =
 				(fieldLength < sizeof(mFruTable.oemVendorIana)) ? fieldLength : sizeof(mFruTable.oemVendorIana);
 			memcpy(&mFruTable.oemVendorIana, fieldData, safeLength);
-			DBG("    OEM Vendor IANA: 0x%X\n", mFruTable.oemVendorIana);
+			DBG("    OEM Vendor IANA: 0x{:X}\n", mFruTable.oemVendorIana);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_SLAVE_ADDRESS:
 			safeLength = (fieldLength < sizeof(mFruTable.oemSlaveAddr)) ? fieldLength : sizeof(mFruTable.oemSlaveAddr);
 			memcpy(&mFruTable.oemSlaveAddr, fieldData, safeLength);
-			DBG("    OEM Slave Address: 0x%X\n", mFruTable.oemSlaveAddr);
+			DBG("    OEM Slave Address: 0x{:X}\n", mFruTable.oemSlaveAddr);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_SMBUS_FREQUENCY:
 			safeLength = (fieldLength < sizeof(mFruTable.oemSmbusFreq)) ? fieldLength : sizeof(mFruTable.oemSmbusFreq);
 			memcpy(&mFruTable.oemSmbusFreq, fieldData, safeLength);
-			DBG("    OEM SMBus Frequency: 0x%X\n", mFruTable.oemSmbusFreq);
+			DBG("    OEM SMBus Frequency: 0x{:X}\n", mFruTable.oemSmbusFreq);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_HARDWARE_ARBITRATION_OPT_IN:
@@ -377,15 +377,15 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 							 ? fieldLength
 							 : sizeof(mFruTable.oemHWArbitrationOptIn);
 			memcpy(&mFruTable.oemHWArbitrationOptIn, fieldData, safeLength);
-			DBG("    OEM Hardware Arbitration Opt-in: 0x%X\n", mFruTable.oemHWArbitrationOptIn);
+			DBG("    OEM Hardware Arbitration Opt-in: 0x{:X}\n", mFruTable.oemHWArbitrationOptIn);
 			break;
 
 		default:
-			DBG("    Unknown OEM field type: 0x%X\n", fieldType);
+			DBG("    Unknown OEM field type: 0x{:X}\n", fieldType);
 			return PLDM_ERROR;
 		}
 	} else {
-		DBG("    Unknown record type: 0x%X\n", recordType);
+		DBG("    Unknown record type: 0x{:X}\n", recordType);
 		return PLDM_ERROR;
 	}
 

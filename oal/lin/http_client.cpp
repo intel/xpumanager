@@ -215,7 +215,7 @@ int HttpClient::performRequest(const std::string &url, const std::string &userna
 		curl_easy_cleanup(curl);
 
 		// Print detailed error information for debugging
-		ERR("CURL Error: %s (code: %d)\n", curl_easy_strerror(res), res);
+		ERR("CURL Error: {} (code: {})\n", curl_easy_strerror(res), res);
 
 		// Map curl errors to our error codes
 		switch (res) {

@@ -78,11 +78,11 @@ ze_result_t firmware::enumFirmwares(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumFirmwares(device, &firmwareCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS || firmwareCount == 0) {
-		ERR("No firmware found or failed to enumerate firmwares. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("No firmware found or failed to enumerate firmwares. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Device has %u firmwares.\n", firmwareCount);
+	DBG("Device has {} firmwares.\n", firmwareCount);
 
 	firmwareList = new zes_firmware_handle_t[firmwareCount];
 	result = zesDeviceEnumFirmwares(device, &firmwareCount, firmwareList);
@@ -110,12 +110,12 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 	zes_firmware_properties_t properties;
 	ze_result_t result = zesFirmwareGetProperties(firmwareHandle, &properties);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get firmware properties. 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get firmware properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	DBG("Firmware Name: %s, Version: %s\n", properties.name, properties.version);
-	DBG("Can control: %d\n", properties.canControl);
+	DBG("Firmware Name: {}, Version: {}\n", properties.name, properties.version);
+	DBG("Can control: {}\n", properties.canControl);
 	if (STRCASECMP(properties.name, "GFX") == 0) {
 		index = GFX;
 	} else if (STRCASECMP(properties.name, "AMC") == 0) {
@@ -167,7 +167,7 @@ ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *versio
 
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	if (type < GFX || type >= MAX_FW_TYPE) {
-		ERR("Invalid firmware type: %d\n", type);
+		ERR("Invalid firmware type: {}\n", type);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -225,7 +225,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			fwInfo->firmwareHandle = updateFWCmds[i].firmwareHandle;
 
 			if ((fwInfo->fwType != fwType::AMC) && fwInfo->firmwareHandle == nullptr) {
-				ERR("Failed to find firmware handle 0x%X (%s)\n", ZE_RESULT_ERROR_UNKNOWN,
+				ERR("Failed to find firmware handle 0x{:X} ({})\n", ZE_RESULT_ERROR_UNKNOWN,
 					l0_error_to_string(ZE_RESULT_ERROR_UNKNOWN));
 				return ZE_RESULT_ERROR_UNKNOWN;
 			}
@@ -233,7 +233,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			// Call the corresponding pre-update, firmware update and post-update functions in the hal
 			result = (fw->*updateFWCmds[i].preUpdateFunc)(fwInfo);
 			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to pre-update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
+				ERR("Failed to pre-update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
 				return result;
 			}
@@ -241,7 +241,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 			if (result != ZE_RESULT_SUCCESS) {
 				if (result != ZE_RESULT_ERROR_UNINITIALIZED && result != ZE_RESULT_ERROR_INVALID_ARGUMENT &&
 					result != ZE_RESULT_ERROR_INVALID_SIZE) {
-					ERR("Failed to update firmware 0x%X (%s)\n", result, l0_error_to_string(result));
+					ERR("Failed to update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
 				}
 				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
 				return result;
@@ -256,7 +256,7 @@ ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 	}
 
 	if (i == MAX_FW_TYPE) {
-		ERR("Invalid firmware type: %s\n", fwInfo->firmwareType.c_str());
+		ERR("Invalid firmware type: {}\n", fwInfo->firmwareType.c_str());
 		result = ZE_RESULT_ERROR_UNKNOWN;
 	}
 
