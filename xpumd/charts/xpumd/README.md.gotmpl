@@ -8,7 +8,11 @@
 
 ## Pre-conditions
 
-Kubernetes cluster with eiher Intel GPU plugin[^1] or Intel GPU resource driver[^2] installed.
+Kubernetes cluster with either Intel GPU plugin[^1] or Intel GPU (DRA) resource driver[^2] installed.
+
+NOTE: Enable NFD ([Node Feature Discovery](https://kubernetes-sigs.github.io/node-feature-discovery/))
+/ GPU node labeling when installing either GPU plugin or DRA driver, to avoid `Pending` daemon
+pods on cluster nodes that do not have Intel GPUs.
 
 [^1]: [Intel GPU plugin](https://intel.github.io/intel-device-plugins-for-kubernetes/cmd/gpu_plugin/README.html)
 [^2]: [Intel GPU resource driver](https://github.com/intel/intel-resource-drivers-for-kubernetes/tree/main/doc/gpu#readme)
@@ -16,10 +20,28 @@ Kubernetes cluster with eiher Intel GPU plugin[^1] or Intel GPU resource driver[
 
 ## Installation
 
-Create namespace for the daemon and label it for [DRA](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) GPU monitoring access:
+Specify which type of Intel [GPU monitoring access](#other-values) is used in the cluster:
+
+* `i915`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
+* `xe`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
+* `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
+
+For example:
+
+```bash
+MONITOR=dra
+```
+
+Create namespace for the daemon:
 
 ```bash
 kubectl create ns intel-xpumd
+```
+
+If using DRA, label namespace for [admin access](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
+(needed for GPU monitoring):
+
+```bash
 kubectl label ns intel-xpumd resource.kubernetes.io/admin-access=true
 ```
 
@@ -28,27 +50,25 @@ Install the chart:
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
   --version 0.0.0-main \
-  --set gpuAccess=MODE \
+  --set gpuAccess=$MONITOR \
   --namespace intel-xpumd
 ```
 
-Where [MODE](#other-values) specifies how monitoring access to Intel GPUs is requested:
+If cluster GPU nodes are labeled (with NFD), add option limiting daemon pods to Intel GPU nodes:
 
-* `i915`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
-* `xe`: Use Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
-* `dra`: Use Intel GPU resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
-
+```bash
+  --set-string 'nodeSelector.intel\.feature\.node\.kubernetes\.io/gpu=true'
+```
 
 ### Optional functionality
 
 By default, only `intelxpuinfo` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
 To enable other exporters, the corresponding values must be set.
 
-To enable also Prometheus exporter endpoint, Prometheus monitoring of that,
-and Grafana dashboard for the collected metrics:
+To enable also Prometheus exporter endpoint, Prometheus monitoring of that
+and Grafana dashboard for the collected metrics, add options:
 
 ```bash
-  ...
   --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
   --set prometheus.release=prometheus-stack \
   --set prometheus.monitor=true \
@@ -59,10 +79,9 @@ and Grafana dashboard for the collected metrics:
 NOTE: above requires Prometheus to be installed to the cluster beforehand, otherwise install fails.
 See [monitoring](../../MONITORING.md) and [Prometheus exporter README](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusexporter#readme).
 
-To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service:
+To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collector service, add options:
 
 ```bash
-  ...
   --set config.exporters.otlp.endpoint="otel-collector:4317" \
   --set config.service.pipelines.metrics.exporters="{otlp}"
 ```
@@ -76,16 +95,17 @@ See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector and
 If image is in a private GitHub registry to which you have access, Helm login to ghcr.io:
 
 ```bash
-helm registry login ghcr.io -u GITHUB_USERNAME
+helm registry login ghcr.io -u $GITHUB_USERNAME
 ```
 
 Create an image pull secret in your Kubernetes cluster:
 
 ```bash
 kubectl create secret docker-registry ghcr-secret \
+  --namespace=intel-xpumd \
   --docker-server=ghcr.io/intel \
-  --docker-username=GITHUB_USERNAME \
-  --docker-password=GITHUB_PERSONAL_ACCESS_TOKEN
+  --docker-username=$GITHUB_USERNAME \
+  --docker-password=$GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 And add following option to chart install:
