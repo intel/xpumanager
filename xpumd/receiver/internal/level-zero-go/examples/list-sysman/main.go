@@ -6,15 +6,18 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
+	"os"
 
 	"github.com/intel/level-zero-go/examples/common"
 	"github.com/intel/level-zero-go/sysman"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func main() {
-	format := flag.String("format", "yaml", "Output format: json or yaml")
+	format := flag.String("format", "yaml", "Output format: json, yaml, json-raw, or yaml-raw")
 	flag.Parse()
 
 	if ret := sysman.Init(0); ret != nil {
@@ -31,7 +34,21 @@ func main() {
 		common.DumpJSON(sysInfo)
 	case "yaml":
 		common.DumpYAML(sysInfo)
+	case "json-raw":
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(sysInfo); err != nil {
+			log.Fatalf("Failed to encode raw JSON: %v", err)
+		}
+	case "yaml-raw":
+		encoder := yaml.NewEncoder(os.Stdout)
+		if err := encoder.Encode(sysInfo); err != nil {
+			log.Fatalf("Failed to encode raw YAML: %v", err)
+		}
+		if err := encoder.Close(); err != nil {
+			log.Fatalf("Failed to close YAML encoder: %v", err)
+		}
 	default:
-		log.Fatalf("Unknown format: %s (use json or yaml)", *format)
+		log.Fatalf("Unknown format: %s (use json, yaml, json-raw, or yaml-raw)", *format)
 	}
 }
