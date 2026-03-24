@@ -729,6 +729,52 @@ static int genCmdOut(const std::string &uuid)
 }
 
 /**
+ * @brief Determines if a file is a special file that should not be read as a regular file.
+ *
+ * This function checks whether a given file path represents a special file (such as device files,
+ * pseudo-files in sysfs/procfs, or other non-regular file types) that should be skipped during
+ * normal file operations. Special files may report incorrect sizes, block on read operations,
+ * or cause stream failures when accessed like regular files.
+ *
+ * @param[in] path The filesystem path to check
+ *
+ * @return true if the file is a special file and should be skipped
+ * @return false if the file is a regular file and can be safely read
+ *
+ * @note This function treats files with indeterminate status (permission errors, etc.) as special
+ *       files
+ *
+ * @warning Files in /sys/, /proc/, and /dev/ are always considered special, even if they appear
+ *          to be regular files, as they may have unpredictable behavior.
+ *
+ * @see std::filesystem::status
+ * @see std::filesystem::file_type
+ *
+ */
+static bool isSpecialFile(const std::filesystem::path &path)
+{
+	std::error_code ec;
+	// First, get the symlink status without following symlinks.
+	auto s = std::filesystem::symlink_status(path, ec);
+	if (ec) {
+		// Treat as special if we can't determine status
+		return true;
+	}
+	// If this is a symbolic link, attempt to resolve and check the target type.
+	if (s.type() == std::filesystem::file_type::symlink) {
+		auto targetStatus = std::filesystem::status(path, ec);
+		if (ec) {
+			// Conservatively treat unresolved/denied symlinks as special
+			return true;
+		}
+		// Only process regular files
+		return targetStatus.type() != std::filesystem::file_type::regular;
+	}
+	// For non-symlink entries, only regular files are considered safe to read.
+	return s.type() != std::filesystem::file_type::regular;
+}
+
+/**
  * @brief Writes all collected diagnostic files into a single plain-text output file
  *
  * Recursively iterates the temporary collection directory and appends each
@@ -742,26 +788,114 @@ static int genCmdOut(const std::string &uuid)
 static int writeToFile(const std::string &uuid, const std::string &fileName)
 {
 	const std::filesystem::path srcDir{"/var/tmp/xpum-" + uuid};
+
+	// Check source directory
+	if (!std::filesystem::exists(srcDir)) {
+		ERR("Source directory does not exist: %s\n", srcDir.string().c_str());
+		return -1;
+	}
+
+	// Check output directory and space
+	auto outPath = std::filesystem::path(fileName);
+	auto outDir = outPath.parent_path();
+	if (outDir.empty()) {
+		std::error_code ec;
+		auto cwd = std::filesystem::current_path(ec);
+		if (ec) {
+			ERR("Failed to get current working directory: %s\n", ec.message().c_str());
+			return -1;
+		}
+		outDir = cwd;
+	}
+
+	try {
+		auto space = std::filesystem::space(outDir);
+		DBG("Available disk space: %llu MB\n", static_cast<unsigned long long>(space.available / 1024 / 1024));
+	} catch (const std::exception &e) {
+		ERR("Could not check disk space: %s\n", e.what());
+	}
+
 	std::ofstream out{fileName};
 	if (!out) {
 		ERR("Failed to open output file: %s\n", fileName.c_str());
 		return -1;
 	}
 
-	for (const auto &entry : std::filesystem::recursive_directory_iterator(
-			 srcDir, std::filesystem::directory_options::skip_permission_denied)) {
-		if (!entry.is_regular_file()) {
-			continue;
+	DBG("Output file opened successfully\n");
+
+	size_t fileCount = 0;
+	size_t totalBytes = 0;
+
+	try {
+		for (const auto &entry : std::filesystem::recursive_directory_iterator(
+				 srcDir, std::filesystem::directory_options::skip_permission_denied)) {
+
+			if (!entry.is_regular_file() || isSpecialFile(entry.path())) {
+				continue;
+			}
+
+			const auto relPath = std::filesystem::relative(entry.path(), srcDir);
+			auto fileSize = std::filesystem::file_size(entry.path());
+
+			DBG("Processing: %s (%llu bytes)\n", relPath.string().c_str(), static_cast<unsigned long long>(fileSize));
+
+			// Write header
+			out << "=== " << relPath.string() << " ===\n";
+			if (!out) {
+				ERR("Failed writing header for: %s\n", relPath.string().c_str());
+				break;
+			}
+
+			// Copy file content
+			if (std::ifstream in{entry.path(), std::ios::binary}; in) {
+				auto startPos = out.tellp();
+				out << in.rdbuf();
+				auto endPos = out.tellp();
+
+				if (!out) {
+					ERR("Stream failed while copying: %s\n", relPath.string().c_str());
+					ERR("fail bit: %s\n", out.fail() ? "true" : "false");
+					ERR("bad bit: %s\n", out.bad() ? "true" : "false");
+					ERR("eof bit: %s\n", out.eof() ? "true" : "false");
+					ERR("Bytes written before failure: %lld\n", static_cast<long long>(endPos - startPos));
+					break;
+				}
+
+				totalBytes += fileSize;
+				fileCount++;
+			} else {
+				ERR("Could not open input file: %s\n", entry.path().string().c_str());
+			}
+
+			out << '\n';
+
+			// Check stream health after each file
+			if (!out) {
+				ERR("Stream became bad after processing: %s\n", relPath.string().c_str());
+				break;
+			}
 		}
-		const auto relPath = std::filesystem::relative(entry.path(), srcDir);
-		out << "=== " << relPath.string() << " ===\n";
-		if (std::ifstream in{entry.path()}; in) {
-			out << in.rdbuf();
-		}
-		out << '\n';
+	} catch (const std::filesystem::filesystem_error &e) {
+		ERR("Filesystem error: %s\n", e.what());
+		return -1;
+	} catch (const std::exception &e) {
+		ERR("Exception: %s\n", e.what());
+		return -1;
 	}
 
-	return out ? 0 : -1;
+	DBG("Processed %zu files, %zu KB total\n", fileCount, totalBytes / 1024);
+
+	// Final stream state check
+	out.flush();
+	bool success = out.good();
+
+	DBG("Final stream state:\n");
+	DBG("  good: %s\n", out.good() ? "true" : "false");
+	DBG("  fail: %s\n", out.fail() ? "true" : "false");
+	DBG("  bad: %s\n", out.bad() ? "true" : "false");
+	DBG("  eof: %s\n", out.eof() ? "true" : "false");
+
+	return success ? 0 : -1;
 }
 
 /**
