@@ -806,3 +806,155 @@ std::string getPciSlotLabel(const std::string &bdf)
 
 	return "";
 }
+
+/**
+ * @brief Derive PCIe generation number from link speed in GT/s
+ *
+ * Maps the raw transfer rate advertised by sysfs max_link_speed to the
+ * corresponding PCIe generation number per the PCIe Base Specification.
+ *
+ * @param speedGTs Transfer rate in GT/s (e.g. 32.0 for Gen 5)
+ * @return int PCIe generation (1–6), or 0 if the speed is unrecognised
+ */
+static int pcieSpeedToGeneration(double speedGTs)
+{
+	if (speedGTs >= 64.0)
+		return 6;
+	if (speedGTs >= 32.0)
+		return 5;
+	if (speedGTs >= 16.0)
+		return 4;
+	if (speedGTs >= 8.0)
+		return 3;
+	if (speedGTs >= 5.0)
+		return 2;
+	if (speedGTs >= 2.5)
+		return 1;
+	return 0;
+}
+
+/**
+ * @brief Calculate PCIe maximum unidirectional bandwidth in GB/s
+ *
+ * Uses the per-lane transfer rate and the link width to compute the
+ * theoretical peak bandwidth, accounting for the encoding overhead:
+ *  - PCIe 1.x / 2.x : 8b/10b -> 80 % efficiency
+ *  - PCIe 3.x and above : 128b/130b -> ~98.5 % efficiency
+ *
+ * @param[in] speedGTs Transfer rate per lane in GT/s
+ * @param[in] width    Number of lanes (e.g. 16)
+ * @return double  Peak bandwidth in GB/s
+ */
+static double pcieBandwidthGBps(double speedGTs, int width)
+{
+	if (speedGTs <= 0.0 || width <= 0)
+		return 0.0;
+	const double encoding = (speedGTs >= 8.0) ? (128.0 / 130.0) : (8.0 / 10.0);
+	return speedGTs * static_cast<double>(width) * encoding / 8.0;
+}
+
+/**
+ * @brief Discover xe-bound PCI devices and collect their PCIe properties
+ *
+ * Scans /sys/bus/pci/drivers/xe for symlinks representing devices bound to
+ * the "xe" kernel driver.  For every valid BDF address found the function
+ * reads the following properties directly from sysfs / SMBIOS:
+ *
+ *  - PCI slot label   : /sys/bus/pci/devices/<bdf>/label  (fallback: SMBIOS)
+ *  - PCIe generation  : derived from upstream bridge's max_link_speed in sysfs
+ *  - Max link width   : upstream bridge's max_link_width in sysfs
+ *  - Max bandwidth    : computed from speed × width × encoding efficiency
+ *
+ * Example values for a Gen-5 ×16 slot:
+ *   pciSlot        = "PCIEX16(G5)"
+ *   pcieGeneration = 5
+ *   maxLinkWidth   = 16
+ *   maxBandwidthGBps = 63.01
+ *
+ * @param pciPropsList [out] Vector to which one xeDevPciInfo entry per
+ *                          discovered device is appended.
+ * @return int  0 on success, -1 if /sys/bus/pci/drivers/xe cannot be accessed
+ */
+int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
+{
+	constexpr std::string_view kXeDriverPath = "/sys/bus/pci/drivers/xe";
+
+	namespace fs = std::filesystem;
+	std::error_code ec;
+
+	try {
+		for (const auto &entry : fs::directory_iterator(kXeDriverPath, fs::directory_options::skip_permission_denied)) {
+			if (!fs::is_symlink(entry.symlink_status(ec)) || ec)
+				continue;
+
+			// Consume the symlink to confirm it resolves; ignore errors
+			auto targetPath = fs::read_symlink(entry.path(), ec);
+			if (ec || targetPath.empty())
+				continue;
+
+			const std::string bdf = entry.path().filename().string();
+			if (!isValidBdf(bdf))
+				continue;
+
+			xeDevPciInfo info;
+			info.bdf = bdf;
+
+			// --- PCI slot label ------------------------------------------------
+			info.pciSlot = getPciSlotLabel(bdf);
+
+			// --- Resolve root port BDF for accurate PCIe link attributes -----
+			// Intel Xe GPU endpoints (and PCIe switch downstream ports) may
+			// report incorrect Gen/width in their own LnkCap registers.  The
+			// root port — first BDF in the symlink path — is always configured
+			// correctly by BIOS for the physical slot.  Walk the raw symlink
+			// target components to find it:
+			//   ../../../../devices/pci0000:00/0000:00:06.0/0000:02:00.0/0000:03:01.0/0000:04:00.0
+			//                                               ^^^^^^^^^^^^  ← root port (first valid BDF)
+			std::string linkBdf = bdf;
+			for (const auto &component : targetPath) {
+				const std::string name = component.string();
+				if (isValidBdf(name) && name != bdf) {
+					linkBdf = name;
+					DBG("Using root port BDF %s for link attributes of %s\n", linkBdf.c_str(), bdf.c_str());
+					break;
+				}
+			}
+
+			// --- PCIe max link speed -------------------------------------------
+			// sysfs format: "32.0 GT/s PCIe"  →  stod stops at the first
+			// non-numeric character, giving us the GT/s value directly.
+			const std::string speedStr = getSysfsLine(linkBdf, "/max_link_speed");
+			double speedGTs = 0.0;
+			if (!speedStr.empty()) {
+				try {
+					speedGTs = std::stod(speedStr);
+				} catch (const std::exception &) {
+					ERR("Failed to parse max_link_speed for %s: \"%s\"\n", linkBdf.c_str(), speedStr.c_str());
+				}
+			}
+			info.pcieGeneration = pcieSpeedToGeneration(speedGTs);
+
+			// --- PCIe max link width -------------------------------------------
+			// sysfs format: "16"
+			const std::string widthStr = getSysfsLine(linkBdf, "/max_link_width");
+			info.maxLinkWidth = 0;
+			if (!widthStr.empty()) {
+				try {
+					info.maxLinkWidth = std::stoi(widthStr);
+				} catch (const std::exception &) {
+					ERR("Failed to parse max_link_width for %s: \"%s\"\n", linkBdf.c_str(), widthStr.c_str());
+				}
+			}
+
+			// --- Max bandwidth (derived) ---------------------------------------
+			info.maxBandwidthGBps = pcieBandwidthGBps(speedGTs, info.maxLinkWidth);
+
+			pciPropsList->push_back(std::move(info));
+		}
+	} catch (const fs::filesystem_error &e) {
+		ERR("Error accessing %s: %s\n", kXeDriverPath.data(), e.what());
+		return -1;
+	}
+
+	return 0;
+}

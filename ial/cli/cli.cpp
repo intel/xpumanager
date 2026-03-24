@@ -8,6 +8,7 @@
 #include "version.h"
 #include <cmd_agentset.h>
 #include <cmd_amc.h>
+#include <cmd_listgpu.h>
 #include <cmd_config.h>
 #include <cmd_diag.h>
 #include <cmd_discovery.h>
@@ -245,6 +246,7 @@ int main(int argc, char *argv[])
 		{createInstance<cmdTopdown>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 		{createInstance<cmdAgentSet>, DAEMONCAP::DAEMON, OSTYPE::LINUX},
 		{createInstance<cmdAmc>, DAEMONCAP::BOTH, OSTYPE::LINUX},
+		{createInstance<cmdListgpu>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 	};
 
 	OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;

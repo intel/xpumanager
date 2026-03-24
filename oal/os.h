@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -22,6 +23,7 @@
 #define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
 #define TIMESTAMP timestamp
 #define SETPROGRESS(devIndex, lineNum, totalThreads, progress) setProgress(devIndex, lineNum, totalThreads, progress)
+#define GET_XE_DEV_PCI_PROPS(pciPropsList) getXeDevPciProps(pciPropsList)
 
 struct bdfID
 {
@@ -37,9 +39,19 @@ struct amcCardInfo
 	std::string gpuParentPath;
 };
 
+struct xeDevPciInfo
+{
+	std::string bdf;		 // e.g. "0000:03:00.0"
+	std::string pciSlot;	 // e.g. "PCIEX16(G5)"
+	int pcieGeneration;		 // e.g. 5
+	int maxLinkWidth;		 // e.g. 16
+	double maxBandwidthGBps; // e.g. 63.01
+};
+
 std::string getProcessName(uint32_t processId);
 std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
+int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
 inline std::mutex progressPrintMutex;
 
