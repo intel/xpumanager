@@ -404,3 +404,12 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 	}
 	sync_out.flush();
 }
+
+int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
+{
+	// This function is not applicable on Windows as it is not a priority for the current scope of work.
+	// It is defined to maintain cross-platform compatibility but will not perform any operations on Windows.
+	UNUSED_VAR(pciPropsList);
+	ERR("getXeDevPciProps is not supported on Windows.\n");
+	return -1;
+}
