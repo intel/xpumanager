@@ -7,6 +7,7 @@ package core
 
 import "C"
 import (
+	"encoding/json"
 	"unsafe"
 
 	"github.com/intel/level-zero-go/internal"
@@ -19,10 +20,26 @@ func (s StringProperty64) String() string {
 	return C.GoString((*C.char)(unsafe.Pointer(&s[0])))
 }
 
+func (s StringProperty64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s StringProperty64) MarshalYAML() (any, error) {
+	return s.String(), nil
+}
+
 type StringProperty256 [256]byte
 
 func (s StringProperty256) String() string {
 	return C.GoString((*C.char)(unsafe.Pointer(&s[0])))
+}
+
+func (s StringProperty256) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s StringProperty256) MarshalYAML() (any, error) {
+	return s.String(), nil
 }
 
 /* Stringers for flags types */
