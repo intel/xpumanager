@@ -1,0 +1,67 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/name: xpumd
+    app.kubernetes.io/part-of: xpumd
+    prometheus: k8s
+    role: alert-rules
+  name: xpum-alert-rules
+# relevant specs:
+# - https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+# - https://prometheus.io/docs/prometheus/latest/configuration/template_reference/
+spec:
+  # NOTE:
+  # - "hw_sensor_location" attribute values may differ between HW and driver versions, use
+  #   one relevant for the cluster HW (gpu, memory, package, card...)
+  # - use suitable intervals [1] in "for" fields, and update summary/description accordingly
+  #
+  # [1] the time taken to generate an alarm varies between:
+  # - minimum time = [time set in the 'FOR' clause]
+  # - maximum time = [scrape_interval + evaluation_interval + 'FOR' clause time]
+  # where (scrape and) rule evaluation intervals are 1 min by default:
+  #   https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+  groups:
+  - name: xpum-alerts
+    rules:
+    - alert: GpuPowerUsageHigh
+      # TODO: set limit to a value suitable for GPU type(s) used in the cluster
+      # (or if GPU stack provides power ratio metrics, use those instead)
+      expr: hw_power_watts{pci_bdf!="",hw_sensor_location="gpu"} > 99
+      for: 20s
+      annotations:
+        description: "Over 99W ({{ $value }}W) {{ $labels.hw_sensor_location }} power usage over 20s on '{{ $labels.node }}' node '{{ $labels.pci_bdf }}' GPU"
+        summary: "99+W GPU power usage 20+s on {{ $labels.node }}/{{ $labels.pci_bdf }}"
+      labels:
+        severity: warning
+    - alert: GpuTemperatureHigh
+      expr: hw_temperature_celsius{pci_bdf!="",hw_sensor_location="gpu",statistic="max"} > 85
+      for: 20s
+      annotations:
+        description: "Over 85C ({{ $value }}C) max temperature across all sensors over 20s on '{{ $labels.node }}' node '{{ $labels.pci_bdf }}' GPU"
+        summary: "85+C GPU max temperature 20+s on {{ $labels.node }}/{{ $labels.pci_bdf }}"
+      labels:
+        severity: warning
+    - alert: GpuMemoryUsageHigh
+      expr: hw_memory_utilization_ratio{pci_bdf!="",hw_memory_location="device"} > 0.95
+      for: 20s
+      annotations:
+        description: "Over 95% ({{ humanizePercentage $value }}) device ({{ $labels.hw_memory_type }}) memory usage over 20s on '{{ $labels.node }}' node '{{ $labels.pci_bdf }}' GPU"
+        summary: "95+% GPU device memory usage 20+s on {{ $labels.node }}/{{ $labels.pci_bdf }}"
+      labels:
+        severity: warning
+    - alert: GpuStateIssue
+      # HW (component) moved to non-OK state (or to unknown state from a known one)
+      expr: sum by (hw_type, hw_state, node, pci_bdf)(hw_status{pci_bdf!="",hw_state!="ok"}) > 0
+      annotations:
+        description: "{{ $labels.hw_type }} {{ $labels.hw_state }} issue on '{{ $labels.node }}' node '{{ $labels.pci_bdf }}' GPU"
+        summary: "GPU issue(s) on {{ $labels.node }}/{{ $labels.pci_bdf }}"
+      labels:
+        severity: warning
+    - alert: GpuErrors
+      expr: sum by (hw_type, error_type, error_category, node, pci_bdf)(hw_errors_total{hw_type="gpu",pci_bdf!="",error_type="uncorrectable"}) > 0
+      annotations:
+        description: "{{ $value }} uncorrectable '{{ $labels.error_category }}' errors on '{{ $labels.node }}' node '{{ $labels.pci_bdf }}' GPU"
+        summary: "Uncorrectable GPU error(s) on {{ $labels.node }}/{{ $labels.pci_bdf }}"
+      labels:
+        severity: warning

@@ -5,6 +5,7 @@
 - [Prometheus + Grafana install](#prometheus--grafana-install)
 - [XPUMD Helm options](#xpumd-helm-options)
 - [View metrics](#view-metrics)
+- [GPU metric alerts](#gpu-metric-alerts)
 - [Manual metrics verification](#manual-metrics-verification)
 - [Dashboard install workarounds](#dashboard-install-workarounds)
 
@@ -105,6 +106,14 @@ kubectl get secret -n $(kubectl get svc -A | awk '/grafana/{print $1,$2}') \
 of being generated on Grafana install and stored into a K8s Secret.)
 
 ![GPU metrics dashboard](xpumd-dashboard.png)
+
+
+## GPU metric alerts
+
+K8s DRA driver (listening on XPUMD local gRPC socket) can taint
+unhealthy cluster devices, but those do not produce alerts for the
+admin. [ALERTS.md](ALERTS.md) provides some examples on setting up
+GPU metric based alerts.
 
 
 ## Manual metrics verification
