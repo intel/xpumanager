@@ -162,7 +162,7 @@ func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 	domains, err := device.EnumOverclockDomains()
 	if err != nil {
 		d.recordError("Overclock.EnumDomains", err)
-	} else if len(domains) > 0 {
+	} else {
 		ocInfo.Domains = make([]OverclockDomainInfo, len(domains))
 		for i, domain := range domains {
 			if props, err := domain.GetDomainProperties(); err != nil {
