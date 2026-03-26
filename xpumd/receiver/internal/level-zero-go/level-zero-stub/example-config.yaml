@@ -29,6 +29,14 @@ Drivers:
     ReturnValues:
       zesDeviceGet: 0
 
+    # List of features that return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
+    # Takes precedence over ReturnValues.
+    UnsupportedFeatures:
+    #   - GetExtensionProperties
+    #   - Driver.DeviceGet
+    #   - Driver.EventListen
+    #   - Driver.EventListenEx
+
     # -------------------------------------------------------------------
     # Devices
     # -------------------------------------------------------------------
@@ -238,8 +246,119 @@ Drivers:
           zesDeviceEnumTemperatureSensors: 0
           zesDeviceEnumDiagnosticTestSuites: 0
 
-        # zesDriverEventListen / zesDriverEventListenEx (0 == no pending events)
-        Events: 1  # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
+        # List of features that return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
+        # Takes precedence over ReturnValues.
+        UnsupportedFeatures:
+        #   - Device.GetProperties
+        #   - Device.GetState
+        #   - Device.ProcessesGetState
+        #   - Device.Reset
+        #   - Device.ResetExt
+        #   - Device.SetOverclockWaiver
+        #   - Device.GetOverclockControls
+        #   - Device.EventRegister
+        #   - PCI.GetProperties
+        #   - PCI.GetState
+        #   - PCI.GetBars
+        #   - PCI.GetStats
+        #   - OverclockDomains
+        #   - Overclock.ReadState
+        #   - Overclock.EnumDomains
+        #   - Overclock.ResetSettings
+        #   - OverclockDomain.GetProperties
+        #   - OverclockDomain.GetVFProperties
+        #   - OverclockDomain.GetDomainControlProperties
+        #   - OverclockDomain.GetControlCurrentValue
+        #   - OverclockDomain.GetControlPendingValue
+        #   - OverclockDomain.SetControlUserValue
+        #   - OverclockDomain.GetControlState
+        #   - OverclockDomain.GetVFPointValues
+        #   - OverclockDomain.SetVFPointValues
+        #   - ECC
+        #   - ECC.Configurable
+        #   - ECC.GetState
+        #   - ECC.SetState
+        #   - DiagnosticsTestSuites
+        #   - Diagnostic.GetProperties
+        #   - Diagnostic.GetTests
+        #   - Diagnostic.RunTests
+        #   - EngineGroups
+        #   - EngineGroup.GetProperties
+        #   - EngineGroup.GetActivity
+        #   - EngineGroup.GetActivityExt
+        #   - FabricPorts
+        #   - FabricPort.GetProperties
+        #   - FabricPort.GetLinkType
+        #   - FabricPort.GetConfig
+        #   - FabricPort.SetConfig
+        #   - FabricPort.GetState
+        #   - FabricPort.GetThroughput
+        #   - FabricPort.GetErrorCounters
+        #   - FabricPort.GetMultiPortThroughput
+        #   - Fans
+        #   - Fan.GetProperties
+        #   - Fan.GetConfig
+        #   - Fan.SetDefaultMode
+        #   - Fan.SetFixedSpeedMode
+        #   - Fan.SetSpeedTableMode
+        #   - Fan.GetState
+        #   - Firmwares
+        #   - Firmware.GetProperties
+        #   - Firmware.Flash
+        #   - Firmware.GetFlashProgress
+        #   - Firmware.GetConsoleLogs
+        #   - FrequencyDomains
+        #   - FrequencyDomain.GetProperties
+        #   - FrequencyDomain.GetAvailableClocks
+        #   - FrequencyDomain.GetRange
+        #   - FrequencyDomain.SetRange
+        #   - FrequencyDomain.GetState
+        #   - FrequencyDomain.GetThrottleTime
+        #   - Leds
+        #   - Led.GetProperties
+        #   - Led.GetState
+        #   - Led.SetState
+        #   - Led.SetColor
+        #   - MemoryModules
+        #   - MemoryModule.GetProperties
+        #   - MemoryModule.GetState
+        #   - MemoryModule.GetBandwidth
+        #   - PerformanceDomains
+        #   - PerformanceDomain.GetProperties
+        #   - PerformanceDomain.GetConfig
+        #   - PerformanceDomain.SetConfig
+        #   - PowerDomains
+        #   - PowerDomain.GetProperties
+        #   - PowerDomain.GetEnergyCounter
+        #   - PowerDomain.GetLimitsExt
+        #   - PowerDomain.SetLimitsExt
+        #   - PowerDomain.GetEnergyThreshold
+        #   - PowerDomain.SetEnergyThreshold
+        #   - Psus
+        #   - Psu.GetProperties
+        #   - Psu.GetState
+        #   - RasErrorSets
+        #   - RasErrorSet.GetProperties
+        #   - RasErrorSet.GetConfig
+        #   - RasErrorSet.SetConfig
+        #   - RasErrorSet.GetState
+        #   - Schedulers
+        #   - Scheduler.GetProperties
+        #   - Scheduler.GetCurrentMode
+        #   - Scheduler.GetTimeoutModeProperties
+        #   - Scheduler.GetTimesliceModeProperties
+        #   - Scheduler.SetTimeoutMode
+        #   - Scheduler.SetTimesliceMode
+        #   - Scheduler.SetExclusiveMode
+        #   - StandbyDomains
+        #   - StandbyDomain.GetProperties
+        #   - StandbyDomain.GetMode
+        #   - StandbyDomain.SetMode
+        #   - TemperatureSensors
+        #   - TemperatureSensor.GetProperties
+        #   - TemperatureSensor.GetConfig
+        #   - TemperatureSensor.SetConfig
+        #   - TemperatureSensor.GetState
 
         # -----------------------------------------------------------------
         # Engine groups (zesDeviceEnumEngineGroups)

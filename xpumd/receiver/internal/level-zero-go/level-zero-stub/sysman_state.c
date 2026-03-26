@@ -34,8 +34,8 @@ static pthread_mutex_t g_state_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t g_watch_thread;
 // Guards the entire start/stop lifecycle; serialises concurrent callers.
 static pthread_mutex_t g_watch_lifecycle_mu = PTHREAD_MUTEX_INITIALIZER;
-static int g_watch_thread_started;         // protected by g_watch_lifecycle_mu
-static int g_stop_efd = -1;               // eventfd; written by sysman_watch_stop()
+static int g_watch_thread_started; // protected by g_watch_lifecycle_mu
+static int g_stop_efd = -1;		   // eventfd; written by sysman_watch_stop()
 
 // Condition variable used to signal that the watcher thread has registered
 // the inotify watch and is ready to receive events.
@@ -487,6 +487,7 @@ static void free_device(sysman_device_state_t *dev)
 	free(dev->pci.bars);
 	free(dev->pci.stats);
 	free(dev->processes);
+	free(dev->unsupported_features);
 	free_ecc(dev);
 	free_engine_groups(dev);
 	free_fabric_ports(dev);
@@ -513,6 +514,7 @@ static void free_driver(sysman_drivers_state_t *drv)
 		free_device(&drv->devices[i]);
 	free(drv->devices);
 	free(drv->extension_properties);
+	free(drv->unsupported_features);
 	memset(drv, 0, sizeof(*drv));
 }
 
