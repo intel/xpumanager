@@ -66,12 +66,28 @@ type ECCInfo struct {
 type OverclockInfo struct {
 	DomainsBitmask sysman.OverclockDomain
 	State          *sysman.OverclockState
+	Controls       []OverclockControlsInfo
 	Domains        []OverclockDomainInfo
+}
+
+type OverclockControlsInfo struct {
+	DomainType      sysman.OverclockDomain
+	ControlsBitmask sysman.OverclockControl
+}
+
+type OverclockDomainControlsInfo struct {
+	ControlType   sysman.OverclockControl
+	Properties    *sysman.ControlProperty
+	CurrentValue  *float64
+	PendingValue  *float64
+	State         *sysman.ControlState
+	PendingAction *sysman.PendingAction
 }
 
 type OverclockDomainInfo struct {
 	Properties   *sysman.OverclockProperties
 	VFProperties *sysman.VfProperty
+	ControlInfos []OverclockDomainControlsInfo
 }
 
 type DiagnosticsInfo struct {

@@ -14,6 +14,16 @@ import (
 	"github.com/intel/level-zero-go/sysman"
 )
 
+// getFlagBits returns a slice of individual set bits from a bitmask flags
+// value, starting from the LSB.
+func getFlagBits(flags uint32) []uint32 {
+	result := make([]uint32, 0, bits.OnesCount32(flags))
+	for ; flags != 0; flags &= flags - 1 {
+		result = append(result, flags&-flags) // get the least significant set bit
+	}
+	return result
+}
+
 // recordError records an error into the appropriate list
 func (b *BaseInfo) recordError(context string, err error) {
 	if err == nil {
@@ -149,6 +159,18 @@ func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 	}
 	ocInfo.DomainsBitmask = domainFlags
 
+	for _, flag := range getFlagBits(uint32(domainFlags)) {
+		domainType := sysman.OverclockDomain(flag)
+		if controls, err := device.GetOverclockControls(domainType); err != nil {
+			d.recordError("Device.GetOverclockControls", err)
+		} else {
+			ocInfo.Controls = append(ocInfo.Controls, OverclockControlsInfo{
+				DomainType:      domainType,
+				ControlsBitmask: controls,
+			})
+		}
+	}
+
 	if state, err := device.ReadOverclockState(); err != nil {
 		d.recordError("Overclock.ReadState", err)
 	} else {
@@ -161,15 +183,45 @@ func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 	} else {
 		ocInfo.Domains = make([]OverclockDomainInfo, len(domains))
 		for i, domain := range domains {
+			var domainProps *sysman.OverclockProperties
 			if props, err := domain.GetDomainProperties(); err != nil {
 				d.recordError("OverclockDomain.GetProperties", err)
 			} else {
 				ocInfo.Domains[i].Properties = &props
+				domainProps = &props
 			}
 			if vfProps, err := domain.GetDomainVFProperties(); err != nil {
 				d.recordError("OverclockDomain.GetVFProperties", err)
 			} else {
 				ocInfo.Domains[i].VFProperties = &vfProps
+			}
+			if domainProps != nil {
+				for _, flag := range getFlagBits(domainProps.AvailableControls) {
+					ctrl := sysman.OverclockControl(flag)
+					info := OverclockDomainControlsInfo{ControlType: ctrl}
+					if cp, err := domain.GetDomainControlProperties(ctrl); err != nil {
+						d.recordError("OverclockDomain.GetDomainControlProperties", err)
+					} else {
+						info.Properties = &cp
+					}
+					if val, err := domain.GetControlCurrentValue(ctrl); err != nil {
+						d.recordError("OverclockDomain.GetControlCurrentValue", err)
+					} else {
+						info.CurrentValue = &val
+					}
+					if val, err := domain.GetControlPendingValue(ctrl); err != nil {
+						d.recordError("OverclockDomain.GetControlPendingValue", err)
+					} else {
+						info.PendingValue = &val
+					}
+					if state, pendingAction, err := domain.GetControlState(ctrl); err != nil {
+						d.recordError("OverclockDomain.GetControlState", err)
+					} else {
+						info.State = &state
+						info.PendingAction = &pendingAction
+					}
+					ocInfo.Domains[i].ControlInfos = append(ocInfo.Domains[i].ControlInfos, info)
+				}
 			}
 		}
 	}
