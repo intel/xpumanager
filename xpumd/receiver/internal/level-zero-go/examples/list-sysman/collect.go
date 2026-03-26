@@ -114,33 +114,29 @@ func (d *DeviceInfo) collect(device *sysman.Device) {
 }
 
 func (d *DeviceInfo) collectPCIInfo(device *sysman.Device) {
-	pciInfo := &PCIInfo{}
-
 	if props, err := device.PciGetProperties(); err != nil {
 		d.recordError("PCI.GetProperties", err)
 	} else {
-		pciInfo.Properties = &props
+		d.PCI.Properties = &props
 	}
 
 	if state, err := device.PciGetState(); err != nil {
 		d.recordError("PCI.GetState", err)
 	} else {
-		pciInfo.State = &state
+		d.PCI.State = &state
 	}
 
 	if bars, err := device.PciGetBars(); err != nil {
 		d.recordError("PCI.GetBars", err)
 	} else {
-		pciInfo.Bars = bars
+		d.PCI.Bars = bars
 	}
 
 	if stats, err := device.PciGetStats(); err != nil {
 		d.recordError("PCI.GetStats", err)
 	} else {
-		pciInfo.Stats = &stats
+		d.PCI.Stats = &stats
 	}
-
-	d.PCI = pciInfo
 }
 
 func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
