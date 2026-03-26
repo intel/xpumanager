@@ -535,7 +535,7 @@ func TestDeviceGetOverclockDomains(t *testing.T) {
 		loadDriverConfig(t, driverConfigDefault)
 		mask, err := getDevice(t, 0, 0).GetOverclockDomains()
 		require.NoError(t, err)
-		assert.Equal(t, OVERCLOCK_DOMAIN_CARD|OVERCLOCK_DOMAIN_PACKAGE, mask, "mask")
+		assert.Equal(t, OverclockDomains(OVERCLOCK_DOMAIN_CARD|OVERCLOCK_DOMAIN_PACKAGE), mask, "mask")
 	})
 }
 
@@ -549,7 +549,7 @@ func TestDeviceGetOverclockControls(t *testing.T) {
 		loadDriverConfig(t, driverConfigDefault)
 		mask, err := getDevice(t, 0, 0).GetOverclockControls(0)
 		require.NoError(t, err)
-		assert.Equal(t, OVERCLOCK_CONTROL_VF|OVERCLOCK_CONTROL_FREQ_OFFSET|OVERCLOCK_CONTROL_VMAX_OFFSET, mask, "mask")
+		assert.Equal(t, OverclockControls(OVERCLOCK_CONTROL_VF|OVERCLOCK_CONTROL_FREQ_OFFSET|OVERCLOCK_CONTROL_VMAX_OFFSET), mask, "mask")
 	})
 }
 

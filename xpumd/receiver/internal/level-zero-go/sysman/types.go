@@ -275,7 +275,7 @@ type OverclockProperties struct {
 	stype             structureType
 	pnext             unsafe.Pointer
 	DomainType        OverclockDomain
-	AvailableControls uint32
+	AvailableControls OverclockControls
 	VFProgramType     VfProgramType
 	NumberOfVFPoints  uint32
 }

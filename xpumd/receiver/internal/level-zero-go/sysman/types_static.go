@@ -260,6 +260,12 @@ func wrappersToHandles[H any, V any, W interface {
 
 /* Types for the higher level golang API */
 
+// Overclock domains. Alias bitmap to wrap multiple domain types in a single value.
+type OverclockDomains OverclockDomain
+
+// Overclock controls. Alias bitmap to wrap multiple control types in a single value.
+type OverclockControls OverclockControl
+
 // OverclockState wraps the overclocking state from zesDeviceReadOverclockState.
 type OverclockState struct {
 	Mode          OverclockMode
@@ -297,6 +303,26 @@ type PowerProperties struct {
 	// ExtendedProperties provides optional additional properties that may not
 	// be supported on all devices or drivers. Value is nil if not available.
 	ExtendedProperties *PowerExtProperties
+}
+
+// String representation of all set bits of OverclockDomains.
+func (o OverclockDomains) String() string {
+	return internal.FlagsToString[OverclockDomain](OverclockDomain(o))
+}
+
+// Bits returns a slice of all enabled bits of OverclockDomain.
+func (f OverclockDomains) Bits() []OverclockDomain {
+	return internal.FlagsToBits(OverclockDomain(f))
+}
+
+// String representation of all set bits of OverclockControls.
+func (o OverclockControls) String() string {
+	return internal.FlagsToString[OverclockControl](OverclockControl(o))
+}
+
+// Bits returns a slice of all enabled bits of OverclockControl.
+func (f OverclockControls) Bits() []OverclockControl {
+	return internal.FlagsToBits(OverclockControl(f))
 }
 
 // String representation of all set bits of InitFlags.
@@ -397,14 +423,4 @@ func (f FreqThrottleReasonFlags) String() string {
 // Bits returns a slice of all enabled flags (set bits) of FreqThrottleReasonFlags.
 func (f FreqThrottleReasonFlags) Bits() []FreqThrottleReasonFlag {
 	return internal.FlagsToBits(FreqThrottleReasonFlag(f))
-}
-
-// Bits returns a slice of all enabled bits of OverclockDomain.
-func (f OverclockDomain) Bits() []OverclockDomain {
-	return internal.FlagsToBits(f)
-}
-
-// Bits returns a slice of all enabled bits of OverclockControl.
-func (f OverclockControl) Bits() []OverclockControl {
-	return internal.FlagsToBits(f)
 }

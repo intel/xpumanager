@@ -226,18 +226,18 @@ func (z *Device) SetOverclockWaiver() error {
 
 // GetOverclockDomains wraps the zesDeviceGetOverclockDomains function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicegetoverclockdomains
-func (z *Device) GetOverclockDomains() (OverclockDomain, error) {
+func (z *Device) GetOverclockDomains() (OverclockDomains, error) {
 	var domains uint32
 	ret := zesDeviceGetOverclockDomains(z.handle, &domains)
-	return OverclockDomain(domains), ret.ToError()
+	return OverclockDomains(domains), ret.ToError()
 }
 
 // GetOverclockControls wraps the zesDeviceGetOverclockControls function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicegetoverclockcontrols
-func (z *Device) GetOverclockControls(domainType OverclockDomain) (OverclockControl, error) {
+func (z *Device) GetOverclockControls(domainType OverclockDomain) (OverclockControls, error) {
 	var controls uint32
 	ret := zesDeviceGetOverclockControls(z.handle, domainType, &controls)
-	return OverclockControl(controls), ret.ToError()
+	return OverclockControls(controls), ret.ToError()
 }
 
 // ResetOverclockSettings wraps the zesDeviceResetOverclockSettings function:
