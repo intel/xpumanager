@@ -14,16 +14,6 @@ import (
 	"github.com/intel/level-zero-go/sysman"
 )
 
-// getFlagBits returns a slice of individual set bits from a bitmask flags
-// value, starting from the LSB.
-func getFlagBits(flags uint32) []uint32 {
-	result := make([]uint32, 0, bits.OnesCount32(flags))
-	for ; flags != 0; flags &= flags - 1 {
-		result = append(result, flags&-flags) // get the least significant set bit
-	}
-	return result
-}
-
 // recordError records an error into the appropriate list
 func (b *BaseInfo) recordError(context string, err error) {
 	if err == nil {
@@ -152,21 +142,21 @@ func (d *DeviceInfo) collectPCIInfo(device *sysman.Device) {
 func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 	ocInfo := &OverclockInfo{}
 
-	domainFlags, err := device.GetOverclockDomains()
+	domainTypes, err := device.GetOverclockDomains()
 	if err != nil {
 		d.recordError("OverclockDomains", err)
 		return
 	}
-	ocInfo.DomainsBitmask = domainFlags
+	ocInfo.DomainTypes = domainTypes
 
-	for _, flag := range getFlagBits(uint32(domainFlags)) {
+	for _, flag := range domainTypes.Bits() {
 		domainType := sysman.OverclockDomain(flag)
-		if controls, err := device.GetOverclockControls(domainType); err != nil {
+		if controlTypes, err := device.GetOverclockControls(domainType); err != nil {
 			d.recordError("Device.GetOverclockControls", err)
 		} else {
 			ocInfo.Controls = append(ocInfo.Controls, OverclockControlsInfo{
-				DomainType:      domainType,
-				ControlsBitmask: controls,
+				DomainType:   domainType,
+				ControlTypes: controlTypes,
 			})
 		}
 	}
@@ -196,7 +186,7 @@ func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 				ocInfo.Domains[i].VFProperties = &vfProps
 			}
 			if domainProps != nil {
-				for _, flag := range getFlagBits(domainProps.AvailableControls) {
+				for _, flag := range domainProps.AvailableControls.Bits() {
 					ctrl := sysman.OverclockControl(flag)
 					info := OverclockDomainControlsInfo{ControlType: ctrl}
 					if cp, err := domain.GetDomainControlProperties(ctrl); err != nil {
