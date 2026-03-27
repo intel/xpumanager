@@ -24,11 +24,15 @@ stats:
 # --- Build targets ---
 
 .PHONY: generate
-generate: clean
+generate: clean generate-stub
 	go mod download
 	$(Q)for pkg in $(PACKAGES); do \
 	    hack/generate.sh $$pkg || exit 1; \
 	done
+
+.PHONY: generate-stub
+generate-stub:
+	$(MAKE) -C level-zero-stub generate
 
 .PHONY: generate-dockerized
 generate-dockerized: clean

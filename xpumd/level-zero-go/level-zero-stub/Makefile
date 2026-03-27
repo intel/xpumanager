@@ -44,6 +44,16 @@ valgrind: $(TESTS)
 		valgrind --tool=drd --error-exitcode=1 ./$$t || exit 1; \
 	done
 
+.PHONY: generate
+generate:
+	python3 ../hack/generate-cyaml.py \
+		--header-file ../level-zero/ze_api.h \
+		--header-file ../level-zero/zes_api.h \
+		--header-file sysman_state.h \
+		--root-struct sysman_state_t \
+		--output-file sysman_state_cyaml.h
+	clang-format -i sysman_state_cyaml.h
+
 .PHONY: format
 format:
 	@clang-format -i *.c *.h
