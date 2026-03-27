@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ fromJson(vars.RUNS_ON) }}
     steps:
     - name: Check out code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Check modfiles
       run: ./xpumd/scripts/make-dockerized.sh check-modfiles
@@ -39,11 +39,11 @@ jobs:
     runs-on: ${{ fromJson(vars.RUNS_ON) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Run Trivy Fs Scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           exit-code: 1
           scan-type: fs
@@ -54,7 +54,7 @@ jobs:
           output: trivy-report.json
 
       - name: Print Trivy report in human-readable format
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: convert
           scanners: vuln,secret
@@ -62,7 +62,7 @@ jobs:
           format: table
 
       - name: Convert Trivy report to CSV format
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: convert
           image-ref: trivy-report.json
@@ -71,7 +71,7 @@ jobs:
           output: trivy-xpumd-vuln-report.csv
 
       - name: Upload Trivy report as artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: trivy-xpumd-vuln-report
           path: trivy-xpumd-vuln-report.csv
@@ -80,10 +80,10 @@ jobs:
     runs-on: ${{ fromJson(vars.RUNS_ON) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version-file: xpumd/go.mod
 
@@ -91,7 +91,7 @@ jobs:
         run: ./xpumd/scripts/trivy-warmup.sh
 
       - name: Run Trivy License Scan
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         env:
           TRIVY_IGNORED_LICENSES: MPL-2.0
         with:
