@@ -825,7 +825,6 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	std::string drmPath;
 	zesDriver = zesDri;
 	zesDevice = zesDev;
-
 	/*
 	 * For whichever inherited classes of sysman that support the init function,
 	 * call it so that their data can be used later.
@@ -873,6 +872,13 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	// Initialize RAS experimental instance and check if it's supported
 	if (rasExpInstance.init(zesDriver, zesDevice) != ZE_RESULT_SUCCESS) {
 		ERR("Failed to initialize RAS experimental instance.\n");
+	}
+
+	// Initialize page offline module with sysman device context
+	result = pageOfflineInstance.init(zesDri, zesDev);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize page offline module with sysman device context.\n");
+		// Don't fail initialization, continue with other modules
 	}
 
 	return ZE_RESULT_SUCCESS;

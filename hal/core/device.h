@@ -30,6 +30,7 @@
 #include "temperature.h"
 #include "vf.h"
 #include "rasexp.h"
+#include "offline_page.h"
 
 struct devProps
 {
@@ -109,6 +110,7 @@ private:
 	vf vfInstance;
 	metric metricInstance;
 	rasExp rasExpInstance;
+	pageOffline pageOfflineInstance;
 
 public:
 	device();
@@ -172,6 +174,7 @@ public:
 	temperature *getTemperature() { return &temperatureInstance; }
 	vf *getVF() { return &vfInstance; }
 	rasExp *getRASExp() { return &rasExpInstance; }
+	pageOffline *getPageOffline() { return &pageOfflineInstance; }
 
 	void getBDF(bdfID &bdf) const;
 	std::string getBDFStr();

@@ -48,6 +48,8 @@ if extensions_enabled
 else
   # External build uses rasexp.cpp (returns base ecc)
   hal_core_sources += files('rasexp.cpp')
+  # External build uses offline_page.cpp
+  hal_core_sources += files('offline_page.cpp')
 endif
 
 # Shared library
@@ -152,7 +154,8 @@ if get_option('install_headers')
     'sysman.h',
     'sysprocess.h',
     'temperature.h',
-    'vf.h'
+    'vf.h',
+    'offline_page.h'
   )
   install_headers(hal_headers, subdir : 'xpum')
 

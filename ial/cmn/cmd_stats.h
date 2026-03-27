@@ -31,6 +31,7 @@ enum statsCmdType
 	STATS_RAS,
 	STATS_SAMPLES,
 	STATS_INTERVAL,
+	STATS_LIST_OFFLINE_PAGES,
 	TOTAL_STATS,
 };
 
@@ -222,6 +223,8 @@ struct DeviceMetrics
 	std::map<zes_ras_error_cat_t, RasCounter> rasCounters;
 	EuArrayMetrics euMetrics;
 
+	uint32_t offlinePageCount = 0;
+
 	std::vector<std::string> computeEngineDetails;
 	std::vector<std::string> renderEngineDetails;
 	std::vector<std::string> decoderEngineDetails;
@@ -252,6 +255,16 @@ private:
 	static void addEngineInstanceRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson,
 									  const std::string &label, const std::vector<std::string> &path);
 	static void addRasCounterRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson);
+};
+
+class OfflinePagesTextPrinter : public Printer
+{
+public:
+	OfflinePagesTextPrinter() : Printer() {}
+	void print(nlohmann::ordered_json *jsonObj) override;
+
+private:
+	static void printOfflinePagesTable(const nlohmann::ordered_json &deviceJson);
 };
 
 class cmdStats : public cmds
@@ -307,6 +320,7 @@ private:
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,
 										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas,
 										  bool collectEuMetrics);
+	static ze_result_t listOfflinePages(devInfo *device, nlohmann::ordered_json &deviceJson);
 };
 
 using statsSubCmdFunc = ze_result_t (cmdStats::*)(devInfo *d);

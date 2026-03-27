@@ -1322,6 +1322,19 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		}
 	}
 
+	// Collect offline page count (count-only query, no page data needed)
+	{
+		uint32_t offlinePageCount = 0;
+		ze_result_t pageResult = dev->getPageOffline()->getDeviceMemoryPageOfflineState(&offlinePageCount, nullptr);
+		if (pageResult == ZE_RESULT_SUCCESS) {
+			metrics.offlinePageCount = offlinePageCount;
+			deviceJson["offline_page_count"] = offlinePageCount;
+			DBG("Offline memory page count: %u\n", offlinePageCount);
+		} else {
+			DBG("Failed to get offline page count: 0x%X (%s)\n", pageResult, l0_error_to_string(pageResult));
+		}
+	}
+
 	if (collectRas) {
 		ze_result_t rasResult = collectRasCounters(device, metrics);
 		if (rasResult == ZE_RESULT_SUCCESS && !metrics.rasCounters.empty()) {
@@ -1487,6 +1500,12 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Util (%)", {"memory", "util_percent"}, 0);
 	table.addSeparator();
+
+	if (deviceJson.contains("offline_page_count")) {
+		uint32_t offlineCount = deviceJson["offline_page_count"].get<uint32_t>();
+		table.addRow("Offline Memory Pages", std::to_string(offlineCount));
+		table.addSeparator();
+	}
 
 	addMetricRow(table, deviceJson, "PCIe Read (kB/s)", {"pcie", "read_kbps"});
 	table.addSeparator();
@@ -1891,6 +1910,7 @@ static std::unordered_map<statsCmdType, statsCmdStruct> statsCmds = {
 	{statsCmdType::STATS_RAS, {{"ras", no_argument, 0, 'r'}, &cmdStats::ras, false, ""}},
 	{statsCmdType::STATS_SAMPLES, {{"samples", required_argument, 0, 0}, nullptr, false, ""}},
 	{statsCmdType::STATS_INTERVAL, {{"interval", required_argument, 0, 0}, nullptr, false, ""}},
+	{statsCmdType::STATS_LIST_OFFLINE_PAGES, {{"list-offline-pages", no_argument, 0, 0}, nullptr, false, ""}},
 };
 
 /**
@@ -1927,6 +1947,8 @@ void cmdStats::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-e,--eu                     Show EU metrics"));
 	helpList.push_back(helpCmd(HEADING, "-r,--ras                    Show RAS error metrics"));
+	helpList.push_back(
+		helpCmd(HEADING, "--list-offline-pages        List offline memory pages (exclusive, no other stats)"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--samples                   Number of samples to collect (default: 2)"));
 	helpList.push_back(
@@ -1966,6 +1988,109 @@ ze_result_t cmdStats::ras(UNUSED devInfo *d)
 {
 	TRACING();
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Lists offline memory pages for a device
+ *
+ * This function queries the full list of offline memory pages from the HAL
+ * and populates a JSON object with the page addresses and sizes.
+ *
+ * @param [in] device Pointer to device information structure
+ * @param [out] deviceJson JSON object to populate with offline page data
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful operation
+ */
+ze_result_t cmdStats::listOfflinePages(devInfo *device, nlohmann::ordered_json &deviceJson)
+{
+	TRACING();
+	if (device == nullptr || device->dev == nullptr) {
+		ERR("Invalid device reference.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	auto *dev = device->dev;
+	deviceJson["device_index"] = device->index;
+	deviceJson["pci_bdf"] = dev->getBDFStr();
+
+	uint32_t count = 0;
+	std::vector<memPageOfflineInfo> pages;
+	ze_result_t result = dev->getPageOffline()->getDeviceMemoryPageOfflineState(&count, &pages);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get offline pages for device %u: 0x%X (%s)\n", device->index, result,
+			l0_error_to_string(result));
+		return result;
+	}
+
+	deviceJson["offline_page_count"] = count;
+	auto &pagesJson = deviceJson["offline_pages"];
+	pagesJson = nlohmann::ordered_json::array();
+	for (const auto &page : pages) {
+		nlohmann::ordered_json pageJson;
+		pageJson["address"] = std::format("0x{:016X}", page.pageAddress);
+		pageJson["size"] = page.pageSize;
+		pagesJson.push_back(pageJson);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Print offline memory pages table for a single device
+ *
+ * This function renders a formatted table listing all offline memory pages
+ * for a single device. It prints a header line showing the device index,
+ * PCI BDF address, and total offline page count. If pages are present,
+ * a two-column table (Address, Size) is printed using TableBuilder.
+ * If no offline pages exist, a message indicating none were found is printed.
+ *
+ * @param [in] deviceJson JSON object containing device index, PCI BDF,
+ *                        offline_page_count, and offline_pages array
+ */
+void OfflinePagesTextPrinter::printOfflinePagesTable(const nlohmann::ordered_json &deviceJson)
+{
+	uint32_t deviceIndex = deviceJson.value("device_index", 0);
+	std::string pciBdf = deviceJson.value("pci_bdf", "N/A");
+	uint32_t count = deviceJson.value("offline_page_count", 0);
+
+	PRINT("Device %u (%s) - Offline Memory Pages: %u\n\n", deviceIndex, pciBdf.c_str(), count);
+
+	if (count == 0 || !deviceJson.contains("offline_pages") || deviceJson["offline_pages"].empty()) {
+		PRINT("No offline memory pages found.\n");
+		return;
+	}
+
+	TableBuilder table;
+	table.addColumn("Address", 20, Align::Left).addColumn("Size (bytes)", 20, Align::Left);
+	for (const auto &page : deviceJson["offline_pages"]) {
+		table.addRow(page.value("address", "N/A"), std::to_string(page.value("size", static_cast<uint32_t>(0))));
+	}
+	PRINT("%s", table.toString().c_str());
+}
+
+/**
+ * @brief Print offline memory pages in text format
+ *
+ * Implements the Printer interface for rendering offline memory page data as
+ * formatted text tables. Handles both single-device and multi-device output:
+ * if the JSON object is an array, it iterates through each device entry and
+ * prints a separate table for each one; otherwise it prints a single table.
+ *
+ * @param [in] jsonObj JSON object or array containing offline page data to print
+ */
+void OfflinePagesTextPrinter::print(nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+	if (jsonObj == nullptr)
+		return;
+
+	if (jsonObj->is_array()) {
+		for (auto &deviceJson : *jsonObj) {
+			printOfflinePagesTable(deviceJson);
+			PRINT("\n");
+		}
+	} else {
+		printOfflinePagesTable(*jsonObj);
+	}
 }
 
 /**
@@ -2042,6 +2167,21 @@ int cmdStats::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (statsCmds[STATS_LIST_OFFLINE_PAGES].enabled) {
+		static const std::pair<statsCmdType, const char *> conflictingOpts[] = {
+			{STATS_SAMPLES, "--samples"},
+			{STATS_INTERVAL, "--interval"},
+			{STATS_EU, "--eu"},
+			{STATS_RAS, "--ras"},
+		};
+		for (const auto &[cmdType, optName] : conflictingOpts) {
+			if (statsCmds[cmdType].enabled) {
+				ERR("{} cannot be used with --list-offline-pages.\n", optName);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+		}
+	}
+
 	result = args->sm.findDevice(statsCmds[STATS_DEVICE].val.c_str(), &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '{}'.\n", statsCmds[STATS_DEVICE].val.c_str());
@@ -2087,6 +2227,8 @@ int cmdStats::run(arg_struct *args)
 	std::unique_ptr<Printer> printer;
 	if (statsCmds[STATS_JSON].enabled) {
 		printer = std::make_unique<JsonPrinter>();
+	} else if (statsCmds[STATS_LIST_OFFLINE_PAGES].enabled) {
+		printer = std::make_unique<OfflinePagesTextPrinter>();
 	} else {
 		printer = std::make_unique<StatsTextPrinter>();
 	}
@@ -2096,6 +2238,30 @@ int cmdStats::run(arg_struct *args)
 
 	if (collectMultiple && statsCmds[STATS_JSON].enabled) {
 		outputJson = nlohmann::ordered_json::array();
+	}
+
+	if (statsCmds[STATS_LIST_OFFLINE_PAGES].enabled) {
+		for (auto &device : deviceList) {
+			nlohmann::ordered_json deviceJson;
+			result = listOfflinePages(&device, deviceJson);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to list offline pages for device %u.\n", device.index);
+				continue;
+			}
+			if (statsCmds[STATS_JSON].enabled) {
+				if (collectMultiple) {
+					outputJson.push_back(deviceJson);
+				} else {
+					outputJson = deviceJson;
+				}
+			} else {
+				printer->print(&deviceJson);
+			}
+		}
+		if (statsCmds[STATS_JSON].enabled) {
+			printer->print(&outputJson);
+		}
+		return ZE_RESULT_SUCCESS;
 	}
 
 	for (auto &device : deviceList) {
