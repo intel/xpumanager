@@ -684,8 +684,7 @@ type MemProperties struct {
 //
 // Memory state - health, allocated.
 //
-// - Percent allocation is given by 100 * (size - free / size.
-// - Percent free is given by 100 * free / size.
+// - Percent free is given by 100 * free / pysical mem size.
 type MemState struct {
 	stype  structureType
 	pnext  unsafe.Pointer
@@ -937,6 +936,32 @@ type DeviceEccDefaultPropertiesExt struct {
 	pnext        unsafe.Pointer
 	DefaultState DeviceEccState
 	_            [4]byte
+}
+
+// PciLinkSpeedDowngradeExtState declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-state-t
+//
+// Query PCIe downgrade status.
+//
+// - This structure can be passed in the 'pNext' of zes_pci_state_t
+type PciLinkSpeedDowngradeExtState struct {
+	stype                       structureType
+	pnext                       unsafe.Pointer
+	PciLinkSpeedDowngradeStatus uint8
+	_                           [7]byte
+}
+
+// PciLinkSpeedDowngradeExtProperties declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-properties-t
+//
+// Query PCIe downgrade capability.
+//
+// - This structure can be passed in the 'pNext' of zes_pci_properties_t
+type PciLinkSpeedDowngradeExtProperties struct {
+	stype                     structureType
+	pnext                     unsafe.Pointer
+	PciLinkSpeedUpdateCapable uint8
+	MaxPciGenSupported        int32
 }
 
 // PowerLimitExtDesc declared in:

@@ -23,22 +23,23 @@ func _() {
 	_ = x[API_VERSION_1_12-65548]
 	_ = x[API_VERSION_1_13-65549]
 	_ = x[API_VERSION_1_14-65550]
-	_ = x[API_VERSION_CURRENT-65550]
+	_ = x[API_VERSION_1_15-65551]
+	_ = x[API_VERSION_CURRENT-65551]
 	_ = x[API_VERSION_FORCE_UINT32-2147483647]
 }
 
 const (
-	_ApiVersion_name_0 = "1_01_11_21_31_41_51_61_71_81_91_101_111_121_131_14"
+	_ApiVersion_name_0 = "1_01_11_21_31_41_51_61_71_81_91_101_111_121_131_141_15"
 	_ApiVersion_name_1 = "FORCE_UINT32"
 )
 
 var (
-	_ApiVersion_index_0 = [...]uint8{0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 34, 38, 42, 46, 50}
+	_ApiVersion_index_0 = [...]uint8{0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 34, 38, 42, 46, 50, 54}
 )
 
 func (i ApiVersion) String() string {
 	switch {
-	case 65536 <= i && i <= 65550:
+	case 65536 <= i && i <= 65551:
 		i -= 65536
 		return _ApiVersion_name_0[_ApiVersion_index_0[i]:_ApiVersion_index_0[i+1]]
 	case i == 2147483647:

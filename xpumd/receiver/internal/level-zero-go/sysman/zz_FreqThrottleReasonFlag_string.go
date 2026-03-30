@@ -15,6 +15,9 @@ func _() {
 	_ = x[FREQ_THROTTLE_REASON_FLAG_PSU_ALERT-16]
 	_ = x[FREQ_THROTTLE_REASON_FLAG_SW_RANGE-32]
 	_ = x[FREQ_THROTTLE_REASON_FLAG_HW_RANGE-64]
+	_ = x[FREQ_THROTTLE_REASON_FLAG_VOLTAGE-128]
+	_ = x[FREQ_THROTTLE_REASON_FLAG_THERMAL-256]
+	_ = x[FREQ_THROTTLE_REASON_FLAG_POWER-512]
 	_ = x[FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32-2147483647]
 }
 
@@ -25,7 +28,10 @@ const (
 	_FreqThrottleReasonFlag_name_3 = "PSU_ALERT"
 	_FreqThrottleReasonFlag_name_4 = "SW_RANGE"
 	_FreqThrottleReasonFlag_name_5 = "HW_RANGE"
-	_FreqThrottleReasonFlag_name_6 = "FORCE_UINT32"
+	_FreqThrottleReasonFlag_name_6 = "VOLTAGE"
+	_FreqThrottleReasonFlag_name_7 = "THERMAL"
+	_FreqThrottleReasonFlag_name_8 = "POWER"
+	_FreqThrottleReasonFlag_name_9 = "FORCE_UINT32"
 )
 
 var (
@@ -47,8 +53,14 @@ func (i FreqThrottleReasonFlag) String() string {
 		return _FreqThrottleReasonFlag_name_4
 	case i == 64:
 		return _FreqThrottleReasonFlag_name_5
-	case i == 2147483647:
+	case i == 128:
 		return _FreqThrottleReasonFlag_name_6
+	case i == 256:
+		return _FreqThrottleReasonFlag_name_7
+	case i == 512:
+		return _FreqThrottleReasonFlag_name_8
+	case i == 2147483647:
+		return _FreqThrottleReasonFlag_name_9
 	default:
 		return "FreqThrottleReasonFlag(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
