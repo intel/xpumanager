@@ -217,6 +217,14 @@ func (z *Device) PciGetStats() (PciStats, error) {
 	return stats, ret.ToError()
 }
 
+// PciLinkSpeedUpdateExt wraps the zesDevicePciLinkSpeedUpdateExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcilinkspeedupdateext
+func (z *Device) PciLinkSpeedUpdateExt(shouldDowngrade bool) (DeviceAction, error) {
+	var pendingAction DeviceAction
+	ret := zesDevicePciLinkSpeedUpdateExt(z.handle, boolToByte(shouldDowngrade), &pendingAction)
+	return pendingAction, ret.ToError()
+}
+
 // SetOverclockWaiver wraps the zesDeviceSetOverclockWaiver function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicesetoverclockwaiver
 func (z *Device) SetOverclockWaiver() error {
