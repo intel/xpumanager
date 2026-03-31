@@ -11,6 +11,8 @@ Relates-To: <!-- issue reference, e.g. #123 -->
 - [ ] New feature
 - [ ] Refactor / cleanup
 - [ ] Documentation
+- [ ] Tests
+- [ ] Dependency update
 - [ ] CI / build
 - [ ] Other: <!-- Please specify -->
 
