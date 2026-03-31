@@ -18,4 +18,5 @@ subprojects/level-zero
 **/*conan*.sh
 **/*.pc
 **/compile_commands.json
+**/.conan*.log
 **/.conan
