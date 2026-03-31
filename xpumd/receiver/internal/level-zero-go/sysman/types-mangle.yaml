@@ -159,7 +159,7 @@ structs:
     fields:
       - name: Type
         newType: PciBarType
-  - name: PciState
+  - name: PciBaseState
     fields:
       - name: Status
         newType: PciLinkStatus
@@ -249,6 +249,22 @@ types:
     newComment: |-
       EngineBaseProperties is the engine properties type declared in:
       https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: PciBaseProperties
+    newComment: |-
+      PciBaseProperties is the PCI properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-properties-t
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: PciBaseState
+    newComment: |-
+      PciBaseState is the PCI state type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
       {{- with doxygen . }}
 
       {{ . }}

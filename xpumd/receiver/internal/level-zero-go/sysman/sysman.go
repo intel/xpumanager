@@ -106,7 +106,7 @@ func zesDeviceProcessesGetState(HDevice deviceHandle, PCount *uint32, PProcesses
 }
 
 // zesDevicePciGetProperties function as declared in level-zero/zes_api.h:1416
-func zesDevicePciGetProperties(HDevice deviceHandle, PProperties *PciProperties) core.Result {
+func zesDevicePciGetProperties(HDevice deviceHandle, PProperties *PciBaseProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_pci_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
 	__ret := C.zesDevicePciGetProperties(cHDevice, cPProperties)
@@ -115,7 +115,7 @@ func zesDevicePciGetProperties(HDevice deviceHandle, PProperties *PciProperties)
 }
 
 // zesDevicePciGetState function as declared in level-zero/zes_api.h:1447
-func zesDevicePciGetState(HDevice deviceHandle, PState *PciState) core.Result {
+func zesDevicePciGetState(HDevice deviceHandle, PState *PciBaseState) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_pci_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
 	__ret := C.zesDevicePciGetState(cHDevice, cPState)

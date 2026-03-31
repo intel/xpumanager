@@ -304,6 +304,22 @@ type EngineProperties struct {
 	ExtendedProperties *EngineExtProperties
 }
 
+// PciProperties wraps the PCI property structures from the Sysman API.
+type PciProperties struct {
+	PciBaseProperties
+	// LinkSpeedDowngrade provides optional additional properties related to
+	// PCIe link speed downgrade extension. Value is nil if not available.
+	LinkSpeedDowngrade *PciLinkSpeedDowngradeExtProperties
+}
+
+// PciState wraps the PCI state structures from the Sysman API.
+type PciState struct {
+	PciBaseState
+	// LinkSpeedDowngrade provides optional additional state related to
+	// PCIe link speed downgrade extension. Value is nil if not available.
+	LinkSpeedDowngrade *PciLinkSpeedDowngradeExtState
+}
+
 // PowerProperties wraps the power property structures from the Sysman API.
 type PowerProperties struct {
 	PowerBaseProperties

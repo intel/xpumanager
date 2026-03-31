@@ -185,7 +185,21 @@ func (z *Device) EventRegister(eventType EventTypeFlags) error {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetproperties
 func (z *Device) PciGetProperties() (PciProperties, error) {
 	var props PciProperties
-	ret := zesDevicePciGetProperties(z.handle, &props)
+
+	if z.extensions[PCI_LINK_SPEED_DOWNGRADE_EXT_NAME] {
+		props.LinkSpeedDowngrade = &PciLinkSpeedDowngradeExtProperties{
+			stype: _STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES,
+		}
+
+		pinner := runtime.Pinner{}
+		pinner.Pin(props.LinkSpeedDowngrade)
+		defer pinner.Unpin()
+
+		//nolint:staticcheck // could remove embedded field from selector
+		props.PciBaseProperties.pnext = unsafe.Pointer(props.LinkSpeedDowngrade)
+	}
+
+	ret := zesDevicePciGetProperties(z.handle, &props.PciBaseProperties)
 	return props, ret.ToError()
 }
 
@@ -193,7 +207,20 @@ func (z *Device) PciGetProperties() (PciProperties, error) {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetstate
 func (z *Device) PciGetState() (PciState, error) {
 	var state PciState
-	ret := zesDevicePciGetState(z.handle, &state)
+
+	if z.extensions[PCI_LINK_SPEED_DOWNGRADE_EXT_NAME] {
+		state.LinkSpeedDowngrade = &PciLinkSpeedDowngradeExtState{
+			stype: _STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE,
+		}
+
+		pinner := runtime.Pinner{}
+		pinner.Pin(state.LinkSpeedDowngrade)
+		defer pinner.Unpin()
+
+		//nolint:staticcheck // could remove embedded field from selector
+		state.PciBaseState.pnext = unsafe.Pointer(state.LinkSpeedDowngrade)
+	}
+	ret := zesDevicePciGetState(z.handle, &state.PciBaseState)
 	return state, ret.ToError()
 }
 

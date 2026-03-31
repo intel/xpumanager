@@ -187,11 +187,9 @@ type PciSpeed struct {
 	MaxBandwidth int64
 }
 
-// PciProperties declared in:
+// PciBaseProperties is the PCI properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-properties-t
-//
-// Static PCI properties.
-type PciProperties struct {
+type PciBaseProperties struct {
 	stype                 structureType
 	pnext                 unsafe.Pointer
 	Address               PciAddress
@@ -202,11 +200,9 @@ type PciProperties struct {
 	_                     [5]byte
 }
 
-// PciState declared in:
+// PciBaseState is the PCI state type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
-//
-// Dynamic PCI state.
-type PciState struct {
+type PciBaseState struct {
 	stype           structureType
 	pnext           unsafe.Pointer
 	Status          PciLinkStatus
