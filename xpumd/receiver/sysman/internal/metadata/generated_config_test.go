@@ -27,28 +27,72 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					HwEnergy:                     MetricConfig{Enabled: true},
-					HwFrequency:                  MetricConfig{Enabled: true},
-					HwFrequencyLimit:             MetricConfig{Enabled: true},
-					HwFrequencyRequest:           MetricConfig{Enabled: true},
-					HwFrequencySamples:           MetricConfig{Enabled: true},
-					HwFrequencyThrottleStatus:    MetricConfig{Enabled: true},
-					HwGpuBandwidthLimit:          MetricConfig{Enabled: true},
-					HwGpuBandwidthUtilization:    MetricConfig{Enabled: true},
-					HwGpuInfo:                    MetricConfig{Enabled: true},
-					HwGpuIo:                      MetricConfig{Enabled: true},
-					HwGpuIoRate:                  MetricConfig{Enabled: true},
-					HwGpuUtilization:             MetricConfig{Enabled: true},
-					HwMemoryBandwidthLimit:       MetricConfig{Enabled: true},
-					HwMemoryBandwidthUtilization: MetricConfig{Enabled: true},
-					HwMemoryIo:                   MetricConfig{Enabled: true},
-					HwMemoryIoRate:               MetricConfig{Enabled: true},
-					HwMemorySize:                 MetricConfig{Enabled: true},
-					HwMemoryUsage:                MetricConfig{Enabled: true},
-					HwPower:                      MetricConfig{Enabled: true},
-					HwPowerLimit:                 MetricConfig{Enabled: true},
-					HwStatus:                     MetricConfig{Enabled: true},
-					HwTemperature:                MetricConfig{Enabled: true},
+					HwEnergy: MetricConfig{
+						Enabled: true,
+					},
+					HwFrequency: MetricConfig{
+						Enabled: true,
+					},
+					HwFrequencyLimit: MetricConfig{
+						Enabled: true,
+					},
+					HwFrequencyRequest: MetricConfig{
+						Enabled: true,
+					},
+					HwFrequencySamples: MetricConfig{
+						Enabled: true,
+					},
+					HwFrequencyThrottleStatus: MetricConfig{
+						Enabled: true,
+					},
+					HwGpuBandwidthLimit: MetricConfig{
+						Enabled: true,
+					},
+					HwGpuBandwidthUtilization: MetricConfig{
+						Enabled: true,
+					},
+					HwGpuInfo: MetricConfig{
+						Enabled: true,
+					},
+					HwGpuIo: MetricConfig{
+						Enabled: true,
+					},
+					HwGpuIoRate: MetricConfig{
+						Enabled: true,
+					},
+					HwGpuUtilization: MetricConfig{
+						Enabled: true,
+					},
+					HwMemoryBandwidthLimit: MetricConfig{
+						Enabled: true,
+					},
+					HwMemoryBandwidthUtilization: MetricConfig{
+						Enabled: true,
+					},
+					HwMemoryIo: MetricConfig{
+						Enabled: true,
+					},
+					HwMemoryIoRate: MetricConfig{
+						Enabled: true,
+					},
+					HwMemorySize: MetricConfig{
+						Enabled: true,
+					},
+					HwMemoryUsage: MetricConfig{
+						Enabled: true,
+					},
+					HwPower: MetricConfig{
+						Enabled: true,
+					},
+					HwPowerLimit: MetricConfig{
+						Enabled: true,
+					},
+					HwStatus: MetricConfig{
+						Enabled: true,
+					},
+					HwTemperature: MetricConfig{
+						Enabled: true,
+					},
 				},
 			},
 		},
@@ -56,28 +100,72 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					HwEnergy:                     MetricConfig{Enabled: false},
-					HwFrequency:                  MetricConfig{Enabled: false},
-					HwFrequencyLimit:             MetricConfig{Enabled: false},
-					HwFrequencyRequest:           MetricConfig{Enabled: false},
-					HwFrequencySamples:           MetricConfig{Enabled: false},
-					HwFrequencyThrottleStatus:    MetricConfig{Enabled: false},
-					HwGpuBandwidthLimit:          MetricConfig{Enabled: false},
-					HwGpuBandwidthUtilization:    MetricConfig{Enabled: false},
-					HwGpuInfo:                    MetricConfig{Enabled: false},
-					HwGpuIo:                      MetricConfig{Enabled: false},
-					HwGpuIoRate:                  MetricConfig{Enabled: false},
-					HwGpuUtilization:             MetricConfig{Enabled: false},
-					HwMemoryBandwidthLimit:       MetricConfig{Enabled: false},
-					HwMemoryBandwidthUtilization: MetricConfig{Enabled: false},
-					HwMemoryIo:                   MetricConfig{Enabled: false},
-					HwMemoryIoRate:               MetricConfig{Enabled: false},
-					HwMemorySize:                 MetricConfig{Enabled: false},
-					HwMemoryUsage:                MetricConfig{Enabled: false},
-					HwPower:                      MetricConfig{Enabled: false},
-					HwPowerLimit:                 MetricConfig{Enabled: false},
-					HwStatus:                     MetricConfig{Enabled: false},
-					HwTemperature:                MetricConfig{Enabled: false},
+					HwEnergy: MetricConfig{
+						Enabled: false,
+					},
+					HwFrequency: MetricConfig{
+						Enabled: false,
+					},
+					HwFrequencyLimit: MetricConfig{
+						Enabled: false,
+					},
+					HwFrequencyRequest: MetricConfig{
+						Enabled: false,
+					},
+					HwFrequencySamples: MetricConfig{
+						Enabled: false,
+					},
+					HwFrequencyThrottleStatus: MetricConfig{
+						Enabled: false,
+					},
+					HwGpuBandwidthLimit: MetricConfig{
+						Enabled: false,
+					},
+					HwGpuBandwidthUtilization: MetricConfig{
+						Enabled: false,
+					},
+					HwGpuInfo: MetricConfig{
+						Enabled: false,
+					},
+					HwGpuIo: MetricConfig{
+						Enabled: false,
+					},
+					HwGpuIoRate: MetricConfig{
+						Enabled: false,
+					},
+					HwGpuUtilization: MetricConfig{
+						Enabled: false,
+					},
+					HwMemoryBandwidthLimit: MetricConfig{
+						Enabled: false,
+					},
+					HwMemoryBandwidthUtilization: MetricConfig{
+						Enabled: false,
+					},
+					HwMemoryIo: MetricConfig{
+						Enabled: false,
+					},
+					HwMemoryIoRate: MetricConfig{
+						Enabled: false,
+					},
+					HwMemorySize: MetricConfig{
+						Enabled: false,
+					},
+					HwMemoryUsage: MetricConfig{
+						Enabled: false,
+					},
+					HwPower: MetricConfig{
+						Enabled: false,
+					},
+					HwPowerLimit: MetricConfig{
+						Enabled: false,
+					},
+					HwStatus: MetricConfig{
+						Enabled: false,
+					},
+					HwTemperature: MetricConfig{
+						Enabled: false,
+					},
 				},
 			},
 		},
