@@ -25,7 +25,7 @@ stats:
 
 # --- Build targets ---
 
-OTEL_VERSION ?= 0.148.0
+OTEL_VERSION ?= 0.149.0
 
 .PHONY: build
 # Build xpumd + xpuinfo-cli
