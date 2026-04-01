@@ -1001,15 +1001,14 @@ ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	zes_device_properties_t zesDevProp = {};
-
-	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
+	ze_driver_properties_t zeDriProp = {};
+	const auto result = zeDriverGetProperties(d->dev->getDriverHandle(), &zeDriProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x%X (%s)\n", result, l0_error_to_string(result));
+		ERR("Failed to get Driver properties: 0x%X (%s)\n", result, l0_error_to_string(result));
 		return result;
 	}
 
-	*outputLine = zesDevProp.driverVersion;
+	*outputLine = std::to_string(zeDriProp.driverVersion);
 	return ZE_RESULT_SUCCESS;
 }
 
