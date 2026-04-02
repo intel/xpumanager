@@ -405,7 +405,7 @@ The operational status of the hardware component.
 | pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
 | com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
 | hw.state | Current state of the hardware component. | Any Str | Recommended | - |
-| hw.type | Type of the hardware component. | Str: ``frequency``, ``gpu``, ``memory`` | Recommended | - |
+| hw.type | Type of the hardware component. | Str: ``frequency``, ``gpu``, ``memory``, ``pci_link`` | Recommended | - |
 
 ### hw.temperature
 

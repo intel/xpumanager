@@ -32,8 +32,13 @@ type device struct {
 }
 
 type deviceState struct {
-	pciStats     *l0sysman.PciStats
-	maxBandwidth int64
+	devStateDisabled bool
+	pciStateDisabled bool
+	pciStatesSeen    map[l0sysman.PciLinkStatus]bool
+	pciQualitySeen   l0sysman.PciLinkQualIssueFlags
+	pciStabilitySeen l0sysman.PciLinkStabIssueFlags
+	pciStats         *l0sysman.PciStats
+	maxBandwidth     int64
 }
 
 // deviceAttributes fields for numeric items which values may be
@@ -42,6 +47,7 @@ type deviceState struct {
 type deviceAttributes struct {
 	hwID              string
 	hwName            string
+	hwNamePci         string
 	pciBDF            string
 	pciVendorID       string
 	pciDeviceID       string
@@ -121,6 +127,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			// TODO: use (Sysman ext) props.Uuid.Id.String()?
 			hwID:           props.Core.Uuid.Id.String(),
 			hwName:         name,
+			hwNamePci:      name + "-pci",
 			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
 			pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
 			hwModel:        props.ModelName.String(),
@@ -177,6 +184,16 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		}
 	}
 
+	// check device + PCI state availability
+	if _, err := d.GetState(); err != nil {
+		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "deviceAttributes", d.attributes)
+		d.state.devStateDisabled = true
+	}
+	if _, err := d.PciGetState(); err != nil {
+		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "deviceAttributes", d.attributes)
+		d.state.pciStateDisabled = true
+	}
+
 	// TODO: report types & sizes of device PCI BARs?
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetbars
 
@@ -206,10 +223,124 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		d.attributes.eccSupport,
 	)
 
+	d.scrapeDevState(mb, ts)
+	d.scrapePciState(mb, ts)
 	d.scrapePciStats(mb, ts)
 
 	for _, s := range d.scrapers {
 		s.scrape(mb, ts)
+	}
+}
+
+// scrapeDevState reports device (reset) state
+func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if d.state.devStateDisabled {
+		return
+	}
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
+	state, err := d.GetState()
+	if err != nil {
+		d.logger.Errorw("Device GetState() failed: device reset state metric disabled", zap.Error(err), "deviceAttributes", d.attributes)
+		d.state.devStateDisabled = true
+		return
+	}
+
+	reset := int64(0)
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
+	if state.Reset != 0 {
+		reset = 1
+	}
+
+	mb.RecordHwStatusDataPoint(ts, reset,
+		d.attributes.hwID,
+		d.attributes.hwName,
+		d.attributes.pciBDF,
+		"", // not subdevice
+		"reset_needed",
+		metadata.AttributeHwTypeGpu,
+	)
+}
+
+// scrapePciState reports device PCI link state(s)
+func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if d.state.pciStateDisabled {
+		return
+	}
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
+	pci, err := d.PciGetState()
+	if err != nil {
+		d.logger.Errorw("Device PciGetState() failed: PCI link state metrics disabled", zap.Error(err), "deviceAttributes", d.attributes)
+		d.state.pciStateDisabled = true
+		return
+	}
+
+	if d.state.pciStatesSeen == nil {
+		// skip unknown PCI state reporting until state has been known
+		if pci.Status == l0sysman.PCI_LINK_STATUS_UNKNOWN {
+			return
+		}
+		d.state.pciStatesSeen = map[l0sysman.PciLinkStatus]bool{}
+	}
+
+	// Collect states that are either active, or have been reported before.
+	// Because names of the PCI statuses and quality & stability issues do not overlap,
+	// single mapping is enough for all of them
+	states := map[string]bool{}
+	for flag := range d.state.pciStatesSeen {
+		states[flag.String()] = false
+	}
+
+	// status is enumerator, not a bitmask, so only one of these is relevant
+	switch pci.Status {
+	case l0sysman.PCI_LINK_STATUS_QUALITY_ISSUES:
+		d.state.pciQualitySeen |= pci.QualityIssues
+	case l0sysman.PCI_LINK_STATUS_STABILITY_ISSUES:
+		d.state.pciStabilitySeen |= pci.StabilityIssues
+	default:
+		switch pci.Status {
+		// recognized values
+		case l0sysman.PCI_LINK_STATUS_GOOD:
+		case l0sysman.PCI_LINK_STATUS_UNKNOWN:
+		default:
+			// report each unrecognized value from Sysman backend only once
+			if !d.state.pciStatesSeen[pci.Status] {
+				d.logger.Errorw("Unrecognized PciGetState() value", "pci.Status", pci.Status, "attributes", d.attributes)
+			}
+		}
+		d.state.pciStatesSeen[pci.Status] = true
+		states[pci.Status.String()] = true
+	}
+
+	// add (issue) states from bitmasks
+	for _, bit := range d.state.pciQualitySeen.Bits() {
+		issue := bit.String() + "_issue"
+		states[issue] = (l0sysman.PciLinkQualIssueFlag(pci.QualityIssues) & bit) != 0
+	}
+	for _, bit := range d.state.pciStabilitySeen.Bits() {
+		issue := bit.String() + "_issue"
+		states[issue] = (l0sysman.PciLinkStabIssueFlag(pci.StabilityIssues) & bit) != 0
+	}
+
+	// report status of currently active & previously seen PCI link states
+	for state, active := range states {
+		value := int64(0)
+		if active {
+			value = 1
+		}
+		state = strings.ToLower(state)
+		if state == "good" {
+			state = "ok"
+		}
+		mb.RecordHwStatusDataPoint(ts, value,
+			d.attributes.hwID,
+			d.attributes.hwNamePci,
+			d.attributes.pciBDF,
+			"", // not subdevice
+			state,
+			metadata.AttributeHwTypePciLink,
+		)
 	}
 }
 
@@ -225,8 +356,6 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		return
 	}
 
-	hwName := d.attributes.hwName + "-pci"
-
 	// TODO: check from visualization that change rate for
 	// PCI counters matches BW rate values calculated below
 	// (if not, caller's timestamps do not match KMD timestamps)
@@ -235,14 +364,14 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	mb.RecordHwGpuIoDataPoint(
 		ts, float64(stats.RxCounter),
 		d.attributes.hwID,
-		hwName,
+		d.attributes.hwNamePci,
 		d.attributes.pciBDF,
 		metadata.AttributeNetworkIoDirectionReceive,
 	)
 	mb.RecordHwGpuIoDataPoint(
 		ts, float64(stats.TxCounter),
 		d.attributes.hwID,
-		hwName,
+		d.attributes.hwNamePci,
 		d.attributes.pciBDF,
 		metadata.AttributeNetworkIoDirectionTransmit,
 	)
@@ -268,7 +397,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	mb.RecordHwGpuIoRateDataPoint(
 		ts, rate,
 		d.attributes.hwID,
-		hwName,
+		d.attributes.hwNamePci,
 		d.attributes.pciBDF,
 	)
 
@@ -279,7 +408,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		mb.RecordHwGpuBandwidthLimitDataPoint(
 			ts, d.state.maxBandwidth,
 			d.attributes.hwID,
-			hwName,
+			d.attributes.hwNamePci,
 			d.attributes.pciBDF,
 		)
 
@@ -287,7 +416,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		mb.RecordHwGpuBandwidthUtilizationDataPoint(
 			ts, rate/float64(d.state.maxBandwidth),
 			d.attributes.hwID,
-			hwName,
+			d.attributes.hwNamePci,
 			d.attributes.pciBDF,
 		)
 	}

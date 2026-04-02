@@ -80,6 +80,7 @@ const (
 	AttributeHwTypeFrequency
 	AttributeHwTypeGpu
 	AttributeHwTypeMemory
+	AttributeHwTypePciLink
 )
 
 // String returns the string representation of the AttributeHwType.
@@ -91,6 +92,8 @@ func (av AttributeHwType) String() string {
 		return "gpu"
 	case AttributeHwTypeMemory:
 		return "memory"
+	case AttributeHwTypePciLink:
+		return "pci_link"
 	}
 	return ""
 }
@@ -100,6 +103,7 @@ var MapAttributeHwType = map[string]AttributeHwType{
 	"frequency": AttributeHwTypeFrequency,
 	"gpu":       AttributeHwTypeGpu,
 	"memory":    AttributeHwTypeMemory,
+	"pci_link":  AttributeHwTypePciLink,
 }
 
 // AttributeNetworkIoDirection specifies the value network.io.direction attribute.
