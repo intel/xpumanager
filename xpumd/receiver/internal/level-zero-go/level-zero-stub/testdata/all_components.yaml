@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Test fixture: one entry of every component type so that test_error_cases
+# can obtain valid handles for every component category.
+
+Drivers:
+  - ExtensionProperties: []
+    Devices:
+      - Properties: {}
+        State: {}
+        PCI:
+          Properties: {}
+          State: {}
+          Bars: []
+          Stats: {}
+        ECC:
+          Available: true
+          Configurable: true
+          State: {}
+        Overclock:
+          DomainsBitmask: 0
+          Controls: []
+          State: {}
+          Domains: []
+        Processes:
+          - ProcessId: 1
+            MemSize: 1048576
+            SharedSize: 0
+            Engines: 1
+          - ProcessId: 2
+            MemSize: 1048576
+            SharedSize: 0
+            Engines: 1
+        Events: 0
+        EngineGroups:
+          - Properties:
+              Type: 0
+            Activity:
+              ActiveTime: 0
+              Timestamp: 0
+            ActivityExt: []
+        FabricPorts:
+          - Properties: {}
+            LinkType: {}
+            Config: {}
+            State: {}
+            Throughput: {}
+            ErrorCounters: {}
+        Fans:
+          - Properties: {}
+            Config: {}
+            Speed: 0
+        Firmwares:
+          - Properties: {}
+            FlashProgress: 0
+            Log: ""
+        FrequencyDomains:
+          - Properties: {}
+            Range: {}
+            State: {}
+            ThrottleTime: {}
+            AvailableClocks: []
+        Leds:
+          - Properties: {}
+            State: {}
+        MemoryModules:
+          - Properties: {}
+            State: {}
+            Bandwidth: {}
+        PerformanceDomains:
+          - Properties: {}
+            Config: 0
+        PowerDomains:
+          - Properties: {}
+            EnergyCounter: {}
+            EnergyThreshold: {}
+            Limits: []
+        Psus:
+          - Properties: {}
+            State: {}
+        RasErrorSets:
+          - Properties: {}
+            Config: {}
+            State: {}
+        Schedulers:
+          - Properties: {}
+            CurrentMode: 1
+            TimeoutModeProperties: {}
+            TimesliceModeProperties: {}
+        StandbyDomains:
+          - Properties: {}
+            Mode: 0
+        TemperatureSensors:
+          - Properties: {}
+            Temperature: 0
+            Config: {}
+        Diagnostics:
+          - Properties: {}
+            Tests: []
+            Result: 0
