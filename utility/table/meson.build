@@ -41,13 +41,13 @@ table_example = executable(
 
 # Unit tests (optional, requires boost-ext-ut — enable with -Dwith_tests=true)
 if get_option('with_tests')
-    ut_dep = dependency('boost-ext-ut', required: true)
+    doctest_dep = dependency('doctest', required: true)
     table_test = executable(
         'table_builder_test',
         'test/table_builder_test.cpp',
         include_directories: [global_inc, table_inc],
         link_with: table_lib,
-        dependencies: [nlohmann_json_dep, ut_dep],
+        dependencies: [nlohmann_json_dep, doctest_dep],
         link_args: is_linux ? ['-pie'] : [],
         build_by_default: true
     )
