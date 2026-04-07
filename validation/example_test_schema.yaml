@@ -1,0 +1,543 @@
+# ============================================================================
+# EXAMPLE TEST SCHEMA - Reference for Writing Test Cases
+# ============================================================================
+
+test_suite:
+  name: "Example Test Suite"
+  description: "Reference showing all available validation features"
+
+  settings:
+    binary: "xpu-smi"         # Can be overridden via --binary flag
+    timeout: 30               # Default timeout in seconds
+    max_retries: 0                 # Retry failing tests N times (0 = no retries)
+    continue_on_failure: true
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # PLAINTEXT VALIDATION
+    # -----------------------------------------------------------------------
+    - name: "example_plaintext"
+      command: "discovery"
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "Device Name:"
+          - "Device ID"
+        stdout_not_contains:
+          - "Error"
+          - "Exception"
+      tags: ["example", "plaintext"]
+
+    # -----------------------------------------------------------------------
+    # JSON SCHEMA VALIDATION
+    # -----------------------------------------------------------------------
+    - name: "example_json_schema"
+      command: "discovery -j"
+      expect:
+        return_code: 0
+        json_schema:
+          type: "object"
+          required: ["device_list", "timestamp"]
+          properties:
+            device_list:
+              type: "array"
+              minItems: 1
+            timestamp:
+              type: "string"
+            device_count:
+              type: "integer"
+              minimum: 0
+      tags: ["example", "json"]
+
+    # -----------------------------------------------------------------------
+    # JSONPATH VALIDATION
+    # Operators: exists | equals (with value:) | all_equal (with value:)
+    # -----------------------------------------------------------------------
+    - name: "example_jsonpath"
+      command: "discovery -d 0 -j"
+      expect:
+        return_code: 0
+        json_path_checks:
+          - path: "$.device_id"
+            expected: "equals"
+            value: 0
+          - path: "$.vendor_name"
+            expected: "exists"
+          - path: "$.tiles[*].tile_id"
+            expected: "exists"
+          - path: "$.device_list[*].device_function_type"
+            expected: "all_equal"
+            value: "physical"
+      tags: ["example", "json", "jsonpath"]
+
+    # -----------------------------------------------------------------------
+    # ERROR CASE VALIDATION
+    # -----------------------------------------------------------------------
+    - name: "example_error_case"
+      command: "invalid-command --bad-flag"
+      expect:
+        return_code: [1, 2, 255]      # Accept any of these codes
+        stdout_or_stderr_contains:    # Checks stdout OR stderr
+          - "Error"
+      tags: ["example", "error"]
+
+    # -----------------------------------------------------------------------
+    # MINIMAL TEST
+    # -----------------------------------------------------------------------
+    - name: "example_minimal"
+      command: "discovery --help"
+      expect:
+        return_code: 0
+      tags: ["example", "minimal"]
+
+    # -----------------------------------------------------------------------
+    # PARAMETERIZED - EXPLICIT LIST
+    # command_template uses {param} placeholders; generates one test per value
+    # -----------------------------------------------------------------------
+    - name: "example_parameterized_explicit"
+      command_template: "discovery -d {device_id} -j"
+      parameters:
+        device_id: [0, 1, 2]
+      expect:
+        return_code: 0
+        json_path_checks:
+          - path: "$.device_id"
+            expected: "exists"
+      tags: ["example", "parameterized"]
+
+    # -----------------------------------------------------------------------
+    # PARAMETERIZED - RANGE
+    # -----------------------------------------------------------------------
+    - name: "example_parameterized_range"
+      command_template: "discovery -d {device_id}"
+      parameters:
+        device_id:
+          type: "range"
+          start: 0
+          end: 4      # exclusive, like Python range()
+          step: 1
+      expect:
+        return_code: 0
+      tags: ["example", "parameterized"]
+
+    # -----------------------------------------------------------------------
+    # PARAMETERIZED - AUTO-DISCOVER DEVICES
+    # Runs 'discovery -j', one test per discovered device; falls back to 0
+    # -----------------------------------------------------------------------
+    - name: "example_parameterized_auto_discover"
+      command_template: "discovery -d {device_id} -j"
+      parameters:
+        device_id:
+          type: "auto_discover_devices"
+      expect:
+        return_code: 0
+        json_path_checks:
+          - path: "$.device_id"
+            expected: "exists"
+      tags: ["example", "parameterized"]
+
+    # -----------------------------------------------------------------------
+    # PARAMETERIZED - MULTIPLE PARAMS (cartesian product)
+    # 2 x 3 = 6 tests generated
+    # -----------------------------------------------------------------------
+    - name: "example_multi_param"
+      command_template: "discovery -d {device_id} --dump {dump_index}"
+      parameters:
+        device_id: [0, 1]
+        dump_index: [1, 2, 3]
+      expect:
+        return_code: 0
+      tags: ["example", "parameterized"]
+
+    # -----------------------------------------------------------------------
+    # PARALLEL MATRIX
+    # parallel: true runs all parameter variants of this test concurrently
+    # -----------------------------------------------------------------------
+    - name: "example_parallel_matrix"
+      command_template: "discovery -d {device_id} -j"
+      parallel: true
+      parameters:
+        device_id:
+          type: "auto_discover_devices"
+      expect:
+        return_code: 0
+        json_path_checks:
+          - path: "$.device_id"
+            expected: "exists"
+      tags: ["example", "parallel"]
+
+    # -----------------------------------------------------------------------
+    # WRAPPER
+    # Wraps the command with another tool; {command} is replaced inline
+    # -----------------------------------------------------------------------
+    - name: "example_wrapper"
+      command: "discovery -d 0"
+      wrapper: "perf stat -o perf_$$.log {command}"
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "Device ID"
+      tags: ["example", "wrapper"]
+
+    # -----------------------------------------------------------------------
+    # SCRIPT
+    # Full shell script run directly by the shell - the binary is NOT
+    # prepended. Use {command} where you want "xpu-smi <command>" inserted,
+    # or omit it entirely to run arbitrary shell commands.
+    # Must preserve exit code: exit $RESULT
+    # -----------------------------------------------------------------------
+    - name: "example_script"
+      command: "stats -d 0 --interval 100 --sample 10"
+      script: |
+        mkdir -p monitoring_logs
+        LOG_DIR="monitoring_logs/test_$$"
+        mkdir -p "$LOG_DIR"
+
+        vmstat 1 > "$LOG_DIR/vmstat.log" &
+        VMSTAT_PID=$!
+
+        {command}
+        RESULT=$?
+
+        kill $VMSTAT_PID 2>/dev/null
+        exit $RESULT
+      expect:
+        return_code: 0
+      tags: ["example", "script"]
+
+    # -----------------------------------------------------------------------
+    # HOOKS
+    # Structured before/after/on_failure callbacks; cleaner than script.
+    # Variables exported in before_test are available in other hooks.
+    # Execution order: before_test -> command -> on_failure (if failed) -> after_test
+    # -----------------------------------------------------------------------
+    - name: "example_hooks"
+      command: "stats -d 0 --interval 100 --sample 10"
+      hooks:
+        before_test: |
+          export LOG_DIR="monitoring_logs/test_$$"
+          mkdir -p "$LOG_DIR"
+          vmstat 1 > "$LOG_DIR/vmstat.log" &
+          echo $! > "$LOG_DIR/vmstat.pid"
+
+        after_test: |
+          kill $(cat "$LOG_DIR/vmstat.pid") 2>/dev/null
+          rm "$LOG_DIR/vmstat.pid"
+
+        on_failure: |
+          dmesg | tail -20 > "$LOG_DIR/dmesg.log"
+      expect:
+        return_code: 0
+      tags: ["example", "hooks"]
+
+    # -----------------------------------------------------------------------
+    # OS-SPECIFIC VARIABLES
+    # Substituted into command/script/hooks before execution.
+    # Supported keys: Linux, Windows, Darwin, default
+    # -----------------------------------------------------------------------
+    - name: "example_variables"
+      command: "stats -d 0 --interval 100 --sample 10"
+      variables:
+        log_file:
+          Linux: "/tmp/monitor.log"
+          Windows: "C:\\Temp\\monitor.log"
+        monitor_cmd:
+          Linux: "vmstat 1"
+          Windows: "typeperf \"\\Processor(_Total)\\% Processor Time\" -si 1"
+      script: |
+        {monitor_cmd} > {log_file} &
+        MONITOR_PID=$!
+        {command}
+        EXIT_CODE=$?
+        kill $MONITOR_PID 2>/dev/null
+        exit $EXIT_CODE
+      expect:
+        return_code: 0
+      tags: ["example", "variables"]
+
+    # -----------------------------------------------------------------------
+    # OS / PLATFORM FILTERS
+    # os: skip test on non-matching OS (values: Linux, Windows)
+    # platform: skip test on non-matching platform (values: BMG)
+    # Both accept a single string or a list.
+    # -----------------------------------------------------------------------
+    - name: "example_os_filter"
+      command: "discovery -j"
+      os: "Linux"               # Only runs on Linux; silently skipped on Windows
+      platform: ["BMG"]         # Only runs on BMG platform
+      expect:
+        return_code: 0
+      tags: ["example", "filter"]
+
+    # -----------------------------------------------------------------------
+    # DEPENDENCIES
+    # depends_on: name or list of names of tests that must pass first.
+    # If a dependency fails the dependent test is skipped (counts as passed).
+    # -----------------------------------------------------------------------
+    - name: "example_dep_base"
+      command: "discovery -j"
+      expect:
+        return_code: 0
+      tags: ["example", "dependency"]
+
+    - name: "example_dep_child"
+      command: "discovery -d 0 -j"
+      depends_on: "example_dep_base"   # single string or list of names
+      expect:
+        return_code: 0
+        json_path_checks:
+          - path: "$.device_id"
+            expected: "exists"
+      tags: ["example", "dependency"]
+
+    # -----------------------------------------------------------------------
+    # WORKFLOW
+    # type: workflow  enables multi-step execution with shared context.
+    # Steps run sequentially; failures stop the workflow unless
+    # continue_on_step_failure: true is set.
+    #
+    # Step fields:
+    #   command         - arguments appended to the binary (e.g. "discovery -j"
+    #                     becomes "xpu-smi discovery -j"). To run arbitrary shell
+    #                     commands instead, use script: and omit {command}.
+    #   background      - start in background; process auto-cleaned at end
+    #   cleanup_step    - always runs, even when workflow has failed
+    #   optional        - failure does not fail the overall workflow
+    #   critical        - failure immediately stops the workflow
+    #   run_on_failure  - only runs when a prior step has failed (recovery)
+    #   condition       - expression evaluated against workflow context;
+    #                     step is skipped if falsy (e.g. "rc == 0")
+    #   store_result    - save step's return code into context key
+    #   store_output_as - save step's stdout into context key
+    #   output_format   - plaintext (default) | json
+    #   timeout         - override global timeout for this step
+    #   expect          - same validation options as single-command tests
+    #
+    # environment: key/value pairs pre-loaded into workflow context.
+    # variables:   OS-specific substitution (same as single-command tests).
+    # -----------------------------------------------------------------------
+    - name: "example_workflow"
+      type: workflow
+      description: "Multi-step workflow with background monitoring and cleanup"
+      continue_on_step_failure: false
+      environment:
+        DEVICE_ID: "0"
+      tags: ["example", "workflow"]
+
+      steps:
+        # Start a background monitor (process is killed automatically at end)
+        - name: "start_monitor"
+          command: "stats -d 0 --interval 1000"
+          background: true
+
+        # Discovery step; store return code and output in context
+        - name: "run_discovery"
+          command: "discovery -d {DEVICE_ID} -j"
+          output_format: "json"
+          store_result: "discovery_rc"
+          store_output_as: "discovery_output"
+          expect:
+            return_code: 0
+            json_path_checks:
+              - path: "$.device_id"
+                expected: "exists"
+
+        # Conditional step: only run if discovery succeeded
+        - name: "check_dump"
+          command: "dump -d {DEVICE_ID} -j"
+          condition: "discovery_rc == 0"
+          output_format: "json"
+          expect:
+            return_code: 0
+
+        # Optional step: failure is tolerated
+        - name: "optional_diag"
+          command: "diag -d {DEVICE_ID} --level 1"
+          optional: true
+          expect:
+            return_code: [0, 1]
+
+        # Critical step: failure stops the workflow immediately
+        - name: "critical_check"
+          command: "discovery -j"
+          critical: true
+          expect:
+            return_code: 0
+
+        # Recovery step: only runs when a prior step has failed
+        - name: "collect_debug_on_failure"
+          command: "log -f output.log"
+          run_on_failure: true
+
+        # Cleanup step: always runs regardless of workflow pass/fail
+        - name: "cleanup"
+          command: "discovery --help"
+          cleanup_step: true
+          expect:
+            return_code: 0
+
+    # -----------------------------------------------------------------------
+    # COMPLEX JSON EXAMPLES - Topology output
+    #
+    # Example response shape:
+    # {
+    #   "topo_list": [
+    #     { "link_type": "S", "local_cpu_affinity": "0-31",
+    #       "local_device_id": 0, "local_numa_index": 0,
+    #       "local_on_subdevice": true, "local_subdevice_id": 0,
+    #       "max_bit_rate": -1, "remote_device_id": 0, "remote_subdevice_id": 0 }
+    #   ],
+    #   "headers": ["GPU 0/0"],
+    #   "matrix": [
+    #     { "tile": "GPU 0/0", "cpu_affinity": "0-31", "connections": ["S"] }
+    #   ]
+    # }
+    # -----------------------------------------------------------------------
+
+    # Validate top-level structure and required keys
+    - name: "topo_schema"
+      command: "topology -j"
+      expect:
+        return_code: 0
+        json_schema:
+          type: "object"
+          required: ["topo_list", "headers", "matrix"]
+          properties:
+            topo_list:
+              type: "array"
+              minItems: 1
+              items:
+                type: "object"
+                required: ["link_type", "local_device_id", "remote_device_id",
+                           "local_subdevice_id", "remote_subdevice_id",
+                           "local_on_subdevice", "local_cpu_affinity",
+                           "local_numa_index", "max_bit_rate"]
+                properties:
+                  link_type:        { type: "string" }
+                  local_device_id:  { type: "integer", minimum: 0 }
+                  remote_device_id: { type: "integer", minimum: 0 }
+                  local_subdevice_id:  { type: "integer", minimum: 0 }
+                  remote_subdevice_id: { type: "integer", minimum: 0 }
+                  local_on_subdevice: { type: "boolean" }
+                  local_cpu_affinity: { type: "string" }
+                  local_numa_index:   { type: "integer", minimum: 0 }
+                  max_bit_rate:       { type: "integer" }
+            headers:
+              type: "array"
+              minItems: 1
+              items: { type: "string" }
+            matrix:
+              type: "array"
+              minItems: 1
+              items:
+                type: "object"
+                required: ["tile", "cpu_affinity", "connections"]
+                properties:
+                  tile:         { type: "string" }
+                  cpu_affinity: { type: "string" }
+                  connections:
+                    type: "array"
+                    minItems: 1
+                    items: { type: "string" }
+      tags: ["example", "json", "topology"]
+
+    # Spot-check specific field values with JSONPath
+    - name: "topo_jsonpath_values"
+      command: "topology -j"
+      expect:
+        return_code: 0
+        json_path_checks:
+          # First entry fields exist
+          - path: "$.topo_list[0].link_type"
+            expected: "exists"
+          - path: "$.topo_list[0].local_device_id"
+            expected: "equals"
+            value: 0
+          - path: "$.topo_list[0].remote_device_id"
+            expected: "equals"
+            value: 0
+          - path: "$.topo_list[0].local_on_subdevice"
+            expected: "equals"
+            value: true
+          - path: "$.topo_list[0].max_bit_rate"
+            expected: "equals"
+            value: -1
+
+          # Every topo_list entry must have link_type
+          - path: "$.topo_list[*].link_type"
+            expected: "exists"
+
+          # Every matrix row must have a tile and cpu_affinity
+          - path: "$.matrix[*].tile"
+            expected: "exists"
+          - path: "$.matrix[*].cpu_affinity"
+            expected: "exists"
+
+          # Every matrix row must have at least one connection entry
+          - path: "$.matrix[*].connections[0]"
+            expected: "exists"
+
+          # First matrix entry matches expected values
+          - path: "$.matrix[0].tile"
+            expected: "equals"
+            value: "GPU 0/0"
+          - path: "$.matrix[0].cpu_affinity"
+            expected: "equals"
+            value: "0-31"
+          - path: "$.matrix[0].connections[0]"
+            expected: "equals"
+            value: "S"
+
+          # headers array is populated
+          - path: "$.headers[0]"
+            expected: "equals"
+            value: "GPU 0/0"
+      tags: ["example", "json", "jsonpath", "topology"]
+
+    # All topo_list entries on device 0 share the same link_type
+    - name: "topo_all_equal"
+      command: "topology -d 0 -j"
+      expect:
+        return_code: 0
+        json_path_checks:
+          - path: "$.topo_list[*].local_device_id"
+            expected: "all_equal"
+            value: 0
+          - path: "$.topo_list[*].link_type"
+            expected: "all_equal"
+            value: "S"
+      tags: ["example", "json", "jsonpath", "topology"]
+
+    # Combined: schema validates shape, jsonpath validates values
+    - name: "topo_combined"
+      command: "topology -j"
+      expect:
+        return_code: 0
+        json_schema:
+          type: "object"
+          required: ["topo_list", "headers", "matrix"]
+          properties:
+            topo_list:
+              type: "array"
+              minItems: 1
+            headers:
+              type: "array"
+              minItems: 1
+            matrix:
+              type: "array"
+              minItems: 1
+        json_path_checks:
+          # headers and matrix must be the same length (both index 0 exist)
+          - path: "$.headers[0]"
+            expected: "exists"
+          - path: "$.matrix[0]"
+            expected: "exists"
+          # Every connection entry must be a single uppercase letter (spot-check first)
+          - path: "$.matrix[0].connections[0]"
+            expected: "exists"
+          # Confirm topo_list has the right local_device_id for device 0 query
+          - path: "$.topo_list[0].local_device_id"
+            expected: "equals"
+            value: 0
+      tags: ["example", "json", "topology", "combined"]
