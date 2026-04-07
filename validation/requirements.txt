@@ -1,0 +1,8 @@
+# Requirements for CLI Validation Framework
+
+# Core dependencies
+pyyaml>=6.0
+jsonschema>=4.17.0
+jsonpath-ng>=1.5.3
+colorama>=0.4.6       # Colored terminal output (cross-platform, including Windows)
+
