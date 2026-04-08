@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <debug.h>
 #include <fcntl.h>
+#include <sys/file.h>
 #include <filesystem>
 #include <fstream>
 #include <i2c_interface.h>
@@ -44,7 +45,7 @@ I2CInterface::I2CInterface(const std::string &devpath)
 I2CInterface::~I2CInterface()
 {
 	TRACING();
-	if (init && amchandle >= 0) {
+	if (amchandle >= 0) {
 		closeAmc();
 		amchandle = -1;
 	}
@@ -118,6 +119,12 @@ bool I2CInterface::openAmc(const std::string &devpath)
 	amchandle = open(devpath.c_str(), O_RDWR | O_NONBLOCK);
 	if (amchandle < 0) {
 		ERR("Failed to open I2C device {}: {}\n", devpath.c_str(), strerror(errno));
+		return false;
+	}
+	if (::flock(amchandle, LOCK_EX | LOCK_NB) < 0) {
+		ERR("Failed to acquire exclusive lock on I2C device %s with error: %s\n", devpath.c_str(), strerror(errno));
+		close(amchandle);
+		amchandle = -1;
 		return false;
 	}
 	return true;
