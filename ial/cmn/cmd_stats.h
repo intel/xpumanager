@@ -181,6 +181,7 @@ struct DeviceMetrics
 	std::map<uint32_t, std::vector<double>> mediaFrequencyPerTile; // tile_id -> media freq samples in MHz
 	std::map<uint32_t, std::vector<double>> gpuCoreTempPerTile;	   // tile_id -> GPU core temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> memoryTempPerTile;	   // tile_id -> memory temp samples in Celsius
+	std::map<uint32_t, std::vector<double>> vrTempPerTile; // tile_id -> voltage regulator temp samples in Celsius
 
 	std::map<uint32_t, std::vector<double>> memoryReadKBpsPerTile;	// tile_id -> read throughput samples in kB/s
 	std::map<uint32_t, std::vector<double>> memoryWriteKBpsPerTile; // tile_id -> write throughput samples in kB/s
@@ -201,6 +202,7 @@ struct DeviceMetrics
 
 	SummaryStats gpuCoreTemp;
 	SummaryStats memoryTemp;
+	SummaryStats vrTemp;
 
 	SummaryStats memoryReadKBps;
 	SummaryStats memoryWriteKBps;
@@ -278,7 +280,8 @@ private:
 													  std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile);
 	static ze_result_t collectTemperatureMetricsPerTile(temperature *tempHandler,
 														std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
-														std::map<uint32_t, std::vector<double>> &memoryTempPerTile);
+														std::map<uint32_t, std::vector<double>> &memoryTempPerTile,
+														std::map<uint32_t, std::vector<double>> &vrTempPerTile);
 	static ze_result_t
 	collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
 								std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,
