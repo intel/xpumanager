@@ -165,25 +165,22 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				f.attributes.hwType)
 		}
 
-		for reason := l0sysman.FreqThrottleReasonFlag(1); reason < l0sysman.FREQ_THROTTLE_REASON_FLAG_FORCE_UINT32; reason <<= 1 {
+		// Flags may be unset because the driver lacks support for specific
+		// throttle reason (does not know the status). Emit the metric only
+		// once support is confirmed.
+		f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
+		for _, reason := range f.state.throttleReasonsSeen.Bits() {
 			value := int64(0)
 			if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
 				value = 1
-				f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(reason)
 			}
-
-			// Flags may be unset because the driver lacks support for this
-			// throttle reason (does not know the status). Emit the metric
-			// only once support is confirmed.
-			if l0sysman.FreqThrottleReasonFlag(f.state.throttleReasonsSeen)&reason != 0 {
-				mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
-					f.attributes.hwID,
-					f.attributes.hwName,
-					f.attributes.pciBDF,
-					f.attributes.subdeviceId,
-					f.attributes.hwFrequencyType,
-					strings.ToLower(reason.String()))
-			}
+			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
+				f.attributes.hwID,
+				f.attributes.hwName,
+				f.attributes.pciBDF,
+				f.attributes.subdeviceId,
+				f.attributes.hwFrequencyType,
+				strings.ToLower(reason.String()))
 		}
 	}
 
