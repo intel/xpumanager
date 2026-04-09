@@ -301,50 +301,110 @@ type PowerProperties struct {
 
 // String representation of all set bits of InitFlags.
 func (f InitFlags) String() string {
-	return internal.FlagsToString[InitFlag](InitFlag(f))
+	return internal.FlagsToString(InitFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of InitFlags.
+func (f InitFlags) Bits() []InitFlag {
+	return internal.FlagsToBits(InitFlag(f))
 }
 
 // String representation of all set bits of EngineTypeFlags.
 func (f EngineTypeFlags) String() string {
-	return internal.FlagsToString[EngineTypeFlag](EngineTypeFlag(f))
+	return internal.FlagsToString(EngineTypeFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of EngineTypeFlags.
+func (f EngineTypeFlags) Bits() []EngineTypeFlag {
+	return internal.FlagsToBits(EngineTypeFlag(f))
 }
 
 // String representation of all set bits of ResetReasonFlags.
 func (f ResetReasonFlags) String() string {
-	return internal.FlagsToString[ResetReasonFlag](ResetReasonFlag(f))
+	return internal.FlagsToString(ResetReasonFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of ResetReasonFlags.
+func (f ResetReasonFlags) Bits() []ResetReasonFlag {
+	return internal.FlagsToBits(ResetReasonFlag(f))
 }
 
 // String representation of all set bits of DevicePropertyFlags.
 func (f DevicePropertyFlags) String() string {
-	return internal.FlagsToString[DevicePropertyFlag](DevicePropertyFlag(f))
+	return internal.FlagsToString(DevicePropertyFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of DevicePropertyFlags.
+func (f DevicePropertyFlags) Bits() []DevicePropertyFlag {
+	return internal.FlagsToBits(DevicePropertyFlag(f))
 }
 
 // String representation of all set bits of PciLinkQualIssueFlags.
 func (f PciLinkQualIssueFlags) String() string {
-	return internal.FlagsToString[PciLinkQualIssueFlag](PciLinkQualIssueFlag(f))
+	return internal.FlagsToString(PciLinkQualIssueFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of PciLinkQualIssueFlags.
+func (f PciLinkQualIssueFlags) Bits() []PciLinkQualIssueFlag {
+	return internal.FlagsToBits(PciLinkQualIssueFlag(f))
 }
 
 // String representation of all set bits of PciLinkStabIssueFlags.
 func (f PciLinkStabIssueFlags) String() string {
-	return internal.FlagsToString[PciLinkStabIssueFlag](PciLinkStabIssueFlag(f))
+	return internal.FlagsToString(PciLinkStabIssueFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of PciLinkStabIssueFlags.
+func (f PciLinkStabIssueFlags) Bits() []PciLinkStabIssueFlag {
+	return internal.FlagsToBits(PciLinkStabIssueFlag(f))
 }
 
 // String representation of all set bits of EventTypeFlags.
 func (f EventTypeFlags) String() string {
-	return internal.FlagsToString[EventTypeFlag](EventTypeFlag(f))
+	return internal.FlagsToString(EventTypeFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of EventTypeFlags.
+func (f EventTypeFlags) Bits() []EventTypeFlag {
+	return internal.FlagsToBits(EventTypeFlag(f))
 }
 
 // String representation of all set bits of FabricPortQualIssueFlags.
 func (f FabricPortQualIssueFlags) String() string {
-	return internal.FlagsToString[FabricPortQualIssueFlag](FabricPortQualIssueFlag(f))
+	return internal.FlagsToString(FabricPortQualIssueFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of FabricPortQualIssueFlags.
+func (f FabricPortQualIssueFlags) Bits() []FabricPortQualIssueFlag {
+	return internal.FlagsToBits(FabricPortQualIssueFlag(f))
 }
 
 // String representation of all set bits of FabricPortFailureFlags.
 func (f FabricPortFailureFlags) String() string {
-	return internal.FlagsToString[FabricPortFailureFlag](FabricPortFailureFlag(f))
+	return internal.FlagsToString(FabricPortFailureFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of FabricPortFailureFlags.
+func (f FabricPortFailureFlags) Bits() []FabricPortFailureFlag {
+	return internal.FlagsToBits(FabricPortFailureFlag(f))
 }
 
 // String representation of all set bits of FreqThrottleReasonFlags.
 func (f FreqThrottleReasonFlags) String() string {
-	return internal.FlagsToString[FreqThrottleReasonFlag](FreqThrottleReasonFlag(f))
+	return internal.FlagsToString(FreqThrottleReasonFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of FreqThrottleReasonFlags.
+func (f FreqThrottleReasonFlags) Bits() []FreqThrottleReasonFlag {
+	return internal.FlagsToBits(FreqThrottleReasonFlag(f))
+}
+
+// Bits returns a slice of all enabled bits of OverclockDomain.
+func (f OverclockDomain) Bits() []OverclockDomain {
+	return internal.FlagsToBits(f)
+}
+
+// Bits returns a slice of all enabled bits of OverclockControl.
+func (f OverclockControl) Bits() []OverclockControl {
+	return internal.FlagsToBits(f)
 }
