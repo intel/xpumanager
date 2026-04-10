@@ -9,6 +9,7 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <string_view>
 
 enum policyCmdType
 {
@@ -48,10 +49,25 @@ using policySubCmdFunc = ze_result_t (cmdPolicy::*)(devInfo *d);
 
 struct policyCmdStruct
 {
-	option opt;
-	policySubCmdFunc func;
-	bool enabled;
-	std::string val;
+	policySubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
+
+constexpr std::string_view policyCmdName(policyCmdType t) noexcept
+{
+	switch (t) {
+	case policyCmdType::POLICY_LIST:
+		return "list";
+	case policyCmdType::POLICY_LISTALLTYPES:
+		return "listalltypes";
+	case policyCmdType::POLICY_CREATE:
+		return "create";
+	case policyCmdType::POLICY_REMOVE:
+		return "remove";
+	default:
+		return "";
+	}
+}
 
 #endif

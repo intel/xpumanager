@@ -11,6 +11,7 @@
 #include "printer.h"
 #include <os.h>
 #include <map>
+#include <string_view>
 
 inline constexpr char DEVICE_STATE_SURV_MODE[] =
 	"survivability mode (firmware update and cold reset are recommended for device recovery)";
@@ -179,12 +180,25 @@ using discoveryFunc = ze_result_t (cmdDiscovery::*)(devInfo *d, nlohmann::ordere
 
 struct discoveryCmdStruct
 {
-	option opt;
-	discoveryFunc func;
-	discoveryHeadingFunc headingFunc;
-	bool enabled;
-	std::string val;
+	discoveryFunc func{nullptr};
+	discoveryHeadingFunc headingFunc{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
+
+constexpr std::string_view discCmdName(discCmdType t) noexcept
+{
+	switch (t) {
+	case discCmdType::DISC_DEVICE:
+		return "device";
+	case discCmdType::DISC_DUMP:
+		return "dump";
+	case discCmdType::DISC_LISTAMCVERSIONS:
+		return "listamcversions";
+	default:
+		return "";
+	}
+}
 
 struct discoveryDumpStruct
 {

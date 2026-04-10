@@ -327,10 +327,9 @@ using statsSubCmdFunc = ze_result_t (cmdStats::*)(devInfo *d);
 
 struct statsCmdStruct
 {
-	option opt;
-	statsSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	statsSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
 
 #endif

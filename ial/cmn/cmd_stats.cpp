@@ -6,6 +6,7 @@
 
 #include "cmd_stats.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 #include "memory.h"
 #include "fan.h"
 #include "metric.h"
@@ -1903,14 +1904,14 @@ void StatsTextPrinter::addRasCounterRows(TableBuilder &table, const nlohmann::or
 }
 
 static std::unordered_map<statsCmdType, statsCmdStruct> statsCmds = {
-	{statsCmdType::STATS_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{statsCmdType::STATS_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{statsCmdType::STATS_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{statsCmdType::STATS_EU, {{"eu", no_argument, 0, 'e'}, &cmdStats::eu, false, ""}},
-	{statsCmdType::STATS_RAS, {{"ras", no_argument, 0, 'r'}, &cmdStats::ras, false, ""}},
-	{statsCmdType::STATS_SAMPLES, {{"samples", required_argument, 0, 0}, nullptr, false, ""}},
-	{statsCmdType::STATS_INTERVAL, {{"interval", required_argument, 0, 0}, nullptr, false, ""}},
-	{statsCmdType::STATS_LIST_OFFLINE_PAGES, {{"list-offline-pages", no_argument, 0, 0}, nullptr, false, ""}},
+	{statsCmdType::STATS_HELP, {}},
+	{statsCmdType::STATS_JSON, {}},
+	{statsCmdType::STATS_DEVICE, {}},
+	{statsCmdType::STATS_EU, {.func = &cmdStats::eu}},
+	{statsCmdType::STATS_RAS, {.func = &cmdStats::ras}},
+	{statsCmdType::STATS_SAMPLES, {}},
+	{statsCmdType::STATS_INTERVAL, {}},
+	{statsCmdType::STATS_LIST_OFFLINE_PAGES, {}},
 };
 
 /**
@@ -2103,66 +2104,34 @@ int cmdStats::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
-	int opt;
-	int optionIndex = 0;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(statsCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			statsCmds[STATS_JSON].enabled = true;
-			break;
-		case 'd':
-			statsCmds[STATS_DEVICE].enabled = true;
-			statsCmds[STATS_DEVICE].val = optarg;
-			break;
-		case 'e':
-			statsCmds[STATS_EU].enabled = true;
-			break;
-		case 'r':
-			statsCmds[STATS_RAS].enabled = true;
-			break;
-		case 0:
-			for (auto &cmd : statsCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	// Reset state
+	for (auto &[k, v] : statsCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Show GPU statistics", "stats"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", statsCmds[STATS_JSON].enabled, "Print result in JSON format");
+	sub.add_option("-d,--device", statsCmds[STATS_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { statsCmds[STATS_DEVICE].enabled = true; });
+	sub.add_flag("-e,--eu", statsCmds[STATS_EU].enabled, "Show EU statistics");
+	sub.add_flag("-r,--ras", statsCmds[STATS_RAS].enabled, "Show RAS error statistics");
+	sub.add_option("--samples", statsCmds[STATS_SAMPLES].val, "Number of samples to collect (minimum 2)")
+		->each([&](const std::string &) { statsCmds[STATS_SAMPLES].enabled = true; });
+	sub.add_option("--interval", statsCmds[STATS_INTERVAL].val, "Sampling interval in milliseconds")
+		->each([&](const std::string &) { statsCmds[STATS_INTERVAL].enabled = true; });
+	sub.add_flag("--list-offline-pages", statsCmds[STATS_LIST_OFFLINE_PAGES].enabled,
+				 "List offline memory pages (exclusive; cannot be combined with other stats options)");
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}

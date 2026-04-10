@@ -6,6 +6,7 @@
 
 #include "cmd_diag.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 #include "table_builder.h"
 #include <format>
 #include <pci.h>
@@ -14,7 +15,6 @@
 #include <thread>
 #include <cmath>
 #include <fstream>
-#include <sys/stat.h>
 #include <assert.h>
 #include <ecc.h>
 #include <fabric.h>
@@ -45,17 +45,17 @@
  */
 
 static std::unordered_map<diagCmdType, diagCmdStruct> diagCmds = {
-	{diagCmdType::DIAGHELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{diagCmdType::DIAGJSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{diagCmdType::DIAGDEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{diagCmdType::LEVEL, {{"level", required_argument, 0, 'l'}, &cmdDiag::level, false, ""}},
-	{diagCmdType::PRECHECK, {{"precheck", no_argument, 0, 0}, nullptr, false, ""}},
-	{diagCmdType::STRESS, {{"stress", no_argument, 0, 's'}, &cmdDiag::stress, false, ""}},
-	{diagCmdType::SINGLETEST, {{"singletest", required_argument, 0, 0}, &cmdDiag::runSingleTest, false, ""}},
-	{diagCmdType::LISTTYPES, {{"listtypes", no_argument, 0, 0}, nullptr, false, ""}},
-	{diagCmdType::GPU, {{"gpu", no_argument, 0, 0}, nullptr, false, ""}},
-	{diagCmdType::SINCE, {{"since", required_argument, 0, 0}, &cmdDiag::runSince, false, ""}},
-	{diagCmdType::STRESSTIME, {{"stresstime", required_argument, 0, 0}, nullptr, false, ""}},
+	{diagCmdType::DIAGHELP, {}},
+	{diagCmdType::DIAGJSON, {}},
+	{diagCmdType::DIAGDEVICE, {}},
+	{diagCmdType::LEVEL, {.func = &cmdDiag::level}},
+	{diagCmdType::PRECHECK, {}},
+	{diagCmdType::STRESS, {.func = &cmdDiag::stress}},
+	{diagCmdType::SINGLETEST, {.func = &cmdDiag::runSingleTest}},
+	{diagCmdType::LISTTYPES, {}},
+	{diagCmdType::GPU, {}},
+	{diagCmdType::SINCE, {.func = &cmdDiag::runSince}},
+	{diagCmdType::STRESSTIME, {}},
 };
 
 std::unordered_map<diagLevel, std::vector<std::pair<diagSubCmdType, diagSubLevelCmdStruct>>> cmdDiag::levelToDiagTests =
@@ -1448,63 +1448,41 @@ int cmdDiag::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
-	int opt;
-	int optionIndex = 0;
 	std::unique_ptr<Printer> printer;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(diagCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
+	// Reset state
+	for (auto &[k, v] : diagCmds) {
+		v.enabled = false;
+		v.val.clear();
+	}
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return 0;
-		case 'j':
-			diagCmds[diagCmdType::DIAGJSON].enabled = true;
-			break;
-		case 'd':
-			diagCmds[diagCmdType::DIAGDEVICE].enabled = true;
-			diagCmds[diagCmdType::DIAGDEVICE].val = optarg;
-			break;
-		case 'l':
-			diagCmds[diagCmdType::LEVEL].enabled = true;
-			diagCmds[diagCmdType::LEVEL].val = optarg;
-			break;
-		case 's':
-			diagCmds[diagCmdType::STRESS].enabled = true;
-			break;
-		case 0:
-			for (auto &cmd : diagCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
+	CLI::App sub{"Run GPU diagnostics", "diag"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", diagCmds[diagCmdType::DIAGJSON].enabled, "Print result in JSON format");
+	sub.add_option("-d,--device", diagCmds[diagCmdType::DIAGDEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { diagCmds[diagCmdType::DIAGDEVICE].enabled = true; });
+	sub.add_option("-l,--level", diagCmds[diagCmdType::LEVEL].val, "Diagnostic level (1-3)")
+		->each([&](const std::string &) { diagCmds[diagCmdType::LEVEL].enabled = true; });
+	sub.add_flag("--precheck", diagCmds[diagCmdType::PRECHECK].enabled, "Run pre-check diagnostics");
+	sub.add_flag("-s,--stress", diagCmds[diagCmdType::STRESS].enabled, "Run stress diagnostics");
+	sub.add_option("--singletest", diagCmds[diagCmdType::SINGLETEST].val, "Run a single diagnostic test")
+		->each([&](const std::string &) { diagCmds[diagCmdType::SINGLETEST].enabled = true; });
+	sub.add_flag("--listtypes", diagCmds[diagCmdType::LISTTYPES].enabled, "List all diagnostic test types");
+	sub.add_flag("--gpu", diagCmds[diagCmdType::GPU].enabled, "Run GPU diagnostics only");
+	sub.add_option("--since", diagCmds[diagCmdType::SINCE].val, "Run diagnostics since a given timestamp")
+		->each([&](const std::string &) { diagCmds[diagCmdType::SINCE].enabled = true; });
+	sub.add_option("--stresstime", diagCmds[diagCmdType::STRESSTIME].val, "Stress test duration (seconds)")
+		->each([&](const std::string &) { diagCmds[diagCmdType::STRESSTIME].enabled = true; });
 
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Check if any actual diagnostic command was specified
@@ -1529,14 +1507,6 @@ int cmdDiag::run(arg_struct *args)
 		printer = std::make_unique<JsonPrinter>();
 	} else {
 		printer = std::make_unique<DiagTextPrinter>();
-	}
-
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
-		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	result = args->sm.findDevice(diagCmds[diagCmdType::DIAGDEVICE].val.c_str(), &deviceList);
@@ -1567,10 +1537,10 @@ int cmdDiag::run(arg_struct *args)
 			// Call the appropriate command function based on the command type
 			for (const auto &cmd : diagCmds) {
 				if (cmd.second.enabled && cmd.second.func != nullptr) {
-					DBG("Running command: {}\n", cmd.second.opt.name);
+					DBG("Running command: {}\n", diagCmdName(cmd.first));
 					result = (this->*cmd.second.func)(&device, jsonObj.get());
 					if (diagCmds[diagCmdType::DIAGDEVICE].enabled) {
-						DBG("Exiting command: {}\n", cmd.second.opt.name);
+						DBG("Exiting command: {}\n", diagCmdName(cmd.first));
 						break;
 					}
 				}

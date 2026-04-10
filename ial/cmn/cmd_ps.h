@@ -43,10 +43,9 @@ using psSubCmdFunc = ze_result_t (cmdPs::*)(devInfo *d, nlohmann::ordered_json *
 
 struct psCmdStruct
 {
-	option opt;
-	psSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	psSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
 
 struct psSubCmdStruct

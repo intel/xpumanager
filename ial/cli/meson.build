@@ -16,7 +16,8 @@ cli_deps = [
   ial_cmn_dep,
   levelzero_dep,
   igsc_dep,
-  nlohmann_json_dep
+  nlohmann_json_dep,
+  cli11_dep
 ]
 
 if is_linux

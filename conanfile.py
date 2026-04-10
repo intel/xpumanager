@@ -38,6 +38,7 @@ class XpumConan(ConanFile):
         self.requires("nlohmann_json/3.10.2")
         self.requires("hwloc/2.9.3")  # Cross-platform topology library
         self.requires("libcurl/8.5.0")
+        self.requires("cli11/2.6.2")
 
     def build_requirements(self):
         self.tool_requires("meson/1.3.2")

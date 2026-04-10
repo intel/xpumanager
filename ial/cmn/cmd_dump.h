@@ -171,10 +171,9 @@ using dumpHeadingFunc = ze_result_t (cmdDump::*)();
 
 struct dumpCmdStruct
 {
-	option opt;
-	funcptr func;
-	bool enabled;
-	std::string val;
+	funcptr func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
 
 struct dumpCmdSubStruct

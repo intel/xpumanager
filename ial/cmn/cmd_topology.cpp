@@ -5,12 +5,8 @@
  */
 
 #include "cmd_topology.h"
-#include "cmds.h"
-#include "nlohmann/json_fwd.hpp"
-#include "logger/logger.h"
-#include "device.h"
-#include "fabric.h"
-#include "os.h"
+#include "debug.h"
+#include <CLI/CLI.hpp>
 #include "printer.h"
 #include "table_builder.h"
 #include "ze_api.h"
@@ -224,11 +220,9 @@ void TopologyTextPrinter::print(const TopologyInfo &info)
 }
 
 static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
-	{topologyCmdType::TOPOLOGY_HELP, {{"help", no_argument, nullptr, 'h'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_JSON, {{"json", no_argument, nullptr, 'j'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_DEVICE, {{"device", required_argument, nullptr, 'd'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_FILE, {{"file", required_argument, nullptr, 'f'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_MATRIX, {{"matrix", no_argument, nullptr, 'm'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_HELP, {}},	{topologyCmdType::TOPOLOGY_JSON, {}},
+	{topologyCmdType::TOPOLOGY_DEVICE, {}}, {topologyCmdType::TOPOLOGY_FILE, {}},
+	{topologyCmdType::TOPOLOGY_MATRIX, {}},
 };
 
 /**
@@ -729,7 +723,6 @@ ze_result_t cmdTopology::showMatrix(bool useJson)
  *
  * @note If no specific command is given, displays help information
  * @note Device queries can be performed on multiple devices matching the criteria
- * @note Uses getopt_long for command line parsing
  * @note Sets currentArgs for use by subcommands (generateFile, showMatrix)
  */
 int cmdTopology::run(arg_struct *args)
@@ -741,64 +734,32 @@ int cmdTopology::run(arg_struct *args)
 
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
-	int opt = 0;
-	int optionIndex = 0;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(topologyCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	int startind = 2;
-	optind = 2;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			topologyCmds[topologyCmdType::TOPOLOGY_JSON].enabled = true;
-			break;
-		case 'd':
-			topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val = optarg;
-			topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled = true;
-			break;
-		case 'f':
-			topologyCmds[topologyCmdType::TOPOLOGY_FILE].val = optarg;
-			topologyCmds[topologyCmdType::TOPOLOGY_FILE].enabled = true;
-			xmlFilename = optarg; // Store filename for use in generateFile()
-			break;
-		case 'm':
-			topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled = true;
-			break;
-		case 0:
-			for (auto &[cmdType, cmdStruct] : topologyCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmdStruct.opt.name) == 0) {
-					cmdStruct.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmdStruct.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			break;
-		}
-		startind++;
+	// Reset all cmd states before parsing
+	for (auto &[k, v] : topologyCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Show GPU topology information", "topology"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", topologyCmds[topologyCmdType::TOPOLOGY_JSON].enabled, "Output in JSON format");
+	sub.add_option("-d,--device", topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val, "Device ID")
+		->each([&](const std::string &) { topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled = true; });
+	sub.add_option("-f,--file", topologyCmds[topologyCmdType::TOPOLOGY_FILE].val, "Output XML file path")
+		->each([&](const std::string &val) {
+			topologyCmds[topologyCmdType::TOPOLOGY_FILE].enabled = true;
+			xmlFilename = val;
+		});
+	sub.add_flag("-m,--matrix", topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled, "Show topology matrix");
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}\n", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}

@@ -7,6 +7,7 @@
 #include "cmd_vgpu.h"
 #include "debug.h"
 #include "printer.h"
+#include <CLI/CLI.hpp>
 #include "table_builder.h"
 #include <osvf.h>
 #include <algorithm>
@@ -14,16 +15,16 @@
 #include <cinttypes>
 
 static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
-	{VGPU_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{VGPU_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{VGPU_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{VGPU_PRECHECK, {{"precheck", no_argument, 0, 0}, &cmdVgpu::precheck, false, ""}},
-	{VGPU_NUMBER, {{"number", required_argument, 0, 'n'}, nullptr, false, ""}},
-	{VGPU_CREATE, {{"create", no_argument, 0, 'c'}, &cmdVgpu::create, false, ""}},
-	{VGPU_REMOVE, {{"remove", no_argument, 0, 'r'}, &cmdVgpu::remove, false, ""}},
-	{VGPU_LIST, {{"list", no_argument, 0, 'l'}, &cmdVgpu::listGpus, false, ""}},
-	{VGPU_STATS, {{"stats", no_argument, 0, 's'}, &cmdVgpu::stats, false, ""}},
-	{VGPU_LMEM, {{"lmem", required_argument, 0, 0}, nullptr, false, ""}},
+	{VGPU_HELP, {}},
+	{VGPU_JSON, {}},
+	{VGPU_DEVICE, {}},
+	{VGPU_PRECHECK, {.func = &cmdVgpu::precheck}},
+	{VGPU_NUMBER, {}},
+	{VGPU_CREATE, {.func = &cmdVgpu::create}},
+	{VGPU_REMOVE, {.func = &cmdVgpu::remove}},
+	{VGPU_LIST, {.func = &cmdVgpu::listGpus}},
+	{VGPU_STATS, {.func = &cmdVgpu::stats}},
+	{VGPU_LMEM, {}},
 };
 
 /**
@@ -345,82 +346,35 @@ int cmdVgpu::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
-	int opt;
-	int optionIndex = 0;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
+	// Reset state
 	for (auto &[k, v] : vgpuCmds) {
 		v.enabled = false;
 		v.val.clear();
 	}
 
-	processOptions(vgpuCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
+	CLI::App sub{"Manage virtual GPUs (vGPU)", "vgpu"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", vgpuCmds[VGPU_JSON].enabled, "Print result in JSON format");
+	sub.add_option("-d,--device", vgpuCmds[VGPU_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { vgpuCmds[VGPU_DEVICE].enabled = true; });
+	sub.add_flag("--precheck", vgpuCmds[VGPU_PRECHECK].enabled, "Check vGPU readiness");
+	sub.add_option("-n,--number", vgpuCmds[VGPU_NUMBER].val, "Number of vGPUs to create")
+		->each([&](const std::string &) { vgpuCmds[VGPU_NUMBER].enabled = true; });
+	sub.add_flag("-c,--create", vgpuCmds[VGPU_CREATE].enabled, "Create vGPUs");
+	sub.add_flag("-r,--remove", vgpuCmds[VGPU_REMOVE].enabled, "Remove vGPUs");
+	sub.add_flag("-l,--list", vgpuCmds[VGPU_LIST].enabled, "List vGPUs");
+	sub.add_flag("-s,--stats", vgpuCmds[VGPU_STATS].enabled, "Show vGPU stats");
+	sub.add_option("--lmem", vgpuCmds[VGPU_LMEM].val, "Local memory size per vGPU (MB)")
+		->each([&](const std::string &) { vgpuCmds[VGPU_LMEM].enabled = true; });
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			vgpuCmds[vgpuCmdType::VGPU_JSON].enabled = true;
-			break;
-		case 'd':
-			vgpuCmds[vgpuCmdType::VGPU_DEVICE].val = optarg;
-			vgpuCmds[vgpuCmdType::VGPU_DEVICE].enabled = true;
-			break;
-		case 'c':
-			vgpuCmds[vgpuCmdType::VGPU_CREATE].enabled = true;
-			break;
-		case 'r':
-			vgpuCmds[vgpuCmdType::VGPU_REMOVE].enabled = true;
-			break;
-		case 'l':
-			vgpuCmds[vgpuCmdType::VGPU_LIST].enabled = true;
-			break;
-		case 'n':
-			vgpuCmds[vgpuCmdType::VGPU_NUMBER].enabled = true;
-			vgpuCmds[vgpuCmdType::VGPU_NUMBER].val = optarg;
-			break;
-		case 's':
-			vgpuCmds[vgpuCmdType::VGPU_STATS].enabled = true;
-			break;
-		case 0:
-			for (auto &cmd : vgpuCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			break;
-		}
-		startind++;
-	}
-
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -444,7 +398,7 @@ int cmdVgpu::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : vgpuCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: {}\n", cmd.second.opt.name);
+				DBG("Running command: {}\n", vgpuCmdName(cmd.first));
 				result = (this->*cmd.second.func)(&device);
 				break;
 			}

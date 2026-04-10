@@ -7,13 +7,14 @@
 #include "cmd_listgpu.h"
 #include "debug.h"
 #include "table_builder.h"
+#include <CLI/CLI.hpp>
 #include <format>
 #include <memory>
 
 static std::unordered_map<listgpuCmdType, listgpuCmdStruct> listgpuCmds = {
-	{listgpuCmdType::LISTGPU_HELP, {{"help", no_argument, 0, 'h'}, false, ""}},
-	{listgpuCmdType::LISTGPU_BDF, {{"bdf", required_argument, 0, 'b'}, false, ""}},
-	{listgpuCmdType::LISTGPU_JSON, {{"json", no_argument, 0, 'j'}, false, ""}},
+	{listgpuCmdType::LISTGPU_HELP, {}},
+	{listgpuCmdType::LISTGPU_BDF, {}},
+	{listgpuCmdType::LISTGPU_JSON, {}},
 };
 
 /**
@@ -105,44 +106,28 @@ int cmdListgpu::run(arg_struct *args)
 {
 	TRACING();
 
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 	// Reset state so the command is re-entrant if the instance is reused
 	for (auto &[k, v] : listgpuCmds) {
 		v.enabled = false;
 		v.val.clear();
 	}
 
-	processOptions(listgpuCmds, shortOpts, longOptsVec);
-	const struct option *longOptions = longOptsVec.data();
+	CLI::App sub{"Query PCI properties for xe-bound GPU(s)", "listgpu"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_option("-b,--bdf", listgpuCmds[listgpuCmdType::LISTGPU_BDF].val,
+				   "PCI BDF address to query (e.g. 0000:03:00.0)")
+		->each([&](const std::string &) { listgpuCmds[listgpuCmdType::LISTGPU_BDF].enabled = true; });
+	sub.add_flag("-j,--json", listgpuCmds[listgpuCmdType::LISTGPU_JSON].enabled, "Print result in JSON format");
 
-	optind = 2;
-	int opt = 0;
-	int optionIndex = 0;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOptions, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return 0;
-		case 'b':
-			listgpuCmds[listgpuCmdType::LISTGPU_BDF].enabled = true;
-			listgpuCmds[listgpuCmdType::LISTGPU_BDF].val = optarg;
-			break;
-		case 'j':
-			listgpuCmds[listgpuCmdType::LISTGPU_JSON].enabled = true;
-			break;
-		default:
-			ERR("The following argument was not expected: '%s'.\n", args->argv[optind - 1]);
-			ERR("Run with --help for more information.\n");
-			return 1;
-		}
-	}
-
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '%s'.\n", args->argv[optind]);
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
-		return 1;
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Discover all xe-bound devices and collect their PCI properties

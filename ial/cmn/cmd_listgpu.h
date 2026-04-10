@@ -31,9 +31,8 @@ enum listgpuCmdType
 
 struct listgpuCmdStruct
 {
-	option opt;
-	bool enabled;
-	std::string val;
+	bool enabled{false};
+	std::string val{};
 };
 
 /**

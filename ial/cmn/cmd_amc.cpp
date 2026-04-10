@@ -6,6 +6,7 @@
 
 #include "cmd_amc.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 #include "table_builder.h"
 #include "amclib.h"
 #include "printer.h"
@@ -21,16 +22,16 @@
 #include <array>
 
 static std::unordered_map<amcSubCmdType, amcSubCmdStruct> amcCmds = {
-	{AMC_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{AMC_GPURESET, {{"gpureset", no_argument, 0, 0}, &cmdAmc::gpuReset, false, ""}},
-	{AMC_SENSOR, {{"sensor", no_argument, 0, 0}, &cmdAmc::readSensor, false, ""}},
-	{AMC_SENSORID, {{"sensorid", required_argument, 0, 's'}, nullptr, false, ""}},
-	{AMC_FILE, {{"file", no_argument, 0, 0}, &cmdAmc::readFile, false, ""}},
-	{AMC_FILE_TYPE, {{"filetype", required_argument, 0, 0}, nullptr, false, ""}},
-	{AMC_OP_FILENAME, {{"filename", required_argument, 0, 0}, nullptr, false, ""}},
-	{AMC_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{AMC_YES, {{"yes", no_argument, 0, 'y'}, nullptr, false, ""}},
-	{AMC_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
+	{AMC_HELP, {}},
+	{AMC_GPURESET, {.func = &cmdAmc::gpuReset}},
+	{AMC_SENSOR, {.func = &cmdAmc::readSensor}},
+	{AMC_SENSORID, {}},
+	{AMC_FILE, {.func = &cmdAmc::readFile}},
+	{AMC_FILE_TYPE, {}},
+	{AMC_OP_FILENAME, {}},
+	{AMC_DEVICE, {}},
+	{AMC_YES, {}},
+	{AMC_JSON, {}},
 };
 
 AmcTextPrinter::AmcTextPrinter() : TextPrinter() {}
@@ -155,71 +156,44 @@ void cmdAmc::help(HELP helpType)
 int cmdAmc::run(arg_struct *args)
 {
 	TRACING();
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(amcCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-
-	int opt;
-	int optionIndex = 0;
-
-	int startind = 2;
-	optind = 2;
+	// Reset state
+	for (auto &[k, v] : amcCmds) {
+		v.enabled = false;
+		v.val.clear();
+	}
 
 	if (args->argc == 2) {
 		help();
 		return ZE_RESULT_SUCCESS;
 	}
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return 0;
-		case 'd':
-			amcCmds[AMC_DEVICE].enabled = true;
-			amcCmds[AMC_DEVICE].val = optarg;
-			break;
-		case 'y':
-			amcCmds[AMC_YES].enabled = true;
-			break;
-		case 'j':
-			amcCmds[AMC_JSON].enabled = true;
-			break;
-		case 's':
-			amcCmds[AMC_SENSORID].enabled = true;
-			amcCmds[AMC_SENSORID].val = optarg;
-			break;
-		case 0: {
-			bool found = false;
-			for (auto &cmd : amcCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			break;
-		}
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
-	}
+	CLI::App sub{"AMC firmware and sensor operations", "amc"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", amcCmds[AMC_JSON].enabled, "Print result in JSON format");
+	sub.add_flag("--gpureset", amcCmds[AMC_GPURESET].enabled, "Reset a GPU");
+	sub.add_flag("--sensor", amcCmds[AMC_SENSOR].enabled, "Read AMC sensor data");
+	sub.add_option("-s,--sensorid", amcCmds[AMC_SENSORID].val, "Sensor ID")->each([&](const std::string &) {
+		amcCmds[AMC_SENSORID].enabled = true;
+	});
+	sub.add_flag("--file", amcCmds[AMC_FILE].enabled, "Read a file from AMC");
+	sub.add_option("--filetype", amcCmds[AMC_FILE_TYPE].val, "File type ID")->each([&](const std::string &) {
+		amcCmds[AMC_FILE_TYPE].enabled = true;
+	});
+	sub.add_option("--filename", amcCmds[AMC_OP_FILENAME].val, "Output filename")->each([&](const std::string &) {
+		amcCmds[AMC_OP_FILENAME].enabled = true;
+	});
+	sub.add_option("-d,--device", amcCmds[AMC_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { amcCmds[AMC_DEVICE].enabled = true; });
+	sub.add_flag("-y,--yes", amcCmds[AMC_YES].enabled, "Assume yes to all questions");
 
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -240,7 +214,7 @@ int cmdAmc::run(arg_struct *args)
 
 	if (operationCount == 0) {
 		help(SHORT_HELP);
-		return 0;
+		return ZE_RESULT_SUCCESS;
 	}
 
 	amclib amc;

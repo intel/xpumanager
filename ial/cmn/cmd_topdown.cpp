@@ -6,6 +6,7 @@
 
 #include "cmd_topdown.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 
 /**
  * @brief Displays help information for the topdown command
@@ -106,55 +107,27 @@ void cmdTopdown::help(HELP helpType)
 int cmdTopdown::run(arg_struct *args)
 {
 	TRACING();
-	static struct option longOptions[] = {{"help", no_argument, 0, 'h'},
-										  {"json", no_argument, 0, 'j'},
-										  {"device", required_argument, 0, 'd'},
-										  {"tile", required_argument, 0, 't'},
-										  {"samplingInterval", required_argument, 0, 's'},
-										  {0, 0, 0, 0}};
-
 	ze_result_t result;
 	std::vector<devInfo> deviceList;
-	int opt;
-	int optionIndex = 0;
 	std::string deviceId;
 	std::string tileId;
 	std::string samplingInterval;
 	bool jsonOutput = false;
 
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
+	CLI::App sub{"Show topdown information", "topdown"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", jsonOutput, "Print result in JSON format");
+	sub.add_option("-d,--device", deviceId, "Device ID or PCI BDF address");
+	sub.add_option("-t,--tile", tileId, "Tile ID");
+	sub.add_option("-s,--samplingInterval", samplingInterval, "Sampling interval (ms)");
 
-	while ((opt = getopt_long(args->argc, args->argv, "hjd:t:s:", longOptions, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			jsonOutput = true;
-			break;
-		case 'd':
-			deviceId = optarg;
-			break;
-		case 't':
-			tileId = optarg;
-			break;
-		case 's':
-			samplingInterval = optarg;
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
-	}
-
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}

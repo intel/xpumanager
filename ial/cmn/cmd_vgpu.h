@@ -9,6 +9,7 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <string_view>
 
 enum vgpuCmdType
 {
@@ -46,10 +47,27 @@ using vgpuSubCmdFunc = ze_result_t (cmdVgpu::*)(devInfo *d);
 
 struct vgpuCmdStruct
 {
-	option opt;
-	vgpuSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	vgpuSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
+
+constexpr std::string_view vgpuCmdName(vgpuCmdType t) noexcept
+{
+	switch (t) {
+	case vgpuCmdType::VGPU_PRECHECK:
+		return "precheck";
+	case vgpuCmdType::VGPU_CREATE:
+		return "create";
+	case vgpuCmdType::VGPU_REMOVE:
+		return "remove";
+	case vgpuCmdType::VGPU_LIST:
+		return "list";
+	case vgpuCmdType::VGPU_STATS:
+		return "stats";
+	default:
+		return "";
+	}
+}
 
 #endif

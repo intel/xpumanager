@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "table_builder.h"
 #include <assert.h>
+#include <CLI/CLI.hpp>
 #include <temperature.h>
 #include <memory.h>
 #include <sstream>
@@ -17,11 +18,11 @@
 #include <inttypes.h>
 
 static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
-	{healthCmdType::HEALTH_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{healthCmdType::HEALTH_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{healthCmdType::HEALTH_LIST, {{"list", no_argument, 0, 'l'}, nullptr, false, ""}},
-	{healthCmdType::HEALTH_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdHealth::allComponents, false, ""}},
-	{healthCmdType::HEALTH_COMPONENT, {{"component", required_argument, 0, 'c'}, &cmdHealth::component, false, ""}},
+	{healthCmdType::HEALTH_HELP, {}},
+	{healthCmdType::HEALTH_JSON, {}},
+	{healthCmdType::HEALTH_LIST, {}},
+	{healthCmdType::HEALTH_DEVICE, {.func = &cmdHealth::allComponents}},
+	{healthCmdType::HEALTH_COMPONENT, {.func = &cmdHealth::component}},
 };
 
 healthSubCmdStruct componentCmds[] = {
@@ -710,49 +711,30 @@ int cmdHealth::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	int opt;
-	int optionIndex = 0;
-	std::string shortOpts;
 	std::unique_ptr<Printer> printer;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(healthCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			healthCmds[healthCmdType::HEALTH_JSON].enabled = true;
-			break;
-		case 'l':
-			healthCmds[healthCmdType::HEALTH_LIST].enabled = true;
-			break;
-		case 'd':
-			healthCmds[healthCmdType::HEALTH_DEVICE].enabled = true;
-			healthCmds[healthCmdType::HEALTH_DEVICE].val = optarg;
-			break;
-		case 'c':
-			healthCmds[healthCmdType::HEALTH_COMPONENT].enabled = true;
-			healthCmds[healthCmdType::HEALTH_COMPONENT].val = optarg;
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	// Reset state
+	for (auto &[k, v] : healthCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Check GPU component health", "health"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", healthCmds[healthCmdType::HEALTH_JSON].enabled, "Print result in JSON format");
+	sub.add_flag("-l,--list", healthCmds[healthCmdType::HEALTH_LIST].enabled, "List all available components");
+	sub.add_option("-d,--device", healthCmds[healthCmdType::HEALTH_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { healthCmds[healthCmdType::HEALTH_DEVICE].enabled = true; });
+	sub.add_option("-c,--component", healthCmds[healthCmdType::HEALTH_COMPONENT].val, "Component type ID")
+		->each([&](const std::string &) { healthCmds[healthCmdType::HEALTH_COMPONENT].enabled = true; });
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}

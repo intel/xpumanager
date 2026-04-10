@@ -205,9 +205,8 @@ private:
  */
 struct TopologyCmdStruct
 {
-	option opt;		 ///< GNU getopt option specification
-	bool enabled;	 ///< Whether this option was provided by the user
-	std::string val; ///< Value associated with the option (if required_argument)
+	bool enabled{false}; ///< Whether this option was provided by the user
+	std::string val{};	 ///< Value associated with the option (if required)
 };
 
 #endif

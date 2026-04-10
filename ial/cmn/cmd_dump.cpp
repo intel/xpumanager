@@ -6,7 +6,7 @@
 
 #include "cmd_dump.h"
 #include "debug.h"
-#include <array>
+#include <CLI/CLI.hpp>
 #include <assert.h>
 #include <temperature.h>
 #include <frequency.h>
@@ -27,17 +27,10 @@
 #include <memory>
 
 static std::unordered_map<dumpCmdType, dumpCmdStruct> dumpCmds = {
-	{dumpCmdType::DUMP_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_TILE, {{"tile", required_argument, 0, 't'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_METRICS, {{"metrics", required_argument, 0, 'm'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_FILE, {{"file", required_argument, 0, 'f'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_IMS, {{"ims", required_argument, 0, 0}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_TIME, {{"time", required_argument, 0, 0}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_DATE, {{"date", no_argument, 0, 0}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_INTERVAL, {{"interval", required_argument, 0, 'i'}, nullptr, false, ""}},
-	{dumpCmdType::DUMP_NUMBER, {{"number", required_argument, 0, 'n'}, nullptr, false, ""}},
+	{dumpCmdType::DUMP_HELP, {}},	  {dumpCmdType::DUMP_JSON, {}},	   {dumpCmdType::DUMP_DEVICE, {}},
+	{dumpCmdType::DUMP_TILE, {}},	  {dumpCmdType::DUMP_METRICS, {}}, {dumpCmdType::DUMP_FILE, {}},
+	{dumpCmdType::DUMP_IMS, {}},	  {dumpCmdType::DUMP_TIME, {}},	   {dumpCmdType::DUMP_DATE, {}},
+	{dumpCmdType::DUMP_INTERVAL, {}}, {dumpCmdType::DUMP_NUMBER, {}},
 };
 
 static std::unordered_map<int, dumpCmdSubStruct> dumpMetrics = {
@@ -1550,11 +1543,6 @@ int cmdDump::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
-	int opt;
-	int optionIndex = 0;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 	std::string header;
 	bool first = true;
 	auto running = std::make_shared<std::atomic<bool>>(true);
@@ -1570,79 +1558,48 @@ int cmdDump::run(arg_struct *args)
 		return ZE_RESULT_SUCCESS;
 	}
 
-	processOptions(dumpCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		found = false;
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			dumpCmds[dumpCmdType::DUMP_JSON].enabled = true;
-			break;
-		case 'd':
-			dumpCmds[dumpCmdType::DUMP_DEVICE].enabled = true;
-			dumpCmds[dumpCmdType::DUMP_DEVICE].val = optarg;
-			if (stoi(dumpCmds[dumpCmdType::DUMP_DEVICE].val) == -1) {
-				dumpCmds[dumpCmdType::DUMP_DEVICE].val = "";
-			}
-			break;
-		case 't':
-			dumpCmds[dumpCmdType::DUMP_TILE].enabled = true;
-			dumpCmds[dumpCmdType::DUMP_TILE].val = optarg;
-			break;
-		case 'm':
-			dumpCmds[dumpCmdType::DUMP_METRICS].enabled = true;
-			dumpCmds[dumpCmdType::DUMP_METRICS].val = optarg;
-			break;
-		case 'i':
-			dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled = true;
-			dumpCmds[dumpCmdType::DUMP_INTERVAL].val = optarg;
-			break;
-		case 'n':
-			dumpCmds[dumpCmdType::DUMP_NUMBER].enabled = true;
-			dumpCmds[dumpCmdType::DUMP_NUMBER].val = optarg;
-			break;
-		case 'f':
-			dumpCmds[dumpCmdType::DUMP_FILE].enabled = true;
-			dumpCmds[dumpCmdType::DUMP_FILE].val = optarg;
-			break;
-		case 0:
-			for (auto &cmd : dumpCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	// Reset all cmd states before parsing
+	for (auto &[k, v] : dumpCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Dump raw GPU metric samples", "dump"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", dumpCmds[dumpCmdType::DUMP_JSON].enabled, "Output in JSON format");
+	sub.add_option("-d,--device", dumpCmds[dumpCmdType::DUMP_DEVICE].val, "Device ID (-1 = all devices)")
+		->check(CLI::Number)
+		->each([&](const std::string &val) {
+			if (val == "-1")
+				dumpCmds[dumpCmdType::DUMP_DEVICE].val.clear();
+			dumpCmds[dumpCmdType::DUMP_DEVICE].enabled = true;
+		});
+	sub.add_option("-t,--tile", dumpCmds[dumpCmdType::DUMP_TILE].val, "Tile ID")->each([&](const std::string &) {
+		dumpCmds[dumpCmdType::DUMP_TILE].enabled = true;
+	});
+	sub.add_option("-m,--metrics", dumpCmds[dumpCmdType::DUMP_METRICS].val, "Comma-separated metric IDs")
+		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_METRICS].enabled = true; });
+	sub.add_option("-f,--file", dumpCmds[dumpCmdType::DUMP_FILE].val, "Output file path")
+		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_FILE].enabled = true; });
+	sub.add_option("--ims", dumpCmds[dumpCmdType::DUMP_IMS].val, "IMS value")->each([&](const std::string &) {
+		dumpCmds[dumpCmdType::DUMP_IMS].enabled = true;
+	});
+	sub.add_option("--time", dumpCmds[dumpCmdType::DUMP_TIME].val, "Time value")->each([&](const std::string &) {
+		dumpCmds[dumpCmdType::DUMP_TIME].enabled = true;
+	});
+	sub.add_flag("--date", dumpCmds[dumpCmdType::DUMP_DATE].enabled, "Include date in timestamp");
+	sub.add_option("-i,--interval", dumpCmds[dumpCmdType::DUMP_INTERVAL].val, "Sampling interval (s)")
+		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled = true; });
+	sub.add_option("-n,--number", dumpCmds[dumpCmdType::DUMP_NUMBER].val, "Number of samples")
+		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_NUMBER].enabled = true; });
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}\n", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -1877,12 +1834,20 @@ int cmdDump::run(arg_struct *args)
 		PRINT("{}\n", header.c_str());
 	}
 
-	threadArgs **argsList = new threadArgs *[deviceList.size() * dumpArgs.size()] {};
-	thread_id **tidList = new thread_id *[deviceList.size() * dumpArgs.size()] {};
-	if (tidList == nullptr) {
-		ERR("Failed to allocate memory for thread ID list.\n");
-		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+	if (dumpArgs.empty()) {
+		ERR("No metrics specified. Use -m/--metrics to select metrics to dump.\n");
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+
+	const std::size_t listSize = deviceList.size() * dumpArgs.size();
+	std::vector<std::unique_ptr<threadArgs>> argsList(listSize);
+	// TODO: tidList holds raw owning thread handles because wait_for_thread() is responsible for
+	// closing/freeing each handle internally. To use an owning pointer here, create_thread/wait_for_thread
+	// would need to be refactored to either return a RAII type or expose a matching deleter.
+	// The long-term fix is to replace the entire create_thread/wait_for_thread abstraction with
+	// std::jthread, which would also eliminate the input-thread detach/join dance above.
+	std::vector<thread_id *> tidList(listSize, nullptr);
 
 	// Start a thread to check for key presses to stop dumping
 	// Only start if: 1) no iteration count specified, 2) stdin is a terminal, and
@@ -1920,16 +1885,15 @@ int cmdDump::run(arg_struct *args)
 		for (auto &device : deviceList) {
 			for (const auto &arg : dumpArgs) {
 				threadData prevThreadData = {};
-				if (argsList[total] != nullptr) {
-					// Copy any previous thread data before we delete the old argsList entry
+				if (argsList[total]) {
+					// Copy any previous thread data before we replace the old argsList entry
 					prevThreadData = argsList[total]->td;
-					delete argsList[total]; // Clean up any previously allocated memory
 				}
-				argsList[total] = new threadArgs{this, &device, arg, "", {}};
+				argsList[total].reset(new threadArgs{this, &device, arg, "", {}});
 				// Copy any previous thread data into the new argsList entry just in case the underlying functions
 				// need to access it to do comparison between old and new values
 				argsList[total]->td = prevThreadData;
-				tidList[total] = create_thread(metrics, argsList[total]);
+				tidList[total] = create_thread(metrics, argsList[total].get());
 				total++;
 			}
 		}
@@ -2006,16 +1970,6 @@ int cmdDump::run(arg_struct *args)
 			inputThread.detach();
 		}
 	}
-
-	for (int i = 0; i < total; i++) {
-		if (argsList[i]) {
-			delete argsList[i]; // Clean up any previously allocated memory
-		}
-	}
-
-	// Clean up allocated memory
-	delete[] tidList;
-	delete[] argsList;
 
 	// Restore terminal settings to ensure echo is re-enabled
 	// This is necessary when the input thread is detached and may have left the terminal in raw mode

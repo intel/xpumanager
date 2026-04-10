@@ -6,22 +6,23 @@
 
 #include "cmd_policy.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 
 static std::unordered_map<policyCmdType, policyCmdStruct> policyCmds = {
-	{POLICY_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{POLICY_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{POLICY_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{POLICY_GROUP, {{"group", required_argument, 0, 'g'}, nullptr, false, ""}},
-	{POLICY_LIST, {{"list", no_argument, 0, 'l'}, &cmdPolicy::listPolicies, false, ""}},
-	{POLICY_LISTALLTYPES, {{"listalltypes", no_argument, 0, 0}, &cmdPolicy::listTypes, false, ""}},
-	{POLICY_CREATE, {{"create", no_argument, 0, 'c'}, &cmdPolicy::create, false, ""}},
-	{POLICY_REMOVE, {{"remove", no_argument, 0, 'r'}, &cmdPolicy::remove, false, ""}},
-	{POLICY_TYPE, {{"type", required_argument, 0, 0}, nullptr, false, ""}},
-	{POLICY_CONDITION, {{"condition", required_argument, 0, 0}, nullptr, false, ""}},
-	{POLICY_THRESHOLD, {{"threshold", required_argument, 0, 0}, nullptr, false, ""}},
-	{POLICY_ACTION, {{"action", required_argument, 0, 0}, nullptr, false, ""}},
-	{POLICY_THROTTLEFREQUENCYMIN, {{"throttlefrequencymin", required_argument, 0, 0}, nullptr, false, ""}},
-	{POLICY_THROTTLEFREQUENCYMAX, {{"throttlefrequencymax", required_argument, 0, 0}, nullptr, false, ""}},
+	{POLICY_HELP, {}},
+	{POLICY_JSON, {}},
+	{POLICY_DEVICE, {}},
+	{POLICY_GROUP, {}},
+	{POLICY_LIST, {.func = &cmdPolicy::listPolicies}},
+	{POLICY_LISTALLTYPES, {.func = &cmdPolicy::listTypes}},
+	{POLICY_CREATE, {.func = &cmdPolicy::create}},
+	{POLICY_REMOVE, {.func = &cmdPolicy::remove}},
+	{POLICY_TYPE, {}},
+	{POLICY_CONDITION, {}},
+	{POLICY_THRESHOLD, {}},
+	{POLICY_ACTION, {}},
+	{POLICY_THROTTLEFREQUENCYMIN, {}},
+	{POLICY_THROTTLEFREQUENCYMAX, {}},
 };
 
 void cmdPolicy::help(HELP helpType)
@@ -160,73 +161,49 @@ int cmdPolicy::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	bool found = false;
-	int opt;
-	int optionIndex = 0;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(policyCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			policyCmds[POLICY_JSON].enabled = true;
-			break;
-		case 'd':
-			policyCmds[POLICY_DEVICE].enabled = true;
-			policyCmds[POLICY_DEVICE].val = optarg;
-			break;
-		case 'g':
-			policyCmds[POLICY_GROUP].enabled = true;
-			policyCmds[POLICY_GROUP].val = optarg;
-			break;
-		case 'l':
-			policyCmds[POLICY_LIST].enabled = true;
-			break;
-		case 'c':
-			policyCmds[POLICY_CREATE].enabled = true;
-			break;
-		case 'r':
-			policyCmds[POLICY_REMOVE].enabled = true;
-			break;
-		case 0:
-			for (auto &cmd : policyCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	// Reset state
+	for (auto &[k, v] : policyCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Manage GPU policies", "policy"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", policyCmds[POLICY_JSON].enabled, "Print result in JSON format");
+	sub.add_option("-d,--device", policyCmds[POLICY_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { policyCmds[POLICY_DEVICE].enabled = true; });
+	sub.add_option("-g,--group", policyCmds[POLICY_GROUP].val, "Group ID")->each([&](const std::string &) {
+		policyCmds[POLICY_GROUP].enabled = true;
+	});
+	sub.add_flag("-l,--list", policyCmds[POLICY_LIST].enabled, "List all policies");
+	sub.add_flag("--listalltypes", policyCmds[POLICY_LISTALLTYPES].enabled, "List all policy types");
+	sub.add_flag("-c,--create", policyCmds[POLICY_CREATE].enabled, "Create a new policy");
+	sub.add_flag("-r,--remove", policyCmds[POLICY_REMOVE].enabled, "Remove a policy");
+	sub.add_option("--type", policyCmds[POLICY_TYPE].val, "Policy type")->each([&](const std::string &) {
+		policyCmds[POLICY_TYPE].enabled = true;
+	});
+	sub.add_option("--condition", policyCmds[POLICY_CONDITION].val, "Policy condition")->each([&](const std::string &) {
+		policyCmds[POLICY_CONDITION].enabled = true;
+	});
+	sub.add_option("--threshold", policyCmds[POLICY_THRESHOLD].val, "Policy threshold")->each([&](const std::string &) {
+		policyCmds[POLICY_THRESHOLD].enabled = true;
+	});
+	sub.add_option("--action", policyCmds[POLICY_ACTION].val, "Policy action")->each([&](const std::string &) {
+		policyCmds[POLICY_ACTION].enabled = true;
+	});
+	sub.add_option("--throttlefrequencymin", policyCmds[POLICY_THROTTLEFREQUENCYMIN].val, "Minimum throttle frequency")
+		->each([&](const std::string &) { policyCmds[POLICY_THROTTLEFREQUENCYMIN].enabled = true; });
+	sub.add_option("--throttlefrequencymax", policyCmds[POLICY_THROTTLEFREQUENCYMAX].val, "Maximum throttle frequency")
+		->each([&](const std::string &) { policyCmds[POLICY_THROTTLEFREQUENCYMAX].enabled = true; });
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -242,7 +219,7 @@ int cmdPolicy::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : policyCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: {}\n", cmd.second.opt.name);
+				DBG("Running command: {}\n", policyCmdName(cmd.first));
 				result = (this->*cmd.second.func)(&device);
 				break;
 			}

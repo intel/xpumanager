@@ -228,6 +228,7 @@ thread_dep = dependency('threads')
 levelzero_dep = dependency('level-zero', required : true)
 igsc_dep = dependency('igsc', required : true)
 nlohmann_json_dep = dependency('nlohmann_json', required : true)
+cli11_dep = dependency('CLI11', required : true, include_type : 'system')
 
 # Additional Linux-specific dependencies
 if is_linux
