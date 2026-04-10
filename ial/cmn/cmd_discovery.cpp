@@ -6,6 +6,7 @@
 
 #include "cmd_discovery.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 #include "printer.h"
 #include "table_builder.h"
 #include "amclib.h"
@@ -32,22 +33,20 @@
  * discoveryCmdStruct with a pointer to the function that will be called when the command is executed
  */
 static std::unordered_map<discCmdType, discoveryCmdStruct> discCmds = {
-	{discCmdType::DISC_HELP, {{"help", no_argument, 0, 'h'}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_JSON, {{"json", no_argument, 0, 'j'}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_DEVICE, {{"device", required_argument, 0, 'd'}, &cmdDiscovery::dumpAll, nullptr, false, ""}},
-	{discCmdType::DISC_PF, {{"pf", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_PHYSICALFUNCTION, {{"physicalFunction", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_VF, {{"vf", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_VIRTUALFUNCTION, {{"virtualFunction", no_argument, 0, 0}, nullptr, nullptr, false, ""}},
-	{discCmdType::DISC_DUMP,
-	 {{"dump", required_argument, 0, 0}, &cmdDiscovery::dump, &cmdDiscovery::dumpHeading, false, ""}},
-	{discCmdType::DISC_LISTAMCVERSIONS,
-	 {{"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions, nullptr, false, ""}},
+	{discCmdType::DISC_HELP, {}},
+	{discCmdType::DISC_JSON, {}},
+	{discCmdType::DISC_DEVICE, {.func = &cmdDiscovery::dumpAll}},
+	{discCmdType::DISC_PF, {}},
+	{discCmdType::DISC_PHYSICALFUNCTION, {}},
+	{discCmdType::DISC_VF, {}},
+	{discCmdType::DISC_VIRTUALFUNCTION, {}},
+	{discCmdType::DISC_DUMP, {.func = &cmdDiscovery::dump, .headingFunc = &cmdDiscovery::dumpHeading}},
+	{discCmdType::DISC_LISTAMCVERSIONS, {.func = &cmdDiscovery::listamcversions}},
 };
 
 // Array indexed by discDumpType enum value (1-based; slot 0 unused).
 // Direct O(1) lookup by property ID replaces the former unordered_map linear scan.
-static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> discDumpCmds{{
+static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> DISC_DUMP_CMDS{{
 	{nullptr, ""},																	 // 0 – unused
 	{&cmdDiscovery::deviceID, "Device ID"},											 // 1
 	{&cmdDiscovery::deviceName, "Device Name"},										 // 2
@@ -98,6 +97,81 @@ static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> discDumpCmds{{
 	{&cmdDiscovery::opromDataFirmwareName, "OPROM Data Firmware Name"},				 // 47
 	{&cmdDiscovery::opromDataFirmwareVersion, "OPROM Data Firmware Version"},		 // 48
 }};
+/**
+ * @brief Helper function to convert internal JSON keys to user-friendly display names
+ *
+ * @param key The internal JSON key
+ * @return std::string The user-friendly display name
+ */
+std::string getDisplayName(const std::string &key)
+{
+	static const std::unordered_map<std::string, std::string> keyDisplayMap = {
+		// clang-format off
+		{"device_id", "Device ID"},
+		{"device_name", "Device Name"},
+		{"device_state", "Device State"},
+		{"vendor_name", "Vendor Name"},
+		{"uuid", "UUID"},
+		{"pci_bdf_address", "PCI BDF Address"},
+		{"drm_device_path", "DRM Device"},
+		{"device_function_type", "Function Type"},
+		{"survivability_mode", "Survivability Mode"},
+		{"serial_number", "Serial Number"},
+		{"core_clock_rate", "Core Clock Rate"},
+		{"device_stepping", "Stepping"},
+		{"driver_version", "Driver Version"},
+		{"gfx_firmware_version", "GFX Firmware Version"},
+		{"gfx_data_firmware_version", "GFX Data Firmware Version"},
+		{"pci_slot", "PCI Slot"},
+		{"pcie_generation", "PCIe Generation"},
+		{"pcie_max_link_width", "PCIe Max Link Width"},
+		{"oam_socket_id", "OAM Socket ID"},
+		{"memory_physical_size", "Memory Physical Size"},
+		{"memory_physical_size_byte", "Memory Physical Size"},
+		{"number_of_memory_channels", "Number of Memory Channels"},
+		{"memory_bus_width", "Memory Bus Width"},
+		{"number_of_eus", "Number of EUs"},
+		{"number_of_media_engines", "Number of Media Engines"},
+		{"number_of_media_enh_engines", "Number of Media Enhancement Engines"},
+		{"gfx_firmware_status", "GFX Firmware Status"},
+		{"pci_vendor_id", "PCI Vendor ID"},
+		{"pci_device_id", "PCI Device ID"},
+		{"number_of_tiles", "Number of Tiles"},
+		{"number_of_slices", "Number of Slices"},
+		{"number_of_sub_slices_per_slice", "Number of Sub-slices per Slice"},
+		{"number_of_eus_per_sub_slice", "Number of EUs per Sub-slice"},
+		{"number_of_threads_per_eu", "Number of Threads per EU"},
+		{"physical_eu_simd_width", "Physical EU SIMD Width"},
+		{"max_command_queue_priority", "Max Command Queue Priority"},
+		{"max_hardware_contexts", "Max Hardware Contexts"},
+		{"max_mem_alloc_size_byte", "Max Memory Alloc Size (In Bytes)"},
+		{"memory_free_size_byte", "Memory Free Size"},
+		{"memory_ecc_state", "Memory ECC State"},
+		{"kernel_version", "Kernel Version"},
+		{"drm_device", "DRM Device"},
+		{"device_type", "Device Type"},
+		{"sku_type", "SKU Type"},
+		{"pcie_max_bandwidth", "PCIe Max Bandwidth"},
+		{"amc_firmware_name", "AMC Firmware Name"},
+		{"amc_firmware_version", "AMC Firmware Version"},
+		{"gfx_pscbin_firmware_name", "GFX PSCBIN Firmware Name"},
+		{"gfx_pscbin_firmware_version", "GFX PSCBIN Firmware Version"},
+		{"oprom_code_firmware_name", "OPROM CODE Firmware Name"},
+		{"oprom_code_firmware_version", "OPROM CODE Firmware Version"},
+		{"oprom_data_firmware_name", "OPROM DATA Firmware Name"},
+		{"oprom_data_firmware_version", "OPROM DATA Firmware Version"},
+		{"gfx_firmware_name", "GFX Firmware Name"},
+		{"gfx_data_firmware_name", "GFX Data Firmware Name"},
+		// clang-format on
+	};
+
+	auto it = keyDisplayMap.find(key);
+	if (it != keyDisplayMap.end()) {
+		return it->second;
+	}
+	// If key not found in map, return the original key (fallback)
+	return key;
+}
 
 /**
  * @brief Constructor for DiscoveryTextPrinter class
@@ -332,7 +406,7 @@ void cmdDiscovery::help(HELP helpType)
 										"format. Separated by the comma. \"-1\" means all properties"));
 
 	for (int propId = 1; propId < TOTAL_DISC_DUMPS; propId++) {
-		helpList.push_back(helpCmd(SUB_HEADING, std::format("{}. {}", propId, discDumpCmds[propId].heading).c_str()));
+		helpList.push_back(helpCmd(SUB_HEADING, std::format("{}. {}", propId, DISC_DUMP_CMDS[propId].heading).c_str()));
 	}
 	helpList.push_back(helpCmd(HEADING, "--listamcversions           Show all AMC firmware versions"));
 
@@ -413,7 +487,7 @@ ze_result_t cmdDiscovery::dumpHeading(nlohmann::ordered_json *jsonObj)
 
 	for (const auto arg : dumpArgs) {
 		found = true;
-		headingJson->push_back(discDumpCmds[arg].heading);
+		headingJson->push_back(DISC_DUMP_CMDS[arg].heading);
 	}
 
 	if (!found) {
@@ -451,7 +525,7 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	std::string outputLine;
 	for (const auto arg : dumpArgs) {
-		const auto &cmd = discDumpCmds[arg];
+		const auto &cmd = DISC_DUMP_CMDS[arg];
 		DBG("Running command: {}\n", arg);
 		result = (this->*cmd.func)(d, &outputLine);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -2048,68 +2122,45 @@ int cmdDiscovery::run(arg_struct *args)
 {
 	TRACING();
 	std::vector<devInfo> deviceList;
-	bool found = false, headingFirst = true;
-	int opt;
-	int optionIndex = 0;
+	bool headingFirst = true;
 	std::unique_ptr<Printer> printer;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(discCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
+	// Reset state
+	for (auto &[k, v] : discCmds) {
+		v.enabled = false;
+		v.val.clear();
+	}
 
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return 0;
-		case 'j':
-			discCmds[discCmdType::DISC_JSON].enabled = true;
-			break;
-		case 'd':
-			discCmds[discCmdType::DISC_DEVICE].enabled = true;
-			discCmds[discCmdType::DISC_DEVICE].val = optarg;
-			break;
-		case 0:
-			for (auto &cmd : discCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					found = true;
-					break;
-				}
-			}
+	CLI::App sub{"Discover Intel GPU devices", "discovery"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", discCmds[discCmdType::DISC_JSON].enabled, "Print result in JSON format");
+	sub.add_option("-d,--device", discCmds[discCmdType::DISC_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { discCmds[discCmdType::DISC_DEVICE].enabled = true; });
+	sub.add_flag("--pf", discCmds[discCmdType::DISC_PF].enabled, "List physical function devices");
+	sub.add_flag("--physicalFunction", discCmds[discCmdType::DISC_PHYSICALFUNCTION].enabled,
+				 "List physical function devices (alias for --pf)");
+	sub.add_flag("--vf", discCmds[discCmdType::DISC_VF].enabled, "List virtual function devices");
+	sub.add_flag("--virtualFunction", discCmds[discCmdType::DISC_VIRTUALFUNCTION].enabled,
+				 "List virtual function devices (alias for --vf)");
+	sub.add_option("--dump", discCmds[discCmdType::DISC_DUMP].val, "Dump specific property IDs (comma-separated)")
+		->each([&](const std::string &) { discCmds[discCmdType::DISC_DUMP].enabled = true; });
+	sub.add_flag("--listamcversions", discCmds[discCmdType::DISC_LISTAMCVERSIONS].enabled,
+				 "List AMC firmware versions");
 
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
+		ERR("Run with --help for more information.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 	if (discCmds[discCmdType::DISC_JSON].enabled == true) {
 		printer = std::make_unique<JsonPrinter>();
 	} else {
 		printer = std::make_unique<DiscoveryTextPrinter>();
-	}
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
-		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	auto result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
@@ -2150,7 +2201,7 @@ int cmdDiscovery::run(arg_struct *args)
 						}
 					}
 
-					DBG("Running command: {}\n", cmd.second.opt.name);
+					DBG("Running command: {}\n", discCmdName(cmd.first));
 					result = (this->*cmd.second.func)(&device, jsonObj.get());
 					if (result != ZE_RESULT_SUCCESS) {
 						return result;

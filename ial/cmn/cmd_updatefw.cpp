@@ -8,6 +8,7 @@
 #include <fs_lock.h>
 #include <debug.h>
 #include <assert.h>
+#include <CLI/CLI.hpp>
 #include <thread>
 #include <atomic>
 #include <cerrno>
@@ -105,58 +106,25 @@ int cmdUpdateFW::run(arg_struct *args)
 	std::atomic<uint32_t> curThread{0};
 	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};
 	std::vector<std::thread> workers;
-	int opt;
-	int optionIndex = 0;
-	const char *optString = "hjd:t:f:y";
-	struct option longOpts[] = {{"help", no_argument, nullptr, 'h'},		 {"json", no_argument, nullptr, 'j'},
-								{"device", required_argument, nullptr, 'd'}, {"type", required_argument, nullptr, 't'},
-								{"file", required_argument, nullptr, 'f'},	 {"assumeyes", no_argument, nullptr, 'y'},
-								{"force", no_argument, nullptr, 0},			 {nullptr, 0, nullptr, 0}};
 
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
+	CLI::App sub{"Update GPU firmware", "updatefw"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", fwInfo.jsonOutput, "Print result in JSON format");
+	sub.add_option("-d,--device", fwInfo.deviceId,
+				   "Device ID or PCI BDF address. If not specified, all devices are updated");
+	sub.add_option("-t,--type", fwInfo.firmwareType,
+				   "Firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC, OPCODE, OPDATA");
+	sub.add_option("-f,--file", fwInfo.filePath, "Firmware image file path");
+	sub.add_flag("-y,--assumeyes", fwInfo.assumeYes, "Assume yes to all questions");
+	sub.add_flag("--force", fwInfo.forceUpdate, "Force GFX firmware update");
 
-	while ((opt = GETOPT_LONG(args->argc, args->argv, optString, longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return ZE_RESULT_SUCCESS;
-		case 'j':
-			fwInfo.jsonOutput = true;
-			break;
-		case 'd':
-			fwInfo.deviceId = optarg;
-			break;
-		case 't':
-			fwInfo.firmwareType = optarg;
-			break;
-		case 'f':
-			fwInfo.filePath = optarg;
-			break;
-		case 'y':
-			fwInfo.assumeYes = true;
-			break;
-		case 0:
-			if (STRCASECMP("force", longOpts[optionIndex].name) == 0) {
-				fwInfo.forceUpdate = true;
-			} else {
-				ERR("Unknown command: {}\n", longOpts[optionIndex].name);
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
-	}
-
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}

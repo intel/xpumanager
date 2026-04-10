@@ -362,10 +362,10 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 /**
  * Returns all registered metrics in declaration order.
  *
- * @return  Non-owning span over the global metric table. Valid for the lifetime
- *          of the process; elements are stable (never reallocated).
+ * @return  Vector of all metrics assembled from the per-group headers,
+ *          in declaration order.
  */
-[[nodiscard]] std::span<const QueryMetric> getQueryMetrics();
+[[nodiscard]] std::vector<QueryMetric> getQueryMetrics();
 
 /**
  * Returns pointers to all metrics whose group bitmask overlaps @p mask.
@@ -376,19 +376,18 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  *   membership (including metrics whose @c groups field is @c MetricGroup::NONE).
  *
  * @param mask  A @ref MetricGroup bitmask.
- * @return      Pointers into the global metric table, in declaration order.
- *              Never contains null pointers.
+ * @return      Copies of all matching metrics, in declaration order.
  */
-[[nodiscard]] std::vector<const QueryMetric *> getMetricsByGroup(MetricGroup mask);
+[[nodiscard]] std::vector<QueryMetric> getMetricsByGroup(MetricGroup mask);
 
 /**
  * Case-insensitive lookup by metric name or alias.
  *
  * @param name  Metric name to search for, e.g. @c "temperature.gpu".
  *              Also matches entries in @c QueryMetric::aliases.
- * @return      Reference to the matching @ref QueryMetric, or empty optional if not found.
+ * @return      Copy of the matching @ref QueryMetric, or empty optional if not found.
  */
-[[nodiscard]] std::optional<std::reference_wrapper<const QueryMetric>> findMetric(std::string_view name);
+[[nodiscard]] std::optional<QueryMetric> findMetric(std::string_view name);
 
 /**
  * Unified query resolver: handles field names, aliases, and group tokens in one call.
@@ -400,13 +399,13 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  *    (including multi-character expansion). If no group matches, falls back to
  *    @ref findMetric for dotless names like @c "timestamp" or @c "name".
  *
- * Duplicate pointers are removed; declaration order is preserved.
+ * Duplicate entries (matched by name) are removed; declaration order is preserved.
  *
  * @param csv  Comma-separated query string, e.g. @c "temperature.gpu,POWER" or @c "pu".
- * @return     Deduplicated, ordered list of matching metric pointers.
+ * @return     Deduplicated, ordered list of matching metrics (by value).
  *             Unknown tokens are silently ignored.
  */
-[[nodiscard]] std::vector<const QueryMetric *> resolveQuery(std::string_view csv);
+[[nodiscard]] std::vector<QueryMetric> resolveQuery(std::string_view csv);
 
 /**
  * Format the canonical group names for the given bitmask as a comma-separated string.

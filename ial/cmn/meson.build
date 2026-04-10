@@ -44,6 +44,7 @@ ial_cmn_deps = [
   libxpum_dep,
   oal_dep,
   nlohmann_json_dep,
+  cli11_dep,
   amc_dep,
   fwupd_dep,
   table_dep,

@@ -32,6 +32,7 @@
 #include <os.h>
 #include <vector>
 #include <format>
+#include <CLI/CLI.hpp>
 #ifdef DAEMONMODE
 DAEMONCAP curDaemonMode = DAEMON;
 std::string progName = "xpumcli";
@@ -253,8 +254,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	/* Print top-level help if -h, --help, or help is specified */
-	if (!STRCASECMP(argv[1], "-h") || !STRCASECMP(argv[1], "--help") || !STRCASECMP(argv[1], "help")) {
+	/* Handle the "help" keyword (no hyphen) as a special top-level alias for --help */
+	if (!STRCASECMP(argv[1], "help")) {
 		if (argc > 2) {
 			PRINT("The following argument was not expected: '{}'.\n", argv[2]);
 			help(cmdList);
@@ -266,11 +267,45 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	/* Print out version info if -v command line arg specified */
-	if (!STRCASECMP(argv[1], "-v") || !STRCASECMP(argv[1], "--version")) {
-		printVersion(&arg);
+	/* Use CLI11 to parse top-level flags (-h/--help, -v/--version).
+	 * Subcommand names are not flags and are handled by the dispatch loop below. */
+	if (argv[1][0] == '-') {
+		const std::string shortVersion = std::format("v{}.{}", MAJOR, MINOR);
+		CLI::App app{"", progName};
+		app.set_help_flag("-h,--help", "Print this help message and exit");
+		bool versionFlag = false;
+		app.add_flag("-v,--version", versionFlag, "Display version information and exit");
+
+		try {
+			app.parse(std::vector<std::string>{argv[1]});
+		} catch (const CLI::CallForHelp &) {
+			if (argc > 2) {
+				PRINT("The following argument was not expected: '{}'.\n", argv[2]);
+				help(cmdList);
+				deleteList(cmdList);
+				return 1;
+			}
+			help(cmdList);
+			deleteList(cmdList);
+			return 0;
+		} catch (const CLI::ParseError &) {
+			PRINT("The following argument was not expected: '{}'.\n", argv[1]);
+			help(cmdList);
+			deleteList(cmdList);
+			return 1;
+		}
+
+		if (versionFlag) {
+			printVersion(&arg);
+			deleteList(cmdList);
+			return 0;
+		}
+
+		/* Unrecognised flag – report and exit */
+		PRINT("The following argument was not expected: '{}'.\n", argv[1]);
+		help(cmdList);
 		deleteList(cmdList);
-		return 0;
+		return 1;
 	}
 
 	int exitCode = 0;
@@ -278,13 +313,7 @@ int main(int argc, char *argv[])
 	/* Parse command line and run the command that the user wants */
 	for (const auto &it : *cmdList) {
 		if (!STRCASECMP(it->getName(), argv[1])) {
-			/* If the second argument is -h or --help, then just print their help */
-			if (argc > 2 && (!STRCASECMP(argv[2], "-h") || !STRCASECMP(argv[2], "--help"))) {
-				it->help(FULL_HELP);
-				deleteList(cmdList);
-				return 0;
-			}
-			/* Run the command and capture the return code */
+			/* Run the command; it handles its own --help via CLI11 */
 			exitCode = (it->run(&arg) != 0) ? 1 : 0;
 			found = true;
 			/* Exit the loop once the command is found */

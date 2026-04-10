@@ -68,10 +68,9 @@ using configSubCmdFunc = ze_result_t (cmdConfig::*)(devInfo *d);
 
 struct configCmdStruct
 {
-	option opt;
-	configSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	configSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
 
 #endif

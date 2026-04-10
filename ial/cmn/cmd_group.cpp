@@ -6,18 +6,19 @@
 
 #include "cmd_group.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 
 static std::unordered_map<groupCmdType, groupCmdStruct> groupCmds = {
-	{groupCmdType::GROUP_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{groupCmdType::GROUP_JSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{groupCmdType::GROUP_CREATE, {{"create", no_argument, 0, 'c'}, &cmdGroup::create, false, ""}},
-	{groupCmdType::GROUP_DELETE, {{"delete", no_argument, 0, 'D'}, &cmdGroup::deleteGroup, false, ""}},
-	{groupCmdType::GROUP_LIST, {{"list", no_argument, 0, 'l'}, &cmdGroup::listGroup, false, ""}},
-	{groupCmdType::GROUP_ADD, {{"add", no_argument, 0, 'a'}, &cmdGroup::add, false, ""}},
-	{groupCmdType::GROUP_REMOVE, {{"remove", no_argument, 0, 'r'}, &cmdGroup::remove, false, ""}},
-	{groupCmdType::GROUP_GROUP, {{"group", required_argument, 0, 'g'}, nullptr, false, ""}},
-	{groupCmdType::GROUP_NAME1, {{"name", required_argument, 0, 'n'}, nullptr, false, ""}},
-	{groupCmdType::GROUP_DEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
+	{groupCmdType::GROUP_HELP, {}},
+	{groupCmdType::GROUP_JSON, {}},
+	{groupCmdType::GROUP_CREATE, {.func = &cmdGroup::create}},
+	{groupCmdType::GROUP_DELETE, {.func = &cmdGroup::deleteGroup}},
+	{groupCmdType::GROUP_LIST, {.func = &cmdGroup::listGroup}},
+	{groupCmdType::GROUP_ADD, {.func = &cmdGroup::add}},
+	{groupCmdType::GROUP_REMOVE, {.func = &cmdGroup::remove}},
+	{groupCmdType::GROUP_GROUP, {}},
+	{groupCmdType::GROUP_NAME1, {}},
+	{groupCmdType::GROUP_DEVICE, {}},
 };
 
 /**
@@ -155,64 +156,37 @@ int cmdGroup::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	int opt;
-	int optionIndex = 0;
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
 
-	processOptions(groupCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
-
-	while ((opt = getopt_long(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return 0;
-		case 'j':
-			groupCmds[groupCmdType::GROUP_JSON].enabled = true;
-			break;
-		case 'c':
-			groupCmds[groupCmdType::GROUP_CREATE].enabled = true;
-			break;
-		case 'D':
-			groupCmds[groupCmdType::GROUP_DELETE].enabled = true;
-			break;
-		case 'l':
-			groupCmds[groupCmdType::GROUP_LIST].enabled = true;
-			break;
-		case 'a':
-			groupCmds[groupCmdType::GROUP_ADD].enabled = true;
-			break;
-		case 'r':
-			groupCmds[groupCmdType::GROUP_REMOVE].enabled = true;
-			break;
-		case 'g':
-			groupCmds[groupCmdType::GROUP_GROUP].enabled = true;
-			groupCmds[groupCmdType::GROUP_GROUP].val = optarg;
-			break;
-		case 'n':
-			groupCmds[groupCmdType::GROUP_NAME1].enabled = true;
-			groupCmds[groupCmdType::GROUP_NAME1].val = optarg;
-			break;
-		case 'd':
-			groupCmds[groupCmdType::GROUP_DEVICE].enabled = true;
-			groupCmds[groupCmdType::GROUP_DEVICE].val = optarg;
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	// Reset state
+	for (auto &[k, v] : groupCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	// If optind is not equal to args->argc, it means there are extra arguments
-	// that were not processed by getopt_long.
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Manage GPU groups", "group"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", groupCmds[groupCmdType::GROUP_JSON].enabled, "Print result in JSON format");
+	sub.add_flag("-c,--create", groupCmds[groupCmdType::GROUP_CREATE].enabled, "Create a new group");
+	sub.add_flag("-D,--delete", groupCmds[groupCmdType::GROUP_DELETE].enabled, "Delete a group");
+	sub.add_flag("-l,--list", groupCmds[groupCmdType::GROUP_LIST].enabled, "List all groups");
+	sub.add_flag("-a,--add", groupCmds[groupCmdType::GROUP_ADD].enabled, "Add device to group");
+	sub.add_flag("-r,--remove", groupCmds[groupCmdType::GROUP_REMOVE].enabled, "Remove device from group");
+	sub.add_option("-g,--group", groupCmds[groupCmdType::GROUP_GROUP].val, "Group ID")->each([&](const std::string &) {
+		groupCmds[groupCmdType::GROUP_GROUP].enabled = true;
+	});
+	sub.add_option("-n,--name", groupCmds[groupCmdType::GROUP_NAME1].val, "Group name")->each([&](const std::string &) {
+		groupCmds[groupCmdType::GROUP_NAME1].enabled = true;
+	});
+	sub.add_option("-d,--device", groupCmds[groupCmdType::GROUP_DEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { groupCmds[groupCmdType::GROUP_DEVICE].enabled = true; });
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -230,7 +204,7 @@ int cmdGroup::run(arg_struct *args)
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : groupCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
-				DBG("Running command: {}\n", cmd.second.opt.name);
+				DBG("Running command: {}\n", groupCmdName(cmd.first));
 				ze_result_t cmdResult = (this->*cmd.second.func)(&device);
 				if (cmdResult != ZE_RESULT_SUCCESS && firstError == ZE_RESULT_SUCCESS) {
 					firstError = cmdResult;

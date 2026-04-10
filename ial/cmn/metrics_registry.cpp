@@ -223,53 +223,59 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 //  Registry API implementations
 
 // Each metrics/X.h owns one group and exposes getXMetrics() returning a span.
-std::span<const QueryMetric> getQueryMetrics()
-{
-	static const std::vector<QueryMetric> metrics = []() {
-		const auto identityMetrics = metrics::identity::getIdentityMetrics();
-		const auto temperatureMetrics = metrics::temperature::getTemperatureMetrics();
-		const auto utilizationMetrics = metrics::utilization::getUtilizationMetrics();
-		const auto pciMetrics = metrics::pci::getPciMetrics();
-		const auto euArrayMetrics = metrics::eu_array::getEuArrayMetrics();
-		const auto fanMetrics = metrics::fan::getFanMetrics();
-		const auto memoryMetrics = metrics::memory::getMemoryMetrics();
-		const auto powerMetrics = metrics::power::getPowerMetrics();
-		const auto eccMetrics = metrics::ecc::getEccMetrics();
-		const auto clockMetrics = metrics::clock::getClockMetrics();
-		const auto groups = std::to_array<std::span<const QueryMetric>>(
-			{identityMetrics, temperatureMetrics, utilizationMetrics, pciMetrics, euArrayMetrics, fanMetrics,
-			 memoryMetrics, powerMetrics, eccMetrics, clockMetrics});
-		std::vector<QueryMetric> v;
-		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
-										[](const auto &s) { return s.size(); }));
-		std::ranges::copy(groups | std::views::join, std::back_inserter(v));
-		return v;
-	}();
 
-	return metrics;
+std::vector<QueryMetric> getQueryMetrics()
+{
+	const auto identity = identity::getIdentityMetrics();
+	const auto temperature = temperature::getTemperatureMetrics();
+	const auto utilization = utilization::getUtilizationMetrics();
+	const auto pci = pci::getPciMetrics();
+	const auto euArray = eu_array::getEuArrayMetrics();
+	const auto fan = fan::getFanMetrics();
+	const auto memory = memory::getMemoryMetrics();
+	const auto power = power::getPowerMetrics();
+	const auto ecc = ecc::getEccMetrics();
+	const auto clock = clock::getClockMetrics();
+
+	std::vector<QueryMetric> v;
+	v.reserve(identity.size() + temperature.size() + utilization.size() + pci.size() + euArray.size() + fan.size() +
+			  memory.size() + power.size() + ecc.size() + clock.size());
+	v.insert(v.end(), identity.begin(), identity.end());
+	v.insert(v.end(), temperature.begin(), temperature.end());
+	v.insert(v.end(), utilization.begin(), utilization.end());
+	v.insert(v.end(), pci.begin(), pci.end());
+	v.insert(v.end(), euArray.begin(), euArray.end());
+	v.insert(v.end(), fan.begin(), fan.end());
+	v.insert(v.end(), memory.begin(), memory.end());
+	v.insert(v.end(), power.begin(), power.end());
+	v.insert(v.end(), ecc.begin(), ecc.end());
+	v.insert(v.end(), clock.begin(), clock.end());
+	return v;
 }
 
-std::vector<const QueryMetric *> getMetricsByGroup(MetricGroup mask)
+std::vector<QueryMetric> getMetricsByGroup(MetricGroup mask)
 {
 	// MetricGroup::NONE matches nothing by definition.
 	if (mask == MetricGroup::NONE) {
 		return {};
 	}
+	const auto all = getQueryMetrics();
 	// MetricGroup::ALL means "every metric": bypass the overlap filter so that
 	// metrics whose groups == MetricGroup::NONE are included rather than excluded
 	// (NONE & ALL == NONE, which would fail the hasGroup test).
 	if (mask == MetricGroup::ALL) {
-		auto view =
-			getQueryMetrics() | std::views::transform([](const QueryMetric &f) -> const QueryMetric * { return &f; });
-		return {view.begin(), view.end()};
+		return all;
 	}
-	auto view = getQueryMetrics() |
-				std::views::filter([mask](const QueryMetric &f) { return hasGroup(f.groups, mask); }) |
-				std::views::transform([](const QueryMetric &f) -> const QueryMetric * { return &f; });
-	return {view.begin(), view.end()};
+	std::vector<QueryMetric> result;
+	for (const auto &f : all) {
+		if (hasGroup(f.groups, mask)) {
+			result.push_back(f);
+		}
+	}
+	return result;
 }
 
-std::optional<std::reference_wrapper<const QueryMetric>> findMetric(std::string_view name)
+std::optional<QueryMetric> findMetric(std::string_view name)
 {
 	const auto allMetrics = getQueryMetrics();
 	auto it = std::ranges::find_if(allMetrics, [&](const QueryMetric &f) noexcept {
@@ -278,15 +284,15 @@ std::optional<std::reference_wrapper<const QueryMetric>> findMetric(std::string_
 		}
 		return std::ranges::any_of(f.aliases, [&](std::string_view alias) noexcept { return iequal(alias, name); });
 	});
-	return it != allMetrics.end() ? std::optional<std::reference_wrapper<const QueryMetric>>{*it} : std::nullopt;
+	return it != allMetrics.end() ? std::optional<QueryMetric>{*it} : std::nullopt;
 }
 
-std::vector<const QueryMetric *> resolveQuery(std::string_view csv)
+std::vector<QueryMetric> resolveQuery(std::string_view csv)
 {
-	std::vector<const QueryMetric *> result;
+	std::vector<QueryMetric> result;
 
-	const auto addUnique = [&](const QueryMetric *f) {
-		if (std::ranges::find(result, f) == result.end()) {
+	const auto addUnique = [&](const QueryMetric &f) {
+		if (std::ranges::none_of(result, [&f](const QueryMetric &r) { return r.name == f.name; })) {
 			result.push_back(f);
 		}
 	};
@@ -299,19 +305,19 @@ std::vector<const QueryMetric *> resolveQuery(std::string_view csv)
 		if (token.find('.') != std::string_view::npos) {
 			// Dotted token → individual metric lookup (canonical name or alias).
 			if (auto f = findMetric(token); f.has_value()) {
-				addUnique(&f->get());
+				addUnique(*f);
 			}
 		} else {
 			// Group name / shortcut → expand via parseGroupMask (includes per-char expansion).
 			const MetricGroup mask = parseGroupMask(token);
 			if (mask != MetricGroup::NONE) {
-				for (const QueryMetric *f : getMetricsByGroup(mask)) {
+				for (const QueryMetric &f : getMetricsByGroup(mask)) {
 					addUnique(f);
 				}
 			} else {
 				// Fall back to individual lookup for dotless names like "timestamp", "name".
 				if (auto f = findMetric(token); f.has_value()) {
-					addUnique(&f->get());
+					addUnique(*f);
 				}
 			}
 		}

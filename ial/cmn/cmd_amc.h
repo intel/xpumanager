@@ -57,10 +57,9 @@ using amcSubCmdFunc = ze_result_t (cmdAmc::*)(amclib *, int);
 
 struct amcSubCmdStruct
 {
-	option opt;
-	amcSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	amcSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
 
 #endif

@@ -172,12 +172,12 @@ TEST_CASE("Power group contains all expected metric names")
 	const std::vector<std::string_view> expected = {"power.draw", "power.draw.gpu", "energy.consumed", "power.limit",
 													"power.max_limit"};
 	for (const auto name : expected) {
-		CHECK_MESSAGE(std::ranges::any_of(byPow, [name](const auto *m) { return m->name == name; }), name,
+		CHECK_MESSAGE(std::ranges::any_of(byPow, [name](const auto &m) { return m.name == name; }), name,
 					  " not found in POWER group");
 	}
 	// Relative order: power.draw before power.draw.gpu before energy.consumed
 	const auto pos = [&](std::string_view n) {
-		return std::ranges::find_if(byPow, [n](const auto *m) { return m->name == n; }) - byPow.begin();
+		return std::ranges::find_if(byPow, [n](const auto &m) { return m.name == n; }) - byPow.begin();
 	};
 	CHECK(pos("power.draw") < pos("power.draw.gpu"));
 	CHECK(pos("power.draw.gpu") < pos("energy.consumed"));
@@ -202,7 +202,7 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 	const auto byUtil = getMetricsByGroup(MetricGroup::UTILIZATION);
 	REQUIRE(byUtil.size() == canonicalNames.size());
 	for (std::size_t i = 0; i < canonicalNames.size(); ++i) {
-		CHECK(byUtil[i]->name == canonicalNames[i]);
+		CHECK(byUtil[i].name == canonicalNames[i]);
 	}
 }
 
@@ -211,7 +211,7 @@ TEST_CASE("getMetricsByGroup MEMORY includes utilization.memory")
 	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
 	// utilization.memory is registered first (before memory.cpp metrics)
 	REQUIRE_FALSE(byMem.empty());
-	CHECK(byMem[0]->name == "utilization.memory");
+	CHECK(byMem[0].name == "utilization.memory");
 }
 
 TEST_CASE("findMetric resolves Temperature metric names")
@@ -224,8 +224,8 @@ TEST_CASE("getMetricsByGroup TEMPERATURE matches getTemperatureMetrics")
 {
 	const auto byTemp = getMetricsByGroup(MetricGroup::TEMPERATURE);
 	REQUIRE(byTemp.size() == metrics::temperature::getTemperatureMetrics().size());
-	CHECK(byTemp[0]->name == "temperature.gpu");
-	CHECK(byTemp[1]->name == "temperature.memory");
+	CHECK(byTemp[0].name == "temperature.gpu");
+	CHECK(byTemp[1].name == "temperature.memory");
 }
 
 TEST_CASE("findMetric resolves clock metric names")
@@ -352,7 +352,7 @@ TEST_CASE(
 	const std::vector<std::string_view> expectedPower = {"power.draw", "power.draw.gpu", "energy.consumed",
 														 "power.limit", "power.max_limit"};
 	for (const auto name : expectedPower) {
-		CHECK_MESSAGE(std::ranges::any_of(byQuery, [name](const auto *m) { return m->name == name; }), name,
+		CHECK_MESSAGE(std::ranges::any_of(byQuery, [name](const auto &m) { return m.name == name; }), name,
 					  " not found in resolveQuery(\"POWER\")");
 	}
 	CHECK_FALSE(resolveQuery("CLOCK").empty());
@@ -404,23 +404,23 @@ TEST_CASE("power QueryMetric fields: unit, source, and group membership")
 	for (const auto name : std::to_array<std::string_view>({"power.draw", "power.draw.gpu"})) {
 		auto found = findMetric(name);
 		REQUIRE(found.has_value());
-		CHECK(found->get().unit == "W");
-		CHECK(found->get().source == MetricSource::Live);
-		CHECK(hasGroup(found->get().groups, MetricGroup::POWER));
+		CHECK(found->unit == "W");
+		CHECK(found->source == MetricSource::Live);
+		CHECK(hasGroup(found->groups, MetricGroup::POWER));
 	}
 	{
 		auto found = findMetric("energy.consumed");
 		REQUIRE(found.has_value());
-		CHECK(found->get().unit == "J");
-		CHECK(found->get().source == MetricSource::Live);
-		CHECK(hasGroup(found->get().groups, MetricGroup::POWER));
+		CHECK(found->unit == "J");
+		CHECK(found->source == MetricSource::Live);
+		CHECK(hasGroup(found->groups, MetricGroup::POWER));
 	}
 	for (const auto name : std::to_array<std::string_view>({"power.limit", "power.max_limit"})) {
 		auto found = findMetric(name);
 		REQUIRE(found.has_value());
-		CHECK(found->get().unit == "W");
-		CHECK(found->get().source == MetricSource::Static);
-		CHECK(hasGroup(found->get().groups, MetricGroup::POWER));
+		CHECK(found->unit == "W");
+		CHECK(found->source == MetricSource::Static);
+		CHECK(hasGroup(found->groups, MetricGroup::POWER));
 	}
 }
 
@@ -432,7 +432,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: UNSUPPORTED when cardPo
 {
 	MetricValue out;
 	MetricCache c; // all zeros — before.ts == 0
-	CHECK(findMetric("power.draw").value().get().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: UNSUPPORTED when after.ts < before.ts")
@@ -441,7 +441,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: UNSUPPORTED when after.
 	MetricCache c;
 	c.cardPowerBefore.ts = 200;
 	c.cardPowerAfter.ts = 100;
-	CHECK(findMetric("power.draw").value().get().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: N/A when timestamps are equal")
@@ -449,7 +449,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: N/A when timestamps are
 	MetricValue out;
 	MetricCache c;
 	c.cardPowerBefore.ts = c.cardPowerAfter.ts = 100;
-	CHECK(findMetric("power.draw").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "N/A");
 }
 
@@ -459,7 +459,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: N/A when energy counter
 	MetricCache c;
 	c.cardPowerBefore = {.energy = 500, .ts = 100};
 	c.cardPowerAfter = {.energy = 400, .ts = 200};
-	CHECK(findMetric("power.draw").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "N/A");
 }
 
@@ -469,7 +469,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: computes watts (delta 2
 	MetricCache c;
 	c.cardPowerBefore = {.energy = 0, .ts = 1};
 	c.cardPowerAfter = {.energy = 2'000'000, .ts = 2'000'001};
-	CHECK(findMetric("power.draw").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "1.00");
 }
 
@@ -477,7 +477,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw.gpu getter: UNSUPPORTED when gp
 {
 	MetricValue out;
 	MetricCache c;
-	CHECK(findMetric("power.draw.gpu").value().get().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(findMetric("power.draw.gpu").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw.gpu getter: UNSUPPORTED when after.ts < before.ts")
@@ -486,7 +486,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw.gpu getter: UNSUPPORTED when af
 	MetricCache c;
 	c.gpuPowerBefore.ts = 200;
 	c.gpuPowerAfter.ts = 100;
-	CHECK(findMetric("power.draw.gpu").value().get().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(findMetric("power.draw.gpu").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw.gpu getter: N/A when timestamps are equal")
@@ -494,7 +494,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw.gpu getter: N/A when timestamps
 	MetricValue out;
 	MetricCache c;
 	c.gpuPowerBefore.ts = c.gpuPowerAfter.ts = 100;
-	CHECK(findMetric("power.draw.gpu").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("power.draw.gpu").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "N/A");
 }
 
@@ -505,7 +505,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 	MetricCache c;
 	c.gpuPowerBefore = {.energy = 0, .ts = 1};
 	c.gpuPowerAfter = {.energy = 4'000'000, .ts = 2'000'001};
-	CHECK(findMetric("power.draw.gpu").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("power.draw.gpu").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "2.00");
 }
 
@@ -513,7 +513,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: UNSUPPORTED when g
 {
 	MetricValue out;
 	MetricCache c;
-	CHECK(findMetric("energy.consumed").value().get().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: converts µJ to J (5 000 000 000 µJ == 5000.00 J)")
@@ -521,7 +521,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: converts µJ to J 
 	MetricValue out;
 	MetricCache c;
 	c.gpuPowerAfter = {.energy = 5'000'000'000ULL, .ts = 1};
-	CHECK(findMetric("energy.consumed").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "5000.00");
 }
 
@@ -530,7 +530,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: zero energy format
 	MetricValue out;
 	MetricCache c;
 	c.gpuPowerAfter = {.energy = 0, .ts = 1}; // ts != 0, so it is available
-	CHECK(findMetric("energy.consumed").value().get().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "0.00");
 }
 

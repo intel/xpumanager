@@ -11,6 +11,7 @@
 #include "printer.h"
 #include <os.h>
 #include <string>
+#include <string_view>
 
 enum diagCmdType
 {
@@ -70,11 +71,26 @@ class cmdDiag;
 using diagSubCmdFunc = ze_result_t (cmdDiag::*)(devInfo *d, nlohmann::ordered_json *cmdJson);
 struct diagCmdStruct
 {
-	option opt;
-	diagSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	diagSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
+
+constexpr std::string_view diagCmdName(diagCmdType t) noexcept
+{
+	switch (t) {
+	case diagCmdType::LEVEL:
+		return "level";
+	case diagCmdType::STRESS:
+		return "stress";
+	case diagCmdType::SINGLETEST:
+		return "singletest";
+	case diagCmdType::SINCE:
+		return "since";
+	default:
+		return "";
+	}
+}
 
 struct diagSubLevelCmdStruct
 {

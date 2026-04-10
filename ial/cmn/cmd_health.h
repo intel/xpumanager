@@ -88,10 +88,9 @@ using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d, nlohmann::ordere
 
 struct healthCmdStruct
 {
-	option opt;
-	healthSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	healthSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
 
 struct healthSubCmdStruct

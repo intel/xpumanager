@@ -6,6 +6,7 @@
 
 #include "cmd_config.h"
 #include "debug.h"
+#include <CLI/CLI.hpp>
 #include "table_builder.h"
 #include "bdf.h"
 #include <assert.h>
@@ -46,30 +47,27 @@ constexpr uint64_t SCHEDULER_TIME_MIN = 5000;
 constexpr uint64_t SCHEDULER_TIME_MAX = 100000000;
 
 static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
-	{configCmdType::CONFIGHELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
-	{configCmdType::CONFIGJSON, {{"json", no_argument, 0, 'j'}, nullptr, false, ""}},
-	{configCmdType::CONFIGDEVICE, {{"device", required_argument, 0, 'd'}, nullptr, false, ""}},
-	{configCmdType::TILE, {{"tile", required_argument, 0, 't'}, nullptr, false, ""}},
-	{configCmdType::FREQUENCYRANGE,
-	 {{"frequencyrange", required_argument, 0, 0}, &cmdConfig::setFrequencyRange, false, ""}},
-	{configCmdType::POWERLIMIT, {{"powerlimit", required_argument, 0, 0}, &cmdConfig::setPowerLimit, false, ""}},
-	{configCmdType::STANDBYMODE, {{"standby", required_argument, 0, 0}, &cmdConfig::setStandby, false, ""}},
-	{configCmdType::SCHEDULERMODE, {{"scheduler", required_argument, 0, 0}, &cmdConfig::setScheduler, false, ""}},
-	{configCmdType::PERFORMANCEFACTOR,
-	 {{"performancefactor", required_argument, 0, 0}, &cmdConfig::setPerformanceFactor, false, ""}},
-	{configCmdType::MEMORYECC, {{"memoryecc", required_argument, 0, 0}, &cmdConfig::setMemoryEcc, false, ""}},
-	{configCmdType::PCIEDOWNGRADE,
-	 {{"pciedowngrade", required_argument, 0, 0}, &cmdConfig::setPCIeGenUpdate, false, ""}},
-	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
-	{configCmdType::CLEARRAS, {{"clear-ras-errors", no_argument, 0, 0}, &cmdConfig::clearRasErrors, false, ""}},
-	{configCmdType::FANSPEED, {{"fanspeed", required_argument, 0, 0}, &cmdConfig::setFanSpeed, false, ""}},
-	{configCmdType::FANCURVE, {{"fancurve", required_argument, 0, 0}, &cmdConfig::setFanCurve, false, ""}},
-	{configCmdType::FANCURVERPM, {{"fancurve-rpm", required_argument, 0, 0}, &cmdConfig::setFanCurveRpm, false, ""}},
-	{configCmdType::FANID, {{"fanid", required_argument, 0, 0}, nullptr, false, ""}},
-	{configCmdType::COLDRESET, {{"coldreset", no_argument, 0, 0}, &cmdConfig::coldResetDevice, false, ""}},
-	{configCmdType::IGNORE_GPU_USER_PROCESSES, {{"ignore-gpu-user-processes", no_argument, 0, 0}, nullptr, false, ""}},
-	{configCmdType::FORCE_RESET_GPUS, {{"force-reset-gpus", no_argument, 0, 0}, nullptr, false, ""}},
-	{configCmdType::POWERTYPE, {{"powertype", required_argument, 0, 0}, nullptr, false, ""}},
+	{configCmdType::CONFIGHELP, {}},
+	{configCmdType::CONFIGJSON, {}},
+	{configCmdType::CONFIGDEVICE, {}},
+	{configCmdType::TILE, {}},
+	{configCmdType::FREQUENCYRANGE, {.func = &cmdConfig::setFrequencyRange}},
+	{configCmdType::POWERLIMIT, {.func = &cmdConfig::setPowerLimit}},
+	{configCmdType::STANDBYMODE, {.func = &cmdConfig::setStandby}},
+	{configCmdType::SCHEDULERMODE, {.func = &cmdConfig::setScheduler}},
+	{configCmdType::PERFORMANCEFACTOR, {.func = &cmdConfig::setPerformanceFactor}},
+	{configCmdType::MEMORYECC, {.func = &cmdConfig::setMemoryEcc}},
+	{configCmdType::PCIEDOWNGRADE, {.func = &cmdConfig::setPCIeGenUpdate}},
+	{configCmdType::RESET, {.func = &cmdConfig::resetDevice}},
+	{configCmdType::CLEARRAS, {.func = &cmdConfig::clearRasErrors}},
+	{configCmdType::FANSPEED, {.func = &cmdConfig::setFanSpeed}},
+	{configCmdType::FANCURVE, {.func = &cmdConfig::setFanCurve}},
+	{configCmdType::FANCURVERPM, {.func = &cmdConfig::setFanCurveRpm}},
+	{configCmdType::FANID, {}},
+	{configCmdType::COLDRESET, {.func = &cmdConfig::coldResetDevice}},
+	{configCmdType::IGNORE_GPU_USER_PROCESSES, {}},
+	{configCmdType::FORCE_RESET_GPUS, {}},
+	{configCmdType::POWERTYPE, {}},
 };
 
 /**
@@ -1925,72 +1923,105 @@ int cmdConfig::run(arg_struct *args)
 	TRACING();
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-	int opt;
-	int optionIndex = 0;
-	bool found = false;
-	bool isQueryMode = true; // Track if this is a query or set operation
-	std::string shortOpts;
-	std::vector<struct option> longOptsVec;
+	bool isQueryMode = true;
 
-	processOptions(configCmds, shortOpts, longOptsVec);
-	const struct option *longOpts = longOptsVec.data();
-	// Skip the first two arguments (process and command name)
-	int startind = 2;
-	optind = 2;
-
-	// Parse command line arguments
-	while ((opt = GETOPT_LONG(args->argc, args->argv, shortOpts.c_str(), longOpts, &optionIndex)) != -1) {
-		switch (opt) {
-		case 'h':
-			help();
-			return 0;
-		case 'j':
-			configCmds[configCmdType::CONFIGJSON].enabled = true;
-			break;
-		case 'd':
-			configCmds[configCmdType::CONFIGDEVICE].enabled = true;
-			configCmds[configCmdType::CONFIGDEVICE].val = optarg;
-			break;
-		case 't':
-			configCmds[configCmdType::TILE].enabled = true;
-			configCmds[configCmdType::TILE].val = optarg;
-			break;
-		case 0:
-			for (auto &cmd : configCmds) {
-				if (STRCASECMP(longOpts[optionIndex].name, cmd.second.opt.name) == 0) {
-					cmd.second.enabled = true;
-					if (longOpts[optionIndex].has_arg == required_argument) {
-						cmd.second.val = optarg;
-					}
-					// Any command with a function means this is a set operation
-					if (cmd.second.func != nullptr || cmd.first == configCmdType::RESET) {
-						isQueryMode = false;
-					}
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				ERR("The following argument was not expected: '{}'.\n", longOpts[optionIndex].name);
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			break;
-		default:
-			ERR("The following argument was not expected: '{}'.\n", args->argv[startind]);
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-		startind++;
+	// Reset state
+	for (auto &[k, v] : configCmds) {
+		v.enabled = false;
+		v.val.clear();
 	}
 
-	// Check for extra arguments
-	if (optind != args->argc) {
-		ERR("The following argument was not expected: '{}'.\n", args->argv[optind]);
+	CLI::App sub{"Configure GPU settings", "config"};
+	sub.set_help_flag("-h,--help", "Print this help message and exit");
+	sub.add_flag("-j,--json", configCmds[configCmdType::CONFIGJSON].enabled, "Print result in JSON format");
+	sub.add_option("-d,--device", configCmds[configCmdType::CONFIGDEVICE].val, "Device ID or PCI BDF address")
+		->each([&](const std::string &) { configCmds[configCmdType::CONFIGDEVICE].enabled = true; });
+	sub.add_option("-t,--tile", configCmds[configCmdType::TILE].val, "Tile ID")->each([&](const std::string &) {
+		configCmds[configCmdType::TILE].enabled = true;
+	});
+	sub.add_option("--frequencyrange", configCmds[configCmdType::FREQUENCYRANGE].val,
+				   "Set frequency range (MHz), e.g. minFreq:maxFreq")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::FREQUENCYRANGE].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--powerlimit", configCmds[configCmdType::POWERLIMIT].val, "Set power limit (W)")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::POWERLIMIT].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--standby", configCmds[configCmdType::STANDBYMODE].val, "Set standby mode")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::STANDBYMODE].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--scheduler", configCmds[configCmdType::SCHEDULERMODE].val, "Set scheduler mode")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::SCHEDULERMODE].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--performancefactor", configCmds[configCmdType::PERFORMANCEFACTOR].val, "Set performance factor")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::PERFORMANCEFACTOR].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--memoryecc", configCmds[configCmdType::MEMORYECC].val, "Enable (1) or disable (0) ECC")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::MEMORYECC].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--pciedowngrade", configCmds[configCmdType::PCIEDOWNGRADE].val, "Set PCIe generation downgrade")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::PCIEDOWNGRADE].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_flag("--reset", configCmds[configCmdType::RESET].enabled, "Reset the GPU");
+	sub.add_option("--powertype", configCmds[configCmdType::POWERTYPE].val, "Power type")
+		->each([&](const std::string &) { configCmds[configCmdType::POWERTYPE].enabled = true; });
+	sub.add_flag("--clear-ras-errors", configCmds[configCmdType::CLEARRAS].enabled, "Clear RAS error counters");
+	sub.add_option("--fanspeed", configCmds[configCmdType::FANSPEED].val,
+				   "Set fan speed (%). Use --fanid to target a specific fan; omit for all fans")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::FANSPEED].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--fancurve", configCmds[configCmdType::FANCURVE].val,
+				   "Set fan curve as temp:speed pairs, e.g. 50:20,80:60,100:100")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::FANCURVE].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--fancurve-rpm", configCmds[configCmdType::FANCURVERPM].val,
+				   "Set fan curve in RPM as temp:rpm pairs, e.g. 50:800,80:1200")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::FANCURVERPM].enabled = true;
+			isQueryMode = false;
+		});
+	sub.add_option("--fanid", configCmds[configCmdType::FANID].val,
+				   "Target fan ID (-1 = all fans, 0..N-1 = specific fan)")
+		->each([&](const std::string &) { configCmds[configCmdType::FANID].enabled = true; });
+	sub.add_flag("--coldreset", configCmds[configCmdType::COLDRESET].enabled,
+				 "Cold-reset the device (requires PCI BDF address for -d, not a device index)");
+	sub.add_flag("--ignore-gpu-user-processes", configCmds[configCmdType::IGNORE_GPU_USER_PROCESSES].enabled,
+				 "Skip check for running GPU user processes before reset");
+	sub.add_flag("--force-reset-gpus", configCmds[configCmdType::FORCE_RESET_GPUS].enabled,
+				 "Force GPU reset even if user processes are present");
+
+	try {
+		sub.parse(args->argc - 1, args->argv + 1);
+	} catch (const CLI::CallForHelp &) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	} catch (const CLI::ParseError &e) {
+		ERR("{}", e.what());
 		ERR("Run with --help for more information.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Flags that constitute a write (non-query) operation
+	if (configCmds[configCmdType::RESET].enabled || configCmds[configCmdType::CLEARRAS].enabled ||
+		configCmds[configCmdType::COLDRESET].enabled) {
+		isQueryMode = false;
 	}
 
 	// Check if the device ID is provided

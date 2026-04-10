@@ -9,6 +9,7 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <string_view>
 
 enum groupCmdType
 {
@@ -46,10 +47,27 @@ using groupSubCmdFunc = ze_result_t (cmdGroup::*)(devInfo *d);
 
 struct groupCmdStruct
 {
-	option opt;
-	groupSubCmdFunc func;
-	bool enabled;
-	std::string val;
+	groupSubCmdFunc func{nullptr};
+	bool enabled{false};
+	std::string val{};
 };
+
+constexpr std::string_view groupCmdName(groupCmdType t) noexcept
+{
+	switch (t) {
+	case groupCmdType::GROUP_CREATE:
+		return "create";
+	case groupCmdType::GROUP_DELETE:
+		return "delete";
+	case groupCmdType::GROUP_LIST:
+		return "list";
+	case groupCmdType::GROUP_ADD:
+		return "add";
+	case groupCmdType::GROUP_REMOVE:
+		return "remove";
+	default:
+		return "";
+	}
+}
 
 #endif
