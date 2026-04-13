@@ -5,31 +5,31 @@
 
 # Platform-specific source files
 oal_sources = []
-oal_inc_dirs = [include_directories('.')]  # Include the oal folder itself
+oal_inc_dirs = [include_directories('.')] # Include the oal folder itself
 oal_deps = [thread_dep, levelzero_dep]
 
 if is_windows
   oal_sources = files(
-    'win/i2c_interface.cpp',
     'win/dllmain.cpp',
-    'win/thread.cpp', 
-    'win/win.cpp',
-    'win/http_client.cpp',
     'win/fs_lock.cpp',
+    'win/http_client.cpp',
+    'win/i2c_interface.cpp',
+    'win/thread.cpp',
+    'win/win.cpp',
   )
   oal_inc_dirs = [include_directories('win'), include_directories('.')]
   oal_deps += windows_deps
 elif is_linux
   oal_sources = files(
-    'lin/pci_database.cpp',
-    'lin/i2c_interface.cpp',
-    'lin/lin.cpp',
-    'lin/http_client.cpp',
     'lin/dbg_log.cpp',
     'lin/diag_lin.cpp',
     'lin/dmi_reader.cpp',
     'lin/fs_lock.cpp',
+    'lin/http_client.cpp',
+    'lin/i2c_interface.cpp',
+    'lin/lin.cpp',
     'lin/linvf.cpp',
+    'lin/pci_database.cpp',
     'lin/topology.cpp',
   )
   oal_inc_dirs = [include_directories('lin'), include_directories('.')]
@@ -43,6 +43,8 @@ elif is_linux
   # Add pciaccess dependency for PCI/SRIOV functionality
   pciaccess_dep = dependency('pciaccess', required: true)
   oal_deps += [pciaccess_dep]
+
+  subdir('lin/test')
 endif
 
 # Set correct CRT flags for Windows with override capability
@@ -58,19 +60,14 @@ if is_windows
 endif
 
 # OAL static library
-oal_lib = static_library('oal',
+oal_lib = static_library(
+  'oal',
   oal_sources,
-  include_directories : [
-    global_inc, 
-    include_directories('../hal/core')  # For debug.h
-  ] + oal_inc_dirs,
-  dependencies : oal_deps,
-  cpp_args : oal_cpp_args,
-  install : false
+  include_directories: [global_inc, include_directories('../hal/core')] + oal_inc_dirs,
+  dependencies: oal_deps,
+  cpp_args: oal_cpp_args,
+  install: false,
 )
 
 # OAL dependency for other components
-oal_dep = declare_dependency(
-  link_with : oal_lib,
-  include_directories : oal_inc_dirs
-)
+oal_dep = declare_dependency(link_with: oal_lib, include_directories: oal_inc_dirs)

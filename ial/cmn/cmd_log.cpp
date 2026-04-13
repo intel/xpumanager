@@ -91,13 +91,6 @@ int cmdLogs::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	// Check to make sure that the file doesn't exist in the current folder
-	if (std::filesystem::exists(fileName)) {
-		ERR("File '{}' already exists. Please choose a different name or remove the existing file.\n",
-			fileName.c_str());
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
 	DBG("fileName: {}, jsonOutput: {}", fileName.c_str(), jsonOutput);
 	result = args->sm.getLogs(fileName);
 	if (result == ZE_RESULT_SUCCESS) {

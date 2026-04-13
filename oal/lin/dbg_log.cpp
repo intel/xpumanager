@@ -775,56 +775,141 @@ static bool isSpecialFile(const std::filesystem::path &path)
 }
 
 /**
+ * @brief Appends a single file's content to the output with section header
+ *
+ * Handles empty files by writing "(empty)" placeholder. Implements selective
+ * error recovery: clears failbit if badbit is not set, preserving stream
+ * usability for subsequent files. This function is resilient to certain error
+ * conditions and attempts recovery when possible.
+ *
+ * @param [in,out] out      Output stream for writing
+ * @param [in] filePath     Full path to the file being appended
+ * @param [in] relPath      Relative path for the section header
+ * @param [in] fileSize     File size in bytes
+ *
+ * @pre out.is_open() must be true
+ * @pre filePath must be a valid, readable path
+ * @pre relPath should be relative to collection root for display
+ * @pre fileSize must be the actual file size from filesystem
+ *
+ * @retval true  File appended successfully or recoverable error occurred
+ * @retval false Stream is corrupted (badbit set), operation aborted
+ *
+ * @post If returns true, file content (or "(empty)" marker) is written to stream
+ * @post If returns false, stream may be in a bad state and unusable
+ */
+static bool appendFileToOutput(std::ofstream &out, const std::filesystem::path &filePath,
+							   const std::filesystem::path &relPath, std::uintmax_t fileSize)
+{
+	// Write header
+	out << "=== " << relPath.string() << " ===\n";
+	if (!out) {
+		ERR("Failed writing header for: {}\n", relPath.string());
+		return false;
+	}
+
+	// Handle empty files
+	if (fileSize == 0) {
+		out << "(empty)\n";
+		return true;
+	}
+
+	// Copy file content
+	if (std::ifstream in{filePath, std::ios::binary}; in) {
+		out << in.rdbuf();
+
+		if (!out) {
+			ERR("Stream failed while copying: {}\n", relPath.string());
+
+			// Selective recovery: clear failbit if badbit is not set
+			if (!out.bad()) {
+				out.clear(out.goodbit);
+			} else {
+				return false; // Fatal error
+			}
+		}
+	} else {
+		ERR("Could not open input file: {}\n", filePath.string());
+	}
+
+	out << '\n';
+	return true;
+}
+
+/**
  * @brief Writes all collected diagnostic files into a single plain-text output file
  *
- * Recursively iterates the temporary collection directory and appends each
- * file's content to the output file, preceded by a section header showing
- * the file's path relative to the collection root.
+ * Recursively iterates the temporary collection directory (/var/tmp/xpum-<uuid>)
+ * and appends each regular file's content to the output file, preceded by a
+ * section header showing the file's path relative to the collection root.
+ * Special files (symlinks, device files, etc.) are automatically skipped.
  *
- * @param uuid     The UUID string identifying the temporary directory
- * @param fileName The output file path to write into
- * @return 0 on success, -1 if the output file could not be opened or written
+ * @param [in] uuid     The UUID string identifying the temporary directory.
+ *                      Expected format: alphanumeric string
+ * @param [in] fileName The output file path to write into. Directory must be writable.
+ *
+ * @pre Source directory /var/tmp/xpum-<uuid> must exist
+ * @pre Output file directory must exist and be writable
+ * @pre uuid must be a non-empty valid directory name component
+ * @pre fileName must be a non-empty valid file path
+ *
+ * @retval 0  All files processed successfully; output file is valid
+ * @retval -1 Output file could not be opened, or filesystem error occurred
+ *
+ * @post On success (retval 0): output file contains diagnostic data
+ * @post On failure (retval -1): output file may be incomplete or corrupted
+ *
+ * @note Handles disk space checks and provides diagnostics via DBG macro
+ * @note Skips inaccessible files and continues processing others
+ * @note Uses ProcessingStats internally to track file count and total bytes
+ *
+ * @see isSpecialFile for file type filtering logic
+ * @see appendFileToOutput for per-file processing semantics
  */
 static int writeToFile(const std::string &uuid, const std::string &fileName)
 {
 	const std::filesystem::path srcDir{"/var/tmp/xpum-" + uuid};
 
-	// Check source directory
+	// Validate source directory
 	if (!std::filesystem::exists(srcDir)) {
-		ERR("Source directory does not exist: %s\n", srcDir.string().c_str());
+		ERR("Source directory does not exist: {}\n", srcDir.string());
 		return -1;
 	}
 
-	// Check output directory and space
-	auto outPath = std::filesystem::path(fileName);
-	auto outDir = outPath.parent_path();
-	if (outDir.empty()) {
-		std::error_code ec;
-		auto cwd = std::filesystem::current_path(ec);
-		if (ec) {
-			ERR("Failed to get current working directory: %s\n", ec.message().c_str());
-			return -1;
+	// Check output directory and disk space
+	const auto outDir = [&fileName]() -> std::filesystem::path {
+		auto outPath = std::filesystem::path(fileName);
+		auto dir = outPath.parent_path();
+		if (dir.empty()) {
+			std::error_code ec;
+			auto cwd = std::filesystem::current_path(ec);
+			return ec ? std::filesystem::path{} : cwd;
 		}
-		outDir = cwd;
-	}
+		return dir;
+	}();
 
 	try {
-		auto space = std::filesystem::space(outDir);
-		DBG("Available disk space: %llu MB\n", static_cast<unsigned long long>(space.available / 1024 / 1024));
+		if (!outDir.empty()) {
+			auto space = std::filesystem::space(outDir);
+			DBG("Available disk space: {} MB\n", space.available / 1024 / 1024);
+		}
 	} catch (const std::exception &e) {
-		ERR("Could not check disk space: %s\n", e.what());
+		ERR("Could not check disk space: {}\n", e.what());
 	}
 
+	// Open output file
 	std::ofstream out{fileName};
-	if (!out) {
-		ERR("Failed to open output file: {}\n", fileName.c_str());
+	if (!out.is_open() || !out.good()) {
+		ERR("Failed to open output file: {}\n", fileName);
 		return -1;
 	}
 
-	DBG("Output file opened successfully\n");
-
-	size_t fileCount = 0;
-	size_t totalBytes = 0;
+	struct ProcessingStats
+	{
+		size_t fileCount = 0;
+		size_t totalBytes = 0;
+	};
+	ProcessingStats stats{};
 
 	try {
 		for (const auto &entry : std::filesystem::recursive_directory_iterator(
@@ -837,65 +922,26 @@ static int writeToFile(const std::string &uuid, const std::string &fileName)
 			const auto relPath = std::filesystem::relative(entry.path(), srcDir);
 			auto fileSize = std::filesystem::file_size(entry.path());
 
-			DBG("Processing: %s (%llu bytes)\n", relPath.string().c_str(), static_cast<unsigned long long>(fileSize));
+			DBG("Processing: {} ({} bytes)\n", relPath.string(), fileSize);
 
-			// Write header
-			out << "=== " << relPath.string() << " ===\n";
-			if (!out) {
-				ERR("Failed writing header for: %s\n", relPath.string().c_str());
-				break;
+			if (!appendFileToOutput(out, entry.path(), relPath, fileSize)) {
+				return -1; // Stream failed, abort
 			}
 
-			// Copy file content
-			if (std::ifstream in{entry.path(), std::ios::binary}; in) {
-				auto startPos = out.tellp();
-				out << in.rdbuf();
-				auto endPos = out.tellp();
-
-				if (!out) {
-					ERR("Stream failed while copying: %s\n", relPath.string().c_str());
-					ERR("fail bit: %s\n", out.fail() ? "true" : "false");
-					ERR("bad bit: %s\n", out.bad() ? "true" : "false");
-					ERR("eof bit: %s\n", out.eof() ? "true" : "false");
-					ERR("Bytes written before failure: %lld\n", static_cast<long long>(endPos - startPos));
-					break;
-				}
-
-				totalBytes += fileSize;
-				fileCount++;
-			} else {
-				ERR("Could not open input file: %s\n", entry.path().string().c_str());
-			}
-
-			out << '\n';
-
-			// Check stream health after each file
-			if (!out) {
-				ERR("Stream became bad after processing: %s\n", relPath.string().c_str());
-				break;
-			}
+			stats.totalBytes += fileSize;
+			stats.fileCount++;
 		}
 	} catch (const std::filesystem::filesystem_error &e) {
-		ERR("Filesystem error: %s\n", e.what());
+		ERR("Filesystem error: {}\n", e.what());
 		return -1;
 	} catch (const std::exception &e) {
-		ERR("Exception: %s\n", e.what());
+		ERR("Exception: {}\n", e.what());
 		return -1;
 	}
 
-	DBG("Processed %zu files, %zu KB total\n", fileCount, totalBytes / 1024);
+	DBG("Processed {} files, {} KB total\n", stats.fileCount, stats.totalBytes / 1024);
 
-	// Final stream state check
-	out.flush();
-	bool success = out.good();
-
-	DBG("Final stream state:\n");
-	DBG("  good: %s\n", out.good() ? "true" : "false");
-	DBG("  fail: %s\n", out.fail() ? "true" : "false");
-	DBG("  bad: %s\n", out.bad() ? "true" : "false");
-	DBG("  eof: %s\n", out.eof() ? "true" : "false");
-
-	return success ? 0 : -1;
+	return out.good() ? 0 : -1;
 }
 
 /**
