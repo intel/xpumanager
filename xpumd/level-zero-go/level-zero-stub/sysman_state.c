@@ -238,99 +238,92 @@ static int sysman_watch_start_locked(void)
 
 static void free_engine_groups(sysman_device_state_t *dev)
 {
-	if (dev->engine_groups.entries) {
-		for (uint32_t j = 0; j < dev->engine_groups.count; j++) {
-			free(dev->engine_groups.entries[j].activity_ext);
-			memset(&dev->engine_groups.entries[j], 0, sizeof(dev->engine_groups.entries[j]));
+	if (dev->engine_groups) {
+		for (uint32_t j = 0; j < dev->engine_groups_count; j++) {
+			free(dev->engine_groups[j].activity_ext);
+			memset(&dev->engine_groups[j], 0, sizeof(dev->engine_groups[j]));
 		}
-		free(dev->engine_groups.entries);
+		free(dev->engine_groups);
 	}
-	memset(&dev->engine_groups, 0, sizeof(dev->engine_groups));
 }
 
 static void free_fabric_ports(sysman_device_state_t *dev)
 {
-	if (dev->fabric_ports.entries) {
-		for (uint32_t j = 0; j < dev->fabric_ports.count; j++) {
-			free(dev->fabric_ports.entries[j].properties);
-			free(dev->fabric_ports.entries[j].link_type);
-			free(dev->fabric_ports.entries[j].config);
-			free(dev->fabric_ports.entries[j].state);
-			free(dev->fabric_ports.entries[j].throughput);
-			free(dev->fabric_ports.entries[j].error_counters);
-			memset(&dev->fabric_ports.entries[j], 0, sizeof(dev->fabric_ports.entries[j]));
+	if (dev->fabric_ports) {
+		for (uint32_t j = 0; j < dev->fabric_ports_count; j++) {
+			free(dev->fabric_ports[j].properties);
+			free(dev->fabric_ports[j].link_type);
+			free(dev->fabric_ports[j].config);
+			free(dev->fabric_ports[j].state);
+			free(dev->fabric_ports[j].throughput);
+			free(dev->fabric_ports[j].error_counters);
+			memset(&dev->fabric_ports[j], 0, sizeof(dev->fabric_ports[j]));
 		}
-		free(dev->fabric_ports.entries);
+		free(dev->fabric_ports);
 	}
-	memset(&dev->fabric_ports, 0, sizeof(dev->fabric_ports));
 }
 
 static void free_fans(sysman_device_state_t *dev)
 {
-	if (dev->fans.entries) {
-		for (uint32_t j = 0; j < dev->fans.count; j++) {
-			free(dev->fans.entries[j].properties);
-			free(dev->fans.entries[j].config);
-			memset(&dev->fans.entries[j], 0, sizeof(dev->fans.entries[j]));
+	if (dev->fans) {
+		for (uint32_t j = 0; j < dev->fans_count; j++) {
+			free(dev->fans[j].properties);
+			free(dev->fans[j].config);
+			memset(&dev->fans[j], 0, sizeof(dev->fans[j]));
 		}
-		free(dev->fans.entries);
+		free(dev->fans);
 	}
-	memset(&dev->fans, 0, sizeof(dev->fans));
 }
 
 static void free_firmwares(sysman_device_state_t *dev)
 {
-	if (dev->firmwares.entries) {
-		for (uint32_t j = 0; j < dev->firmwares.count; j++) {
-			free(dev->firmwares.entries[j].properties);
-			memset(&dev->firmwares.entries[j], 0, sizeof(dev->firmwares.entries[j]));
+	if (dev->firmwares) {
+		for (uint32_t j = 0; j < dev->firmwares_count; j++) {
+			free(dev->firmwares[j].properties);
+			memset(&dev->firmwares[j], 0, sizeof(dev->firmwares[j]));
 		}
-		free(dev->firmwares.entries);
+		free(dev->firmwares);
 	}
-	memset(&dev->firmwares, 0, sizeof(dev->firmwares));
 }
 
 static void free_frequency_domains(sysman_device_state_t *dev)
 {
-	if (dev->frequency_domains.entries) {
-		for (uint32_t j = 0; j < dev->frequency_domains.count; j++) {
-			free(dev->frequency_domains.entries[j].properties);
-			free(dev->frequency_domains.entries[j].range);
-			free(dev->frequency_domains.entries[j].available_clocks);
-			free(dev->frequency_domains.entries[j].state);
-			free(dev->frequency_domains.entries[j].throttle_time);
-			memset(&dev->frequency_domains.entries[j], 0, sizeof(dev->frequency_domains.entries[j]));
+	if (dev->frequency_domains) {
+		for (uint32_t j = 0; j < dev->frequency_domains_count; j++) {
+			free(dev->frequency_domains[j].properties);
+			free(dev->frequency_domains[j].range);
+			free(dev->frequency_domains[j].available_clocks);
+			free(dev->frequency_domains[j].state);
+			free(dev->frequency_domains[j].throttle_time);
+			memset(&dev->frequency_domains[j], 0, sizeof(dev->frequency_domains[j]));
 		}
-		free(dev->frequency_domains.entries);
+		free(dev->frequency_domains);
 	}
-	memset(&dev->frequency_domains, 0, sizeof(dev->frequency_domains));
 }
 
 static void free_leds(sysman_device_state_t *dev)
 {
-	if (dev->leds.entries) {
-		for (uint32_t j = 0; j < dev->leds.count; j++) {
-			free(dev->leds.entries[j].properties);
-			free(dev->leds.entries[j].state);
-			memset(&dev->leds.entries[j], 0, sizeof(dev->leds.entries[j]));
+	if (dev->leds) {
+		for (uint32_t j = 0; j < dev->leds_count; j++) {
+			free(dev->leds[j].properties);
+			free(dev->leds[j].state);
+			memset(&dev->leds[j], 0, sizeof(dev->leds[j]));
 		}
-		free(dev->leds.entries);
+		free(dev->leds);
 	}
-	memset(&dev->leds, 0, sizeof(dev->leds));
 }
 
 static void free_memory_modules(sysman_device_state_t *dev)
 {
-	if (dev->memory_modules.entries) {
-		for (uint32_t j = 0; j < dev->memory_modules.count; j++) {
-			free(dev->memory_modules.entries[j].properties);
-			free(dev->memory_modules.entries[j].state);
-			free(dev->memory_modules.entries[j].bandwidth);
-			memset(&dev->memory_modules.entries[j], 0, sizeof(dev->memory_modules.entries[j]));
+	if (dev->memory_modules) {
+		for (uint32_t j = 0; j < dev->memory_modules_count; j++) {
+			free(dev->memory_modules[j].properties);
+			free(dev->memory_modules[j].state);
+			free(dev->memory_modules[j].bandwidth);
+			memset(&dev->memory_modules[j], 0, sizeof(dev->memory_modules[j]));
 		}
-		free(dev->memory_modules.entries);
+		free(dev->memory_modules);
 	}
-	memset(&dev->memory_modules, 0, sizeof(dev->memory_modules));
 }
 
 static void free_overclock(sysman_device_state_t *dev)
@@ -339,7 +332,7 @@ static void free_overclock(sysman_device_state_t *dev)
 		return;
 	if (dev->overclock->domains) {
 		for (uint32_t j = 0; j < dev->overclock->domains_count; j++) {
-			sysman_oc_entry_t *e = &dev->overclock->domains[j];
+			sysman_oc_t *e = &dev->overclock->domains[j];
 			free(e->properties);
 			free(e->vf_properties);
 			if (e->control_infos) {
@@ -374,109 +367,101 @@ static void free_ecc(sysman_device_state_t *dev)
 
 static void free_performance_domains(sysman_device_state_t *dev)
 {
-	if (dev->performance_domains.entries) {
-		for (uint32_t j = 0; j < dev->performance_domains.count; j++) {
-			free(dev->performance_domains.entries[j].properties);
-			memset(&dev->performance_domains.entries[j], 0, sizeof(dev->performance_domains.entries[j]));
+	if (dev->performance_domains) {
+		for (uint32_t j = 0; j < dev->performance_domains_count; j++) {
+			free(dev->performance_domains[j].properties);
+			memset(&dev->performance_domains[j], 0, sizeof(dev->performance_domains[j]));
 		}
-		free(dev->performance_domains.entries);
+		free(dev->performance_domains);
 	}
-	memset(&dev->performance_domains, 0, sizeof(dev->performance_domains));
 }
 
 static void free_power_domains(sysman_device_state_t *dev)
 {
-	if (dev->power_domains.entries) {
-		for (uint32_t j = 0; j < dev->power_domains.count; j++) {
-			free(dev->power_domains.entries[j].properties);
-			free(dev->power_domains.entries[j].energy_counter);
-			free(dev->power_domains.entries[j].limits);
-			free(dev->power_domains.entries[j].energy_threshold);
-			memset(&dev->power_domains.entries[j], 0, sizeof(dev->power_domains.entries[j]));
+	if (dev->power_domains) {
+		for (uint32_t j = 0; j < dev->power_domains_count; j++) {
+			free(dev->power_domains[j].properties);
+			free(dev->power_domains[j].energy_counter);
+			free(dev->power_domains[j].limits);
+			free(dev->power_domains[j].energy_threshold);
+			memset(&dev->power_domains[j], 0, sizeof(dev->power_domains[j]));
 		}
-		free(dev->power_domains.entries);
+		free(dev->power_domains);
 	}
-	memset(&dev->power_domains, 0, sizeof(dev->power_domains));
 }
 
 static void free_psus(sysman_device_state_t *dev)
 {
-	if (dev->psus.entries) {
-		for (uint32_t j = 0; j < dev->psus.count; j++) {
-			free(dev->psus.entries[j].properties);
-			free(dev->psus.entries[j].state);
-			memset(&dev->psus.entries[j], 0, sizeof(dev->psus.entries[j]));
+	if (dev->psus) {
+		for (uint32_t j = 0; j < dev->psus_count; j++) {
+			free(dev->psus[j].properties);
+			free(dev->psus[j].state);
+			memset(&dev->psus[j], 0, sizeof(dev->psus[j]));
 		}
-		free(dev->psus.entries);
+		free(dev->psus);
 	}
-	memset(&dev->psus, 0, sizeof(dev->psus));
 }
 
 static void free_ras_error_sets(sysman_device_state_t *dev)
 {
-	if (dev->ras_error_sets.entries) {
-		for (uint32_t j = 0; j < dev->ras_error_sets.count; j++) {
-			free(dev->ras_error_sets.entries[j].properties);
-			free(dev->ras_error_sets.entries[j].config);
-			free(dev->ras_error_sets.entries[j].state);
-			free(dev->ras_error_sets.entries[j].state_exp);
-			memset(&dev->ras_error_sets.entries[j], 0, sizeof(dev->ras_error_sets.entries[j]));
+	if (dev->ras_error_sets) {
+		for (uint32_t j = 0; j < dev->ras_error_sets_count; j++) {
+			free(dev->ras_error_sets[j].properties);
+			free(dev->ras_error_sets[j].config);
+			free(dev->ras_error_sets[j].state);
+			free(dev->ras_error_sets[j].state_exp);
+			memset(&dev->ras_error_sets[j], 0, sizeof(dev->ras_error_sets[j]));
 		}
-		free(dev->ras_error_sets.entries);
+		free(dev->ras_error_sets);
 	}
-	memset(&dev->ras_error_sets, 0, sizeof(dev->ras_error_sets));
 }
 
 static void free_schedulers(sysman_device_state_t *dev)
 {
-	if (dev->schedulers.entries) {
-		for (uint32_t j = 0; j < dev->schedulers.count; j++) {
-			free(dev->schedulers.entries[j].properties);
-			free(dev->schedulers.entries[j].timeout_mode_properties);
-			free(dev->schedulers.entries[j].timeslice_mode_properties);
-			memset(&dev->schedulers.entries[j], 0, sizeof(dev->schedulers.entries[j]));
+	if (dev->schedulers) {
+		for (uint32_t j = 0; j < dev->schedulers_count; j++) {
+			free(dev->schedulers[j].properties);
+			free(dev->schedulers[j].timeout_mode_properties);
+			free(dev->schedulers[j].timeslice_mode_properties);
+			memset(&dev->schedulers[j], 0, sizeof(dev->schedulers[j]));
 		}
-		free(dev->schedulers.entries);
+		free(dev->schedulers);
 	}
-	memset(&dev->schedulers, 0, sizeof(dev->schedulers));
 }
 
 static void free_standby_domains(sysman_device_state_t *dev)
 {
-	if (dev->standby_domains.entries) {
-		for (uint32_t j = 0; j < dev->standby_domains.count; j++) {
-			free(dev->standby_domains.entries[j].properties);
-			memset(&dev->standby_domains.entries[j], 0, sizeof(dev->standby_domains.entries[j]));
+	if (dev->standby_domains) {
+		for (uint32_t j = 0; j < dev->standby_domains_count; j++) {
+			free(dev->standby_domains[j].properties);
+			memset(&dev->standby_domains[j], 0, sizeof(dev->standby_domains[j]));
 		}
-		free(dev->standby_domains.entries);
+		free(dev->standby_domains);
 	}
-	memset(&dev->standby_domains, 0, sizeof(dev->standby_domains));
 }
 
 static void free_temperature_sensors(sysman_device_state_t *dev)
 {
-	if (dev->temperature_sensors.entries) {
-		for (uint32_t j = 0; j < dev->temperature_sensors.count; j++) {
-			free(dev->temperature_sensors.entries[j].properties);
-			free(dev->temperature_sensors.entries[j].config);
-			memset(&dev->temperature_sensors.entries[j], 0, sizeof(dev->temperature_sensors.entries[j]));
+	if (dev->temperature_sensors) {
+		for (uint32_t j = 0; j < dev->temperature_sensors_count; j++) {
+			free(dev->temperature_sensors[j].properties);
+			free(dev->temperature_sensors[j].config);
+			memset(&dev->temperature_sensors[j], 0, sizeof(dev->temperature_sensors[j]));
 		}
-		free(dev->temperature_sensors.entries);
+		free(dev->temperature_sensors);
 	}
-	memset(&dev->temperature_sensors, 0, sizeof(dev->temperature_sensors));
 }
 
 static void free_diagnostics(sysman_device_state_t *dev)
 {
-	if (dev->diagnostics.entries) {
-		for (uint32_t j = 0; j < dev->diagnostics.count; j++) {
-			free(dev->diagnostics.entries[j].properties);
-			free(dev->diagnostics.entries[j].tests);
-			memset(&dev->diagnostics.entries[j], 0, sizeof(dev->diagnostics.entries[j]));
+	if (dev->diagnostics) {
+		for (uint32_t j = 0; j < dev->diagnostics_count; j++) {
+			free(dev->diagnostics[j].properties);
+			free(dev->diagnostics[j].tests);
+			memset(&dev->diagnostics[j], 0, sizeof(dev->diagnostics[j]));
 		}
-		free(dev->diagnostics.entries);
+		free(dev->diagnostics);
 	}
-	memset(&dev->diagnostics, 0, sizeof(dev->diagnostics));
 }
 
 static void free_device(sysman_device_state_t *dev)

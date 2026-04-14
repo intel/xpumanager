@@ -408,13 +408,7 @@ typedef struct
 	zes_engine_stats_t activity;
 	uint32_t activity_ext_count;
 	zes_engine_stats_t *activity_ext;
-} sysman_engine_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_engine_entry_t *entries;
-} sysman_engines_t;
+} sysman_engine_t;
 
 typedef struct
 {
@@ -425,13 +419,7 @@ typedef struct
 	zes_fabric_port_state_t *state;
 	zes_fabric_port_throughput_t *throughput;
 	zes_fabric_port_error_counters_t *error_counters;
-} sysman_fabric_port_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_fabric_port_entry_t *entries;
-} sysman_fabric_ports_t;
+} sysman_fabric_port_t;
 
 typedef struct
 {
@@ -439,13 +427,7 @@ typedef struct
 	zes_fan_properties_t *properties;
 	zes_fan_config_t *config;
 	int32_t speed;
-} sysman_fan_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_fan_entry_t *entries;
-} sysman_fans_t;
+} sysman_fan_t;
 
 typedef struct
 {
@@ -453,43 +435,25 @@ typedef struct
 	zes_firmware_properties_t *properties;
 	uint32_t flash_progress;
 	char log[SYSMAN_FIRMWARE_LOG_SIZE];
-} sysman_firmware_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_firmware_entry_t *entries;
-} sysman_firmwares_t;
+} sysman_firmware_t;
 
 typedef struct
 {
 	sysman_freq_rv_t return_values;
 	zes_freq_properties_t *properties;
 	zes_freq_range_t *range;
-	uint32_t available_clock_count;
+	uint32_t available_clocks_count;
 	double *available_clocks;
 	zes_freq_state_t *state;
 	zes_freq_throttle_time_t *throttle_time;
-} sysman_freq_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_freq_entry_t *entries;
-} sysman_freqs_t;
+} sysman_freq_t;
 
 typedef struct
 {
 	sysman_led_rv_t return_values;
 	zes_led_properties_t *properties;
 	zes_led_state_t *state;
-} sysman_led_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_led_entry_t *entries;
-} sysman_leds_t;
+} sysman_led_t;
 
 typedef struct
 {
@@ -497,13 +461,7 @@ typedef struct
 	zes_mem_properties_t *properties;
 	zes_mem_state_t *state;
 	zes_mem_bandwidth_t *bandwidth;
-} sysman_mem_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_mem_entry_t *entries;
-} sysman_mems_t;
+} sysman_mem_t;
 
 typedef struct
 {
@@ -519,7 +477,7 @@ typedef struct
 {
 	zes_overclock_domain_t domain_type;
 	uint32_t controls_bitmask;
-} sysman_oc_controls_entry_t;
+} sysman_oc_control_t;
 
 typedef struct
 {
@@ -529,7 +487,7 @@ typedef struct
 	uint32_t control_infos_count;
 	sysman_oc_control_info_t *control_infos;
 	uint32_t vf_point_value;
-} sysman_oc_entry_t;
+} sysman_oc_t;
 
 typedef struct
 {
@@ -579,10 +537,10 @@ typedef struct
 {
 	uint32_t domains_bitmask;
 	uint32_t controls_count;
-	sysman_oc_controls_entry_t *controls;
+	sysman_oc_control_t *controls;
 	sysman_overclock_state_info_t *state;
 	uint32_t domains_count;
-	sysman_oc_entry_t *domains;
+	sysman_oc_t *domains;
 } sysman_overclock_info_t;
 
 typedef struct
@@ -590,13 +548,7 @@ typedef struct
 	sysman_perf_rv_t return_values;
 	zes_perf_properties_t *properties;
 	double config;
-} sysman_perf_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_perf_entry_t *entries;
-} sysman_perfs_t;
+} sysman_perf_t;
 
 // used in place of sysman_power_ext_properties_t to avoid allocating memory for limits in YAML parsing
 
@@ -617,29 +569,17 @@ typedef struct
 	sysman_power_rv_t return_values;
 	sysman_power_properties_info_t *properties;
 	zes_power_energy_counter_t *energy_counter;
-	uint32_t limit_count;
+	uint32_t limits_count;
 	zes_power_limit_ext_desc_t *limits;
 	zes_energy_threshold_t *energy_threshold;
-} sysman_power_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_power_entry_t *entries;
-} sysman_powers_t;
+} sysman_power_t;
 
 typedef struct
 {
 	sysman_psu_rv_t return_values;
 	zes_psu_properties_t *properties;
 	zes_psu_state_t *state;
-} sysman_psu_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_psu_entry_t *entries;
-} sysman_psus_t;
+} sysman_psu_t;
 
 typedef struct
 {
@@ -649,13 +589,7 @@ typedef struct
 	zes_ras_state_t *state;
 	uint32_t state_exp_count;
 	zes_ras_state_exp_t *state_exp;
-} sysman_ras_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_ras_entry_t *entries;
-} sysman_ras_sets_t;
+} sysman_ras_t;
 
 typedef struct
 {
@@ -665,26 +599,14 @@ typedef struct
 	zes_sched_timeout_properties_t *timeout_mode_properties;
 	zes_sched_timeslice_properties_t *timeslice_mode_properties;
 	ze_bool_t need_reload;
-} sysman_sched_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_sched_entry_t *entries;
-} sysman_scheds_t;
+} sysman_sched_t;
 
 typedef struct
 {
 	sysman_standby_rv_t return_values;
 	zes_standby_properties_t *properties;
 	zes_standby_promo_mode_t mode;
-} sysman_standby_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_standby_entry_t *entries;
-} sysman_standbys_t;
+} sysman_standby_t;
 
 typedef struct
 {
@@ -692,28 +614,16 @@ typedef struct
 	zes_temp_properties_t *properties;
 	double temperature;
 	zes_temp_config_t *config;
-} sysman_temp_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_temp_entry_t *entries;
-} sysman_temps_t;
+} sysman_temp_t;
 
 typedef struct
 {
 	sysman_diag_rv_t return_values;
 	zes_diag_properties_t *properties;
-	uint32_t test_count;
+	uint32_t tests_count;
 	zes_diag_test_t *tests;
 	zes_diag_result_t result;
-} sysman_diag_entry_t;
-
-typedef struct
-{
-	uint32_t count;
-	sysman_diag_entry_t *entries;
-} sysman_diags_t;
+} sysman_diag_t;
 
 // ------------------------------------------------------------------
 // Per-device state
@@ -755,21 +665,36 @@ typedef struct
 	uint32_t processes_count;
 	zes_process_state_t *processes;
 	zes_event_type_flags_t events;
-	sysman_engines_t engine_groups;
-	sysman_fabric_ports_t fabric_ports;
-	sysman_fans_t fans;
-	sysman_firmwares_t firmwares;
-	sysman_freqs_t frequency_domains;
-	sysman_leds_t leds;
-	sysman_mems_t memory_modules;
-	sysman_perfs_t performance_domains;
-	sysman_powers_t power_domains;
-	sysman_psus_t psus;
-	sysman_ras_sets_t ras_error_sets;
-	sysman_scheds_t schedulers;
-	sysman_standbys_t standby_domains;
-	sysman_temps_t temperature_sensors;
-	sysman_diags_t diagnostics;
+	uint32_t engine_groups_count;
+	sysman_engine_t *engine_groups;
+	uint32_t fabric_ports_count;
+	sysman_fabric_port_t *fabric_ports;
+	uint32_t fans_count;
+	sysman_fan_t *fans;
+	uint32_t firmwares_count;
+	sysman_firmware_t *firmwares;
+	uint32_t frequency_domains_count;
+	sysman_freq_t *frequency_domains;
+	uint32_t leds_count;
+	sysman_led_t *leds;
+	uint32_t memory_modules_count;
+	sysman_mem_t *memory_modules;
+	uint32_t performance_domains_count;
+	sysman_perf_t *performance_domains;
+	uint32_t power_domains_count;
+	sysman_power_t *power_domains;
+	uint32_t psus_count;
+	sysman_psu_t *psus;
+	uint32_t ras_error_sets_count;
+	sysman_ras_t *ras_error_sets;
+	uint32_t schedulers_count;
+	sysman_sched_t *schedulers;
+	uint32_t standby_domains_count;
+	sysman_standby_t *standby_domains;
+	uint32_t temperature_sensors_count;
+	sysman_temp_t *temperature_sensors;
+	uint32_t diagnostics_count;
+	sysman_diag_t *diagnostics;
 } sysman_device_state_t;
 
 // ------------------------------------------------------------------
