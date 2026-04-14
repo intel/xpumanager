@@ -269,20 +269,29 @@ static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdfString)
 /**
  * @brief Get the amount of free local memory (LMEM) available on the device
  *
- * Reads the vram0_mm file from the debugfs path to determine the amount of
- * visible available memory on the GPU device.
+ * Reads the vram_mm file(vram0_mm for older kernels) from the debugfs path to determine the
+ * amount of visible available memory on the GPU device.
  *
  * @param[in] path The debugfs path for the device (e.g., /sys/kernel/debug/dri/0000:03:00.0)
  * @return uint64_t Free LMEM size in bytes, or 0 if unable to read or parse the information
  */
 static uint64_t getFreeLmemSize(const std::string &path)
 {
-	std::ifstream ifs(path + "/vram0_mm");
+	std::string mmPath = path + "/tile0/vram_mm";
+	std::error_code ec;
+	if (!std::filesystem::exists(mmPath, ec)) {
+		if (ec && ec == std::errc::permission_denied) {
+			ERR("Permission denied accessing {}\n", mmPath.c_str());
+			return 0;
+		}
+		mmPath = path + "/vram0_mm";
+	}
+	std::ifstream ifs(mmPath);
 	std::string line;
 	uint64_t freeSize = 0;
 
 	if (!ifs.is_open()) {
-		ERR("Failed to open {}/vram0_mm\n", path.c_str());
+		ERR("{} {}\n", errno == EACCES ? "Permission denied opening" : "Failed to open", mmPath.c_str());
 		return 0;
 	}
 
