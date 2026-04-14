@@ -273,123 +273,123 @@ typedef struct
 
 typedef enum
 {
-	UNSUPPORTED_FEATURE_GET_PROPERTIES = 0,				  // Device.GetProperties
-	UNSUPPORTED_FEATURE_GET_STATE,						  // Device.GetState
-	UNSUPPORTED_FEATURE_PROCESSES_GET_STATE,			  // Device.ProcessesGetState
-	UNSUPPORTED_FEATURE_PCI_GET_PROPERTIES,				  // PCI.GetProperties
-	UNSUPPORTED_FEATURE_PCI_GET_STATE,					  // PCI.GetState
-	UNSUPPORTED_FEATURE_PCI_GET_BARS,					  // PCI.GetBars
-	UNSUPPORTED_FEATURE_PCI_GET_STATS,					  // PCI.GetStats
-	UNSUPPORTED_FEATURE_OVERCLOCK_DOMAINS,				  // OverclockDomains
-	UNSUPPORTED_FEATURE_GET_OVERCLOCK_CONTROLS,			  // Device.GetOverclockControls
-	UNSUPPORTED_FEATURE_OVERCLOCK_READ_STATE,			  // Overclock.ReadState
-	UNSUPPORTED_FEATURE_OVERCLOCK_ENUM_DOMAINS,			  // Overclock.EnumDomains
-	UNSUPPORTED_FEATURE_ECC,							  // ECC
-	UNSUPPORTED_FEATURE_ECC_CONFIGURABLE,				  // ECC.Configurable
-	UNSUPPORTED_FEATURE_ECC_GET_STATE,					  // ECC.GetState
-	UNSUPPORTED_FEATURE_ENGINE_GROUPS,					  // EngineGroups
-	UNSUPPORTED_FEATURE_FABRIC_PORTS,					  // FabricPorts
-	UNSUPPORTED_FEATURE_FANS,							  // Fans
-	UNSUPPORTED_FEATURE_FIRMWARES,						  // Firmwares
-	UNSUPPORTED_FEATURE_FREQUENCY_DOMAINS,				  // FrequencyDomains
-	UNSUPPORTED_FEATURE_LEDS,							  // Leds
-	UNSUPPORTED_FEATURE_MEMORY_MODULES,					  // MemoryModules
-	UNSUPPORTED_FEATURE_PERFORMANCE_DOMAINS,			  // PerformanceDomains
-	UNSUPPORTED_FEATURE_POWER_DOMAINS,					  // PowerDomains
-	UNSUPPORTED_FEATURE_PSUS,							  // Psus
-	UNSUPPORTED_FEATURE_RAS_ERROR_SETS,					  // RasErrorSets
-	UNSUPPORTED_FEATURE_SCHEDULERS,						  // Schedulers
-	UNSUPPORTED_FEATURE_STANDBY_DOMAINS,				  // StandbyDomains
-	UNSUPPORTED_FEATURE_TEMPERATURE_SENSORS,			  // TemperatureSensors
-	UNSUPPORTED_FEATURE_DIAGNOSTICS_TEST_SUITES,		  // DiagnosticsTestSuites
-	UNSUPPORTED_FEATURE_GET_EXT_PROPERTIES,				  // GetExtensionProperties
-	UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET,				  // Driver.DeviceGet
-	UNSUPPORTED_FEATURE_DEVICE_RESET,					  // Device.Reset
-	UNSUPPORTED_FEATURE_DEVICE_RESET_EXT,				  // Device.ResetExt
-	UNSUPPORTED_FEATURE_SET_OVERCLOCK_WAIVER,			  // Device.SetOverclockWaiver
-	UNSUPPORTED_FEATURE_OVERCLOCK_RESET_SETTINGS,		  // Overclock.ResetSettings
-	UNSUPPORTED_FEATURE_ECC_SET_STATE,					  // ECC.SetState
-	UNSUPPORTED_FEATURE_EVENT_REGISTER,					  // Device.EventRegister
-	UNSUPPORTED_FEATURE_EVENT_LISTEN,					  // Driver.EventListen
-	UNSUPPORTED_FEATURE_EVENT_LISTEN_EX,				  // Driver.EventListenEx
-	UNSUPPORTED_FEATURE_FABRIC_PORT_MULTI_THROUGHPUT,	  // FabricPort.GetMultiPortThroughput
-	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_PROPERTIES,		  // OverclockDomain.GetProperties
-	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_VF_PROPERTIES,	  // OverclockDomain.GetVFProperties
-	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_CONTROL_PROPERTIES, // OverclockDomain.GetDomainControlProperties
-	UNSUPPORTED_FEATURE_OC_GET_CONTROL_CURRENT_VALUE,	  // OverclockDomain.GetControlCurrentValue
-	UNSUPPORTED_FEATURE_OC_GET_CONTROL_PENDING_VALUE,	  // OverclockDomain.GetControlPendingValue
-	UNSUPPORTED_FEATURE_OC_SET_CONTROL_USER_VALUE,		  // OverclockDomain.SetControlUserValue
-	UNSUPPORTED_FEATURE_OC_GET_CONTROL_STATE,			  // OverclockDomain.GetControlState
-	UNSUPPORTED_FEATURE_OC_GET_VF_POINT_VALUES,			  // OverclockDomain.GetVFPointValues
-	UNSUPPORTED_FEATURE_OC_SET_VF_POINT_VALUES,			  // OverclockDomain.SetVFPointValues
-	UNSUPPORTED_FEATURE_DIAG_GET_PROPERTIES,			  // Diagnostic.GetProperties
-	UNSUPPORTED_FEATURE_DIAG_GET_TESTS,					  // Diagnostic.GetTests
-	UNSUPPORTED_FEATURE_DIAG_RUN_TESTS,					  // Diagnostic.RunTests
-	UNSUPPORTED_FEATURE_ENGINE_GET_PROPERTIES,			  // EngineGroup.GetProperties
-	UNSUPPORTED_FEATURE_ENGINE_GET_ACTIVITY,			  // EngineGroup.GetActivity
-	UNSUPPORTED_FEATURE_ENGINE_GET_ACTIVITY_EXT,		  // EngineGroup.GetActivityExt
-	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_PROPERTIES,		  // FabricPort.GetProperties
-	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_LINK_TYPE,		  // FabricPort.GetLinkType
-	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_CONFIG,			  // FabricPort.GetConfig
-	UNSUPPORTED_FEATURE_FABRIC_PORT_SET_CONFIG,			  // FabricPort.SetConfig
-	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_STATE,			  // FabricPort.GetState
-	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_THROUGHPUT,		  // FabricPort.GetThroughput
-	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_ERROR_COUNTERS,	  // FabricPort.GetErrorCounters
-	UNSUPPORTED_FEATURE_FAN_GET_PROPERTIES,				  // Fan.GetProperties
-	UNSUPPORTED_FEATURE_FAN_GET_CONFIG,					  // Fan.GetConfig
-	UNSUPPORTED_FEATURE_FAN_SET_DEFAULT_MODE,			  // Fan.SetDefaultMode
-	UNSUPPORTED_FEATURE_FAN_SET_FIXED_SPEED_MODE,		  // Fan.SetFixedSpeedMode
-	UNSUPPORTED_FEATURE_FAN_SET_SPEED_TABLE_MODE,		  // Fan.SetSpeedTableMode
-	UNSUPPORTED_FEATURE_FAN_GET_STATE,					  // Fan.GetState
-	UNSUPPORTED_FEATURE_FW_GET_PROPERTIES,				  // Firmware.GetProperties
-	UNSUPPORTED_FEATURE_FW_FLASH,						  // Firmware.Flash
-	UNSUPPORTED_FEATURE_FW_GET_FLASH_PROGRESS,			  // Firmware.GetFlashProgress
-	UNSUPPORTED_FEATURE_FW_GET_CONSOLE_LOGS,			  // Firmware.GetConsoleLogs
-	UNSUPPORTED_FEATURE_FREQ_GET_PROPERTIES,			  // FrequencyDomain.GetProperties
-	UNSUPPORTED_FEATURE_FREQ_GET_AVAILABLE_CLOCKS,		  // FrequencyDomain.GetAvailableClocks
-	UNSUPPORTED_FEATURE_FREQ_GET_RANGE,					  // FrequencyDomain.GetRange
-	UNSUPPORTED_FEATURE_FREQ_SET_RANGE,					  // FrequencyDomain.SetRange
-	UNSUPPORTED_FEATURE_FREQ_GET_STATE,					  // FrequencyDomain.GetState
-	UNSUPPORTED_FEATURE_FREQ_GET_THROTTLE_TIME,			  // FrequencyDomain.GetThrottleTime
-	UNSUPPORTED_FEATURE_LED_GET_PROPERTIES,				  // Led.GetProperties
-	UNSUPPORTED_FEATURE_LED_GET_STATE,					  // Led.GetState
-	UNSUPPORTED_FEATURE_LED_SET_STATE,					  // Led.SetState
-	UNSUPPORTED_FEATURE_LED_SET_COLOR,					  // Led.SetColor
-	UNSUPPORTED_FEATURE_MEM_GET_PROPERTIES,				  // MemoryModule.GetProperties
-	UNSUPPORTED_FEATURE_MEM_GET_STATE,					  // MemoryModule.GetState
-	UNSUPPORTED_FEATURE_MEM_GET_BANDWIDTH,				  // MemoryModule.GetBandwidth
-	UNSUPPORTED_FEATURE_PERF_GET_PROPERTIES,			  // PerformanceDomain.GetProperties
-	UNSUPPORTED_FEATURE_PERF_GET_CONFIG,				  // PerformanceDomain.GetConfig
-	UNSUPPORTED_FEATURE_PERF_SET_CONFIG,				  // PerformanceDomain.SetConfig
-	UNSUPPORTED_FEATURE_POWER_GET_PROPERTIES,			  // PowerDomain.GetProperties
-	UNSUPPORTED_FEATURE_POWER_GET_ENERGY_COUNTER,		  // PowerDomain.GetEnergyCounter
-	UNSUPPORTED_FEATURE_POWER_GET_LIMITS_EXT,			  // PowerDomain.GetLimitsExt
-	UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT,			  // PowerDomain.SetLimitsExt
-	UNSUPPORTED_FEATURE_POWER_GET_ENERGY_THRESHOLD,		  // PowerDomain.GetEnergyThreshold
-	UNSUPPORTED_FEATURE_POWER_SET_ENERGY_THRESHOLD,		  // PowerDomain.SetEnergyThreshold
-	UNSUPPORTED_FEATURE_PSU_GET_PROPERTIES,				  // Psu.GetProperties
-	UNSUPPORTED_FEATURE_PSU_GET_STATE,					  // Psu.GetState
-	UNSUPPORTED_FEATURE_RAS_GET_PROPERTIES,				  // RasErrorSet.GetProperties
-	UNSUPPORTED_FEATURE_RAS_GET_CONFIG,					  // RasErrorSet.GetConfig
-	UNSUPPORTED_FEATURE_RAS_SET_CONFIG,					  // RasErrorSet.SetConfig
-	UNSUPPORTED_FEATURE_RAS_GET_STATE,					  // RasErrorSet.GetState
-	UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP,					  // RasErrorSet.GetStateExp
-	UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP,				  // RasErrorSet.ClearStateExp
-	UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES,			  // Scheduler.GetProperties
-	UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE,			  // Scheduler.GetCurrentMode
-	UNSUPPORTED_FEATURE_SCHED_GET_TIMEOUT_MODE_PROPS,	  // Scheduler.GetTimeoutModeProperties
-	UNSUPPORTED_FEATURE_SCHED_GET_TIMESLICE_MODE_PROPS,	  // Scheduler.GetTimesliceModeProperties
-	UNSUPPORTED_FEATURE_SCHED_SET_TIMEOUT_MODE,			  // Scheduler.SetTimeoutMode
-	UNSUPPORTED_FEATURE_SCHED_SET_TIMESLICE_MODE,		  // Scheduler.SetTimesliceMode
-	UNSUPPORTED_FEATURE_SCHED_SET_EXCLUSIVE_MODE,		  // Scheduler.SetExclusiveMode
-	UNSUPPORTED_FEATURE_STANDBY_GET_PROPERTIES,			  // StandbyDomain.GetProperties
-	UNSUPPORTED_FEATURE_STANDBY_GET_MODE,				  // StandbyDomain.GetMode
-	UNSUPPORTED_FEATURE_STANDBY_SET_MODE,				  // StandbyDomain.SetMode
-	UNSUPPORTED_FEATURE_TEMP_GET_PROPERTIES,			  // TemperatureSensor.GetProperties
-	UNSUPPORTED_FEATURE_TEMP_GET_CONFIG,				  // TemperatureSensor.GetConfig
-	UNSUPPORTED_FEATURE_TEMP_SET_CONFIG,				  // TemperatureSensor.SetConfig
-	UNSUPPORTED_FEATURE_TEMP_GET_STATE,					  // TemperatureSensor.GetState
-} sysman_unsupported_feature_t;
+	UNSUPPORTED_FEATURE_GET_PROPERTIES = 0,				  // gen: key=Device.GetProperties
+	UNSUPPORTED_FEATURE_GET_STATE,						  // gen: key=Device.GetState
+	UNSUPPORTED_FEATURE_PROCESSES_GET_STATE,			  // gen: key=Device.ProcessesGetState
+	UNSUPPORTED_FEATURE_PCI_GET_PROPERTIES,				  // gen: key=PCI.GetProperties
+	UNSUPPORTED_FEATURE_PCI_GET_STATE,					  // gen: key=PCI.GetState
+	UNSUPPORTED_FEATURE_PCI_GET_BARS,					  // gen: key=PCI.GetBars
+	UNSUPPORTED_FEATURE_PCI_GET_STATS,					  // gen: key=PCI.GetStats
+	UNSUPPORTED_FEATURE_OVERCLOCK_DOMAINS,				  // gen: key=OverclockDomains
+	UNSUPPORTED_FEATURE_GET_OVERCLOCK_CONTROLS,			  // gen: key=Device.GetOverclockControls
+	UNSUPPORTED_FEATURE_OVERCLOCK_READ_STATE,			  // gen: key=Overclock.ReadState
+	UNSUPPORTED_FEATURE_OVERCLOCK_ENUM_DOMAINS,			  // gen: key=Overclock.EnumDomains
+	UNSUPPORTED_FEATURE_ECC,							  // gen: key=ECC
+	UNSUPPORTED_FEATURE_ECC_CONFIGURABLE,				  // gen: key=ECC.Configurable
+	UNSUPPORTED_FEATURE_ECC_GET_STATE,					  // gen: key=ECC.GetState
+	UNSUPPORTED_FEATURE_ENGINE_GROUPS,					  // gen: key=EngineGroups
+	UNSUPPORTED_FEATURE_FABRIC_PORTS,					  // gen: key=FabricPorts
+	UNSUPPORTED_FEATURE_FANS,							  // gen: key=Fans
+	UNSUPPORTED_FEATURE_FIRMWARES,						  // gen: key=Firmwares
+	UNSUPPORTED_FEATURE_FREQUENCY_DOMAINS,				  // gen: key=FrequencyDomains
+	UNSUPPORTED_FEATURE_LEDS,							  // gen: key=Leds
+	UNSUPPORTED_FEATURE_MEMORY_MODULES,					  // gen: key=MemoryModules
+	UNSUPPORTED_FEATURE_PERFORMANCE_DOMAINS,			  // gen: key=PerformanceDomains
+	UNSUPPORTED_FEATURE_POWER_DOMAINS,					  // gen: key=PowerDomains
+	UNSUPPORTED_FEATURE_PSUS,							  // gen: key=Psus
+	UNSUPPORTED_FEATURE_RAS_ERROR_SETS,					  // gen: key=RasErrorSets
+	UNSUPPORTED_FEATURE_SCHEDULERS,						  // gen: key=Schedulers
+	UNSUPPORTED_FEATURE_STANDBY_DOMAINS,				  // gen: key=StandbyDomains
+	UNSUPPORTED_FEATURE_TEMPERATURE_SENSORS,			  // gen: key=TemperatureSensors
+	UNSUPPORTED_FEATURE_DIAGNOSTICS_TEST_SUITES,		  // gen: key=DiagnosticsTestSuites
+	UNSUPPORTED_FEATURE_GET_EXT_PROPERTIES,				  // gen: key=GetExtensionProperties
+	UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET,				  // gen: key=Driver.DeviceGet
+	UNSUPPORTED_FEATURE_DEVICE_RESET,					  // gen: key=Device.Reset
+	UNSUPPORTED_FEATURE_DEVICE_RESET_EXT,				  // gen: key=Device.ResetExt
+	UNSUPPORTED_FEATURE_SET_OVERCLOCK_WAIVER,			  // gen: key=Device.SetOverclockWaiver
+	UNSUPPORTED_FEATURE_OVERCLOCK_RESET_SETTINGS,		  // gen: key=Overclock.ResetSettings
+	UNSUPPORTED_FEATURE_ECC_SET_STATE,					  // gen: key=ECC.SetState
+	UNSUPPORTED_FEATURE_EVENT_REGISTER,					  // gen: key=Device.EventRegister
+	UNSUPPORTED_FEATURE_EVENT_LISTEN,					  // gen: key=Driver.EventListen
+	UNSUPPORTED_FEATURE_EVENT_LISTEN_EX,				  // gen: key=Driver.EventListenEx
+	UNSUPPORTED_FEATURE_FABRIC_PORT_MULTI_THROUGHPUT,	  // gen: key=FabricPort.GetMultiPortThroughput
+	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_PROPERTIES,		  // gen: key=OverclockDomain.GetProperties
+	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_VF_PROPERTIES,	  // gen: key=OverclockDomain.GetVFProperties
+	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_CONTROL_PROPERTIES, // gen: key=OverclockDomain.GetDomainControlProperties
+	UNSUPPORTED_FEATURE_OC_GET_CONTROL_CURRENT_VALUE,	  // gen: key=OverclockDomain.GetControlCurrentValue
+	UNSUPPORTED_FEATURE_OC_GET_CONTROL_PENDING_VALUE,	  // gen: key=OverclockDomain.GetControlPendingValue
+	UNSUPPORTED_FEATURE_OC_SET_CONTROL_USER_VALUE,		  // gen: key=OverclockDomain.SetControlUserValue
+	UNSUPPORTED_FEATURE_OC_GET_CONTROL_STATE,			  // gen: key=OverclockDomain.GetControlState
+	UNSUPPORTED_FEATURE_OC_GET_VF_POINT_VALUES,			  // gen: key=OverclockDomain.GetVFPointValues
+	UNSUPPORTED_FEATURE_OC_SET_VF_POINT_VALUES,			  // gen: key=OverclockDomain.SetVFPointValues
+	UNSUPPORTED_FEATURE_DIAG_GET_PROPERTIES,			  // gen: key=Diagnostic.GetProperties
+	UNSUPPORTED_FEATURE_DIAG_GET_TESTS,					  // gen: key=Diagnostic.GetTests
+	UNSUPPORTED_FEATURE_DIAG_RUN_TESTS,					  // gen: key=Diagnostic.RunTests
+	UNSUPPORTED_FEATURE_ENGINE_GET_PROPERTIES,			  // gen: key=EngineGroup.GetProperties
+	UNSUPPORTED_FEATURE_ENGINE_GET_ACTIVITY,			  // gen: key=EngineGroup.GetActivity
+	UNSUPPORTED_FEATURE_ENGINE_GET_ACTIVITY_EXT,		  // gen: key=EngineGroup.GetActivityExt
+	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_PROPERTIES,		  // gen: key=FabricPort.GetProperties
+	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_LINK_TYPE,		  // gen: key=FabricPort.GetLinkType
+	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_CONFIG,			  // gen: key=FabricPort.GetConfig
+	UNSUPPORTED_FEATURE_FABRIC_PORT_SET_CONFIG,			  // gen: key=FabricPort.SetConfig
+	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_STATE,			  // gen: key=FabricPort.GetState
+	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_THROUGHPUT,		  // gen: key=FabricPort.GetThroughput
+	UNSUPPORTED_FEATURE_FABRIC_PORT_GET_ERROR_COUNTERS,	  // gen: key=FabricPort.GetErrorCounters
+	UNSUPPORTED_FEATURE_FAN_GET_PROPERTIES,				  // gen: key=Fan.GetProperties
+	UNSUPPORTED_FEATURE_FAN_GET_CONFIG,					  // gen: key=Fan.GetConfig
+	UNSUPPORTED_FEATURE_FAN_SET_DEFAULT_MODE,			  // gen: key=Fan.SetDefaultMode
+	UNSUPPORTED_FEATURE_FAN_SET_FIXED_SPEED_MODE,		  // gen: key=Fan.SetFixedSpeedMode
+	UNSUPPORTED_FEATURE_FAN_SET_SPEED_TABLE_MODE,		  // gen: key=Fan.SetSpeedTableMode
+	UNSUPPORTED_FEATURE_FAN_GET_STATE,					  // gen: key=Fan.GetState
+	UNSUPPORTED_FEATURE_FW_GET_PROPERTIES,				  // gen: key=Firmware.GetProperties
+	UNSUPPORTED_FEATURE_FW_FLASH,						  // gen: key=Firmware.Flash
+	UNSUPPORTED_FEATURE_FW_GET_FLASH_PROGRESS,			  // gen: key=Firmware.GetFlashProgress
+	UNSUPPORTED_FEATURE_FW_GET_CONSOLE_LOGS,			  // gen: key=Firmware.GetConsoleLogs
+	UNSUPPORTED_FEATURE_FREQ_GET_PROPERTIES,			  // gen: key=FrequencyDomain.GetProperties
+	UNSUPPORTED_FEATURE_FREQ_GET_AVAILABLE_CLOCKS,		  // gen: key=FrequencyDomain.GetAvailableClocks
+	UNSUPPORTED_FEATURE_FREQ_GET_RANGE,					  // gen: key=FrequencyDomain.GetRange
+	UNSUPPORTED_FEATURE_FREQ_SET_RANGE,					  // gen: key=FrequencyDomain.SetRange
+	UNSUPPORTED_FEATURE_FREQ_GET_STATE,					  // gen: key=FrequencyDomain.GetState
+	UNSUPPORTED_FEATURE_FREQ_GET_THROTTLE_TIME,			  // gen: key=FrequencyDomain.GetThrottleTime
+	UNSUPPORTED_FEATURE_LED_GET_PROPERTIES,				  // gen: key=Led.GetProperties
+	UNSUPPORTED_FEATURE_LED_GET_STATE,					  // gen: key=Led.GetState
+	UNSUPPORTED_FEATURE_LED_SET_STATE,					  // gen: key=Led.SetState
+	UNSUPPORTED_FEATURE_LED_SET_COLOR,					  // gen: key=Led.SetColor
+	UNSUPPORTED_FEATURE_MEM_GET_PROPERTIES,				  // gen: key=MemoryModule.GetProperties
+	UNSUPPORTED_FEATURE_MEM_GET_STATE,					  // gen: key=MemoryModule.GetState
+	UNSUPPORTED_FEATURE_MEM_GET_BANDWIDTH,				  // gen: key=MemoryModule.GetBandwidth
+	UNSUPPORTED_FEATURE_PERF_GET_PROPERTIES,			  // gen: key=PerformanceDomain.GetProperties
+	UNSUPPORTED_FEATURE_PERF_GET_CONFIG,				  // gen: key=PerformanceDomain.GetConfig
+	UNSUPPORTED_FEATURE_PERF_SET_CONFIG,				  // gen: key=PerformanceDomain.SetConfig
+	UNSUPPORTED_FEATURE_POWER_GET_PROPERTIES,			  // gen: key=PowerDomain.GetProperties
+	UNSUPPORTED_FEATURE_POWER_GET_ENERGY_COUNTER,		  // gen: key=PowerDomain.GetEnergyCounter
+	UNSUPPORTED_FEATURE_POWER_GET_LIMITS_EXT,			  // gen: key=PowerDomain.GetLimitsExt
+	UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT,			  // gen: key=PowerDomain.SetLimitsExt
+	UNSUPPORTED_FEATURE_POWER_GET_ENERGY_THRESHOLD,		  // gen: key=PowerDomain.GetEnergyThreshold
+	UNSUPPORTED_FEATURE_POWER_SET_ENERGY_THRESHOLD,		  // gen: key=PowerDomain.SetEnergyThreshold
+	UNSUPPORTED_FEATURE_PSU_GET_PROPERTIES,				  // gen: key=Psu.GetProperties
+	UNSUPPORTED_FEATURE_PSU_GET_STATE,					  // gen: key=Psu.GetState
+	UNSUPPORTED_FEATURE_RAS_GET_PROPERTIES,				  // gen: key=RasErrorSet.GetProperties
+	UNSUPPORTED_FEATURE_RAS_GET_CONFIG,					  // gen: key=RasErrorSet.GetConfig
+	UNSUPPORTED_FEATURE_RAS_SET_CONFIG,					  // gen: key=RasErrorSet.SetConfig
+	UNSUPPORTED_FEATURE_RAS_GET_STATE,					  // gen: key=RasErrorSet.GetState
+	UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP,				  // gen: key=RasErrorSet.GetStateExp
+	UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP,			  // gen: key=RasErrorSet.ClearStateExp
+	UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES,			  // gen: key=Scheduler.GetProperties
+	UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE,			  // gen: key=Scheduler.GetCurrentMode
+	UNSUPPORTED_FEATURE_SCHED_GET_TIMEOUT_MODE_PROPS,	  // gen: key=Scheduler.GetTimeoutModeProperties
+	UNSUPPORTED_FEATURE_SCHED_GET_TIMESLICE_MODE_PROPS,	  // gen: key=Scheduler.GetTimesliceModeProperties
+	UNSUPPORTED_FEATURE_SCHED_SET_TIMEOUT_MODE,			  // gen: key=Scheduler.SetTimeoutMode
+	UNSUPPORTED_FEATURE_SCHED_SET_TIMESLICE_MODE,		  // gen: key=Scheduler.SetTimesliceMode
+	UNSUPPORTED_FEATURE_SCHED_SET_EXCLUSIVE_MODE,		  // gen: key=Scheduler.SetExclusiveMode
+	UNSUPPORTED_FEATURE_STANDBY_GET_PROPERTIES,			  // gen: key=StandbyDomain.GetProperties
+	UNSUPPORTED_FEATURE_STANDBY_GET_MODE,				  // gen: key=StandbyDomain.GetMode
+	UNSUPPORTED_FEATURE_STANDBY_SET_MODE,				  // gen: key=StandbyDomain.SetMode
+	UNSUPPORTED_FEATURE_TEMP_GET_PROPERTIES,			  // gen: key=TemperatureSensor.GetProperties
+	UNSUPPORTED_FEATURE_TEMP_GET_CONFIG,				  // gen: key=TemperatureSensor.GetConfig
+	UNSUPPORTED_FEATURE_TEMP_SET_CONFIG,				  // gen: key=TemperatureSensor.SetConfig
+	UNSUPPORTED_FEATURE_TEMP_GET_STATE,					  // gen: key=TemperatureSensor.GetState
+} sysman_unsupported_feature_t;							  // gen: enum
 
 // ------------------------------------------------------------------
 // Per-component entry types and group structs
@@ -397,7 +397,7 @@ typedef enum
 
 typedef struct
 {
-	zes_engine_properties_t base;
+	zes_engine_properties_t base; // gen: flatten
 	zes_engine_ext_properties_t extended_properties;
 } sysman_engine_properties_info_t;
 
@@ -483,7 +483,7 @@ typedef struct
 {
 	sysman_oc_rv_t return_values;
 	zes_overclock_properties_t *properties;
-	zes_vf_property_t *vf_properties;
+	zes_vf_property_t *vf_properties; // gen: key=VFProperties
 	uint32_t control_infos_count;
 	sysman_oc_control_info_t *control_infos;
 	uint32_t vf_point_value;
@@ -491,13 +491,13 @@ typedef struct
 
 typedef struct
 {
-	zes_pci_properties_t base;
+	zes_pci_properties_t base; // gen: flatten
 	zes_pci_link_speed_downgrade_ext_properties_t link_speed_downgrade;
 } sysman_pci_properties_info_t;
 
 typedef struct
 {
-	zes_pci_state_t base;
+	zes_pci_state_t base; // gen: flatten
 	zes_pci_link_speed_downgrade_ext_state_t link_speed_downgrade;
 } sysman_pci_state_info_t;
 
@@ -513,7 +513,7 @@ typedef struct
 
 typedef struct
 {
-	zes_device_ecc_properties_t properties;
+	zes_device_ecc_properties_t properties; // gen: flatten
 	zes_device_ecc_default_properties_ext_t extended_properties;
 } sysman_ecc_state_info_t;
 
@@ -560,7 +560,7 @@ typedef struct
 
 typedef struct
 {
-	zes_power_properties_t base;
+	zes_power_properties_t base; // gen: flatten
 	sysman_power_ext_properties_t extended_properties;
 } sysman_power_properties_info_t;
 
@@ -640,16 +640,16 @@ typedef struct
 // Wrapper for ze_device_properties_t to allow parsing of UUID strings from YAML.
 typedef struct
 {
-	ze_device_properties_t ze;
+	ze_device_properties_t ze; // gen: flatten
 	sysman_uuid_t uuid;
 } sysman_device_core_properties_t;
 
 typedef struct
 {
-	zes_device_properties_t base;
-	zes_device_ext_properties_t extended_properties;
-	sysman_device_core_properties_t core; // YAML parsing helper for base.core.uuid
-	sysman_uuid_t uuid;					  // YAML parsing helper for extended_properties.uuid
+	zes_device_properties_t base;					 // gen: flatten
+	zes_device_ext_properties_t extended_properties; // gen: flatten
+	sysman_device_core_properties_t core;			 // YAML parsing helper for base.core.uuid
+	sysman_uuid_t uuid;								 // YAML parsing helper for extended_properties.uuid
 } sysman_device_properties_info_t;
 
 typedef struct
@@ -659,8 +659,8 @@ typedef struct
 	sysman_unsupported_feature_t *unsupported_features;
 	sysman_device_properties_info_t *properties;
 	zes_device_state_t *state;
-	sysman_pci_info_t pci;
-	sysman_ecc_info_t *ecc;
+	sysman_pci_info_t pci;	// gen: key=PCI
+	sysman_ecc_info_t *ecc; // gen: key=ECC
 	sysman_overclock_info_t *overclock;
 	uint32_t processes_count;
 	zes_process_state_t *processes;
@@ -720,7 +720,7 @@ typedef struct
 
 typedef struct
 {
-	sysman_system_state_t system;
+	sysman_system_state_t system; // gen: flatten
 	sysman_system_rv_t return_values;
 } sysman_state_t;
 
