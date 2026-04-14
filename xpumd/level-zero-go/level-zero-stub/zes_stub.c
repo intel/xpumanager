@@ -64,65 +64,65 @@ static void *resolve_handle(const void *zes_handle, stub_handle_type_t expected_
 			return NULL;
 		return &device->overclock->domains[handle.bits.comp];
 	case STUB_HANDLE_DIAG:
-		if (handle.bits.comp >= device->diagnostics.count)
+		if (handle.bits.comp >= device->diagnostics_count)
 			return NULL;
-		return &device->diagnostics.entries[handle.bits.comp];
+		return &device->diagnostics[handle.bits.comp];
 	case STUB_HANDLE_ENGINE:
-		if (handle.bits.comp >= device->engine_groups.count)
+		if (handle.bits.comp >= device->engine_groups_count)
 			return NULL;
-		return &device->engine_groups.entries[handle.bits.comp];
+		return &device->engine_groups[handle.bits.comp];
 	case STUB_HANDLE_FABRIC_PORT:
-		if (handle.bits.comp >= device->fabric_ports.count)
+		if (handle.bits.comp >= device->fabric_ports_count)
 			return NULL;
-		return &device->fabric_ports.entries[handle.bits.comp];
+		return &device->fabric_ports[handle.bits.comp];
 	case STUB_HANDLE_FAN:
-		if (handle.bits.comp >= device->fans.count)
+		if (handle.bits.comp >= device->fans_count)
 			return NULL;
-		return &device->fans.entries[handle.bits.comp];
+		return &device->fans[handle.bits.comp];
 	case STUB_HANDLE_FIRMWARE:
-		if (handle.bits.comp >= device->firmwares.count)
+		if (handle.bits.comp >= device->firmwares_count)
 			return NULL;
-		return &device->firmwares.entries[handle.bits.comp];
+		return &device->firmwares[handle.bits.comp];
 	case STUB_HANDLE_FREQ:
-		if (handle.bits.comp >= device->frequency_domains.count)
+		if (handle.bits.comp >= device->frequency_domains_count)
 			return NULL;
-		return &device->frequency_domains.entries[handle.bits.comp];
+		return &device->frequency_domains[handle.bits.comp];
 	case STUB_HANDLE_LED:
-		if (handle.bits.comp >= device->leds.count)
+		if (handle.bits.comp >= device->leds_count)
 			return NULL;
-		return &device->leds.entries[handle.bits.comp];
+		return &device->leds[handle.bits.comp];
 	case STUB_HANDLE_MEM:
-		if (handle.bits.comp >= device->memory_modules.count)
+		if (handle.bits.comp >= device->memory_modules_count)
 			return NULL;
-		return &device->memory_modules.entries[handle.bits.comp];
+		return &device->memory_modules[handle.bits.comp];
 	case STUB_HANDLE_PERF:
-		if (handle.bits.comp >= device->performance_domains.count)
+		if (handle.bits.comp >= device->performance_domains_count)
 			return NULL;
-		return &device->performance_domains.entries[handle.bits.comp];
+		return &device->performance_domains[handle.bits.comp];
 	case STUB_HANDLE_PWR:
-		if (handle.bits.comp >= device->power_domains.count)
+		if (handle.bits.comp >= device->power_domains_count)
 			return NULL;
-		return &device->power_domains.entries[handle.bits.comp];
+		return &device->power_domains[handle.bits.comp];
 	case STUB_HANDLE_PSU:
-		if (handle.bits.comp >= device->psus.count)
+		if (handle.bits.comp >= device->psus_count)
 			return NULL;
-		return &device->psus.entries[handle.bits.comp];
+		return &device->psus[handle.bits.comp];
 	case STUB_HANDLE_RAS:
-		if (handle.bits.comp >= device->ras_error_sets.count)
+		if (handle.bits.comp >= device->ras_error_sets_count)
 			return NULL;
-		return &device->ras_error_sets.entries[handle.bits.comp];
+		return &device->ras_error_sets[handle.bits.comp];
 	case STUB_HANDLE_SCHED:
-		if (handle.bits.comp >= device->schedulers.count)
+		if (handle.bits.comp >= device->schedulers_count)
 			return NULL;
-		return &device->schedulers.entries[handle.bits.comp];
+		return &device->schedulers[handle.bits.comp];
 	case STUB_HANDLE_STANDBY:
-		if (handle.bits.comp >= device->standby_domains.count)
+		if (handle.bits.comp >= device->standby_domains_count)
 			return NULL;
-		return &device->standby_domains.entries[handle.bits.comp];
+		return &device->standby_domains[handle.bits.comp];
 	case STUB_HANDLE_TEMP:
-		if (handle.bits.comp >= device->temperature_sensors.count)
+		if (handle.bits.comp >= device->temperature_sensors_count)
 			return NULL;
-		return &device->temperature_sensors.entries[handle.bits.comp];
+		return &device->temperature_sensors[handle.bits.comp];
 	default:
 		return NULL;
 	}
@@ -612,7 +612,7 @@ ze_result_t zesDeviceEnumOverclockDomains(zes_device_handle_t hDevice, uint32_t 
 // Overclock domain functions
 // ------------------------------------------------------------------
 
-static sysman_oc_control_info_t *find_control_info(sysman_oc_entry_t *oc, zes_overclock_control_t ctrl)
+static sysman_oc_control_info_t *find_control_info(sysman_oc_t *oc, zes_overclock_control_t ctrl)
 {
 	if (!oc->control_infos || SYSMAN_ARRAY_PTR_IS_EMPTY(oc->control_infos))
 		return NULL;
@@ -627,7 +627,7 @@ ze_result_t zesOverclockGetDomainProperties(zes_overclock_handle_t hDomainHandle
 											zes_overclock_properties_t *pDomainProperties)
 {
 	sysman_state_lock();
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_DOMAIN_PROPERTIES))
@@ -649,7 +649,7 @@ ze_result_t zesOverclockGetDomainProperties(zes_overclock_handle_t hDomainHandle
 ze_result_t zesOverclockGetDomainVFProperties(zes_overclock_handle_t hDomainHandle, zes_vf_property_t *pVFProperties)
 {
 	sysman_state_lock();
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_DOMAIN_VF_PROPERTIES))
@@ -669,7 +669,7 @@ ze_result_t zesOverclockGetDomainControlProperties(zes_overclock_handle_t hDomai
 												   zes_control_property_t *pControlProperties)
 {
 	sysman_state_lock();
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_DOMAIN_CONTROL_PROPERTIES))
@@ -689,7 +689,7 @@ ze_result_t zesOverclockGetControlCurrentValue(zes_overclock_handle_t hDomainHan
 											   zes_overclock_control_t DomainControl, double *pValue)
 {
 	sysman_state_lock();
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_CONTROL_CURRENT_VALUE))
@@ -709,7 +709,7 @@ ze_result_t zesOverclockGetControlPendingValue(zes_overclock_handle_t hDomainHan
 											   zes_overclock_control_t DomainControl, double *pValue)
 {
 	sysman_state_lock();
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_CONTROL_PENDING_VALUE))
@@ -732,7 +732,7 @@ ze_result_t zesOverclockSetControlUserValue(zes_overclock_handle_t hDomainHandle
 	(void)DomainControl;
 	(void)pValue;
 	(void)pPendingAction;
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_SET_CONTROL_USER_VALUE))
@@ -746,7 +746,7 @@ ze_result_t zesOverclockGetControlState(zes_overclock_handle_t hDomainHandle, ze
 										zes_control_state_t *pControlState, zes_pending_action_t *pPendingAction)
 {
 	sysman_state_lock();
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_CONTROL_STATE))
@@ -770,7 +770,7 @@ ze_result_t zesOverclockGetVFPointValues(zes_overclock_handle_t hDomainHandle, z
 	(void)VFType;
 	(void)VFArrayType;
 	(void)PointIndex;
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_GET_VF_POINT_VALUES))
@@ -789,7 +789,7 @@ ze_result_t zesOverclockSetVFPointValues(zes_overclock_handle_t hDomainHandle, z
 	(void)VFType;
 	(void)PointIndex;
 	(void)PointValue;
-	sysman_oc_entry_t *oc = (sysman_oc_entry_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
+	sysman_oc_t *oc = (sysman_oc_t *)resolve_handle(hDomainHandle, STUB_HANDLE_OC);
 	if (!oc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDomainHandle, UNSUPPORTED_FEATURE_OC_SET_VF_POINT_VALUES))
@@ -814,7 +814,7 @@ ze_result_t zesDeviceEnumDiagnosticTestSuites(zes_device_handle_t hDevice, uint3
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumDiagnosticTestSuites)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumDiagnosticTestSuites);
-	uint32_t n = dev->diagnostics.count;
+	uint32_t n = dev->diagnostics_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phDiagnostics) {
@@ -833,7 +833,7 @@ ze_result_t zesDeviceEnumDiagnosticTestSuites(zes_device_handle_t hDevice, uint3
 ze_result_t zesDiagnosticsGetProperties(zes_diag_handle_t hDiagnostics, zes_diag_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_diag_entry_t *dg = (sysman_diag_entry_t *)resolve_handle(hDiagnostics, STUB_HANDLE_DIAG);
+	sysman_diag_t *dg = (sysman_diag_t *)resolve_handle(hDiagnostics, STUB_HANDLE_DIAG);
 	if (!dg)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDiagnostics, UNSUPPORTED_FEATURE_DIAG_GET_PROPERTIES))
@@ -855,14 +855,14 @@ ze_result_t zesDiagnosticsGetProperties(zes_diag_handle_t hDiagnostics, zes_diag
 ze_result_t zesDiagnosticsGetTests(zes_diag_handle_t hDiagnostics, uint32_t *pCount, zes_diag_test_t *pTests)
 {
 	sysman_state_lock();
-	sysman_diag_entry_t *dg = (sysman_diag_entry_t *)resolve_handle(hDiagnostics, STUB_HANDLE_DIAG);
+	sysman_diag_t *dg = (sysman_diag_t *)resolve_handle(hDiagnostics, STUB_HANDLE_DIAG);
 	if (!dg)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDiagnostics, UNSUPPORTED_FEATURE_DIAG_GET_TESTS))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dg->return_values.zesDiagnosticsGetTests)
 		return sysman_unlock_and_return(dg->return_values.zesDiagnosticsGetTests);
-	uint32_t n = dg->test_count;
+	uint32_t n = dg->tests_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!pTests) {
@@ -882,7 +882,7 @@ ze_result_t zesDiagnosticsRunTests(zes_diag_handle_t hDiagnostics, uint32_t star
 	sysman_state_lock();
 	(void)startIndex;
 	(void)endIndex;
-	sysman_diag_entry_t *dg = (sysman_diag_entry_t *)resolve_handle(hDiagnostics, STUB_HANDLE_DIAG);
+	sysman_diag_t *dg = (sysman_diag_t *)resolve_handle(hDiagnostics, STUB_HANDLE_DIAG);
 	if (!dg)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDiagnostics, UNSUPPORTED_FEATURE_DIAG_RUN_TESTS))
@@ -1004,7 +1004,7 @@ ze_result_t zesDeviceEnumEngineGroups(zes_device_handle_t hDevice, uint32_t *pCo
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumEngineGroups)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumEngineGroups);
-	uint32_t n = dev->engine_groups.count;
+	uint32_t n = dev->engine_groups_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phEngine) {
@@ -1023,7 +1023,7 @@ ze_result_t zesDeviceEnumEngineGroups(zes_device_handle_t hDevice, uint32_t *pCo
 ze_result_t zesEngineGetProperties(zes_engine_handle_t hEngine, zes_engine_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_engine_entry_t *eng = (sysman_engine_entry_t *)resolve_handle(hEngine, STUB_HANDLE_ENGINE);
+	sysman_engine_t *eng = (sysman_engine_t *)resolve_handle(hEngine, STUB_HANDLE_ENGINE);
 	if (!eng)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hEngine, UNSUPPORTED_FEATURE_ENGINE_GET_PROPERTIES))
@@ -1052,7 +1052,7 @@ ze_result_t zesEngineGetProperties(zes_engine_handle_t hEngine, zes_engine_prope
 ze_result_t zesEngineGetActivity(zes_engine_handle_t hEngine, zes_engine_stats_t *pStats)
 {
 	sysman_state_lock();
-	sysman_engine_entry_t *eng = (sysman_engine_entry_t *)resolve_handle(hEngine, STUB_HANDLE_ENGINE);
+	sysman_engine_t *eng = (sysman_engine_t *)resolve_handle(hEngine, STUB_HANDLE_ENGINE);
 	if (!eng)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hEngine, UNSUPPORTED_FEATURE_ENGINE_GET_ACTIVITY))
@@ -1068,7 +1068,7 @@ ze_result_t zesEngineGetActivity(zes_engine_handle_t hEngine, zes_engine_stats_t
 ze_result_t zesEngineGetActivityExt(zes_engine_handle_t hEngine, uint32_t *pCount, zes_engine_stats_t *pStats)
 {
 	sysman_state_lock();
-	sysman_engine_entry_t *eng = (sysman_engine_entry_t *)resolve_handle(hEngine, STUB_HANDLE_ENGINE);
+	sysman_engine_t *eng = (sysman_engine_t *)resolve_handle(hEngine, STUB_HANDLE_ENGINE);
 	if (!eng)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hEngine, UNSUPPORTED_FEATURE_ENGINE_GET_ACTIVITY_EXT))
@@ -1216,7 +1216,7 @@ ze_result_t zesDeviceEnumFabricPorts(zes_device_handle_t hDevice, uint32_t *pCou
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumFabricPorts)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumFabricPorts);
-	uint32_t n = dev->fabric_ports.count;
+	uint32_t n = dev->fabric_ports_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phPort) {
@@ -1235,7 +1235,7 @@ ze_result_t zesDeviceEnumFabricPorts(zes_device_handle_t hDevice, uint32_t *pCou
 ze_result_t zesFabricPortGetProperties(zes_fabric_port_handle_t hPort, zes_fabric_port_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_GET_PROPERTIES))
@@ -1257,7 +1257,7 @@ ze_result_t zesFabricPortGetProperties(zes_fabric_port_handle_t hPort, zes_fabri
 ze_result_t zesFabricPortGetLinkType(zes_fabric_port_handle_t hPort, zes_fabric_link_type_t *pLinkType)
 {
 	sysman_state_lock();
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_GET_LINK_TYPE))
@@ -1275,7 +1275,7 @@ ze_result_t zesFabricPortGetLinkType(zes_fabric_port_handle_t hPort, zes_fabric_
 ze_result_t zesFabricPortGetConfig(zes_fabric_port_handle_t hPort, zes_fabric_port_config_t *pConfig)
 {
 	sysman_state_lock();
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_GET_CONFIG))
@@ -1298,7 +1298,7 @@ ze_result_t zesFabricPortSetConfig(zes_fabric_port_handle_t hPort, const zes_fab
 {
 	sysman_state_lock();
 	(void)pConfig;
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_SET_CONFIG))
@@ -1311,7 +1311,7 @@ ze_result_t zesFabricPortSetConfig(zes_fabric_port_handle_t hPort, const zes_fab
 ze_result_t zesFabricPortGetState(zes_fabric_port_handle_t hPort, zes_fabric_port_state_t *pState)
 {
 	sysman_state_lock();
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_GET_STATE))
@@ -1333,7 +1333,7 @@ ze_result_t zesFabricPortGetState(zes_fabric_port_handle_t hPort, zes_fabric_por
 ze_result_t zesFabricPortGetThroughput(zes_fabric_port_handle_t hPort, zes_fabric_port_throughput_t *pThroughput)
 {
 	sysman_state_lock();
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_GET_THROUGHPUT))
@@ -1352,7 +1352,7 @@ ze_result_t zesFabricPortGetFabricErrorCounters(zes_fabric_port_handle_t hPort,
 												zes_fabric_port_error_counters_t *pErrors)
 {
 	sysman_state_lock();
-	sysman_fabric_port_entry_t *fp = (sysman_fabric_port_entry_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
+	sysman_fabric_port_t *fp = (sysman_fabric_port_t *)resolve_handle(hPort, STUB_HANDLE_FABRIC_PORT);
 	if (!fp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPort, UNSUPPORTED_FEATURE_FABRIC_PORT_GET_ERROR_COUNTERS))
@@ -1381,15 +1381,14 @@ ze_result_t zesFabricPortGetMultiPortThroughput(zes_device_handle_t hDevice, uin
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hDevice, UNSUPPORTED_FEATURE_FABRIC_PORT_MULTI_THROUGHPUT))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
-	if (dev->fabric_ports.count > 0 && dev->fabric_ports.entries[0].return_values.zesFabricPortGetMultiPortThroughput)
-		return sysman_unlock_and_return(dev->fabric_ports.entries[0].return_values.zesFabricPortGetMultiPortThroughput);
+	if (dev->fabric_ports_count > 0 && dev->fabric_ports[0].return_values.zesFabricPortGetMultiPortThroughput)
+		return sysman_unlock_and_return(dev->fabric_ports[0].return_values.zesFabricPortGetMultiPortThroughput);
 	if (!phPort || !pThroughput)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	for (uint32_t i = 0; i < numPorts; i++) {
 		if (!phPort[i] || !pThroughput[i])
 			continue;
-		sysman_fabric_port_entry_t *port =
-			(sysman_fabric_port_entry_t *)resolve_handle(phPort[i], STUB_HANDLE_FABRIC_PORT);
+		sysman_fabric_port_t *port = (sysman_fabric_port_t *)resolve_handle(phPort[i], STUB_HANDLE_FABRIC_PORT);
 		if (!port || !port->throughput)
 			continue;
 		*pThroughput[i] = *port->throughput;
@@ -1411,7 +1410,7 @@ ze_result_t zesDeviceEnumFans(zes_device_handle_t hDevice, uint32_t *pCount, zes
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumFans)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumFans);
-	uint32_t n = dev->fans.count;
+	uint32_t n = dev->fans_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phFan) {
@@ -1430,7 +1429,7 @@ ze_result_t zesDeviceEnumFans(zes_device_handle_t hDevice, uint32_t *pCount, zes
 ze_result_t zesFanGetProperties(zes_fan_handle_t hFan, zes_fan_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_fan_entry_t *fan = (sysman_fan_entry_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
+	sysman_fan_t *fan = (sysman_fan_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
 	if (!fan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFan, UNSUPPORTED_FEATURE_FAN_GET_PROPERTIES))
@@ -1452,7 +1451,7 @@ ze_result_t zesFanGetProperties(zes_fan_handle_t hFan, zes_fan_properties_t *pPr
 ze_result_t zesFanGetConfig(zes_fan_handle_t hFan, zes_fan_config_t *pConfig)
 {
 	sysman_state_lock();
-	sysman_fan_entry_t *fan = (sysman_fan_entry_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
+	sysman_fan_t *fan = (sysman_fan_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
 	if (!fan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFan, UNSUPPORTED_FEATURE_FAN_GET_CONFIG))
@@ -1474,7 +1473,7 @@ ze_result_t zesFanGetConfig(zes_fan_handle_t hFan, zes_fan_config_t *pConfig)
 ze_result_t zesFanSetDefaultMode(zes_fan_handle_t hFan)
 {
 	sysman_state_lock();
-	sysman_fan_entry_t *fan = (sysman_fan_entry_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
+	sysman_fan_t *fan = (sysman_fan_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
 	if (!fan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFan, UNSUPPORTED_FEATURE_FAN_SET_DEFAULT_MODE))
@@ -1488,7 +1487,7 @@ ze_result_t zesFanSetFixedSpeedMode(zes_fan_handle_t hFan, const zes_fan_speed_t
 {
 	sysman_state_lock();
 	(void)speed;
-	sysman_fan_entry_t *fan = (sysman_fan_entry_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
+	sysman_fan_t *fan = (sysman_fan_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
 	if (!fan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFan, UNSUPPORTED_FEATURE_FAN_SET_FIXED_SPEED_MODE))
@@ -1502,7 +1501,7 @@ ze_result_t zesFanSetSpeedTableMode(zes_fan_handle_t hFan, const zes_fan_speed_t
 {
 	sysman_state_lock();
 	(void)speedTable;
-	sysman_fan_entry_t *fan = (sysman_fan_entry_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
+	sysman_fan_t *fan = (sysman_fan_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
 	if (!fan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFan, UNSUPPORTED_FEATURE_FAN_SET_SPEED_TABLE_MODE))
@@ -1516,7 +1515,7 @@ ze_result_t zesFanGetState(zes_fan_handle_t hFan, zes_fan_speed_units_t units, i
 {
 	sysman_state_lock();
 	(void)units;
-	sysman_fan_entry_t *fan = (sysman_fan_entry_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
+	sysman_fan_t *fan = (sysman_fan_t *)resolve_handle(hFan, STUB_HANDLE_FAN);
 	if (!fan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFan, UNSUPPORTED_FEATURE_FAN_GET_STATE))
@@ -1543,7 +1542,7 @@ ze_result_t zesDeviceEnumFirmwares(zes_device_handle_t hDevice, uint32_t *pCount
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumFirmwares)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumFirmwares);
-	uint32_t n = dev->firmwares.count;
+	uint32_t n = dev->firmwares_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phFirmware) {
@@ -1562,7 +1561,7 @@ ze_result_t zesDeviceEnumFirmwares(zes_device_handle_t hDevice, uint32_t *pCount
 ze_result_t zesFirmwareGetProperties(zes_firmware_handle_t hFirmware, zes_firmware_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_firmware_entry_t *fw = (sysman_firmware_entry_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
+	sysman_firmware_t *fw = (sysman_firmware_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
 	if (!fw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFirmware, UNSUPPORTED_FEATURE_FW_GET_PROPERTIES))
@@ -1586,7 +1585,7 @@ ze_result_t zesFirmwareFlash(zes_firmware_handle_t hFirmware, void *pImage, uint
 	sysman_state_lock();
 	(void)pImage;
 	(void)size;
-	sysman_firmware_entry_t *fw = (sysman_firmware_entry_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
+	sysman_firmware_t *fw = (sysman_firmware_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
 	if (!fw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFirmware, UNSUPPORTED_FEATURE_FW_FLASH))
@@ -1599,7 +1598,7 @@ ze_result_t zesFirmwareFlash(zes_firmware_handle_t hFirmware, void *pImage, uint
 ze_result_t zesFirmwareGetFlashProgress(zes_firmware_handle_t hFirmware, uint32_t *pCompletionPercent)
 {
 	sysman_state_lock();
-	sysman_firmware_entry_t *fw = (sysman_firmware_entry_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
+	sysman_firmware_t *fw = (sysman_firmware_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
 	if (!fw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFirmware, UNSUPPORTED_FEATURE_FW_GET_FLASH_PROGRESS))
@@ -1615,7 +1614,7 @@ ze_result_t zesFirmwareGetFlashProgress(zes_firmware_handle_t hFirmware, uint32_
 ze_result_t zesFirmwareGetConsoleLogs(zes_firmware_handle_t hFirmware, size_t *pSize, char *pFirmwareLog)
 {
 	sysman_state_lock();
-	sysman_firmware_entry_t *fw = (sysman_firmware_entry_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
+	sysman_firmware_t *fw = (sysman_firmware_t *)resolve_handle(hFirmware, STUB_HANDLE_FIRMWARE);
 	if (!fw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFirmware, UNSUPPORTED_FEATURE_FW_GET_CONSOLE_LOGS))
@@ -1653,7 +1652,7 @@ ze_result_t zesDeviceEnumFrequencyDomains(zes_device_handle_t hDevice, uint32_t 
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumFrequencyDomains)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumFrequencyDomains);
-	uint32_t n = dev->frequency_domains.count;
+	uint32_t n = dev->frequency_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phFrequency) {
@@ -1672,7 +1671,7 @@ ze_result_t zesDeviceEnumFrequencyDomains(zes_device_handle_t hDevice, uint32_t 
 ze_result_t zesFrequencyGetProperties(zes_freq_handle_t hFrequency, zes_freq_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_freq_entry_t *fr = (sysman_freq_entry_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
+	sysman_freq_t *fr = (sysman_freq_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
 	if (!fr)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFrequency, UNSUPPORTED_FEATURE_FREQ_GET_PROPERTIES))
@@ -1694,14 +1693,14 @@ ze_result_t zesFrequencyGetProperties(zes_freq_handle_t hFrequency, zes_freq_pro
 ze_result_t zesFrequencyGetAvailableClocks(zes_freq_handle_t hFrequency, uint32_t *pCount, double *phFrequency)
 {
 	sysman_state_lock();
-	sysman_freq_entry_t *fr = (sysman_freq_entry_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
+	sysman_freq_t *fr = (sysman_freq_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
 	if (!fr)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFrequency, UNSUPPORTED_FEATURE_FREQ_GET_AVAILABLE_CLOCKS))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fr->return_values.zesFrequencyGetAvailableClocks)
 		return sysman_unlock_and_return(fr->return_values.zesFrequencyGetAvailableClocks);
-	uint32_t n = fr->available_clock_count;
+	uint32_t n = fr->available_clocks_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phFrequency) {
@@ -1718,7 +1717,7 @@ ze_result_t zesFrequencyGetAvailableClocks(zes_freq_handle_t hFrequency, uint32_
 ze_result_t zesFrequencyGetRange(zes_freq_handle_t hFrequency, zes_freq_range_t *pLimits)
 {
 	sysman_state_lock();
-	sysman_freq_entry_t *fr = (sysman_freq_entry_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
+	sysman_freq_t *fr = (sysman_freq_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
 	if (!fr)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFrequency, UNSUPPORTED_FEATURE_FREQ_GET_RANGE))
@@ -1737,7 +1736,7 @@ ze_result_t zesFrequencySetRange(zes_freq_handle_t hFrequency, const zes_freq_ra
 {
 	sysman_state_lock();
 	(void)pLimits;
-	sysman_freq_entry_t *fr = (sysman_freq_entry_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
+	sysman_freq_t *fr = (sysman_freq_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
 	if (!fr)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFrequency, UNSUPPORTED_FEATURE_FREQ_SET_RANGE))
@@ -1750,7 +1749,7 @@ ze_result_t zesFrequencySetRange(zes_freq_handle_t hFrequency, const zes_freq_ra
 ze_result_t zesFrequencyGetState(zes_freq_handle_t hFrequency, zes_freq_state_t *pState)
 {
 	sysman_state_lock();
-	sysman_freq_entry_t *fr = (sysman_freq_entry_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
+	sysman_freq_t *fr = (sysman_freq_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
 	if (!fr)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFrequency, UNSUPPORTED_FEATURE_FREQ_GET_STATE))
@@ -1772,7 +1771,7 @@ ze_result_t zesFrequencyGetState(zes_freq_handle_t hFrequency, zes_freq_state_t 
 ze_result_t zesFrequencyGetThrottleTime(zes_freq_handle_t hFrequency, zes_freq_throttle_time_t *pThrottleTime)
 {
 	sysman_state_lock();
-	sysman_freq_entry_t *fr = (sysman_freq_entry_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
+	sysman_freq_t *fr = (sysman_freq_t *)resolve_handle(hFrequency, STUB_HANDLE_FREQ);
 	if (!fr)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hFrequency, UNSUPPORTED_FEATURE_FREQ_GET_THROTTLE_TIME))
@@ -1801,7 +1800,7 @@ ze_result_t zesDeviceEnumLeds(zes_device_handle_t hDevice, uint32_t *pCount, zes
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumLeds)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumLeds);
-	uint32_t n = dev->leds.count;
+	uint32_t n = dev->leds_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phLed) {
@@ -1820,7 +1819,7 @@ ze_result_t zesDeviceEnumLeds(zes_device_handle_t hDevice, uint32_t *pCount, zes
 ze_result_t zesLedGetProperties(zes_led_handle_t hLed, zes_led_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_led_entry_t *led = (sysman_led_entry_t *)resolve_handle(hLed, STUB_HANDLE_LED);
+	sysman_led_t *led = (sysman_led_t *)resolve_handle(hLed, STUB_HANDLE_LED);
 	if (!led)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hLed, UNSUPPORTED_FEATURE_LED_GET_PROPERTIES))
@@ -1842,7 +1841,7 @@ ze_result_t zesLedGetProperties(zes_led_handle_t hLed, zes_led_properties_t *pPr
 ze_result_t zesLedGetState(zes_led_handle_t hLed, zes_led_state_t *pState)
 {
 	sysman_state_lock();
-	sysman_led_entry_t *led = (sysman_led_entry_t *)resolve_handle(hLed, STUB_HANDLE_LED);
+	sysman_led_t *led = (sysman_led_t *)resolve_handle(hLed, STUB_HANDLE_LED);
 	if (!led)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hLed, UNSUPPORTED_FEATURE_LED_GET_STATE))
@@ -1865,7 +1864,7 @@ ze_result_t zesLedSetState(zes_led_handle_t hLed, ze_bool_t enable)
 {
 	sysman_state_lock();
 	(void)enable;
-	sysman_led_entry_t *led = (sysman_led_entry_t *)resolve_handle(hLed, STUB_HANDLE_LED);
+	sysman_led_t *led = (sysman_led_t *)resolve_handle(hLed, STUB_HANDLE_LED);
 	if (!led)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hLed, UNSUPPORTED_FEATURE_LED_SET_STATE))
@@ -1879,7 +1878,7 @@ ze_result_t zesLedSetColor(zes_led_handle_t hLed, const zes_led_color_t *pColor)
 {
 	sysman_state_lock();
 	(void)pColor;
-	sysman_led_entry_t *led = (sysman_led_entry_t *)resolve_handle(hLed, STUB_HANDLE_LED);
+	sysman_led_t *led = (sysman_led_t *)resolve_handle(hLed, STUB_HANDLE_LED);
 	if (!led)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hLed, UNSUPPORTED_FEATURE_LED_SET_COLOR))
@@ -1903,7 +1902,7 @@ ze_result_t zesDeviceEnumMemoryModules(zes_device_handle_t hDevice, uint32_t *pC
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumMemoryModules)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumMemoryModules);
-	uint32_t n = dev->memory_modules.count;
+	uint32_t n = dev->memory_modules_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phMemory) {
@@ -1922,7 +1921,7 @@ ze_result_t zesDeviceEnumMemoryModules(zes_device_handle_t hDevice, uint32_t *pC
 ze_result_t zesMemoryGetProperties(zes_mem_handle_t hMemory, zes_mem_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_mem_entry_t *mem = (sysman_mem_entry_t *)resolve_handle(hMemory, STUB_HANDLE_MEM);
+	sysman_mem_t *mem = (sysman_mem_t *)resolve_handle(hMemory, STUB_HANDLE_MEM);
 	if (!mem)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hMemory, UNSUPPORTED_FEATURE_MEM_GET_PROPERTIES))
@@ -1944,7 +1943,7 @@ ze_result_t zesMemoryGetProperties(zes_mem_handle_t hMemory, zes_mem_properties_
 ze_result_t zesMemoryGetState(zes_mem_handle_t hMemory, zes_mem_state_t *pState)
 {
 	sysman_state_lock();
-	sysman_mem_entry_t *mem = (sysman_mem_entry_t *)resolve_handle(hMemory, STUB_HANDLE_MEM);
+	sysman_mem_t *mem = (sysman_mem_t *)resolve_handle(hMemory, STUB_HANDLE_MEM);
 	if (!mem)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hMemory, UNSUPPORTED_FEATURE_MEM_GET_STATE))
@@ -1966,7 +1965,7 @@ ze_result_t zesMemoryGetState(zes_mem_handle_t hMemory, zes_mem_state_t *pState)
 ze_result_t zesMemoryGetBandwidth(zes_mem_handle_t hMemory, zes_mem_bandwidth_t *pBandwidth)
 {
 	sysman_state_lock();
-	sysman_mem_entry_t *mem = (sysman_mem_entry_t *)resolve_handle(hMemory, STUB_HANDLE_MEM);
+	sysman_mem_t *mem = (sysman_mem_t *)resolve_handle(hMemory, STUB_HANDLE_MEM);
 	if (!mem)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hMemory, UNSUPPORTED_FEATURE_MEM_GET_BANDWIDTH))
@@ -1996,7 +1995,7 @@ ze_result_t zesDeviceEnumPerformanceFactorDomains(zes_device_handle_t hDevice, u
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumPerformanceFactorDomains)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumPerformanceFactorDomains);
-	uint32_t n = dev->performance_domains.count;
+	uint32_t n = dev->performance_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phPerf) {
@@ -2015,7 +2014,7 @@ ze_result_t zesDeviceEnumPerformanceFactorDomains(zes_device_handle_t hDevice, u
 ze_result_t zesPerformanceFactorGetProperties(zes_perf_handle_t hPerf, zes_perf_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_perf_entry_t *pf = (sysman_perf_entry_t *)resolve_handle(hPerf, STUB_HANDLE_PERF);
+	sysman_perf_t *pf = (sysman_perf_t *)resolve_handle(hPerf, STUB_HANDLE_PERF);
 	if (!pf)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPerf, UNSUPPORTED_FEATURE_PERF_GET_PROPERTIES))
@@ -2037,7 +2036,7 @@ ze_result_t zesPerformanceFactorGetProperties(zes_perf_handle_t hPerf, zes_perf_
 ze_result_t zesPerformanceFactorGetConfig(zes_perf_handle_t hPerf, double *pFactor)
 {
 	sysman_state_lock();
-	sysman_perf_entry_t *pf = (sysman_perf_entry_t *)resolve_handle(hPerf, STUB_HANDLE_PERF);
+	sysman_perf_t *pf = (sysman_perf_t *)resolve_handle(hPerf, STUB_HANDLE_PERF);
 	if (!pf)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPerf, UNSUPPORTED_FEATURE_PERF_GET_CONFIG))
@@ -2054,7 +2053,7 @@ ze_result_t zesPerformanceFactorSetConfig(zes_perf_handle_t hPerf, double factor
 {
 	sysman_state_lock();
 	(void)factor;
-	sysman_perf_entry_t *pf = (sysman_perf_entry_t *)resolve_handle(hPerf, STUB_HANDLE_PERF);
+	sysman_perf_t *pf = (sysman_perf_t *)resolve_handle(hPerf, STUB_HANDLE_PERF);
 	if (!pf)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPerf, UNSUPPORTED_FEATURE_PERF_SET_CONFIG))
@@ -2078,7 +2077,7 @@ ze_result_t zesDeviceEnumPowerDomains(zes_device_handle_t hDevice, uint32_t *pCo
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumPowerDomains)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumPowerDomains);
-	uint32_t n = dev->power_domains.count;
+	uint32_t n = dev->power_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phPower) {
@@ -2097,7 +2096,7 @@ ze_result_t zesDeviceEnumPowerDomains(zes_device_handle_t hDevice, uint32_t *pCo
 ze_result_t zesPowerGetProperties(zes_pwr_handle_t hPower, zes_power_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_power_entry_t *pw = (sysman_power_entry_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
 	if (!pw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_GET_PROPERTIES))
@@ -2127,7 +2126,7 @@ ze_result_t zesPowerGetProperties(zes_pwr_handle_t hPower, zes_power_properties_
 ze_result_t zesPowerGetEnergyCounter(zes_pwr_handle_t hPower, zes_power_energy_counter_t *pEnergy)
 {
 	sysman_state_lock();
-	sysman_power_entry_t *pw = (sysman_power_entry_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
 	if (!pw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_GET_ENERGY_COUNTER))
@@ -2145,14 +2144,14 @@ ze_result_t zesPowerGetEnergyCounter(zes_pwr_handle_t hPower, zes_power_energy_c
 ze_result_t zesPowerGetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_power_limit_ext_desc_t *pSustained)
 {
 	sysman_state_lock();
-	sysman_power_entry_t *pw = (sysman_power_entry_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
 	if (!pw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_GET_LIMITS_EXT))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (pw->return_values.zesPowerGetLimitsExt)
 		return sysman_unlock_and_return(pw->return_values.zesPowerGetLimitsExt);
-	uint32_t n = pw->limit_count;
+	uint32_t n = pw->limits_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!pSustained) {
@@ -2171,7 +2170,7 @@ ze_result_t zesPowerSetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 	sysman_state_lock();
 	(void)pCount;
 	(void)pSustained;
-	sysman_power_entry_t *pw = (sysman_power_entry_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
 	if (!pw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT))
@@ -2184,7 +2183,7 @@ ze_result_t zesPowerSetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 ze_result_t zesPowerGetEnergyThreshold(zes_pwr_handle_t hPower, zes_energy_threshold_t *pThreshold)
 {
 	sysman_state_lock();
-	sysman_power_entry_t *pw = (sysman_power_entry_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
 	if (!pw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_GET_ENERGY_THRESHOLD))
@@ -2203,7 +2202,7 @@ ze_result_t zesPowerSetEnergyThreshold(zes_pwr_handle_t hPower, double threshold
 {
 	sysman_state_lock();
 	(void)threshold;
-	sysman_power_entry_t *pw = (sysman_power_entry_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
 	if (!pw)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_SET_ENERGY_THRESHOLD))
@@ -2227,7 +2226,7 @@ ze_result_t zesDeviceEnumPsus(zes_device_handle_t hDevice, uint32_t *pCount, zes
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumPsus)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumPsus);
-	uint32_t n = dev->psus.count;
+	uint32_t n = dev->psus_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phPsu) {
@@ -2246,7 +2245,7 @@ ze_result_t zesDeviceEnumPsus(zes_device_handle_t hDevice, uint32_t *pCount, zes
 ze_result_t zesPsuGetProperties(zes_psu_handle_t hPsu, zes_psu_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_psu_entry_t *psu = (sysman_psu_entry_t *)resolve_handle(hPsu, STUB_HANDLE_PSU);
+	sysman_psu_t *psu = (sysman_psu_t *)resolve_handle(hPsu, STUB_HANDLE_PSU);
 	if (!psu)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPsu, UNSUPPORTED_FEATURE_PSU_GET_PROPERTIES))
@@ -2268,7 +2267,7 @@ ze_result_t zesPsuGetProperties(zes_psu_handle_t hPsu, zes_psu_properties_t *pPr
 ze_result_t zesPsuGetState(zes_psu_handle_t hPsu, zes_psu_state_t *pState)
 {
 	sysman_state_lock();
-	sysman_psu_entry_t *psu = (sysman_psu_entry_t *)resolve_handle(hPsu, STUB_HANDLE_PSU);
+	sysman_psu_t *psu = (sysman_psu_t *)resolve_handle(hPsu, STUB_HANDLE_PSU);
 	if (!psu)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hPsu, UNSUPPORTED_FEATURE_PSU_GET_STATE))
@@ -2301,7 +2300,7 @@ ze_result_t zesDeviceEnumRasErrorSets(zes_device_handle_t hDevice, uint32_t *pCo
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumRasErrorSets)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumRasErrorSets);
-	uint32_t n = dev->ras_error_sets.count;
+	uint32_t n = dev->ras_error_sets_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phRas) {
@@ -2320,7 +2319,7 @@ ze_result_t zesDeviceEnumRasErrorSets(zes_device_handle_t hDevice, uint32_t *pCo
 ze_result_t zesRasGetProperties(zes_ras_handle_t hRas, zes_ras_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	sysman_ras_t *ras = (sysman_ras_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
 	if (!ras)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_GET_PROPERTIES))
@@ -2342,7 +2341,7 @@ ze_result_t zesRasGetProperties(zes_ras_handle_t hRas, zes_ras_properties_t *pPr
 ze_result_t zesRasGetConfig(zes_ras_handle_t hRas, zes_ras_config_t *pConfig)
 {
 	sysman_state_lock();
-	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	sysman_ras_t *ras = (sysman_ras_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
 	if (!ras)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_GET_CONFIG))
@@ -2365,7 +2364,7 @@ ze_result_t zesRasSetConfig(zes_ras_handle_t hRas, const zes_ras_config_t *pConf
 {
 	sysman_state_lock();
 	(void)pConfig;
-	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	sysman_ras_t *ras = (sysman_ras_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
 	if (!ras)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_SET_CONFIG))
@@ -2379,7 +2378,7 @@ ze_result_t zesRasGetState(zes_ras_handle_t hRas, ze_bool_t clear, zes_ras_state
 {
 	sysman_state_lock();
 	(void)clear;
-	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	sysman_ras_t *ras = (sysman_ras_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
 	if (!ras)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_GET_STATE))
@@ -2401,7 +2400,7 @@ ze_result_t zesRasGetState(zes_ras_handle_t hRas, ze_bool_t clear, zes_ras_state
 ze_result_t zesRasGetStateExp(zes_ras_handle_t hRas, uint32_t *pCount, zes_ras_state_exp_t *pStates)
 {
 	sysman_state_lock();
-	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	sysman_ras_t *ras = (sysman_ras_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
 	if (!ras)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP))
@@ -2426,7 +2425,7 @@ ze_result_t zesRasGetStateExp(zes_ras_handle_t hRas, uint32_t *pCount, zes_ras_s
 ze_result_t zesRasClearStateExp(zes_ras_handle_t hRas, zes_ras_error_category_exp_t cat)
 {
 	sysman_state_lock();
-	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	sysman_ras_t *ras = (sysman_ras_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
 	if (!ras)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP))
@@ -2457,7 +2456,7 @@ ze_result_t zesDeviceEnumSchedulers(zes_device_handle_t hDevice, uint32_t *pCoun
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumSchedulers)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumSchedulers);
-	uint32_t n = dev->schedulers.count;
+	uint32_t n = dev->schedulers_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phScheduler) {
@@ -2476,7 +2475,7 @@ ze_result_t zesDeviceEnumSchedulers(zes_device_handle_t hDevice, uint32_t *pCoun
 ze_result_t zesSchedulerGetProperties(zes_sched_handle_t hScheduler, zes_sched_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES))
@@ -2498,7 +2497,7 @@ ze_result_t zesSchedulerGetProperties(zes_sched_handle_t hScheduler, zes_sched_p
 ze_result_t zesSchedulerGetCurrentMode(zes_sched_handle_t hScheduler, zes_sched_mode_t *pMode)
 {
 	sysman_state_lock();
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE))
@@ -2516,7 +2515,7 @@ ze_result_t zesSchedulerGetTimeoutModeProperties(zes_sched_handle_t hScheduler, 
 {
 	sysman_state_lock();
 	(void)getDefaults;
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_GET_TIMEOUT_MODE_PROPS))
@@ -2540,7 +2539,7 @@ ze_result_t zesSchedulerGetTimesliceModeProperties(zes_sched_handle_t hScheduler
 {
 	sysman_state_lock();
 	(void)getDefaults;
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_GET_TIMESLICE_MODE_PROPS))
@@ -2564,7 +2563,7 @@ ze_result_t zesSchedulerSetTimeoutMode(zes_sched_handle_t hScheduler, zes_sched_
 {
 	sysman_state_lock();
 	(void)pProperties;
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_SET_TIMEOUT_MODE))
@@ -2581,7 +2580,7 @@ ze_result_t zesSchedulerSetTimesliceMode(zes_sched_handle_t hScheduler, zes_sche
 										 ze_bool_t *pNeedReload)
 {
 	sysman_state_lock();
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_SET_TIMESLICE_MODE))
@@ -2597,7 +2596,7 @@ ze_result_t zesSchedulerSetTimesliceMode(zes_sched_handle_t hScheduler, zes_sche
 ze_result_t zesSchedulerSetExclusiveMode(zes_sched_handle_t hScheduler, ze_bool_t *pNeedReload)
 {
 	sysman_state_lock();
-	sysman_sched_entry_t *sc = (sysman_sched_entry_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
+	sysman_sched_t *sc = (sysman_sched_t *)resolve_handle(hScheduler, STUB_HANDLE_SCHED);
 	if (!sc)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hScheduler, UNSUPPORTED_FEATURE_SCHED_SET_EXCLUSIVE_MODE))
@@ -2624,7 +2623,7 @@ ze_result_t zesDeviceEnumStandbyDomains(zes_device_handle_t hDevice, uint32_t *p
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumStandbyDomains)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumStandbyDomains);
-	uint32_t n = dev->standby_domains.count;
+	uint32_t n = dev->standby_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phStandby) {
@@ -2643,7 +2642,7 @@ ze_result_t zesDeviceEnumStandbyDomains(zes_device_handle_t hDevice, uint32_t *p
 ze_result_t zesStandbyGetProperties(zes_standby_handle_t hStandby, zes_standby_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_standby_entry_t *sb = (sysman_standby_entry_t *)resolve_handle(hStandby, STUB_HANDLE_STANDBY);
+	sysman_standby_t *sb = (sysman_standby_t *)resolve_handle(hStandby, STUB_HANDLE_STANDBY);
 	if (!sb)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hStandby, UNSUPPORTED_FEATURE_STANDBY_GET_PROPERTIES))
@@ -2665,7 +2664,7 @@ ze_result_t zesStandbyGetProperties(zes_standby_handle_t hStandby, zes_standby_p
 ze_result_t zesStandbyGetMode(zes_standby_handle_t hStandby, zes_standby_promo_mode_t *pMode)
 {
 	sysman_state_lock();
-	sysman_standby_entry_t *sb = (sysman_standby_entry_t *)resolve_handle(hStandby, STUB_HANDLE_STANDBY);
+	sysman_standby_t *sb = (sysman_standby_t *)resolve_handle(hStandby, STUB_HANDLE_STANDBY);
 	if (!sb)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hStandby, UNSUPPORTED_FEATURE_STANDBY_GET_MODE))
@@ -2682,7 +2681,7 @@ ze_result_t zesStandbySetMode(zes_standby_handle_t hStandby, zes_standby_promo_m
 {
 	sysman_state_lock();
 	(void)mode;
-	sysman_standby_entry_t *sb = (sysman_standby_entry_t *)resolve_handle(hStandby, STUB_HANDLE_STANDBY);
+	sysman_standby_t *sb = (sysman_standby_t *)resolve_handle(hStandby, STUB_HANDLE_STANDBY);
 	if (!sb)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hStandby, UNSUPPORTED_FEATURE_STANDBY_SET_MODE))
@@ -2707,7 +2706,7 @@ ze_result_t zesDeviceEnumTemperatureSensors(zes_device_handle_t hDevice, uint32_
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (dev->return_values.zesDeviceEnumTemperatureSensors)
 		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumTemperatureSensors);
-	uint32_t n = dev->temperature_sensors.count;
+	uint32_t n = dev->temperature_sensors_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!phTemperature) {
@@ -2726,7 +2725,7 @@ ze_result_t zesDeviceEnumTemperatureSensors(zes_device_handle_t hDevice, uint32_
 ze_result_t zesTemperatureGetProperties(zes_temp_handle_t hTemperature, zes_temp_properties_t *pProperties)
 {
 	sysman_state_lock();
-	sysman_temp_entry_t *temp = (sysman_temp_entry_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
+	sysman_temp_t *temp = (sysman_temp_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
 	if (!temp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hTemperature, UNSUPPORTED_FEATURE_TEMP_GET_PROPERTIES))
@@ -2748,7 +2747,7 @@ ze_result_t zesTemperatureGetProperties(zes_temp_handle_t hTemperature, zes_temp
 ze_result_t zesTemperatureGetConfig(zes_temp_handle_t hTemperature, zes_temp_config_t *pConfig)
 {
 	sysman_state_lock();
-	sysman_temp_entry_t *temp = (sysman_temp_entry_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
+	sysman_temp_t *temp = (sysman_temp_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
 	if (!temp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hTemperature, UNSUPPORTED_FEATURE_TEMP_GET_CONFIG))
@@ -2771,7 +2770,7 @@ ze_result_t zesTemperatureSetConfig(zes_temp_handle_t hTemperature, const zes_te
 {
 	sysman_state_lock();
 	(void)pConfig;
-	sysman_temp_entry_t *temp = (sysman_temp_entry_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
+	sysman_temp_t *temp = (sysman_temp_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
 	if (!temp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hTemperature, UNSUPPORTED_FEATURE_TEMP_SET_CONFIG))
@@ -2784,7 +2783,7 @@ ze_result_t zesTemperatureSetConfig(zes_temp_handle_t hTemperature, const zes_te
 ze_result_t zesTemperatureGetState(zes_temp_handle_t hTemperature, double *pTemperature)
 {
 	sysman_state_lock();
-	sysman_temp_entry_t *temp = (sysman_temp_entry_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
+	sysman_temp_t *temp = (sysman_temp_t *)resolve_handle(hTemperature, STUB_HANDLE_TEMP);
 	if (!temp)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	if (is_unsupported(hTemperature, UNSUPPORTED_FEATURE_TEMP_GET_STATE))
