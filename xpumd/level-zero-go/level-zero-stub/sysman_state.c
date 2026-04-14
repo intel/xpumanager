@@ -591,7 +591,7 @@ static int sysman_state_load_locked(const char *path)
 	}
 
 	sysman_state_t *parsed = NULL;
-	cyaml_err_t err = cyaml_load_file(resolved, &cyaml_cfg, &state_schema, (cyaml_data_t **)&parsed, NULL);
+	cyaml_err_t err = cyaml_load_file(resolved, &cyaml_cfg, &sysman_state_schema, (cyaml_data_t **)&parsed, NULL);
 	if (err != CYAML_OK) {
 		fprintf(stderr, "stub: YAML parse error in '%s': %s\n", resolved, cyaml_strerror(err));
 		return -1;
