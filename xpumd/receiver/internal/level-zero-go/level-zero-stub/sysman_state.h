@@ -528,12 +528,6 @@ typedef struct
 
 typedef struct
 {
-	uint32_t count;
-	sysman_oc_entry_t *entries;
-} sysman_oc_domains_t;
-
-typedef struct
-{
 	zes_pci_properties_t *properties;
 	zes_pci_state_t *state;
 	uint32_t bars_count;
@@ -718,7 +712,6 @@ typedef struct
 	sysman_unsupported_feature_t *unsupported_features;
 	sysman_device_properties_info_t *properties;
 	zes_device_state_t *state;
-	zes_reset_properties_t reset_properties;
 	sysman_pci_info_t pci;
 	sysman_ecc_info_t *ecc;
 	sysman_overclock_info_t *overclock;
