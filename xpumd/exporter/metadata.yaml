@@ -3,7 +3,7 @@ type: intelxpuinfo
 status:
   class: exporter
   stability:
-    development: [metrics]
+    development: [metrics, logs]
   codeowners:
     active: [marquiz]
 
