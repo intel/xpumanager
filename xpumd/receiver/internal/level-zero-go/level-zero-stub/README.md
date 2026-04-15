@@ -6,6 +6,7 @@ API. The stub driver is intended for use in unit and integration tests.
 ## Requirements
 
 - gcc
+- libyaml
 - libcyaml
 - libpthread
 
