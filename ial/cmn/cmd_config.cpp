@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <ecc.h>
 #include <fabric.h>
+#include <fan.h>
+#include <charconv>
 #include <format>
 #include <frequency.h>
 #include <nlohmann/json.hpp>
@@ -24,9 +26,16 @@
 #include <cinttypes>
 #include <cmath>
 #include <cstdlib>
+#include <limits>
 
 // Conversion factors
 constexpr uint64_t W_TO_MW = 1000;
+
+// Fan curve input limits
+constexpr uint32_t FAN_CURVE_TEMP_MIN_C = 0;
+constexpr uint32_t FAN_CURVE_TEMP_MAX_C = 150;
+constexpr int32_t FAN_CURVE_RPM_MIN = 0;
+constexpr int32_t FAN_CURVE_RPM_MAX = 20000;
 
 // Scheduler time limits in microseconds
 constexpr uint64_t SCHEDULER_TIME_MIN = 5000;
@@ -48,6 +57,10 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::PCIEDOWNGRADE,
 	 {{"pciedowngrade", required_argument, 0, 0}, &cmdConfig::setPCIeGenUpdate, false, ""}},
 	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
+	{configCmdType::FANSPEED, {{"fanspeed", required_argument, 0, 0}, &cmdConfig::setFanSpeed, false, ""}},
+	{configCmdType::FANCURVE, {{"fancurve", required_argument, 0, 0}, &cmdConfig::setFanCurve, false, ""}},
+	{configCmdType::FANCURVERPM, {{"fancurve-rpm", required_argument, 0, 0}, &cmdConfig::setFanCurveRpm, false, ""}},
+	{configCmdType::FANID, {{"fanid", required_argument, 0, 0}, nullptr, false, ""}},
 	{configCmdType::POWERTYPE, {{"powertype", required_argument, 0, 0}, nullptr, false, ""}},
 };
 
@@ -523,6 +536,44 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 	deviceJson["pl_package_peak"] = plPackagePeak;
 	deviceJson["power_valid_range"] = powerValidRange;
 
+	// Fan config — per-fan index
+	{
+		auto *fanHandler = reinterpret_cast<::fan *>(d->dev->getFan());
+		nlohmann::ordered_json fansArray = nlohmann::ordered_json::array();
+		if (fanHandler != nullptr) {
+			uint32_t fanCount = 0;
+			if (fanHandler->getFanCount(fanCount) == ZE_RESULT_SUCCESS) {
+				for (uint32_t fanId = 0; fanId < fanCount; ++fanId) {
+					nlohmann::ordered_json fanEntry;
+					fanEntry["id"] = fanId;
+					zes_fan_config_t fanCfg = {};
+					if (fanHandler->getConfig(fanCfg, static_cast<int32_t>(fanId)) == ZE_RESULT_SUCCESS) {
+						if (fanCfg.mode == ZES_FAN_SPEED_MODE_DEFAULT) {
+							fanEntry["mode"] = "default";
+						} else if (fanCfg.mode == ZES_FAN_SPEED_MODE_FIXED) {
+							fanEntry["mode"] = "fixed";
+							fanEntry["fixed_speed"] = fanCfg.speedFixed.speed;
+							fanEntry["fixed_speed_units"] =
+								(fanCfg.speedFixed.units == ZES_FAN_SPEED_UNITS_PERCENT) ? "percent" : "rpm";
+						} else if (fanCfg.mode == ZES_FAN_SPEED_MODE_TABLE) {
+							fanEntry["mode"] = "table";
+						} else {
+							fanEntry["mode"] = "N/A";
+						}
+					} else {
+						fanEntry["mode"] = "N/A";
+					}
+					int32_t speedPct = -1;
+					if (fanHandler->getSpeedPercentById(fanId, speedPct) == ZE_RESULT_SUCCESS && speedPct >= 0) {
+						fanEntry["speed_percent"] = speedPct;
+					}
+					fansArray.push_back(fanEntry);
+				}
+			}
+		}
+		deviceJson["fans"] = fansArray;
+	}
+
 	nlohmann::ordered_json tileConfigArray = nlohmann::ordered_json::array();
 
 	for (uint32_t tileId = 0; tileId < tileCount; ++tileId) {
@@ -598,6 +649,55 @@ static std::vector<std::string> split(const std::string &str, char delimiter)
 }
 
 /**
+ * @brief Parses an unsigned integer from a string without throwing exceptions.
+ *
+ * @param[in] input String to parse.
+ * @param[out] value Parsed uint32_t value.
+ * @return true if parsing succeeds and consumes the full string; false otherwise.
+ */
+static bool parseUint32NoThrow(const std::string &input, uint32_t &value)
+{
+	auto result = std::from_chars(input.data(), input.data() + input.size(), value);
+	return result.ec == std::errc() && result.ptr == input.data() + input.size();
+}
+
+/**
+ * @brief Parses optional fan ID selection from command options.
+ *
+ * Supports -1 (all fans) or 0..N-1 (single fan).
+ *
+ * @param[out] fanId Parsed fan target ID.
+ * @return ze_result_t ZE_RESULT_SUCCESS on success.
+ */
+ze_result_t cmdConfig::getSelectedFanId(int32_t &fanId)
+{
+	fanId = -1;
+	if (!configCmds[configCmdType::FANID].enabled) {
+		return ZE_RESULT_SUCCESS;
+	}
+
+	const std::string &fanIdStr = configCmds[configCmdType::FANID].val;
+	if (fanIdStr.empty()) {
+		ERR("Error: --fanid cannot be empty. Use -1 for all fans, or 0..N-1 for a single fan.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	try {
+		size_t pos = 0;
+		long long parsed = std::stoll(fanIdStr, &pos);
+		if (pos != fanIdStr.size() || parsed < -1 || parsed > std::numeric_limits<int32_t>::max()) {
+			ERR("Error: invalid --fanid '{}'. Use -1 for all fans, or 0..N-1 for a single fan.\n", fanIdStr.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		fanId = static_cast<int32_t>(parsed);
+		return ZE_RESULT_SUCCESS;
+	} catch (const std::exception &) {
+		ERR("Error: invalid --fanid '{}'. Use -1 for all fans, or 0..N-1 for a single fan.\n", fanIdStr.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+}
+
+/**
  * @brief Adds help commands to the provided help list.
  *
  * @param helpList A pointer to a list of help commands.
@@ -624,6 +724,18 @@ void cmdConfig::help(HELP helpType)
 		helpCmd(HEADING, "%s config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config -d [deviceId] --pciedowngrade [0|1] 0:disable; 1:enable", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING,
+							   "%s config -d [deviceId] [--fanid <id|-1>] --fanspeed [value] 0-100(percent);default",
+							   progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING,
+				"%s config -d [deviceId] [--fanid <id|-1>] --fancurve [curve] temp:speed pairs, e.g. 40:25,60:50,80:90",
+				progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING,
+				"%s config -d [deviceId] [--fanid <id|-1>] --fancurve-rpm [curve] temp:rpm pairs, e.g. 40:1200,70:2800",
+				progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "--fanid                     Fan target: -1 (all fans, default) or 0..N-1"));
 
 	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --reset", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
@@ -661,6 +773,16 @@ void cmdConfig::help(HELP helpType)
 		"--powertype                 Device-level power limit type. Valid options: \"sustain\"; \"peak\"; \"burst\""));
 	helpList.push_back(
 		helpCmd(HEADING, "--pciedowngrade                 Enable/disable PCIe downgrade setting. 0:disable; 1:enable"));
+	helpList.push_back(helpCmd(HEADING, "--fanspeed                  Set fan speed percentage: 0-100; default (auto)"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING, "Examples: --fanspeed 50   --fanspeed 50%%   --fanspeed default   --fanid 1 --fanspeed 50"));
+	helpList.push_back(
+		helpCmd(HEADING, "--fancurve                  Set fan curve in percent: temp:speed,temp:speed,..."));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "Examples: --fancurve 40:25,60:50,80:90   --fancurve 40:25%,60:50%,80:90%"));
+	helpList.push_back(helpCmd(HEADING, "--fancurve-rpm              Set fan curve in RPM: temp:rpm,temp:rpm,..."));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "Examples: --fancurve-rpm 40:1200,70:2800   --fancurve-rpm 40:1200rpm,70:2800rpm"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -773,6 +895,43 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 	table.addRow("", "", "");
 	table.addRow("", "", " PCIe Gen4 Downgrade:");
 	table.addRow("", "", "  Current: N/A");
+
+	// Fan configuration (device-level)
+	table.addRow("", "", "");
+	table.addRow("", "", " Fan (Mode / Speed %):");
+	auto *fanHandler = reinterpret_cast<::fan *>(d->dev->getFan());
+	if (fanHandler == nullptr) {
+		table.addRow("", "", "  Current: N/A");
+	} else {
+		uint32_t fanCount = 0;
+		ze_result_t fanCountResult = fanHandler->getFanCount(fanCount);
+		if (fanCountResult != ZE_RESULT_SUCCESS || fanCount == 0) {
+			table.addRow("", "", "  Current: N/A");
+		} else {
+			for (uint32_t fanId = 0; fanId < fanCount; ++fanId) {
+				std::string modeText = "N/A";
+				zes_fan_config_t fanCfg = {};
+				ze_result_t fanResult = fanHandler->getConfig(fanCfg, static_cast<int32_t>(fanId));
+				if (fanResult == ZE_RESULT_SUCCESS) {
+					if (fanCfg.mode == ZES_FAN_SPEED_MODE_DEFAULT) {
+						modeText = "Default";
+					} else if (fanCfg.mode == ZES_FAN_SPEED_MODE_FIXED) {
+						modeText = "Fixed";
+					} else if (fanCfg.mode == ZES_FAN_SPEED_MODE_TABLE) {
+						modeText = "Table";
+					}
+				}
+
+				int32_t speedPct = -1;
+				ze_result_t speedResult = fanHandler->getSpeedPercentById(fanId, speedPct);
+				if (speedResult == ZE_RESULT_SUCCESS && speedPct >= 0) {
+					table.addRow("", "", std::format("  Fan {}: {} / {}%", fanId, modeText, speedPct));
+				} else {
+					table.addRow("", "", std::format("  Fan {}: {} / N/A", fanId, modeText));
+				}
+			}
+		}
+	}
 
 	table.addSeparator();
 
@@ -1497,6 +1656,314 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 	PRINT("Succeed to reset the GPU {}\n", d->index);
 	std::_Exit(0);
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Sets the fan speed for the device.
+ *
+ * Supports percentage mode:
+ * - "50%" or "50" - sets fixed speed to 50 percent
+ * - "default" - resets to automatic/default mode
+ *
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::setFanSpeed(devInfo *d)
+{
+	TRACING();
+	int32_t fanId = -1;
+	ze_result_t parseFanResult = getSelectedFanId(fanId);
+	if (parseFanResult != ZE_RESULT_SUCCESS) {
+		return parseFanResult;
+	}
+	std::string fanTarget = (fanId == -1) ? "ALL" : std::to_string(fanId);
+
+	auto *fanHandler = reinterpret_cast<::fan *>(d->dev->getFan());
+	if (fanHandler == nullptr) {
+		ERR("Error: Device GPU {} does not have fan support.\n", d->index);
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	std::string fanSpeedStr = configCmds[configCmdType::FANSPEED].val;
+	std::transform(fanSpeedStr.begin(), fanSpeedStr.end(), fanSpeedStr.begin(),
+				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	// Handle "default" mode - reset to automatic
+	if (fanSpeedStr == "default") {
+		result = fanHandler->setDefaultMode(fanId);
+		if (result == ZE_RESULT_SUCCESS) {
+			PRINT("Succeeded in setting fan {} to default (automatic) mode on GPU {}\n", fanTarget.c_str(), d->index);
+		} else {
+			ERR("Failed to set fan {} to default mode on GPU {}: 0x{:X} ({})\n", fanTarget.c_str(), d->index, result,
+				l0_error_to_string(result));
+		}
+		return result;
+	}
+
+	// Parse fan speed value - can be:
+	// - "50%" -> percentage
+	// - "50" -> percentage
+	std::string numericStr = fanSpeedStr;
+
+	// Check for percentage suffix
+	if (fanSpeedStr.length() > 0 && fanSpeedStr.back() == '%') {
+		numericStr = fanSpeedStr.substr(0, fanSpeedStr.length() - 1);
+	}
+
+	// Validate that remaining string is numeric and parseable
+	uint32_t speedRaw = 0;
+	if (numericStr.empty() || !std::all_of(numericStr.begin(), numericStr.end(), ::isdigit) ||
+		!parseUint32NoThrow(numericStr, speedRaw)) {
+		ERR("Error: Invalid fan speed format: '{}'. Valid formats are:\n", fanSpeedStr.c_str());
+		ERR("  - NN to set percentage (0-100)\n");
+		ERR("  - NN%% to set percentage (0-100)\n");
+		ERR("  - default to reset to automatic mode\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	int32_t speedValue = static_cast<int32_t>(speedRaw);
+	if (speedValue < 0 || speedValue > 100) {
+		ERR("Error: Fan speed percentage must be between 0 and 100, got: {}\n", speedValue);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	result = fanHandler->setFixedSpeedPercent(speedValue, fanId);
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in setting fan {} speed to {}%% on GPU {}\n", fanTarget.c_str(), speedValue, d->index);
+	} else {
+		ERR("Failed to set fan {} speed to {}%% on GPU {}: 0x{:X} ({})\n", fanTarget.c_str(), speedValue, d->index,
+			result, l0_error_to_string(result));
+	}
+
+	return result;
+}
+
+/**
+ * @brief Sets the fan curve in percent for the device.
+ *
+ * Expects one or more "temp:speed" points where speed is percent (0..100),
+ * optionally with '%' suffix, and temperatures are strictly increasing.
+ *
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::setFanCurve(devInfo *d)
+{
+	TRACING();
+	int32_t fanId = -1;
+	ze_result_t parseFanResult = getSelectedFanId(fanId);
+	if (parseFanResult != ZE_RESULT_SUCCESS) {
+		return parseFanResult;
+	}
+	std::string fanTarget = (fanId == -1) ? "ALL" : std::to_string(fanId);
+
+	auto *fanHandler = reinterpret_cast<::fan *>(d->dev->getFan());
+	if (fanHandler == nullptr) {
+		ERR("Error: Device GPU {} does not have fan support.\n", d->index);
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	std::string curve = configCmds[configCmdType::FANCURVE].val;
+	if (curve.empty()) {
+		ERR("Error: fancurve value cannot be empty.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	auto points = split(curve, ',');
+	if (points.empty()) {
+		ERR("Error: invalid fancurve format. Expected temp:speed,temp:speed,...\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::vector<std::pair<uint32_t, int32_t>> table;
+	table.reserve(points.size());
+	uint32_t previousTemp = 0;
+	bool first = true;
+
+	for (const auto &entry : points) {
+		size_t colonPos = entry.find(':');
+		if (colonPos == std::string::npos || colonPos == 0 || colonPos + 1 >= entry.size()) {
+			ERR("Error: invalid fancurve point '{}'. Expected temp:speed\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		std::string tempStr = entry.substr(0, colonPos);
+		std::string speedStr = entry.substr(colonPos + 1);
+
+		if (tempStr.empty() || !std::all_of(tempStr.begin(), tempStr.end(), ::isdigit)) {
+			ERR("Error: invalid temperature '{}' in fancurve.\n", tempStr.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		if (!speedStr.empty() && speedStr.back() == '%') {
+			speedStr = speedStr.substr(0, speedStr.size() - 1);
+		} else if (speedStr.size() >= 3 && speedStr.substr(speedStr.size() - 3) == "rpm") {
+			ERR("Error: --fancurve supports percent points only. Use --fancurve-rpm for RPM points.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		if (speedStr.empty() || !std::all_of(speedStr.begin(), speedStr.end(), ::isdigit)) {
+			ERR("Error: invalid fan speed value in fancurve point '{}'.\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		uint32_t temp = 0;
+		if (!parseUint32NoThrow(tempStr, temp)) {
+			ERR("Error: invalid numeric value in fancurve point '{}'.\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (temp < FAN_CURVE_TEMP_MIN_C || temp > FAN_CURVE_TEMP_MAX_C) {
+			ERR("Error: fancurve temperature must be in range {}..{} C.\n", FAN_CURVE_TEMP_MIN_C, FAN_CURVE_TEMP_MAX_C);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		uint32_t speedRaw = 0;
+		if (!parseUint32NoThrow(speedStr, speedRaw)) {
+			ERR("Error: invalid numeric value in fancurve point '{}'.\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (speedRaw > 100) {
+			ERR("Error: fancurve percent speed must be in range 0..100.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		int32_t speed = static_cast<int32_t>(speedRaw);
+		if (!first && temp <= previousTemp) {
+			ERR("Error: fancurve temperatures must be strictly increasing.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		table.emplace_back(temp, speed);
+		previousTemp = temp;
+		first = false;
+	}
+
+	ze_result_t result = fanHandler->setSpeedTableMode(table, ZES_FAN_SPEED_UNITS_PERCENT, fanId);
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in setting fan {} curve on GPU {} with {} points (percent)\n", fanTarget.c_str(), d->index,
+			  table.size());
+	} else {
+		ERR("Failed to set fan {} curve on GPU {}: 0x{:X} ({})\n", fanTarget.c_str(), d->index, result,
+			l0_error_to_string(result));
+	}
+
+	return result;
+}
+
+/**
+ * @brief Sets the fan curve in RPM for the device.
+ *
+ * Expects one or more "temp:rpm" points where rpm is non-negative,
+ * optionally with "rpm" suffix, and temperatures are strictly increasing.
+ *
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::setFanCurveRpm(devInfo *d)
+{
+	TRACING();
+	int32_t fanId = -1;
+	ze_result_t parseFanResult = getSelectedFanId(fanId);
+	if (parseFanResult != ZE_RESULT_SUCCESS) {
+		return parseFanResult;
+	}
+	std::string fanTarget = (fanId == -1) ? "ALL" : std::to_string(fanId);
+
+	auto *fanHandler = reinterpret_cast<::fan *>(d->dev->getFan());
+	if (fanHandler == nullptr) {
+		ERR("Error: Device GPU {} does not have fan support.\n", d->index);
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	std::string curve = configCmds[configCmdType::FANCURVERPM].val;
+	if (curve.empty()) {
+		ERR("Error: fancurve-rpm value cannot be empty.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	auto points = split(curve, ',');
+	if (points.empty()) {
+		ERR("Error: invalid fancurve-rpm format. Expected temp:rpm,temp:rpm,...\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::vector<std::pair<uint32_t, int32_t>> table;
+	table.reserve(points.size());
+	uint32_t previousTemp = 0;
+	bool first = true;
+
+	for (const auto &entry : points) {
+		size_t colonPos = entry.find(':');
+		if (colonPos == std::string::npos || colonPos == 0 || colonPos + 1 >= entry.size()) {
+			ERR("Error: invalid fancurve-rpm point '{}'. Expected temp:rpm\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		std::string tempStr = entry.substr(0, colonPos);
+		std::string speedStr = entry.substr(colonPos + 1);
+
+		if (tempStr.empty() || !std::all_of(tempStr.begin(), tempStr.end(), ::isdigit)) {
+			ERR("Error: invalid temperature '{}' in fancurve-rpm.\n", tempStr.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		if (!speedStr.empty() && speedStr.back() == '%') {
+			ERR("Error: --fancurve-rpm supports RPM points only. Use --fancurve for percent points.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (speedStr.size() >= 3 && speedStr.substr(speedStr.size() - 3) == "rpm") {
+			speedStr = speedStr.substr(0, speedStr.size() - 3);
+		}
+
+		if (speedStr.empty() || !std::all_of(speedStr.begin(), speedStr.end(), ::isdigit)) {
+			ERR("Error: invalid RPM value in fancurve-rpm point '{}'.\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		uint32_t temp = 0;
+		if (!parseUint32NoThrow(tempStr, temp)) {
+			ERR("Error: invalid numeric value in fancurve-rpm point '{}'.\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (temp < FAN_CURVE_TEMP_MIN_C || temp > FAN_CURVE_TEMP_MAX_C) {
+			ERR("Error: fancurve-rpm temperature must be in range {}..{} C.\n", FAN_CURVE_TEMP_MIN_C,
+				FAN_CURVE_TEMP_MAX_C);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		uint32_t speedRaw = 0;
+		if (!parseUint32NoThrow(speedStr, speedRaw)) {
+			ERR("Error: invalid numeric value in fancurve-rpm point '{}'.\n", entry.c_str());
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		if (speedRaw < static_cast<uint32_t>(FAN_CURVE_RPM_MIN) ||
+			speedRaw > static_cast<uint32_t>(FAN_CURVE_RPM_MAX)) {
+			ERR("Error: fancurve-rpm speed must be in range {}..{} RPM.\n", FAN_CURVE_RPM_MIN, FAN_CURVE_RPM_MAX);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		int32_t speed = static_cast<int32_t>(speedRaw);
+		if (!first && temp <= previousTemp) {
+			ERR("Error: fancurve-rpm temperatures must be strictly increasing.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+
+		table.emplace_back(temp, speed);
+		previousTemp = temp;
+		first = false;
+	}
+
+	ze_result_t result = fanHandler->setSpeedTableMode(table, ZES_FAN_SPEED_UNITS_RPM, fanId);
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in setting fan {} curve on GPU {} with {} points (rpm)\n", fanTarget.c_str(), d->index,
+			  table.size());
+	} else {
+		ERR("Failed to set fan {} curve on GPU {}: 0x{:X} ({})\n", fanTarget.c_str(), d->index, result,
+			l0_error_to_string(result));
+	}
+
+	return result;
 }
 
 /**

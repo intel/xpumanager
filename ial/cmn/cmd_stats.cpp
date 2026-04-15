@@ -7,6 +7,7 @@
 #include "cmd_stats.h"
 #include "debug.h"
 #include "memory.h"
+#include "fan.h"
 #include "metric.h"
 #include "pci.h"
 #include "printer.h"
@@ -418,6 +419,44 @@ ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 			DBG("Tile %u voltage regulator temperature sample: %.2f C\n", tileId, temp);
 		}
 	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Collect fan speed metrics per fan ID in percentage
+ *
+ * This function captures fan speed samples by querying the fan HAL layer
+ * for both percentage and RPM values. Samples are collected for monitoring
+ * thermal management system behavior over time.
+ *
+ * @param [in] fanHandler The HAL fan instance
+ * @param [out] fanSpeedPercentSamplesPerFan Map of fan_id -> fan speed percentage samples (0-100)
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectFanMetrics(fan *fanHandler,
+										std::map<uint32_t, std::vector<double>> &fanSpeedPercentSamplesPerFan)
+{
+	TRACING();
+	if (fanHandler == nullptr) {
+		DBG("Fan handler not available.\n");
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	uint32_t fanCount = 0;
+	ze_result_t result = fanHandler->getFanCount(fanCount);
+	if (result != ZE_RESULT_SUCCESS || fanCount == 0) {
+		return ZE_RESULT_SUCCESS;
+	}
+
+	for (uint32_t fanId = 0; fanId < fanCount; ++fanId) {
+		int32_t fanPct = 0;
+		result = fanHandler->getSpeedPercentById(fanId, fanPct);
+		if (result == ZE_RESULT_SUCCESS && fanPct >= 0) {
+			fanSpeedPercentSamplesPerFan[fanId].push_back(static_cast<double>(fanPct));
+			DBG("Fan {} speed percentage sample: {:.1f}%\n", fanId, static_cast<double>(fanPct));
+		}
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -896,6 +935,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	auto *powerHandler = reinterpret_cast<::power *>(dev->getPower());
 	auto *frequencyHandler = reinterpret_cast<::frequency *>(dev->getFrequency());
 	auto *tempHandler = reinterpret_cast<::temperature *>(dev->getTemperature());
+	auto *fanHandler = reinterpret_cast<::fan *>(dev->getFan());
 	auto *memoryHandler = reinterpret_cast<::memory *>(dev->getMemory());
 	auto *pciHandler = reinterpret_cast<::pci *>(dev->getPCI());
 
@@ -984,6 +1024,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile);
 		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile,
 										 metrics.vrTempPerTile);
+		collectFanMetrics(fanHandler, metrics.fanSpeedPercentSamplesPerFan);
 		collectMemoryMetricsPerTile(memoryHandler, memoryBaseline, metrics.memoryReadKBpsPerTile,
 									metrics.memoryWriteKBpsPerTile, metrics.memoryBandwidthPercentPerTile,
 									metrics.memoryUsedMiBPerTile, metrics.memoryUtilPercentPerTile);
@@ -1020,6 +1061,13 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	populateEngineStats(encoderEngines, "encoder_engines", deviceJson, metrics.encoderEngineDetails);
 	populateEngineStats(copyEngines, "copy_engines", deviceJson, metrics.copyEngineDetails);
 	populateEngineStats(mediaEmEngines, "media_em_engines", deviceJson, metrics.mediaEmEngineDetails);
+
+	auto populateSummaryStatsJson = [](auto &targetJson, const SummaryStats &stats) {
+		targetJson["avg"] = stats.avg;
+		targetJson["min"] = stats.min;
+		targetJson["max"] = stats.max;
+		targetJson["current"] = stats.current;
+	};
 
 	for (const auto &[tileId, samples] : metrics.gpuPowerPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
@@ -1172,6 +1220,14 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 			pciJson["min"] = stats.min;
 			pciJson["max"] = stats.max;
 			pciJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[fanId, samples] : metrics.fanSpeedPercentSamplesPerFan) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string fanKey = std::format("fan_{}", fanId);
+			populateSummaryStatsJson(deviceJson["fan"]["speed_percent"][fanKey], stats);
 		}
 	}
 
@@ -1407,6 +1463,9 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	table.addRow("(Degrees Celsius)", "");
 	table.addSeparator();
 
+	addPerFanMetricRows(table, deviceJson, "Fan Speed (%)", {"fan", "speed_percent"}, 0);
+	table.addSeparator();
+
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Read (kB/s)", {"memory", "read_kbps"}, 0);
 	table.addSeparator();
 
@@ -1521,6 +1580,84 @@ void StatsTextPrinter::addPerTileMetricRows(TableBuilder &table, const nlohmann:
 		} else {
 			table.addRow("", oss.str());
 		}
+	}
+}
+
+/**
+ * @brief Add per-fan metric rows to the table.
+ *
+ * Expects JSON keys in the form fan_<id>, each with avg/min/max/current fields.
+ *
+ * @param [in,out] table TableBuilder to add rows to.
+ * @param [in] json JSON object containing device statistics.
+ * @param [in] label Row label for the metric.
+ * @param [in] path Nested JSON path to the metric object.
+ * @param [in] precision Decimal places for formatting values.
+ */
+void StatsTextPrinter::addPerFanMetricRows(TableBuilder &table, const nlohmann::ordered_json &json,
+										   const std::string &label, const std::vector<std::string> &path,
+										   int precision)
+{
+	const nlohmann::ordered_json *metricPtr = getNestedJson(json, path);
+	if (metricPtr == nullptr) {
+		table.addRow(label, "N/A");
+		return;
+	}
+
+	const auto &metric = *metricPtr;
+	if (!metric.is_object() || metric.empty()) {
+		table.addRow(label, "N/A");
+		return;
+	}
+
+	std::vector<uint32_t> fanIds;
+	const std::string fanPrefix = "fan_";
+	for (auto it = metric.begin(); it != metric.end(); ++it) {
+		const std::string &key = it.key();
+		if (key.find(fanPrefix) == 0) {
+			try {
+				uint32_t fanId = static_cast<uint32_t>(std::stoi(key.substr(fanPrefix.length())));
+				fanIds.push_back(fanId);
+			} catch (...) {
+				continue;
+			}
+		}
+	}
+
+	if (fanIds.empty()) {
+		table.addRow(label, "N/A");
+		return;
+	}
+
+	std::sort(fanIds.begin(), fanIds.end());
+
+	bool firstFan = true;
+	for (uint32_t fanId : fanIds) {
+		std::string fanKey = fanPrefix + std::to_string(fanId);
+		const auto &fanMetric = metric[fanKey];
+		double value = 0.0;
+		if (fanMetric.is_object()) {
+			value = fanMetric.value("current", 0.0);
+		} else if (fanMetric.is_number()) {
+			value = fanMetric.get<double>();
+		} else {
+			continue;
+		}
+
+		std::ostringstream oss;
+		oss << std::fixed << std::setprecision(precision);
+		oss << "Fan " << fanId << ": " << value << "%";
+
+		if (firstFan) {
+			table.addRow(label, oss.str());
+			firstFan = false;
+		} else {
+			table.addRow("", oss.str());
+		}
+	}
+
+	if (firstFan) {
+		table.addRow(label, "N/A");
 	}
 }
 

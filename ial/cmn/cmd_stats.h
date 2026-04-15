@@ -175,6 +175,8 @@ struct DeviceMetrics
 	SummaryStats gpuPower;
 	SummaryStats gpuFrequency;
 	SummaryStats mediaFrequency;
+	SummaryStats fanSpeedPercent;
+	SummaryStats fanSpeedRpm;
 
 	std::map<uint32_t, std::vector<double>> gpuPowerPerTile;	   // tile_id -> power samples in watts
 	std::map<uint32_t, std::vector<double>> gpuFrequencyPerTile;   // tile_id -> GPU freq samples in MHz
@@ -182,6 +184,7 @@ struct DeviceMetrics
 	std::map<uint32_t, std::vector<double>> gpuCoreTempPerTile;	   // tile_id -> GPU core temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> memoryTempPerTile;	   // tile_id -> memory temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> vrTempPerTile; // tile_id -> voltage regulator temp samples in Celsius
+	std::map<uint32_t, std::vector<double>> fanSpeedPercentSamplesPerFan; // fan_id -> fan speed samples in percent
 
 	std::map<uint32_t, std::vector<double>> memoryReadKBpsPerTile;	// tile_id -> read throughput samples in kB/s
 	std::map<uint32_t, std::vector<double>> memoryWriteKBpsPerTile; // tile_id -> write throughput samples in kB/s
@@ -242,6 +245,8 @@ private:
 	void printDeviceTable(const nlohmann::ordered_json &deviceJson);
 	static void addPerTileMetricRows(TableBuilder &table, const nlohmann::ordered_json &json, const std::string &label,
 									 const std::vector<std::string> &path, int precision = 0);
+	static void addPerFanMetricRows(TableBuilder &table, const nlohmann::ordered_json &json, const std::string &label,
+									const std::vector<std::string> &path, int precision = 0);
 	static void addMetricRow(TableBuilder &table, const nlohmann::ordered_json &deviceJson, const std::string &label,
 							 const std::vector<std::string> &path);
 	static void addEngineInstanceRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson,
@@ -253,8 +258,8 @@ class cmdStats : public cmds
 {
 
 public:
-	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); };
-	~cmdStats(){};
+	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); }
+	~cmdStats() {}
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t eu(devInfo *d);
 	ze_result_t ras(devInfo *d);
@@ -282,6 +287,8 @@ private:
 														std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
 														std::map<uint32_t, std::vector<double>> &memoryTempPerTile,
 														std::map<uint32_t, std::vector<double>> &vrTempPerTile);
+	static ze_result_t collectFanMetrics(fan *fanHandler,
+										 std::map<uint32_t, std::vector<double>> &fanSpeedPercentSamplesPerFan);
 	static ze_result_t
 	collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
 								std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,

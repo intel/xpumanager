@@ -27,6 +27,10 @@ enum configCmdType
 	MEMORYECC,
 	RESET,
 	PCIEDOWNGRADE,
+	FANSPEED,
+	FANCURVE,
+	FANCURVERPM,
+	FANID,
 	TOTAL_CONFIG,
 };
 
@@ -36,8 +40,8 @@ class cmdConfig : public cmds
 {
 
 public:
-	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); };
-	~cmdConfig(){};
+	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); }
+	~cmdConfig() {}
 	void help(HELP helpType = FULL_HELP);
 	void displayDeviceConfig(devInfo *d);
 	ze_result_t setFrequencyRange(devInfo *d);
@@ -48,6 +52,10 @@ public:
 	ze_result_t setMemoryEcc(devInfo *d);
 	ze_result_t setPCIeGenUpdate(devInfo *d);
 	ze_result_t resetDevice(devInfo *d);
+	ze_result_t setFanSpeed(devInfo *d);
+	ze_result_t setFanCurve(devInfo *d);
+	ze_result_t setFanCurveRpm(devInfo *d);
+	ze_result_t getSelectedFanId(int32_t &fanId);
 	int run(arg_struct *args);
 };
 

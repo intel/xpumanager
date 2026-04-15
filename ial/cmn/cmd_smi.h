@@ -40,7 +40,7 @@ struct SmiDeviceStats
 	bool eccEnabled = false;
 
 	// Fan
-	int32_t fanSpeedPct = 0;
+	int32_t fanSpeedPct = -1;
 	bool fanValid = false;
 
 	// Temperature

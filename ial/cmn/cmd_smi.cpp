@@ -50,6 +50,20 @@ static std::string fmtMem(double usedMiB, double totalMiB)
 	return std::format("{:.0f}MiB / {:.0f}MiB", usedMiB, totalMiB);
 }
 
+/**
+ * @brief Format fan telemetry string from percent value only.
+ *
+ * @param[in] pct Fan speed percentage, or negative when unavailable.
+ * @return std::string Formatted fan string for the SMI table.
+ */
+static std::string fmtFan(int32_t pct)
+{
+	if (pct >= 0) {
+		return std::format("{}%", pct);
+	}
+	return "N/A";
+}
+
 static std::string processTypeFromEngines(uint64_t engines, uint64_t memSizeKiB, uint64_t sharedSizeKiB)
 {
 	if (engines & ZES_ENGINE_TYPE_FLAG_COMPUTE) {
@@ -111,7 +125,9 @@ void cmdSmi::collectFan(SmiDeviceStats &stats, devInfo *di)
 	if (fanHandler == nullptr) {
 		return;
 	}
-	int32_t pct = 0;
+
+	// Collect fan speed as percentage
+	int32_t pct = -1;
 	if (fanHandler->getSpeedPercent(pct) == ZE_RESULT_SUCCESS) {
 		stats.fanSpeedPct = pct;
 		stats.fanValid = true;
@@ -329,6 +345,10 @@ void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &basel
  */
 TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, const std::string &lzVersion)
 {
+	// Keep fan/temp columns aligned for strings like "100% (20000RPM)" and "N/A".
+	constexpr int fanDisplayWidth = static_cast<int>(sizeof("100% (20000RPM)") - 1);
+	constexpr int tempDisplayWidth = 4;
+
 	TableBuilder table;
 	table.enableAutoSizing();
 	// Header text spacing mirrors the data format strings:
@@ -339,7 +359,8 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 		.addColumn("Volatile Uncorr. ECC", Align::Right);
 
 	// Multi-line column headers (second header line per column)
-	table.setColumnExtraHeaders(0, {"Fan  Temp  Pwr:Usage/Cap"});
+	table.setColumnExtraHeaders(
+		0, {std::format("{:<{}}  {:>{}}  {}", "Fan", fanDisplayWidth, "Temp", tempDisplayWidth, "Pwr:Usage/Cap")});
 	table.setColumnExtraHeaders(1, {"Memory-Usage"});
 	table.setColumnExtraHeaders(2, {"GPU-Util  Compute M."});
 
@@ -363,9 +384,10 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 
 		// Row 2: live telemetry per column
 		std::string tempStr = s.tempValid ? std::format("{:.0f}C", s.gpuTempC) : "N/A";
-		std::string fanStr = s.fanValid ? std::format("{}%", s.fanSpeedPct) : "N/A";
+		std::string fanStr = s.fanValid ? fmtFan(s.fanSpeedPct) : "N/A";
 		std::string pwrStr = fmtPower(s.powerValid ? s.powerCurrentW : 0.0, s.powerTdpW);
-		std::string fanTempPwrLine = std::format("{:<4}  {:>4}  {}", fanStr, tempStr, pwrStr);
+		std::string fanTempPwrLine =
+			std::format("{:<{}}  {:>{}}  {}", fanStr, fanDisplayWidth, tempStr, tempDisplayWidth, pwrStr);
 		std::string memLine = s.memValid ? fmtMem(s.memUsedMiB, s.memTotalMiB) : "N/A";
 		// Left-pad util% to 10 chars so "Default" aligns under "Compute M." in the header
 		// Header extra: "GPU-Util  Compute M." → "Compute M." starts at col 10
