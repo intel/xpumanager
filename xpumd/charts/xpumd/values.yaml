@@ -157,3 +157,6 @@ config:
         receivers: [intelxpu]
         processors: [intelxpustatus]
         exporters: [intelxpuinfo]
+      logs:
+        receivers: [intelxpu]
+        exporters: [intelxpuinfo]

@@ -130,3 +130,4 @@ service:
       exporters: [intelxpuinfo,prometheus]
     logs:
       receivers: [intelxpu]
+      exporters: [intelxpuinfo]

@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -23,12 +25,16 @@ import (
 )
 
 type xpuInfoExporter struct {
+	sync.Mutex
+
 	cfg          *Config
 	logger       *zap.SugaredLogger
 	telemetry    *metadata.TelemetryBuilder
 	settings     exporter.Settings
 	grpcServer   *grpc.Server
 	healthServer *deviceInfoServer
+
+	started bool
 }
 
 func newXpuInfoExporter(cfg *Config, settings exporter.Settings) *xpuInfoExporter {
@@ -40,6 +46,13 @@ func newXpuInfoExporter(cfg *Config, settings exporter.Settings) *xpuInfoExporte
 }
 
 func (e *xpuInfoExporter) start(ctx context.Context, host component.Host) error {
+	e.Lock()
+	defer e.Unlock()
+
+	if e.started {
+		return nil
+	}
+
 	e.logger.Info("Starting XPU Info exporter")
 
 	tb, err := metadata.NewTelemetryBuilder(e.settings.TelemetrySettings)
@@ -52,10 +65,19 @@ func (e *xpuInfoExporter) start(ctx context.Context, host component.Host) error 
 		return fmt.Errorf("failed to start gRPC server: %w", err)
 	}
 
+	e.started = true
 	return nil
 }
 
 func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
+	e.Lock()
+	defer e.Unlock()
+
+	if !e.started {
+		return nil
+	}
+	e.started = false
+
 	e.logger.Info("Shutting down XPU Info exporter")
 
 	done := make(chan struct{})
@@ -85,6 +107,12 @@ func (e *xpuInfoExporter) pushMetrics(_ context.Context, md pmetric.Metrics) err
 	// all metrics for a particular device.
 	e.healthServer.updateHealthData(md)
 
+	return nil
+}
+
+func (e *xpuInfoExporter) pushLogs(_ context.Context, ld plog.Logs) error {
+	e.logger.Debugw("Pushing logs", "logRecords", ld.LogRecordCount())
+	e.healthServer.broadcastEvents(ld)
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 
 	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
 	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 )
@@ -26,8 +27,10 @@ type deviceInfoServer struct {
 	// Cached health data
 	healthDataLock sync.RWMutex
 	healthData     *pb.DeviceHealthResponse
-	// Active clients
+	// Active health clients
 	deviceHealthClients sync.Map
+	// Active event clients
+	deviceEventClients sync.Map
 }
 
 func newDeviceInfoServer(logger *zap.SugaredLogger, tb *metadata.TelemetryBuilder, cfg *Config) *deviceInfoServer {
@@ -65,6 +68,56 @@ func (s *deviceInfoServer) WatchDeviceHealth(req *pb.WatchDeviceHealthRequest, s
 
 func (s *deviceInfoServer) stop() {
 	close(s.stopChan)
+}
+
+func (s *deviceInfoServer) WatchDeviceEvents(req *pb.WatchDeviceEventsRequest, stream pb.DeviceInfo_WatchDeviceEventsServer) error {
+	s.logger.Info("new DeviceEvents client connected")
+
+	errCh := make(chan error, 1)
+	s.deviceEventClients.Store(stream, errCh)
+	defer s.deviceEventClients.Delete(stream)
+
+	select {
+	case <-s.stopChan:
+		s.logger.Info("server stopping, closing DeviceEvents stream")
+		return nil
+	case <-stream.Context().Done():
+		s.logger.Infow("stream closed", "error", stream.Context().Err())
+		return stream.Context().Err()
+	case e := <-errCh:
+		s.logger.Infow("stopping DeviceEvents stream", "error", e)
+		return e
+	}
+}
+
+func (s *deviceInfoServer) broadcastEvents(ld plog.Logs) {
+	events := translateEvents(ld, s.logger)
+	if len(events) == 0 {
+		return
+	}
+	s.deviceEventClients.Range(func(key, value any) bool {
+		stream, ok := key.(pb.DeviceInfo_WatchDeviceEventsServer)
+		if !ok {
+			panic("invalid type assertion for device event client stream")
+		}
+		errCh, ok := value.(chan error)
+		if !ok {
+			panic("invalid type assertion for device event client stop channel")
+		}
+		for _, ev := range events {
+			if err := stream.Send(ev); err != nil {
+				s.logger.Errorw("failed to send event to client", "error", err)
+				s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
+				select {
+				case errCh <- err:
+				default:
+				}
+				return true
+			}
+			s.telemetry.ExporterRequestsSent.Add(context.Background(), 1)
+		}
+		return true
+	})
 }
 
 func (s *deviceInfoServer) updateHealthData(md pmetric.Metrics) {
