@@ -8,6 +8,8 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <errno.h>
+#include <time.h>
 
 // strnlen needs _POSIX_C_SOURCE >= 200809L or _GNU_SOURCE under c99
 static size_t sysman_strnlen(const char *s, size_t maxlen)
@@ -1066,10 +1068,20 @@ ze_result_t zesDeviceEventRegister(zes_device_handle_t hDevice, zes_event_type_f
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
-static ze_result_t driver_event_listen_impl(ze_driver_handle_t hDriver, uint32_t count, zes_device_handle_t *phDevices,
-											uint32_t *pNumDeviceEvents, zes_event_type_flags_t *pEvents)
+// Caller must hold g_state_lock.
+static ze_result_t driver_event_listen_peek(ze_driver_handle_t hDriver, uint32_t count, zes_device_handle_t *phDevices,
+											uint32_t *pNumDeviceEvents, zes_event_type_flags_t *pEvents, bool is_ex)
 {
-	// Caller holds g_state_lock and has already validated drv != NULL.
+	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
+	if (!drv)
+		return ZE_RESULT_ERROR_INVALID_NULL_HANDLE;
+	bool unsupported = is_ex ? is_unsupported(hDriver, UNSUPPORTED_FEATURE_EVENT_LISTEN_EX)
+							 : is_unsupported(hDriver, UNSUPPORTED_FEATURE_EVENT_LISTEN);
+	if (unsupported)
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	ze_result_t rv = is_ex ? drv->return_values.zesDriverEventListenEx : drv->return_values.zesDriverEventListen;
+	if (rv)
+		return rv;
 	if (!phDevices || !pNumDeviceEvents || !pEvents)
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	stub_handle_t drv_h = decode_handle(hDriver);
@@ -1090,20 +1102,57 @@ static ze_result_t driver_event_listen_impl(ze_driver_handle_t hDriver, uint32_t
 	return ZE_RESULT_SUCCESS;
 }
 
+// Poll with 1-second interval, with initial delay of min(1 second, timeout) to
+// limit flooding on the caller. Error cases return without delay.
+static ze_result_t driver_event_listen_poll(ze_driver_handle_t hDriver, uint64_t timeout_ms, uint32_t count,
+											zes_device_handle_t *phDevices, uint32_t *pNumDeviceEvents,
+											zes_event_type_flags_t *pEvents, bool is_ex)
+{
+	// Initial peek to check error cases
+	ze_result_t result = driver_event_listen_peek(hDriver, count, phDevices, pNumDeviceEvents, pEvents, is_ex);
+	if (result != ZE_RESULT_SUCCESS)
+		return result;
+
+	struct timespec start;
+	clock_gettime(CLOCK_MONOTONIC, &start);
+
+	for (;;) {
+		uint64_t sleep_ms = 1000;
+		if (timeout_ms != UINT64_MAX) {
+			struct timespec now;
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			int64_t elapsed_ms =
+				(int64_t)(now.tv_sec - start.tv_sec) * 1000 + (int64_t)(now.tv_nsec - start.tv_nsec) / 1000000;
+			if ((uint64_t)elapsed_ms >= timeout_ms) {
+				*pNumDeviceEvents = 0;
+				return ZE_RESULT_SUCCESS;
+			}
+			uint64_t remaining_ms = timeout_ms - (uint64_t)elapsed_ms;
+			if (remaining_ms < sleep_ms)
+				sleep_ms = remaining_ms;
+		}
+
+		sysman_state_unlock();
+		struct timespec delay = {.tv_sec = (time_t)(sleep_ms / 1000), .tv_nsec = (long)(sleep_ms % 1000) * 1000000L};
+		struct timespec rem;
+		while (nanosleep(&delay, &rem) == -1 && errno == EINTR)
+			delay = rem;
+		sysman_state_lock();
+
+		ze_result_t result = driver_event_listen_peek(hDriver, count, phDevices, pNumDeviceEvents, pEvents, is_ex);
+		if (result != ZE_RESULT_SUCCESS || *pNumDeviceEvents > 0)
+			return result;
+	}
+}
+
 ze_result_t zesDriverEventListen(ze_driver_handle_t hDriver, uint32_t timeout, uint32_t count,
 								 zes_device_handle_t *phDevices, uint32_t *pNumDeviceEvents,
 								 zes_event_type_flags_t *pEvents)
 {
 	sysman_state_lock();
-	(void)timeout;
-	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
-	if (!drv)
-		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
-	if (is_unsupported(hDriver, UNSUPPORTED_FEATURE_EVENT_LISTEN))
-		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
-	if (drv->return_values.zesDriverEventListen)
-		return sysman_unlock_and_return(drv->return_values.zesDriverEventListen);
-	return sysman_unlock_and_return(driver_event_listen_impl(hDriver, count, phDevices, pNumDeviceEvents, pEvents));
+	uint64_t timeout_ms = (timeout == UINT32_MAX) ? UINT64_MAX : (uint64_t)timeout;
+	return sysman_unlock_and_return(
+		driver_event_listen_poll(hDriver, timeout_ms, count, phDevices, pNumDeviceEvents, pEvents, false));
 }
 
 ze_result_t zesDriverEventListenEx(ze_driver_handle_t hDriver, uint64_t timeout, uint32_t count,
@@ -1111,15 +1160,8 @@ ze_result_t zesDriverEventListenEx(ze_driver_handle_t hDriver, uint64_t timeout,
 								   zes_event_type_flags_t *pEvents)
 {
 	sysman_state_lock();
-	(void)timeout;
-	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
-	if (!drv)
-		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
-	if (is_unsupported(hDriver, UNSUPPORTED_FEATURE_EVENT_LISTEN_EX))
-		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
-	if (drv->return_values.zesDriverEventListenEx)
-		return sysman_unlock_and_return(drv->return_values.zesDriverEventListenEx);
-	return sysman_unlock_and_return(driver_event_listen_impl(hDriver, count, phDevices, pNumDeviceEvents, pEvents));
+	return sysman_unlock_and_return(
+		driver_event_listen_poll(hDriver, timeout, count, phDevices, pNumDeviceEvents, pEvents, true));
 }
 
 // ------------------------------------------------------------------
