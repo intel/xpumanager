@@ -6,9 +6,10 @@
 
 #include "sysprocess.h"
 #include <vector>
+#include <algorithm>
 
 /**
- * @brief Gets the current state of all processes using a device
+ * @brief Gets the current state of all processes running workloads on a device
  *
  * This function retrieves comprehensive information about all processes currently
  * utilizing the specified device, including process IDs, memory usage (shared and
@@ -40,12 +41,21 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 		return result;
 	}
 
+	processList->erase(std::remove_if(processList->begin(), processList->end(),
+									  [](const zes_process_state_t &ps) {
+										  return ps.engines == 0 || ps.engines == ZES_ENGINE_TYPE_FLAG_OTHER;
+									  }),
+					   processList->end());
+	processCount = static_cast<uint32_t>(processList->size());
+
 	DBG("  - Device has {} processes\n", processCount);
 	for (const auto &ps : *processList) {
 		DBG("    - Process ID: {}\n", ps.processId);
 		DBG("    - Name: {}\n", GETPROCESSNAME(ps.processId).c_str());
 		DBG("    - Shared Size: {} KB\n", (ps.sharedSize / 1024));
 		DBG("    - Memory Size: {} KB\n", (ps.memSize / 1024));
+		DBG("    - Engines:\n");
+		printEngines(ps.engines);
 	}
 	return result;
 }
