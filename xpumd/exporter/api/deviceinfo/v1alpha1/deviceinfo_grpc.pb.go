@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	DeviceInfo_WatchDeviceHealth_FullMethodName = "/deviceinfo.DeviceInfo/WatchDeviceHealth"
+	DeviceInfo_WatchDeviceEvents_FullMethodName = "/deviceinfo.DeviceInfo/WatchDeviceEvents"
 )
 
 // DeviceInfoClient is the client API for DeviceInfo service.
@@ -35,6 +36,9 @@ const (
 type DeviceInfoClient interface {
 	// WatchDeviceHealth returns a stream of health metrics for all devices.
 	WatchDeviceHealth(ctx context.Context, in *WatchDeviceHealthRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DeviceHealthResponse], error)
+	// WatchDeviceEvents returns a stream of hardware events as they occur.
+	// Clients only receive events that arrive after connecting; there is no replay.
+	WatchDeviceEvents(ctx context.Context, in *WatchDeviceEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DeviceEventResponse], error)
 }
 
 type deviceInfoClient struct {
@@ -64,6 +68,25 @@ func (c *deviceInfoClient) WatchDeviceHealth(ctx context.Context, in *WatchDevic
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeviceInfo_WatchDeviceHealthClient = grpc.ServerStreamingClient[DeviceHealthResponse]
 
+func (c *deviceInfoClient) WatchDeviceEvents(ctx context.Context, in *WatchDeviceEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DeviceEventResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &DeviceInfo_ServiceDesc.Streams[1], DeviceInfo_WatchDeviceEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[WatchDeviceEventsRequest, DeviceEventResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeviceInfo_WatchDeviceEventsClient = grpc.ServerStreamingClient[DeviceEventResponse]
+
 // DeviceInfoServer is the server API for DeviceInfo service.
 // All implementations must embed UnimplementedDeviceInfoServer
 // for forward compatibility.
@@ -72,6 +95,9 @@ type DeviceInfo_WatchDeviceHealthClient = grpc.ServerStreamingClient[DeviceHealt
 type DeviceInfoServer interface {
 	// WatchDeviceHealth returns a stream of health metrics for all devices.
 	WatchDeviceHealth(*WatchDeviceHealthRequest, grpc.ServerStreamingServer[DeviceHealthResponse]) error
+	// WatchDeviceEvents returns a stream of hardware events as they occur.
+	// Clients only receive events that arrive after connecting; there is no replay.
+	WatchDeviceEvents(*WatchDeviceEventsRequest, grpc.ServerStreamingServer[DeviceEventResponse]) error
 	mustEmbedUnimplementedDeviceInfoServer()
 }
 
@@ -84,6 +110,9 @@ type UnimplementedDeviceInfoServer struct{}
 
 func (UnimplementedDeviceInfoServer) WatchDeviceHealth(*WatchDeviceHealthRequest, grpc.ServerStreamingServer[DeviceHealthResponse]) error {
 	return status.Error(codes.Unimplemented, "method WatchDeviceHealth not implemented")
+}
+func (UnimplementedDeviceInfoServer) WatchDeviceEvents(*WatchDeviceEventsRequest, grpc.ServerStreamingServer[DeviceEventResponse]) error {
+	return status.Error(codes.Unimplemented, "method WatchDeviceEvents not implemented")
 }
 func (UnimplementedDeviceInfoServer) mustEmbedUnimplementedDeviceInfoServer() {}
 func (UnimplementedDeviceInfoServer) testEmbeddedByValue()                    {}
@@ -117,6 +146,17 @@ func _DeviceInfo_WatchDeviceHealth_Handler(srv interface{}, stream grpc.ServerSt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeviceInfo_WatchDeviceHealthServer = grpc.ServerStreamingServer[DeviceHealthResponse]
 
+func _DeviceInfo_WatchDeviceEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchDeviceEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DeviceInfoServer).WatchDeviceEvents(m, &grpc.GenericServerStream[WatchDeviceEventsRequest, DeviceEventResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeviceInfo_WatchDeviceEventsServer = grpc.ServerStreamingServer[DeviceEventResponse]
+
 // DeviceInfo_ServiceDesc is the grpc.ServiceDesc for DeviceInfo service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -128,6 +168,11 @@ var DeviceInfo_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "WatchDeviceHealth",
 			Handler:       _DeviceInfo_WatchDeviceHealth_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "WatchDeviceEvents",
+			Handler:       _DeviceInfo_WatchDeviceEvents_Handler,
 			ServerStreams: true,
 		},
 	},
