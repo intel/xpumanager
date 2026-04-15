@@ -12,14 +12,33 @@ option go_package = "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v
 service DeviceInfo {
   // WatchDeviceHealth returns a stream of health metrics for all devices.
   rpc WatchDeviceHealth(WatchDeviceHealthRequest) returns (stream DeviceHealthResponse);
+  // WatchDeviceEvents returns a stream of hardware events as they occur.
+  // Clients only receive events that arrive after connecting; there is no replay.
+  rpc WatchDeviceEvents(WatchDeviceEventsRequest) returns (stream DeviceEventResponse);
 }
 
 // Request message for WatchDeviceHealth.
 message WatchDeviceHealthRequest {}
 
+// Request message for WatchDeviceEvents.
+message WatchDeviceEventsRequest {}
+
 // Response message containing health metrics for all devices.
 message DeviceHealthResponse {
   repeated DeviceHealth devices = 1;
+}
+
+// A single hardware event notification.
+message DeviceEventResponse {
+  // Identification of the device associated with this event.
+  DeviceIdentification device = 1;
+  // Short reason for the event, suitable to be used as part of device taint
+  // name, e.g. "device_detach".
+  string reason = 2;
+  // Detailed message about the event.
+  string message = 3;
+  // Severity of the event.
+  EventSeverityLevel severity = 4;
 }
 
 // Health metrics for a single device
@@ -36,6 +55,13 @@ message DeviceInformation {
   PciInfo pci = 3;
   repeated FirmwareInfo firmwares = 4;
   repeated MemoryInfo memory = 5;
+}
+
+// Device identification
+message DeviceIdentification {
+  string uuid = 1;
+  string model = 2;
+  PciInfo pci = 3;
 }
 
 // PCI information of the device.
@@ -81,4 +107,15 @@ enum SeverityLevel {
   SEVERITY_LEVEL_WARNING = 2;
   SEVERITY_LEVEL_CRITICAL = 3;
   SEVERITY_LEVEL_FAILED = 4;
+}
+
+// Severity level for device events, aligned with OpenTelemetry log severity.
+enum EventSeverityLevel {
+  EVENT_SEVERITY_LEVEL_UNSPECIFIED = 0;
+  EVENT_SEVERITY_LEVEL_TRACE = 1;
+  EVENT_SEVERITY_LEVEL_DEBUG = 2;
+  EVENT_SEVERITY_LEVEL_INFO = 3;
+  EVENT_SEVERITY_LEVEL_WARN = 4;
+  EVENT_SEVERITY_LEVEL_ERROR = 5;
+  EVENT_SEVERITY_LEVEL_FATAL = 6;
 }
