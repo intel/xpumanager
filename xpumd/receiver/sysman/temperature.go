@@ -70,8 +70,8 @@ func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*t
 	tempType := strings.ToLower(props.Type.String())
 	location := tempType
 	statistic := metadata.AttributeStatisticMax
-	if strings.HasSuffix(tempType, "_min") {
-		location = strings.TrimSuffix(tempType, "_min")
+	if before, ok := strings.CutSuffix(tempType, "_min"); ok {
+		location = before
 		statistic = metadata.AttributeStatisticMin
 	}
 

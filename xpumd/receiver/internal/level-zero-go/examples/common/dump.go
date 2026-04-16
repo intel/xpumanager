@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"reflect"
 
@@ -17,7 +18,7 @@ import (
 
 // DumpJSON prints an object in JSON format with with human-readable string
 // representation for all types that implement fmt.Stringer.
-func DumpJSON(obj interface{}) {
+func DumpJSON(obj any) {
 	transformed, err := stringify(reflect.ValueOf(obj))
 	if err != nil {
 		log.Fatalf("Failed to transform object: %v", err)
@@ -32,7 +33,7 @@ func DumpJSON(obj interface{}) {
 
 // DumpYAML prints an object in YAML format with human-readable string
 // representation for all types that implement fmt.Stringer.
-func DumpYAML(obj interface{}) {
+func DumpYAML(obj any) {
 	transformed, err := stringify(reflect.ValueOf(obj))
 	if err != nil {
 		log.Fatalf("Failed to transform object: %v", err)
@@ -52,7 +53,7 @@ func stringify(v reflect.Value) (any, error) {
 	}
 
 	// Resolve interfaces and pointers
-	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Interface || v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return nil, nil
 		}
@@ -74,7 +75,7 @@ func stringify(v reflect.Value) (any, error) {
 	}
 
 	// Return string if type implements fmt.Stringer (includes aliased types)
-	if v.Type().Implements(reflect.TypeOf((*fmt.Stringer)(nil)).Elem()) {
+	if v.Type().Implements(reflect.TypeFor[fmt.Stringer]()) {
 		s := v.Interface().(fmt.Stringer)
 		return s.String(), nil
 	}
@@ -100,9 +101,7 @@ func stringify(v reflect.Value) (any, error) {
 				}
 				// Merge embedded struct fields into parent
 				if embeddedMap, ok := cv.(map[string]any); ok {
-					for k, v := range embeddedMap {
-						m[k] = v
-					}
+					maps.Copy(m, embeddedMap)
 				}
 				continue
 			}
@@ -141,7 +140,7 @@ func stringify(v reflect.Value) (any, error) {
 	case reflect.Slice, reflect.Array:
 		l := v.Len()
 		s := make([]any, l)
-		for i := 0; i < l; i++ {
+		for i := range l {
 			// Transform recursively. Value will be string if the type
 			// implements Stringer.
 			cv, err := stringify(v.Index(i))

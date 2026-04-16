@@ -111,3 +111,10 @@ check-modfiles:
 		exit 1; \
 	fi; \
 	echo "✓ All go.mod files are in sync"
+
+.PHONY: go-fix
+go-fix:
+	@for module in $(GO_MODULES); do \
+		echo "Running go fix in '$$module'"; \
+		go -C $$module fix ./... || exit 1; \
+	done

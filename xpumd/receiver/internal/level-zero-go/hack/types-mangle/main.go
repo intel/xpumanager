@@ -343,7 +343,7 @@ func (cr *commentRewriter) rewriteComment(cmap ast.CommentMap, genDecl *ast.GenD
 	// Add comment markers
 	if text := strings.TrimSpace(commentBuf.String()); text != "" {
 		lines := []string{}
-		for _, l := range strings.Split(commentBuf.String(), "\n") {
+		for l := range strings.SplitSeq(commentBuf.String(), "\n") {
 			if l == "" {
 				lines = append(lines, "//")
 			} else {

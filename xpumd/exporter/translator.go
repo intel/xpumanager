@@ -164,7 +164,7 @@ func (t *metricsTranslator) updateMetadata(metricName string, dps pmetric.Number
 
 func (t *metricsTranslator) parseFirmwares(fwVersionStr string) []*pb.FirmwareInfo {
 	var firmwares []*pb.FirmwareInfo
-	for _, fwEntry := range strings.Split(fwVersionStr, ",") {
+	for fwEntry := range strings.SplitSeq(fwVersionStr, ",") {
 		if fwEntry == "" {
 			continue
 		}

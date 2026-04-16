@@ -8,6 +8,7 @@ package processor
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -170,10 +171,8 @@ func (f *AttributeFilter) validate() error {
 	if f.Key == "" {
 		return fmt.Errorf("filter key is required")
 	}
-	for _, v := range f.Values {
-		if v == "" {
-			return fmt.Errorf("filter value cannot be empty for key %q", f.Key)
-		}
+	if slices.Contains(f.Values, "") {
+		return fmt.Errorf("filter value cannot be empty for key %q", f.Key)
 	}
 	return nil
 }
@@ -183,12 +182,7 @@ func (f *AttributeFilter) match(attrs pcommon.Map) bool {
 	if !ok {
 		return false
 	}
-	for _, v := range f.Values {
-		if val.Str() == v {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(f.Values, val.Str())
 }
 
 func (r *ConditionRule) match(value float64, parentAttrs pcommon.Map) bool {
