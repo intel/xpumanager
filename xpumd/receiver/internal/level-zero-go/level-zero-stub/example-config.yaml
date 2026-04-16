@@ -27,7 +27,10 @@ Drivers:
     # Function-level return-value overrides for driver-scoped calls.
     # Set a non-zero ze_result_t value to inject an error.
     ReturnValues:
+      zesDriverGetExtensionProperties: 0
       zesDeviceGet: 0
+      zesDriverEventListen: 0
+      zesDriverEventListenEx: 0
 
     # List of features that return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
     # Takes precedence over ReturnValues.
