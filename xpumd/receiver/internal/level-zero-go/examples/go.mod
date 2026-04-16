@@ -1,6 +1,6 @@
 module github.com/intel/level-zero-go/examples
 
-go 1.25
+go 1.26
 
 replace github.com/intel/level-zero-go => ../
 

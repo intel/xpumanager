@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-FROM golang:1.25-trixie AS builder
+FROM golang:1.26-trixie AS builder
 
 ARG IGC_CORE_VERSION=2.27.10+20617
 ARG COMPUTE_RUNTIME_RELEASE=26.01.36711.4

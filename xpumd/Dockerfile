@@ -6,7 +6,7 @@
 ARG BASE_IMAGE=scratch
 
 # The build stage
-FROM golang:1.25-trixie AS builder
+FROM golang:1.26-trixie AS builder
 
 ARG IGC_CORE_VERSION=2.30.1+20950
 ARG COMPUTE_RUNTIME_RELEASE=26.09.37435.1

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-ARG GO_VERSION=1.25
+ARG GO_VERSION=1.26
 ARG BASE_DEBIAN_DISTRO="trixie"
 
 FROM golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO} AS builder
