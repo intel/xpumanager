@@ -218,6 +218,9 @@ Drivers:
             SharedSize: 134217728
             Engines: 2  # ZES_ENGINE_TYPE_FLAG_COMPUTE
 
+        # zesDriverEventListen / zesDriverEventListenEx (0 == no pending events)
+        Events: 1  # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
+
         # Function-level return-value overrides for device-scoped calls.
         ReturnValues:
           zesDeviceGetProperties: 0
