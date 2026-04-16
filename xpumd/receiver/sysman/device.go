@@ -36,6 +36,9 @@ type deviceState struct {
 	maxBandwidth int64
 }
 
+// deviceAttributes fields for numeric items which values may be
+// be missing (e.g. pciLinkGen) are stored as strings instead of ints
+// to be able to better indicate missing info (= "" instead of "0").
 type deviceAttributes struct {
 	hwID              string
 	hwName            string
@@ -46,8 +49,12 @@ type deviceAttributes struct {
 	hwSerialNumber    string
 	hwVendor          string
 	hwFirmwareVersion string
+	hwGpuType         metadata.AttributeHwGpuType
+	subDevCount       int64
 	pciLanes          string
 	pciLinkGen        string
+	demandPaging      bool
+	eccSupport        bool
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*deviceRegistry, error) {
@@ -111,7 +118,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		Device: dev,
 		logger: logger,
 		attributes: deviceAttributes{
-			// TODO: use extended props UUID?
+			// TODO: use (Sysman ext) props.Uuid.Id.String()?
 			hwID:           props.Core.Uuid.Id.String(),
 			hwName:         name,
 			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
@@ -119,8 +126,21 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			hwModel:        props.ModelName.String(),
 			hwSerialNumber: props.SerialNumber.String(),
 			hwVendor:       props.VendorName.String(),
+			subDevCount:    int64(props.NumSubdevices),
+			demandPaging:   props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
+			eccSupport:     props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ECC) != 0,
 		},
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
+	}
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
+	switch {
+	case props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_SUBDEVICE) != 0:
+		d.attributes.hwGpuType = metadata.AttributeHwGpuTypeSubdevice
+	case props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_INTEGRATED) != 0:
+		d.attributes.hwGpuType = metadata.AttributeHwGpuTypeIntegrated
+	default:
+		d.attributes.hwGpuType = metadata.AttributeHwGpuTypeDiscrete
 	}
 
 	// Get firmware info
@@ -157,11 +177,8 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		}
 	}
 
-	// TODO: query device ext props:
-	// - https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-properties-t
-	// Especially device props:
-	// - https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
-	// (discrete/integrated, ECC support...)
+	// TODO: report types & sizes of device PCI BARs?
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetbars
 
 	for _, s := range subsystems {
 		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
@@ -181,8 +198,12 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		d.attributes.hwSerialNumber,
 		d.attributes.hwVendor,
 		d.attributes.hwFirmwareVersion,
+		d.attributes.hwGpuType,
+		d.attributes.subDevCount,
 		d.attributes.pciLanes,
 		d.attributes.pciLinkGen,
+		d.attributes.demandPaging,
+		d.attributes.eccSupport,
 	)
 
 	d.scrapePciStats(mb, ts)

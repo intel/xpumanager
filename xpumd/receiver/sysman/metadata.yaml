@@ -29,8 +29,11 @@ attributes:
   com.intel.speed.throttle_reason:
     description: Reason for the hardware component speed throttling.
     type: string
+  com.intel.subdevice_count:
+    description: Number of GPU sub-devices.
+    type: int
   com.intel.subdevice_id:
-    description: Subdevice ID of the hardware component.
+    description: Sub-device ID of the hardware component.
     type: string
   hw.firmware_version:
     description: Firmware version of the hardware component. Comma-separated list of `<id>:<name>:<subdevice_id>:<version>`, where `<version>` is URL-encoded.
@@ -41,12 +44,25 @@ attributes:
   hw.gpu.task:
     description: GPU engine / task type.
     type: string
+  hw.gpu.type:
+    description: GPU device type.
+    type: string
+    enum:
+      - discrete
+      - integrated
+      - subdevice
   hw.id:
     description: Unique identifier for the hardware component.
     type: string
   hw.limit_type:
     description: Type of limit.
     type: string
+  hw.memory.demand_paging:
+    description: Whether device supports on-demand memory page-faulting.
+    type: bool
+  hw.memory.ecc_support:
+    description: Whether device memory access supports error correction.
+    type: bool
   hw.memory.location:
     description: Location of the memory (device, system...).
     type: string
@@ -192,7 +208,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, pci.lanes, pci.link_gen]
+    attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc_support]
   hw.gpu.io:
     enabled: true
     description: Bytes received / transmitted over PCI bus by the GPU device.

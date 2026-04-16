@@ -92,7 +92,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", "pci.lanes-val", "pci.link_gen-val")
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", AttributeHwGpuTypeDiscrete, 25, "pci.lanes-val", "pci.link_gen-val", false, false)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -437,12 +437,24 @@ func TestMetricsBuilder(t *testing.T) {
 					hwFirmwareVersionAttrVal, ok := dp.Attributes().Get("hw.firmware_version")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.firmware_version-val", hwFirmwareVersionAttrVal.Str())
+					hwGpuTypeAttrVal, ok := dp.Attributes().Get("hw.gpu.type")
+					assert.True(t, ok)
+					assert.Equal(t, "discrete", hwGpuTypeAttrVal.Str())
+					comIntelSubdeviceCountAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_count")
+					assert.True(t, ok)
+					assert.EqualValues(t, 25, comIntelSubdeviceCountAttrVal.Int())
 					pciLanesAttrVal, ok := dp.Attributes().Get("pci.lanes")
 					assert.True(t, ok)
 					assert.Equal(t, "pci.lanes-val", pciLanesAttrVal.Str())
 					pciLinkGenAttrVal, ok := dp.Attributes().Get("pci.link_gen")
 					assert.True(t, ok)
 					assert.Equal(t, "pci.link_gen-val", pciLinkGenAttrVal.Str())
+					hwMemoryDemandPagingAttrVal, ok := dp.Attributes().Get("hw.memory.demand_paging")
+					assert.True(t, ok)
+					assert.False(t, hwMemoryDemandPagingAttrVal.Bool())
+					hwMemoryEccSupportAttrVal, ok := dp.Attributes().Get("hw.memory.ecc_support")
+					assert.True(t, ok)
+					assert.False(t, hwMemoryEccSupportAttrVal.Bool())
 				case "hw.gpu.io":
 					assert.False(t, validatedMetrics["hw.gpu.io"], "Found a duplicate in the metrics slice: hw.gpu.io")
 					validatedMetrics["hw.gpu.io"] = true
