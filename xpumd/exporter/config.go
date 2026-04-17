@@ -6,15 +6,18 @@
 package exporter
 
 import (
+	"bytes"
 	"fmt"
 	"maps"
 	"regexp"
 	"slices"
 	"strings"
+	"text/template"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configgrpc"
 	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/intel/xpumanager/xpumd/common"
 	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
@@ -57,11 +60,39 @@ type HwStatusMapping struct {
 	// Filters are the attribute filters that must all match for this
 	// mapping to apply. An empty slice matches any data point.
 	Filters common.AttributeFilterList `mapstructure:"filters"`
+	// HealthDomain is a Go template for the health domain name. Attribute
+	// values are available as template variables (with dots in the name
+	// replaced by underscores, e.g.  "hw.type" -> .hw_type).
+	HealthDomain string `mapstructure:"health_domain"`
 	// StateMapping maps hw.state attribute values to their health status
 	// output. The map key is the hw.state value to match. The special key
 	// "*" acts as a default catch-all for any state not matched by an
 	// exact key.
 	StateMapping map[string]HwStateMapping `mapstructure:"state_mapping"`
+
+	// healthDomainTmpl is compiled from HealthDomain during Validate.
+	healthDomainTmpl *template.Template
+}
+
+// healthDomainFor returns the health domain name for the given attrs. If a
+// HealthDomain template is configured it is rendered with attributes as
+// variables (dots in names replaced by underscores). When no template is
+// configured the default "{hw.type}[.{hw.sensor_location}]" is used.
+func (m *HwStatusMapping) healthDomainFor(attrs pcommon.Map) (string, error) {
+	data := make(map[string]string, attrs.Len())
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		data[strings.ReplaceAll(k, ".", "_")] = v.Str()
+		return true
+	})
+	var buf bytes.Buffer
+	if err := m.healthDomainTmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("failed to render health domain template: %w", err)
+	}
+	if buf.Len() == 0 {
+		return "", fmt.Errorf("health domain name is empty")
+	}
+
+	return buf.String(), nil
 }
 
 // Config defines configuration for the exporter.
@@ -96,6 +127,17 @@ func (m *HwStatusMapping) Validate() error {
 	if err := m.Filters.Validate(); err != nil {
 		return fmt.Errorf("invalid filter: %w", err)
 	}
+
+	if m.HealthDomain == "" {
+		return fmt.Errorf("health_domain must be specified")
+
+	}
+	tmpl, err := template.New("health_domain").Option("missingkey=zero").Parse(m.HealthDomain)
+	if err != nil {
+		return fmt.Errorf("invalid health_domain template: %w", err)
+	}
+	m.healthDomainTmpl = tmpl
+
 	for hwState, sm := range m.StateMapping {
 		if err := sm.Validate(hwState); err != nil {
 			return err

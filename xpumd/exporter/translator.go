@@ -209,13 +209,6 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 	for _, dp := range dps.All() {
 		attrs := dp.Attributes()
 
-		hwTypeVal, _ := attrs.Get("hw.type")
-		hwType := hwTypeVal.Str()
-		if hwType == "" {
-			t.logger.Errorw("missing or empty hw.type attribute", "metric", metricName, "attributes", attrs.AsRaw())
-			continue
-		}
-
 		if dp.ValueType() != pmetric.NumberDataPointValueTypeInt {
 			// Value should be integer
 			t.logger.Errorw("unexpected data point value type for health status metric", "valueType", dp.ValueType(), "metric", metricName, "attributes", attrs.AsRaw())
@@ -237,13 +230,21 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 			t.health[id] = health
 		}
 
-		health.updateStatus(attrs, t.mappings)
+		t.updateHealthDomainStatus(health, metricName, attrs, t.mappings)
 	}
 }
 
-func (d *domainHealth) updateStatus(attrs pcommon.Map, mappings []HwStatusMapping) {
+func (t *metricsTranslator) updateHealthDomainStatus(domain domainHealth, metricName string, attrs pcommon.Map, mappings []HwStatusMapping) {
 	m, ok := matchHwStatusMapping(mappings, attrs)
 	if !ok {
+		return
+	}
+
+	healthDomain, err := m.healthDomainFor(attrs)
+	if err != nil {
+		t.logger.Debug("failed to determine health domain, skipping health status",
+			"metric", metricName, "attributes", attrs.AsRaw(),
+			"health_domain_template", m.HealthDomain, "error", err)
 		return
 	}
 
@@ -254,31 +255,24 @@ func (d *domainHealth) updateStatus(attrs pcommon.Map, mappings []HwStatusMappin
 		return
 	}
 
-	hwTypeVal, _ := attrs.Get("hw.type")
-	hwSensorLocationVal, _ := attrs.Get("hw.sensor_location")
-	healthDomain := hwTypeVal.Str()
-	if loc := hwSensorLocationVal.Str(); loc != "" {
-		healthDomain += "." + loc
-	}
-
 	reason := sm.Reason
 	if reason == "" {
 		reason = hwState
 	}
 
-	if status, exists := (*d)[healthDomain]; !exists {
-		(*d)[healthDomain] = &pb.HealthStatus{
+	if status, exists := domain[healthDomain]; !exists {
+		domain[healthDomain] = &pb.HealthStatus{
 			Name:     healthDomain,
 			Severity: sm.severityLevel,
 			Reason:   reason,
 			Message:  sm.Message,
 		}
 	} else if sm.severityLevel != pb.SeverityLevel_SEVERITY_LEVEL_OK {
-		// Update only if new status is worse than existing
+		// Pick the worst severity level if multiple statuses exist for the same domain
 		if sm.severityLevel > status.Severity {
-			(*d)[healthDomain].Severity = sm.severityLevel
-			(*d)[healthDomain].Reason = reason
-			(*d)[healthDomain].Message = sm.Message
+			domain[healthDomain].Severity = sm.severityLevel
+			domain[healthDomain].Reason = reason
+			domain[healthDomain].Message = sm.Message
 		}
 	}
 }
