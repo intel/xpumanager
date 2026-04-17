@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/processor"
 	"go.uber.org/zap"
+
+	"github.com/intel/xpumanager/xpumd/common"
 )
 
 type xpuHealthProcessor struct {
@@ -187,9 +189,9 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 	}
 }
 
-func (p *ruleProcessor) matchFilters(attrs pcommon.Map, filters []AttributeFilter) bool {
+func (p *ruleProcessor) matchFilters(attrs pcommon.Map, filters []common.AttributeFilter) bool {
 	for _, filter := range filters {
-		if !filter.match(attrs) {
+		if !filter.Match(attrs) {
 			return false
 		}
 	}

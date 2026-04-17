@@ -8,10 +8,11 @@ package processor
 import (
 	"fmt"
 	"math"
-	"slices"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+
+	"github.com/intel/xpumanager/xpumd/common"
 )
 
 // Config defines configuration for the processor.
@@ -43,21 +44,13 @@ type HealthRule struct {
 	// Additional attributes to set on the StatusMetric.
 	AddAttributes map[string]string `mapstructure:"add_attributes"`
 	// Filters to apply on the source metric.
-	ComponentFilters []AttributeFilter `mapstructure:"component_filters"`
+	ComponentFilters []common.AttributeFilter `mapstructure:"component_filters"`
 	// Filters to apply on the parent metric.
-	ParentFilters []AttributeFilter `mapstructure:"parent_filters"`
+	ParentFilters []common.AttributeFilter `mapstructure:"parent_filters"`
 	// Ordered list of state rules to evaluate. All rules are evaluated, and
 	// the last matching one will be active. Thus, the rules should be ordered
 	// by increasing severity.
 	States []StateRule `mapstructure:"states"`
-}
-
-// AttributeFilter defines filtering criteria for component attributes
-type AttributeFilter struct {
-	// Attribute key to filter on.
-	Key string `mapstructure:"key"`
-	// Attribute values to match.
-	Values []string `mapstructure:"values"`
 }
 
 // StateRule defines when to apply a specific state.
@@ -75,7 +68,7 @@ type ConditionRule struct {
 	// Value threshold
 	Value float64 `mapstructure:"value"`
 	// Filter to apply on parent attributes.
-	ParentFilters []AttributeFilter `mapstructure:"parent_filters"`
+	ParentFilters []common.AttributeFilter `mapstructure:"parent_filters"`
 }
 
 // defaultConfig returns the default configuration for the processor.
@@ -131,12 +124,12 @@ func (r *HealthRule) validate() error {
 		}
 	}
 	for _, filter := range r.ComponentFilters {
-		if err := filter.validate(); err != nil {
+		if err := filter.Validate(); err != nil {
 			return fmt.Errorf("invalid component filter: %w", err)
 		}
 	}
 	for _, filter := range r.ParentFilters {
-		if err := filter.validate(); err != nil {
+		if err := filter.Validate(); err != nil {
 			return fmt.Errorf("invalid parent filter: %w", err)
 		}
 	}
@@ -160,29 +153,11 @@ func (r *ConditionRule) validate() error {
 		return fmt.Errorf("value cannot be NaN")
 	}
 	for _, filter := range r.ParentFilters {
-		if err := filter.validate(); err != nil {
+		if err := filter.Validate(); err != nil {
 			return fmt.Errorf("invalid parent filter: %w", err)
 		}
 	}
 	return nil
-}
-
-func (f *AttributeFilter) validate() error {
-	if f.Key == "" {
-		return fmt.Errorf("filter key is required")
-	}
-	if slices.Contains(f.Values, "") {
-		return fmt.Errorf("filter value cannot be empty for key %q", f.Key)
-	}
-	return nil
-}
-
-func (f *AttributeFilter) match(attrs pcommon.Map) bool {
-	val, ok := attrs.Get(f.Key)
-	if !ok {
-		return false
-	}
-	return slices.Contains(f.Values, val.Str())
 }
 
 func (r *ConditionRule) match(value float64, parentAttrs pcommon.Map) bool {
@@ -190,7 +165,7 @@ func (r *ConditionRule) match(value float64, parentAttrs pcommon.Map) bool {
 		return false
 	}
 	for _, filter := range r.ParentFilters {
-		if !filter.match(parentAttrs) {
+		if !filter.Match(parentAttrs) {
 			return false
 		}
 	}

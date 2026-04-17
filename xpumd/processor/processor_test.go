@@ -13,6 +13,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
+
+	"github.com/intel/xpumanager/xpumd/common"
 )
 
 func TestRuleProcessorEvaluatestates(t *testing.T) {
@@ -170,7 +172,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 					Conditions: []ConditionRule{
 						{
 							Value: 50.0,
-							ParentFilters: []AttributeFilter{
+							ParentFilters: []common.AttributeFilter{
 								{
 									Key:    "hw.type",
 									Values: []string{"gpu"},
@@ -200,7 +202,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 					Conditions: []ConditionRule{
 						{
 							Value: 50.0,
-							ParentFilters: []AttributeFilter{
+							ParentFilters: []common.AttributeFilter{
 								{
 									Key:    "hw.type",
 									Values: []string{"gpu"},
@@ -366,13 +368,13 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				StateAttribute:     "hw.state",
 				ParentMetric:       "system.info",
 				ParentRefAttribute: "hw.parent",
-				ComponentFilters: []AttributeFilter{
+				ComponentFilters: []common.AttributeFilter{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
 					},
 				},
-				ParentFilters: []AttributeFilter{
+				ParentFilters: []common.AttributeFilter{
 					{
 						Key:    "hw.vendor",
 						Values: []string{"acme"},
@@ -417,7 +419,7 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				SourceMetric:   "gpu.temperature",
 				StatusMetric:   "hw.status",
 				StateAttribute: "hw.state",
-				ComponentFilters: []AttributeFilter{
+				ComponentFilters: []common.AttributeFilter{
 					{
 						Key:    "hw.type",
 						Values: []string{"cpu"},
@@ -450,7 +452,7 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				StateAttribute:     "hw.state",
 				ParentMetric:       "system.info",
 				ParentRefAttribute: "hw.parent",
-				ParentFilters: []AttributeFilter{
+				ParentFilters: []common.AttributeFilter{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},

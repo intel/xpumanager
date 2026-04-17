@@ -12,6 +12,7 @@ dist:
 replaces:
   - github.com/intel/level-zero-go => ../receiver/internal/level-zero-go
   - github.com/intel/xpumanager/xpumd => ../
+  - github.com/intel/xpumanager/xpumd/common => ../common
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v@OTEL_VERSION@
