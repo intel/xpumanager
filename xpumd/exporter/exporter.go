@@ -95,7 +95,7 @@ func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
 	}
 	e.grpcServer = s
 
-	h := newDeviceInfoServer(e.logger, e.telemetry)
+	h := newDeviceInfoServer(e.logger, e.telemetry, e.cfg)
 	pb.RegisterDeviceInfoServer(s, h)
 	e.healthServer = h
 

@@ -58,5 +58,43 @@ data:
               - state_name: "warning"
                 conditions:
                   - value: 85.0
+  # Default configuration for the Intel XPU info exporter. Can be overridden
+  # in config.yaml (via .Values.config).
+  config-exporter-xpuinfo.yaml: |-
+    exporters:
+      intelxpuinfo:
+        endpoint: "/run/xpumd/intelxpuinfo.sock"
+        hw_status_mappings:
+          - filters:
+              - key: hw.type
+                values: [memory]
+            state_mapping:
+              unknown:
+                severity: unknown
+              ok:
+                severity: ok
+              degraded:
+                severity: warning
+              critical:
+                severity: critical
+              replace:
+                severity: critical
+              "*":
+                severity: warning
+                message: "Unexpected memory health state, mapped to warning"
+          # Default mapping (empty filters matches any data point not matched above):
+          - state_mapping:
+              unknown:
+                severity: unknown
+              ok:
+                severity: ok
+              warning:
+                severity: warning
+              critical:
+                severity: critical
+              failed:
+                severity: failed
+              "*":
+                severity: warning
   config.yaml: |-
 {{ .Values.config | toYaml | indent 4 }}

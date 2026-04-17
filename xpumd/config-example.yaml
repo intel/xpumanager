@@ -78,6 +78,38 @@ exporters:
     # Only unix domain socket is allowed.
     # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
     #endpoint: "/run/xpumd/intelxpuinfo.sock"
+    hw_status_mappings:
+      - filters:
+          - key: hw.type
+            values: [memory]
+        state_mapping:
+          unknown:
+            severity: unknown
+          ok:
+            severity: ok
+          degraded:
+            severity: warning
+          critical:
+            severity: critical
+          replace:
+            severity: critical
+          "*":
+            severity: warning
+            message: "Unexpected memory health state, mapped to warning"
+      # Default mapping (empty filters matches any data point not matched above):
+      - state_mapping:
+          unknown:
+            severity: unknown
+          ok:
+            severity: ok
+          warning:
+            severity: warning
+          critical:
+            severity: critical
+          failed:
+            severity: failed
+          "*":
+            severity: warning
   prometheus:
     endpoint: "0.0.0.0:8080"
 

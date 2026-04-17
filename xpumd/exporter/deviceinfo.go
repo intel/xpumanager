@@ -19,6 +19,7 @@ type deviceInfoServer struct {
 	pb.UnimplementedDeviceInfoServer
 	logger    *zap.SugaredLogger
 	telemetry *metadata.TelemetryBuilder
+	cfg       *Config
 
 	stopChan chan struct{}
 
@@ -29,10 +30,11 @@ type deviceInfoServer struct {
 	deviceHealthClients sync.Map
 }
 
-func newDeviceInfoServer(logger *zap.SugaredLogger, tb *metadata.TelemetryBuilder) *deviceInfoServer {
+func newDeviceInfoServer(logger *zap.SugaredLogger, tb *metadata.TelemetryBuilder, cfg *Config) *deviceInfoServer {
 	return &deviceInfoServer{
 		logger:    logger,
 		telemetry: tb,
+		cfg:       cfg,
 		stopChan:  make(chan struct{}),
 	}
 }
@@ -69,7 +71,7 @@ func (s *deviceInfoServer) updateHealthData(md pmetric.Metrics) {
 	s.healthDataLock.Lock()
 	defer s.healthDataLock.Unlock()
 
-	mt := newMetricsTranslator(s.logger)
+	mt := newMetricsTranslator(s.logger, s.cfg)
 	s.healthData = mt.translate(md)
 
 	s.broadcastHealthData()

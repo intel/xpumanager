@@ -41,6 +41,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - "--config=/etc/xpumd/config-processor-xpustatus.yaml"
+        - "--config=/etc/xpumd/config-exporter-xpuinfo.yaml"
         - "--config=/etc/xpumd/config.yaml"
         securityContext:
           {{- if .Values.securityContextOverride }}

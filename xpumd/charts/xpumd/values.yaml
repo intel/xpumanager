@@ -131,11 +131,9 @@ config:
   # @default --  
   # @section -- XPUM Daemon Configuration
   exporters:
-    # -- Configuration for the Intel XPU info exporter ([all available gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)). Only unix domain socket endpoints are supported. If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
-    # @default --  
+    # -- Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intelxpuinfo` README for details.
     # @section -- XPUM Daemon Configuration
-    intelxpuinfo:
-      endpoint: "/run/xpumd/intelxpuinfo.sock"
+    intelxpuinfo: {}
     # @schema hidden
     prometheus:
       endpoint: "0.0.0.0:8080"

@@ -24,18 +24,24 @@ type metricsTranslator struct {
 	resp   map[string]*pb.DeviceHealth
 
 	// helpers for quick'n'easy lookups
-	health map[string]domainHealth
-	memory map[string][]*pb.MemoryInfo
+	health   map[string]domainHealth
+	memory   map[string][]*pb.MemoryInfo
+	mappings []HwStatusMapping
 }
 
 type domainHealth map[string]*pb.HealthStatus
 
-func newMetricsTranslator(logger *zap.SugaredLogger) *metricsTranslator {
+func newMetricsTranslator(logger *zap.SugaredLogger, cfg *Config) *metricsTranslator {
+	var mappings []HwStatusMapping
+	if cfg != nil {
+		mappings = cfg.HwStatusMappings
+	}
 	return &metricsTranslator{
-		logger: logger,
-		resp:   make(map[string]*pb.DeviceHealth),
-		health: make(map[string]domainHealth),
-		memory: make(map[string][]*pb.MemoryInfo),
+		logger:   logger,
+		resp:     make(map[string]*pb.DeviceHealth),
+		health:   make(map[string]domainHealth),
+		memory:   make(map[string][]*pb.MemoryInfo),
+		mappings: mappings,
 	}
 }
 
@@ -231,114 +237,59 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 			t.health[id] = health
 		}
 
-		hwSensorLocationVal, _ := attrs.Get("hw.sensor_location")
-		hwStateVal, _ := attrs.Get("hw.state")
-
-		health.updateStatus(hwType, hwSensorLocationVal.Str(), hwStateVal.Str())
+		health.updateStatus(attrs, t.mappings)
 	}
 }
 
-func (d *domainHealth) updateStatus(hwType, sensorLocation, state string) {
-	hs := hwStatusToHealthStatus(hwType, state)
+func (d *domainHealth) updateStatus(attrs pcommon.Map, mappings []HwStatusMapping) {
+	m, ok := matchHwStatusMapping(mappings, attrs)
+	if !ok {
+		return
+	}
 
-	healthDomain := hwType
-	if sensorLocation != "" {
-		healthDomain += "." + sensorLocation
+	hwStateVal, _ := attrs.Get("hw.state")
+	hwState := hwStateVal.Str()
+	sm, ok := m.healthStatusFor(hwState)
+	if !ok {
+		return
+	}
+
+	hwTypeVal, _ := attrs.Get("hw.type")
+	hwSensorLocationVal, _ := attrs.Get("hw.sensor_location")
+	healthDomain := hwTypeVal.Str()
+	if loc := hwSensorLocationVal.Str(); loc != "" {
+		healthDomain += "." + loc
+	}
+
+	reason := sm.Reason
+	if reason == "" {
+		reason = hwState
 	}
 
 	if status, exists := (*d)[healthDomain]; !exists {
 		(*d)[healthDomain] = &pb.HealthStatus{
 			Name:     healthDomain,
-			Severity: hs.severity,
-			Reason:   hs.reason,
-			Message:  hs.message,
+			Severity: sm.severityLevel,
+			Reason:   reason,
+			Message:  sm.Message,
 		}
-	} else if hs.severity != pb.SeverityLevel_SEVERITY_LEVEL_OK {
+	} else if sm.severityLevel != pb.SeverityLevel_SEVERITY_LEVEL_OK {
 		// Update only if new status is worse than existing
-		if hs.severity > status.Severity {
-			(*d)[healthDomain].Severity = hs.severity
-			(*d)[healthDomain].Reason = hs.reason
-			(*d)[healthDomain].Message = hs.message
+		if sm.severityLevel > status.Severity {
+			(*d)[healthDomain].Severity = sm.severityLevel
+			(*d)[healthDomain].Reason = reason
+			(*d)[healthDomain].Message = sm.Message
 		}
 	}
 }
 
-type healthStateTranslator map[string]healthStatus
-
-type healthStatus struct {
-	severity pb.SeverityLevel
-	reason   string
-	message  string
-}
-
-func (t healthStateTranslator) translate(state string) healthStatus {
-	hs, ok := t[state]
-	if ok {
-		return hs
+func matchHwStatusMapping(mappings []HwStatusMapping, attrs pcommon.Map) (*HwStatusMapping, bool) {
+	for i := range mappings {
+		if mappings[i].Filters.Match(attrs) {
+			return &mappings[i], true
+		}
 	}
-	// Default to warning for unlisted states
-	return healthStatus{
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_WARNING,
-		reason:   state,
-		message:  "unrecognized state mapped to warning",
-	}
-}
-
-// memoryHealthTranslation maps memory health status from Sysman to gRPC API.
-var memoryHealthTranslator = healthStateTranslator{
-	"unknown": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_UNKNOWN,
-		reason:   "unknown",
-	},
-	"ok": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_OK,
-		reason:   "ok",
-	},
-	"degraded": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_WARNING,
-		reason:   "degraded",
-	},
-	"critical": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
-		reason:   "critical",
-	},
-	"replace": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
-		reason:   "replace",
-	},
-}
-
-// defaultHealthTranslator maps general component state string to gRPC API.
-var defaultHealthTranslator = healthStateTranslator{
-	"unknown": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_UNKNOWN,
-		reason:   "unknown",
-	},
-	"ok": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_OK,
-		reason:   "ok",
-	},
-	"warning": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_WARNING,
-		reason:   "warning",
-	},
-	"critical": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
-		reason:   "critical",
-	},
-	"failed": {
-		severity: pb.SeverityLevel_SEVERITY_LEVEL_FAILED,
-		reason:   "failed",
-	},
-}
-
-func hwStatusToHealthStatus(hwType, state string) healthStatus {
-	switch hwType {
-	case "memory":
-		return memoryHealthTranslator.translate(state)
-	default:
-		return defaultHealthTranslator.translate(state)
-	}
+	return nil, false
 }
 
 func (t *metricsTranslator) updateMemoryInfo(metricName string, dps pmetric.NumberDataPointSlice) {

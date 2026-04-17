@@ -69,7 +69,7 @@ func TestParseFirmwares(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			translator := newMetricsTranslator(zap.NewNop().Sugar())
+			translator := newMetricsTranslator(zap.NewNop().Sugar(), nil)
 
 			result := translator.parseFirmwares(tt.input)
 
@@ -228,7 +228,7 @@ func TestUpdateMemoryInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			translator := newMetricsTranslator(zap.NewNop().Sugar())
+			translator := newMetricsTranslator(zap.NewNop().Sugar(), nil)
 
 			dps := pmetric.NewNumberDataPointSlice()
 			tt.setup(dps)

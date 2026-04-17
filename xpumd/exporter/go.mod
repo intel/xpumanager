@@ -4,6 +4,8 @@ go 1.26
 
 replace github.com/intel/xpumanager/xpumd => ..
 
+replace github.com/intel/xpumanager/xpumd/common => ../common
+
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/stretchr/testify v1.11.1
@@ -41,6 +43,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/intel/xpumanager/xpumd/common v0.0.0
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
