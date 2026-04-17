@@ -12,8 +12,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/processor"
 	"go.uber.org/zap"
-
-	"github.com/intel/xpumanager/xpumd/common"
 )
 
 type xpuHealthProcessor struct {
@@ -136,7 +134,7 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 		sourceAttrs := dp.Attributes()
 
 		// Apply rule-level filters
-		if !p.matchFilters(sourceAttrs, p.ComponentFilters) {
+		if !p.ComponentFilters.Match(sourceAttrs) {
 			continue
 		}
 
@@ -154,7 +152,7 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 				p.logger.Debugw("missing parent attributes", "metric", p.SourceMetric, "parentID", parentID, "attributes", sourceAttrs.AsRaw())
 				parentAttrs = pcommon.Map{}
 			}
-			if !p.matchFilters(parentAttrs, p.ParentFilters) {
+			if !p.ParentFilters.Match(parentAttrs) {
 				continue
 			}
 		}
@@ -187,15 +185,6 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 
 		p.createHealthMetric(statusDps, statusAttrs, states, dp.Timestamp())
 	}
-}
-
-func (p *ruleProcessor) matchFilters(attrs pcommon.Map, filters []common.AttributeFilter) bool {
-	for _, filter := range filters {
-		if !filter.Match(attrs) {
-			return false
-		}
-	}
-	return true
 }
 
 func (p *ruleProcessor) evaluateStates(value float64, parentID string) map[string]uint64 {

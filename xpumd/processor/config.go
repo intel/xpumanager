@@ -44,9 +44,9 @@ type HealthRule struct {
 	// Additional attributes to set on the StatusMetric.
 	AddAttributes map[string]string `mapstructure:"add_attributes"`
 	// Filters to apply on the source metric.
-	ComponentFilters []common.AttributeFilter `mapstructure:"component_filters"`
+	ComponentFilters common.AttributeFilterList `mapstructure:"component_filters"`
 	// Filters to apply on the parent metric.
-	ParentFilters []common.AttributeFilter `mapstructure:"parent_filters"`
+	ParentFilters common.AttributeFilterList `mapstructure:"parent_filters"`
 	// Ordered list of state rules to evaluate. All rules are evaluated, and
 	// the last matching one will be active. Thus, the rules should be ordered
 	// by increasing severity.
@@ -68,7 +68,7 @@ type ConditionRule struct {
 	// Value threshold
 	Value float64 `mapstructure:"value"`
 	// Filter to apply on parent attributes.
-	ParentFilters []common.AttributeFilter `mapstructure:"parent_filters"`
+	ParentFilters common.AttributeFilterList `mapstructure:"parent_filters"`
 }
 
 // defaultConfig returns the default configuration for the processor.
@@ -123,15 +123,11 @@ func (r *HealthRule) validate() error {
 			return fmt.Errorf("invalid state rule: %w", err)
 		}
 	}
-	for _, filter := range r.ComponentFilters {
-		if err := filter.Validate(); err != nil {
-			return fmt.Errorf("invalid component filter: %w", err)
-		}
+	if err := r.ComponentFilters.Validate(); err != nil {
+		return fmt.Errorf("invalid component filter: %w", err)
 	}
-	for _, filter := range r.ParentFilters {
-		if err := filter.Validate(); err != nil {
-			return fmt.Errorf("invalid parent filter: %w", err)
-		}
+	if err := r.ParentFilters.Validate(); err != nil {
+		return fmt.Errorf("invalid parent filter: %w", err)
 	}
 	return nil
 }
@@ -152,22 +148,12 @@ func (r *ConditionRule) validate() error {
 	if math.IsNaN(r.Value) {
 		return fmt.Errorf("value cannot be NaN")
 	}
-	for _, filter := range r.ParentFilters {
-		if err := filter.Validate(); err != nil {
-			return fmt.Errorf("invalid parent filter: %w", err)
-		}
+	if err := r.ParentFilters.Validate(); err != nil {
+		return fmt.Errorf("invalid parent filter: %w", err)
 	}
 	return nil
 }
 
 func (r *ConditionRule) match(value float64, parentAttrs pcommon.Map) bool {
-	if value < r.Value {
-		return false
-	}
-	for _, filter := range r.ParentFilters {
-		if !filter.Match(parentAttrs) {
-			return false
-		}
-	}
-	return true
+	return value >= r.Value && r.ParentFilters.Match(parentAttrs)
 }

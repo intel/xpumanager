@@ -172,7 +172,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 					Conditions: []ConditionRule{
 						{
 							Value: 50.0,
-							ParentFilters: []common.AttributeFilter{
+							ParentFilters: common.AttributeFilterList{
 								{
 									Key:    "hw.type",
 									Values: []string{"gpu"},
@@ -202,7 +202,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 					Conditions: []ConditionRule{
 						{
 							Value: 50.0,
-							ParentFilters: []common.AttributeFilter{
+							ParentFilters: common.AttributeFilterList{
 								{
 									Key:    "hw.type",
 									Values: []string{"gpu"},
@@ -368,13 +368,13 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				StateAttribute:     "hw.state",
 				ParentMetric:       "system.info",
 				ParentRefAttribute: "hw.parent",
-				ComponentFilters: []common.AttributeFilter{
+				ComponentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
 					},
 				},
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.vendor",
 						Values: []string{"acme"},
@@ -419,7 +419,7 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				SourceMetric:   "gpu.temperature",
 				StatusMetric:   "hw.status",
 				StateAttribute: "hw.state",
-				ComponentFilters: []common.AttributeFilter{
+				ComponentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"cpu"},
@@ -452,7 +452,7 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				StateAttribute:     "hw.state",
 				ParentMetric:       "system.info",
 				ParentRefAttribute: "hw.parent",
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},

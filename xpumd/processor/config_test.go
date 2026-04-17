@@ -57,7 +57,7 @@ func TestConditionRule(t *testing.T) {
 			name: "value matches, parent filter matches",
 			rule: ConditionRule{
 				Value: 50.0,
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
@@ -74,7 +74,7 @@ func TestConditionRule(t *testing.T) {
 			name: "value matches, parent filter does not match",
 			rule: ConditionRule{
 				Value: 50.0,
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
@@ -91,7 +91,7 @@ func TestConditionRule(t *testing.T) {
 			name: "value below threshold and parent filter matches",
 			rule: ConditionRule{
 				Value: 50.0,
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
@@ -108,7 +108,7 @@ func TestConditionRule(t *testing.T) {
 			name: "value matches, multiple parent filters all match",
 			rule: ConditionRule{
 				Value: 50.0,
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
@@ -130,7 +130,7 @@ func TestConditionRule(t *testing.T) {
 			name: "value matches, one parent filter does not match",
 			rule: ConditionRule{
 				Value: 50.0,
-				ParentFilters: []common.AttributeFilter{
+				ParentFilters: common.AttributeFilterList{
 					{
 						Key:    "hw.type",
 						Values: []string{"gpu"},
