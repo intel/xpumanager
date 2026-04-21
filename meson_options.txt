@@ -31,3 +31,6 @@ option('conan_deps_runtime', type: 'string', value: 'Release',
 
 option('with_tests', type: 'boolean', value: false,
        description: 'Build unit tests (requires boost-ext-ut via Conan)')
+
+option('extensions', type: 'boolean', value: false,
+       description: 'Include extensions-only features (dev branch only)')

@@ -29,6 +29,7 @@
 #include "standby.h"
 #include "temperature.h"
 #include "vf.h"
+#include "rasexp.h"
 
 struct devProps
 {
@@ -107,6 +108,7 @@ private:
 	temperature temperatureInstance;
 	vf vfInstance;
 	metric metricInstance;
+	rasExp rasExpInstance;
 
 public:
 	device();
@@ -168,6 +170,7 @@ public:
 	standby *getStandby() { return &standbyInstance; }
 	temperature *getTemperature() { return &temperatureInstance; }
 	vf *getVF() { return &vfInstance; }
+	rasExp *getRASExp() { return &rasExpInstance; }
 
 	void getBDF(bdfID &bdf) const;
 	std::string getBDFStr();

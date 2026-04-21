@@ -35,6 +35,21 @@ hal_core_sources = files(
 hal_core_inc = include_directories('.')
 api_inc = include_directories('../../ial/api')
 
+# extensions-only sources (dev branch only)
+# These files are only included when building with -Dextensions=true
+extensions_enabled = get_option('extensions')
+extensions_inc_dirs = []
+
+if extensions_enabled
+  message('Extensions: Building with extended features enabled')
+  subdir('extensions')
+  hal_core_sources += hal_core_extension_sources
+  extensions_inc_dirs = [hal_core_extension_inc]
+else
+  # External build uses rasexp.cpp (returns base ecc)
+  hal_core_sources += files('rasexp.cpp')
+endif
+
 # Shared library
 libxpum_shared = shared_library('xpum',
   hal_core_sources,
@@ -46,7 +61,7 @@ libxpum_shared = shared_library('xpum',
     include_directories('../fwupd'),
     include_directories('../amc'),
     include_directories('../../ial/cli')  # For version.h
-  ],
+  ] + extensions_inc_dirs,
   dependencies : [
     levelzero_dep, 
     igsc_dep, 
@@ -71,7 +86,7 @@ libxpum_static = static_library('xpum',
     include_directories('../fwupd'),
     include_directories('../amc'),
     include_directories('../../ial/cli')  # For version.h
-  ],
+  ] + extensions_inc_dirs,
   dependencies : [
     levelzero_dep,
     igsc_dep,

@@ -230,6 +230,13 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	rasExp *rasExpInstance = device->dev->getRASExp();
+	if (rasExpInstance != nullptr && rasExpInstance->isRasExpEnabled()) {
+		DBG("Using RAS Experimental extension for error collection.\n");
+		std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> rasErrStates;
+		return rasExpInstance->getErrorsPerTileRasExp(rasErrStates);
+	}
+
 	auto *rasHandler = reinterpret_cast<::ras *>(device->dev->getRAS());
 	if (rasHandler == nullptr) {
 		DBG("RAS handler not available for device {}.\n", device->index);
