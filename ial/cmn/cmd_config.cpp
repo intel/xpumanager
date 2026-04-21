@@ -204,7 +204,14 @@ static void getGpuFrequencyOptions(zes_device_handle_t device, uint32_t tileId, 
 	}
 
 	options = joinRoundedClocks(clocks);
-	if (!clocks.empty()) {
+
+	// Get the currently configured frequency range, not just the available clocks
+	zes_freq_range_t range = {};
+	if (zesFrequencyGetRange(selected, &range) == ZE_RESULT_SUCCESS) {
+		minFreq = static_cast<uint32_t>(std::llround(range.min));
+		maxFreq = static_cast<uint32_t>(std::llround(range.max));
+	} else if (!clocks.empty()) {
+		// Fallback to available clock range if GetRange fails
 		double minVal = *std::min_element(clocks.begin(), clocks.end());
 		double maxVal = *std::max_element(clocks.begin(), clocks.end());
 		minFreq = static_cast<uint32_t>(std::llround(minVal));
@@ -1104,11 +1111,11 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 	std::string powerType = configCmds[configCmdType::POWERTYPE].val;
 	if (powerType.empty() || powerType == "sustain") {
 		// Default to sustained power limit
-		result = pwr->setSustainedLimit(limitMw, -1);
+		result = pwr->setLimitsExt(-1, ZES_POWER_LEVEL_SUSTAINED, limitMw);
 	} else if (powerType == "burst") {
-		result = pwr->setBurstLimit(limitMw);
+		result = pwr->setLimitsExt(-1, ZES_POWER_LEVEL_BURST, limitMw);
 	} else if (powerType == "peak") {
-		result = pwr->setPeakLimit(limitMw, limitMw);
+		result = pwr->setLimitsExt(-1, ZES_POWER_LEVEL_PEAK, limitMw);
 	} else {
 		ERR("Invalid power type. Valid options: sustain, burst, peak\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;

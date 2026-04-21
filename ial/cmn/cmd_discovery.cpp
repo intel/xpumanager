@@ -1683,8 +1683,28 @@ ze_result_t cmdDiscovery::memoryFreeSize(devInfo *d, std::string *outputLine)
 ze_result_t cmdDiscovery::memoryEccState(devInfo *d, std::string *outputLine)
 {
 	TRACING();
+
+	// Use Sysman ECC state API to get the actual runtime ECC state
+	zes_device_ecc_properties_t eccState = {};
+	ze_result_t result = zesDeviceGetEccState(d->zesDeviceHdl, &eccState);
+	if (result == ZE_RESULT_SUCCESS) {
+		switch (eccState.currentState) {
+		case ZES_DEVICE_ECC_STATE_ENABLED:
+			*outputLine = "enabled";
+			break;
+		case ZES_DEVICE_ECC_STATE_DISABLED:
+			*outputLine = "disabled";
+			break;
+		default:
+			*outputLine = "unavailable";
+			break;
+		}
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// Fallback to device property flag if Sysman API is not available
 	auto zeDevProp = ze_device_properties_t{};
-	const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
+	result = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
