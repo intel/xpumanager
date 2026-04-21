@@ -1,0 +1,9 @@
+{
+    "_comment": "PCI device ID to firmware image paths. Paths should point to the actual firmware binaries for each GPU SKU. Update these paths to match the deployment environment.",
+    "firmware_by_pci_device_id": {
+        "0x0bd5": "/usr/lib/firmware/updates/i915/bmg_g21_fwupdate.bin",
+        "0x0bd6": "/usr/lib/firmware/updates/i915/bmg_g21_fwupdate.bin",
+        "0x0bda": "/usr/lib/firmware/updates/i915/lnl_fwupdate.bin",
+        "0x0bd0": "/usr/lib/firmware/updates/i915/ats_fwupdate.bin"
+    }
+}
