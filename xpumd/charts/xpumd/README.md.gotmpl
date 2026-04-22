@@ -86,8 +86,10 @@ To enable (only) OTLP gRPC exporter i.e. data pushing to specified OTel collecto
   --set config.service.pipelines.metrics.exporters="{otlp}"
 ```
 
-See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector and
-[OTLP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter#readme).
+See [OTEL_STACK](../../OTEL_STACK.md) on how to setup OTel collector, and
+[OTLP gRPC exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter#readme) or
+[OTLP HTTP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter#readme)
+on how to configure OTel exporter for gRPC or HTTP transport.
 
 
 ### Using private GitHub registry
