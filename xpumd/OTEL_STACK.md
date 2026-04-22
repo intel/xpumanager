@@ -9,7 +9,7 @@ example setup:
 - [**Upstream OpenTelemetry Collector**](#step-1-deploy-upstream-opentelemetry-collector)
   receives metrics from xpumd and provides Prometheus-compatible endpoints
 - [**xpumd**](#step-2-deploy-xpumd)
-  collects Intel GPU telemetry and exports metrics via OTLP (OpenTelemetry Protocol) gRPC
+  collects Intel GPU telemetry and exports metrics via OTLP (OpenTelemetry Protocol)
 - [**Prometheus/Grafana**](#visualization-with-grafana)
   (optional) used for visualization and alerting
 
@@ -75,25 +75,24 @@ With locally built image (e.g. [kind](https://kind.sigs.k8s.io/) cluster):
 helm install xpumd charts/xpumd \
   --set image.repository=registry.local/xpumd \
   --set image.pullPolicy=Never \
-  --set config.exporters.otlp.endpoint="otel-collector-opentelemetry-collector.default.svc.cluster.local:4317" \
-  --set config.exporters.otlp.tls.insecure=true \
-  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlp}"
+  --set config.exporters.otlphttp.endpoint="http://otel-collector-opentelemetry-collector.default.svc.cluster.local:4318" \
+  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlphttp}"
 ```
 
 From ghcr.io registry:
 
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
-  --set imagePullSecrets[0].name=ghcr-secret \
-  --set config.exporters.otlp.endpoint="otel-collector-opentelemetry-collector.default.svc.cluster.local:4317" \
-  --set config.exporters.otlp.tls.insecure=true \
-  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlp}" \
+  --set config.exporters.otlphttp.endpoint="http://otel-collector-opentelemetry-collector.default.svc.cluster.local:4318" \
+  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlphttp}" \
   --version 0.0.0-main
 ```
 
+Alternatively, use the OTLP gRPC exporter (port 4317) instead of HTTP.
+
 > [!IMPORTANT]
-> See the [Chart README](charts/xpumd/README.md) for details on installing the
-> chart and image from the ghcr.io registry requiring image pull secrets.
+> See the [Chart README](charts/xpumd/README.md) for details on how to
+> configure `xpumd` for the target cluster setup.
 
 ### Step 3: Validate the Setup
 
