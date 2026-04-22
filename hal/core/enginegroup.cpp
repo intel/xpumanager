@@ -5,6 +5,9 @@
  */
 
 #include "enginegroup.h"
+#include <algorithm>
+#include <ranges>
+#include <tuple>
 
 /**
  * @brief Destructor for the enginegroup class
@@ -224,64 +227,44 @@ ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_
 /**
  * @brief Gets utilization statistics for specific engine group types
  *
- * This function searches for engine groups matching the specified types
- * and retrieves their utilization metrics, providing active time and
- * timestamp data for performance analysis and monitoring.
+ * Searches for engine groups matching the specified types and retrieves
+ * their utilization metrics. Returns results as a tuple to avoid
+ * uninitialized out-parameter pitfalls.
  *
- * @param typeTable Array of engine group types to search for
- * @param tableSize Number of entries in the type table
- * @param utilization Pointer to store the utilization active time
- * @param timestamp Pointer to store the measurement timestamp
- * @return ze_result_t ZE_RESULT_SUCCESS if utilization retrieved successfully, error code otherwise
+ * @param typeTable Span of engine group types to search for
+ * @return std::tuple of (ze_result_t, activeTime, timestamp)
  */
-ze_result_t enginegroup::getUtilization(zes_engine_group_t *typeTable, uint32_t tableSize, uint64_t *utilization,
-										uint64_t *timestamp)
+std::tuple<ze_result_t, uint64_t, uint64_t> enginegroup::getUtilization(std::span<const zes_engine_group_t> typeTable)
 {
 	zes_engine_properties_t engineProperties;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_engine_stats_t engineStats;
-	bool found;
 	TRACING();
-
-	if (utilization == nullptr) {
-		ERR("Utilization pointer is null.\n");
-		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
-	}
-
-	if (timestamp == nullptr) {
-		ERR("Timestamp pointer is null.\n");
-		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
-	}
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get engine properties for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
-			return result;
+			return {result, 0, 0};
 		}
 
-		found = false;
-		for (uint32_t j = 0; j < tableSize; j++) {
-			if (engineProperties.type == typeTable[j]) {
-				found = true;
-				break;
-			}
-		}
+		bool found = std::ranges::find(typeTable, engineProperties.type) != typeTable.end();
 
 		if (found) {
 			result = getActivity(engineGroup, &engineStats);
 			if (result != ZE_RESULT_SUCCESS) {
 				ERR("Failed to get engine activity for group {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
-				return result;
+				return {result, 0, 0};
 			}
-			*utilization = engineStats.activeTime;
-			*timestamp = engineStats.timestamp;
-			DBG("  - Engine Group {} Utilization: {}%, Timestamp: {}\n", i, *utilization, *timestamp);
-			break;
+			DBG("  - Engine Group {} Utilization: {}%, Timestamp: {}\n", i, engineStats.activeTime,
+				engineStats.timestamp);
+			return {ZE_RESULT_SUCCESS, engineStats.activeTime, engineStats.timestamp};
 		}
 	}
-	return ZE_RESULT_SUCCESS;
+
+	ERR("No engine group matching the requested types was found.\n");
+	return {ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, 0, 0};
 }
 
 /**

@@ -9,6 +9,8 @@
 
 #include "sysman.h"
 #include <map>
+#include <span>
+#include <tuple>
 #include <utility>
 
 class LIBXPUM_API enginegroup : public sysman
@@ -24,10 +26,8 @@ public:
 	ze_result_t getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties);
 	ze_result_t getActivity(zes_engine_handle_t engineGroup, zes_engine_stats_t *engineStats);
 	ze_result_t getActivityExt(zes_engine_handle_t engineGroup);
-	ze_result_t getUtilization(zes_engine_group_t type, uint64_t *utilization, uint64_t *timestamp);
 	ze_result_t getEngineCountByType(uint32_t *count, zes_engine_group_t type);
-	ze_result_t getUtilization(zes_engine_group_t *typeTable, uint32_t tableSize, uint64_t *utilization,
-							   uint64_t *timestamp);
+	std::tuple<ze_result_t, uint64_t, uint64_t> getUtilization(std::span<const zes_engine_group_t> typeTable);
 	ze_result_t getEngineActivityByType(zes_engine_group_t type, uint32_t engineIndex, uint64_t *activeTime,
 										uint64_t *timestamp);
 	ze_result_t getEngineActivityPerTile(zes_engine_group_t type,

@@ -6,6 +6,7 @@
 
 #include "cmd_dump.h"
 #include "debug.h"
+#include <array>
 #include <assert.h>
 #include <temperature.h>
 #include <frequency.h>
@@ -382,17 +383,17 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
  * @brief Helper function to get utilization on an engine type
  *
  * @param d A pointer to the device information structure.
- * @param type The engine group type for which to get the utilization.
- * @param utilizationDiff A pointer to store the calculated utilization difference.
+ * @param typeTable Span of engine group types to search for utilization.
+ * @param outputLine A pointer to store the formatted utilization percentage string.
+ * @param td A pointer to thread-specific data holding utilization samples.
  *
  * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
  */
-ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, std::string *outputLine,
+ze_result_t cmdDump::utilization(devInfo *d, std::span<const zes_engine_group_t> typeTable, std::string *outputLine,
 								 threadData *td)
 {
 	TRACING();
 	double utilizationDiff = 0.0;
-	ze_result_t result;
 
 	enginegroup *eg = d->dev->getEngineGroup();
 	if (eg == nullptr) {
@@ -400,19 +401,15 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	result = eg->getUtilization(typeTable, tableSize, &td->u[0].utilization, &td->u[0].timeStamp);
+	const auto [result, activeTime, timestamp] = eg->getUtilization(typeTable);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
 
-	// If this is the first time we are getting the utilization, we cannot calculate the difference. We would know
-	// this by checking if the timeStamp[1] is zero, which means we have not yet stored the last utilization
+	td->u[0].utilization = activeTime;
+	td->u[0].timeStamp = timestamp;
+
 	if (td->u[1].timeStamp) {
-		// Calculate the utilization difference. First check if the time difference is zero to avoid division by zero
-		// Next, calculate the utilization difference by checking the current utilization (in utilization[0]) against
-		// the last utilization (in utilization[1]) and the time difference (in timeStamp[0] - timeStamp[1]). Since we
-		// are calculating a percentage, therefore multiply the numerator by 100 before dividing the timestamp to get
-		// an accurate percentage value.
 		utilizationDiff = ((td->u[0].timeStamp - td->u[1].timeStamp) == 0)
 							  ? 0
 							  : (double)((double)td->u[0].utilization - (double)td->u[1].utilization) * 100 /
@@ -420,10 +417,14 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 		*outputLine = std::format("{:.2f}", utilizationDiff);
 	}
 
-	// Update the last utilization and timestamp values for the next iteration
 	memcpy(&td->u[1], &td->u[0], sizeof(utilData));
 
 	return ZE_RESULT_SUCCESS;
+}
+
+ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t type, std::string *outputLine, threadData *td)
+{
+	return utilization(d, std::span<const zes_engine_group_t>(&type, 1), outputLine, td);
 }
 
 /**
@@ -439,8 +440,7 @@ ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t *typeTable, uint
 ze_result_t cmdDump::gpuUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_ALL, outputLine, td);
 }
 
 /**
@@ -1185,8 +1185,7 @@ ze_result_t cmdDump::xeLinkThroughput(UNUSED devInfo *d, std::string *outputLine
 ze_result_t cmdDump::computeEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_COMPUTE_SINGLE, outputLine, td);
 }
 
 /**
@@ -1202,8 +1201,7 @@ ze_result_t cmdDump::computeEngineUtilization(devInfo *d, std::string *outputLin
 ze_result_t cmdDump::renderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_RENDER_SINGLE, outputLine, td);
 }
 
 /**
@@ -1219,8 +1217,7 @@ ze_result_t cmdDump::renderEngineUtilization(devInfo *d, std::string *outputLine
 ze_result_t cmdDump::mediaDecoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, outputLine, td);
 }
 
 /**
@@ -1236,8 +1233,7 @@ ze_result_t cmdDump::mediaDecoderEngineUtilization(devInfo *d, std::string *outp
 ze_result_t cmdDump::mediaEncoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE, outputLine, td);
 }
 
 /**
@@ -1253,8 +1249,7 @@ ze_result_t cmdDump::mediaEncoderEngineUtilization(devInfo *d, std::string *outp
 ze_result_t cmdDump::copyEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_COPY_SINGLE, outputLine, td);
 }
 
 /**
@@ -1270,8 +1265,7 @@ ze_result_t cmdDump::copyEngineUtilization(devInfo *d, std::string *outputLine, 
 ze_result_t cmdDump::mediaEnhancementEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	return utilization(d, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, outputLine, td);
 }
 
 /**
@@ -1291,8 +1285,7 @@ ze_result_t cmdDump::mediaEnhancementEngineUtilization(devInfo *d, std::string *
 ze_result_t cmdDump::engineUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_3D_ALL};
-	ze_result_t result = utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	ze_result_t result = utilization(d, ZES_ENGINE_GROUP_3D_ALL, outputLine, td);
 
 	// If 3D engine is not supported on this platform, return N/A
 	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
@@ -1389,8 +1382,8 @@ ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(devInfo *d, std::string *outpu
 ze_result_t cmdDump::computeEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COMPUTE_SINGLE, ZES_ENGINE_GROUP_COMPUTE_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_COMPUTE_SINGLE, ZES_ENGINE_GROUP_COMPUTE_ALL};
+	return utilization(d, std::span(engineTable), outputLine, td);
 }
 
 /**
@@ -1407,8 +1400,8 @@ ze_result_t cmdDump::computeEngineGroupUtilization(devInfo *d, std::string *outp
 ze_result_t cmdDump::renderEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_RENDER_SINGLE, ZES_ENGINE_GROUP_RENDER_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_RENDER_SINGLE, ZES_ENGINE_GROUP_RENDER_ALL};
+	return utilization(d, std::span(engineTable), outputLine, td);
 }
 
 /**
@@ -1425,9 +1418,9 @@ ze_result_t cmdDump::renderEngineGroupUtilization(devInfo *d, std::string *outpu
 ze_result_t cmdDump::mediaEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE,
-										ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, ZES_ENGINE_GROUP_MEDIA_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE,
+											ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, ZES_ENGINE_GROUP_MEDIA_ALL};
+	return utilization(d, std::span(engineTable), outputLine, td);
 }
 
 /**
@@ -1444,8 +1437,8 @@ ze_result_t cmdDump::mediaEngineGroupUtilization(devInfo *d, std::string *output
 ze_result_t cmdDump::copyEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
-	zes_engine_group_t engineTable[] = {ZES_ENGINE_GROUP_COPY_SINGLE, ZES_ENGINE_GROUP_COPY_ALL};
-	return utilization(d, engineTable, ARRAY_SIZE(engineTable), outputLine, td);
+	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_COPY_SINGLE, ZES_ENGINE_GROUP_COPY_ALL};
+	return utilization(d, std::span(engineTable), outputLine, td);
 }
 
 /**

@@ -10,6 +10,7 @@
 #include "cmds.h"
 #include <os.h>
 #include <chrono>
+#include <span>
 
 constexpr auto DEFAULT_INTERVAL = std::chrono::seconds{1};
 constexpr auto MAX_INTERVAL = std::chrono::seconds{20};
@@ -155,8 +156,9 @@ public:
 	ze_result_t throttleReason(devInfo *d, std::string *outputLine, threadData *td);
 	ze_result_t mediaEngineFrequency(devInfo *d, std::string *outputLine, threadData *td);
 
-	ze_result_t utilization(devInfo *d, zes_engine_group_t *typeTable, uint32_t tableSize, std::string *outputLine,
+	ze_result_t utilization(devInfo *d, std::span<const zes_engine_group_t> typeTable, std::string *outputLine,
 							threadData *td);
+	ze_result_t utilization(devInfo *d, zes_engine_group_t type, std::string *outputLine, threadData *td);
 	ze_result_t gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU);
 	std::string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 
