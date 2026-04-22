@@ -428,7 +428,7 @@ Power usage limit for the hardware component.
 
 ### hw.status
 
-The operational status of the hardware component.
+Known hardware component states. Problem state reporting starts after issue becomes known / active for the first time (to greatly reduce number of state metrics). Unknown state is reported only if state was known before.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |

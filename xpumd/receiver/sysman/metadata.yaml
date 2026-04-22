@@ -331,7 +331,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, com.intel.power.limit.level, com.intel.power.limit.source]
   hw.status:
     enabled: true
-    description: The operational status of the hardware component.
+    description: Known hardware component states. Problem state reporting starts after issue becomes known / active for the first time (to greatly reduce number of state metrics). Unknown state is reported only if state was known before.
     stability: development
     unit: "1"
     sum:

@@ -855,7 +855,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["hw.status"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-					assert.Equal(t, "The operational status of the hardware component.", mi.Description())
+					assert.Equal(t, "Known hardware component states. Problem state reporting starts after issue becomes known / active for the first time (to greatly reduce number of state metrics). Unknown state is reported only if state was known before.", mi.Description())
 					assert.Equal(t, "1", mi.Unit())
 					assert.False(t, mi.Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())

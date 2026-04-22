@@ -1569,7 +1569,7 @@ type metricHwStatus struct {
 // init fills hw.status metric with initial data.
 func (m *metricHwStatus) init() {
 	m.data.SetName("hw.status")
-	m.data.SetDescription("The operational status of the hardware component.")
+	m.data.SetDescription("Known hardware component states. Problem state reporting starts after issue becomes known / active for the first time (to greatly reduce number of state metrics). Unknown state is reported only if state was known before.")
 	m.data.SetUnit("1")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
