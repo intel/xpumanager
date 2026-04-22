@@ -8,6 +8,7 @@ package sysman
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
@@ -39,10 +40,12 @@ type frequencyAttributes struct {
 
 // frequencyState holds the dynamic runtime state.
 type frequencyState struct {
+	disabled bool
+	hasRange bool
+	sync.Mutex
+	// updated (also) in aggregation thread => access needs locking
 	actual              *aggregatedMetric[float64]
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
-	hasRange            bool
-	disabled            bool
 }
 
 func enumFrequency(d *device) []instanceScraper {
@@ -102,8 +105,8 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 	return f, nil
 }
 
+// scrape handles instantaneous metrics.
 func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	// Handle instantaneous metrics
 	if f.state.disabled {
 		return
 	}
@@ -134,6 +137,15 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		}
 	}
 
+	f.scrapeState(mb, ts)
+	f.scrapeSamples(mb, ts)
+}
+
+// scrapeState handles frequency and its throttling reasons.
+func (f *frequency) scrapeState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	f.state.Lock()
+	defer f.state.Unlock()
+
 	if state, err := f.GetState(); err != nil {
 		f.logger.Errorw("Frequency GetState() failed: freq metrics disabled", zap.Error(err), "attributes", f.attributes)
 		f.state.disabled = true
@@ -147,14 +159,24 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				f.attributes.hwFrequencyType)
 		}
 
+		// Flags may be unset because driver stack lacks support for specific
+		// throttle reasons (does not know their status). API has large number
+		// of these flags, so emit their metrics only after they first become
+		// active (= flag is known to be supported).
+		f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
+
 		states := map[string]int64{}
 		if state.ThrottleReasons == 0 {
 			states["ok"] = 1
-			states["throttled"] = 0
+			// Report throttling issue state only after it has been first seen.
+			if f.state.throttleReasonsSeen != 0 {
+				states["throttled"] = 0
+			}
 		} else {
 			states["ok"] = 0
 			states["throttled"] = 1
 		}
+
 		for state, value := range states {
 			mb.RecordHwStatusDataPoint(ts, value,
 				f.attributes.hwID,
@@ -165,10 +187,6 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				f.attributes.hwType)
 		}
 
-		// Flags may be unset because the driver lacks support for specific
-		// throttle reason (does not know the status). Emit the metric only
-		// once support is confirmed.
-		f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
 		for _, reason := range f.state.throttleReasonsSeen.Bits() {
 			value := int64(0)
 			if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
@@ -183,11 +201,17 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 				strings.ToLower(reason.String()))
 		}
 	}
+}
 
-	// Handle aggregated metrics
+// scrapeSamples handles aggregated metrics.
+func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	f.state.Lock()
+	defer f.state.Unlock()
+
 	if f.state.actual == nil {
 		return
 	}
+
 	actualStats := f.state.actual.collect(0)
 
 	if actualStats.samples > 0 {
@@ -238,15 +262,25 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 }
 
+// pollAggregatedMetrics collects active frequency samples and updates seen throttling reasons bitmask (asynchronously).
 func (f *frequency) pollAggregatedMetrics() {
+	f.state.Lock()
+	defer f.state.Unlock()
+
 	if f.state.actual == nil {
 		return
 	}
 
-	if state, err := f.GetState(); err != nil {
+	state, err := f.GetState()
+
+	if err != nil {
 		f.logger.Errorw("Frequency GetState() failed: aggregated metrics polling stopped", zap.Error(err), "attributes", f.attributes)
 		f.state.actual = nil
-	} else if state.Actual < 0 {
+		return
+	}
+
+	f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
+	if state.Actual < 0 {
 		// A negative value indicates "not known", stop polling also in this case:
 		// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
 		f.state.actual = nil
