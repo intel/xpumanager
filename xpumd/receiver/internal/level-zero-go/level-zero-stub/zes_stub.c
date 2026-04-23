@@ -1124,7 +1124,6 @@ static ze_result_t driver_event_listen_poll(ze_driver_handle_t hDriver, uint64_t
 			int64_t elapsed_ms =
 				(int64_t)(now.tv_sec - start.tv_sec) * 1000 + (int64_t)(now.tv_nsec - start.tv_nsec) / 1000000;
 			if ((uint64_t)elapsed_ms >= timeout_ms) {
-				*pNumDeviceEvents = 0;
 				return ZE_RESULT_SUCCESS;
 			}
 			uint64_t remaining_ms = timeout_ms - (uint64_t)elapsed_ms;
