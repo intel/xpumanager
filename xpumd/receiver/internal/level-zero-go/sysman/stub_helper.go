@@ -6,8 +6,6 @@
 package sysman
 
 /*
-#cgo CFLAGS: -I../level-zero-stub
-#cgo LDFLAGS: -L${SRCDIR}/../level-zero-stub -lze_stub -Wl,-rpath,${SRCDIR}/../level-zero-stub
 #include "sysman_state.h"
 #include <stdlib.h>
 */

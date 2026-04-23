@@ -1,0 +1,6 @@
+# pkg-config file for building/linking against the stub driver
+Name: Level Zero Stub
+Description: Level Zero (stub driver)
+Version: 1.26.0
+Libs: -L${pcfiledir} -lze_stub -Wl,-rpath,${pcfiledir}
+CFlags: -I${pcfiledir}/../level-zero -I${pcfiledir}
