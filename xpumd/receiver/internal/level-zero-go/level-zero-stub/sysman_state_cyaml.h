@@ -30,6 +30,7 @@ static const cyaml_schema_field_t device_rv_fields[] = {RV(sysman_device_rv_t, z
 														RV(sysman_device_rv_t, zesDevicePciGetState),
 														RV(sysman_device_rv_t, zesDevicePciGetBars),
 														RV(sysman_device_rv_t, zesDevicePciGetStats),
+														RV(sysman_device_rv_t, zesDevicePciLinkSpeedUpdateExt),
 														RV(sysman_device_rv_t, zesDeviceSetOverclockWaiver),
 														RV(sysman_device_rv_t, zesDeviceGetOverclockDomains),
 														RV(sysman_device_rv_t, zesDeviceGetOverclockControls),
@@ -864,18 +865,33 @@ static const cyaml_schema_field_t pci_speed_fields[] = {
 	CYAML_FIELD_INT("Gen", CYAML_FLAG_OPTIONAL, zes_pci_speed_t, gen),
 	CYAML_FIELD_INT("Width", CYAML_FLAG_OPTIONAL, zes_pci_speed_t, width),
 	CYAML_FIELD_INT("MaxBandwidth", CYAML_FLAG_OPTIONAL, zes_pci_speed_t, maxBandwidth), CYAML_FIELD_END};
+static const cyaml_schema_field_t pci_link_speed_downgrade_ext_properties_fields[] = {
+	CYAML_FIELD_BOOL("PciLinkSpeedUpdateCapable", CYAML_FLAG_OPTIONAL,
+					 zes_pci_link_speed_downgrade_ext_properties_t, pciLinkSpeedUpdateCapable),
+	CYAML_FIELD_INT("MaxPciGenSupported", CYAML_FLAG_OPTIONAL,
+					zes_pci_link_speed_downgrade_ext_properties_t, maxPciGenSupported),
+	CYAML_FIELD_END};
+static const cyaml_schema_field_t pci_link_speed_downgrade_ext_state_fields[] = {
+	CYAML_FIELD_BOOL("PciLinkSpeedDowngradeStatus", CYAML_FLAG_OPTIONAL,
+					 zes_pci_link_speed_downgrade_ext_state_t, pciLinkSpeedDowngradeStatus),
+	CYAML_FIELD_END};
 static const cyaml_schema_field_t pci_properties_schema_fields[] = {
-	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, zes_pci_properties_t, address, pci_address_fields),
-	CYAML_FIELD_MAPPING("MaxSpeed", CYAML_FLAG_OPTIONAL, zes_pci_properties_t, maxSpeed, pci_speed_fields),
-	CYAML_FIELD_BOOL("HaveBandwidthCounters", CYAML_FLAG_OPTIONAL, zes_pci_properties_t, haveBandwidthCounters),
-	CYAML_FIELD_BOOL("HavePacketCounters", CYAML_FLAG_OPTIONAL, zes_pci_properties_t, havePacketCounters),
-	CYAML_FIELD_BOOL("HaveReplayCounters", CYAML_FLAG_OPTIONAL, zes_pci_properties_t, haveReplayCounters),
+	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, base.address, pci_address_fields),
+	CYAML_FIELD_MAPPING("MaxSpeed", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, base.maxSpeed, pci_speed_fields),
+	CYAML_FIELD_BOOL("HaveBandwidthCounters", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, base.haveBandwidthCounters),
+	CYAML_FIELD_BOOL("HavePacketCounters", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, base.havePacketCounters),
+	CYAML_FIELD_BOOL("HaveReplayCounters", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, base.haveReplayCounters),
+	CYAML_FIELD_MAPPING("LinkSpeedDowngrade", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, link_speed_downgrade,
+						pci_link_speed_downgrade_ext_properties_fields),
 	CYAML_FIELD_END};
 static const cyaml_schema_field_t pci_state_schema_fields[] = {
-	CYAML_FIELD_UINT("Status", CYAML_FLAG_OPTIONAL, zes_pci_state_t, status),
-	CYAML_FIELD_UINT("QualityIssues", CYAML_FLAG_OPTIONAL, zes_pci_state_t, qualityIssues),
-	CYAML_FIELD_UINT("StabilityIssues", CYAML_FLAG_OPTIONAL, zes_pci_state_t, stabilityIssues),
-	CYAML_FIELD_MAPPING("Speed", CYAML_FLAG_OPTIONAL, zes_pci_state_t, speed, pci_speed_fields), CYAML_FIELD_END};
+	CYAML_FIELD_UINT("Status", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, base.status),
+	CYAML_FIELD_UINT("QualityIssues", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, base.qualityIssues),
+	CYAML_FIELD_UINT("StabilityIssues", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, base.stabilityIssues),
+	CYAML_FIELD_MAPPING("Speed", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, base.speed, pci_speed_fields),
+	CYAML_FIELD_MAPPING("LinkSpeedDowngrade", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, link_speed_downgrade,
+						pci_link_speed_downgrade_ext_state_fields),
+	CYAML_FIELD_END};
 static const cyaml_schema_field_t pci_stats_schema_fields[] = {
 	CYAML_FIELD_UINT("ReplayCounter", CYAML_FLAG_OPTIONAL, zes_pci_stats_t, replayCounter),
 	CYAML_FIELD_UINT("PacketCounter", CYAML_FLAG_OPTIONAL, zes_pci_stats_t, packetCounter),
@@ -906,6 +922,8 @@ static const cyaml_schema_field_t pci_info_fields[] = {
 	CYAML_FIELD_SEQUENCE("Bars", SYSMAN_NULLABLE_PTR_FLAGS, sysman_pci_info_t, bars, &pci_bar_schema, 0,
 						 CYAML_UNLIMITED),
 	CYAML_FIELD_MAPPING_PTR("Stats", SYSMAN_NULLABLE_PTR_FLAGS, sysman_pci_info_t, stats, pci_stats_schema_fields),
+	CYAML_FIELD_UINT("PciLinkSpeedUpdatePendingAction", CYAML_FLAG_OPTIONAL, sysman_pci_info_t,
+					 pci_link_speed_update_pending_action),
 	CYAML_FIELD_END};
 static const cyaml_schema_field_t overclock_state_info_fields[] = {
 	CYAML_FIELD_UINT("Mode", CYAML_FLAG_OPTIONAL, sysman_overclock_state_info_t, mode),

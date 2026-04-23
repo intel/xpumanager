@@ -376,9 +376,19 @@ ze_result_t zesDevicePciGetProperties(zes_device_handle_t hDevice, zes_pci_prope
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	zes_structure_type_t stype = pProperties->stype;
 	void *pNext = pProperties->pNext;
-	*pProperties = *dev->pci.properties;
+	*pProperties = dev->pci.properties->base;
 	pProperties->stype = stype;
 	pProperties->pNext = pNext;
+	if (pNext) {
+		zes_pci_link_speed_downgrade_ext_properties_t *ext =
+			(zes_pci_link_speed_downgrade_ext_properties_t *)pNext;
+		if (ext->stype == ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES) {
+			pNext = ext->pNext;
+			*ext = dev->pci.properties->link_speed_downgrade;
+			ext->stype = ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES;
+			ext->pNext = pNext;
+		}
+	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -398,9 +408,19 @@ ze_result_t zesDevicePciGetState(zes_device_handle_t hDevice, zes_pci_state_t *p
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	zes_structure_type_t stype = pState->stype;
 	const void *pNext = pState->pNext;
-	*pState = *dev->pci.state;
+	*pState = dev->pci.state->base;
 	pState->stype = stype;
 	pState->pNext = pNext;
+	if (pNext) {
+		zes_pci_link_speed_downgrade_ext_state_t *ext =
+			(zes_pci_link_speed_downgrade_ext_state_t *)pNext;
+		if (ext->stype == ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE) {
+			pNext = ext->pNext;
+			*ext = dev->pci.state->link_speed_downgrade;
+			ext->stype = ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE;
+			ext->pNext = pNext;
+		}
+	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -443,6 +463,22 @@ ze_result_t zesDevicePciGetStats(zes_device_handle_t hDevice, zes_pci_stats_t *p
 	if (!(dev->pci.stats))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	*pStats = *dev->pci.stats;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesDevicePciLinkSpeedUpdateExt(zes_device_handle_t hDevice, ze_bool_t shouldDowngrade,
+										   zes_device_action_t *pendingAction)
+{
+	sysman_state_lock();
+	(void)shouldDowngrade;
+	sysman_device_state_t *dev = (sysman_device_state_t *)resolve_handle(hDevice, STUB_HANDLE_DEVICE);
+	if (!dev)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (dev->return_values.zesDevicePciLinkSpeedUpdateExt)
+		return sysman_unlock_and_return(dev->return_values.zesDevicePciLinkSpeedUpdateExt);
+	if (!pendingAction)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	*pendingAction = dev->pci.pci_link_speed_update_pending_action;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 

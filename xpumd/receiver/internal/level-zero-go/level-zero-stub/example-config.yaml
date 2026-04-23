@@ -101,6 +101,10 @@ Drivers:
             HaveBandwidthCounters: true
             HavePacketCounters: true
             HaveReplayCounters: true
+            # Extended properties for ZES_extension_pci_link_speed_downgrade
+            LinkSpeedDowngrade:
+              PciLinkSpeedUpdateCapable: true
+              MaxPciGenSupported: 4
           # zesDevicePciGetState (nullable)
           State:
             Status: 1  # ZES_PCI_LINK_STATUS_GOOD
@@ -110,6 +114,9 @@ Drivers:
               Gen: 4
               Width: 16
               MaxBandwidth: 0
+            # Extended state for ZES_extension_pci_link_speed_downgrade
+            LinkSpeedDowngrade:
+              PciLinkSpeedDowngradeStatus: false
           # zesDevicePciGetBars
           Bars:
             - Type: 0  # ZES_PCI_BAR_TYPE_MMIO
@@ -131,6 +138,8 @@ Drivers:
               Gen: 4
               Width: 16
               MaxBandwidth: 0
+          # zesDevicePciLinkSpeedUpdateExt: pending action to return.
+          PciLinkSpeedUpdatePendingAction: 0  # ZES_DEVICE_ACTION_NONE
 
         # ECC info
         ECC:
@@ -231,6 +240,7 @@ Drivers:
           zesDevicePciGetProperties: 0
           zesDevicePciGetState: 0
           zesDevicePciGetStats: 0
+          zesDevicePciLinkSpeedUpdateExt: 0
           zesDevicePciGetBars: 0
           zesDeviceGetEccState: 0
           zesDeviceSetEccState: 0

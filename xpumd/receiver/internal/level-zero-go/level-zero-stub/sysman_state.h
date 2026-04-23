@@ -226,6 +226,7 @@ typedef struct
 	ze_result_t zesDevicePciGetState;
 	ze_result_t zesDevicePciGetBars;
 	ze_result_t zesDevicePciGetStats;
+	ze_result_t zesDevicePciLinkSpeedUpdateExt;
 	ze_result_t zesDeviceSetOverclockWaiver;
 	ze_result_t zesDeviceGetOverclockDomains;
 	ze_result_t zesDeviceGetOverclockControls;
@@ -528,11 +529,24 @@ typedef struct
 
 typedef struct
 {
-	zes_pci_properties_t *properties;
-	zes_pci_state_t *state;
+	zes_pci_properties_t base;
+	zes_pci_link_speed_downgrade_ext_properties_t link_speed_downgrade;
+} sysman_pci_properties_info_t;
+
+typedef struct
+{
+	zes_pci_state_t base;
+	zes_pci_link_speed_downgrade_ext_state_t link_speed_downgrade;
+} sysman_pci_state_info_t;
+
+typedef struct
+{
+	sysman_pci_properties_info_t *properties;
+	sysman_pci_state_info_t *state;
 	uint32_t bars_count;
 	zes_pci_bar_properties_t *bars;
 	zes_pci_stats_t *stats;
+	zes_device_action_t pci_link_speed_update_pending_action;
 } sysman_pci_info_t;
 
 typedef struct
