@@ -14,7 +14,9 @@ package sysman
 import "C"
 import "github.com/intel/level-zero-go/internal"
 
-/* Wrappers for handles */
+// Wrappers for handles
+//
+// This section defines wrapper types for the Sysman API handles
 
 // Driver provides access to Sysman API driver functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#driver-functions
@@ -216,7 +218,10 @@ func (w *Temperature) setHandle(h tempHandle) {
 	w.handle = h
 }
 
-/* Generics for handle wrappers */
+// Generics for handle wrappers
+//
+// This section defines generic functions to convert between Sysman handles and the Golang wrapper types.
+
 func handlesToWrappers[H any, V any, W interface {
 	*V
 	setHandle(H)
@@ -258,7 +263,9 @@ func wrappersToHandles[H any, V any, W interface {
 	return handles
 }
 
-/* Types for the higher level golang API */
+// Types for the higher level golang API
+//
+// This section defines wrapper and convenience types used by the higher level Golang API.
 
 // Overclock domains. Alias bitmap to wrap multiple domain types in a single value.
 type OverclockDomains OverclockDomain
@@ -324,6 +331,10 @@ func (o OverclockControls) String() string {
 func (f OverclockControls) Bits() []OverclockControl {
 	return internal.FlagsToBits(OverclockControl(f))
 }
+
+// Extra methods for auto-generated types
+//
+// This section defines extra methods for the auto-generated types (types.go).
 
 // String representation of all set bits of InitFlags.
 func (f InitFlags) String() string {
