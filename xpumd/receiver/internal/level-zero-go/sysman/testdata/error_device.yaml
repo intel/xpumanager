@@ -19,6 +19,7 @@ Drivers:
           zesDevicePciGetState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDevicePciGetBars: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDevicePciGetStats: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDevicePciLinkSpeedUpdateExt: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceSetOverclockWaiver: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceGetOverclockDomains: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceGetOverclockControls: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT

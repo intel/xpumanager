@@ -473,6 +473,8 @@ Drivers:
         Version: 1
       - Name: "ZES_extension_device_ecc_default_properties"
         Version: 1
+      - Name: "ZES_extension_pci_link_speed_downgrade"
+        Version: 65536
 
     Devices:
       - Properties:
@@ -486,6 +488,34 @@ Drivers:
           State:
             ExtendedProperties:
               DefaultState: 1 # ZES_DEVICE_ECC_STATE_ENABLED
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 1
+              Bus: 2
+              Device: 3
+              Function: 4
+            MaxSpeed:
+              Gen: 5
+              Width: 16
+              MaxBandwidth: 512000000000
+            HaveBandwidthCounters: true
+            HavePacketCounters: false
+            HaveReplayCounters: true
+            LinkSpeedDowngrade:
+              PciLinkSpeedUpdateCapable: true
+              MaxPciGenSupported: 5
+          State:
+            Status: 2 # ZES_PCI_LINK_STATUS_QUALITY_ISSUES
+            QualityIssues: 2 # ZES_PCI_LINK_QUAL_ISSUE_FLAG_SPEED
+            Speed:
+              Gen: 3
+              Width: 8
+              MaxBandwidth: 126000000000
+            LinkSpeedDowngrade:
+              PciLinkSpeedDowngradeStatus: true
+          PciLinkSpeedUpdatePendingAction: 1 # ZES_DEVICE_ACTION_WARM_CARD_RESET
 
         EngineGroups:
           - Properties:

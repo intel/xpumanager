@@ -432,15 +432,40 @@ func TestDevicePciGetProperties(t *testing.T) {
 		props, err := getDevice(t, 0, 0).PciGetProperties()
 		require.NoError(t, err)
 		assert.EqualExportedValues(t, PciProperties{
-			Address: PciAddress{Domain: 1, Bus: 5},
-			MaxSpeed: PciSpeed{
-				Gen:          4,
-				Width:        16,
-				MaxBandwidth: 256000000000,
+			PciBaseProperties: PciBaseProperties{
+				Address: PciAddress{Domain: 1, Bus: 5},
+				MaxSpeed: PciSpeed{
+					Gen:          4,
+					Width:        16,
+					MaxBandwidth: 256000000000,
+				},
+				HaveBandwidthCounters: 1,
+				HavePacketCounters:    1,
+				HaveReplayCounters:    1,
 			},
-			HaveBandwidthCounters: 1,
-			HavePacketCounters:    1,
-			HaveReplayCounters:    1,
+		}, props)
+		assert.Nil(t, props.LinkSpeedDowngrade)
+	})
+
+	t.Run("SuccessWithExt", func(t *testing.T) {
+		loadDriverConfig(t, driverConfigDefault)
+		props, err := getDevice(t, 1, 0).PciGetProperties()
+		require.NoError(t, err)
+		assert.EqualExportedValues(t, PciProperties{
+			PciBaseProperties: PciBaseProperties{
+				Address: PciAddress{Domain: 1, Bus: 2, Device: 3, Function: 4},
+				MaxSpeed: PciSpeed{
+					Gen:          5,
+					Width:        16,
+					MaxBandwidth: 512000000000,
+				},
+				HaveBandwidthCounters: 1,
+				HaveReplayCounters:    1,
+			},
+			LinkSpeedDowngrade: &PciLinkSpeedDowngradeExtProperties{
+				PciLinkSpeedUpdateCapable: 1,
+				MaxPciGenSupported:        5,
+			},
 		}, props)
 	})
 }
@@ -457,15 +482,53 @@ func TestDevicePciGetState(t *testing.T) {
 		state, err := getDevice(t, 0, 0).PciGetState()
 		require.NoError(t, err)
 		assert.EqualExportedValues(t, PciState{
-			Status:          PCI_LINK_STATUS_QUALITY_ISSUES,
-			QualityIssues:   PciLinkQualIssueFlags(PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS | PCI_LINK_QUAL_ISSUE_FLAG_SPEED),
-			StabilityIssues: PciLinkStabIssueFlags(PCI_LINK_STAB_ISSUE_FLAG_RETRAINING),
-			Speed: PciSpeed{
-				Gen:          3,
-				Width:        8,
-				MaxBandwidth: 126000000000,
+			PciBaseState: PciBaseState{
+				Status:          PCI_LINK_STATUS_QUALITY_ISSUES,
+				QualityIssues:   PciLinkQualIssueFlags(PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS | PCI_LINK_QUAL_ISSUE_FLAG_SPEED),
+				StabilityIssues: PciLinkStabIssueFlags(PCI_LINK_STAB_ISSUE_FLAG_RETRAINING),
+				Speed: PciSpeed{
+					Gen:          3,
+					Width:        8,
+					MaxBandwidth: 126000000000,
+				},
 			},
 		}, state)
+		assert.Nil(t, state.LinkSpeedDowngrade)
+	})
+
+	t.Run("SuccessWithExt", func(t *testing.T) {
+		loadDriverConfig(t, driverConfigDefault)
+		state, err := getDevice(t, 1, 0).PciGetState()
+		require.NoError(t, err)
+		assert.EqualExportedValues(t, PciState{
+			PciBaseState: PciBaseState{
+				Status:        PCI_LINK_STATUS_QUALITY_ISSUES,
+				QualityIssues: PciLinkQualIssueFlags(PCI_LINK_QUAL_ISSUE_FLAG_SPEED),
+				Speed: PciSpeed{
+					Gen:          3,
+					Width:        8,
+					MaxBandwidth: 126000000000,
+				},
+			},
+			LinkSpeedDowngrade: &PciLinkSpeedDowngradeExtState{
+				PciLinkSpeedDowngradeStatus: 1,
+			},
+		}, state)
+	})
+}
+
+func TestDevicePciLinkSpeedUpdateExt(t *testing.T) {
+	t.Run("Error", func(t *testing.T) {
+		loadDriverConfig(t, driverConfigDevice)
+		_, err := getDevice(t, 0, 0).PciLinkSpeedUpdateExt(true)
+		require.ErrorIs(t, err, core.RESULT_ERROR_INVALID_ARGUMENT)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		loadDriverConfig(t, driverConfigDefault)
+		action, err := getDevice(t, 1, 0).PciLinkSpeedUpdateExt(true)
+		require.NoError(t, err)
+		assert.Equal(t, DEVICE_ACTION_WARM_CARD_RESET, action)
 	})
 }
 
