@@ -229,6 +229,12 @@ private:
 
 			processBatch(batch);
 			batch.clear();
+			// Notify flushNow() waiters under queueMutex to prevent the
+			// missed-notification race: without the lock, notify_all() can
+			// fire between flushNow()'s predicate-false check and its wait()
+			// call, causing flushNow() to block indefinitely.
+			std::scoped_lock lk(queueMutex);
+			idleCv.notify_all();
 		}
 
 		drainQueue();
@@ -245,7 +251,8 @@ private:
 			}
 			nRetired.fetch_add(1, std::memory_order_release);
 		}
-		idleCv.notify_all(); // wake any flushNow() waiters
+		// Notification intentionally omitted here: callers (workerLoop,
+		// drainQueue) send it under queueMutex to avoid missed-notification races.
 	}
 
 	void drainQueue()
@@ -257,6 +264,10 @@ private:
 			queue.clear();
 		}
 		processBatch(remaining);
+		{
+			std::lock_guard<std::mutex> const lk(queueMutex);
+			idleCv.notify_all();
+		}
 	}
 
 	void enqueue(const LogRecord &record)
