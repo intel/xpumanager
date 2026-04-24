@@ -7,8 +7,10 @@ Relates-To: <!-- issue reference, e.g. #123 -->
 
 ## Type of change
 
+<!-- Check all that apply -->
 - [ ] Bug fix
 - [ ] New feature
+- [ ] API / ABI change
 - [ ] Refactor / cleanup
 - [ ] Documentation
 - [ ] Tests
