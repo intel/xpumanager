@@ -1,4 +1,4 @@
 version: "2"
 run:
   build-tags:
-    - stub_test
+    - lint

@@ -1,4 +1,4 @@
-//go:build stub_test
+//go:build test
 
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Intel Corporation
