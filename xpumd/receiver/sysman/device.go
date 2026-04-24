@@ -37,6 +37,12 @@ type device struct {
 	aggregatedMetricsBufferSize int
 }
 
+type eccInfo struct {
+	states       map[string]bool
+	current      string
+	configurable bool
+}
+
 type deviceState struct {
 	devStateDisabled bool
 	pciStateDisabled bool
@@ -45,6 +51,7 @@ type deviceState struct {
 	pciStabilitySeen l0sysman.PciLinkStabIssueFlags
 	pciStats         *l0sysman.PciStats
 	maxBandwidth     int64
+	ecc              *eccInfo
 }
 
 // deviceAttributes fields for numeric items which values may be
@@ -66,7 +73,7 @@ type deviceAttributes struct {
 	pciLanes          string
 	pciLinkGen        string
 	demandPaging      bool
-	eccSupport        bool
+	eccSupport        metadata.AttributeHwMemoryEcc
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*deviceRegistry, error) {
@@ -152,20 +159,22 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			hwSerialNumber: props.SerialNumber.String(),
 			hwVendor:       props.VendorName.String(),
 			subDevCount:    int64(props.NumSubdevices),
+			hwGpuType:      gpuType(props.Flags),
 			demandPaging:   props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
-			eccSupport:     props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ECC) != 0,
+		},
+		state: deviceState{
+			ecc: &eccInfo{
+				states: map[string]bool{},
+			},
 		},
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
-	switch {
-	case props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_SUBDEVICE) != 0:
-		d.attributes.hwGpuType = metadata.AttributeHwGpuTypeSubdevice
-	case props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_INTEGRATED) != 0:
-		d.attributes.hwGpuType = metadata.AttributeHwGpuTypeIntegrated
-	default:
-		d.attributes.hwGpuType = metadata.AttributeHwGpuTypeDiscrete
+	_ = d.updateEccState()
+	if d.state.ecc.configurable {
+		d.attributes.eccSupport = metadata.AttributeHwMemoryEccConfigurable
+	} else {
+		d.attributes.eccSupport = metadata.MapAttributeHwMemoryEcc[d.state.ecc.current]
 	}
 
 	// Get firmware info
@@ -222,7 +231,78 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 	return d, nil
 }
 
+func gpuType(flags l0sysman.DevicePropertyFlags) metadata.AttributeHwGpuType {
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
+	switch {
+	case flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_SUBDEVICE) != 0:
+		return metadata.AttributeHwGpuTypeSubdevice
+	case flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_INTEGRATED) != 0:
+		return metadata.AttributeHwGpuTypeIntegrated
+	default:
+		return metadata.AttributeHwGpuTypeDiscrete
+	}
+}
+
+func (d *device) updateEccState() error {
+	configurable := false
+	retval := error(nil)
+	var name string
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#ecc
+	if available, err := d.EccAvailable(); err != nil {
+		name = "unknown"
+		retval = err
+	} else if !available {
+		name = "unavailable" // same as from GetEccState()
+	} else if isConfigurable, err := d.EccConfigurable(); err != nil {
+		name = "unknown"
+		retval = err
+	} else if !isConfigurable {
+		name = "available"
+	} else if state, err := d.GetEccState(); err != nil {
+		name = "unknown"
+		retval = err
+	} else {
+		name = strings.ToLower(state.CurrentState.String())
+		if state.CurrentState != l0sysman.DEVICE_ECC_STATE_UNAVAILABLE {
+			configurable = true
+		}
+	}
+
+	d.state.ecc.configurable = configurable
+	d.state.ecc.states[name] = true
+	d.state.ecc.current = name
+
+	return retval
+}
+
 func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if d.state.ecc.configurable {
+		err := d.updateEccState()
+		if !d.state.ecc.configurable {
+			d.logger.Errorw("ECC become non-configurable, disabling state querying", "states", d.state.ecc, zap.Error(err), "attributes", d.attributes)
+		}
+	}
+
+	// Report ECC state(s) if state is configurable or changed
+	if d.state.ecc.configurable || len(d.state.ecc.states) > 1 {
+		for state := range d.state.ecc.states {
+			value := int64(0)
+			if state == d.state.ecc.current {
+				value = 1
+			}
+			mb.RecordHwStatusDataPoint(ts, value,
+				d.attributes.hwID,
+				d.attributes.hwName,
+				d.attributes.pciBDF,
+				"", // not subdevice
+				"ecc_"+state,
+				metadata.AttributeHwTypeGpu,
+			)
+		}
+	}
+
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.hwID,
 		d.attributes.hwName,

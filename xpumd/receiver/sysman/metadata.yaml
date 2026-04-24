@@ -60,9 +60,14 @@ attributes:
   hw.memory.demand_paging:
     description: Whether device supports on-demand memory page-faulting.
     type: bool
-  hw.memory.ecc_support:
-    description: Whether device memory access supports error correction.
-    type: bool
+  hw.memory.ecc:
+    description: Device memory ECC support status. If ECC is configurable, `hw.status` metric tells whether it is enabled.
+    type: string
+    enum:
+      - available
+      - configurable
+      - unavailable
+      - unknown
   hw.memory.location:
     description: Location of the memory (device, system...).
     type: string
@@ -209,7 +214,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc_support]
+    attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc]
   hw.gpu.io:
     enabled: true
     description: Bytes received / transmitted over PCI bus by the GPU device.

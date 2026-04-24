@@ -182,7 +182,7 @@ Information about the GPU device.
 | pci.lanes | The number of PCI lanes. | Any Str | Recommended | - |
 | pci.link_gen | PCI link generation. | Any Str | Recommended | - |
 | hw.memory.demand_paging | Whether device supports on-demand memory page-faulting. | Any Bool | Recommended | - |
-| hw.memory.ecc_support | Whether device memory access supports error correction. | Any Bool | Recommended | - |
+| hw.memory.ecc | Device memory ECC support status. If ECC is configurable, `hw.status` metric tells whether it is enabled. | Str: ``available``, ``configurable``, ``unavailable``, ``unknown`` | Recommended | - |
 
 ### hw.gpu.io
 

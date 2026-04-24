@@ -92,7 +92,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", AttributeHwGpuTypeDiscrete, 25, "pci.lanes-val", "pci.link_gen-val", false, false)
+			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", AttributeHwGpuTypeDiscrete, 25, "pci.lanes-val", "pci.link_gen-val", false, AttributeHwMemoryEccAvailable)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -460,9 +460,9 @@ func TestMetricsBuilder(t *testing.T) {
 					hwMemoryDemandPagingAttrVal, ok := dp.Attributes().Get("hw.memory.demand_paging")
 					assert.True(t, ok)
 					assert.False(t, hwMemoryDemandPagingAttrVal.Bool())
-					hwMemoryEccSupportAttrVal, ok := dp.Attributes().Get("hw.memory.ecc_support")
+					hwMemoryEccAttrVal, ok := dp.Attributes().Get("hw.memory.ecc")
 					assert.True(t, ok)
-					assert.False(t, hwMemoryEccSupportAttrVal.Bool())
+					assert.Equal(t, "available", hwMemoryEccAttrVal.Str())
 				case "hw.gpu.io":
 					assert.False(t, validatedMetrics["hw.gpu.io"], "Found a duplicate in the metrics slice: hw.gpu.io")
 					validatedMetrics["hw.gpu.io"] = true
