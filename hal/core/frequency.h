@@ -9,6 +9,7 @@
 
 #include "sysman.h"
 #include <map>
+#include <span>
 
 class device; // Forward declaration
 class LIBXPUM_API frequency : public sysman
@@ -36,6 +37,10 @@ public:
 	ze_result_t setFrequencyRange(double minFreq, double maxFreq, int32_t subdeviceId = -1);
 	ze_result_t setFrequencyRangeForAll(double minFreq, double maxFreq);
 	ze_result_t getFreqAvailableClocks(uint32_t subdeviceId, std::vector<double> &clocks);
+	ze_result_t getFreqRangeForTile(uint32_t tileId, double &minFreq, double &maxFreq);
+	ze_result_t getFreqStateForTile(uint32_t tileId, zes_freq_state_t *state, zes_freq_properties_t *props);
+	uint32_t getFrequencyCount() const { return frequencyCount; }
+	std::span<const zes_freq_handle_t> getFrequencyHandles() const { return {frequencyHandles, frequencyCount}; }
 	ze_result_t setSchedulerTimeoutMode(uint32_t subdeviceId, uint64_t watchdogTimeout);
 	ze_result_t setSchedulerTimesliceMode(uint32_t subdeviceId, uint64_t interval, uint64_t yieldTimeout);
 	ze_result_t setSchedulerExclusiveMode(uint32_t subdeviceId);

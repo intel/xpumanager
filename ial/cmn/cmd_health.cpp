@@ -364,7 +364,6 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	std::string description = "Health cannot be determined for the power domains.";
 	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
-	uint32_t powerDomainCount = 0;
 	ze_device_properties_t zeDevProp = {};
 	ze_result_t res;
 
@@ -381,25 +380,26 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 		ERR("Power threshold is not set for power domain\n");
 		return ZE_RESULT_NOT_READY;
 	}
-	res = zesDeviceEnumPowerDomains(d->zesDeviceHdl, &powerDomainCount, nullptr);
-	std::vector<zes_pwr_handle_t> powerHandles(powerDomainCount);
-	res = zesDeviceEnumPowerDomains(d->zesDeviceHdl, &powerDomainCount, powerHandles.data());
-	if (res == ZE_RESULT_SUCCESS) {
+
+	uint32_t powerDomainCount = pwr->getPowerCount();
+	zes_pwr_handle_t *powerHandles = pwr->getPowerHandles();
+	if (powerDomainCount > 0 && powerHandles != nullptr) {
 		uint64_t currentDeviceMaxDomainValue = 0;
 		uint64_t currentSubDeviceValueSum = 0;
-		for (auto &power : powerHandles) {
+		for (uint32_t i = 0; i < powerDomainCount; ++i) {
 			zes_power_properties_t props = {};
-			props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
-			res = zesPowerGetProperties(power, &props);
+			zes_power_ext_properties_t extProps = {};
+			extProps.pNext = nullptr;
+			res = pwr->getProperties(powerHandles[i], &props, &extProps);
 			if (res != ZE_RESULT_SUCCESS) {
 				continue;
 			}
 			zes_power_energy_counter_t snap1 = {};
 			zes_power_energy_counter_t snap2 = {};
-			res = zesPowerGetEnergyCounter(power, &snap1);
+			res = pwr->getEnergyCounter(powerHandles[i], &snap1);
 			if (res == ZE_RESULT_SUCCESS) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(POWER_MONITOR_INTERNAL_PERIOD));
-				res = zesPowerGetEnergyCounter(power, &snap2);
+				res = pwr->getEnergyCounter(powerHandles[i], &snap2);
 				if (res == ZE_RESULT_SUCCESS && snap2.timestamp != snap1.timestamp) {
 					uint64_t value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
 					if (props.onSubdevice) {
@@ -567,69 +567,75 @@ ze_result_t cmdHealth::xeLinkPort(devInfo *d, nlohmann::ordered_json *jsonObj)
 	TRACING();
 	std::string description = "Status cannot be determined for all the ports.";
 	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
-	uint32_t fabricPortsCount = 0;
 	ze_result_t res;
-	res = zesDeviceEnumFabricPorts(d->zesDeviceHdl, &fabricPortsCount, nullptr);
-	if (res == ZE_RESULT_SUCCESS && fabricPortsCount > 0) {
-		std::vector<zes_fabric_port_handle_t> fabricPorts(fabricPortsCount);
-		std::vector<std::string> failedFabricPorts, degradedFabricPorts, disabledFabricPorts;
-		res = zesDeviceEnumFabricPorts(d->zesDeviceHdl, &fabricPortsCount, fabricPorts.data());
-		for (auto &fabricPort : fabricPorts) {
-			zes_fabric_port_properties_t fabricPortProperties = {};
-			fabricPortProperties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
-			res = zesFabricPortGetProperties(fabricPort, &fabricPortProperties);
-			if (res != ZE_RESULT_SUCCESS) {
-				continue;
-			}
-			zes_fabric_port_state_t fabricPortState = {};
-			fabricPortState.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
-			res = zesFabricPortGetState(fabricPort, &fabricPortState);
-			if (res != ZE_RESULT_SUCCESS) {
-				continue;
-			}
-			if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_FAILED) {
-				failedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
-											   std::to_string((int)(fabricPortProperties.portId.portNumber)));
-			}
-			if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
-				degradedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
-												 std::to_string((int)(fabricPortProperties.portId.portNumber)));
-			}
-			if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DISABLED) {
-				disabledFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
-												 std::to_string((int)(fabricPortProperties.portId.portNumber)));
-			}
-		}
 
-		if (failedFabricPorts.empty() && degradedFabricPorts.empty() && disabledFabricPorts.empty()) {
-			status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
-			description = "All ports are up and operating as expected.";
+	fabric *fab = d->dev->getFabric();
+	if (fab != nullptr) {
+		uint32_t fabricPortsCount = fab->getPortCount();
+		if (fabricPortsCount > 0) {
+			std::vector<std::string> failedFabricPorts, degradedFabricPorts, disabledFabricPorts;
+			for (uint32_t i = 0; i < fabricPortsCount; ++i) {
+				zes_fabric_port_handle_t portHandle = fab->getPortHandle(i);
+				zes_fabric_port_properties_t fabricPortProperties = {};
+				fabricPortProperties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
+				res = fab->portGetProperties(portHandle, &fabricPortProperties);
+				if (res != ZE_RESULT_SUCCESS) {
+					continue;
+				}
+				zes_fabric_port_state_t fabricPortState = {};
+				fabricPortState.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
+				res = fab->portGetState(portHandle, &fabricPortState);
+				if (res != ZE_RESULT_SUCCESS) {
+					continue;
+				}
+				if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_FAILED) {
+					failedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
+												   std::to_string((int)(fabricPortProperties.portId.portNumber)));
+				}
+				if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
+					degradedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) +
+													 "-" +
+													 std::to_string((int)(fabricPortProperties.portId.portNumber)));
+				}
+				if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DISABLED) {
+					disabledFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) +
+													 "-" +
+													 std::to_string((int)(fabricPortProperties.portId.portNumber)));
+				}
+			}
+
+			if (failedFabricPorts.empty() && degradedFabricPorts.empty() && disabledFabricPorts.empty()) {
+				status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+				description = "All ports are up and operating as expected.";
+			} else {
+				status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+				std::ostringstream desc;
+				if (!failedFabricPorts.empty()) {
+					status = xpumHealthStatus::XPUM_HEALTH_STATUS_CRITICAL;
+					desc << "Ports ";
+					for (const auto &port : failedFabricPorts) {
+						desc << port << " ";
+					}
+					desc << "connection instabilities are preventing workloads making forward progress. ";
+				}
+				if (!degradedFabricPorts.empty()) {
+					desc << "Ports ";
+					for (const auto &port : degradedFabricPorts) {
+						desc << port << " ";
+					}
+					desc << "are up but have quality and/or speed degradation. ";
+				}
+				if (!disabledFabricPorts.empty()) {
+					desc << "Ports ";
+					for (const auto &port : disabledFabricPorts) {
+						desc << port << " ";
+					}
+					desc << "are configured down. ";
+				}
+				description = desc.str();
+			}
 		} else {
-			status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
-			std::ostringstream desc;
-			if (!failedFabricPorts.empty()) {
-				status = xpumHealthStatus::XPUM_HEALTH_STATUS_CRITICAL;
-				desc << "Ports ";
-				for (const auto &port : failedFabricPorts) {
-					desc << port << " ";
-				}
-				desc << "connection instabilities are preventing workloads making forward progress. ";
-			}
-			if (!degradedFabricPorts.empty()) {
-				desc << "Ports ";
-				for (const auto &port : degradedFabricPorts) {
-					desc << port << " ";
-				}
-				desc << "are up but have quality and/or speed degradation. ";
-			}
-			if (!disabledFabricPorts.empty()) {
-				desc << "Ports ";
-				for (const auto &port : disabledFabricPorts) {
-					desc << port << " ";
-				}
-				desc << "are configured down. ";
-			}
-			description = desc.str();
+			description = "Device lacks Xe Link capability.";
 		}
 	} else {
 		description = "Device lacks Xe Link capability.";
@@ -695,34 +701,43 @@ bool cmdHealth::getFrequencyState(const zes_device_handle_t &device, std::string
 		return ret;
 	}
 
-	uint32_t freqCount = 0;
-	ze_result_t res;
-	res = zesDeviceEnumFrequencyDomains(device, &freqCount, nullptr);
-	std::vector<zes_freq_handle_t> freqHandles(freqCount);
-	if (res == ZE_RESULT_SUCCESS) {
-		res = zesDeviceEnumFrequencyDomains(device, &freqCount, freqHandles.data());
-		for (auto &phFreq : freqHandles) {
-			zes_freq_properties_t props = {};
-			props.pNext = nullptr;
-			res = zesFrequencyGetProperties(phFreq, &props);
+	// Create a temporary frequency instance to enumerate and query frequency domains.
+	// The caller only passes a device handle, so we re-enumerate here rather than
+	// accessing the device object's frequency instance directly.
+
+	::frequency freqHelper;
+	ze_result_t initResult = freqHelper.init(device);
+	if (initResult != ZE_RESULT_SUCCESS) {
+		return ret;
+	}
+
+	uint32_t freqCount = freqHelper.getFrequencyCount();
+	auto freqHandles = freqHelper.getFrequencyHandles();
+	if (freqCount == 0 || freqHandles.empty()) {
+		return ret;
+	}
+
+	for (uint32_t i = 0; i < freqCount; ++i) {
+		zes_freq_properties_t props = {};
+		props.pNext = nullptr;
+		ze_result_t res = freqHelper.getProperties(freqHandles[i], &props);
+		if (res == ZE_RESULT_SUCCESS) {
+			zes_freq_state_t freqState = {};
+			res = freqHelper.getState(freqHandles[i], &freqState);
 			if (res == ZE_RESULT_SUCCESS) {
-				zes_freq_state_t freqState = {};
-				res = zesFrequencyGetState(phFreq, &freqState);
-				if (res == ZE_RESULT_SUCCESS) {
-					if (freqState.throttleReasons == 0) {
-						ret = true;
-						continue;
-					}
-					if (props.onSubdevice) {
-						if (!freqThrottleMessage.empty())
-							freqThrottleMessage += " ";
-						freqThrottleMessage += "Tile " + std::to_string(props.subdeviceId) + " " +
-											   this->getFreqThrottleString(freqState.throttleReasons);
-						ret = true;
-					} else {
-						freqThrottleMessage = "Device " + this->getFreqThrottleString(freqState.throttleReasons);
-						return true;
-					}
+				if (freqState.throttleReasons == 0) {
+					ret = true;
+					continue;
+				}
+				if (props.onSubdevice) {
+					if (!freqThrottleMessage.empty())
+						freqThrottleMessage += " ";
+					freqThrottleMessage += "Tile " + std::to_string(props.subdeviceId) + " " +
+										   this->getFreqThrottleString(freqState.throttleReasons);
+					ret = true;
+				} else {
+					freqThrottleMessage = "Device " + this->getFreqThrottleString(freqState.throttleReasons);
+					return true;
 				}
 			}
 		}

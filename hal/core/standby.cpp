@@ -113,6 +113,46 @@ ze_result_t standby::getMode(zes_standby_handle_t standbyHandle)
 }
 
 /**
+ * @brief Gets properties for a specific standby domain
+ *
+ * This function retrieves the properties of a specific standby domain
+ * identified by its handle, returning information such as the subdevice
+ * association and standby domain type.
+ *
+ * @param standbyHandle Handle to the specific standby domain
+ * @param props Pointer to the standby properties structure to populate
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t standby::getProperties(zes_standby_handle_t standbyHandle, zes_standby_properties_t *props)
+{
+	ze_result_t result = zesStandbyGetProperties(standbyHandle, props);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get properties for standby domain 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
+ * @brief Gets the current standby promotion mode for a specific domain
+ *
+ * This function retrieves the current standby promotion mode setting for a
+ * specific standby domain identified by its handle, indicating whether the
+ * domain will automatically enter standby states or remain active.
+ *
+ * @param standbyHandle Handle to the specific standby domain
+ * @param mode Pointer to the standby promotion mode value to populate
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t standby::getMode(zes_standby_handle_t standbyHandle, zes_standby_promo_mode_t *mode)
+{
+	ze_result_t result = zesStandbyGetMode(standbyHandle, mode);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get mode for standby domain 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
  * @brief Sets the standby promotion mode for all standby domains
  *
  * This function configures the standby promotion mode across all standby domains,

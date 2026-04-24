@@ -608,6 +608,31 @@ ze_result_t device::resetDevice(zes_device_handle_t dev)
 }
 
 /**
+ * @brief Retrieves the driver properties for this device's Level Zero driver.
+ *
+ * Wraps zeDriverGetProperties to populate the caller-supplied structure with
+ * driver version and UUID information.
+ *
+ * @param [out] driverProps Pointer to a ze_driver_properties_t structure to fill.
+ * @retval ZE_RESULT_SUCCESS If properties were retrieved successfully.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER If driverProps is null.
+ */
+ze_result_t device::getDriverProperties(ze_driver_properties_t *driverProps)
+{
+	if (driverProps == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	memset(driverProps, 0, sizeof(ze_driver_properties_t));
+	driverProps->stype = ZE_STRUCTURE_TYPE_DRIVER_PROPERTIES;
+	ze_result_t result = zeDriverGetProperties(zeDriver, driverProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get driver properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
  * @brief Retrieves and prints ZES (Ze System Management) device properties.
  *
  * This function retrieves the properties of a ZES device and prints them to the debug output.

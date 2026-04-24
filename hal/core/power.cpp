@@ -738,6 +738,93 @@ ze_result_t power::getLimitsExt(std::vector<PowerLimitExt> &limits)
 }
 
 /**
+ * @brief Gets power domain limits for all power domains
+ *
+ * This function retrieves power limit values organized by power domain and
+ * power level, aggregating extended power limit information across all
+ * device-level power handles.
+ *
+ * @param domainLimits Output map of power domain to power level to limit value in milliwatts
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t power::getDomainLimits(std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> &domainLimits)
+{
+	domainLimits.clear();
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		zes_power_ext_properties_t extProps = {};
+		zes_power_limit_ext_desc_t defaultLimit = {};
+
+		extProps.defaultLimit = &defaultLimit;
+		extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+		props.pNext = &extProps;
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+
+		ze_result_t res = zesPowerGetProperties(powerHandles[i], &props);
+		if (res != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get power properties for handle {}. 0x{:X} ({})\n", i, res, l0_error_to_string(res));
+			continue;
+		}
+		if (props.onSubdevice) {
+			continue;
+		}
+
+		uint32_t limitCount = 0;
+		res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, nullptr);
+		if (res != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get power limit count for handle {}. 0x{:X} ({})\n", i, res, l0_error_to_string(res));
+			continue;
+		}
+
+		std::vector<zes_power_limit_ext_desc_t> powerExtDescs(limitCount);
+		res = zesPowerGetLimitsExt(powerHandles[i], &limitCount, powerExtDescs.data());
+		if (res != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get extended power limits for handle {}. 0x{:X} ({})\n", i, res, l0_error_to_string(res));
+			continue;
+		}
+
+		for (uint32_t j = 0; j < limitCount; j++) {
+			zes_power_level_t level = static_cast<zes_power_level_t>(powerExtDescs[j].level);
+			domainLimits[extProps.domain][level] = powerExtDescs[j].limit;
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Gets the maximum power limit as a formatted string range
+ *
+ * This function queries all power handles to find the maximum power limit
+ * and returns it as a formatted string range (e.g., "1 to 300"), preferring
+ * the package-level domain value.
+ *
+ * @param range Output string containing the formatted power limit range in watts
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t power::getMaxPowerLimit(std::string &range)
+{
+	range.clear();
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props = {};
+		zes_power_ext_properties_t extProps = {};
+		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+		props.pNext = &extProps;
+		extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
+		if (zesPowerGetProperties(powerHandles[i], &props) != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (props.maxLimit > 0) {
+			uint32_t maxLimitW = props.maxLimit / 1000;
+			range = "1 to " + std::to_string(maxLimitW);
+			if (extProps.domain == ZES_POWER_DOMAIN_PACKAGE) {
+				break;
+			}
+		}
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Sets extended power limits for a specific power level
  *
  * This function configures power limits using the extended power management

@@ -10,7 +10,6 @@
 #include "cmds.h"
 #include <os.h>
 #include <string>
-#include <zes_api.h>
 
 enum configCmdType
 {

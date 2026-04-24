@@ -1002,9 +1002,9 @@ ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 	TRACING();
 
 	ze_driver_properties_t zeDriProp = {};
-	const auto result = zeDriverGetProperties(d->dev->getDriverHandle(), &zeDriProp);
+	const auto result = d->dev->getDriverProperties(&zeDriProp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		ERR("Failed to get driver properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 

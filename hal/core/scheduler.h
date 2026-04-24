@@ -20,9 +20,18 @@ public:
 	~scheduler();
 	ze_result_t enumSchedulers(zes_device_handle_t device);
 	ze_result_t getProperties(zes_sched_handle_t schedulerHandle);
+	ze_result_t getProperties(zes_sched_handle_t schedulerHandle, zes_sched_properties_t *props);
 	ze_result_t getCurrentMode(zes_sched_handle_t schedulerHandle);
+	ze_result_t getCurrentMode(zes_sched_handle_t schedulerHandle, zes_sched_mode_t *mode);
 	ze_result_t getTimeoutModeProperties(zes_sched_handle_t schedulerHandle);
+	ze_result_t getTimeoutModeProperties(zes_sched_handle_t schedulerHandle, bool getDefaults,
+										 zes_sched_timeout_properties_t *props);
 	ze_result_t getTimesliceProperties(zes_sched_handle_t schedulerHandle);
+	ze_result_t getTimesliceProperties(zes_sched_handle_t schedulerHandle, bool getDefaults,
+									   zes_sched_timeslice_properties_t *props);
+
+	uint32_t getSchedulerCount() const { return schedulerCount; }
+	zes_sched_handle_t *getSchedulerHandles() const { return schedulerHandles; }
 
 	ze_result_t setTimeoutMode(float timeoutValue);
 	ze_result_t setTimesliceMode(float timesliceValue, float yieldTimeoutValue);

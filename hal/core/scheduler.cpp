@@ -155,6 +155,88 @@ ze_result_t scheduler::getTimesliceProperties(zes_sched_handle_t schedulerHandle
 }
 
 /**
+ * @brief Gets properties for a specific scheduler controller
+ *
+ * This function retrieves the properties of a specific scheduler controller
+ * identified by its handle, returning information such as the subdevice
+ * association and scheduling engine type.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @param props Pointer to the scheduler properties structure to populate
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t scheduler::getProperties(zes_sched_handle_t schedulerHandle, zes_sched_properties_t *props)
+{
+	ze_result_t result = zesSchedulerGetProperties(schedulerHandle, props);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get properties for scheduler 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
+ * @brief Gets the current scheduling mode for a specific scheduler controller
+ *
+ * This function retrieves the current scheduling mode (timeout, timeslice,
+ * or exclusive) for a specific scheduler controller identified by its handle.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @param mode Pointer to the scheduling mode value to populate
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t scheduler::getCurrentMode(zes_sched_handle_t schedulerHandle, zes_sched_mode_t *mode)
+{
+	ze_result_t result = zesSchedulerGetCurrentMode(schedulerHandle, mode);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get current mode for scheduler 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+/**
+ * @brief Gets timeout mode properties for a specific scheduler controller
+ *
+ * This function retrieves timeout mode configuration properties for a specific
+ * scheduler controller, including the watchdog timeout value used for hang
+ * detection and workload monitoring.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @param getDefaults If true, retrieves default values instead of current settings
+ * @param props Pointer to the timeout properties structure to populate
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t scheduler::getTimeoutModeProperties(zes_sched_handle_t schedulerHandle, bool getDefaults,
+												zes_sched_timeout_properties_t *props)
+{
+	ze_result_t result = zesSchedulerGetTimeoutModeProperties(schedulerHandle, getDefaults ? 1 : 0, props);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get timeout mode properties for scheduler 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
+ * @brief Gets timeslice mode properties for a specific scheduler controller
+ *
+ * This function retrieves timeslice mode configuration properties for a specific
+ * scheduler controller, including the scheduling interval and yield timeout values
+ * used for time-sharing workload management.
+ *
+ * @param schedulerHandle Handle to the specific scheduler controller
+ * @param getDefaults If true, retrieves default values instead of current settings
+ * @param props Pointer to the timeslice properties structure to populate
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t scheduler::getTimesliceProperties(zes_sched_handle_t schedulerHandle, bool getDefaults,
+											  zes_sched_timeslice_properties_t *props)
+{
+	ze_result_t result = zesSchedulerGetTimesliceModeProperties(schedulerHandle, getDefaults ? 1 : 0, props);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get timeslice properties for scheduler 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
  * @brief Sets timeout mode for all scheduler controllers
  *
  * This function configures timeout mode across all scheduler controllers with
