@@ -266,9 +266,10 @@ ze_result_t zesDeviceGetProperties(zes_device_handle_t hDevice, zes_device_prope
 	if (pNext) {
 		zes_device_ext_properties_t *ext = (zes_device_ext_properties_t *)pNext;
 		if (ext->stype == ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES) {
+			pNext = ext->pNext;
 			*ext = dev->properties->extended_properties;
 			ext->stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES;
-			ext->pNext = NULL;
+			ext->pNext = pNext;
 		}
 	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
@@ -958,7 +959,10 @@ ze_result_t zesDeviceGetEccState(zes_device_handle_t hDevice, zes_device_ecc_pro
 	if (pNext) {
 		zes_device_ecc_default_properties_ext_t *ext = (zes_device_ecc_default_properties_ext_t *)pNext;
 		if (ext->stype == ZES_STRUCTURE_TYPE_DEVICE_ECC_DEFAULT_PROPERTIES_EXT) {
-			ext->defaultState = dev->ecc->state->extended_properties.defaultState;
+			pNext = ext->pNext;
+			*ext = dev->ecc->state->extended_properties;
+			ext->stype = ZES_STRUCTURE_TYPE_DEVICE_ECC_DEFAULT_PROPERTIES_EXT;
+			ext->pNext = pNext;
 		}
 	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
@@ -1038,9 +1042,10 @@ ze_result_t zesEngineGetProperties(zes_engine_handle_t hEngine, zes_engine_prope
 	if (pNext) {
 		zes_engine_ext_properties_t *ext = (zes_engine_ext_properties_t *)pNext;
 		if (ext->stype == ZES_STRUCTURE_TYPE_ENGINE_EXT_PROPERTIES) {
+			pNext = ext->pNext;
 			*ext = eng->properties.extended_properties;
 			ext->stype = ZES_STRUCTURE_TYPE_ENGINE_EXT_PROPERTIES;
-			ext->pNext = NULL;
+			ext->pNext = pNext;
 		}
 	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
