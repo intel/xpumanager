@@ -47,7 +47,7 @@ jobs:
 
       - name: Run Trivy Fs Scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           exit-code: 1
           scan-type: fs
@@ -58,7 +58,7 @@ jobs:
           output: trivy-report.json
 
       - name: Print Trivy report in human-readable format
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: convert
           scanners: vuln,secret
@@ -66,7 +66,7 @@ jobs:
           format: table
 
       - name: Convert Trivy report to CSV format
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: convert
           image-ref: trivy-report.json
@@ -95,7 +95,7 @@ jobs:
         run: ./xpumd/scripts/trivy-warmup.sh
 
       - name: Run Trivy License Scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         env:
           TRIVY_IGNORED_LICENSES: MPL-2.0
         with:

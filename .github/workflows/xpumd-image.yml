@@ -92,7 +92,7 @@ jobs:
       run: cosign sign --yes ${{ env.IMAGE_TAG }}@${{ steps.build_and_push.outputs.digest }}
 
     - name: Run Trivy image scan
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         image-ref: ${{ env.IMAGE_TAG }}
         list-all-pkgs: true
@@ -100,14 +100,14 @@ jobs:
         output: trivy-report.json
 
     - name: Print Trivy report in human-readable format
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         scan-type: convert
         image-ref: trivy-report.json
         format: table
 
     - name: Convert Trivy report to CSV format
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         scan-type: convert
         image-ref: trivy-report.json
