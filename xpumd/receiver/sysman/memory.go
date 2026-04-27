@@ -152,8 +152,11 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		)
 	}
 
-	m.state.healthStatesSeen[state.Health] = true
-	// TODO: should we filter out "unknown" health state?
+	// Skip unknown memory state reporting until state has been known.
+	if state.Health != l0sysman.MEM_HEALTH_UNKNOWN || len(m.state.healthStatesSeen) > 0 {
+		m.state.healthStatesSeen[state.Health] = true
+	}
+
 	for s := range m.state.healthStatesSeen {
 		value := int64(0)
 		if s == state.Health {
