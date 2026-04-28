@@ -73,6 +73,32 @@ func TestAttributeFilter(t *testing.T) {
 			},
 			expectMatch: false,
 		},
+		{
+			name: "match, multiple attrs",
+			filter: AttributeFilter{
+				Key:    "hw.vendor",
+				Values: []string{"acme"},
+			},
+			attrs: map[string]string{
+				"hw.type":            "gpu",
+				"hw.vendor":          "acme",
+				"hw.sensor_location": "memory",
+			},
+			expectMatch: true,
+		},
+		{
+			name: "no match, multiple attrs",
+			filter: AttributeFilter{
+				Key:    "hw.vendor",
+				Values: []string{"memory"}, // another attr has the wanted value, but on the wrong key
+			},
+			attrs: map[string]string{
+				"hw.type":            "cpu",
+				"hw.vendor":          "acme",
+				"hw.sensor_location": "memory",
+			},
+			expectMatch: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -130,6 +156,33 @@ func TestAttributeFilterList_Match(t *testing.T) {
 				},
 			},
 			attrs:       map[string]string{"hw.type": "memory", "hw.vendor": "acme"},
+			expectMatch: false,
+		},
+		{
+			name: "all filters match among many attrs",
+			list: AttributeFilterList{
+				{Key: "hw.type", Values: []string{"gpu"}},
+				{Key: "hw.vendor", Values: []string{"acme"}},
+			},
+			attrs: map[string]string{
+				"hw.type":            "gpu",
+				"hw.vendor":          "acme",
+				"hw.sensor_location": "memory",
+				"hw.state":           "ok",
+			},
+			expectMatch: true,
+		},
+		{
+			name: "one filter does not match among many attrs",
+			list: AttributeFilterList{
+				{Key: "hw.type", Values: []string{"gpu"}},
+				{Key: "hw.vendor", Values: []string{"good"}},
+			},
+			attrs: map[string]string{
+				"hw.type":   "gpu",
+				"hw.vendor": "acme",
+				"hw.state":  "good",
+			},
 			expectMatch: false,
 		},
 	}
