@@ -7,7 +7,8 @@
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
-LEVEL_ZERO_VERSION=${LEVEL_ZERO_VERSION:-"1.26.2"}
+LEVEL_ZERO_VERSION_DEFAULT=$(sed -n 's/^ARG LEVEL_ZERO_VERSION=//p' "${SCRIPT_DIR}/../Dockerfile")
+LEVEL_ZERO_VERSION=${LEVEL_ZERO_VERSION:-"${LEVEL_ZERO_VERSION_DEFAULT}"}
 L0_BASE_URL="https://github.com/oneapi-src/level-zero/releases/download"
 
 IMAGE_TAG="xpumd-builder:latest"
