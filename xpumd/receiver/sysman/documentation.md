@@ -273,6 +273,25 @@ Memory bandwidth (read+write) utilization ratio.
 | hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended | - |
 | hw.memory.type | Type of the memory. | Any Str | Recommended | - |
 
+### hw.memory.free
+
+Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| By | Sum | Int | Cumulative | false | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended | - |
+| hw.memory.type | Type of the memory. | Any Str | Recommended | - |
+
 ### hw.memory.io
 
 Bytes read from / written to memory.
@@ -314,7 +333,7 @@ Current memory bandwidth (read+write) usage in bytes/sec.
 
 ### hw.memory.size
 
-Size of the memory.
+Physical size of the memory.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
@@ -338,6 +357,25 @@ Memory used.
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
 | By | Sum | Int | Cumulative | false | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.memory.location | Location of the memory (device, system...). | Any Str | Recommended | - |
+| hw.memory.type | Type of the memory. | Any Str | Recommended | - |
+
+### hw.memory.utilization
+
+Memory utilization ratio.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Gauge | Double | Development |
 
 #### Attributes
 

@@ -29,6 +29,8 @@ all_set:
       enabled: true
     hw.memory.bandwidth.utilization:
       enabled: true
+    hw.memory.free:
+      enabled: true
     hw.memory.io:
       enabled: true
     hw.memory.io.rate:
@@ -36,6 +38,8 @@ all_set:
     hw.memory.size:
       enabled: true
     hw.memory.usage:
+      enabled: true
+    hw.memory.utilization:
       enabled: true
     hw.power:
       enabled: true
@@ -75,6 +79,8 @@ none_set:
       enabled: false
     hw.memory.bandwidth.utilization:
       enabled: false
+    hw.memory.free:
+      enabled: false
     hw.memory.io:
       enabled: false
     hw.memory.io.rate:
@@ -82,6 +88,8 @@ none_set:
     hw.memory.size:
       enabled: false
     hw.memory.usage:
+      enabled: false
+    hw.memory.utilization:
       enabled: false
     hw.power:
       enabled: false

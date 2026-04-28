@@ -116,6 +116,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwMemoryFreeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val", AttributeNetworkIoDirectionReceive)
 
 			defaultMetricsCount++
@@ -129,6 +133,10 @@ func TestMetricsBuilder(t *testing.T) {
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwMemoryUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -591,6 +599,38 @@ func TestMetricsBuilder(t *testing.T) {
 					hwMemoryTypeAttrVal, ok := dp.Attributes().Get("hw.memory.type")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.memory.type-val", hwMemoryTypeAttrVal.Str())
+				case "hw.memory.free":
+					assert.False(t, validatedMetrics["hw.memory.free"], "Found a duplicate in the metrics slice: hw.memory.free")
+					validatedMetrics["hw.memory.free"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+					assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.", mi.Description())
+					assert.Equal(t, "By", mi.Unit())
+					assert.False(t, mi.Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+					dp := mi.Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())
+					hwNameAttrVal, ok := dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", hwNameAttrVal.Str())
+					pciBdfAttrVal, ok := dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", pciBdfAttrVal.Str())
+					comIntelSubdeviceIDAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", comIntelSubdeviceIDAttrVal.Str())
+					hwMemoryLocationAttrVal, ok := dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", hwMemoryLocationAttrVal.Str())
+					hwMemoryTypeAttrVal, ok := dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", hwMemoryTypeAttrVal.Str())
 				case "hw.memory.io":
 					assert.False(t, validatedMetrics["hw.memory.io"], "Found a duplicate in the metrics slice: hw.memory.io")
 					validatedMetrics["hw.memory.io"] = true
@@ -661,7 +701,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["hw.memory.size"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-					assert.Equal(t, "Size of the memory.", mi.Description())
+					assert.Equal(t, "Physical size of the memory.", mi.Description())
 					assert.Equal(t, "By", mi.Unit())
 					assert.False(t, mi.Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -702,6 +742,36 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
+					hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())
+					hwNameAttrVal, ok := dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", hwNameAttrVal.Str())
+					pciBdfAttrVal, ok := dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", pciBdfAttrVal.Str())
+					comIntelSubdeviceIDAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", comIntelSubdeviceIDAttrVal.Str())
+					hwMemoryLocationAttrVal, ok := dp.Attributes().Get("hw.memory.location")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.location-val", hwMemoryLocationAttrVal.Str())
+					hwMemoryTypeAttrVal, ok := dp.Attributes().Get("hw.memory.type")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.memory.type-val", hwMemoryTypeAttrVal.Str())
+				case "hw.memory.utilization":
+					assert.False(t, validatedMetrics["hw.memory.utilization"], "Found a duplicate in the metrics slice: hw.memory.utilization")
+					validatedMetrics["hw.memory.utilization"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+					assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+					assert.Equal(t, "Memory utilization ratio.", mi.Description())
+					assert.Equal(t, "1", mi.Unit())
+					dp := mi.Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
 					hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())

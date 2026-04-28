@@ -69,6 +69,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwMemoryBandwidthUtilization: MetricConfig{
 						Enabled: true,
 					},
+					HwMemoryFree: MetricConfig{
+						Enabled: true,
+					},
 					HwMemoryIo: MetricConfig{
 						Enabled: true,
 					},
@@ -79,6 +82,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 						Enabled: true,
 					},
 					HwMemoryUsage: MetricConfig{
+						Enabled: true,
+					},
+					HwMemoryUtilization: MetricConfig{
 						Enabled: true,
 					},
 					HwPower: MetricConfig{
@@ -142,6 +148,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwMemoryBandwidthUtilization: MetricConfig{
 						Enabled: false,
 					},
+					HwMemoryFree: MetricConfig{
+						Enabled: false,
+					},
 					HwMemoryIo: MetricConfig{
 						Enabled: false,
 					},
@@ -152,6 +161,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 						Enabled: false,
 					},
 					HwMemoryUsage: MetricConfig{
+						Enabled: false,
+					},
+					HwMemoryUtilization: MetricConfig{
 						Enabled: false,
 					},
 					HwPower: MetricConfig{

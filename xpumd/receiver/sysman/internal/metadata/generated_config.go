@@ -42,10 +42,12 @@ type MetricsConfig struct {
 	HwGpuUtilization             MetricConfig `mapstructure:"hw.gpu.utilization"`
 	HwMemoryBandwidthLimit       MetricConfig `mapstructure:"hw.memory.bandwidth.limit"`
 	HwMemoryBandwidthUtilization MetricConfig `mapstructure:"hw.memory.bandwidth.utilization"`
+	HwMemoryFree                 MetricConfig `mapstructure:"hw.memory.free"`
 	HwMemoryIo                   MetricConfig `mapstructure:"hw.memory.io"`
 	HwMemoryIoRate               MetricConfig `mapstructure:"hw.memory.io.rate"`
 	HwMemorySize                 MetricConfig `mapstructure:"hw.memory.size"`
 	HwMemoryUsage                MetricConfig `mapstructure:"hw.memory.usage"`
+	HwMemoryUtilization          MetricConfig `mapstructure:"hw.memory.utilization"`
 	HwPower                      MetricConfig `mapstructure:"hw.power"`
 	HwPowerLimit                 MetricConfig `mapstructure:"hw.power.limit"`
 	HwStatus                     MetricConfig `mapstructure:"hw.status"`
@@ -96,6 +98,9 @@ func DefaultMetricsConfig() MetricsConfig {
 		HwMemoryBandwidthUtilization: MetricConfig{
 			Enabled: true,
 		},
+		HwMemoryFree: MetricConfig{
+			Enabled: true,
+		},
 		HwMemoryIo: MetricConfig{
 			Enabled: true,
 		},
@@ -106,6 +111,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		HwMemoryUsage: MetricConfig{
+			Enabled: true,
+		},
+		HwMemoryUtilization: MetricConfig{
 			Enabled: true,
 		},
 		HwPower: MetricConfig{

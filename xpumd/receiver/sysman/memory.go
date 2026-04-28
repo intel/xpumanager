@@ -39,6 +39,7 @@ type memoryAttributes struct {
 	hwType         metadata.AttributeHwType
 	hwName         string
 	pciBDF         string
+	physicalSize   int64
 	memoryType     string
 	memoryLocation string
 	subdeviceId    string
@@ -82,6 +83,7 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 			hwType:         metadata.AttributeHwTypeMemory,
 			hwName:         name,
 			pciBDF:         device.attributes.pciBDF,
+			physicalSize:   int64(props.PhysicalSize),
 			memoryType:     strings.ToLower(props.Type.String()),
 			memoryLocation: strings.ToLower(props.Location.String()),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
@@ -101,6 +103,8 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if m.state.disabled {
 		return
 	}
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-state-t
 	state, err := m.GetState()
 	if err != nil {
 		m.logger.Errorw("Memory GetState() failed: mem metrics disabled", zap.Error(err), "attributes", m.attributes)
@@ -108,23 +112,45 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 
-	mb.RecordHwMemorySizeDataPoint(ts, int64(state.Size),
-		m.attributes.hwID,
-		m.attributes.hwName,
-		m.attributes.pciBDF,
-		m.attributes.subdeviceId,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
-	)
+	if m.attributes.physicalSize > 0 {
+		mb.RecordHwMemorySizeDataPoint(ts, m.attributes.physicalSize,
+			m.attributes.hwID,
+			m.attributes.hwName,
+			m.attributes.pciBDF,
+			m.attributes.subdeviceId,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
+		)
 
-	mb.RecordHwMemoryUsageDataPoint(ts, int64(state.Size-state.Free),
-		m.attributes.hwID,
-		m.attributes.hwName,
-		m.attributes.pciBDF,
-		m.attributes.subdeviceId,
-		m.attributes.memoryLocation,
-		m.attributes.memoryType,
-	)
+		usage := m.attributes.physicalSize - int64(state.Free)
+		mb.RecordHwMemoryUsageDataPoint(ts, usage,
+			m.attributes.hwID,
+			m.attributes.hwName,
+			m.attributes.pciBDF,
+			m.attributes.subdeviceId,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
+		)
+
+		ratio := float64(usage) / float64(m.attributes.physicalSize)
+		mb.RecordHwMemoryUtilizationDataPoint(ts, ratio,
+			m.attributes.hwID,
+			m.attributes.hwName,
+			m.attributes.pciBDF,
+			m.attributes.subdeviceId,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
+		)
+	} else {
+		mb.RecordHwMemoryFreeDataPoint(ts, int64(state.Free),
+			m.attributes.hwID,
+			m.attributes.hwName,
+			m.attributes.pciBDF,
+			m.attributes.subdeviceId,
+			m.attributes.memoryLocation,
+			m.attributes.memoryType,
+		)
+	}
 
 	m.state.healthStatesSeen[state.Health] = true
 	// TODO: should we filter out "unknown" health state?
