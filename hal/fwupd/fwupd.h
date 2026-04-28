@@ -43,6 +43,7 @@ enum fwType
 	FAN_TABLE,
 	VR_CONFIG,
 	AMC,
+	FDO,
 	MAX_FW_TYPE,
 };
 
@@ -59,11 +60,10 @@ struct firmwareInfo
 	bool jsonOutput;
 	bool assumeYes;
 	bool forceUpdate;
-	bool recoveryMode;
 	std::string deviceId;
 	uint32_t amcIndex;
 	uint32_t deviceIndex;
-	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC
+	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC, FDO
 	std::string firmwareType; // This is the string representation of fwType
 	std::string filePath;
 	device *dev;
@@ -105,6 +105,9 @@ public:
 	virtual ze_result_t postUpdateGfx(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t preUpdateFdo(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t updateFdo(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
+	virtual ze_result_t postUpdateFdo(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t postUpdateOpCode(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateOpCode(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateOpCode(firmwareInfo *fwInfo) { return updateFW(fwInfo); };

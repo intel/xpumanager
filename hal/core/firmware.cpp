@@ -30,6 +30,8 @@ firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(n
 		 &fwupd::postUpdateVrConfig, nullptr, "", ""},
 		{AMC, TOSTR(AMC), FWUPD_PREFERENCE_AMC, &fwupd::preUpdateAMC, &fwupd::updateAMC, &fwupd::postUpdateAMC, nullptr,
 		 "", ""},
+		{FDO, TOSTR(FDO), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateFdo, &fwupd::updateFdo, &fwupd::postUpdateFdo,
+		 nullptr, "", ""},
 	};
 }
 
@@ -122,6 +124,8 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 		index = AMC;
 	} else if (STRCASECMP(properties.name, "GFX_DATA") == 0) {
 		index = GFX_DATA;
+	} else if (STRCASECMP(properties.name, "FLASH_OVERRIDE") == 0) {
+		index = FDO;
 	} else if (STRCASECMP(properties.name, "OPTIONROM") == 0) {
 		index = OP_CODE;
 	} else if (STRCASECMP(properties.name, "GFX_PSCBIN") == 0) {

@@ -57,6 +57,7 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "Usage: %s updatefw [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [deviceId] -t GFX -f [imageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [deviceId] -t FDO -f [imageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s updatefw -t AMC -f [imageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
@@ -66,7 +67,7 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address. If it is not "
 										"specified, all devices will be updated"));
 	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, "
-										"GFX_CODE_DATA, GFX_PSCBIN, AMC, OPCODE, OPDATA."));
+										"FDO, GFX_CODE_DATA, GFX_PSCBIN, AMC, OP_CODE, OP_DATA."));
 	helpList.push_back(helpCmd(
 		SUB_HEADING, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
 	helpList.push_back(
@@ -76,9 +77,6 @@ void cmdUpdateFW::help(HELP helpType)
 		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList.push_back(helpCmd(
 		HEADING, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
-	helpList.push_back(
-		helpCmd(HEADING, "--recovery                  Update firmware under survivability mode. This parameter only "
-						 "works for GFX and GFX_DATA firmware on Intel® Data Center GPU Flex series"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -110,15 +108,10 @@ int cmdUpdateFW::run(arg_struct *args)
 	int opt;
 	int optionIndex = 0;
 	const char *optString = "hjd:t:f:y";
-	struct option longOpts[] = {{"help", no_argument, nullptr, 'h'},
-								{"json", no_argument, nullptr, 'j'},
-								{"device", required_argument, nullptr, 'd'},
-								{"type", required_argument, nullptr, 't'},
-								{"file", required_argument, nullptr, 'f'},
-								{"assumeyes", no_argument, nullptr, 'y'},
-								{"force", no_argument, nullptr, 0},
-								{"recovery", no_argument, nullptr, 0},
-								{nullptr, 0, nullptr, 0}};
+	struct option longOpts[] = {{"help", no_argument, nullptr, 'h'},		 {"json", no_argument, nullptr, 'j'},
+								{"device", required_argument, nullptr, 'd'}, {"type", required_argument, nullptr, 't'},
+								{"file", required_argument, nullptr, 'f'},	 {"assumeyes", no_argument, nullptr, 'y'},
+								{"force", no_argument, nullptr, 0},			 {nullptr, 0, nullptr, 0}};
 
 	// Skip the first two arguments (process and command name)
 	int startind = 2;
@@ -147,8 +140,6 @@ int cmdUpdateFW::run(arg_struct *args)
 		case 0:
 			if (STRCASECMP("force", longOpts[optionIndex].name) == 0) {
 				fwInfo.forceUpdate = true;
-			} else if (STRCASECMP("recovery", longOpts[optionIndex].name) == 0) {
-				fwInfo.recoveryMode = true;
 			} else {
 				ERR("Unknown command: {}\n", longOpts[optionIndex].name);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
