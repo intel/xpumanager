@@ -31,5 +31,6 @@ processors:
   - gomod: github.com/intel/xpumanager/xpumd/processor/intelxpustatus v0.0.0
     path: ./processor/intelxpustatus
     name: intelxpustatus
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v@OTEL_VERSION@
 
 extensions:
