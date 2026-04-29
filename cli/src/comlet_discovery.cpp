@@ -280,6 +280,9 @@ void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
                     deviceJson["gfx_data_firmware_version"] = 
                         fwVer.gfx_data_fw_version;
                 }
+            } else if (!this->opts->showVfOnly) {
+                // if only need show pf, and isPhysicalFunctionDevice==false, means device is vf, skip
+                continue;
             }
             PciDeviceData pdd;
             if (getPciDeviceData(pdd, bdf) == true) {
@@ -327,7 +330,22 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
             deviceJsonList.push_back(deviceJson);
         }
         checkBadDevices(deviceJsonList);
-        (*json)["device_list"] = deviceJsonList;
+        if (this->opts->showVfOnly) {
+            // This is a WA, remove pf if set --vf.
+            nlohmann::json filteredList;
+            for (auto& item : deviceJsonList) {
+                if (item.contains("pci_bdf_address") && item["pci_bdf_address"].is_string()) {
+                    auto bdf = item["pci_bdf_address"].get<std::string>();
+                    if (isPhysicalFunctionDevice(bdf) == true) {
+                        continue;
+                    }
+                }
+                filteredList.push_back(item);
+            }
+            (*json)["device_list"] = filteredList;
+        } else {
+            (*json)["device_list"] = deviceJsonList;
+        }
         return json;
     }
 
