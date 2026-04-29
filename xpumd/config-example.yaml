@@ -73,6 +73,14 @@ processors:
             conditions:
               - value: 85.0
 
+  # An example config for filter processor: drop hw.status{hw.state="ok"} data points to reduce metric cardinality.
+  # NOTE: If enabled in the default pipeline, this also affects the
+  # intelxpuinfo exporter: healthy components will have no active status entry.
+  filter/ok_status:
+    metrics:
+      datapoint:
+        - 'metric.name == "hw.status" and attributes["hw.state"] == "ok"'
+
 exporters:
   intelxpuinfo:
     # Only unix domain socket is allowed.
