@@ -66,7 +66,7 @@ Drivers:
             TimestampValidBits: 36
             KernelTimestampValidBits: 32
             Uuid:
-              Id: "12345678-000a-00b0-0c00-00000000d000"
+              Id: "12345678-000a-00b0-0c00-00000000d00e"
             Name: "ACME GPU"
           NumSubdevices: 2
           SerialNumber: "SN-0001"

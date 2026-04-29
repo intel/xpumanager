@@ -533,6 +533,54 @@ static const cyaml_config_t cyaml_cfg = {
 	.flags = CYAML_CFG_IGNORE_UNKNOWN_KEYS,
 };
 
+static bool parse_uuid(const char str[SYSMAN_UUID_STR_SIZE], uint8_t (*id)[16])
+{
+	if (!str || str[0] == '\0') {
+		memset(id, 0, sizeof(*id));
+		return true;
+	}
+
+	if (strlen(str) != SYSMAN_UUID_STR_SIZE - 1)
+		return false;
+
+	unsigned int b[16];
+	int n = sscanf(str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", &b[0], &b[1], &b[2],
+				   &b[3], &b[4], &b[5], &b[6], &b[7], &b[8], &b[9], &b[10], &b[11], &b[12], &b[13], &b[14], &b[15]);
+	if (n != 16)
+		return false;
+
+	for (int i = 0; i < 16; i++)
+		(*id)[i] = (uint8_t)b[i];
+	return true;
+}
+
+// Special post-parse handler for UUID fields. Resolves UUID strings parsed
+// from YAML into the binary fields in the ze/zes structs.
+// Must be called on the freshly parsed tree before it is donated to g_sysman_state.
+static bool resolve_uuids(sysman_state_t *state)
+{
+	for (uint32_t d = 0; d < state->system.drivers_count; d++) {
+		sysman_drivers_state_t *drv = &state->system.drivers[d];
+		for (uint32_t i = 0; i < drv->devices_count; i++) {
+			sysman_device_properties_info_t *p = drv->devices[i].properties;
+			if (!p)
+				continue;
+			// Copy all Core fields parsed into .core.ze back to .base.core,
+			// then overlay the parsed UUID string onto .base.core.uuid.id.
+			p->base.core = p->core.ze;
+			if (!parse_uuid(p->core.uuid.id, &p->base.core.uuid.id)) {
+				fprintf(stderr, "stub: invalid Core.Uuid '%s' in device %u of driver %u\n", p->core.uuid.id, i, d);
+				return false;
+			}
+			if (!parse_uuid(p->uuid.id, &p->extended_properties.uuid.id)) {
+				fprintf(stderr, "stub: invalid Uuid '%s' in device %u of driver %u\n", p->uuid.id, i, d);
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 // ------------------------------------------------------------------
 // Internal state management functions
 // ------------------------------------------------------------------
@@ -564,6 +612,12 @@ static int sysman_state_load_locked(const char *path)
 	}
 	if (!parsed) {
 		fprintf(stderr, "stub: YAML produced empty state in '%s'\n", resolved);
+		return -1;
+	}
+
+	if (!resolve_uuids(parsed)) {
+		free_system_state(&parsed->system);
+		free(parsed);
 		return -1;
 	}
 

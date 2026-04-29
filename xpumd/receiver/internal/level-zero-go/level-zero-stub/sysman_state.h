@@ -699,10 +699,27 @@ typedef struct
 // Per-device state
 // ------------------------------------------------------------------
 
+// UUID string in "8-4-4-4-12" format + NUL
+#define SYSMAN_UUID_STR_SIZE (sizeof("12345678-1234-1234-1234-123456789abc"))
+
+typedef struct
+{
+	char id[SYSMAN_UUID_STR_SIZE];
+} sysman_uuid_t;
+
+// Wrapper for ze_device_properties_t to allow parsing of UUID strings from YAML.
+typedef struct
+{
+	ze_device_properties_t ze;
+	sysman_uuid_t uuid;
+} sysman_device_core_properties_t;
+
 typedef struct
 {
 	zes_device_properties_t base;
 	zes_device_ext_properties_t extended_properties;
+	sysman_device_core_properties_t core; // YAML parsing helper for base.core.uuid
+	sysman_uuid_t uuid;					  // YAML parsing helper for extended_properties.uuid
 } sysman_device_properties_info_t;
 
 typedef struct
