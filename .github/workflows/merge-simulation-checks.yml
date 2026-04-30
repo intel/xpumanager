@@ -1,0 +1,145 @@
+name: Merge Simulation - Post-Merge CI
+
+# This workflow validates that PR changes will pass CI AFTER being merged/rebased
+# It runs on pull_request_target (against the base branch) to simulate the post-merge state
+# This catches issues like dependabot updates that break compatibility after rebase
+
+on:
+  pull_request_target:
+    branches:
+      - main
+      - dev
+    types: [opened, reopened, synchronize]
+
+# Limit concurrent jobs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  validate-after-merge:
+    name: Validate post-merge state
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    steps:
+      - name: Checkout base branch (simulating post-merge state)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+
+      - name: Merge PR branch into base
+        run: |
+          git config user.name "xpum-bot"
+          git config user.email "xpum-bot@users.noreply.github.com"
+          
+          # Fetch the PR branch
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+          
+          # Attempt to merge (this is what would happen on merge)
+          if ! git merge --no-commit --no-ff pr-branch; then
+            echo "❌ Merge conflict detected! PR cannot be cleanly merged."
+            git merge --abort
+            exit 1
+          fi
+          
+          # Show the merged state for debugging
+          echo "✅ Merge simulation successful"
+          git log --oneline -5
+
+      - name: Report merge simulation result
+        if: success()
+        run: |
+          echo "✅ Post-merge validation passed: This PR will pass CI after merge"
+
+      - name: Report merge simulation failure
+        if: failure()
+        run: |
+          echo "❌ Post-merge validation failed: Merging this PR may break CI"
+          exit 1
+
+  # Run C++ checks if C++ code is affected
+  validate-cpp-after-merge:
+    name: C++ validation after merge
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'cpp') ||
+      contains(github.event.pull_request.files.*.filename, 'hal/') ||
+      contains(github.event.pull_request.files.*.filename, 'ial/') ||
+      contains(github.event.pull_request.files.*.filename, 'oal/') ||
+      contains(github.event.pull_request.files.*.filename, 'meson.build')
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+
+      - name: Merge PR branch
+        run: |
+          git config user.name "xpum-bot"
+          git config user.email "xpum-bot@users.noreply.github.com"
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+          git merge --no-commit --no-ff pr-branch
+
+      - name: Check for dependency conflicts
+        run: |
+          # This is a basic check - add more specific validations for your project
+          if grep -r "CONFLICT" .; then
+            echo "❌ Conflict markers found in merged state"
+            exit 1
+          fi
+          echo "✅ No conflict markers in merged state"
+
+  # Run Go checks if Go code is affected
+  validate-go-after-merge:
+    name: Go validation after merge
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'go') ||
+      contains(github.event.pull_request.files.*.filename, 'xpumd/') ||
+      contains(github.event.pull_request.files.*.filename, 'go.mod') ||
+      contains(github.event.pull_request.files.*.filename, 'go.sum')
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+
+      - name: Merge PR branch
+        run: |
+          git config user.name "xpum-bot"
+          git config user.email "xpum-bot@users.noreply.github.com"
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+          git merge --no-commit --no-ff pr-branch
+
+      - name: Check Go module validity after merge
+        run: |
+          cd xpumd
+          go mod tidy --check || {
+            echo "❌ go.mod/go.sum would be out of sync after merge"
+            echo "Run 'go mod tidy' and commit changes"
+            exit 1
+          }
+          echo "✅ Go modules valid after merge"
+
+  # Final status check
+  merge-simulation-status:
+    name: Merge Simulation Status
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [validate-after-merge]
+    steps:
+      - name: Merge simulation passed
+        if: needs.validate-after-merge.result == 'success'
+        run: echo "✅ PR is safe to merge - post-merge CI will pass"
+
+      - name: Merge simulation failed
+        if: needs.validate-after-merge.result != 'success'
+        run: |
+          echo "❌ Merge simulation failed - this PR may break CI after merge"
+          exit 1

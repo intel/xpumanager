@@ -7,6 +7,9 @@ on:
       - dev
       - v2*
   pull_request:
+    paths:
+      - 'xpumd/**'
+      - '.github/workflows/xpumd-ci-checks.yml'
 
 permissions:
   contents: read

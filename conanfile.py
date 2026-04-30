@@ -11,12 +11,12 @@ import os
 class XpumConan(ConanFile):
     name = "xpum"
     version = "1.0.0"
-    
+
     # Package metadata
     license = "MIT"
     description = "Intel(R) XPU Manager and XPU System Management Interface"
     url = "https://github.com/intel/xpum"
-    
+
     # Settings and options
     settings = "os", "compiler", "build_type", "arch"
     options = {
@@ -31,7 +31,7 @@ class XpumConan(ConanFile):
         "with_igsc": True,
         "with_tests": False,
     }
-    
+
     def requirements(self):
         self.requires("level-zero/1.27.0")
         self.requires("igsc/0.9.6")
@@ -41,18 +41,18 @@ class XpumConan(ConanFile):
 
     def build_requirements(self):
         self.tool_requires("meson/1.3.2")
-        
+
         # Development tools
         if self.options.with_tests:
             self.tool_requires("cmake/3.25.3")  # For some test dependencies
             self.test_requires("boost-ext-ut/2.1.0")  # boost-ext/ut testing framework
-            self.test_requires("doctest/2.4.11")       # doctest — logger unit tests
+            self.test_requires("doctest/2.4.11")  # doctest — logger unit tests
 
     def configure(self):
         # Configure fPIC based on shared option
         if self.options.shared:
             self.options.rm_safe("fPIC")
-        
+
         # Platform-specific configuration
         if self.settings.os == "Windows":
             # Windows doesn't need fPIC
@@ -67,7 +67,9 @@ class XpumConan(ConanFile):
         if self.settings.os == "Windows":
             # Pass dependency build info to Meson
             tc.project_options["conan_deps_build_type"] = str(self.settings.build_type)
-            tc.project_options["conan_deps_runtime"] = str(self.settings.compiler.runtime_type)
+            tc.project_options["conan_deps_runtime"] = str(
+                self.settings.compiler.runtime_type
+            )
 
             # Always use from_buildtype for the application
             tc.b_vscrt = "from_buildtype"
@@ -82,7 +84,7 @@ class XpumConan(ConanFile):
         # Add custom meson options based on conan options
         if not self.options.with_igsc:
             tc.project_options["use_system_igsc"] = False
-            
+
         tc.generate()
 
         # Collect license files from all host dependencies into THIRD_PARTY_LICENSES/.
