@@ -80,6 +80,7 @@ func (am *aggregatedMetric[T]) collect(readerIdx int) aggregatedStats[T] {
 }
 
 // computeStats calculates min, max, and average from the buffer.
+// Async calls must be done with aggregation lock held.
 func (am *aggregatedMetric[T]) computeStats(start, end int) aggregatedStats[T] {
 	if start == end {
 		return aggregatedStats[T]{}
@@ -115,6 +116,7 @@ func (am *aggregatedMetric[T]) computeStats(start, end int) aggregatedStats[T] {
 }
 
 // reset clears the reader index and counters, resetting the collection window.
+// Async calls must be done with aggregation lock held.
 func (am *aggregatedMetric[T]) reset(readerIdx int) {
 	am.tails[readerIdx] = am.head
 	am.lostSamples[readerIdx] = 0
