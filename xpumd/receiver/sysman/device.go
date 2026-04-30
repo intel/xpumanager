@@ -37,7 +37,15 @@ type device struct {
 	aggregatedMetricsBufferSize int
 }
 
-type eccInfo struct {
+type pciState struct {
+	stateDisabled bool
+	statesSeen    map[l0sysman.PciLinkStatus]bool
+	qualitySeen   l0sysman.PciLinkQualIssueFlags
+	stabilitySeen l0sysman.PciLinkStabIssueFlags
+	stats         *l0sysman.PciStats
+}
+
+type eccState struct {
 	states       map[string]bool
 	current      string
 	configurable bool
@@ -46,12 +54,8 @@ type eccInfo struct {
 // deviceState has values that can change after enumeration.
 type deviceState struct {
 	devStateDisabled bool
-	pciStateDisabled bool
-	pciStatesSeen    map[l0sysman.PciLinkStatus]bool
-	pciQualitySeen   l0sysman.PciLinkQualIssueFlags
-	pciStabilitySeen l0sysman.PciLinkStabIssueFlags
-	pciStats         *l0sysman.PciStats
-	ecc              *eccInfo
+	pci              pciState
+	ecc              *eccState
 }
 
 // deviceAttributes fields for numeric items that are always reported,
@@ -165,7 +169,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			demandPaging:   props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
 		},
 		state: deviceState{
-			ecc: &eccInfo{
+			ecc: &eccState{
 				states: map[string]bool{},
 			},
 		},
@@ -204,7 +208,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		}
 		if pci.HaveBandwidthCounters != 0 {
 			if stats, err := dev.PciGetStats(); err == nil {
-				d.state.pciStats = &stats
+				d.state.pci.stats = &stats
 			} else {
 				d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
 			}
@@ -220,7 +224,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 	}
 	if _, err := d.PciGetState(); err != nil {
 		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "deviceAttributes", d.attributes)
-		d.state.pciStateDisabled = true
+		d.state.pci.stateDisabled = true
 	}
 
 	// TODO: report types & sizes of device PCI BARs?
@@ -364,7 +368,7 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 
 // scrapePciState reports device PCI link state(s)
 func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if d.state.pciStateDisabled {
+	if d.state.pci.stateDisabled {
 		return
 	}
 
@@ -372,32 +376,32 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	pci, err := d.PciGetState()
 	if err != nil {
 		d.logger.Errorw("Device PciGetState() failed: PCI link state metrics disabled", zap.Error(err), "deviceAttributes", d.attributes)
-		d.state.pciStateDisabled = true
+		d.state.pci.stateDisabled = true
 		return
 	}
 
-	if d.state.pciStatesSeen == nil {
+	if d.state.pci.statesSeen == nil {
 		// skip unknown PCI state reporting until state has been known
 		if pci.Status == l0sysman.PCI_LINK_STATUS_UNKNOWN {
 			return
 		}
-		d.state.pciStatesSeen = map[l0sysman.PciLinkStatus]bool{}
+		d.state.pci.statesSeen = map[l0sysman.PciLinkStatus]bool{}
 	}
 
 	// Collect states that are either active, or have been reported before.
 	// Because names of the PCI statuses and quality & stability issues do not overlap,
 	// single mapping is enough for all of them
 	states := map[string]bool{}
-	for flag := range d.state.pciStatesSeen {
+	for flag := range d.state.pci.statesSeen {
 		states[flag.String()] = false
 	}
 
 	// status is enumerator, not a bitmask, so only one of these is relevant
 	switch pci.Status {
 	case l0sysman.PCI_LINK_STATUS_QUALITY_ISSUES:
-		d.state.pciQualitySeen |= pci.QualityIssues
+		d.state.pci.qualitySeen |= pci.QualityIssues
 	case l0sysman.PCI_LINK_STATUS_STABILITY_ISSUES:
-		d.state.pciStabilitySeen |= pci.StabilityIssues
+		d.state.pci.stabilitySeen |= pci.StabilityIssues
 	default:
 		switch pci.Status {
 		// recognized values
@@ -405,20 +409,20 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		case l0sysman.PCI_LINK_STATUS_UNKNOWN:
 		default:
 			// report each unrecognized value from Sysman backend only once
-			if !d.state.pciStatesSeen[pci.Status] {
+			if !d.state.pci.statesSeen[pci.Status] {
 				d.logger.Errorw("Unrecognized PciGetState() value", "pci.Status", pci.Status, "attributes", d.attributes)
 			}
 		}
-		d.state.pciStatesSeen[pci.Status] = true
+		d.state.pci.statesSeen[pci.Status] = true
 		states[pci.Status.String()] = true
 	}
 
 	// add (issue) states from bitmasks
-	for _, bit := range d.state.pciQualitySeen.Bits() {
+	for _, bit := range d.state.pci.qualitySeen.Bits() {
 		issue := bit.String() + "_issue"
 		states[issue] = (l0sysman.PciLinkQualIssueFlag(pci.QualityIssues) & bit) != 0
 	}
-	for _, bit := range d.state.pciStabilitySeen.Bits() {
+	for _, bit := range d.state.pci.stabilitySeen.Bits() {
 		issue := bit.String() + "_issue"
 		states[issue] = (l0sysman.PciLinkStabIssueFlag(pci.StabilityIssues) & bit) != 0
 	}
@@ -445,14 +449,14 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 }
 
 func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if d.state.pciStats == nil {
+	if d.state.pci.stats == nil {
 		return
 	}
 
 	stats, err := d.PciGetStats()
 	if err != nil {
 		d.logger.Errorw("Device PciGetStats() failed: PCI BW metrics disabled", zap.Error(err), "attributes", d.attributes)
-		d.state.pciStats = nil
+		d.state.pci.stats = nil
 		return
 	}
 
@@ -478,10 +482,10 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
 	// so their values are assumed to wrap at full type width
-	timeDiff := u64CounterDiff(d.state.pciStats.Timestamp, stats.Timestamp)
-	rxDiff := u64CounterDiff(d.state.pciStats.RxCounter, stats.RxCounter)
-	txDiff := u64CounterDiff(d.state.pciStats.TxCounter, stats.TxCounter)
-	d.state.pciStats = &stats
+	timeDiff := u64CounterDiff(d.state.pci.stats.Timestamp, stats.Timestamp)
+	rxDiff := u64CounterDiff(d.state.pci.stats.RxCounter, stats.RxCounter)
+	txDiff := u64CounterDiff(d.state.pci.stats.TxCounter, stats.TxCounter)
+	d.state.pci.stats = &stats
 
 	if timeDiff == 0 {
 		return
