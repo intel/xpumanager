@@ -6,6 +6,7 @@
 
 #include "cmd_vgpu.h"
 #include "debug.h"
+#include "printer.h"
 #include "table_builder.h"
 #include <osvf.h>
 #include <algorithm>
@@ -91,9 +92,33 @@ ze_result_t cmdVgpu::precheck(devInfo *d)
 	deviceInfo.bdfAddress = p->getBDFStr();
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
-	PRINT("VMX is {}\n", v->vmxSupport() ? "supported" : "not supported");
-	PRINT("IOMMU is {}\n", v->iommuSupport() ? "supported" : "not supported");
-	PRINT("SR-IOV {} supported on device\n", v->sriovSupport(&deviceInfo) ? "is" : "is not");
+	bool vmxOk = v->vmxSupport();
+	bool sriovOk = v->sriovSupport(&deviceInfo);
+	bool iommuOk = v->iommuSupport();
+
+	nlohmann::ordered_json result;
+	result["vmx_flag"] = vmxOk ? "Pass" : "Fail";
+	result["vmx_message"] = vmxOk ? "" : "No VMX flag, Please ensure Intel VT is enabled in BIOS";
+	result["sriov_status"] = sriovOk ? "Pass" : "Fail";
+	result["sriov_message"] = sriovOk ? ""
+									  : "SR-IOV is disabled or sriov_totalvfs is 0. Please set the related BIOS "
+										"settings and kernel command line parameters.";
+	result["iommu_status"] = iommuOk ? "Pass" : "Fail";
+	result["iommu_message"] =
+		iommuOk ? "" : "IOMMU is disabled. Please set the related BIOS settings and kernel command line parameters.";
+
+	if (vgpuCmds[vgpuCmdType::VGPU_JSON].enabled) {
+		JsonPrinter().print(&result);
+	} else {
+		TableBuilder table;
+		table.addColumn("Property", 12, Align::Left)
+			.addColumn("Result", 8, Align::Left)
+			.addColumn("Message", 80, Align::Left);
+		table.addRow("VMX Flag", result["vmx_flag"].get<std::string>(), result["vmx_message"].get<std::string>());
+		table.addRow("SR-IOV", result["sriov_status"].get<std::string>(), result["sriov_message"].get<std::string>());
+		table.addRow("IOMMU", result["iommu_status"].get<std::string>(), result["iommu_message"].get<std::string>());
+		PRINT("{}", table.toString().c_str());
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -325,6 +350,11 @@ int cmdVgpu::run(arg_struct *args)
 	int optionIndex = 0;
 	std::string shortOpts;
 	std::vector<struct option> longOptsVec;
+
+	for (auto &[k, v] : vgpuCmds) {
+		v.enabled = false;
+		v.val.clear();
+	}
 
 	processOptions(vgpuCmds, shortOpts, longOptsVec);
 	const struct option *longOpts = longOptsVec.data();
