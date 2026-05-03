@@ -223,7 +223,7 @@ void openDevicePerfMetricStream(ze_device_handle_t &dev, ze_driver_handle_t &dri
 		result =
 			zetMetricStreamerOpen(ctx, dev, group->metricGroup, &streamerConfig, notificationEvent, &group->streamer);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to open metric streamer for domain {}: 0x{:X} ({})\n", domain, result,
+			DBG("Failed to open metric streamer for domain {}: 0x{:X} ({})\n", domain, result,
 				l0_error_to_string(result));
 		}
 	}
@@ -782,7 +782,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 
 	res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &streamerDesc, nullptr, &hMetricStreamer);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to open metric streamer: 0x{:X} ({})\n", res, l0_error_to_string(res));
+		DBG("Failed to open metric streamer: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		std::lock_guard<std::mutex> lock(metricMutex);
 		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
 		if (contextCreate) {
@@ -838,7 +838,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues,
 											  nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to calculate metric values size: 0x{:X} ({})\n", res, l0_error_to_string(res));
+		DBG("Failed to calculate metric values size: 0x{:X} ({})\n", res, l0_error_to_string(res));
 		if (contextCreate) {
 			std::lock_guard<std::mutex> lock(metricMutex);
 			zeContextDestroy(hContext);
@@ -887,7 +887,7 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	// Process metrics
 	uint32_t numReports = numMetricValues / numMetrics;
 	if (numReports == 0) {
-		ERR("No metric reports available\n");
+		DBG("No metric reports available\n");
 		if (contextCreate) {
 			std::lock_guard<std::mutex> lock(metricMutex);
 			zeContextDestroy(hContext);

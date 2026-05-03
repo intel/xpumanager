@@ -263,7 +263,7 @@ std::tuple<ze_result_t, uint64_t, uint64_t> enginegroup::getUtilization(std::spa
 		}
 	}
 
-	ERR("No engine group matching the requested types was found.\n");
+	DBG("No engine group matching the requested types was found.\n");
 	return {ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, 0, 0};
 }
 

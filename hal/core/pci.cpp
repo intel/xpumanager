@@ -159,7 +159,7 @@ ze_result_t pci::getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats)
 
 	ze_result_t result = zesDevicePciGetStats(device, pciStats);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get PCI stats: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get PCI stats: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 

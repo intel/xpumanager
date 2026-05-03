@@ -118,7 +118,7 @@ TEST_CASE("OStreamSink: empty prefix omitted")
 	CHECK(ss.str() == "trace\n");
 }
 
-TEST_CASE("OStreamSink: ERR level includes file name and line number")
+TEST_CASE("OStreamSink: ERR level does not include file name and line number")
 {
 	std::ostringstream ss;
 	OStreamSink s(ss);
@@ -126,8 +126,9 @@ TEST_CASE("OStreamSink: ERR level includes file name and line number")
 	s.log(LogLevel::ERR, loc, "[Error] ", "oops\n");
 	const auto out = ss.str();
 	CHECK(out.find("[Error] ") != std::string::npos);
-	CHECK(out.find(loc.file_name()) != std::string::npos);
-	CHECK(out.find(std::to_string(loc.line())) != std::string::npos);
+	// Source location must NOT be present
+	CHECK(out.find(loc.file_name()) == std::string::npos);
+	CHECK(out.find(std::to_string(loc.line())) == std::string::npos);
 	CHECK(out.find("oops") != std::string::npos);
 }
 

@@ -268,7 +268,7 @@ ze_result_t power::getEnergyCounter(zes_pwr_handle_t powerHandle, zes_power_ener
 	memset(energyCounter, 0, sizeof(zes_power_energy_counter_t));
 	ze_result_t result = zesPowerGetEnergyCounter(powerHandle, energyCounter);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get energy counter. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get energy counter. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -400,7 +400,7 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 		// Once we found the right domain, we can get the energy counter
 		result = getEnergyCounter(powerHandles[i], &energyCounter);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get energy counter for power domain {}. 0x{:X} ({})\n", i, result,
+			DBG("Failed to get energy counter for power domain {}. 0x{:X} ({})\n", i, result,
 				l0_error_to_string(result));
 			return result;
 		}

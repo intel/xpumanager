@@ -310,8 +310,9 @@ THREAD_RET cmdDump::metrics(void *args)
 	if (!found) {
 		ERR("The following metric ID was not expected: '{}'.\n", metricArgs->cmdName.c_str());
 		ERR("Run with --help for more information.\n");
+		// Error already reported
+		metricArgs->outputLine = "N/A";
 	}
-
 	return 0;
 }
 
@@ -372,7 +373,7 @@ ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *time
 
 	ze_result_t result = p->getEnergy(gpuPower, timeStamp, forGPU);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU power: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get GPU power: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -595,7 +596,7 @@ ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, std::string *outputLine, U
 
 	ze_result_t result = mem->getMemoryUsed(nullptr, &memoryUtilization);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -624,7 +625,7 @@ ze_result_t cmdDump::gpuMemoryRead(devInfo *d, std::string *outputLine, threadDa
 
 	ze_result_t result = mem->getMemoryRW(&td->m[0].read, nullptr, nullptr, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -664,7 +665,7 @@ ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, std::string *outputLine, threadD
 
 	ze_result_t result = mem->getMemoryRW(nullptr, &td->m[0].write, nullptr, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory write: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get GPU memory write: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -742,7 +743,7 @@ ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, std::string *outputLine, threa
 	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
 
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("getEuActiveStallIdle failed: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("getEuActiveStallIdle failed: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1017,7 +1018,7 @@ ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, std::string *outp
 
 	ze_result_t result = mem->getMemoryRW(&td->m[0].read, &td->m[0].write, &maxBandwidth, &td->m[0].timeStamp);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1063,7 +1064,7 @@ ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, std::string *outputLine, UNUSED t
 
 	ze_result_t result = mem->getMemoryUsed(&memoryUsed, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -1650,6 +1651,7 @@ int cmdDump::run(arg_struct *args)
 		std::unordered_set<int> seenMetricIds;
 		std::vector<int> duplicatedMetricIds;
 		std::unordered_set<int> reportedDuplicatedMetricIds;
+		std::vector<std::string> invalidMetricIds;
 
 		while (getline(ss, token, ',')) {
 			// Trim whitespaces around metric id token
@@ -1665,9 +1667,13 @@ int cmdDump::run(arg_struct *args)
 					throw std::invalid_argument("trailing characters");
 				}
 			} catch (const std::exception &) {
-				ERR("The following metric ID was not expected: '{}'.\n", trimmed.c_str());
-				ERR("Run with --help for more information.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+				invalidMetricIds.push_back(trimmed);
+				continue;
+			}
+			// Check if metricId exists in dumpMetrics
+			if (dumpMetrics.find(metricId) == dumpMetrics.end()) {
+				invalidMetricIds.push_back(trimmed);
+				continue;
 			}
 
 			if (seenMetricIds.count(metricId)) {
@@ -1680,6 +1686,15 @@ int cmdDump::run(arg_struct *args)
 			seenMetricIds.insert(metricId);
 			dumpArgs.push_back(trimmed);
 			metricIds.push_back(metricId);
+		}
+
+		// Report all invalid metric IDs
+		if (!invalidMetricIds.empty()) {
+			for (const auto &invalidId : invalidMetricIds) {
+				ERR("The following metric ID was not expected: '{}'.\n", invalidId.c_str());
+			}
+			ERR("Run with --help for more information.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 
 		if (!duplicatedMetricIds.empty()) {

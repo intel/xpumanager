@@ -44,7 +44,7 @@ public:
 		if (mShowThreadId) {
 			os << '[' << record.threadId << "] ";
 		}
-		if (record.level == LogLevel::ERR) {
+		if (record.level == LogLevel::DBG) {
 			os << record.prefix << record.loc.file_name() << ':' << record.loc.line() << ": ";
 		} else if (!record.prefix.empty()) {
 			os << record.prefix;

@@ -218,7 +218,7 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t
 {
 	ze_result_t result = zesMemoryGetBandwidth(memhandle, bandwidth);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Memory bandwidth. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		DBG("Failed to get Memory bandwidth. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
@@ -480,7 +480,7 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBa
 
 		result = getBandwidth(memoryModules[i], &bandwidth);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory bandwidth for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			DBG("Failed to get Memory bandwidth for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
 
@@ -535,7 +535,7 @@ ze_result_t memory::getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidth
 		zes_mem_bandwidth_t bandwidth = {};
 		result = getBandwidth(memoryModules[i], &bandwidth);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get Memory bandwidth for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			DBG("Failed to get Memory bandwidth for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			continue;
 		}
 
