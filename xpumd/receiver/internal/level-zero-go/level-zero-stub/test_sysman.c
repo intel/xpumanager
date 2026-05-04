@@ -41,10 +41,11 @@ static int g_fail = 0;
 // ------------------------------------------------------------------
 
 #define YAML_TWO_ENGINES "testdata/two_engines.yaml"
-#define YAML_ONE_ENGINE "testdata/one_engine.yaml"
+#define YAML_ONE_ENGINE "testdata/one_device.yaml"
 #define YAML_NO_DEVICES "testdata/no_devices.yaml"
 #define YAML_NO_DRIVERS "testdata/no_drivers.yaml"
 #define YAML_ALL_COMPONENTS "testdata/all_components.yaml"
+#define YAML_INVALID_UUID "testdata/invalid_uuid.yaml"
 
 // ------------------------------------------------------------------
 // Test cases
@@ -419,7 +420,7 @@ static void test_auto_reload(void)
 		return;
 	}
 
-	// 4. Atomically replace tmp_path with one_engine content.
+	// 4. Atomically replace tmp_path with test data content.
 	if (copy_file_atomic(YAML_ONE_ENGINE, tmp_path) != 0) {
 		ASSERT("copy updated config", false);
 		sysman_watch_stop();
@@ -1138,6 +1139,44 @@ static void test_error_cases(void)
 }
 
 // ------------------------------------------------------------------
+// UUID parsing
+// ------------------------------------------------------------------
+
+static void test_uuid(void)
+{
+	printf("test_uuid\n");
+
+	sysman_state_reset();
+	ASSERT("load one_device.yaml", sysman_state_load(YAML_ONE_ENGINE) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	zesDriverGet(&drv_n, &drv);
+
+	uint32_t dev_n = 1;
+	zes_device_handle_t dev = NULL;
+	zesDeviceGet(drv, &dev_n, &dev);
+
+	zes_device_properties_t props = {.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES};
+	ASSERT_ZE_OK("zesDeviceGetProperties", zesDeviceGetProperties(dev, &props));
+
+	// Core UUID: "12345678-abcd-ef01-2345-6789abcdef01"
+	const uint8_t expected_core[16] = {0x12, 0x34, 0x56, 0x78, 0xab, 0xcd, 0xef, 0x01,
+									   0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01};
+	ASSERT("UUID matches", memcmp(props.core.uuid.id, expected_core, 16) == 0);
+
+	sysman_state_reset();
+}
+
+static void test_uuid_invalid_load(void)
+{
+	printf("test_uuid_invalid_load\n");
+
+	sysman_state_reset();
+	ASSERT("sysman_state_load fails on invalid UUID", sysman_state_load(YAML_INVALID_UUID) != 0);
+}
+
+// ------------------------------------------------------------------
 // Main
 // ------------------------------------------------------------------
 
@@ -1156,6 +1195,8 @@ int main(void)
 	test_auto_reload();
 	test_array_null_vs_empty();
 	test_error_cases();
+	test_uuid();
+	test_uuid_invalid_load();
 
 	printf("\n%d passed, %d failed\n", g_pass, g_fail);
 	return g_fail ? 1 : 0;

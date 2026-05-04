@@ -2,6 +2,10 @@ Drivers:
 - ExtensionProperties: []
   Devices:
   - Processes: []
+    Properties:
+      Core:
+        Uuid:
+          Id: "12345678-abcd-ef01-2345-6789abcdef01"
     Overclock:
       DomainsBitmask: 0
       State:
