@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -297,8 +298,10 @@ func TestDeviceGetProperties(t *testing.T) {
 				TimerResolution:          100,
 				TimestampValidBits:       36,
 				KernelTimestampValidBits: 32,
-				Uuid:                     props.Core.Uuid,
-				Name:                     stringProperty[core.StringProperty256]("ACME Data Center GPU"),
+				Uuid: core.DeviceUuid{
+					Id: uuid.MustParse("12345678-1234-5678-9abc-def000000000"),
+				},
+				Name: stringProperty[core.StringProperty256]("ACME Data Center GPU"),
 			},
 			NumSubdevices: 2,
 			SerialNumber:  stringProperty[core.StringProperty64]("SN-0001"),
@@ -316,7 +319,9 @@ func TestDeviceGetProperties(t *testing.T) {
 		props, err := getDevice(t, 1, 0).GetProperties()
 		require.NoError(t, err)
 		assert.EqualExportedValues(t, DeviceExtProperties{
-			Uuid:  props.Uuid,
+			Uuid: Uuid{
+				Id: uuid.MustParse("abcdef01-2345-6789-abcd-ef0000000000"),
+			},
 			Type:  DEVICE_TYPE_GPU,
 			Flags: 1,
 		}, props.DeviceExtProperties)

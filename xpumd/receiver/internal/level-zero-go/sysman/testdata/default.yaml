@@ -31,6 +31,8 @@ Drivers:
             TimerResolution: 100
             TimestampValidBits: 36
             KernelTimestampValidBits: 32
+            Uuid:
+              Id: "12345678-1234-5678-9abc-def000000000"
             Name: "ACME Data Center GPU"
           NumSubdevices: 2
           SerialNumber: "SN-0001"
@@ -474,6 +476,8 @@ Drivers:
 
     Devices:
       - Properties:
+          Uuid:
+            Id: "abcdef01-2345-6789-abcd-ef0000000000"
           Type: 1 # ZES_DEVICE_TYPE_GPU
           Flags: 1 # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
         ECC:
