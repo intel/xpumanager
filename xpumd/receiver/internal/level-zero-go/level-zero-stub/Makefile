@@ -10,7 +10,8 @@ TEST_CFLAGS  = -std=c11 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg
 TEST_LDFLAGS = -Wl,-rpath,.
 TEST_LDLIBS  = -L. -lze_stub $(shell pkg-config --libs libcyaml)
 
-LIB   = libze_stub.so
+LIB    = libze_stub.so
+SOLINK = libze_loader.so.1
 SRCS  = zes_stub.c sysman_state.c
 OBJS  = $(SRCS:.c=.o)
 TESTS = test_sysman
@@ -20,6 +21,7 @@ all: $(LIB)
 
 $(LIB): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	ln -sf $(LIB) $(SOLINK)
 
 %.o: %.c sysman_state.h zes_stub.h
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -48,4 +50,4 @@ format:
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) $(LIB) $(TESTS)
+	rm -f $(OBJS) $(LIB) $(SOLINK) $(TESTS)
