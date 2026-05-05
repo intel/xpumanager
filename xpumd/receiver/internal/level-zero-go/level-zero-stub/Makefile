@@ -23,7 +23,7 @@ $(LIB): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 	ln -sf $(LIB) $(SOLINK)
 
-%.o: %.c sysman_state.h zes_stub.h
+%.o: %.c sysman_state.h sysman_state_cyaml.h zes_stub.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(TESTS): %: %.c $(LIB) zes_stub.h
