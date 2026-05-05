@@ -7,6 +7,7 @@ on:
       - dev
       - v2*
     tags:
+      # Note: 'sed' clauses in 'versiontags' need to remove prefixes for these
       - v[0-9]+.[0-9]+.[0-9]+
       - v[0-9]+.[0-9]+.[0-9]+-*
       - xpumd/v[0-9]+.[0-9]+.[0-9]+
@@ -51,6 +52,9 @@ jobs:
     - name: Set image tags
       id: versiontags
       run: |
+        # Chart/app versions cannot contain '/' => remove such prefixes.
+        # Chart version is strict SemVer, so it needs to start with a valid number.
+        # Daemonset image tag defaults to appversion, so those need to match.
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           tag="pr-${{ github.event.pull_request.number }}"
         else
@@ -64,6 +68,7 @@ jobs:
 
         echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpumd:${tag}" >> $GITHUB_ENV
         echo "CHART_VERSION=${chart_version}" >> $GITHUB_ENV
+        echo "CHART_APP_VERSION=${tag}" >> $GITHUB_ENV
 
     - name: Set up Docker Buildx
       if: vars.NO_SETUP_BUILDX != 'true'
@@ -123,7 +128,7 @@ jobs:
     - name: Package Helm chart
       if: github.event_name == 'push'
       run: |
-        helm package ./xpumd/charts/xpumd/ --version ${{ env.CHART_VERSION }} --app-version ${{ github.ref_name }}
+        helm package ./xpumd/charts/xpumd/ --version ${{ env.CHART_VERSION }} --app-version ${{ env.CHART_APP_VERSION }}
 
     - name: Push Helm chart
       if: github.event_name == 'push'
