@@ -5,6 +5,7 @@ go 1.26
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/intel/level-zero-go v0.0.0
+	github.com/intel/xpumanager/xpumd/common v0.0.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.57.0
 	go.opentelemetry.io/collector/component/componenttest v0.151.0
@@ -62,6 +63,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/intel/xpumanager/xpumd => ..
-
-replace github.com/intel/level-zero-go => ./internal/level-zero-go
+replace (
+	github.com/intel/level-zero-go => ./internal/level-zero-go
+	github.com/intel/xpumanager/xpumd => ..
+	github.com/intel/xpumanager/xpumd/common => ../common
+)

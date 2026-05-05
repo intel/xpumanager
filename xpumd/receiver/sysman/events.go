@@ -17,10 +17,9 @@ import (
 	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
+	"github.com/intel/xpumanager/xpumd/common"
 	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
 )
-
-const eventNamePrefix = "com.intel.gpu."
 
 // allEventTypeFlags is the bitmask of all known Sysman event types.
 const allEventTypeFlags = l0sysman.EventTypeFlags(
@@ -162,7 +161,7 @@ func appendDeviceEventLogs(sl plog.ScopeLogs, devices []*device, deviceEvents []
 			sev := eventSeverity(flag)
 			lr.SetSeverityNumber(sev)
 			lr.SetSeverityText(sev.String())
-			lr.SetEventName(eventNamePrefix + flag.String())
+			lr.SetEventName(common.EventNamePrefix + flag.String())
 			lr.Body().SetStr(flag.String())
 
 			lrAttrs := lr.Attributes()

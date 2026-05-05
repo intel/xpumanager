@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
 
+	"github.com/intel/xpumanager/xpumd/common"
 	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
 )
 
@@ -59,7 +60,7 @@ func translateLogRecord(lr plog.LogRecord, logger *zap.SugaredLogger) *pb.Device
 				VendorId: pciVendorIDVal.Str(),
 			},
 		},
-		Reason:   strings.TrimPrefix(strings.ToLower(lr.EventName()), "com.intel.gpu."),
+		Reason:   strings.TrimPrefix(strings.ToLower(lr.EventName()), common.EventNamePrefix),
 		Message:  lr.Body().Str(),
 		Severity: otelSevToProto(lr.SeverityNumber()),
 	}
