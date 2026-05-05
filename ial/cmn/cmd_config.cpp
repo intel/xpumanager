@@ -138,19 +138,26 @@ static void getGpuFrequencyOptions(devInfo *d, uint32_t tileId, std::string &opt
 
 	options = joinRoundedClocks(clocks);
 
+	double minVal = *std::min_element(clocks.begin(), clocks.end());
+	double maxVal = *std::max_element(clocks.begin(), clocks.end());
+
 	// Read the configured frequency range (not the hardware capability range)
 	double configuredMin = 0;
 	double configuredMax = 0;
 	result = fq->getFreqRangeForTile(tileId, configuredMin, configuredMax);
-	if (result == ZE_RESULT_SUCCESS && configuredMin > 0 && configuredMax > 0) {
-		minFreq = static_cast<uint32_t>(std::llround(configuredMin));
-		maxFreq = static_cast<uint32_t>(std::llround(configuredMax));
+	if (result == ZE_RESULT_SUCCESS) {
+		minFreq =
+			static_cast<uint32_t>(std::llround((std::fpclassify(configuredMin) != FP_ZERO) ? configuredMin : minVal));
+		maxFreq =
+			static_cast<uint32_t>(std::llround((std::fpclassify(configuredMax) != FP_ZERO) ? configuredMax : maxVal));
 	} else {
-		// Fallback to available clocks range
-		double minVal = *std::min_element(clocks.begin(), clocks.end());
-		double maxVal = *std::max_element(clocks.begin(), clocks.end());
+		// Fallback to available clocks range only if configured range could not be read
 		minFreq = static_cast<uint32_t>(std::llround(minVal));
 		maxFreq = static_cast<uint32_t>(std::llround(maxVal));
+	}
+
+	if (minFreq > maxFreq) {
+		std::swap(minFreq, maxFreq);
 	}
 }
 
