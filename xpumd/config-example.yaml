@@ -79,7 +79,8 @@ exporters:
     # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
     #endpoint: "/run/xpumd/intelxpuinfo.sock"
     hw_status_mappings:
-      - filters:
+      - health_domain: "memory"
+        filters:
           - key: hw.type
             values: [memory]
         state_mapping:
@@ -97,7 +98,8 @@ exporters:
             severity: warning
             message: "Unexpected memory health state, mapped to warning"
       # Default mapping (empty filters matches any data point not matched above):
-      - state_mapping:
+      - health_domain: "{{ .hw_type }}"
+        state_mapping:
           unknown:
             severity: unknown
           ok:
