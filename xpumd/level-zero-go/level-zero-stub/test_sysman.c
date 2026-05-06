@@ -5,6 +5,7 @@
  */
 
 #include "zes_stub.h"
+#include "sysman_state.h"
 #include "../level-zero/zes_api.h"
 
 #include <limits.h>
@@ -46,6 +47,7 @@ static int g_fail = 0;
 #define YAML_NO_DRIVERS "testdata/no_drivers.yaml"
 #define YAML_ALL_COMPONENTS "testdata/all_components.yaml"
 #define YAML_INVALID_UUID "testdata/invalid_uuid.yaml"
+#define YAML_UNSUPPORTED_FEATURES "testdata/unsupported_features.yaml"
 
 // ------------------------------------------------------------------
 // Test cases
@@ -1179,6 +1181,36 @@ static void test_uuid_invalid_load(void)
 }
 
 // ------------------------------------------------------------------
+// UnsupportedFeatures
+// ------------------------------------------------------------------
+
+static void test_unsupported_features(void)
+{
+	printf("test_unsupported_features\n");
+
+	sysman_state_reset();
+	ASSERT("load unsupported_features.yaml", sysman_state_load(YAML_UNSUPPORTED_FEATURES) == 0);
+
+	sysman_state_lock();
+	sysman_drivers_state_t *drv = &g_sysman_state.system.drivers[0];
+	ASSERT("driver UnsupportedFeatures count", drv->unsupported_features_count == 2);
+	ASSERT("driver UnsupportedFeatures[0]",
+		   drv->unsupported_features[0] == UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET);
+	ASSERT("driver UnsupportedFeatures[1]",
+		   drv->unsupported_features[1] == UNSUPPORTED_FEATURE_EVENT_LISTEN);
+
+	sysman_device_state_t *dev = &drv->devices[0];
+	ASSERT("device UnsupportedFeatures count", dev->unsupported_features_count == 2);
+	ASSERT("device UnsupportedFeatures[0]",
+		   dev->unsupported_features[0] == UNSUPPORTED_FEATURE_GET_STATE);
+	ASSERT("device UnsupportedFeatures[1]",
+		   dev->unsupported_features[1] == UNSUPPORTED_FEATURE_FANS);
+	sysman_state_unlock();
+
+	sysman_state_reset();
+}
+
+// ------------------------------------------------------------------
 // Main
 // ------------------------------------------------------------------
 
@@ -1199,6 +1231,7 @@ int main(void)
 	test_error_cases();
 	test_uuid();
 	test_uuid_invalid_load();
+	test_unsupported_features();
 
 	printf("\n%d passed, %d failed\n", g_pass, g_fail);
 	return g_fail ? 1 : 0;

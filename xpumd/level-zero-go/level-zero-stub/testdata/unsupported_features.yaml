@@ -1,0 +1,8 @@
+Drivers:
+- UnsupportedFeatures:
+  - Driver.DeviceGet
+  - Driver.EventListen
+  Devices:
+  - UnsupportedFeatures:
+    - Device.GetState
+    - Fans
