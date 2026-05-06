@@ -47,7 +47,6 @@ enum healthSubCmdType
 	HEALTH_MEMORYTEMPERATURE,
 	HEALTH_POWER,
 	HEALTH_MEMORY,
-	HEALTH_XELINKPORT,
 	HEALTH_FREQUENCY,
 	TOTAL_HEALTH_SUBCMD
 };
@@ -71,7 +70,6 @@ public:
 	ze_result_t gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	std::string getHealthStatusString(xpumHealthStatus status);
-	ze_result_t xeLinkPort(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t frequency(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 
 	ze_result_t component(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);

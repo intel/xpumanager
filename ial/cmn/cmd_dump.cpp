@@ -69,7 +69,6 @@ static std::unordered_map<int, dumpCmdSubStruct> dumpMetrics = {
 	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, {&cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)", false}},
 	{dumpCmdSubType::DUMP_PCIE_READ, {&cmdDump::pcieRead, "PCIe Read (kB/s)", false}},
 	{dumpCmdSubType::DUMP_PCIE_WRITE, {&cmdDump::pcieWrite, "PCIe Write (kB/s)", false}},
-	{dumpCmdSubType::DUMP_XE_LINK_THROUGHPUT, {&cmdDump::xeLinkThroughput, "XE Link Throughput (kB/s)", false}},
 	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION,
 	 {&cmdDump::computeEngineUtilization, "Compute Engine Utilization (%)", false}},
 	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION,
@@ -211,9 +210,6 @@ void cmdDump::help(HELP helpType)
 		"%d. GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Read (kB/s), per device", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Write (kB/s), per device", i++));
-	helpList.push_back(helpCmd(
-		SUB_HEADING,
-		"%d. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput (Not supported - returns N/A)", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Compute engine utilizations (%), per tile", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Render engine utilizations (%), per tile", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Media decoder engine utilizations (%), per tile", i++));
@@ -266,7 +262,7 @@ void cmdDump::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "The recommended metrics types for high-frequency sampling: GPU "
 											"power, GPU frequency, GPU utilization"));
 	helpList.push_back(helpCmd(SUB_HEADING, "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, "
-											"GPU engine utilizations, Xe Link throughput"));
+											"GPU engine utilizations"));
 	helpList.push_back(helpCmd(HEADING, "--time                      Dump total time in seconds"));
 	helpList.push_back(helpCmd(HEADING, "--date                      Show date in timestamp"));
 	helpList.push_back(helpCmd(BLANK));
@@ -1157,23 +1153,6 @@ ze_result_t cmdDump::pcieWrite(devInfo *d, std::string *outputLine, threadData *
 }
 
 /**
- * @brief Executes the Xe Link throughput command when user requests dump -m 21.
- *
- * Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::xeLinkThroughput(UNUSED devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	*outputLine = "N/A";
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
  * @brief Executes the compute engine utilization command when user requests dump -m 22.
  *
  * Compute engine utilization (%), per tile.
@@ -1816,19 +1795,6 @@ int cmdDump::run(arg_struct *args)
 		ERR("Error: Device handle not found for device ID '{}'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
 		return result;
 	}
-
-	// Check if only metric 21 is requested (not supported when used alone)
-	if (dumpArgs.size() == 1) {
-		try {
-			if (stoi(dumpArgs[0]) == 21) {
-				ERR("Error: Metric not supported\n");
-				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-			}
-		} catch (const std::exception &) {
-			// Not metric 21, continue normal processing
-		}
-	}
-	// If metric 21 is mixed with other metrics, it will return N/A continuously via xeLinkThroughput()
 
 	header = "Timestamp, DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>

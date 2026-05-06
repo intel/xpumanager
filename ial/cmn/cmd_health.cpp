@@ -29,7 +29,6 @@ healthSubCmdStruct componentCmds[] = {
 	{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
 	{healthSubCmdType::HEALTH_POWER, &cmdHealth::gpuPower},
 	{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
-	{healthSubCmdType::HEALTH_XELINKPORT, &cmdHealth::xeLinkPort},
 	{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
 };
 
@@ -66,8 +65,7 @@ void cmdHealth::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING2, "2. GPU Memory Temperature"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "3. GPU Power"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "4. GPU Memory"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "5. Xe Link Port"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "6. GPU Frequency"));
+	helpList.push_back(helpCmd(SUB_HEADING2, "5. GPU Frequency"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -544,104 +542,6 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	(*jsonObj)["memory_health"] = {{"status", getHealthStatusString(healthStatus)},
 								   {"description", getHealthStatusDescription(health)}};
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Performs Xe Link port health assessment
- *
- * This function evaluates the health and operational status of Xe Link
- * interconnect ports used for high-speed GPU-to-GPU communication.
- * It monitors link integrity, bandwidth availability, and error rates
- * for multi-GPU configurations. Currently implemented as a placeholder
- * for future Xe Link health monitoring capabilities. Results are stored in the
- * provided JSON object under the "xe_link_port_health" key.
- *
- * @param d Pointer to device information structure (currently unused)
- * @param jsonObj Pointer to a JSON object where results will be stored
- * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
- */
-ze_result_t cmdHealth::xeLinkPort(devInfo *d, nlohmann::ordered_json *jsonObj)
-{
-	TRACING();
-	std::string description = "Status cannot be determined for all the ports.";
-	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
-	ze_result_t res;
-
-	fabric *fab = d->dev->getFabric();
-	if (fab != nullptr) {
-		uint32_t fabricPortsCount = fab->getPortCount();
-		if (fabricPortsCount > 0) {
-			std::vector<std::string> failedFabricPorts, degradedFabricPorts, disabledFabricPorts;
-			for (uint32_t i = 0; i < fabricPortsCount; ++i) {
-				zes_fabric_port_handle_t portHandle = fab->getPortHandle(i);
-				zes_fabric_port_properties_t fabricPortProperties = {};
-				fabricPortProperties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
-				res = fab->portGetProperties(portHandle, &fabricPortProperties);
-				if (res != ZE_RESULT_SUCCESS) {
-					continue;
-				}
-				zes_fabric_port_state_t fabricPortState = {};
-				fabricPortState.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
-				res = fab->portGetState(portHandle, &fabricPortState);
-				if (res != ZE_RESULT_SUCCESS) {
-					continue;
-				}
-				if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_FAILED) {
-					failedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) + "-" +
-												   std::to_string((int)(fabricPortProperties.portId.portNumber)));
-				}
-				if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
-					degradedFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) +
-													 "-" +
-													 std::to_string((int)(fabricPortProperties.portId.portNumber)));
-				}
-				if (fabricPortState.status == ZES_FABRIC_PORT_STATUS_DISABLED) {
-					disabledFabricPorts.emplace_back("Tile" + std::to_string(fabricPortProperties.portId.attachId) +
-													 "-" +
-													 std::to_string((int)(fabricPortProperties.portId.portNumber)));
-				}
-			}
-
-			if (failedFabricPorts.empty() && degradedFabricPorts.empty() && disabledFabricPorts.empty()) {
-				status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
-				description = "All ports are up and operating as expected.";
-			} else {
-				status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
-				std::ostringstream desc;
-				if (!failedFabricPorts.empty()) {
-					status = xpumHealthStatus::XPUM_HEALTH_STATUS_CRITICAL;
-					desc << "Ports ";
-					for (const auto &port : failedFabricPorts) {
-						desc << port << " ";
-					}
-					desc << "connection instabilities are preventing workloads making forward progress. ";
-				}
-				if (!degradedFabricPorts.empty()) {
-					desc << "Ports ";
-					for (const auto &port : degradedFabricPorts) {
-						desc << port << " ";
-					}
-					desc << "are up but have quality and/or speed degradation. ";
-				}
-				if (!disabledFabricPorts.empty()) {
-					desc << "Ports ";
-					for (const auto &port : disabledFabricPorts) {
-						desc << port << " ";
-					}
-					desc << "are configured down. ";
-				}
-				description = desc.str();
-			}
-		} else {
-			description = "Device lacks Xe Link capability.";
-		}
-	} else {
-		description = "Device lacks Xe Link capability.";
-	}
-
-	(*jsonObj)["xe_link_port_health"] = {{"status", getHealthStatusString(status)}, {"description", description}};
 
 	return ZE_RESULT_SUCCESS;
 }
