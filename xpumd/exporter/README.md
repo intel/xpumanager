@@ -2,8 +2,10 @@
 
 ## Overview
 
-The Intel XPU Info Exporter translates metrics into device information that is
-exposed via a [`gRPC API`](api/deviceinfo/v1alpha1/).
+The Intel XPU Info Exporter translates metrics and logs into device information
+that is exposed via a [`gRPC API`](api/deviceinfo/v1alpha1/).
+
+### Metrics pipeline
 
 The exporter consumes three metrics:
 
@@ -15,6 +17,12 @@ The exporter consumes three metrics:
 
 Connected clients receive a stream of health, identification and configuration
 information for all known XPU devices.
+
+### Logs pipeline
+
+The exporter also consumes events (log records) produced by the
+[intelxpu](../receiver/README.md) receiver. Events with the `hw.id`
+attribute are translated into device events.
 
 ## Configuration
 
