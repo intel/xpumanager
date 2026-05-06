@@ -111,9 +111,6 @@ func (cfg *Config) Validate() error {
 	if cfg.NetAddr.Transport != confignet.TransportTypeUnix {
 		return fmt.Errorf("unsupported transport type: %q, only %q is supported", cfg.NetAddr.Transport, confignet.TransportTypeUnix)
 	}
-	if len(cfg.HwStatusMappings) == 0 {
-		return fmt.Errorf("hw_status_mappings must not be empty")
-	}
 	for i, hwTypeMapping := range cfg.HwStatusMappings {
 		if err := hwTypeMapping.Validate(); err != nil {
 			return fmt.Errorf("hw_status_mappings[%d]: %w", i, err)
