@@ -5,6 +5,7 @@
 
 FROM golang:1.26-trixie AS builder
 
+ARG APP=list-sysman
 ARG IGC_CORE_VERSION=2.32.7+21184
 ARG COMPUTE_RUNTIME_RELEASE=26.14.37833.4
 ARG LIBIGDGMM12_VERSION=22.9.0
@@ -44,18 +45,21 @@ RUN mkdir /src && \
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,ro \
-    cd examples/list-sysman && \
+    cd examples/${APP} && \
     go build -o /out/usr/local/bin/ .
 
 
 # The final image
 FROM ubuntu:24.04 AS final
 
+ARG APP=list-sysman
+
 COPY --from=builder /out/ /
 COPY --from=builder /igsc-install/usr/local/lib /usr/local/lib
 RUN apt-get update && \
     # Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
     apt-get install -y libnl-genl-3-200 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    ln -s /usr/local/bin/${APP} /entrypoint
 
-CMD ["/usr/local/bin/list-sysman"]
+CMD ["/entrypoint"]

@@ -5,8 +5,9 @@
 
 Q := @
 
-IMAGE_REPO ?= registry.local/level-zero-go/list-sysman
+IMAGE_REPO_BASE ?= registry.local/level-zero-go
 IMAGE_TAG ?= main
+EXAMPLE_APPS := list-sysman events-sysman
 
 # --- Helper targets ---
 
@@ -23,6 +24,9 @@ build:
 
 .PHONY: images
 images:
-	$(Q)docker build -t $(IMAGE_REPO):$(IMAGE_TAG) \
-	             --progress=plain \
-	             -f list-sysman/Dockerfile ..
+	$(Q)for app in $(EXAMPLE_APPS); do \
+	    docker build -t $(IMAGE_REPO_BASE)/$$app:$(IMAGE_TAG) \
+	                 --build-arg APP=$$app \
+	                 --progress=plain \
+	                 -f Dockerfile .. ; \
+	done
