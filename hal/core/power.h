@@ -77,7 +77,7 @@ public:
 	ze_result_t setPeakLimit(uint32_t limit_ac_mw, uint32_t limit_dc_mw);
 	ze_result_t getLimitsExt(std::vector<PowerLimitExt> &limits);
 	ze_result_t setLimitsExt(int32_t tile_id, zes_power_level_t level, uint32_t limit_mw);
-	ze_result_t getDomainLimits(std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> &domainLimits);
+	ze_result_t getDomainLimits(std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> &domainLimits);
 	ze_result_t getMaxPowerLimit(std::string &range);
 
 	uint32_t getPowerCount() { return powerCount; }

@@ -12,6 +12,7 @@
 #include <frequency.h>
 #include <memory.h>
 #include <power.h>
+#include <powerexp.h>
 #include <enginegroup.h>
 #include <ras.h>
 #include <pci.h>
@@ -452,6 +453,20 @@ ze_result_t cmdDump::gpuUtilization(devInfo *d, std::string *outputLine, threadD
 ze_result_t cmdDump::gpuPower(devInfo *d, std::string *outputLine, threadData *td)
 {
 	TRACING();
+
+	powerExp *pwrExp = d->dev->getPowerExp();
+	if (pwrExp != nullptr && pwrExp->isPowerExpEnabled()) {
+		std::vector<power_usage_exp_t> powerUsages;
+		ze_result_t result = pwrExp->getPowerUsage(powerUsages);
+		if (result == ZE_RESULT_SUCCESS) {
+			for (const auto &usage : powerUsages) {
+				if (usage.domain == ZES_POWER_DOMAIN_CARD) {
+					*outputLine = std::format("{:.2f}", static_cast<double>(usage.averagePower) / 1000.0);
+					return ZE_RESULT_SUCCESS;
+				}
+			}
+		}
+	}
 
 	// Call gpuPowerIter to get the first power reading. The last parameter is false to indicate it's not for GPU,
 	// instead it is for the entire card

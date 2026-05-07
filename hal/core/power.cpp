@@ -747,7 +747,7 @@ ze_result_t power::getLimitsExt(std::vector<PowerLimitExt> &limits)
  * @param domainLimits Output map of power domain to power level to limit value in milliwatts
  * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
  */
-ze_result_t power::getDomainLimits(std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> &domainLimits)
+ze_result_t power::getDomainLimits(std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> &domainLimits)
 {
 	domainLimits.clear();
 	for (uint32_t i = 0; i < powerCount; ++i) {

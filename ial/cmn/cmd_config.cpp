@@ -18,6 +18,7 @@
 #include <frequency.h>
 #include <nlohmann/json.hpp>
 #include <power.h>
+#include <powerexp.h>
 #include <scheduler.h>
 #include <performance.h>
 #include <standby.h>
@@ -30,8 +31,9 @@
 #include <cstdlib>
 #include <limits>
 
-// Conversion factors
-constexpr uint64_t W_TO_MW = 1000;
+// Conversion helpers between watts and milliwatts
+constexpr inline int mwToW(int32_t mw) { return static_cast<int>(mw / 1000); }
+constexpr inline uint32_t wToMw(double w) { return static_cast<uint32_t>(w * 1000.0); }
 
 // Fan curve input limits
 constexpr uint32_t FAN_CURVE_TEMP_MIN_C = 0;
@@ -392,8 +394,9 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 	int plCardPeak = 0;
 	std::string powerValidRange;
 	power *pwr = d->dev->getPower();
-	if (pwr != nullptr) {
-		std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> domainLimits;
+	powerExp *pwrExp = d->dev->getPowerExp();
+	if (!pwrExp->isPowerExpEnabled() && pwr != nullptr) {
+		std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> domainLimits;
 		pwr->getDomainLimits(domainLimits);
 
 		auto getLimitW = [&](zes_power_domain_t domain, zes_power_level_t level) -> int {
@@ -405,7 +408,7 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 			if (levelIt == domainIt->second.end()) {
 				return 0;
 			}
-			return static_cast<int>(levelIt->second / 1000);
+			return mwToW(levelIt->second);
 		};
 
 		plCardSustain = getLimitW(ZES_POWER_DOMAIN_CARD, ZES_POWER_LEVEL_SUSTAINED);
@@ -416,6 +419,17 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 		plPackagePeak = getLimitW(ZES_POWER_DOMAIN_PACKAGE, ZES_POWER_LEVEL_PEAK);
 
 		pwr->getMaxPowerLimit(powerValidRange);
+	} else if (pwrExp->isPowerExpEnabled()) {
+		std::vector<power_limits_exp_t> powerLimits;
+		if (pwrExp->getPowerLimits(powerLimits) == ZE_RESULT_SUCCESS) {
+			for (const auto &limits : powerLimits) {
+				if (limits.domain == ZES_POWER_DOMAIN_CARD) {
+					plCardSustain = mwToW(limits.limit);
+				} else if (limits.domain == ZES_POWER_DOMAIN_PACKAGE) {
+					plPackageSustain = mwToW(limits.limit);
+				}
+			}
+		}
 	}
 
 	uint32_t tileCount = 0;
@@ -725,7 +739,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 	table.addColumn("Configuration", 62);
 
 	// Power configuration - using getDomainLimits() via HAL
-	std::map<zes_power_domain_t, std::map<zes_power_level_t, uint32_t>> domainLimits;
+	std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> domainLimits;
 	power *pwr = d->dev->getPower();
 	if (pwr != nullptr) {
 		pwr->getDomainLimits(domainLimits);
@@ -733,7 +747,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 
 	// Display power limits by domain (fixed order: card, package)
 	auto addPowerDomain = [&](bool showDeviceId, const char *domainStr,
-							  const std::map<zes_power_level_t, uint32_t> *limits) {
+							  const std::map<zes_power_level_t, int32_t> *limits) {
 		std::string domainLabel = " Power domain " + std::string(domainStr) + ":";
 		if (showDeviceId) {
 			table.addRow("GPU", std::to_string(d->index), domainLabel);
@@ -745,7 +759,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 			if (limits != nullptr) {
 				auto it = limits->find(level);
 				if (it != limits->end()) {
-					return std::to_string(it->second / 1000);
+					return std::to_string(mwToW(it->second));
 				}
 			}
 			return "N/A";
@@ -756,8 +770,8 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 		table.addRow("", "", "  peak(w): " + getLimitStr(ZES_POWER_LEVEL_PEAK));
 	};
 
-	const std::map<zes_power_level_t, uint32_t> *cardLimits = nullptr;
-	const std::map<zes_power_level_t, uint32_t> *packageLimits = nullptr;
+	const std::map<zes_power_level_t, int32_t> *cardLimits = nullptr;
+	const std::map<zes_power_level_t, int32_t> *packageLimits = nullptr;
 	auto cardIt = domainLimits.find(ZES_POWER_DOMAIN_CARD);
 	if (cardIt != domainLimits.end()) {
 		cardLimits = &cardIt->second;
@@ -1097,8 +1111,17 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	uint32_t limitMw = static_cast<uint32_t>(powerLimit * W_TO_MW);
+	uint32_t limitMw = wToMw(powerLimit);
 	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
+
+	powerExp *pwrExp = d->dev->getPowerExp();
+	if (pwrExp != nullptr && pwrExp->isPowerExpEnabled()) {
+		result = pwrExp->setPowerLimit(limitMw);
+		if (result == ZE_RESULT_SUCCESS) {
+			PRINT("Succeeded in setting the power limit to {:.1f} W on GPU {}\n", powerLimit, d->index);
+		}
+		return result;
+	}
 
 	// Determine power type if specified
 	std::string powerType = configCmds[configCmdType::POWERTYPE].val;
