@@ -131,7 +131,7 @@ And add following option to chart install:
 | config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service | object | `{"pipelines":{"logs":{"exporters":["intelxpuinfo"],"receivers":["intelxpu"]},"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 
