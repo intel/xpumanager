@@ -31,6 +31,7 @@
 #include "vf.h"
 #include "rasexp.h"
 #include "offline_page.h"
+#include "powerexp.h"
 
 struct devProps
 {
@@ -111,6 +112,7 @@ private:
 	metric metricInstance;
 	rasExp rasExpInstance;
 	pageOffline pageOfflineInstance;
+	powerExp powerExpInstance;
 
 public:
 	device();
@@ -175,6 +177,7 @@ public:
 	vf *getVF() { return &vfInstance; }
 	rasExp *getRASExp() { return &rasExpInstance; }
 	pageOffline *getPageOffline() { return &pageOfflineInstance; }
+	powerExp *getPowerExp() { return &powerExpInstance; }
 
 	void getBDF(bdfID &bdf) const;
 	std::string getBDFStr();

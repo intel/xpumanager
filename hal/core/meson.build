@@ -43,10 +43,9 @@ if extensions_enabled
   hal_core_sources += hal_core_extension_sources
   extensions_inc_dirs = [hal_core_extension_inc]
 else
-  # External build uses rasexp.cpp (returns base ecc)
   hal_core_sources += files('rasexp.cpp')
-  # External build uses offline_page.cpp
   hal_core_sources += files('offline_page.cpp')
+  hal_core_sources += files('powerexp.cpp')
 endif
 
 # Shared library
