@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: [ubuntu-22.04]
+    runs-on: [ubuntu-24.04]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 1
       - name: Build docker image
         run: |
-          docker build -f ${{ github.workspace }}/builder/Dockerfile.builder-ubuntu22.04 -t intel-xpumanager ${{ github.workspace }}
+          docker build -f ${{ github.workspace }}/builder/Dockerfile.builder-ubuntu24.04 -t intel-xpumanager ${{ github.workspace }}
       - name: Run build.sh
         run: |
           rm -fr build
