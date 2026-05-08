@@ -54,6 +54,8 @@
 
 namespace xpum {
 
+extern bool isZeinitRequired;
+
 std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> GPUDeviceStub::device_perf_groups;
 const char* GPU_TIME_NAME = "GpuTime";
 
@@ -328,12 +330,15 @@ void GPUDeviceStub::init() {
         putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
     }
 
-    ze_result_t ret = zeInit(0);
-    GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
-    if (ret != ZE_RESULT_SUCCESS) {
-        XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
-        checkInitDependency();
-        throw LevelZeroInitializationException("zeInit error");
+    ze_result_t ret;
+    if (isZeinitRequired) {
+	ret = zeInit(0);
+	GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
+	if (ret != ZE_RESULT_SUCCESS) {
+	    XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
+	    checkInitDependency();
+	    throw LevelZeroInitializationException("zeInit error");
+	}
     }
 
     XPUM_LOG_INFO("GPUDeviceStub::init zesInit start...");
@@ -1495,7 +1500,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, fwVersion));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME, std::string("GFX_PSCBIN")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION, fwVersion));
-
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_NAME, std::string("OPROM_CODE")));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_CODE_FIRMWARE_VERSION, fwVersion));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_NAME, std::string("OPROM_DATA")));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OPROM_DATA_FIRMWARE_VERSION, fwVersion));             
                 {
                 std::lock_guard<std::mutex> lock(GPUDeviceStub::fabric_mutex);
                 uint32_t fabric_count = 0;
@@ -4191,18 +4199,18 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
         if (power_threshold <= 0) {
-            description = "Power health threshold is not set";
+            description = "Health threshold for the power domains is not set";
             return;
         }
 
-        description = "The power health cannot be determined.";
+        description = "Health cannot be determined for the power domains.";
         uint32_t power_domain_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumPowerDomains(zes_device, &power_domain_count, nullptr));
         std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumPowerDomains(zes_device, &power_domain_count, power_handles.data()));
         if (res == ZE_RESULT_SUCCESS) {
-            auto current_device_value = 0;
+            auto current_device_max_domain_value = 0;
             auto current_sub_device_value_sum = 0;
             for (auto& power : power_handles) {
                 zes_power_properties_t props = {};
@@ -4220,29 +4228,29 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                     if (res == ZE_RESULT_SUCCESS && 
                             snap2.timestamp != snap1.timestamp) {
                         int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-                        if (!props.onSubdevice) {
-                            current_device_value = value;
-                        } else {
+                        if (props.onSubdevice) {
                             current_sub_device_value_sum += value;
+                        } else if (value > current_device_max_domain_value) {
+                            current_device_max_domain_value = value;
                         }
                     }
                 }
             }
-            XPUM_LOG_DEBUG("health: current device power value: {}", current_device_value);
+            XPUM_LOG_DEBUG("health: current device max domain power value: {}", current_device_max_domain_value);
             XPUM_LOG_DEBUG("health: current sum of sub-device power values: {}", current_sub_device_value_sum);
-            auto power_val = std::max(current_device_value, current_sub_device_value_sum);
+            auto power_val = std::max(current_device_max_domain_value, current_sub_device_value_sum);
             if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-                description = "All power domains are healthy.";
+                description = "Values for all the power domains are healthy.";
             }
             if (power_val >= power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-                description = "Find an unhealthy power domain. Its power is " + std::to_string(power_val) + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";
+                description = "Unhealthy power domain value, " + std::to_string(power_val) + " >= " + std::to_string(power_threshold) + (global_default_limit ? " (global default limit)" : " (threshold)");
             }
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL || type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL) {
         if (core_thermal_threshold <= 0 || memory_thermal_threshold <= 0) {
-            description = "Temperature health threshold is not set";
+            description = "Health threshold for temperature sensors is not set";
             return;
         }
         int thermal_threshold = 0;
@@ -4251,7 +4259,7 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
         else
             thermal_threshold = memory_thermal_threshold;
         double temp_val = 0;
-        description = "The temperature health cannot be determined.";
+        description = "Health cannot be determined for temperature sensors.";
         uint32_t temp_sensor_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumTemperatureSensors(zes_device, &temp_sensor_count, nullptr));
@@ -4296,16 +4304,16 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
         }
         if (temp_val > 0 && temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
             status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-            description = "All temperature sensors are healthy.";
+            description = "Values for all the temperature sensors are healthy.";
         }
         if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
             status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
             std::stringstream temp_buffer;
             temp_buffer << std::fixed << std::setprecision(2) << temp_val;
-            description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
+            description = "Unhealthy temperature sensor value, " + temp_buffer.str() + " >= " + std::to_string(thermal_threshold) + (global_default_limit ? " (global default limit)" : " (threshold)");
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT) {
-        description = "All port statuses cannot be determined.";
+        description = "Status cannot be determined for all the ports.";
         uint32_t fabric_ports_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumFabricPorts(zes_device, &fabric_ports_count, nullptr));
@@ -4367,10 +4375,10 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                 }
             }
         } else {
-            description = "The device lacks Xe Link capability.";
+            description = "Device lacks Xe Link capability.";
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_FREQUENCY) {
-        description = "The device frequency state cannot be determined.";
+        description = "Device frequency state cannot be determined.";
         std::string freq_throttle_message;
         bool get_state = getFrequencyState(zes_device, freq_throttle_message);
         if (get_state) {
@@ -4379,7 +4387,7 @@ void GPUDeviceStub::getHealthStatus(const ze_device_handle_t& device, const zes_
                 description = freq_throttle_message;
             } else {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-                description = "The device frequency not throttled";
+                description = "Device frequency is not throttled";
             }
         }
     }

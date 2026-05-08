@@ -63,7 +63,7 @@ By default, XPU Manager has provided as many GPU metrics as possible without cha
   
 Metric types:  
   
-0. GPU Utilization (%), GPU active time of the elapsed time, per tile
+0. Average % utilization of all GPU Engines, GPU active time of the elapsed time, per tile
 1. GPU EU Array Active (%),  the normalized sum of all cycles on all EUs that were spent actively executing instructions, per tile (Disabled by default)
 2. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled, per tile. (Disabled by default)
 3. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. per tile.  (Disabled by default)

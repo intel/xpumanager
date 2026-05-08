@@ -10,6 +10,6 @@
 
 namespace xpum {
 
-xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result);
+xpum_result_t vgpuPrecheck(xpum_device_id_t deviceId, xpum_vgpu_precheck_result_t* result);
 
 }

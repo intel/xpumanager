@@ -13,6 +13,7 @@
 
 #include "comlet_base.h"
 
+constexpr auto XPUM_STRESS_STARTUP_CHECK_DELAY = 10;
 namespace xpum::cli {
 
 struct ComletDiagnosticOptions {

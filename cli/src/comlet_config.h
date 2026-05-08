@@ -52,7 +52,7 @@ class ComletConfig : public ComletBase {
         return this->opts->deviceId >= 0 && this->opts->scheduler.empty() && this->opts->performancefactor.empty() && this->opts->powerlimit.empty() && this->opts->standby.empty() && this->opts->frequencyrange.empty() && this->opts->xelinkportBeaconing.empty() && this->opts->xelinkportEnable.empty() && this->opts->performancefactor.empty() && this->opts->setecc.empty()
         && this->opts->setpciedown.empty() && !this->opts->resetDevice && !this->opts->applyPPR;
     }
-
+    bool getResetOption();
    private:
     std::unique_ptr<ComletConfigOptions> opts;
     std::vector<std::string> split(std::string str, std::string delimiter);

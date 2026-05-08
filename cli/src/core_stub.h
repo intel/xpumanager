@@ -140,7 +140,7 @@ class CoreStub {
 
     virtual std::string getPciSlotName(std::vector<std::string> &bdfs)=0;
 
-    virtual std::unique_ptr<nlohmann::json> doVgpuPrecheck()=0;
+    virtual std::unique_ptr<nlohmann::json> doVgpuPrecheck(int deviceId)=0;
 
     virtual std::unique_ptr<nlohmann::json> createVf(int deviceId, uint32_t numVfs, uint64_t lmem)=0;
 

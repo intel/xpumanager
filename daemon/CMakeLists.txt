@@ -80,7 +80,8 @@ target_include_directories(
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include)
 
-set(LibSpd spdlog$<$<CONFIG:Debug>:d>)
+target_compile_definitions(xpumd PRIVATE SPDLOG_COMPILED_LIB)
+set(LibSpd "-Wl,--push-state,--whole-archive" "spdlog$<$<CONFIG:Debug>:d>" "-Wl,--pop-state")
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 

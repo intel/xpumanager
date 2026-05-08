@@ -44,6 +44,8 @@ env_exporter_no_auth = True if os.environ.get(
 env_exporter_only = True if os.environ.get(
     'XPUM_EXPORTER_ONLY', '') == '1' else False
 
+login_failure_count = 0
+
 
 def main(*args, **kwargs):
 
@@ -263,7 +265,6 @@ def read_config(path):
 if not env_exporter_no_auth:
     user, salt, pwHash, disableAuth = read_config(
         os.path.dirname(os.path.realpath(__file__)))
-    login_failure_count = 0
 
 if not env_exporter_only:
     policy.startPolicyCallBackThread()

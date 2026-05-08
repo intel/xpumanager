@@ -54,6 +54,11 @@ class ComletDump : public ComletBase {
 
     std::atomic<bool> keepDumping;
     std::ofstream dumpFile;
+    
+    // MEI permission tracking
+    bool meiPermissionChecked = false;
+    bool hasMeiPermission = true;
+    std::set<int> suppressedMeiMetrics; // Metrics to show as N/A due to lack of MEI permission
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
     std::set<std::string> sumMetricsList{ "XPUM_STATS_MEMORY_READ", 

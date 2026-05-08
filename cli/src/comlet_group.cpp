@@ -7,6 +7,7 @@
 #include "comlet_group.h"
 
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <stdexcept>

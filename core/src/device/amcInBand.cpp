@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <regex>
 #include <iomanip>
 #include "amcInBand.h"

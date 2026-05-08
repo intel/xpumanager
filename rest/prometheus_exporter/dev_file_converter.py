@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2021-2023 Intel Corporation
+# Copyright (C) 2021-2025 Intel Corporation
 # SPDX-License-Identifier: MIT
 # @file dev_file_converter.py
 #
@@ -11,13 +11,14 @@ import glob
 dev_file_2_bdf_map = {}
 
 pci_slot_name_pattern = re.compile(
-    '^PCI_SLOT_NAME=([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]{1}\S*)')
+    r'^PCI_SLOT_NAME=([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]{1}\S*)',
+    re.ASCII)
 
-dev_file_pattern = re.compile('(card\d+)\-\d*')
+dev_file_pattern = re.compile(r'(card\d+)\-\d*', re.ASCII)
 
 for dev_file in glob.glob("/dev/dri/card*"):
     dev_file_basename = os.path.basename(dev_file)
-    with open(f'/sys/class/drm/{dev_file_basename}/device/uevent', 'r') as f:
+    with open(f'/sys/class/drm/{dev_file_basename}/device/uevent', 'r', encoding='utf-8') as f:
         for line in f.readlines():
             line = line.strip()
             match = pci_slot_name_pattern.match(line)
@@ -25,8 +26,8 @@ for dev_file in glob.glob("/dev/dri/card*"):
                 dev_file_2_bdf_map[dev_file_basename] = match.group(1)
 
 
-def get_bdf_address(dev_file):
-    device_id_match = dev_file_pattern.fullmatch(dev_file)
+def get_bdf_address(dev_name):
+    device_id_match = dev_file_pattern.fullmatch(dev_name)
     if device_id_match is not None:
         return dev_file_2_bdf_map.get(device_id_match.group(1))
 
@@ -34,4 +35,6 @@ def get_bdf_address(dev_file):
 
 
 if __name__ == '__main__':
-    print(get_bdf_address('card1-0'))
+    testdev = 'card1-0'
+    print(f"Got following devices: {dev_file_2_bdf_map}")
+    print(f"Test match for '{testdev}': {get_bdf_address(testdev)}")

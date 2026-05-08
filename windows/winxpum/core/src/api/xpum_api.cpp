@@ -154,7 +154,7 @@ xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_t
     return XPUM_OK;
 }
 
-xpum_result_t xpumInit() {
+xpum_result_t xpumInit(bool zeinitDisable) {
     try {
         Logger::init();
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());

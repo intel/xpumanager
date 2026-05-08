@@ -359,7 +359,8 @@ xpumcli stats -d 0
 | End Time                   | 2023-09-04T13:22:13.982                                             |
 | Elapsed Time (Second)      | 120                                                                 |
 | Energy Consumed (J)        | Tile 0: 5245.05                                                     |
-| GPU Utilization (%)        | Tile 0: 0                                                           |
+| Average % utilization of   | Tile 0: 0                                                           |
+| all GPU Engines            |                                                                     |
 | Compute Engines Util (%)   | Tile 0: 0                                                           |
 | Render Engines Util (%)    | Tile 0: 0                                                           |
 | Media Engines Util (%)     | Tile 0: 0                                                           |
@@ -550,7 +551,7 @@ optional arguments:
   -d,--device                 The device id(s) to query
   -t,--tile                   The device tile ID(s) to query. If the device has only one tile, this parameter should not be specified. 
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
-                              0. GPU Utilization (%), GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles. 
+                              0. Average % utilization of all GPU Engines, GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles.
                               1. GPU Power (W), per tile or device.
                               2. GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles. 
                               3. GPU Core Temperature (Celsius Degree), per tile or device. Device-level is the average value of tiles for multi-tiles. 
@@ -601,7 +602,7 @@ optional arguments:
 Dump the device statistics to screen in CSV format.
 ```
 xpumcli dump -d 0 -t 0 -m 0,1,2,21,22 -i 1 -n 5
-Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz),XL 0/0->1/1 (kB/s),XL 1/1->0/0 (kB/s),Compute Engine 0 (%), Compute Engine 1 (%)
+Timestamp,DeviceId,TileId,Average % utilization of all GPU Engines,GPU Power (W),GPU Frequency (MHz),XL 0/0->1/1 (kB/s),XL 1/1->0/0 (kB/s),Compute Engine 0 (%), Compute Engine 1 (%)
 13:31:43.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
 13:31:44.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
 13:31:45.100, 00, 0, 046,    , 1100, 400, 700, 100, 0

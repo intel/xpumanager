@@ -639,7 +639,8 @@ xpu-smi stats -d 0
 +-----------------------------+--------------------------------------------------------------------+
 | Device ID                   | 0                                                                  |
 +-----------------------------+--------------------------------------------------------------------+
-| GPU Utilization (%)         | 0                                                                  |
+| Average % utilization of    | 0                                                                  |
+| all GPU Engines             |                                                                    |
 | EU Array Active (%)         |                                                                    |
 | EU Array Stall (%)          |                                                                    |
 | EU Array Idle (%)           |                                                                    |
@@ -791,7 +792,7 @@ Options:
   -d,--device                 The device IDs or PCI BDF addresses to query. The value of "-1" means all devices.
   -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified.
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
-                              0. GPU Utilization (%), GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles. 
+                              0. Average % utilization of all GPU Engines, GPU active time of the elapsed time, per tile or device. Device-level is the average value of tiles for multi-tiles.
                               1. GPU Power (W), per tile or device.
                               2. GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles. 
                               3. GPU Core Temperature (Celsius Degree), per tile or device. Device-level is the average value of tiles for multi-tiles. 
@@ -843,7 +844,7 @@ Options:
 Dump the device statistics to screen in CSV format.
 ```
 xpu-smi dump -d 0 -m 0,1,2 -i 1 -n 5
-Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
+Timestamp, DeviceId, Average % utilization of all GPU Engines, GPU Power (W), GPU Frequency (MHz)
 06:14:46.000,    0, 0.00, 14.61,    0
 06:14:47.000,    0, 0.00, 14.59,    0
 06:14:48.000,    0, 0.00, 14.61,    0

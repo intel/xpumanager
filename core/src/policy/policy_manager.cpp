@@ -151,7 +151,7 @@ void PolicyManager::checkPolicy() {
         // Check device id
         xpum_result_t result = this->isValidateDeviceId(deviceId);
         if (result != XPUM_OK) {
-            XPUM_LOG_ERROR("PolicyManager::checkPolicy(): device_id ({}) is not vaild.", deviceId);
+            XPUM_LOG_ERROR("PolicyManager::checkPolicy(): device_id ({}) is not valid.", deviceId);
             continue;
         }
 
@@ -422,7 +422,7 @@ bool PolicyManager::isInDeviceIds(xpum_device_id_t deviceId, xpum_device_id_t de
 xpum_result_t PolicyManager::xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     xpum_result_t result = this->isValidateDeviceId(deviceId);
     if (result != XPUM_OK) {
-        XPUM_LOG_INFO("PolicyManager::xpumSetPolicy(): device_id ({}) is not vaild.", deviceId);
+        XPUM_LOG_INFO("PolicyManager::xpumSetPolicy(): device_id ({}) is not valid.", deviceId);
         return result;
     }
     //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---1--deviceId={}",deviceId);
@@ -486,7 +486,7 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
             // Check device id
             result = this->isValidateDeviceId(deviceIds[i]);
             if (result != XPUM_OK) {
-                XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): device_id ({}) is not vaild.", deviceIds[i]);
+                XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): device_id ({}) is not valid.", deviceIds[i]);
                 return result;
             }
 
@@ -618,7 +618,7 @@ xpum_result_t PolicyManager::xpumGetPolicy(xpum_device_id_t deviceId, xpum_polic
     // Check device id
     xpum_result_t result = this->isValidateDeviceId(deviceId);
     if (result != XPUM_OK) {
-        XPUM_LOG_INFO("PolicyManager::xpumGetPolicy(): device_id ({}) is not vaild.", deviceId);
+        XPUM_LOG_INFO("PolicyManager::xpumGetPolicy(): device_id ({}) is not valid.", deviceId);
         return result;
     }
     xpum_device_id_t deviceList[] = {deviceId};

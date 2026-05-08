@@ -87,7 +87,7 @@ extern "C" {
  * @return \ref xpum_result_t 
  * @note Support Platform: Linux, Windows
  */
-XPUM_API xpum_result_t xpumInit(void);
+XPUM_API xpum_result_t xpumInit(bool zeinitDisable = false);
 
 /**
  * @brief This method is used to shut down XPUM.
@@ -1537,7 +1537,7 @@ XPUM_API xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int
  * @return xpum_result_t 
  * @note Support Platform: Linux
  */
-XPUM_API xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result);
+XPUM_API xpum_result_t xpumDoVgpuPrecheck(xpum_device_id_t deviceId, xpum_vgpu_precheck_result_t *result);
 
 /**
  * @brief Create VF

@@ -7,6 +7,7 @@
 #include "comlet_sensor.h"
 #include "cli_table.h"
 #include <iomanip>
+#include <sstream>
 
 using namespace nlohmann;
 

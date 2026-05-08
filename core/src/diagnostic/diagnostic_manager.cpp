@@ -12,6 +12,7 @@
 #include <numeric>
 #include <limits>
 #include <array>
+#include <sstream>
 
 #include "firmware/firmware_manager.h"
 #include "device/gpu/gpu_device_stub.h"
@@ -2258,7 +2259,7 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
             }
 
             try {
-                auto current_device_power_value = 0;
+                auto current_device_max_power_domain_value = 0;
                 auto current_sub_device_power_value_sum = 0;
                 ze_result_t res;
                 uint32_t power_domain_count = 0;
@@ -2284,18 +2285,18 @@ void DiagnosticManager::doDiagnosticPeformancePower(const ze_device_handle_t &ze
                             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 int value = std::ceil((snap2.energy - snap1.energy) * 1.0 / (snap2.timestamp - snap1.timestamp));
-                                if (!props.onSubdevice) {
-                                    current_device_power_value = value;
-                                } else {
+                                if (props.onSubdevice) {
                                     current_sub_device_power_value_sum += value;
+                                } else if (value > current_device_max_power_domain_value) {
+                                    current_device_max_power_domain_value = value;
                                 }
                             }
                         }
                     }
                 }
-                XPUM_LOG_DEBUG("diagnostic: current device power value: {}", current_device_power_value);
+                XPUM_LOG_DEBUG("diagnostic: current device max power domain value: {}", current_device_max_power_domain_value);
                 XPUM_LOG_DEBUG("diagnostic: current sum of sub-device power values: {}", current_sub_device_power_value_sum);
-                auto current_power_value = std::max(current_device_power_value, current_sub_device_power_value_sum);
+                auto current_power_value = std::max(current_device_max_power_domain_value, current_sub_device_power_value_sum);
                 if (current_power_value > max_power_value) {
                     max_power_value = current_power_value;
                     XPUM_LOG_DEBUG("update peak power value: {}", max_power_value);
@@ -3798,8 +3799,36 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                                     device_properties.numEUsPerSubslice *
                                     device_compute_properties.maxGroupCountX * 2048;
 
-        uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(int);
-        uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(int)));
+        uint64_t available_memory = device_properties.maxMemAllocSize;
+        zes_device_handle_t zes_device = (zes_device_handle_t)ze_device;
+        uint32_t mem_module_count = 0;
+        ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, nullptr);
+        if (ret == ZE_RESULT_SUCCESS && mem_module_count > 0) {
+            std::vector<zes_mem_handle_t> mems(mem_module_count);
+            ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, mems.data());
+            if (ret == ZE_RESULT_SUCCESS) {
+                uint64_t total_free_memory = 0;
+                for (auto &mem : mems) {
+                    zes_mem_state_t memory_state = {};
+                    memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                    memory_state.pNext = nullptr;
+                    XPUM_ZE_HANDLE_LOCK(mem, ret = zesMemoryGetState(mem, &memory_state));
+                    if (ret == ZE_RESULT_SUCCESS) {
+                        total_free_memory += memory_state.free;
+                    } else {
+                        XPUM_LOG_WARN("Stress test: zesMemoryGetState failed for memory module {}: {}",
+                                      (void *)mem, zeResultErrorCodeStr(ret));
+                    }
+                }
+                if (total_free_memory > 0) {
+                    // Use 90% of free memory to leave headroom for system operations
+                    available_memory = std::min(available_memory, (total_free_memory * 9) / 10);
+                }
+            }
+        }
+
+        uint64_t max_number_of_allocated_items = available_memory / sizeof(int);
+        uint64_t number_of_work_items = std::min(max_number_of_allocated_items, max_work_items);
         number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
 
         void *device_input_value;
@@ -3874,10 +3903,12 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
         contextDestroy(context);
 
     } catch (BaseException &e) {
-        XPUM_LOG_DEBUG("Error in stress test with BaseException");
-        XPUM_LOG_DEBUG(e.what());
+        p_task_info->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        XPUM_LOG_ERROR("Error in stress test with BaseException");
+        XPUM_LOG_ERROR(e.what());
     } catch (...) {
-        XPUM_LOG_DEBUG("Error in stress test");
+        p_task_info->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        XPUM_LOG_ERROR("Error in stress test");
     }
 
     p_task_info->finished = true;
@@ -3971,6 +4002,9 @@ xpum_result_t DiagnosticManager::checkStress(xpum_device_id_t deviceId, xpum_dia
         }
         if (stress_task_map.find(deviceId) == stress_task_map.end()) {
             return XPUM_RESULT_DEVICE_NOT_FOUND;
+        }
+        if (stress_task_map.at(deviceId)->result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+            return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
         }
         resultList[0].deviceId = deviceId;
         resultList[0].finished = stress_task_map.at(deviceId)->finished;

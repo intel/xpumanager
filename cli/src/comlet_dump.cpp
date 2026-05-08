@@ -11,6 +11,9 @@
 #include <sstream>
 #include <algorithm>
 #include <chrono>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "core_stub.h"
 #include "pretty_table.h"
@@ -22,6 +25,97 @@
 using xpum::dump::engineNameMap;
 
 namespace xpum::cli {
+
+// Check if a metric requires MEI device access for telemetry
+static bool requiresMeiAccess(int metricId) {
+    // Metrics requiring MEI device access: 0, 3, 4, 6, 7, 9, 10, 11, 17, 22-27, 31-34
+    switch (metricId) {
+        case XPUM_DUMP_GPU_UTILIZATION:                    // 0
+        case XPUM_DUMP_GPU_CORE_TEMPERATURE:               // 3
+        case XPUM_DUMP_MEMORY_TEMPERATURE:                 // 4
+        case XPUM_DUMP_MEMORY_READ_THROUGHPUT:             // 6
+        case XPUM_DUMP_MEMORY_WRITE_THROUGHPUT:            // 7
+        case XPUM_DUMP_EU_ACTIVE:                          // 9
+        case XPUM_DUMP_EU_STALL:                           // 10
+        case XPUM_DUMP_EU_IDLE:                            // 11
+        case XPUM_DUMP_MEMORY_BANDWIDTH:                   // 17
+        case XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION:         // 22
+        case XPUM_DUMP_RENDER_ENGINE_UTILIZATION:          // 23
+        case XPUM_DUMP_DECODE_ENGINE_UTILIZATION:          // 24
+        case XPUM_DUMP_ENCODE_ENGINE_UTILIZATION:          // 25
+        case XPUM_DUMP_COPY_ENGINE_UTILIZATION:            // 26
+        case XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION: // 27
+        case XPUM_DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION:   // 31
+        case XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION:    // 32
+        case XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION:     // 33
+        case XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION:      // 34
+            return true;
+        default:
+            return false;
+    }
+}
+
+// Get metric name for display
+static const char* getMetricName(int metricId) {
+    switch (metricId) {
+        case XPUM_DUMP_GPU_UTILIZATION: return "GPU_UTILIZATION";
+        case XPUM_DUMP_GPU_CORE_TEMPERATURE: return "GPU_CORE_TEMPERATURE";
+        case XPUM_DUMP_MEMORY_TEMPERATURE: return "MEMORY_TEMPERATURE";
+        case XPUM_DUMP_MEMORY_READ_THROUGHPUT: return "MEMORY_READ_THROUGHPUT";
+        case XPUM_DUMP_MEMORY_WRITE_THROUGHPUT: return "MEMORY_WRITE_THROUGHPUT";
+        case XPUM_DUMP_EU_ACTIVE: return "EU_ACTIVE";
+        case XPUM_DUMP_EU_STALL: return "EU_STALL";
+        case XPUM_DUMP_EU_IDLE: return "EU_IDLE";
+        case XPUM_DUMP_MEMORY_BANDWIDTH: return "MEMORY_BANDWIDTH";
+        case XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION: return "COMPUTE_ENGINE_UTILIZATION";
+        case XPUM_DUMP_RENDER_ENGINE_UTILIZATION: return "RENDER_ENGINE_UTILIZATION";
+        case XPUM_DUMP_DECODE_ENGINE_UTILIZATION: return "DECODE_ENGINE_UTILIZATION";
+        case XPUM_DUMP_ENCODE_ENGINE_UTILIZATION: return "ENCODE_ENGINE_UTILIZATION";
+        case XPUM_DUMP_COPY_ENGINE_UTILIZATION: return "COPY_ENGINE_UTILIZATION";
+        case XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION: return "MEDIA_ENHANCEMENT_ENGINE_UTILIZATION";
+        case XPUM_DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION: return "COMPUTE_ENGINE_GROUP_UTILIZATION";
+        case XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION: return "RENDER_ENGINE_GROUP_UTILIZATION";
+        case XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION: return "MEDIA_ENGINE_GROUP_UTILIZATION";
+        case XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION: return "COPY_ENGINE_GROUP_UTILIZATION";
+        default: return "UNKNOWN";
+    }
+}
+
+// Check if MEI devices are accessible for telemetry
+static bool checkMeiDevicePermissions() {
+    DIR* dir = opendir("/dev");
+    if (dir == nullptr) {
+        std::cerr << "Warning: Unable to access /dev directory for MEI device permission check" << std::endl;
+        return true; // Can't check, proceed without suppression
+    }
+    
+    struct dirent* entry;
+    bool meiDeviceFound = false;
+    bool hasPermissionIssue = false;
+    std::vector<std::string> inaccessibleDevices;
+    
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string filename = entry->d_name;
+        // Check for mei devices (mei0, mei1, etc.)
+        if (filename.length() > 3 && filename.substr(0, 3) == "mei" && std::isdigit(filename[3])) {
+            meiDeviceFound = true;
+            std::string devicePath = "/dev/" + filename;
+            
+            // Check read access (which is needed for telemetry queries)
+            if (access(devicePath.c_str(), R_OK) != 0) {
+                hasPermissionIssue = true;
+                inaccessibleDevices.push_back(devicePath);
+            }
+        }
+    }
+    closedir(dir);
+    
+    if (hasPermissionIssue && meiDeviceFound) {
+        return false;
+    }
+    
+    return true;
+}
 
 static std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> result;
@@ -325,6 +419,35 @@ void ComletDump::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
     std::unique_ptr<nlohmann::json> json;
+
+    // Check MEI device permissions once at the start
+    if (!meiPermissionChecked) {
+        meiPermissionChecked = true;
+        std::vector<int> requestedMeiMetrics;
+        
+        for (auto metric : this->opts->metricsIdList) {
+            if (requiresMeiAccess(metric)) {
+                requestedMeiMetrics.push_back(metric);
+            }
+        }
+        
+        // Check MEI device permissions only if MEI-dependent metrics are requested
+        if (!requestedMeiMetrics.empty()) {
+            if (!checkMeiDevicePermissions()) {
+                hasMeiPermission = false;
+                std::cerr << "\nWARNING: Elevated privileges required for the following " 
+                          << (requestedMeiMetrics.size() == 1 ? "metric" : "metrics") << ":\n";
+                for (auto metric : requestedMeiMetrics) {
+                    suppressedMeiMetrics.insert(metric);
+                    std::cerr << "  - Metric " << metric << " (" << getMetricName(metric) << ") - will display as N/A\n";
+                }
+                std::cerr << "\n" << (requestedMeiMetrics.size() == 1 ? "This metric requires" : "These metrics require")
+                          << " access to MEI devices for GPU telemetry.\n";
+                std::cerr << "Please run with elevated privileges (sudo) to collect " 
+                          << (requestedMeiMetrics.size() == 1 ? "this metric" : "these metrics") << ".\n" << std::endl;
+            }
+        }
+    }
 
     // check metrics is unique
     if (std::adjacent_find(this->opts->metricsIdList.begin(), this->opts->metricsIdList.end()) != this->opts->metricsIdList.end()) {
@@ -718,7 +841,12 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
         if (config.optionType == xpum::dump::DUMP_OPTION_STATS) {
             DumpColumn dc{
                 std::string(config.name),
-                [config, this]() {
+                [config, this, metric]() {
+                    // Check if this metric is suppressed due to MEI permission
+                    if (this->suppressedMeiMetrics.count(metric) > 0) {
+                        return std::string("N/A");
+                    }
+                    
                     std::string metricKey = config.key;
                     if (statsJson != nullptr) {
                         for (auto metricObj : (*statsJson)) {
@@ -964,7 +1092,12 @@ void ComletDump::printByLine(std::ostream &out) {
         if (config.optionType == xpum::dump::DUMP_OPTION_STATS) {
             DumpColumn dc{
                 std::string(config.name),
-                [config, this]() {
+                [config, this, metric]() {
+                    // Check if this metric is suppressed due to MEI permission
+                    if (this->suppressedMeiMetrics.count(metric) > 0) {
+                        return std::string("N/A");
+                    }
+                    
                     std::string metricKey = config.key;
                     if (statsJson != nullptr) {
                         for (auto metricObj : (*statsJson)) {

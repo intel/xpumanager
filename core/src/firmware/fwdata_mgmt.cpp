@@ -7,7 +7,8 @@
 #include "fwdata_mgmt.h"
 
 #include <vector>
-#include <fstream> 
+#include <fstream>
+#include <sstream>
 #include <chrono>
 #include <regex>
 #include <igsc_lib.h>
