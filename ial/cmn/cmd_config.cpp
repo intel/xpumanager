@@ -12,6 +12,7 @@
 #include <ecc.h>
 #include <fabric.h>
 #include <fan.h>
+#include <ras.h>
 #include <charconv>
 #include <format>
 #include <frequency.h>
@@ -58,6 +59,7 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::PCIEDOWNGRADE,
 	 {{"pciedowngrade", required_argument, 0, 0}, &cmdConfig::setPCIeGenUpdate, false, ""}},
 	{configCmdType::RESET, {{"reset", no_argument, 0, 0}, &cmdConfig::resetDevice, false, ""}},
+	{configCmdType::CLEARRAS, {{"clear-ras-errors", no_argument, 0, 0}, &cmdConfig::clearRasErrors, false, ""}},
 	{configCmdType::FANSPEED, {{"fanspeed", required_argument, 0, 0}, &cmdConfig::setFanSpeed, false, ""}},
 	{configCmdType::FANCURVE, {{"fancurve", required_argument, 0, 0}, &cmdConfig::setFanCurve, false, ""}},
 	{configCmdType::FANCURVERPM, {{"fancurve-rpm", required_argument, 0, 0}, &cmdConfig::setFanCurveRpm, false, ""}},
@@ -641,6 +643,7 @@ void cmdConfig::help(HELP helpType)
 
 	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --reset", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config -d [pciBdfAddress] --coldreset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --clear-ras-errors", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -672,6 +675,7 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(HEADING, "--force-reset-gpus          Proceed with --coldreset even if other PCI devices share"));
 	helpList.push_back(helpCmd(SUB_HEADING, "the PCIe slot. All devices on the slot will be reset together."));
+	helpList.push_back(helpCmd(HEADING, "--clear-ras-errors          Clear all RAS error counters for the device"));
 	helpList.push_back(helpCmd(HEADING, "--performancefactor         Set the tile-level performance factor. Valid "
 										"options: \"compute/media\",factorValue. The factor value should be"));
 	helpList.push_back(helpCmd(SUB_HEADING, "between 0 to 100. 100 means that the workload is completely compute "
@@ -1485,6 +1489,30 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 
 	PRINT("Succeed to reset the GPU {}\n", d->index);
 	std::_Exit(0);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Clears all RAS error counters for the device.
+ *
+ * @param [in] d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::clearRasErrors(devInfo *d)
+{
+	TRACING();
+
+	ras *rasHandler = d->dev->getRAS();
+
+	ze_result_t result = rasHandler->clearErrors();
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to clear RAS error counters on GPU {}: 0x{:X} ({})\n", d->index, result,
+			l0_error_to_string(result));
+		return result;
+	}
+
+	PRINT("Successfully cleared RAS error counters on GPU {}\n", d->index);
 	return ZE_RESULT_SUCCESS;
 }
 

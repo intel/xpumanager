@@ -28,6 +28,7 @@ enum configCmdType
 	COLDRESET,
 	IGNORE_GPU_USER_PROCESSES,
 	FORCE_RESET_GPUS,
+	CLEARRAS,
 	PCIEDOWNGRADE,
 	FANSPEED,
 	FANCURVE,
@@ -54,6 +55,7 @@ public:
 	ze_result_t setMemoryEcc(devInfo *d);
 	ze_result_t setPCIeGenUpdate(devInfo *d);
 	ze_result_t resetDevice(devInfo *d);
+	ze_result_t clearRasErrors(devInfo *d);
 	ze_result_t setFanSpeed(devInfo *d);
 	ze_result_t setFanCurve(devInfo *d);
 	ze_result_t setFanCurveRpm(devInfo *d);

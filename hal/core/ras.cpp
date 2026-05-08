@@ -5,6 +5,7 @@
  */
 
 #include "ras.h"
+#include <vector>
 
 /**
  * @brief Destructor for the RAS (Reliability, Availability, Serviceability) class
@@ -235,6 +236,65 @@ ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t
 
 		countersPerTile[tileId] += errorCount;
 		*totalCounter += errorCount;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Clears all RAS error counters for all error categories
+ *
+ * This function clears the error counters for every supported RAS error
+ * category across all enumerated RAS handles using the experimental
+ * zesRasGetStateExp / zesRasClearStateExp APIs.
+ *
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful clear, error code otherwise
+ */
+ze_result_t ras::clearErrors()
+{
+	TRACING();
+
+	if (rasHandles == nullptr || rasCount == 0) {
+		ERR("No RAS handles available to clear errors.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	zes_ras_properties_t properties = {};
+	for (uint32_t i = 0; i < rasCount; ++i) {
+		ze_result_t result = getProperties(rasHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		uint32_t categoryCount = 0;
+		result = zesRasGetStateExp(rasHandles[i], &categoryCount, nullptr);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get RAS state exp count for handle {}. 0x{:X} ({})\n", properties.type, result,
+				l0_error_to_string(result));
+			return result;
+		}
+
+		if (categoryCount == 0) {
+			continue;
+		}
+
+		std::vector<zes_ras_state_exp_t> states(categoryCount);
+		result = zesRasGetStateExp(rasHandles[i], &categoryCount, states.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get RAS state exp for handle {}. 0x{:X} ({})\n", properties.type, result,
+				l0_error_to_string(result));
+			return result;
+		}
+
+		for (uint32_t j = 0; j < categoryCount; ++j) {
+			result = zesRasClearStateExp(rasHandles[i], states[j].category);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to clear RAS state exp category {} for handle {}. 0x{:X} ({})\n", states[j].category,
+					properties.type, result, l0_error_to_string(result));
+				return result;
+			}
+		}
+
+		DBG("Cleared {} RAS error categories for handle {}.\n", categoryCount, properties.type);
 	}
 
 	return ZE_RESULT_SUCCESS;
