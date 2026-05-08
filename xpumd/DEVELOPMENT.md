@@ -6,8 +6,14 @@
 - [Testing device info exporter](#testing-device-info-exporter)
 - [Building container image](#building-container-image)
 - [Testing container image](#testing-container-image)
+  - [SELinux and Podman](#selinux-and-podman)
+  - [Testing container image with stub driver](#testing-container-image-with-stub-driver)
 - [Extracting sources from container image](#extracting-sources-from-container-image)
 - [Testing in single-node cluster](#testing-in-single-node-cluster)
+  - [Load container image](#load-container-image)
+    - [Kind cluster](#kind-cluster)
+    - [Containerd-based cluster](#containerd-based-cluster)
+  - [Deploy with Helm](#deploy-with-helm)
 
 ## Building
 
@@ -101,15 +107,19 @@ docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
   --config /etc/xpumd/config.yaml
 ```
 
-(If running on a distro with SELinux enabled, and `docker` being
-provided by `podman` i.e. container being run with normal user
-privileges, add `--security-opt label=disable` option.)
-
 Query Prometheus metrics:
 
 ```bash
 curl --no-progress-meter http://localhost:8080/metrics
 ```
+
+### SELinux and Podman
+
+If running on a distro with SELinux enabled and `docker` being
+provided by `podman` i.e. container being run with normal user
+privileges, add `--security-opt label=disable` Docker option,
+otherwise contents of host volume mounts are inaccessible.
+
 
 ### Testing container image with stub driver
 
@@ -182,7 +192,7 @@ After building the container image, load the image onto the cluster.
 
 ### Load container image
 
-#### Kind
+#### Kind cluster
 
 ```bash
 kind load docker-image registry.local/xpumd:main

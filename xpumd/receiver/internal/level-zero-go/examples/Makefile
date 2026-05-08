@@ -23,10 +23,12 @@ build:
 	$(Q)go build -o bin/events-sysman ./events-sysman/.
 
 .PHONY: images
+# "label=disable" is needed for Dockerfile "RUN --mount" on hosts using Podman + SELinux
 images:
 	$(Q)for app in $(EXAMPLE_APPS); do \
 	    docker build -t $(IMAGE_REPO_BASE)/$$app:$(IMAGE_TAG) \
 	                 --build-arg APP=$$app \
+	                 --security-opt label=disable \
 	                 --progress=plain \
 	                 -f Dockerfile .. ; \
 	done

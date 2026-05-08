@@ -4,6 +4,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Args: XPUMD make target(s) to build in a container
+#
+# Note: does not work with SELinux/Podman (user privileges issue)
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 

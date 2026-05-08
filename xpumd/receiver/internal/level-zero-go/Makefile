@@ -73,7 +73,7 @@ clean-coverage:
 
 .PHONY: golint
 # same as in "ci-checks.yml" GH workflow
-# (label=disable is needed on hosts using SELinux)
+# "label=disable" is needed for host volume mounts on hosts using Podman + SELinux
 golint:
 	@echo -e "\ngolint: linting Go code...\n"
 	docker run --rm -v $$PWD:/app -w /app --security-opt label=disable \
