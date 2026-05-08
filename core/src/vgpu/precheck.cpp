@@ -109,7 +109,7 @@ xpum_result_t vgpuPrecheck(xpum_device_id_t deviceId,
         result->sriovStatus = true;
     } else {
         result->sriovStatus = false;
-        std::string msg = "SR-IOV is disabled or sriov_totalvfs is 0. Please set the related BIOS settings and kernel command line parameters.";
+        std::string msg = "SR-IOV is disabled or the gpu driver has not loaded properly. Please check the related BIOS settings and kernel command line parameters.";
         strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
     }
     return XPUM_OK;
