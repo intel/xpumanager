@@ -79,7 +79,7 @@ health:
 ## Building container image
 
 ```bash
-docker build -t registry.local/xpumd:main .
+docker build -t registry.local/xpumd:latest .
 ```
 
 ## Testing container image
@@ -88,7 +88,7 @@ Test the container with example config from the image:
 
 ```bash
 docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
-  --device /dev/dri --publish 8080:8080 registry.local/xpumd:main \
+  --device /dev/dri --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config-example.yaml
 ```
 
@@ -103,7 +103,7 @@ Map the modified config inside container, and ask daemon to use it:
 ```bash
 docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
   --volume $PWD/config-example.yaml:/etc/xpumd/config.yaml:ro \
-  --device /dev/dri --publish 8080:8080 registry.local/xpumd:main \
+  --device /dev/dri --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config.yaml
 ```
 
@@ -133,7 +133,7 @@ specify the config file:
 docker run -it --rm --user 0 \
   -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
   -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
-  --publish 8080:8080 registry.local/xpumd:main \
+  --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config-example.yaml
 ```
 
@@ -145,7 +145,7 @@ docker run -it --rm --user 0 \
   -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
   -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
   --volume $PWD/receiver/internal/level-zero-go/level-zero-stub:/etc/xpumd/level-zero-stub:ro \
-  --publish 8080:8080 registry.local/xpumd:main \
+  --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config-example.yaml
 ```
 
@@ -165,7 +165,7 @@ example here):
 1. Run image in a temporary container:
 
 ```bash
-docker create --name xpumd-temp registry.local/xpumd:main
+docker create --name xpumd-temp registry.local/xpumd:latest
 ```
 
 2. Extract sources from it:
@@ -195,7 +195,7 @@ After building the container image, load the image onto the cluster.
 #### Kind cluster
 
 ```bash
-kind load docker-image registry.local/xpumd:main
+kind load docker-image registry.local/xpumd:latest
 ```
 
 #### Containerd-based cluster
@@ -203,13 +203,13 @@ kind load docker-image registry.local/xpumd:main
 1. Save image as a tarball (on build machine):
 
 ```bash
-docker save registry.local/xpumd:main -o xpumd-main.tar
+docker save registry.local/xpumd:latest -o xpumd-latest.tar
 ```
 
 2. Import tarball to container runtime (on cluster node):
 
 ```bash
-sudo ctr -n k8s.io images import xpumd-main.tar
+sudo ctr -n k8s.io images import xpumd-latest.tar
 ```
 
 (`-n k8s.io` option is needed for images to be visible to Kubernetes / `crictl`.)

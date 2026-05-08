@@ -6,7 +6,7 @@
 Q := @
 
 IMAGE_REPO_BASE ?= registry.local/level-zero-go
-IMAGE_TAG ?= main
+IMAGE_TAG ?= latest
 EXAMPLE_APPS := list-sysman events-sysman
 
 # --- Helper targets ---

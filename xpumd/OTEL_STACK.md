@@ -85,7 +85,7 @@ From ghcr.io registry:
 helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
   --set config.exporters.otlphttp.endpoint="http://otel-collector-opentelemetry-collector.default.svc.cluster.local:4318" \
   --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlphttp}" \
-  --version 0.0.0-main
+  --version 0.0.0-latest
 ```
 
 Alternatively, use the OTLP gRPC exporter (port 4317) instead of HTTP.

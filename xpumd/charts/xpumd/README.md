@@ -1,6 +1,6 @@
 # xpumd
 
-![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: main](https://img.shields.io/badge/AppVersion-main-informational?style=flat-square)
+![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 A Helm chart for Intel(R) XPUM Daemon
 **Homepage:** <https://github.com/intel/xpumanager/>
 
@@ -46,7 +46,7 @@ Install the chart:
 
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
-  --version 0.0.0-main \
+  --version 0.0.0-latest \
   --set gpuAccess=$MONITOR \
   --namespace intel-xpumd
 ```
