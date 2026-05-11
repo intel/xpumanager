@@ -31,7 +31,7 @@ processors:
         component_filters:
           - key: "hw.sensor_location"
             values: ["gpu"]
-        copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
+        copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
         add_attributes:
           hw.type: "temperature"
         # Ordered list of state rules. The rules should be ordered by increasing severity.
@@ -61,7 +61,7 @@ processors:
         component_filters:
           - key: "hw.sensor_location"
             values: ["memory"]
-        copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location"]
+        copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
         add_attributes:
           hw.type: "temperature"
         # Ordered list of state rules. The rules should be ordered by increasing severity.
