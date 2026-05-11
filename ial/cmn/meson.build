@@ -24,6 +24,7 @@ ial_cmn_sources = files(
   'cmd_vgpu.cpp',
   'cmds.cpp',
   'printer.cpp',
+  'metrics_registry.cpp',
   '../../hal/core/debug.cpp',
 )
 
@@ -67,3 +68,7 @@ ial_cmn_dep = declare_dependency(
   include_directories : ial_cmn_inc,
   dependencies : [table_dep]
 )
+
+if get_option('with_tests')
+  subdir('test')
+endif
