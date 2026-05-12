@@ -223,6 +223,30 @@ Parameterization (command tests):
              'Parent directories are created automatically if they do not exist.'
     )
     
+    parser.add_argument(
+        '--issues-dir',
+        default=None,
+        metavar='PATH',
+        help='Write a per-issue report file for every failed test into this directory. '
+             'Each file is named after the test and contains the command, expected result, '
+             'actual output, and explanation. The directory is created if it does not exist.'
+    )
+
+    parser.add_argument(
+        '--junit-xml',
+        default=None,
+        metavar='PATH',
+        help='Write a JUnit-style XML report for CI consumption to this path. '
+             'Each test becomes a <testcase>; failures embed stdout/stderr.'
+    )
+
+    parser.add_argument(
+        '--summary-json',
+        default=None,
+        metavar='PATH',
+        help='Write a machine-readable JSON summary of all results to this path.'
+    )
+    
     args = parser.parse_args()
     
     # Expand config paths (handles multiple args, comma-separated, globs, and directories)
@@ -260,7 +284,8 @@ Parameterization (command tests):
     # Initialize test runner
     runner = CLITestRunner(binary_path=binary_path, verbose=args.verbose,
                           platform_type=args.platform, max_workers=args.parallel,
-                          log_file=args.log_file)
+                          log_file=args.log_file,
+                          issues_dir=args.issues_dir)
     
     # Show parallel mode if enabled
     if args.parallel > 1:
@@ -334,6 +359,15 @@ Parameterization (command tests):
         print(f"\nFailed to load/run {len(failed_configs)} configuration(s):")
         for path in failed_configs:
             print(f"  - {path}")
+
+    if args.issues_dir and any(not r.passed for r in all_results):
+        print(f"\nIssue files written to: {args.issues_dir}")
+
+    if args.junit_xml:
+        runner.write_junit_xml(all_results, args.junit_xml)
+
+    if args.summary_json:
+        runner.write_summary_json(all_results, args.summary_json)
     
     # Return non-zero exit code if any test failed or configs couldn't be loaded
     if any(not r.passed for r in all_results) or failed_configs:

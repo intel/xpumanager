@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -26,7 +27,10 @@ from .models import (
     TestResult, StepResult,
 )
 from .color import green, red, yellow, bold
-from .validators import validate_return_code, validate_plaintext, validate_json_output
+from .validators import (
+    validate_return_code, validate_plaintext, validate_json_output,
+    validate_combined_output, validate_stderr, validate_csv_output,
+)
 from .executor import execute_command, execute_with_script, execute_with_hooks, _full_binary
 from .resolver import DependencyResolver
 
@@ -36,7 +40,8 @@ class CLITestRunner:
 
     def __init__(self, binary_path: str = "xpu-smi", verbose: bool = False,
                  platform_type: str = "BMG", max_workers: int = 1,
-                 log_file: Optional[str] = None):
+                 log_file: Optional[str] = None,
+                 issues_dir: Optional[str] = None):
         self.binary_path = binary_path
         self.verbose = verbose
         self.is_windows = platform.system() == "Windows"
@@ -44,9 +49,13 @@ class CLITestRunner:
         self.platform_type = platform_type
         self.max_workers = max_workers
         self.log_file = log_file
+        self.issues_dir = Path(issues_dir) if issues_dir else None
         self.logger = self._setup_logger()
         self.results: List[TestResult] = []
         self.workflow_context: Dict[str, Any] = {}
+
+        if self.issues_dir:
+            self.issues_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------
     # Setup
@@ -118,6 +127,58 @@ class CLITestRunner:
 
     def validate_json_output(self, output: str, expectations: Dict[str, Any]):
         return validate_json_output(output, expectations)
+
+    def _merge_suite_defaults(self, expectations: Dict[str, Any],
+                              global_settings: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Merge suite-level default bad-output patterns into a test's expect block.
+
+        Keys merged (list-union, deduplicating):
+          default_combined_not_contains      → combined_not_contains
+          default_combined_not_matches_regex → combined_not_matches_regex
+          default_stdout_not_contains        → stdout_not_contains
+          default_stdout_not_matches_regex   → stdout_not_matches_regex
+
+        Use the ``default_stdout_*`` variants for patterns that target user-facing
+        output channel discipline (e.g. log lines or internal error constants
+        that should never appear on stdout but legitimately appear on stderr).
+        """
+        defaults_not_contains = global_settings.get('default_combined_not_contains', [])
+        defaults_not_regex = global_settings.get('default_combined_not_matches_regex', [])
+        defaults_stdout_not_contains = global_settings.get('default_stdout_not_contains', [])
+        defaults_stdout_not_regex = global_settings.get('default_stdout_not_matches_regex', [])
+
+        if not any([defaults_not_contains, defaults_not_regex,
+                    defaults_stdout_not_contains, defaults_stdout_not_regex]):
+            return expectations
+
+        merged = dict(expectations)
+
+        if defaults_not_contains:
+            existing = merged.get('combined_not_contains', [])
+            extra = [p for p in defaults_not_contains if p not in existing]
+            if extra:
+                merged['combined_not_contains'] = existing + extra
+
+        if defaults_not_regex:
+            existing = merged.get('combined_not_matches_regex', [])
+            extra = [p for p in defaults_not_regex if p not in existing]
+            if extra:
+                merged['combined_not_matches_regex'] = existing + extra
+
+        if defaults_stdout_not_contains:
+            existing = merged.get('stdout_not_contains', [])
+            extra = [p for p in defaults_stdout_not_contains if p not in existing]
+            if extra:
+                merged['stdout_not_contains'] = existing + extra
+
+        if defaults_stdout_not_regex:
+            existing = merged.get('stdout_not_matches_regex', [])
+            extra = [p for p in defaults_stdout_not_regex if p not in existing]
+            if extra:
+                merged['stdout_not_matches_regex'] = existing + extra
+
+        return merged
 
     def _execute_with_script(self, command: str, script: str, timeout: int,
                              variables: Dict[str, Any]) -> Dict[str, Any]:
@@ -321,7 +382,7 @@ class CLITestRunner:
         description = test_config.get('description', '')
         command = test_config.get('command', '')
         output_format = test_config.get('output_format', 'plaintext')
-        expectations = test_config.get('expect', {})
+        expectations = self._merge_suite_defaults(test_config.get('expect', {}), global_settings)
         timeout = test_config.get('timeout', global_settings.get('timeout', 30))
         variables = test_config.get('variables', {})
 
@@ -370,19 +431,26 @@ class CLITestRunner:
 
         duration = time.time() - start_time
 
+        full_command = f"{_full_binary(self.binary_path)} {command}"
+
         expected_rc = expectations.get('return_code', 0)
         if not validate_return_code(result['return_code'], expected_rc):
             msg = f"Return code mismatch: expected {expected_rc}, got {result['return_code']}"
             if result['stderr']:
                 msg += f"\nStderr: {result['stderr'][:200]}"
-            return TestResult(test_name, False, msg, duration, result)
+            tr = TestResult(test_name, False, msg, duration, result)
+            tr.command = full_command
+            tr.expect_config = expectations
+            return tr
 
         if output_format == 'json':
             success, message = validate_json_output(result['stdout'], expectations)
+        elif output_format == 'csv':
+            success, message = validate_csv_output(result['stdout'], expectations)
         else:
             success, message = validate_plaintext(result['stdout'], expectations)
 
-        if 'stdout_or_stderr_contains' in expectations:
+        if success and 'stdout_or_stderr_contains' in expectations:
             combined = result['stdout'] + result['stderr']
             for pattern in expectations['stdout_or_stderr_contains']:
                 if pattern not in combined:
@@ -390,7 +458,27 @@ class CLITestRunner:
                     message = f"Expected pattern not in output: '{pattern}'"
                     break
 
-        return TestResult(test_name, success, message, duration, result)
+        # Stderr validations (independent of output_format)
+        if success and any(k in expectations for k in (
+            'stderr_contains', 'stderr_not_contains', 'stderr_matches_regex',
+            'stderr_not_matches_regex', 'stderr_equals', 'stderr_empty',
+        )):
+            ok, smsg = validate_stderr(result['stderr'], expectations)
+            if not ok:
+                success = False
+                message = smsg
+
+        # Combined (stdout+stderr) bad-output checks — always run even on success
+        if success:
+            ok, cmsg = validate_combined_output(result['stdout'], result['stderr'], expectations)
+            if not ok:
+                success = False
+                message = cmsg
+
+        tr = TestResult(test_name, success, message, duration, result)
+        tr.command = full_command
+        tr.expect_config = expectations
+        return tr
 
     def run_test(self, test_config: Dict[str, Any],
                  global_settings: Dict[str, Any]) -> TestResult:
@@ -494,6 +582,91 @@ class CLITestRunner:
         return expanded
 
     # ------------------------------------------------------------------
+    # Issue file generation
+    # ------------------------------------------------------------------
+
+    def _write_issue_file(self, result: TestResult) -> None:
+        """Write a per-issue report file for a failed test."""
+        if not self.issues_dir:
+            return
+
+        # Sanitize test name to a safe filename
+        safe_name = re.sub(r'[^\w\-\[\]=,.]', '_', result.test_name)
+        issue_path = self.issues_dir / f"{safe_name}.txt"
+
+        stdout = result.details.get('stdout', '')
+        stderr = result.details.get('stderr', '')
+        rc = result.details.get('return_code', 'N/A')
+
+        # Build human-readable expected description
+        ec = result.expect_config
+        expected_parts = []
+        if 'return_code' in ec:
+            expected_parts.append(f"  return_code: {ec['return_code']}")
+        if 'stdout_contains' in ec:
+            for p in ec['stdout_contains']:
+                expected_parts.append(f"  stdout contains: {p!r}")
+        if 'stdout_not_contains' in ec:
+            for p in ec['stdout_not_contains']:
+                expected_parts.append(f"  stdout NOT contains: {p!r}")
+        if 'stdout_or_stderr_contains' in ec:
+            for p in ec['stdout_or_stderr_contains']:
+                expected_parts.append(f"  stdout or stderr contains: {p!r}")
+        if 'json_schema' in ec:
+            expected_parts.append("  JSON schema validation (see YAML)")
+        if 'json_path_checks' in ec:
+            for chk in ec['json_path_checks']:
+                expected_parts.append(f"  JSONPath {chk.get('path')} {chk.get('expected')}"
+                                      + (f" {chk.get('value')!r}" if 'value' in chk else ""))
+        # New validator keys (stderr, csv, combined, regex)
+        # Note: "neither stdout nor stderr contains X" is expressed via
+        # combined_not_contains, so there is no separate
+        # stdout_or_stderr_not_contains key.
+        for key in ('stderr_contains', 'stderr_not_contains', 'stderr_matches_regex',
+                    'stderr_not_matches_regex', 'stderr_equals', 'stderr_empty',
+                    'stdout_equals', 'stdout_matches_regex', 'stdout_not_matches_regex',
+                    'combined_not_contains', 'combined_not_matches_regex',
+                    'csv_required_columns', 'csv_min_rows', 'csv_row_count',
+                    'csv_column_not_empty'):
+            val = ec.get(key)
+            if val is not None:
+                expected_parts.append(f"  {key}: {val!r}")
+        if not expected_parts:
+            expected_parts.append("  (see test YAML for full expectations)")
+
+        lines = [
+            f"Test:        {result.test_name}",
+            f"Command:     {result.command or '(not recorded — workflow test)'}",
+            "",
+            "Expected:",
+            *expected_parts,
+            "",
+            "Actual:",
+            f"  Exit code: {rc}",
+            "  Stdout:",
+        ]
+        for line in stdout.splitlines():
+            lines.append(f"    {line}")
+        if not stdout.strip():
+            lines.append("    (empty)")
+        lines.append("  Stderr:")
+        for line in stderr.splitlines():
+            lines.append(f"    {line}")
+        if not stderr.strip():
+            lines.append("    (empty)")
+        lines += [
+            "",
+            "Explanation:",
+            f"  {result.message}",
+        ]
+
+        try:
+            issue_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+            self.logger.debug(f"  Issue file written: {issue_path}")
+        except OSError as e:
+            self.logger.warning(f"  Could not write issue file {issue_path}: {e}")
+
+    # ------------------------------------------------------------------
     # Suite execution
     # ------------------------------------------------------------------
 
@@ -504,6 +677,19 @@ class CLITestRunner:
         suite_name = test_suite.get('name', 'Unknown Suite')
         global_settings = test_suite.get('settings', {})
         tests = test_suite.get('tests', [])
+
+        # Suite-level hooks (e.g. ensure daemon running, create/remove scratch dir).
+        # Teardown is paired with setup: if setup fails, teardown still runs so any
+        # partial side-effects (scratch dirs, daemons started before the failing
+        # step) get cleaned up.  Teardown is best-effort; its failure does not
+        # affect the suite result.
+        suite_setup = test_suite.get('setup')
+        suite_teardown = test_suite.get('teardown')
+        if suite_setup and not self._run_suite_hook(suite_setup, "suite-setup"):
+            self.logger.error(f"Suite setup failed for {suite_name}; skipping suite")
+            if suite_teardown:
+                self._run_suite_hook(suite_teardown, "suite-teardown")
+            return [TestResult(f"{suite_name}::setup", False, "Suite setup failed")]
 
         # Expand parameterized tests
         tests = [t for raw in tests for t in self.expand_parameterized_test(raw)]
@@ -569,6 +755,9 @@ class CLITestRunner:
                     group_results = self._run_tests_parallel(group_tests, global_settings, continue_on_failure)
                     self.max_workers = saved
                     results.extend(group_results)
+                    for r in group_results:
+                        if not r.passed:
+                            self._write_issue_file(r)
                     failed_tests.update(r.test_name for r in group_results if not r.passed)
             else:
                 test_config = item
@@ -587,6 +776,7 @@ class CLITestRunner:
                         self.logger.info(green("[PASS]") + f" {result.test_name}: {result.message}")
                     else:
                         self.logger.error(red("[FAIL]") + f" {result.test_name}: {result.message}")
+                        self._write_issue_file(result)
                         failed_tests.add(test_name)
                         if self.verbose and result.details:
                             self.logger.debug(f"  Stdout: {result.details.get('stdout', '')[:500]}")
@@ -594,6 +784,10 @@ class CLITestRunner:
                         if not continue_on_failure:
                             self.logger.warning(yellow("Stopping test suite due to failure"))
                             break
+
+        # Suite-level teardown hook (always run, even after failures)
+        if suite_teardown:
+            self._run_suite_hook(suite_teardown, "suite-teardown")
 
         return results
 
@@ -661,3 +855,111 @@ class CLITestRunner:
         self.logger.info(bold("=" * 60))
         if self.log_file:
             self.logger.info(f"Log file: {self.log_file}")
+
+    # ------------------------------------------------------------------
+    # Reports (JUnit XML, summary JSON)
+    # ------------------------------------------------------------------
+
+    def write_junit_xml(self, results: List[TestResult], path: str,
+                        suite_name: str = "xpu-smi e2e") -> None:
+        """Write a JUnit-style XML report for CI consumption."""
+        from xml.sax.saxutils import escape as _esc
+
+        # XML 1.0 forbids most ASCII control characters in character data.
+        # Strip them so CI parsers (Jenkins, GitLab, etc.) don't reject the
+        # report when the binary emits binary noise on stdout/stderr.
+        # Allowed control chars: \t (0x09), \n (0x0a), \r (0x0d).
+        _ILLEGAL_XML_RE = re.compile(
+            r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]'
+        )
+
+        def _xml_clean(s: str) -> str:
+            return _ILLEGAL_XML_RE.sub('?', s)
+
+        total = len(results)
+        skipped = sum(1 for r in results if r.message.startswith("Skipped"))
+        failed = sum(1 for r in results if not r.passed and not r.message.startswith("Skipped"))
+        total_time = sum(r.duration for r in results)
+
+        out = []
+        out.append('<?xml version="1.0" encoding="UTF-8"?>')
+        out.append(
+            f'<testsuite name="{_esc(suite_name)}" tests="{total}" '
+            f'failures="{failed}" skipped="{skipped}" time="{total_time:.3f}">'
+        )
+        for r in results:
+            classname = r.test_name.split('[')[0] if '[' in r.test_name else r.test_name
+            out.append(
+                f'  <testcase classname="{_esc(classname)}" '
+                f'name="{_esc(r.test_name)}" time="{r.duration:.3f}">'
+            )
+            if r.message.startswith("Skipped"):
+                out.append(f'    <skipped message="{_esc(_xml_clean(r.message))}"/>')
+            elif not r.passed:
+                stdout = _xml_clean((r.details or {}).get('stdout', ''))
+                stderr = _xml_clean((r.details or {}).get('stderr', ''))
+                msg = _xml_clean(r.message[:500])
+                body = (
+                    (r.command or "")
+                    + chr(10) + "STDOUT:" + chr(10) + stdout[:2000]
+                    + chr(10) + "STDERR:" + chr(10) + stderr[:2000]
+                )
+                out.append(
+                    f'    <failure message="{_esc(msg)}">'
+                    f'{_esc(body)}'
+                    f'</failure>'
+                )
+            out.append('  </testcase>')
+        out.append('</testsuite>')
+
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text('\n'.join(out) + '\n', encoding='utf-8')
+        self.logger.info(f"JUnit XML written: {path}")
+
+    def write_summary_json(self, results: List[TestResult], path: str) -> None:
+        """Write a machine-readable summary of all results."""
+        data = {
+            "total":   len(results),
+            "passed":  sum(1 for r in results if r.passed),
+            "failed":  sum(1 for r in results if not r.passed),
+            "duration": round(sum(r.duration for r in results), 3),
+            "tests":   [
+                {
+                    "name":       r.test_name,
+                    "passed":     r.passed,
+                    "message":    r.message,
+                    "duration":   round(r.duration, 3),
+                    "command":    r.command,
+                    "return_code": (r.details or {}).get('return_code'),
+                }
+                for r in results
+            ],
+        }
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(json.dumps(data, indent=2), encoding='utf-8')
+        self.logger.info(f"Summary JSON written: {path}")
+
+    # ------------------------------------------------------------------
+    # Suite-level setup / teardown hooks
+    # ------------------------------------------------------------------
+
+    def _run_suite_hook(self, hook_cmd: str, label: str, timeout: int = 60) -> bool:
+        """Run a suite-level setup or teardown shell command. Returns True on success."""
+        if not hook_cmd:
+            return True
+        self.logger.info(f"[{label}] {hook_cmd}")
+        try:
+            r = subprocess.run(hook_cmd, shell=True, capture_output=True, text=True,
+                               timeout=timeout, env=os.environ.copy())
+            if r.returncode != 0:
+                self.logger.error(f"[{label}] failed (rc={r.returncode}): {r.stderr[:400]}")
+                return False
+            if r.stdout.strip():
+                self.logger.debug(f"[{label}] stdout: {r.stdout[:400]}")
+            return True
+        except subprocess.TimeoutExpired:
+            self.logger.error(f"[{label}] timed out after {timeout}s")
+            return False
+        except Exception as e:
+            self.logger.error(f"[{label}] error: {e}")
+            return False
