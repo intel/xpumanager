@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confignet"
@@ -28,12 +29,12 @@ import (
 type xpuInfoExporter struct {
 	sync.Mutex
 
-	cfg          *Config
-	logger       *zap.SugaredLogger
-	telemetry    *metadata.TelemetryBuilder
-	settings     exporter.Settings
-	grpcServer   *grpc.Server
-	healthServer *deviceInfoServer
+	cfg        *Config
+	logger     *zap.SugaredLogger
+	telemetry  *metadata.TelemetryBuilder
+	settings   exporter.Settings
+	grpcServer *grpc.Server
+	infoServer *deviceInfoServer
 
 	started bool
 }
@@ -71,6 +72,8 @@ func (e *xpuInfoExporter) start(ctx context.Context, host component.Host) error 
 }
 
 func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
+	const shutdownTimeout = 5 * time.Second
+
 	e.Lock()
 	defer e.Unlock()
 
@@ -81,10 +84,13 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 
 	e.logger.Info("Shutting down XPU Info exporter")
 
+	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+	defer cancel()
+
 	done := make(chan struct{})
 	go func() {
-		if e.healthServer != nil {
-			e.healthServer.stop()
+		if e.infoServer != nil {
+			e.infoServer.stop()
 		}
 		if e.grpcServer != nil {
 			e.grpcServer.GracefulStop()
@@ -96,6 +102,10 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 	case <-done:
 		e.logger.Info("gRPC server stopped gracefully")
 	case <-ctx.Done():
+		// Force stop
+		if e.grpcServer != nil {
+			e.grpcServer.Stop()
+		}
 		return fmt.Errorf("gRPC server shutdown timed out: %v", ctx.Err())
 	}
 	return nil
@@ -106,27 +116,25 @@ func (e *xpuInfoExporter) pushMetrics(_ context.Context, md pmetric.Metrics) err
 
 	// NOTE: No batching is in place. We rely on the property that md contains
 	// all metrics for a particular device.
-	e.healthServer.updateHealthData(md)
+	e.infoServer.updateHealthData(md)
 
 	return nil
 }
 
 func (e *xpuInfoExporter) pushLogs(_ context.Context, ld plog.Logs) error {
 	e.logger.Debugw("Pushing logs", "logRecords", ld.LogRecordCount())
-	e.healthServer.broadcastEvents(ld)
+	e.infoServer.broadcastEvents(ld)
 	return nil
 }
 
 func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
-	s, err := e.cfg.ToServer(ctx, nil, e.settings.TelemetrySettings)
+	grpcServer, err := e.cfg.ToServer(ctx, nil, e.settings.TelemetrySettings)
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC server: %v", err)
 	}
-	e.grpcServer = s
 
-	h := newDeviceInfoServer(e.logger, e.telemetry, e.cfg)
-	pb.RegisterDeviceInfoServer(s, h)
-	e.healthServer = h
+	infoServer := newDeviceInfoServer(e.logger, e.telemetry, e.cfg)
+	pb.RegisterDeviceInfoServer(grpcServer, infoServer)
 
 	if e.cfg.NetAddr.Transport == confignet.TransportTypeUnix {
 		if e.cfg.NetAddr.Endpoint != "" {
@@ -159,9 +167,11 @@ func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
 	}
 
 	e.logger.Infow("gRPC server listening", "endpoint", e.cfg.NetAddr.Endpoint)
+	e.grpcServer = grpcServer
+	e.infoServer = infoServer
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := grpcServer.Serve(lis); err != nil {
 			e.logger.Errorw("gRPC server failed", "error", err)
 		}
 	}()
