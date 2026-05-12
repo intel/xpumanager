@@ -64,6 +64,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordHwErrorsDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", AttributeHwTypeFrequency, AttributeErrorTypeCorrectable, "error.category-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeAggregationMin)
 
 			defaultMetricsCount++
@@ -211,6 +215,41 @@ func TestMetricsBuilder(t *testing.T) {
 					hwSensorLocationAttrVal, ok := dp.Attributes().Get("hw.sensor_location")
 					assert.True(t, ok)
 					assert.Equal(t, "hw.sensor_location-val", hwSensorLocationAttrVal.Str())
+				case "hw.errors":
+					assert.False(t, validatedMetrics["hw.errors"], "Found a duplicate in the metrics slice: hw.errors")
+					validatedMetrics["hw.errors"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+					assert.Equal(t, "Number of GPU errors. Correctable `error.type` error metrics are reported only when non-zero.", mi.Description())
+					assert.Equal(t, "{error}", mi.Unit())
+					assert.True(t, mi.Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+					dp := mi.Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())
+					hwNameAttrVal, ok := dp.Attributes().Get("hw.name")
+					assert.True(t, ok)
+					assert.Equal(t, "hw.name-val", hwNameAttrVal.Str())
+					pciBdfAttrVal, ok := dp.Attributes().Get("pci.bdf")
+					assert.True(t, ok)
+					assert.Equal(t, "pci.bdf-val", pciBdfAttrVal.Str())
+					comIntelSubdeviceIDAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_id")
+					assert.True(t, ok)
+					assert.Equal(t, "com.intel.subdevice_id-val", comIntelSubdeviceIDAttrVal.Str())
+					hwTypeAttrVal, ok := dp.Attributes().Get("hw.type")
+					assert.True(t, ok)
+					assert.Equal(t, "frequency", hwTypeAttrVal.Str())
+					errorTypeAttrVal, ok := dp.Attributes().Get("error.type")
+					assert.True(t, ok)
+					assert.Equal(t, "correctable", errorTypeAttrVal.Str())
+					errorCategoryAttrVal, ok := dp.Attributes().Get("error.category")
+					assert.True(t, ok)
+					assert.Equal(t, "error.category-val", errorCategoryAttrVal.Str())
 				case "hw.frequency":
 					assert.False(t, validatedMetrics["hw.frequency"], "Found a duplicate in the metrics slice: hw.frequency")
 					validatedMetrics["hw.frequency"] = true

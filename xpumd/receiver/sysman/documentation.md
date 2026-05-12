@@ -30,6 +30,26 @@ Energy consumed by the hardware component.
 | com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended | - |
 
+### hw.errors
+
+Number of GPU errors. Correctable `error.type` error metrics are reported only when non-zero.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| {error} | Sum | Int | Cumulative | true | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.type | Type of the hardware component. | Str: ``frequency``, ``gpu``, ``memory``, ``pci_link`` | Recommended | - |
+| error.type | Error type. | Str: ``correctable``, ``uncorrectable`` | Recommended | - |
+| error.category | Error category. | Any Str | Recommended | - |
+
 ### hw.frequency
 
 Operating frequency of the hardware component.

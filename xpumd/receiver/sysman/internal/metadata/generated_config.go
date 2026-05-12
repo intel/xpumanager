@@ -29,6 +29,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 // MetricsConfig provides config for sysman metrics.
 type MetricsConfig struct {
 	HwEnergy                     MetricConfig `mapstructure:"hw.energy"`
+	HwErrors                     MetricConfig `mapstructure:"hw.errors"`
 	HwFrequency                  MetricConfig `mapstructure:"hw.frequency"`
 	HwFrequencyLimit             MetricConfig `mapstructure:"hw.frequency.limit"`
 	HwFrequencyRequest           MetricConfig `mapstructure:"hw.frequency.request"`
@@ -57,6 +58,9 @@ type MetricsConfig struct {
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
 		HwEnergy: MetricConfig{
+			Enabled: true,
+		},
+		HwErrors: MetricConfig{
 			Enabled: true,
 		},
 		HwFrequency: MetricConfig{

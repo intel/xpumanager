@@ -35,6 +35,15 @@ attributes:
   com.intel.subdevice_id:
     description: Sub-device ID of the hardware component.
     type: string
+  error.category:
+    description: Error category.
+    type: string
+  error.type:
+    description: Error type.
+    type: string
+    enum:
+      - correctable
+      - uncorrectable
   hw.firmware_version:
     description: Firmware version of the hardware component. Comma-separated list of `<id>:<name>:<subdevice_id>:<version>`, where `<version>` is URL-encoded.
     type: string
@@ -145,6 +154,16 @@ metrics:
       monotonic: true
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]
+  hw.errors:
+    enabled: true
+    description: Number of GPU errors. Correctable `error.type` error metrics are reported only when non-zero.
+    stability: development
+    unit: "{error}"
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.type, error.type, error.category]
   hw.frequency:
     enabled: true
     description: Operating frequency of the hardware component.
