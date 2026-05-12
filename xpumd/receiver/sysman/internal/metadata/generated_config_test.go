@@ -29,6 +29,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwEnergy: MetricConfig{
 						Enabled: true,
 					},
+					HwErrors: MetricConfig{
+						Enabled: true,
+					},
 					HwFrequency: MetricConfig{
 						Enabled: true,
 					},
@@ -106,6 +109,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
 					HwEnergy: MetricConfig{
+						Enabled: false,
+					},
+					HwErrors: MetricConfig{
 						Enabled: false,
 					},
 					HwFrequency: MetricConfig{

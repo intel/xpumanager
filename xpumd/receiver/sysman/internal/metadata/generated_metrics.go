@@ -42,6 +42,32 @@ var MapAttributeAggregation = map[string]AttributeAggregation{
 	"avg": AttributeAggregationAvg,
 }
 
+// AttributeErrorType specifies the value error.type attribute.
+type AttributeErrorType int
+
+const (
+	_ AttributeErrorType = iota
+	AttributeErrorTypeCorrectable
+	AttributeErrorTypeUncorrectable
+)
+
+// String returns the string representation of the AttributeErrorType.
+func (av AttributeErrorType) String() string {
+	switch av {
+	case AttributeErrorTypeCorrectable:
+		return "correctable"
+	case AttributeErrorTypeUncorrectable:
+		return "uncorrectable"
+	}
+	return ""
+}
+
+// MapAttributeErrorType is a helper map of string to AttributeErrorType attribute value.
+var MapAttributeErrorType = map[string]AttributeErrorType{
+	"correctable":   AttributeErrorTypeCorrectable,
+	"uncorrectable": AttributeErrorTypeUncorrectable,
+}
+
 // AttributeHwGpuType specifies the value hw.gpu.type attribute.
 type AttributeHwGpuType int
 
@@ -222,6 +248,9 @@ var MetricsInfo = metricsInfo{
 	HwEnergy: metricInfo{
 		Name: "hw.energy",
 	},
+	HwErrors: metricInfo{
+		Name: "hw.errors",
+	},
 	HwFrequency: metricInfo{
 		Name: "hw.frequency",
 	},
@@ -295,6 +324,7 @@ var MetricsInfo = metricsInfo{
 
 type metricsInfo struct {
 	HwEnergy                     metricInfo
+	HwErrors                     metricInfo
 	HwFrequency                  metricInfo
 	HwFrequencyLimit             metricInfo
 	HwFrequencyRequest           metricInfo
@@ -374,6 +404,66 @@ func (m *metricHwEnergy) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwEnergy(cfg MetricConfig) metricHwEnergy {
 	m := metricHwEnergy{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwErrors struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills hw.errors metric with initial data.
+func (m *metricHwErrors) init() {
+	m.data.SetName("hw.errors")
+	m.data.SetDescription("Number of GPU errors. Correctable `error.type` error metrics are reported only when non-zero.")
+	m.data.SetUnit("{error}")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricHwErrors) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwTypeAttributeValue string, errorTypeAttributeValue string, errorCategoryAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
+	dp.Attributes().PutStr("error.type", errorTypeAttributeValue)
+	dp.Attributes().PutStr("error.category", errorCategoryAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwErrors) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwErrors) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwErrors(cfg MetricConfig) metricHwErrors {
+	m := metricHwErrors{config: cfg}
 
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
@@ -1719,6 +1809,7 @@ type MetricsBuilder struct {
 	metricsBuffer                      pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo                          component.BuildInfo  // contains version information.
 	metricHwEnergy                     metricHwEnergy
+	metricHwErrors                     metricHwErrors
 	metricHwFrequency                  metricHwFrequency
 	metricHwFrequencyLimit             metricHwFrequencyLimit
 	metricHwFrequencyRequest           metricHwFrequencyRequest
@@ -1768,6 +1859,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		metricsBuffer:                      pmetric.NewMetrics(),
 		buildInfo:                          settings.BuildInfo,
 		metricHwEnergy:                     newMetricHwEnergy(mbc.Metrics.HwEnergy),
+		metricHwErrors:                     newMetricHwErrors(mbc.Metrics.HwErrors),
 		metricHwFrequency:                  newMetricHwFrequency(mbc.Metrics.HwFrequency),
 		metricHwFrequencyLimit:             newMetricHwFrequencyLimit(mbc.Metrics.HwFrequencyLimit),
 		metricHwFrequencyRequest:           newMetricHwFrequencyRequest(mbc.Metrics.HwFrequencyRequest),
@@ -1858,6 +1950,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricHwEnergy.emit(ils.Metrics())
+	mb.metricHwErrors.emit(ils.Metrics())
 	mb.metricHwFrequency.emit(ils.Metrics())
 	mb.metricHwFrequencyLimit.emit(ils.Metrics())
 	mb.metricHwFrequencyRequest.emit(ils.Metrics())
@@ -1905,6 +1998,11 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 // RecordHwEnergyDataPoint adds a data point to hw.energy metric.
 func (mb *MetricsBuilder) RecordHwEnergyDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
 	mb.metricHwEnergy.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue)
+}
+
+// RecordHwErrorsDataPoint adds a data point to hw.errors metric.
+func (mb *MetricsBuilder) RecordHwErrorsDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwTypeAttributeValue AttributeHwType, errorTypeAttributeValue AttributeErrorType, errorCategoryAttributeValue string) {
+	mb.metricHwErrors.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwTypeAttributeValue.String(), errorTypeAttributeValue.String(), errorCategoryAttributeValue)
 }
 
 // RecordHwFrequencyDataPoint adds a data point to hw.frequency metric.

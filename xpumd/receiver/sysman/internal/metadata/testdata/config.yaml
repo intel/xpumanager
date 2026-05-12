@@ -3,6 +3,8 @@ all_set:
   metrics:
     hw.energy:
       enabled: true
+    hw.errors:
+      enabled: true
     hw.frequency:
       enabled: true
     hw.frequency.limit:
@@ -52,6 +54,8 @@ all_set:
 none_set:
   metrics:
     hw.energy:
+      enabled: false
+    hw.errors:
       enabled: false
     hw.frequency:
       enabled: false
