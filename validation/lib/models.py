@@ -69,6 +69,10 @@ class TestResult:
     duration: float = 0.0
     details: Dict[str, Any] = field(default_factory=dict)
     step_results: List[StepResult] = field(default_factory=list)
+    # Full command line executed (binary + args); populated by run_single_command_test
+    command: str = ""
+    # Snapshot of the expect: block from the test config; used by issue reporter
+    expect_config: Dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
         status = "PASS" if self.passed else "FAIL"
