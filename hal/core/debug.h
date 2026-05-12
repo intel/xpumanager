@@ -40,32 +40,32 @@ extern int dbgLvl;
 #define ERR(fmt, ...)                                                                                                  \
 	do {                                                                                                               \
 		if (dbgLvl >= ERR) {                                                                                           \
-			printf("[Error] ");                                                                                        \
-			printf(fmt, ##__VA_ARGS__);                                                                                \
-			fflush(stdout);                                                                                            \
+			fprintf(stderr, "[Error] ");                                                                               \
+			fprintf(stderr, fmt, ##__VA_ARGS__);                                                                       \
+			fflush(stderr);                                                                                            \
 		}                                                                                                              \
 	} while (0)
 #define INFO(fmt, ...)                                                                                                 \
 	do {                                                                                                               \
 		if (dbgLvl >= INFO) {                                                                                          \
-			printf("[Info] ");                                                                                         \
-			printf(fmt, ##__VA_ARGS__);                                                                                \
-			fflush(stdout);                                                                                            \
+			fprintf(stderr, "[Info] ");                                                                                \
+			fprintf(stderr, fmt, ##__VA_ARGS__);                                                                       \
+			fflush(stderr);                                                                                            \
 		}                                                                                                              \
 	} while (0)
 #define DBG(fmt, ...)                                                                                                  \
 	do {                                                                                                               \
 		if (dbgLvl >= DBG) {                                                                                           \
-			printf("[DBG] ");                                                                                          \
-			printf(fmt, ##__VA_ARGS__);                                                                                \
-			fflush(stdout);                                                                                            \
+			fprintf(stderr, "[DBG] ");                                                                                 \
+			fprintf(stderr, fmt, ##__VA_ARGS__);                                                                       \
+			fflush(stderr);                                                                                            \
 		}                                                                                                              \
 	} while (0)
 #define TRACE(fmt, ...)                                                                                                \
 	do {                                                                                                               \
 		if (dbgLvl >= TRACE) {                                                                                         \
-			printf(fmt, ##__VA_ARGS__);                                                                                \
-			fflush(stdout);                                                                                            \
+			fprintf(stderr, fmt, ##__VA_ARGS__);                                                                       \
+			fflush(stderr);                                                                                            \
 		}                                                                                                              \
 	} while (0)
 #define TRACING()

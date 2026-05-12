@@ -22,19 +22,23 @@
 #include <utility>
 
 /**
- * @brief Singleton logger.  Routes all output through the active Sink.
+ * @brief Singleton logger.  Routes diagnostic output through the active Sink.
  *
- * Sink selection (defaults to OStreamSink(std::cout)):
+ * ERR/INFO/DBG/TRACE go through the sink (defaults to stderr).
+ * PRINT() goes through a separate printSink (defaults to stdout).
+ *
+ * Sink selection (defaults to OStreamSink(std::cerr)):
  * @code
  *     Logger::instance().setSink(
  *         std::make_shared<FileStreamSink>("/var/log/xpu-smi.log"));
  *     Logger::instance().setSink(
- *         std::make_shared<OStreamSink>(std::cerr));
+ *         std::make_shared<OStreamSink>(std::cout));
  * @endcode
  */
 class Logger final
 {
 	std::atomic<std::shared_ptr<Sink>> sink;
+	std::atomic<std::shared_ptr<Sink>> printSink;
 
 	/// Current log level — relaxed ordering is sufficient: a momentarily
 	/// stale read can suppress or emit at most one extra line.
@@ -50,9 +54,12 @@ class Logger final
 	/// Policy for std::vformat errors; default is Report.
 	std::atomic<FormatErrorPolicy> fmtPolicy{FormatErrorPolicy::Report};
 
-	// OStreamSink borrows std::cout by reference; std::cout outlives the
+	// OStreamSink borrows std::cerr by reference; std::cerr outlives the
 	// singleton because <iostream> guarantees ios_base::Init construction.
-	Logger() : sink(std::make_shared<OStreamSink>(std::cout)) {}
+	// Diagnostic output (ERR/INFO/DBG/TRACE) goes to stderr so it doesn't
+	// corrupt stdout which carries user-facing data (JSON, CSV, tables).
+	// PRINT() uses a separate stdout-backed sink.
+	Logger() : sink(std::make_shared<OStreamSink>(std::cerr)), printSink(std::make_shared<OStreamSink>(std::cout)) {}
 
 	void invokeOnError(std::string_view what) noexcept
 	{
@@ -96,13 +103,21 @@ public:
 	Logger(const Logger &) = delete;
 	Logger &operator=(const Logger &) = delete;
 
-	/// Atomically replace the active sink; nullptr resets to OStreamSink(cout).
+	/// Atomically replace the active sink; nullptr resets to OStreamSink(cerr).
 	void setSink(std::shared_ptr<Sink> s) noexcept
 	{
-		sink.store(s ? std::move(s) : std::make_shared<OStreamSink>(std::cout));
+		if (s) {
+			printSink.store(s);
+			sink.store(std::move(s));
+		} else {
+			sink.store(std::make_shared<OStreamSink>(std::cerr));
+			printSink.store(std::make_shared<OStreamSink>(std::cout));
+		}
 	}
 
 	std::shared_ptr<Sink> getSink() noexcept { return sink.load(std::memory_order_acquire); }
+
+	std::shared_ptr<Sink> getPrintSink() noexcept { return printSink.load(std::memory_order_acquire); }
 
 	/// Install an error callback; pass LogErrorCallback{} to silence errors.
 	/// @note Must not call Logger — re-entrant use is undefined.
@@ -124,10 +139,13 @@ public:
 		return fmtPolicy.load(std::memory_order_relaxed);
 	}
 
+	/// PRINT() output goes to stdout via the printSink.  When a custom sink
+	/// is installed (via setSink), PRINT routes through it too — this allows
+	/// test capture and file redirection while defaulting to stdout.
 	template <typename... Args> void print(std::format_string<Args...> fmt, Args... args) noexcept
 	{
 		try {
-			sink.load(std::memory_order_acquire)
+			printSink.load(std::memory_order_acquire)
 				->log(LogLevel::TRACE, {}, "", std::vformat(fmt.get(), std::make_format_args(args...)));
 		} catch (const std::exception &e) {
 			handleFormatError(e.what(), LogLevel::TRACE, "", {});
