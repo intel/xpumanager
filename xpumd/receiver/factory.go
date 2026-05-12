@@ -8,7 +8,6 @@ package receiver
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -38,13 +37,6 @@ func createMetricsReceiver(_ context.Context, settings receiver.Settings, rcfg c
 	if !ok {
 		return nil, fmt.Errorf("invalid config type: %T", rcfg)
 	}
-
-	cfg.lint(settings.Logger.Sugar())
-
-	// Reserve one second (or at least 10 samples) extra for the aggregated sample buffer to mitigate possible jitter to not lose samples
-	const sampleBufferMinExtraSamples = 10
-	aggregatedSampleCount := cfg.CollectionInterval/cfg.SamplingInterval + max(time.Second/cfg.SamplingInterval, sampleBufferMinExtraSamples)
-	cfg.SetAggregatedMetricsBufferSize(int(aggregatedSampleCount))
 
 	return scraperhelper.NewMetricsController(
 		&cfg.ControllerConfig,

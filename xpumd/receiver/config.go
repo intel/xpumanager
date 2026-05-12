@@ -11,7 +11,6 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
-	"go.uber.org/zap"
 
 	"github.com/intel/xpumanager/xpumd/receiver/sysman"
 )
@@ -39,23 +38,22 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("collection_interval too short (%s), must be at least 1 second", c.CollectionInterval)
 	}
 
+	if c.CollectionInterval < 2*c.SamplingInterval {
+		return fmt.Errorf("collection_interval (%s) must be at least twice the sampling_interval (%s)", c.CollectionInterval, c.SamplingInterval)
+	}
+
 	if c.CollectionInterval/c.SamplingInterval > 1e5 {
 		// Cap to 100k samples per collection cycle to avoid excessive memory use
 		return fmt.Errorf("too many samples per collection cycle (%d), maximum is 1e5", c.CollectionInterval/c.SamplingInterval)
 	}
-	return nil
-}
 
-func (c *Config) lint(logger *zap.SugaredLogger) {
-	// Warn about potentially config issues.
-	// Cannot do in Config.Validate() as logger is not available there.
-	if c.CollectionInterval < 2*c.SamplingInterval {
-		orig := c.SamplingInterval
-		c.SamplingInterval = c.CollectionInterval / 2
-		logger.Warnw("collection_interval must be >= 2 * sampling_interval to guarantee data integrity, sampling_interval adjusted",
-			"collectionInterval", c.CollectionInterval,
-			"samplingInterval", c.SamplingInterval,
-			"oldSamplingInterval", orig,
-		)
-	}
+	// Reserve one second (or at least 10 samples) extra for the aggregated sample buffer to mitigate possible jitter to not lose samples
+	const sampleBufferMinExtraSamples = 10
+
+	// Compute derived configuration values
+	samplesPerInterval := c.CollectionInterval / c.SamplingInterval
+	extraSamples := max(time.Second/c.SamplingInterval, sampleBufferMinExtraSamples)
+	c.SetAggregatedMetricsBufferSize(int(samplesPerInterval + extraSamples))
+
+	return nil
 }
