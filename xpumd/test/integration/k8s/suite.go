@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	tthelm "github.com/gruntwork-io/terratest/modules/helm"
 	ttk8s "github.com/gruntwork-io/terratest/modules/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,11 +35,10 @@ var (
 	useExistingCluster = flag.Bool("use-existing-cluster", false, "Use the current kubectl context instead of creating a kind cluster")
 	kindClusterName    = flag.String("kind-cluster-name", defaultKindCluster, "Kind cluster name to create (ignored with --use-existing-cluster)")
 	kindLoadImage      = flag.Bool("kind-load-image", false, "Load the image into the kind cluster, requires that image is available on the host docker, sets pull policy to Never (ignored with --use-existing-cluster)")
-
-	imageRepository = flag.String("image-repository", defaultImageRepo, "Container image repository to deploy")
-	imageTag        = flag.String("image-tag", defaultImageTag, "Container image tag to deploy")
-	imagePullPolicy = flag.String("image-pull-policy", "", "Container image pull policy override")
-	kubeContext     = flag.String("kube-context", "", "kubectl/helm context to use (for --use-existing-cluster)")
+	imageRepository    = flag.String("image-repository", defaultImageRepo, "Container image repository to deploy")
+	imageTag           = flag.String("image-tag", defaultImageTag, "Container image tag to deploy")
+	imagePullPolicy    = flag.String("image-pull-policy", "", "Container image pull policy override")
+	kubeContext        = flag.String("kube-context", "", "kubectl/helm context to use (for --use-existing-cluster)")
 
 	suite suiteConfig
 )
@@ -88,19 +86,20 @@ func newSuiteConfig() (suiteConfig, error) {
 type testConfig struct {
 	namespace            string
 	releaseName          string
-	valuesPath           string
 	stubDriverConfigPath string
 
 	// Cached data populated in setup()
 	cleanupFuncs []func(*testing.T)
+	helm         helmClient
 }
 
 func newTestConfig(testdataDir, valuesFile, stubDriverConfigFile string) testConfig {
+	ns := fmt.Sprintf("xpumd-integration-test-%d", time.Now().UnixNano())
 	return testConfig{
-		namespace:            fmt.Sprintf("xpumd-integration-test-%d", time.Now().UnixNano()),
+		namespace:            ns,
 		releaseName:          defaultReleaseName,
-		valuesPath:           filepath.Join(testdataDir, valuesFile),
 		stubDriverConfigPath: filepath.Join(testdataDir, stubDriverConfigFile),
+		helm:                 newHelmClient(ns, defaultReleaseName, filepath.Join(testdataDir, valuesFile)),
 	}
 }
 
@@ -119,14 +118,12 @@ func (tc *testConfig) setup(t *testing.T) {
 	})
 
 	tc.createStubDriverConfig(t)
-	tthelm.UpgradeContext(t, t.Context(), suite.helmOpts(tc), filepath.Join(suite.repoRoot, "charts", "xpumd"), tc.releaseName)
+	tc.helm.upgrade(t)
 	tc.addCleanup(func(t *testing.T) {
-		if err := tthelm.DeleteContextE(t, context.Background(), suite.helmOpts(tc), tc.releaseName, true); err != nil {
+		if err := tc.helm.uninstall(); err != nil {
 			t.Errorf("failed to delete helm release: %v", err)
 		}
 	})
-
-	ttk8s.RunKubectlContext(t, t.Context(), suite.kubectlOpts(tc.namespace), "rollout", "status", "daemonset/"+tc.releaseName, "--timeout=180s")
 }
 
 func (tc *testConfig) createStubDriverConfig(t *testing.T) {
@@ -160,19 +157,4 @@ func (tc *testConfig) cleanup(t *testing.T) {
 
 func (s *suiteConfig) kubectlOpts(namespace string) *ttk8s.KubectlOptions {
 	return ttk8s.NewKubectlOptions(s.kubeContext, s.kubeconfigPath, namespace)
-}
-
-func (s *suiteConfig) helmOpts(tc *testConfig) *tthelm.Options {
-	return &tthelm.Options{
-		KubectlOptions: s.kubectlOpts(tc.namespace),
-		ValuesFiles:    []string{tc.valuesPath},
-		SetValues: map[string]string{
-			"image.repository": s.imageRepository,
-			"image.tag":        s.imageTag,
-			"image.pullPolicy": s.imagePullPolicy,
-		},
-		ExtraArgs: map[string][]string{
-			"upgrade": {"--create-namespace", "--wait", "--timeout", "180s"},
-		},
-	}
 }
