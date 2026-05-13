@@ -43,6 +43,18 @@
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY getTopology
 #define EXPORT_TOPOLOGY_XML exportTopologyToXml
+inline auto GET_SYSTEM_NICS(const SysfsPaths &paths = {})
+{
+	return discoverNics(paths);
+} // NOLINT(readability-identifier-naming) // Match MACRO style while providing a better interface for navigation
+inline auto GET_NUMA_NODES(const std::vector<std::string> &bdfs)
+{
+	return getNumaNodes(bdfs);
+} // NOLINT(readability-identifier-naming) // Match MACRO style while providing a better interface for navigation
+inline auto GET_PCIE_PATHS(const std::vector<std::string> &bdfs)
+{
+	return getPciePaths(bdfs);
+} // NOLINT(readability-identifier-naming) // Match MACRO style while providing a better interface for navigation
 typedef wchar_t TCHAR;
 #define GETLOGS(f) getLinLogs(f)
 #define GETDRMPATH(bdf) getDrmPath(bdf)

@@ -14,6 +14,8 @@
 #include <conio.h>
 #include <io.h>
 #include <vector>
+#include <optional>
+#include <unordered_map>
 
 #ifdef LIBXPUM_EXPORTS
 #define LIBXPUM_API __declspec(dllexport)
@@ -136,6 +138,14 @@ typedef DWORD(WINAPI *funcptr)(void *input_params);
 extern char *optarg;
 extern int optind;
 
+// Topology types (Linux implementations not available on Windows)
+struct NicInfo
+{
+	std::string name;
+	std::string bdfAddress;
+	std::string cpuAffinity;
+};
+
 // Forward declaration for topology (command not available on Windows)
 struct GpuDeviceInfo
 {
@@ -143,6 +153,22 @@ struct GpuDeviceInfo
 	std::string bdfAddress;
 	std::string cpuAffinity;
 };
+
+inline std::optional<std::vector<NicInfo>> GET_SYSTEM_NICS() { return std::nullopt; }
+inline std::unordered_map<std::string, std::optional<int>> GET_NUMA_NODES(const std::vector<std::string> &)
+{
+	return {};
+} // NOLINT(readability-identifier-naming) // Match MACRO style while providing a better interface for navigation
+struct PcieBridgeLink
+{
+	std::string bdf{};
+	bool isHostBridge{};
+};
+using PciePath = std::vector<PcieBridgeLink>;
+inline std::unordered_map<std::string, PciePath> GET_PCIE_PATHS(const std::vector<std::string> &)
+{
+	return {};
+} // NOLINT(readability-identifier-naming) // Match MACRO style while providing a better interface for navigation
 
 int getopt(int argc, char *argv[], char *optstring);
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);
