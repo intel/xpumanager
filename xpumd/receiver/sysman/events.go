@@ -61,7 +61,7 @@ func newSysmanEventsReceiver(devices *deviceRegistry, logger *zap.SugaredLogger,
 		registered := 0
 		for j, dev := range drv.devices {
 			if err := dev.EventRegister(allEventTypeFlags); err != nil {
-				r.logger.Errorw("Device EventRegister() failed: events from device likely unavailable",
+				r.logger.Errorw("Device EventRegister() failed: device events unavailable",
 					zap.Error(err), "deviceID", j+1, "deviceAttributes", dev.attributes)
 				continue
 			}
