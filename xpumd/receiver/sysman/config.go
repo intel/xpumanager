@@ -26,7 +26,7 @@ type Config struct {
 // defaultConfig creates the default configuration for the scraper.
 func defaultConfig() component.Config {
 	return &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: metadata.NewDefaultMetricsBuilderConfig(),
 		LogLevel:             zapcore.InfoLevel,
 		SamplingInterval:     1 * time.Second,
 	}
