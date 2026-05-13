@@ -9,6 +9,8 @@
 
 #include "cmds.h"
 #include "printer.h"
+#include <optional>
+#include <variant>
 #include <os.h>
 #include <string>
 #include <format>
@@ -16,13 +18,41 @@
 // Forward declarations
 struct portInfo;
 
-// Tile information for topology matrix
-struct TileInfo
+/**
+ * @brief GPU-tile-specific data within a topology node
+ */
+struct GpuData
 {
 	int deviceId;
 	int tileId;
-	std::string cpuAffinity;
 	std::vector<portInfo> ports;
+};
+
+/**
+ * @brief NIC-specific data within a topology node
+ */
+struct NicData
+{
+	int nicIndex; ///< Index of this NIC in the discovered NIC list — stable self-identity
+};
+
+/**
+ * @brief Unified topology node — represents either a GPU tile or a NIC in the matrix.
+ *
+ * The active alternative in @c data determines the node kind:
+ *   - @c GpuData  → GPU tile (possibly a subdevice)
+ *   - @c NicData  → Physical network interface card
+ */
+struct TopoNode
+{
+	std::string label;		 ///< Display label, e.g. "GPU 0/1" or "NIC0"
+	std::string cpuAffinity; ///< Local CPU list string (e.g. "0-31"), used for display
+	std::string bdfAddress;	 ///< PCI BDF address (e.g. "0000:03:00.0"), used for NUMA lookup
+
+	std::optional<int> numaNode{std::nullopt}; ///< sysfs NUMA node index (nullopt = unknown)
+	std::optional<PciePath> pciePath{}; ///< PCIe bridge chain from sysfs canonical path walk (nullopt = not resolved)
+
+	std::variant<GpuData, NicData> data; ///< Kind-specific payload; holds_alternative<GpuData> ↔ GPU
 };
 
 /**
@@ -109,7 +139,7 @@ enum class topologyCmdType
 class cmdTopology : public cmds // NOLINT(readability-identifier-naming) // camelBack for consistency
 {
 private:
-	ze_result_t buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj);
+	ze_result_t buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj) const;
 	std::string xmlFilename; // Store filename for XML export
 
 public:
@@ -118,7 +148,7 @@ public:
 	void help(HELP helpType = FULL_HELP) final;
 
 	// Public for unit testing
-	std::string determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const;
+	static std::string determineLinkType(const TopoNode &node1, const TopoNode &node2);
 
 	/**
 	 * @brief Generates an XML topology file with system topology information
@@ -164,7 +194,7 @@ private:
 	 * @param[out] info Output parameter to receive topology information
 	 * @return ZE_RESULT_SUCCESS on success, error code on failure
 	 */
-	[[nodiscard]] ze_result_t showTopology(devInfo *d, TopologyInfo *info);
+	[[nodiscard]] static ze_result_t showTopology(devInfo *d, TopologyInfo *info);
 };
 
 /**

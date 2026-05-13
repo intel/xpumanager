@@ -7,8 +7,7 @@
 #ifndef XPUM_UTILITY_BDF_H
 #define XPUM_UTILITY_BDF_H
 
-#include <cctype>
-#include <string>
+#include <string_view>
 
 /**
  * @brief Validates that a string is a well-formed PCI BDF address
@@ -21,15 +20,22 @@
  * pure-string check.  Useful both for sysfs path-traversal protection on
  * Linux and for early CLI argument validation on either platform.
  *
+ * The hex digit check is locale-independent (explicit character ranges),
+ * making the function safe to call in any locale context.
+ *
+ * Evaluates at compile time when @p bdf is a compile-time constant.
+ *
  * @param bdf String to validate
  * @return true if @p bdf matches the canonical BDF format
  */
-inline bool isValidBdf(const std::string &bdf)
+[[nodiscard]] constexpr bool isValidBdf(std::string_view bdf) noexcept
 {
-	if (bdf.length() != 12) {
+	if (bdf.size() != 12) {
 		return false;
 	}
-	const auto isHex = [](unsigned char c) { return std::isxdigit(c) != 0; };
+	constexpr auto isHex = [](char c) constexpr noexcept {
+		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+	};
 	return isHex(bdf[0]) && isHex(bdf[1]) && isHex(bdf[2]) && isHex(bdf[3]) && bdf[4] == ':' && isHex(bdf[5]) &&
 		   isHex(bdf[6]) && bdf[7] == ':' && isHex(bdf[8]) && isHex(bdf[9]) && bdf[10] == '.' && isHex(bdf[11]);
 }

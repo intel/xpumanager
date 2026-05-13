@@ -5,16 +5,28 @@
  */
 
 #include "cmd_topology.h"
-#include "debug.h"
+#include "cmds.h"
+#include "nlohmann/json_fwd.hpp"
+#include "logger/logger.h"
+#include "device.h"
+#include "fabric.h"
+#include "os.h"
 #include "printer.h"
 #include "table_builder.h"
-#include <assert.h>
+#include "ze_api.h"
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
 #include <format>
 #include <algorithm>
+#include <memory>
+#include <map>
 #include <ranges>
-#include <concepts>
 #include <optional>
-#include <os.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <variant>
 
 namespace {
 constexpr int MATRIX_TILE_COL_WIDTH = 9;
@@ -70,7 +82,7 @@ struct CpuInfo
  * @brief Constructor for TopologyTextPrinter
  * @ingroup topology_printers
  */
-TopologyTextPrinter::TopologyTextPrinter() : TextPrinter() {}
+TopologyTextPrinter::TopologyTextPrinter() = default;
 
 /**
  * @brief Custom text printer for topology command output (legacy JSON support)
@@ -212,11 +224,11 @@ void TopologyTextPrinter::print(const TopologyInfo &info)
 }
 
 static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
-	{topologyCmdType::TOPOLOGY_HELP, {{"help", no_argument, 0, 'h'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_JSON, {{"json", no_argument, 0, 'j'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_DEVICE, {{"device", required_argument, 0, 'd'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_FILE, {{"file", required_argument, 0, 'f'}, false, ""}},
-	{topologyCmdType::TOPOLOGY_MATRIX, {{"matrix", no_argument, 0, 'm'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_HELP, {{"help", no_argument, nullptr, 'h'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_JSON, {{"json", no_argument, nullptr, 'j'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_DEVICE, {{"device", required_argument, nullptr, 'd'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_FILE, {{"file", required_argument, nullptr, 'f'}, false, ""}},
+	{topologyCmdType::TOPOLOGY_MATRIX, {{"matrix", no_argument, nullptr, 'm'}, false, ""}},
 };
 
 /**
@@ -239,27 +251,30 @@ void cmdTopology::help(HELP helpType)
 	TRACING();
 	std::vector<helpCmd> helpList;
 
-	helpList.push_back(helpCmd(TITLE, "Get the system topology"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: %s topology [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s topology -d [deviceId]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s topology -d [pciBdfAddress]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s topology -d [deviceId] -j", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s topology -f [filename]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s topology -m", progName.c_str()));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Options:"));
-	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
-	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
-	helpList.push_back(
-		helpCmd(HEADING, "-f,--file                   Generate the system topology with the GPU info to a XML file"));
-	helpList.push_back(helpCmd(HEADING, "-m,--matrix                 Print the CPU/GPU topology matrix"));
-	helpList.push_back(helpCmd(SUB_HEADING, "S: Self"));
-	helpList.push_back(helpCmd(SUB_HEADING, "MDF: Connected with Multi-Die Fabric Interface"));
-	helpList.push_back(helpCmd(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node"));
-	helpList.push_back(helpCmd(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes"));
+	helpList.emplace_back(TITLE, "Get the system topology");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Usage: %s topology [Options]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology -d [deviceId]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology -d [pciBdfAddress]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology -d [deviceId] -j", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology -f [filename]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology -m", progName.c_str());
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Options:");
+	helpList.emplace_back(HEADING, "-h,--help                   Print this help message and exit");
+	helpList.emplace_back(HEADING, "-j,--json                   Print result in JSON format");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(HEADING, "-d,--device                 The device ID or PCI BDF address to query");
+	helpList.emplace_back(HEADING,
+						  "-f,--file                   Generate the system topology with the GPU info to a XML file");
+	helpList.emplace_back(HEADING, "-m,--matrix                 Print the CPU/GPU/NIC topology matrix");
+	helpList.emplace_back(SUB_HEADING, "S: Self");
+	helpList.emplace_back(SUB_HEADING, "MDF: Connected with Multi-Die Fabric Interface");
+	helpList.emplace_back(SUB_HEADING, "PIX:  Connected via PCIe switch");
+	helpList.emplace_back(SUB_HEADING, "PXB:  Connected via multiple PCIe bridges");
+	helpList.emplace_back(SUB_HEADING, "PHB:  Connected via PCIe host bridge");
+	helpList.emplace_back(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node");
+	helpList.emplace_back(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes");
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -398,41 +413,24 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
  * @ingroup topology_matrix
  *
  * Constructs a comprehensive topology matrix showing connectivity between all GPU tiles
- * in the system. Examines PCIe topology and CPU affinity to determine link types (MDF, PCIe).
- * Generates both a flat topology list for JSON output and a 2D matrix for text display.
+ * and NICs. Uses two data sources:
+ *   1. sysfs @c numa_node file — for NODE / SYS classification
+ *   2. sysfs canonical path walk — for PIX / PXB / PHB classification (when available)
  *
- * @param[in]  args    Pointer to argument structure containing system manager for device queries.
- *                     Must not be nullptr. The args->sm field must be valid.
- * @param[out] jsonObj Pointer to JSON object that will be populated with topology data.
- *                     Must not be nullptr. On success, contains:
- *                     - "topo_list": Flat array of topology entries for JSON compatibility
- *                     - "headers": Array of tile labels (e.g., "GPU 0/0", "GPU 0/1")
- *                     - "matrix": 2D array of connection data for text printing
- *                     On error, contains:
- *                     - "error": Error message string
+ * @param[in]  args    Pointer to argument structure containing system manager.
+ * @param[out] jsonObj Populated with:
+ *                     - @c "topo_list": flat array of per-pair topology entries
+ *                     - @c "headers":   tile/NIC label array
+ *                     - @c "matrix":    2-D connection-type array for text display
+ *                     On error: @c "error" string.
  *
  * @retval ZE_RESULT_SUCCESS           Matrix built successfully
- * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found in the system
- * @retval Other                       Device enumeration failed (from findDevice)
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found
  *
- * @pre args and args->sm must be initialized and valid
- * @pre jsonObj must point to valid nlohmann::ordered_json object
- *
- * @post On success, jsonObj contains complete topology matrix data
- * @post allTiles vector contains all tile information
- *
- * @note Link type determination:
- *       - "S": Self (same tile)
- *       - "MDF": Multi-Die Fabric (same device, different tiles)
- *       - "NODE": PCIe within same NUMA node
- *       - "SYS": PCIe across NUMA nodes
- * @note Matrix is NxN where N = total number of tiles across all devices
- * @note CPU affinity determines NUMA node relationships
- *
- * @see determineLinkType() for link type determination algorithm
- * @see TileInfo structure for tile metadata
+ * @note Connection symbols: S, MDF, PIX, PXB, PHB, NODE, SYS
+ * @see determineLinkType() for classification algorithm
  */
-ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj)
+ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj) const
 {
 	TRACING();
 	// Get all devices from system manager
@@ -443,188 +441,229 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 		return result != ZE_RESULT_SUCCESS ? result : ZE_RESULT_ERROR_DEVICE_LOST;
 	}
 
-	// Collect all tiles across all devices
-	std::vector<TileInfo> allTiles;
-	std::vector<std::string> deviceHeaders;
-	std::map<int, bool> deviceHasSubdevices; // Track which devices have subdevices
+	// Collect all GPU tiles as topology nodes
+	std::vector<TopoNode> allNodes;
 
 	for (auto &device : deviceList) {
-		const auto cpuAffinity = device.dev->getCPUList(); // Use getCPUList() for range format like "0-31"
+		const auto cpuAffinity = device.dev->getCPUList();
+		const auto bdf = device.dev->getBDFStr();
 		std::map<uint32_t, std::vector<portInfo>> portsByTile;
-
-		// It doesn't mean "has multiple tiles", it means "this is a tile-level view"
-		const bool hasSubdevices = true;
 
 		fabric *f = device.dev->getFabric();
 		if (f != nullptr) {
 			std::vector<portInfo> portInfoList;
-			const auto fabricResult = f->getFabricPorts(device.zesDeviceHdl, portInfoList);
-
-			if (fabricResult == ZE_RESULT_SUCCESS) {
-				// Group ports by subdevice/tile
+			if (f->getFabricPorts(device.zesDeviceHdl, portInfoList) == ZE_RESULT_SUCCESS) {
 				for (const auto &pi : portInfoList) {
-					if (pi.portProps.onSubdevice) {
-						portsByTile[pi.portProps.subdeviceId].push_back(pi);
-					} else {
-						portsByTile[0].push_back(pi);
-					}
+					const uint32_t tileId = (pi.portProps.onSubdevice != 0u) ? pi.portProps.subdeviceId : 0U;
+					portsByTile[tileId].push_back(pi);
 				}
 			}
 		}
 
-		deviceHasSubdevices[device.index] = hasSubdevices;
-
-		// If no fabric ports or fabric not available, add device with single tile
 		if (portsByTile.empty()) {
-			TileInfo tile{
-				.deviceId = static_cast<int>(device.index), .tileId = 0, .cpuAffinity = cpuAffinity, .ports = {}};
-			allTiles.push_back(tile);
-			deviceHeaders.push_back(std::format("GPU {}/0", device.index));
+			allNodes.push_back(
+				TopoNode{.label = std::format("GPU {}/0", device.index),
+						 .cpuAffinity = cpuAffinity,
+						 .bdfAddress = bdf,
+						 .data = GpuData{.deviceId = static_cast<int>(device.index), .tileId = 0, .ports = {}}});
 		} else {
-			// Create tile entries with fabric port information
 			for (const auto &[tileId, ports] : portsByTile) {
-				TileInfo tile{.deviceId = static_cast<int>(device.index),
-							  .tileId = static_cast<int>(tileId),
-							  .cpuAffinity = cpuAffinity,
-							  .ports = ports};
-				allTiles.push_back(tile);
-				deviceHeaders.push_back(std::format("GPU {}/{}", device.index, tileId));
+				allNodes.push_back(TopoNode{.label = std::format("GPU {}/{}", device.index, tileId),
+											.cpuAffinity = cpuAffinity,
+											.bdfAddress = bdf,
+											.data = GpuData{.deviceId = static_cast<int>(device.index),
+															.tileId = static_cast<int>(tileId),
+															.ports = ports}});
 			}
 		}
 	}
 
+	// Append NIC nodes
+	if (const auto nicsOpt = GET_SYSTEM_NICS()) {
+		for (auto nicIdx = size_t{0}; nicIdx < nicsOpt->size(); ++nicIdx) {
+			const auto &nic = (*nicsOpt)[nicIdx];
+			allNodes.push_back(TopoNode{.label = std::format("NIC{}", nicIdx),
+										.cpuAffinity = nic.cpuAffinity,
+										.bdfAddress = nic.bdfAddress,
+										.data = NicData{.nicIndex = static_cast<int>(nicIdx)}});
+		}
+	}
+
+	// Resolve NUMA and PCIe bridge paths — de-duplicate BDFs first to avoid
+	// redundant sysfs reads for multi-tile GPUs that share a BDF.
+	{
+		std::vector<std::string> bdfs;
+		bdfs.reserve(allNodes.size());
+		for (const auto &node : allNodes) {
+			bdfs.push_back(node.bdfAddress);
+		}
+		std::sort(bdfs.begin(), bdfs.end());
+		bdfs.erase(std::unique(bdfs.begin(), bdfs.end()), bdfs.end());
+
+		const auto numaMap = GET_NUMA_NODES(bdfs);
+		for (auto &node : allNodes) {
+			if (const auto it = numaMap.find(node.bdfAddress); it != numaMap.end()) {
+				node.numaNode = it->second;
+			}
+		}
+
+		const auto pcieMap = GET_PCIE_PATHS(bdfs);
+		for (auto &node : allNodes) {
+			if (const auto it = pcieMap.find(node.bdfAddress); it != pcieMap.end()) {
+				node.pciePath = it->second;
+			}
+		}
+	}
+
+	// Build header list
+	std::vector<std::string> headers;
+	headers.reserve(allNodes.size());
+	for (const auto &node : allNodes) {
+		headers.push_back(node.label);
+	}
+
 	// Build topology list (for JSON) and matrix (for text display)
-	const auto tileCount = allTiles.size();
+	const auto nodeCount = allNodes.size();
 	std::vector<nlohmann::ordered_json> topoList;
 	std::vector<nlohmann::ordered_json> matrixData;
 
-	for (const auto row : std::views::iota(size_t{0}, tileCount)) {
+	for (const auto row : std::views::iota(size_t{0}, nodeCount)) {
 		nlohmann::ordered_json rowData;
-		rowData["tile"] = deviceHeaders[row];
-		rowData["cpu_affinity"] = allTiles[row].cpuAffinity;
+		rowData["tile"] = allNodes[row].label;
+		rowData["cpu_affinity"] = allNodes[row].cpuAffinity;
 
 		std::vector<std::string> connections;
-		for (const auto col : std::views::iota(size_t{0}, tileCount)) {
-			std::string linkType;
-			if (row == col) {
-				linkType = "S";
-			} else {
-				linkType = determineLinkType(allTiles[row], allTiles[col]);
-			}
+		for (const auto col : std::views::iota(size_t{0}, nodeCount)) {
+			const std::string linkType = determineLinkType(allNodes[row], allNodes[col]);
 			connections.push_back(linkType);
 
-			// Add to flat topology list for JSON output
 			nlohmann::ordered_json topoEntry;
+			const auto *rowGpu = std::get_if<GpuData>(&allNodes[row].data);
+			const auto *colGpu = std::get_if<GpuData>(&allNodes[col].data);
 			topoEntry["link_type"] = linkType;
-			topoEntry["local_cpu_affinity"] = allTiles[row].cpuAffinity;
-			topoEntry["local_device_id"] = allTiles[row].deviceId;
-			topoEntry["local_numa_index"] = 0; // Would need proper NUMA detection
-			topoEntry["local_on_subdevice"] = deviceHasSubdevices[allTiles[row].deviceId];
-			topoEntry["local_subdevice_id"] = allTiles[row].tileId;
-			topoEntry["max_bit_rate"] = -1; // Would need to calculate from port info
-			topoEntry["remote_device_id"] = allTiles[col].deviceId;
-			topoEntry["remote_subdevice_id"] = allTiles[col].tileId;
+			topoEntry["local_cpu_affinity"] = allNodes[row].cpuAffinity;
+			topoEntry["local_device_id"] = (rowGpu != nullptr) ? rowGpu->deviceId : -1;
+			topoEntry["local_numa_index"] = allNodes[row].numaNode.value_or(-1);
+			topoEntry["local_on_subdevice"] = (rowGpu != nullptr);
+			topoEntry["local_subdevice_id"] = (rowGpu != nullptr) ? rowGpu->tileId : -1;
+			topoEntry["max_bit_rate"] = -1;
+			topoEntry["remote_device_id"] = (colGpu != nullptr) ? colGpu->deviceId : -1;
+			topoEntry["remote_subdevice_id"] = (colGpu != nullptr) ? colGpu->tileId : -1;
 			topoList.push_back(topoEntry);
 		}
 		rowData["connections"] = connections;
 		matrixData.push_back(rowData);
 	}
 
-	// Build final JSON structure - use old format for compatibility
 	(*jsonObj)["topo_list"] = topoList;
-
-	// Store matrix data for text printer
-	(*jsonObj)["headers"] = deviceHeaders;
+	(*jsonObj)["headers"] = headers;
 	(*jsonObj)["matrix"] = matrixData;
 
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Determines the link type between two GPU tiles
+ * @brief Determines the connection type between two topology nodes
  * @ingroup topology_matrix
  *
- * Analyzes the connectivity between two tiles by examining device topology
- * and CPU affinity. Uses a hierarchical decision process to classify the
- * connection type.
+ * Uses a priority-ordered decision chain:
  *
- * Algorithm:
- * 1. Check if same tile → Self (S)
- * 2. Check if same device but different tiles → MDF
- * 3. For PCIe connections, compare CPU affinity:
- *    - Same affinity → NODE (within NUMA node)
- *    - Different affinity → SYS (across NUMA nodes)
+ *  1. **S**   — same stable identity (GPU: matching deviceId/tileId; NIC: matching nicIndex)
+ *  2. **MDF** — both GPU tiles on the same physical device
+ *  3. **PIX** — PCIe paths share ≥ 3 common bridge ancestors (same PCIe switch)
+ *  4. **PXB** — PCIe paths share exactly 2 common ancestors (same root port)
+ *  5. **PHB** — PCIe paths share exactly 1 common ancestor (same host bridge)
+ *  6. **SYS** — both PCIe paths present but share no common ancestor
+ *  7. **NODE** — at least one PCIe path absent; both nodes resolve to the same NUMA index
+ *  8. **SYS** — everything else (different NUMA nodes, or NUMA unknown)
  *
- * @param[in] tile1 First tile information. Contains:
- *                  - deviceId: Device index
- *                  - tileId: Tile/subdevice index within device
- *                  - cpuAffinity: CPU list string (e.g., "0-31")
- *                  - ports: Vector of fabric port information (unused)
- * @param[in] tile2 Second tile information. Same structure as tile1.
+ * PCIe path data comes from the sysfs canonical path walk (unavailable on Windows),
+ * in which case the fallback NODE / SYS classification is used.
  *
- * @return std::string Link type symbol:
- *         - "S": Self (same tile)
- *         - "MDF": Multi-Die Fabric Interface (same device, different tiles)
- *         - "NODE": PCIe within same NUMA node
- *         - "SYS": PCIe across NUMA nodes
- *
- * @pre tile1 and tile2 must contain valid device and tile IDs
- *
- * @note CPU affinity comparison is simplified - full NUMA parsing would be more accurate
- * @note This is a const method as it only reads tile information
- *
- * @see buildTopologyMatrix() for usage context
- * @see TileInfo structure definition
+ * @param[in] node1 First topology node
+ * @param[in] node2 Second topology node
+ * @return One of: "S", "MDF", "PIX", "PXB", "PHB", "NODE", "SYS"
  */
-std::string cmdTopology::determineLinkType(const TileInfo &tile1, const TileInfo &tile2) const
+std::string cmdTopology::determineLinkType(const TopoNode &node1, const TopoNode &node2)
 {
 	TRACING();
-	// Same tile - Self
-	if (tile1.deviceId == tile2.deviceId && tile1.tileId == tile2.tileId) {
-		return "S";
+
+	// Self — compare stable node identity rather than display label
+	if (const auto *g1 = std::get_if<GpuData>(&node1.data)) {
+		if (const auto *g2 = std::get_if<GpuData>(&node2.data)) {
+			if (g1->deviceId == g2->deviceId && g1->tileId == g2->tileId) {
+				return "S";
+			}
+		}
+	} else if (const auto *n1 = std::get_if<NicData>(&node1.data)) {
+		if (const auto *n2 = std::get_if<NicData>(&node2.data)) {
+			if (n1->nicIndex == n2->nicIndex) {
+				return "S";
+			}
+		}
 	}
 
-	// Same device, different tiles - MDF (Multi-Die Fabric)
-	if (tile1.deviceId == tile2.deviceId && tile1.tileId != tile2.tileId) {
-		return "MDF";
+	// MDF: two GPU tiles on the same physical device
+	if (const auto *g1 = std::get_if<GpuData>(&node1.data)) {
+		if (const auto *g2 = std::get_if<GpuData>(&node2.data)) {
+			if (g1->deviceId == g2->deviceId && g1->tileId != g2->tileId) {
+				return "MDF";
+			}
+		}
 	}
 
-	// PCIe connections - check if same NUMA node
-	// Simplified: would need to parse CPU affinity to determine NUMA
-	if (tile1.cpuAffinity == tile2.cpuAffinity) {
-		return "NODE";
+	// PCIe path comparison: find the deepest common bridge ancestor.
+	// Path is root-first (index 0 = root complex, index 1 = root port, ...).
+	//   commonLen == 1  → PHB (share only the root complex)
+	//   commonLen == 2  → PXB (share root complex + root port)
+	//   commonLen >= 3  → PIX (share a PCIe switch)
+	if (node1.pciePath.has_value() && node2.pciePath.has_value()) {
+		const auto &p1 = *node1.pciePath;
+		const auto &p2 = *node2.pciePath;
+		size_t commonLen = 0;
+		for (size_t i = 0; i < std::min(p1.size(), p2.size()); ++i) {
+			if (p1[i].bdf == p2[i].bdf) {
+				commonLen = i + 1;
+			} else {
+				break;
+			}
+		}
+		if (commonLen >= 3) {
+			return "PIX";
+		}
+		if (commonLen == 2) {
+			return "PXB";
+		}
+		if (commonLen == 1) {
+			return "PHB";
+		}
+		// commonLen == 0: both paths exist but share no common ancestor → SYS
+		return "SYS";
+	}
+
+	// Fall back to NUMA comparison only when PCIe path data is absent for at
+	// least one node. Two nullopt nodes must not be treated as co-located.
+	if (!node1.pciePath.has_value() || !node2.pciePath.has_value()) {
+		if (node1.numaNode.has_value() && node1.numaNode == node2.numaNode) {
+			return "NODE";
+		}
 	}
 
 	return "SYS";
 }
 
 /**
- * @brief Displays the topology connectivity matrix for all GPU devices
+ * @brief Displays the topology connectivity matrix for all GPU devices and NICs
  * @ingroup topology_matrix
- *
- * Generates and displays a comprehensive topology matrix showing connectivity
- * between all GPU tiles in the system. The matrix shows link types between
- * each pair of tiles, including MDF and PCIe connections.
- *
- * Output format depends on useJson parameter:
- * - JSON mode: Outputs structured JSON with topo_list and matrix arrays
- * - Text mode: Displays formatted table with headers and connection symbols
  *
  * @param[in] useJson If true, output JSON format; if false, output text table
  *
  * @retval ZE_RESULT_SUCCESS           Matrix displayed successfully
  * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found in system
- * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs not set (run() must be called first)
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs not set
  *
- * @pre currentArgs must be set by run() before calling this function
- * @post Matrix is printed to stdout via appropriate printer
- *
- * @note Uses buildTopologyMatrix() to generate the topology data
- * @note Connection symbols: S (self), MDF, NODE, SYS
- * @note Requires at least one device in the system
- *
- * @see buildTopologyMatrix() for matrix generation algorithm
- * @see determineLinkType() for link type classification
+ * @note Connection symbols: S, MDF, PIX, PXB, PHB, NODE, SYS
+ * @see buildTopologyMatrix(), determineLinkType()
  */
 ze_result_t cmdTopology::showMatrix(bool useJson)
 {
@@ -703,7 +742,7 @@ int cmdTopology::run(arg_struct *args)
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
 	bool found = false;
-	int opt;
+	int opt = 0;
 	int optionIndex = 0;
 	std::string shortOpts;
 	std::vector<struct option> longOptsVec;
