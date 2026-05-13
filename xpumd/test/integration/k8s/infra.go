@@ -10,48 +10,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
-	"testing"
 
 	"github.com/docker/docker/client"
-	ttk8s "github.com/gruntwork-io/terratest/modules/k8s"
 	"sigs.k8s.io/kind/pkg/cluster"
 	"sigs.k8s.io/kind/pkg/cluster/nodeutils"
 )
-
-// updateStubDriverConfig updates the stub driver config in the pod under test.
-// It utilizes the config-writer sidecar to update the config file in-place (in
-// the shared emptyDir volume). ConfigMap is not used because the stub driver's
-// inotify watcher does not catch those, plus, the config map update to be
-// reflected in the pod's filesystem may take quite some time.
-func updateStubDriverConfig(t *testing.T, namespace, updatedPath string) {
-	t.Helper()
-
-	podName := getXPUMDPodName(t, namespace)
-	ttk8s.RunKubectlContext(t, t.Context(), suite.kubectlOpts(namespace),
-		"cp", updatedPath,
-		podName+":/etc/level-zero-stub/stub.yaml",
-		"-c", "stub-driver-config-writer",
-	)
-}
-
-// getXPUMDPodName returns the name of the (single) target xpumd pod in the test namespace.
-func getXPUMDPodName(t *testing.T, namespace string) string {
-	t.Helper()
-	out, err := ttk8s.RunKubectlAndGetOutputContextE(t, t.Context(), suite.kubectlOpts(namespace),
-		"get", "pods",
-		"-l", "app.kubernetes.io/name=xpumd",
-		"-o", "jsonpath={.items[0].metadata.name}",
-	)
-	if err != nil {
-		t.Fatalf("failed to get xpumd pod name: %v", err)
-	}
-	name := strings.TrimSpace(out)
-	if name == "" {
-		t.Fatalf("no xpumd pod found in namespace %s", namespace)
-	}
-	return name
-}
 
 // kindCluster wraps a Kind cluster.Provider scoped to a single cluster.
 type kindCluster struct {
