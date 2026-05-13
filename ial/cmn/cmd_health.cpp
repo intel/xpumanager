@@ -29,6 +29,7 @@ healthSubCmdStruct componentCmds[] = {
 	{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
 	{healthSubCmdType::HEALTH_POWER, &cmdHealth::gpuPower},
 	{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
+	{healthSubCmdType::HEALTH_UNSUPPORTED0, &cmdHealth::unsupported},
 	{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
 };
 
@@ -65,7 +66,8 @@ void cmdHealth::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING2, "2. GPU Memory Temperature"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "3. GPU Power"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "4. GPU Memory"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "5. GPU Frequency"));
+	helpList.push_back(helpCmd(SUB_HEADING2, "5. Unsupported"));
+	helpList.push_back(helpCmd(SUB_HEADING2, "6. GPU Frequency"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -141,15 +143,13 @@ void HealthTextPrinter::print(nlohmann::ordered_json *jsonObj)
  *
  * This function iterates through all discovered devices and runs comprehensive
  * health checks on each one. For every device, it executes all available component
- * tests including temperature monitoring, power assessment, memory health evaluation,
- * Xe Link port status, and frequency subsystem checks. Results are stored in the provided
- * JSON object.
+ * tests including temperature monitoring, power assessment, memory health evaluation
+ * and frequency subsystem checks. Results are stored in the provided JSON object.
  *
  * @param devList Pointer to vector of device information structures
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS if all checks pass, or the first encountered error code
  */
-
 ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
@@ -179,15 +179,13 @@ ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nl
  *
  * This function iterates through all available component health tests and
  * executes them for the specified device. It provides a comprehensive health
- * assessment covering core temperature, memory temperature, power, memory health,
- * Xe Link ports, and frequency subsystems. Results are stored in the provided
- * JSON object.
+ * assessment covering core temperature, memory temperature, power, memory health
+ * and frequency subsystems. Results are stored in the provided JSON object.
  *
  * @param d Pointer to device information structure containing device handles and properties
  * @param jsonObj Pointer to a JSON object where results will be stored
  * @return ze_result_t ZE_RESULT_SUCCESS if all health checks pass, or the first encountered error code
  */
-
 ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
@@ -542,6 +540,26 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	(*jsonObj)["memory_health"] = {{"status", getHealthStatusString(healthStatus)},
 								   {"description", getHealthStatusDescription(health)}};
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Performs unsupported feature health assessment
+ *
+ * This function evaluates the health status of unsupported item.
+ *
+ * @param d Pointer to device information structure (currently unused)
+ * @param jsonObj Pointer to a JSON object where results will be stored
+ * @return ze_result_t ZE_RESULT_SUCCESS indicating successful assessment
+ */
+ze_result_t cmdHealth::unsupported(UNUSED devInfo *d, nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+	std::string description = "Unsupported.";
+	xpumHealthStatus status = xpumHealthStatus::XPUM_HEALTH_STATUS_UNKNOWN;
+
+	(*jsonObj)["unsupported_item_health"] = {{"status", getHealthStatusString(status)}, {"description", description}};
 
 	return ZE_RESULT_SUCCESS;
 }

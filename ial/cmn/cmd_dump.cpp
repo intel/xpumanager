@@ -70,6 +70,7 @@ static std::unordered_map<int, dumpCmdSubStruct> dumpMetrics = {
 	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, {&cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)", false}},
 	{dumpCmdSubType::DUMP_PCIE_READ, {&cmdDump::pcieRead, "PCIe Read (kB/s)", false}},
 	{dumpCmdSubType::DUMP_PCIE_WRITE, {&cmdDump::pcieWrite, "PCIe Write (kB/s)", false}},
+	{dumpCmdSubType::DUMP_UNSUPPORTED0, {&cmdDump::unsupported, "Unsupported", false}},
 	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION,
 	 {&cmdDump::computeEngineUtilization, "Compute Engine Utilization (%)", false}},
 	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION,
@@ -211,6 +212,8 @@ void cmdDump::help(HELP helpType)
 		"%d. GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Read (kB/s), per device", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Write (kB/s), per device", i++));
+	helpList.push_back(
+		helpCmd(SUB_HEADING, "%d. Metric unsupported - when combined with other metrics it returns N/A", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Compute engine utilizations (%), per tile", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Render engine utilizations (%), per tile", i++));
 	helpList.push_back(helpCmd(SUB_HEADING, "%d. Media decoder engine utilizations (%), per tile", i++));
@@ -1168,6 +1171,21 @@ ze_result_t cmdDump::pcieWrite(devInfo *d, std::string *outputLine, threadData *
 }
 
 /**
+ * @brief Executes the unsupported command when user requests dump -m 21.
+ *
+ * @param d A pointer to the device information structure.
+ *
+ * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
+ * code.
+ */
+ze_result_t cmdDump::unsupported(UNUSED devInfo *d, std::string *outputLine, UNUSED threadData *td)
+{
+	TRACING();
+	*outputLine = "N/A";
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Executes the compute engine utilization command when user requests dump -m 22.
  *
  * Compute engine utilization (%), per tile.
@@ -1811,6 +1829,18 @@ int cmdDump::run(arg_struct *args)
 		return result;
 	}
 
+	// Check if only unsupported metric is requested
+	if (dumpArgs.size() == 1) {
+		try {
+			if (stoi(dumpArgs[0]) == dumpCmdSubType::DUMP_UNSUPPORTED0) {
+				ERR("Metric unsupported.\n");
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+		} catch (const std::exception &) {
+			// Not unsupported metric, continue normal processing
+		}
+	}
+	// If the unsupported metric is mixed with other metrics, it will return N/A
 	header = "Timestamp, DeviceId, ";
 	// First print the header which looks like this Timestamp, DeviceId, <heading>
 	for (const auto metricId : metricIds) {

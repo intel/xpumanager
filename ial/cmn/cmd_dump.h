@@ -57,6 +57,7 @@ enum dumpCmdSubType
 	DUMP_GPU_MEMORY_USED,
 	DUMP_PCIE_READ,
 	DUMP_PCIE_WRITE,
+	DUMP_UNSUPPORTED0,
 	DUMP_COMPUTE_ENGINE_UTILIZATION,
 	DUMP_RENDER_ENGINE_UTILIZATION,
 	DUMP_MEDIA_DECODER_ENGINE_UTILIZATION,
@@ -138,6 +139,7 @@ public:
 	ze_result_t gpuMemoryUsed(devInfo *d, std::string *outputLine, threadData *td);
 	ze_result_t pcieRead(devInfo *d, std::string *outputLine, threadData *td);
 	ze_result_t pcieWrite(devInfo *d, std::string *outputLine, threadData *td);
+	ze_result_t unsupported(devInfo *d, std::string *outputLine, threadData *td);
 	ze_result_t computeEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
 	ze_result_t renderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
 	ze_result_t mediaDecoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td);
