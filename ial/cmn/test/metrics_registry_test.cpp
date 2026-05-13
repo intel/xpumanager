@@ -13,6 +13,7 @@
 
 #include "metrics_registry.h"
 #include "metrics/temperature_metrics.h"
+#include "metrics/utilization.h"
 #include <span>
 #include <string>
 
@@ -83,9 +84,15 @@ TEST_CASE("getQueryMetrics returns non-empty span")
 	// >= because multiple metric groups are registered
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::IDENTITY).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::TEMPERATURE).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::UTILIZATION).size());
 }
 
 TEST_CASE("getMetricsByGroup NONE returns empty vector") { CHECK(getMetricsByGroup(MetricGroup::NONE).empty()); }
+
+TEST_CASE("getMetricsByGroup UTILIZATION returns all utilization metrics")
+{
+	CHECK(getMetricsByGroup(MetricGroup::UTILIZATION).size() == metrics::utilization::getUtilizationMetrics().size());
+}
 
 TEST_CASE("findMetric resolves identity metric names")
 {
@@ -101,13 +108,36 @@ TEST_CASE("findMetric resolves identity metric names")
 	CHECK(findMetric("pci.sub_device_id").has_value());
 }
 
+TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliases")
+{
+	// Aliases (.single / .group / .decode.single etc.) must be excluded so that
+	// '-d UTILIZATION' does not produce duplicate columns.
+	static constexpr std::array canonicalNames{
+		std::string_view{"utilization.gpu"},	std::string_view{"utilization.compute"},
+		std::string_view{"utilization.render"}, std::string_view{"utilization.media"},
+		std::string_view{"utilization.copy"},	std::string_view{"utilization.memory"},
+	};
+	const auto byUtil = getMetricsByGroup(MetricGroup::UTILIZATION);
+	REQUIRE(byUtil.size() == canonicalNames.size());
+	for (std::size_t i = 0; i < canonicalNames.size(); ++i) {
+		CHECK(byUtil[i]->name == canonicalNames[i]);
+	}
+}
+
+TEST_CASE("getMetricsByGroup MEMORY returns only utilization.memory")
+{
+	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
+	REQUIRE(byMem.size() == 1);
+	CHECK(byMem[0]->name == "utilization.memory");
+}
+
 TEST_CASE("findMetric resolves Temperature metric names")
 {
 	CHECK(findMetric("temperature.gpu").has_value());
 	CHECK(findMetric("temperature.memory").has_value());
 }
 
-TEST_CASE("Temperature group size matches getTemperatureMetrics")
+TEST_CASE("getMetricsByGroup TEMPERATURE matches getTemperatureMetrics")
 {
 	const auto byTemp = getMetricsByGroup(MetricGroup::TEMPERATURE);
 	REQUIRE(byTemp.size() == metrics::temperature::getTemperatureMetrics().size());
@@ -115,11 +145,49 @@ TEST_CASE("Temperature group size matches getTemperatureMetrics")
 	CHECK(byTemp[1]->name == "temperature.memory");
 }
 
+TEST_CASE("findMetric resolves Utilization canonical names")
+{
+	CHECK(findMetric("utilization.gpu").has_value());
+	CHECK(findMetric("utilization.compute").has_value());
+	CHECK(findMetric("utilization.render").has_value());
+	CHECK(findMetric("utilization.media").has_value());
+	CHECK(findMetric("utilization.copy").has_value());
+	CHECK(findMetric("utilization.memory").has_value());
+}
+
+TEST_CASE("findMetric resolves Utilization aliases")
+{
+	// compute
+	CHECK(findMetric("utilization.compute.single").has_value());
+	CHECK(findMetric("utilization.compute.group").has_value());
+	// render
+	CHECK(findMetric("utilization.render.single").has_value());
+	CHECK(findMetric("utilization.render.group").has_value());
+	// media (sub-engine forms)
+	CHECK(findMetric("utilization.media.decode.single").has_value());
+	CHECK(findMetric("utilization.media.encode.single").has_value());
+	CHECK(findMetric("utilization.media.enhancement.single").has_value());
+	CHECK(findMetric("utilization.media.group").has_value());
+	// copy
+	CHECK(findMetric("utilization.copy.single").has_value());
+	CHECK(findMetric("utilization.copy.group").has_value());
+}
+
 TEST_CASE("findMetric returns nullopt for unregistered metrics")
 {
 	CHECK_FALSE(findMetric("power.draw").has_value());
-	CHECK_FALSE(findMetric("fan.speed").has_value());
 	CHECK_FALSE(findMetric("__no_such_metric__").has_value());
+}
+
+TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, and UTILIZATION groups")
+{
+	CHECK_FALSE(resolveQuery("IDENTITY").empty());
+	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
+	CHECK_FALSE(resolveQuery("UTILIZATION").empty());
+	CHECK_FALSE(resolveQuery("p").empty()); // alias covers POWER|TEMPERATURE
+	CHECK_FALSE(resolveQuery("u").empty()); // single-letter alias for UTILIZATION
+	CHECK(resolveQuery("POWER").empty());
+	CHECK(resolveQuery("FAN").empty());
 }
 
 TEST_CASE("resolveQuery TEMPERATURE returns registered metrics")
@@ -128,14 +196,13 @@ TEST_CASE("resolveQuery TEMPERATURE returns registered metrics")
 	CHECK(resolveQuery("TEMPERATURE").size() == metrics::temperature::getTemperatureMetrics().size());
 }
 
-TEST_CASE("resolveQuery expands IDENTITY and TEMPERATURE groups")
+TEST_CASE("resolveQuery pu expands to Temperature and Utilization metrics")
 {
-	CHECK_FALSE(resolveQuery("IDENTITY").empty());
-	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
-	CHECK_FALSE(resolveQuery("p").empty()); // alias covers POWER|TEMPERATURE
-	CHECK(resolveQuery("POWER").empty());
-	CHECK(resolveQuery("MEMORY").empty());
-	CHECK(resolveQuery("FAN").empty());
+	// 'p' maps to POWER|TEMPERATURE; 'u' maps to UTILIZATION.
+	// Both groups are registered.
+	const auto result = resolveQuery("pu");
+	CHECK(result.size() ==
+		  metrics::temperature::getTemperatureMetrics().size() + metrics::utilization::getUtilizationMetrics().size());
 }
 
 // ── MetricCache struct ────────────────────────────────────────────────────────

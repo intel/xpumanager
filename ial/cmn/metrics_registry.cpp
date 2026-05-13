@@ -6,6 +6,7 @@
 
 #include "metrics_registry.h"
 #include "metrics/temperature_metrics.h"
+#include "metrics/utilization.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
@@ -208,10 +209,11 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 std::span<const QueryMetric> getQueryMetrics()
 {
 	static const std::vector<QueryMetric> metrics = []() {
-		const auto groups = std::to_array<std::span<const QueryMetric>>({
-			metrics::identity::getIdentityMetrics(),
-			metrics::temperature::getTemperatureMetrics(),
-		});
+		const auto identityMetrics = metrics::identity::getIdentityMetrics();
+		const auto temperatureMetrics = metrics::temperature::getTemperatureMetrics();
+		const auto utilizationMetrics = metrics::utilization::getUtilizationMetrics();
+		const auto groups =
+			std::to_array<std::span<const QueryMetric>>({identityMetrics, temperatureMetrics, utilizationMetrics});
 		std::vector<QueryMetric> v;
 		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));
