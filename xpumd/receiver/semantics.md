@@ -14,7 +14,8 @@ Contents:
 * [Current Intel GPU metrics](#current-intel-gpu-metrics)
   * [Overall approach](#overall-approach)
   * [Details](#details)
-* [References](#references)
+* [Other OTel HW semantics users][#other-otel-hw-semantics-users]
+* [Related upstream issues](#related-upstream-issues)
 
 
 ## Introduction
@@ -217,17 +218,17 @@ mix of these):
 |---|**Power supply**|---|
 |W|`hw.power_supply{hw.type="gpu"}`|`hw.gpu.power_supply`|
 |---|**Temperature** (for GPU core/uncore/package/memory/etc)|---|
-|Ce|`hw.temperature`|`hw.gpu.temperature`|
-|Ce|`hw.temperature.limit`|`hw.gpu.temperature.limit`|
+|Cel|`hw.temperature`|`hw.gpu.temperature`|
+|Cel|`hw.temperature.limit`|`hw.gpu.temperature.limit`|
 |1|`hw.temperature.utilization`|`hw.gpu.temperature.utilization`|
 
 Notes:
 
 * Derived `.rate` metrics are needed only when limits are unknown
 * `hw.sensor_location` attribute tells actual metric source for the energy, fan, frequency, power and temperature metrics
-* For `<metric>{<atribute>="*"}` items it would be useful to have standard attribute that tells directly
-  (withou JOIN query) that metric is for some GPU (sub-)component. This would greatly simplify queries
-  for specific parent HW types (CPU / GPU / etc) e.g. in dasboards
+* For `<metric>{<attribute>="*"}` items it would be useful to have standard attribute that tells directly
+  (without JOIN query) that metric is for some GPU (sub-)component. This would greatly simplify queries
+  for specific parent HW types (CPU / GPU / etc) e.g. in dashboards
 * For "semi-common" metrics, OTel spec requires `hw.type` to match metric type,
   above use it for HW component type instead
 * `[*.]hw.info` indicates presence of HW, its value could indicate whether interface is up
@@ -327,7 +328,7 @@ specified ones and Intel specific ones.
   significantly reduce number of metrics
   - Issues should be rare, and underlying HW + driver stack may support only
     small subset of the states specified in the Level-Zero Sysman API[^1]
-* `unknown` states are reported only if corresponging component states were known earlier.
+* `unknown` states are reported only if corresponding component states were known earlier.
 
 
 ### Details
@@ -376,7 +377,28 @@ For more details, see [Sysman receiver metrics documentation](sysman/documentati
 and Level-Zero Sysman API spec[^1].
 
 
-## References
+## Other OTel HW semantics users
+
+In OpenLIT project, except for `hw.errors`, all metrics types are
+under `hw.gpu` namespace, including ones that OTel spec has split to
+"common" and "semi-common" categories:
+https://github.com/openlit/openlit/tree/openlit-1.20.0/opentelemetry-gpu-collector#metrics
+
+In the OTel collector contrib repository:
+https://github.com/open-telemetry/opentelemetry-collector-contrib
+
+Of the 113 receivers added there, only "Cisco OS" receiver uses HW
+semantics, and even that uses _only_ `hw.type` attribute, nothing
+else.
+
+As to the other components in that project, "BMC Helix" exporter
+README and tests refer to HW semantics, as do tests for "Prometheus"
+translator package, but their actual code does not.
+
+=> fixing HW semantics would affect only few projects, and not much.
+
+
+## Related upstream issues
 
 Some upstream tickets discussing issues with the current OTel spec HW semantics:
 
