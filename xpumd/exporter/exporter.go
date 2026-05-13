@@ -7,6 +7,7 @@ package exporter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -147,10 +148,8 @@ func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
 		}
 
 		// Remove the socket file if it already exists
-		if _, err := os.Stat(e.cfg.NetAddr.Endpoint); err == nil {
-			if err := os.Remove(e.cfg.NetAddr.Endpoint); err != nil {
-				return fmt.Errorf("failed to remove existing unix socket file: %w", err)
-			}
+		if err := os.Remove(e.cfg.NetAddr.Endpoint); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("failed to remove existing unix socket file: %w", err)
 		}
 	}
 
