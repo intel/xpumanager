@@ -17,7 +17,6 @@ import (
 	"testing"
 	"time"
 
-	ttk8s "github.com/gruntwork-io/terratest/modules/k8s"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
@@ -175,23 +174,4 @@ func floatAlmostEqual(got, want float64) bool {
 	diff := math.Abs(got - want)
 	scale := math.Max(1, math.Abs(want))
 	return diff <= 1e-9*scale
-}
-
-// forwardServicePort opens a port-forward tunnel to the named service,
-// retrying until a backing pod is available.
-func forwardServicePort(t *testing.T, opts *ttk8s.KubectlOptions, service string, remotePort int) *ttk8s.Tunnel {
-	t.Helper()
-
-	tun := ttk8s.NewTunnel(opts, ttk8s.ResourceTypeService, service, 0, remotePort)
-
-	deadline := time.Now().Add(30 * time.Second)
-	for {
-		if err := tun.ForwardPortE(t); err == nil {
-			return tun
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("timed out waiting for port-forward to service %s", service)
-		}
-		time.Sleep(time.Second)
-	}
 }

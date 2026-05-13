@@ -84,10 +84,9 @@ func TestMetrics(t *testing.T) {
 	t.Cleanup(func() { tc.cleanup(t) })
 	tc.setup(t)
 
-	opts := suite.kubectlOpts(tc.namespace)
-	tunnel := forwardServicePort(t, opts, tc.releaseName, servicePort)
-	t.Cleanup(tunnel.Close)
-	endpoint := tunnel.Endpoint()
+	tunnel := tc.forwardPort(t, servicePort)
+	t.Cleanup(tunnel.stop)
+	endpoint := tunnel.endpoint()
 
 	hwID := "12345678-0000-0000-0000-000000000000"
 
@@ -222,9 +221,10 @@ func TestMetrics(t *testing.T) {
 	})
 
 	// The stub driver's inotify watcher is triggered by a direct file write (IN_CLOSE_WRITE)
-	// to the emptyDir volume. kubectl cp writes stub.yaml directly, so the reload is near-instant.
+	// to the emptyDir volume. The helper streams stub.yaml directly into the sidecar,
+	// so the reload is near-instant.
 	t.Run("UpdatedValues", func(t *testing.T) {
-		updateStubDriverConfig(t, tc.namespace, filepath.Join(suite.testdataDir, stubDriverConfig2))
+		tc.updateStubDriverConfig(t, filepath.Join(suite.testdataDir, stubDriverConfig2))
 
 		// Temperature is the sentinel: poll until the stub has reloaded.
 		updatedTemp := metricAssertion{
