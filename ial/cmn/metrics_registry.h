@@ -215,6 +215,11 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache);
  */
 [[nodiscard]] MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev);
 
+// ── MetricValue ───────────────────────────────────────────────────────────────
+
+/** The output type written by every getter lambda. */
+using MetricValue = std::string;
+
 // ── QueryMetric ────────────────────────────────────────────────────────────────
 
 struct QueryMetric
@@ -226,7 +231,7 @@ struct QueryMetric
 	std::string_view description; /**< Shown by --list-fields / --help-query-gpu */
 	MetricSource source;
 	MetricGroup groups; /**< Bitmask of display sections this field belongs to */
-	ze_result_t (*getter)(devInfo &d, std::string &out, const MetricCache &cache);
+	ze_result_t (*getter)(devInfo &d, MetricValue &out, const MetricCache &cache);
 };
 
 // ── Group name table (detail — not part of the public API) ──────────────────────
@@ -358,7 +363,7 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  * @return  Non-owning span over the global metric table. Valid for the lifetime
  *          of the process; elements are stable (never reallocated).
  */
-[[nodiscard]] std::span<const QueryMetric> getQueryMetrics() noexcept;
+[[nodiscard]] std::span<const QueryMetric> getQueryMetrics();
 
 /**
  * Returns pointers to all metrics whose group bitmask overlaps @p mask.

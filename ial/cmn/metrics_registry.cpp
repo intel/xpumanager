@@ -8,6 +8,7 @@
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
+#include "metrics/identity.h"
 #include <enginegroup.h>
 #include <functional>
 #include <memory.h>
@@ -19,6 +20,7 @@
 #include <array>
 #include <cctype>
 #include <chrono>
+#include <numeric>
 #include <ranges>
 #include <span>
 #include <string>
@@ -200,12 +202,19 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 //  Registry API implementations
 
 // Each metrics/X.h owns one group and exposes getXMetrics() returning a span.
-std::span<const QueryMetric> getQueryMetrics() noexcept
+std::span<const QueryMetric> getQueryMetrics()
 {
-	static const std::vector<QueryMetric> metrics = []() noexcept {
+	static const std::vector<QueryMetric> metrics = []() {
+		const auto groups = std::to_array({
+			metrics::identity::getIdentityMetrics(),
+		});
 		std::vector<QueryMetric> v;
+		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus{},
+										[](const auto &s) { return s.size(); }));
+		std::ranges::copy(groups | std::views::join, std::back_inserter(v));
 		return v;
 	}();
+
 	return metrics;
 }
 
