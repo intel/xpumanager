@@ -28,12 +28,9 @@ hal_core_sources = files(
   'threading.cpp',
   'vf.cpp',
   'file_io.cpp',
-  # C API
-  '../../ial/api/xpum_api.cpp'
 )
 
 hal_core_inc = include_directories('.')
-api_inc = include_directories('../../ial/api')
 
 # extensions-only sources (dev branch only)
 # These files are only included when building with -Dextensions=true
@@ -58,15 +55,14 @@ libxpum_shared = shared_library('xpum',
   include_directories : [
     global_inc,
     hal_core_inc,
-    api_inc,
     oal_inc_dirs,
     include_directories('../fwupd'),
     include_directories('../amc'),
     include_directories('../../ial/cli')  # For version.h
   ] + extensions_inc_dirs,
   dependencies : [
-    levelzero_dep, 
-    igsc_dep, 
+    levelzero_dep,
+    igsc_dep,
     oal_dep,
     fwupd_dep,
     nlohmann_json_dep
@@ -83,7 +79,6 @@ libxpum_static = static_library('xpum',
   include_directories : [
     global_inc,
     hal_core_inc,
-    api_inc,
     oal_inc_dirs,
     include_directories('../fwupd'),
     include_directories('../amc'),
@@ -171,22 +166,7 @@ if get_option('install_headers')
   )
   install_headers(logger_headers, subdir : 'xpum/logger')
   
-  c_api_headers = files(
-    '../../ial/api/xpum_api.h',
-    '../../ial/api/xpum_structs.h'
-  )
-  install_headers(c_api_headers, subdir : 'xpum')
 endif
-
-# Generate pkg-config file for C API compatibility
-pkg = import('pkgconfig')
-pkg.generate(
-  libxpum_shared,
-  name: 'xpum_api',
-  description: 'Intel(R) XPU Manager - Unified C/C++ library for GPU management',
-  version: xpum_version,
-  subdirs: 'xpum',
-)
 
 # Unit tests for the Logger (optional — enable with -Dwith_tests=true)
 if get_option('with_tests')
