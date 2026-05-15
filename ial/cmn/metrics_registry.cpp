@@ -14,6 +14,7 @@
 #include "metrics/power.h"
 #include "metrics/ecc.h"
 #include "metrics/identity.h"
+#include "metrics/clock.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
@@ -234,9 +235,10 @@ std::span<const QueryMetric> getQueryMetrics()
 		const auto memoryMetrics = metrics::memory::getMemoryMetrics();
 		const auto powerMetrics = metrics::power::getPowerMetrics();
 		const auto eccMetrics = metrics::ecc::getEccMetrics();
+		const auto clockMetrics = metrics::clock::getClockMetrics();
 		const auto groups = std::to_array<std::span<const QueryMetric>>(
 			{identityMetrics, temperatureMetrics, utilizationMetrics, pciMetrics, euArrayMetrics, fanMetrics,
-			 memoryMetrics, powerMetrics, eccMetrics});
+			 memoryMetrics, powerMetrics, eccMetrics, clockMetrics});
 		std::vector<QueryMetric> v;
 		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));
