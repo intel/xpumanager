@@ -135,14 +135,14 @@ jobs:
       run: helm push xpumd-*.tgz oci://ghcr.io/${{ github.repository }}/charts/
 
   integration-test:
-    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    runs-on: ${{ fromJson(vars.RUNS_ON_INTEGRATION_TEST) }}
     timeout-minutes: 20
     steps:
     - name: Check out code
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Set up Docker Buildx
-      if: vars.NO_SETUP_BUILDX != 'true'
+      if: vars.NO_SETUP_BUILDX_INTEGRATION_TEST != 'true'
       uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
     - name: Build image
