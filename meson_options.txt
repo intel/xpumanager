@@ -17,10 +17,6 @@ option('use_system_igsc', type : 'boolean', value : false,
 option('static_library', type : 'boolean', value : false,
        description : 'Install static library (libxpum.a/.lib)')
 
-option('install_headers', type : 'boolean', value : false,
-       description : 'Install development headers')
-
-
 option('conan_deps_build_type', type: 'string', value: 'Release',
        description: 'Build type used for Conan dependencies')
 

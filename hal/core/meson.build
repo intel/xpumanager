@@ -124,50 +124,6 @@ if is_windows and get_option('shared_library')
   )
 endif
 
-# Install headers (optional)
-if get_option('install_headers')
-  hal_headers = files(
-    'debug.h',
-    'device.h',
-    'diagnostic.h',
-    'driver.h',
-    'ecc.h',
-    'enginegroup.h',
-    'fabric.h',
-    'fan.h',
-    'firmware.h',
-    'frequency.h',
-    'jsonwrapper.h',
-    'memory.h',
-    'metric.h',
-    'pci.h',
-    'performance.h',
-    'power.h',
-    'ras.h',
-    'scheduler.h',
-    'standby.h',
-    'sysman.h',
-    'sysprocess.h',
-    'temperature.h',
-    'vf.h',
-    'offline_page.h'
-  )
-  install_headers(hal_headers, subdir : 'xpum')
-
-  logger_headers = files(
-    'logger/log_level.h',
-    'logger/log_record.h',
-    'logger/formatters.h',
-    'logger/sink_base.h',
-    'logger/ostream_sink.h',
-    'logger/filestream_sink.h',
-    'logger/async_sink.h',
-    'logger/logger.h',
-  )
-  install_headers(logger_headers, subdir : 'xpum/logger')
-  
-endif
-
 # Unit tests for the Logger (optional — enable with -Dwith_tests=true)
 if get_option('with_tests')
     doctest_dep = dependency('doctest', required: true)
