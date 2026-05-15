@@ -73,29 +73,44 @@ TEST_CASE("formatGroups emits canonical group names")
 
 TEST_CASE("formatGroups returns empty string for NONE") { CHECK(formatGroups(MetricGroup::NONE).empty()); }
 
-// ── Registry API with empty registry ─────────────────────────────────────────
-// PR #1 ships with no metric groups registered.  These tests document that
-// baseline and will be updated as each metric group PR lands.
+// ── Registry API — identity group registered ──────────────────────────────────
 
-TEST_CASE("getQueryMetrics returns empty span before any metric group is added") { CHECK(getQueryMetrics().empty()); }
-
-TEST_CASE("getMetricsByGroup returns empty vector before any metric group is added")
+TEST_CASE("getQueryMetrics returns all identity metrics")
 {
-	CHECK(getMetricsByGroup(MetricGroup::ALL).empty());
-	CHECK(getMetricsByGroup(MetricGroup::NONE).empty());
+	const auto all = getQueryMetrics();
+	CHECK_FALSE(all.empty());
+	// Every registered metric so far belongs to the identity group.
+	CHECK(getMetricsByGroup(MetricGroup::IDENTITY).size() == all.size());
 }
 
-TEST_CASE("findMetric returns nullopt before any metric group is added")
+TEST_CASE("getMetricsByGroup NONE returns empty vector") { CHECK(getMetricsByGroup(MetricGroup::NONE).empty()); }
+
+TEST_CASE("findMetric resolves identity metric names")
+{
+	CHECK(findMetric("name").has_value());
+	CHECK(findMetric("index").has_value());
+	CHECK(findMetric("uuid").has_value());
+	CHECK(findMetric("serial").has_value());
+	CHECK(findMetric("timestamp").has_value());
+	CHECK(findMetric("driver_version").has_value());
+	CHECK(findMetric("vbios_version").has_value());
+	CHECK(findMetric("pci.bus_id").has_value());
+	CHECK(findMetric("pci.device_id").has_value());
+	CHECK(findMetric("pci.sub_device_id").has_value());
+}
+
+TEST_CASE("findMetric returns nullopt for unregistered metrics")
 {
 	CHECK_FALSE(findMetric("temperature.gpu").has_value());
 	CHECK_FALSE(findMetric("power.draw").has_value());
 }
 
-TEST_CASE("resolveQuery returns empty vector before any metric group is added")
+TEST_CASE("resolveQuery expands IDENTITY group")
 {
+	const auto result = resolveQuery("IDENTITY");
+	CHECK_FALSE(result.empty());
 	CHECK(resolveQuery("temperature.gpu").empty());
 	CHECK(resolveQuery("POWER").empty());
-	CHECK(resolveQuery("pu").empty());
 }
 
 // ── MetricCache struct ────────────────────────────────────────────────────────
