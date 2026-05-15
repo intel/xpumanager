@@ -6,6 +6,7 @@
 
 #include "frequency.h"
 #include "device.h"
+#include <ranges>
 #include <vector>
 
 /**
@@ -98,6 +99,45 @@ ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq
 }
 
 /**
+ * @brief Gets the maximum frequency for a specific frequency domain
+ *
+ * Scans the enumerated frequency handles to find the one matching the
+ * requested domain and returns its maximum hardware frequency.
+ *
+ * @param domain The frequency domain to query (e.g. ZES_FREQ_DOMAIN_GPU)
+ * @param maxMHz Output parameter filled with the maximum frequency in MHz
+ * @return ze_result_t ZE_RESULT_SUCCESS when found, ZE_RESULT_ERROR_UNSUPPORTED_FEATURE otherwise
+ */
+ze_result_t frequency::getMaxFreqForDomain(zes_freq_domain_t domain, double &maxMHz)
+{
+	auto handles = std::span(frequencyHandles, frequencyCount);
+
+	// Transform handles to properties, filtering out invalid ones
+	auto validProps =
+		handles | std::views::transform([this](const auto &handle) -> std::optional<zes_freq_properties_t> {
+			zes_freq_properties_t props{};
+			props.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+			if (getProperties(handle, &props) == ZE_RESULT_SUCCESS) {
+				return props;
+			}
+			return std::nullopt;
+		}) |
+		std::views::filter([](const auto &opt) { return opt.has_value(); }) |
+		std::views::transform([](const auto &opt) { return *opt; }) |
+		std::views::filter([domain](const auto &props) { return props.type == domain && props.max > 0.0; });
+
+	// Find the maximum frequency
+
+	if (auto maxIt = std::ranges::max_element(validProps, {}, &zes_freq_properties_t::max);
+		maxIt != std::ranges::end(validProps)) {
+		maxMHz = (*maxIt).max;
+		return ZE_RESULT_SUCCESS;
+	}
+
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Gets available discrete clock frequencies for a frequency domain
  *
  * This function retrieves all available discrete clock frequencies that
@@ -178,12 +218,15 @@ ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 	TRACING();
 	zes_freq_properties_t properties = {};
 	zes_freq_state_t state = {};
-	ze_result_t result = ZE_RESULT_SUCCESS;
 
 	for (uint32_t i = 0; i < frequencyCount; ++i) {
-		result = getProperties(frequencyHandles[i], &properties);
+		ze_result_t result = getProperties(frequencyHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
+		}
+
+		if (properties.type != domain) {
+			continue;
 		}
 
 		result = getState(frequencyHandles[i], &state);
@@ -191,14 +234,12 @@ ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 			return result;
 		}
 
-		if (properties.type == domain) {
-			if (currentFreq) {
-				*currentFreq = state.actual;
-				break;
-			}
+		if (currentFreq) {
+			*currentFreq = state.actual;
 		}
+		return ZE_RESULT_SUCCESS;
 	}
-	return result;
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**

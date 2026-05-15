@@ -41,6 +41,7 @@ public:
 	ze_result_t getFreqStateForTile(uint32_t tileId, zes_freq_state_t *state, zes_freq_properties_t *props);
 	uint32_t getFrequencyCount() const { return frequencyCount; }
 	std::span<const zes_freq_handle_t> getFrequencyHandles() const { return {frequencyHandles, frequencyCount}; }
+	ze_result_t getMaxFreqForDomain(zes_freq_domain_t domain, double &maxMHz);
 	ze_result_t setSchedulerTimeoutMode(uint32_t subdeviceId, uint64_t watchdogTimeout);
 	ze_result_t setSchedulerTimesliceMode(uint32_t subdeviceId, uint64_t interval, uint64_t yieldTimeout);
 	ze_result_t setSchedulerExclusiveMode(uint32_t subdeviceId);

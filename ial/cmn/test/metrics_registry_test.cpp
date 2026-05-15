@@ -14,6 +14,7 @@
 #include "metrics_registry.h"
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
+#include "metrics/clock.h"
 #include "metrics/eu_array.h"
 #include "metrics/power.h"
 #include <algorithm>
@@ -108,6 +109,7 @@ TEST_CASE("getQueryMetrics returns non-empty span")
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::MEMORY).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::POWER).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::ECC).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::CLOCK).size());
 }
 
 TEST_CASE("getMetricsByGroup ALL returns non-empty, NONE returns empty")
@@ -226,6 +228,30 @@ TEST_CASE("getMetricsByGroup TEMPERATURE matches getTemperatureMetrics")
 	CHECK(byTemp[1]->name == "temperature.memory");
 }
 
+TEST_CASE("findMetric resolves clock metric names")
+{
+	CHECK(findMetric("clocks.current.graphics").has_value());
+	CHECK(findMetric("clocks.current.media").has_value());
+	CHECK(findMetric("clocks.throttle.reason").has_value());
+	CHECK(findMetric("clocks.max.graphics").has_value());
+	CHECK(findMetric("clocks.max.media").has_value());
+}
+
+TEST_CASE("findMetric resolves clock aliases")
+{
+	CHECK(findMetric("clocks.current.sm").has_value());
+	CHECK(findMetric("clocks.current.video").has_value());
+	CHECK(findMetric("clocks.max.sm").has_value());
+	CHECK(findMetric("clocks.max.video").has_value());
+}
+
+TEST_CASE("clock aliases do not appear as separate entries in group expansion")
+{
+	const auto byClock = getMetricsByGroup(MetricGroup::CLOCK);
+	// 5 canonical entries; sm/video/max.sm/max.video are aliases, not separate rows.
+	CHECK(byClock.size() == 5);
+}
+
 TEST_CASE("findMetric resolves Utilization canonical names")
 {
 	CHECK(findMetric("utilization.gpu").has_value());
@@ -316,7 +342,8 @@ TEST_CASE("findMetric returns nullopt for unregistered metrics")
 	CHECK_FALSE(findMetric("__no_such_metric__").has_value());
 }
 
-TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Array, Fan, Memory, POWER, and ECC groups")
+TEST_CASE(
+	"resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Array, Fan, Memory, POWER, ECC, and CLOCK groups")
 {
 	CHECK_FALSE(resolveQuery("IDENTITY").empty());
 	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
@@ -328,6 +355,7 @@ TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Arra
 		CHECK_MESSAGE(std::ranges::any_of(byQuery, [name](const auto *m) { return m->name == name; }), name,
 					  " not found in resolveQuery(\"POWER\")");
 	}
+	CHECK_FALSE(resolveQuery("CLOCK").empty());
 	CHECK_FALSE(resolveQuery("p").empty()); // 'p' expands to POWER|TEMPERATURE
 	CHECK_FALSE(resolveQuery("u").empty()); // single-letter alias for UTILIZATION
 	CHECK_FALSE(resolveQuery("PCI").empty());
@@ -341,12 +369,13 @@ TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Arra
 	CHECK_FALSE(resolveQuery("POWER").empty());
 	CHECK_FALSE(resolveQuery("ECC").empty());
 	CHECK_FALSE(resolveQuery("e").empty()); // single-letter alias for ECC
+	CHECK_FALSE(resolveQuery("CLOCK").empty());
+	CHECK_FALSE(resolveQuery("c").empty()); // single-letter alias for CLOCK
 }
 
 TEST_CASE("resolveQuery returns empty for group tokens with no registered metrics")
 {
-	// CLOCK group is in GROUP_TABLE but has no metrics registered in this PR.
-	CHECK(resolveQuery("CLOCK").empty());
+	// All previously-unregistered groups (CLOCK, ECC, POWER, FAN) are now registered.
 }
 
 TEST_CASE("resolveQuery TEMPERATURE returns registered metrics")

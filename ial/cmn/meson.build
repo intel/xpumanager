@@ -5,6 +5,7 @@
 
 ial_cmn_sources = files(
   '../../hal/core/debug.cpp',
+  'metrics/clock.cpp',
   'metrics/temperature_metrics.cpp',
   'metrics/utilization.cpp',
   'metrics/pci.cpp',
