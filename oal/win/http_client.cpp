@@ -216,12 +216,20 @@ int HttpClient::performRequest(const std::string &url, const std::string &userna
 
 	// Add authentication if provided
 	if (!username.empty() && !password.empty()) {
-		WCHAR wideUser[256], widePass[256];
-		MultiByteToWideChar(CP_UTF8, 0, username.c_str(), -1, wideUser, sizeof(wideUser) / sizeof(WCHAR));
-		MultiByteToWideChar(CP_UTF8, 0, password.c_str(), -1, widePass, sizeof(widePass) / sizeof(WCHAR));
+		WCHAR wideUser[256] = {}, widePass[256] = {};
+		const int userLen =
+			MultiByteToWideChar(CP_UTF8, 0, username.c_str(), -1, wideUser, sizeof(wideUser) / sizeof(WCHAR));
+		const int passLen =
+			MultiByteToWideChar(CP_UTF8, 0, password.c_str(), -1, widePass, sizeof(widePass) / sizeof(WCHAR));
 
-		WinHttpSetCredentials(hRequest, WINHTTP_AUTH_TARGET_SERVER, WINHTTP_AUTH_SCHEME_BASIC, wideUser, widePass,
-							  nullptr);
+		if (userLen > 0 && passLen > 0) {
+			WinHttpSetCredentials(hRequest, WINHTTP_AUTH_TARGET_SERVER, WINHTTP_AUTH_SCHEME_BASIC, wideUser, widePass,
+								  nullptr);
+		}
+
+		// Best-effort: scrub local stack copies only; WinHTTP-owned internal copies are not reachable
+		SecureZeroMemory(wideUser, sizeof(wideUser));
+		SecureZeroMemory(widePass, sizeof(widePass));
 	}
 
 	// Send request

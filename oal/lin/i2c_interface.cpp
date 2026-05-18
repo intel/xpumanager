@@ -6,6 +6,7 @@
 
 #include "os.h"
 #include <algorithm>
+#include <cctype>
 #include <debug.h>
 #include <fcntl.h>
 #include <sys/file.h>
@@ -261,9 +262,14 @@ int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList)
 			// Extract the filename portion after the last slash
 			std::string filename = device.substr(device.find_last_of('/') + 1);
 			// Find the hyphen in the filename
-			size_t hyphenPos = filename.find('-');
+			const size_t hyphenPos = filename.find('-');
 			std::string busNumber = (hyphenPos != std::string::npos) ? filename.substr(0, hyphenPos) : "";
-			std::string i2cDevice = "/dev/i2c-" + busNumber;
+			if (busNumber.empty() || !std::all_of(busNumber.begin(), busNumber.end(),
+												  [](char c) { return std::isdigit(static_cast<unsigned char>(c)); })) {
+				ERR("Invalid I2C bus number '{}' from device path: {}\n", busNumber.c_str(), device.c_str());
+				continue;
+			}
+			const std::string i2cDevice = "/dev/i2c-" + busNumber;
 			amcCardInfo info;
 			info.amcDevicePath = i2cDevice;
 			info.gpuParentPath = getGpuDeviceFromI2C("/sys/bus/i2c/devices/i2c-" + busNumber);
