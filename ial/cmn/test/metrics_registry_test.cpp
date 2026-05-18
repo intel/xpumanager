@@ -14,6 +14,7 @@
 #include "metrics_registry.h"
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
+#include "metrics/eu_array.h"
 #include <span>
 #include <string>
 
@@ -86,13 +87,17 @@ TEST_CASE("getQueryMetrics returns non-empty span")
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::TEMPERATURE).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::UTILIZATION).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::PCI).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::EU_ARRAY).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::FAN).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::MEMORY).size());
 }
 
 TEST_CASE("getMetricsByGroup NONE returns empty vector") { CHECK(getMetricsByGroup(MetricGroup::NONE).empty()); }
 
 TEST_CASE("getMetricsByGroup UTILIZATION returns all utilization metrics")
 {
-	CHECK(getMetricsByGroup(MetricGroup::UTILIZATION).size() == metrics::utilization::getUtilizationMetrics().size());
+	CHECK(getMetricsByGroup(MetricGroup::UTILIZATION).size() ==
+		  metrics::utilization::getUtilizationMetrics().size() + metrics::eu_array::getEuArrayMetrics().size());
 }
 
 TEST_CASE("findMetric resolves identity metric names")
@@ -132,10 +137,17 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 {
 	// Aliases (.single / .group / .decode.single etc.) must be excluded so that
 	// '-d UTILIZATION' does not produce duplicate columns.
+	// EU Array metrics also carry UTILIZATION so they appear here too.
 	static constexpr std::array canonicalNames{
-		std::string_view{"utilization.gpu"},	std::string_view{"utilization.compute"},
-		std::string_view{"utilization.render"}, std::string_view{"utilization.media"},
-		std::string_view{"utilization.copy"},	std::string_view{"utilization.memory"},
+		std::string_view{"utilization.gpu"},
+		std::string_view{"utilization.compute"},
+		std::string_view{"utilization.render"},
+		std::string_view{"utilization.media"},
+		std::string_view{"utilization.copy"},
+		std::string_view{"utilization.memory"},
+		std::string_view{"eu.active"},
+		std::string_view{"eu.stall"},
+		std::string_view{"eu.idle"},
 	};
 	const auto byUtil = getMetricsByGroup(MetricGroup::UTILIZATION);
 	REQUIRE(byUtil.size() == canonicalNames.size());
@@ -144,10 +156,11 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 	}
 }
 
-TEST_CASE("getMetricsByGroup MEMORY returns only utilization.memory")
+TEST_CASE("getMetricsByGroup MEMORY includes utilization.memory")
 {
 	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
-	REQUIRE(byMem.size() == 1);
+	// utilization.memory is registered first (before memory.cpp metrics)
+	REQUIRE_FALSE(byMem.empty());
 	CHECK(byMem[0]->name == "utilization.memory");
 }
 
@@ -193,13 +206,50 @@ TEST_CASE("findMetric resolves Utilization aliases")
 	CHECK(findMetric("utilization.copy.group").has_value());
 }
 
+TEST_CASE("findMetric resolves EU Array metric names")
+{
+	CHECK(findMetric("eu.active").has_value());
+	CHECK(findMetric("eu.stall").has_value());
+	CHECK(findMetric("eu.idle").has_value());
+}
+
+TEST_CASE("EU Array group contains exactly 3 canonical entries")
+{
+	const auto byEu = getMetricsByGroup(MetricGroup::EU_ARRAY);
+	CHECK(byEu.size() == 3);
+}
+
+TEST_CASE("findMetric resolves Fan metric names") { CHECK(findMetric("fan.speed").has_value()); }
+
+TEST_CASE("Fan group contains exactly 1 canonical entry")
+{
+	const auto byFan = getMetricsByGroup(MetricGroup::FAN);
+	CHECK(byFan.size() == 1);
+}
+
+TEST_CASE("findMetric resolves Memory metric names")
+{
+	CHECK(findMetric("memory.total").has_value());
+	CHECK(findMetric("memory.used").has_value());
+	CHECK(findMetric("memory.free").has_value());
+	CHECK(findMetric("memory.read.bandwidth").has_value());
+	CHECK(findMetric("memory.write.bandwidth").has_value());
+	CHECK(findMetric("memory.bandwidth.utilization").has_value());
+}
+
+TEST_CASE("Memory group contains exactly 7 canonical entries")
+{
+	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
+	CHECK(byMem.size() == 7); // 6 from memory.cpp + utilization.memory
+}
+
 TEST_CASE("findMetric returns nullopt for unregistered metrics")
 {
 	CHECK_FALSE(findMetric("power.draw").has_value());
 	CHECK_FALSE(findMetric("__no_such_metric__").has_value());
 }
 
-TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, and PCI groups")
+TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Array, Fan, and Memory groups")
 {
 	CHECK_FALSE(resolveQuery("IDENTITY").empty());
 	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
@@ -208,13 +258,18 @@ TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, and PCI grou
 	CHECK_FALSE(resolveQuery("u").empty()); // single-letter alias for UTILIZATION
 	CHECK_FALSE(resolveQuery("PCI").empty());
 	CHECK_FALSE(resolveQuery("t").empty()); // single-letter shortcut for PCI
+	CHECK_FALSE(resolveQuery("EU_ARRAY").empty());
+	CHECK_FALSE(resolveQuery("x").empty()); // single-letter alias for EU_ARRAY
+	CHECK_FALSE(resolveQuery("FAN").empty());
+	CHECK_FALSE(resolveQuery("f").empty()); // single-letter alias for FAN
+	CHECK_FALSE(resolveQuery("MEMORY").empty());
+	CHECK_FALSE(resolveQuery("m").empty()); // single-letter alias for MEMORY
 }
 
 TEST_CASE("resolveQuery returns empty for group tokens with no registered metrics")
 {
 	// These groups are present in GROUP_TABLE but have no metrics registered yet.
 	CHECK(resolveQuery("POWER").empty());
-	CHECK(resolveQuery("FAN").empty());
 }
 
 TEST_CASE("resolveQuery TEMPERATURE returns registered metrics")
@@ -228,8 +283,9 @@ TEST_CASE("resolveQuery pu expands to Temperature and Utilization metrics")
 	// 'p' maps to POWER|TEMPERATURE; 'u' maps to UTILIZATION.
 	// Both groups are registered.
 	const auto result = resolveQuery("pu");
-	CHECK(result.size() ==
-		  metrics::temperature::getTemperatureMetrics().size() + metrics::utilization::getUtilizationMetrics().size());
+	CHECK(result.size() == metrics::temperature::getTemperatureMetrics().size() +
+							   metrics::utilization::getUtilizationMetrics().size() +
+							   metrics::eu_array::getEuArrayMetrics().size());
 }
 
 // ── MetricCache struct ────────────────────────────────────────────────────────

@@ -29,6 +29,9 @@ ial_cmn_sources = files(
   'cmds.cpp',
   'metrics_registry.cpp',
   'printer.cpp',
+  'metrics/eu_array.cpp',
+  'metrics/fan.cpp',
+  'metrics/memory.cpp',
 )
 
 ial_cmn_inc = include_directories('.')

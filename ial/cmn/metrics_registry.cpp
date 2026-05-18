@@ -8,6 +8,9 @@
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
 #include "metrics/pci.h"
+#include "metrics/eu_array.h"
+#include "metrics/fan.h"
+#include "metrics/memory.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
@@ -67,7 +70,7 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 	MetricCache cache;
 	enginegroup *eg = dev.dev->getEngineGroup();
 	power *pw = dev.dev->getPower();
-	memory *mem = dev.dev->getMemory();
+	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
 	for (const auto &entry : ENGINE_MAP) {
@@ -93,6 +96,13 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 		cache.pcieBefore.rx = ps.rxCounter;
 		cache.pcieBefore.timeUs = ps.timestamp;
 	}
+	if (p != nullptr && dev.zesDeviceHdl != nullptr) {
+		zes_pci_properties_t props{};
+		if (p->getProperties(dev.zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
+			cache.pcieBandwidthAvail = props.haveBandwidthCounters;
+			cache.pcieReplayAvail = props.haveReplayCounters;
+		}
+	}
 	if (mem != nullptr) {
 		mem->getMemoryRW(&cache.memBefore.read, &cache.memBefore.write, &cache.memMaxBandwidth, &cache.memBefore.ts);
 	}
@@ -103,7 +113,7 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 {
 	enginegroup *eg = dev.dev->getEngineGroup();
 	power *pw = dev.dev->getPower();
-	memory *mem = dev.dev->getMemory();
+	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
 	for (const auto &entry : ENGINE_MAP) {
@@ -193,6 +203,8 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 	// Using prev.pcieAvail would permanently latch pcieAvail=false after any single
 	// bad tick (non-advancing timestamp, HAL failure, etc.).
 	curr.pcieAvail = (prev.pcieAfter.timeUs != 0);
+	curr.pcieBandwidthAvail = prev.pcieBandwidthAvail;
+	curr.pcieReplayAvail = prev.pcieReplayAvail;
 
 	curr.memBefore = prev.memAfter;
 	curr.memMaxBandwidth = prev.memMaxBandwidth;
@@ -214,8 +226,12 @@ std::span<const QueryMetric> getQueryMetrics()
 		const auto temperatureMetrics = metrics::temperature::getTemperatureMetrics();
 		const auto utilizationMetrics = metrics::utilization::getUtilizationMetrics();
 		const auto pciMetrics = metrics::pci::getPciMetrics();
-		const auto groups = std::to_array<std::span<const QueryMetric>>(
-			{identityMetrics, temperatureMetrics, utilizationMetrics, pciMetrics});
+		const auto euArrayMetrics = metrics::eu_array::getEuArrayMetrics();
+		const auto fanMetrics = metrics::fan::getFanMetrics();
+		const auto memoryMetrics = metrics::memory::getMemoryMetrics();
+		const auto groups =
+			std::to_array<std::span<const QueryMetric>>({identityMetrics, temperatureMetrics, utilizationMetrics,
+														 pciMetrics, euArrayMetrics, fanMetrics, memoryMetrics});
 		std::vector<QueryMetric> v;
 		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));
