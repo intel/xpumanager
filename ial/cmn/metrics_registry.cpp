@@ -5,14 +5,17 @@
  */
 
 #include "metrics_registry.h"
+#include "metrics/temperature_metrics.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
 #include "metrics/identity.h"
 #include <enginegroup.h>
 #include <functional>
+#include <iterator>
 #include <memory.h>
 #include <metric.h>
+#include <numeric>
 #include <optional>
 #include <pci.h>
 #include <power.h>
@@ -205,11 +208,12 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 std::span<const QueryMetric> getQueryMetrics()
 {
 	static const std::vector<QueryMetric> metrics = []() {
-		const auto groups = std::to_array({
+		const auto groups = std::to_array<std::span<const QueryMetric>>({
 			metrics::identity::getIdentityMetrics(),
+			metrics::temperature::getTemperatureMetrics(),
 		});
 		std::vector<QueryMetric> v;
-		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus{},
+		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));
 		std::ranges::copy(groups | std::views::join, std::back_inserter(v));
 		return v;
