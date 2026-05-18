@@ -148,6 +148,8 @@ struct MetricCache
 	PcieSnapshot pcieBefore{}, pcieAfter{};				/**< PCIe Rx/Tx byte counters + µs timestamp */
 	uint64_t pcieReplay = 0;
 	bool pcieAvail = false;
+	bool pcieBandwidthAvail = false;	 /**< true when device reports PCIe bandwidth counters */
+	bool pcieReplayAvail = false;		 /**< true when device reports PCIe replay counters */
 	MemSnapshot memBefore{}, memAfter{}; /**< memory read/write counters + µs timestamp */
 	uint64_t memMaxBandwidth = 0;		 /**< peak bandwidth in bytes/s */
 	bool memAvail = false;

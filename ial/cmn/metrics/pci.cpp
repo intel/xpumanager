@@ -110,7 +110,7 @@ constexpr auto tx_throughput =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail) {
+					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
 					}
 					const auto dt = static_cast<double>(cache.pcieAfter.timeUs - cache.pcieBefore.timeUs);
@@ -127,7 +127,7 @@ constexpr auto rx_throughput =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail) {
+					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
 					}
 					const auto dt = static_cast<double>(cache.pcieAfter.timeUs - cache.pcieBefore.timeUs);
@@ -144,7 +144,7 @@ constexpr auto replay_counter =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail) {
+					if (!cache.pcieAvail || !cache.pcieReplayAvail) {
 						return ZE_RESULT_NOT_READY;
 					}
 					out = std::format("{}", cache.pcieReplay);
@@ -159,7 +159,7 @@ constexpr auto rx_throughput_kbs =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail) {
+					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
 					}
 					const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
@@ -176,7 +176,7 @@ constexpr auto tx_throughput_kbs =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail) {
+					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
 					}
 					const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
