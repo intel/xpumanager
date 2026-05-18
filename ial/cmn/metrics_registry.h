@@ -224,8 +224,6 @@ using MetricValue = std::string;
 
 // ── QueryMetric ────────────────────────────────────────────────────────────────
 
-using MetricValue = std::string;
-
 struct QueryMetric
 {
 	std::string_view name; /**< xpu-smi query field name, e.g. "temperature.gpu" */

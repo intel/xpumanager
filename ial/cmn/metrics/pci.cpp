@@ -22,7 +22,7 @@ namespace metrics::pci {
 
 namespace {
 
-constexpr auto link_gen_max =
+constexpr auto LINK_GEN_MAX =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.link.gen.max",
 				.unit = "",
@@ -42,7 +42,7 @@ constexpr auto link_gen_max =
 					return r;
 				}};
 
-constexpr auto link_width_max =
+constexpr auto LINK_WIDTH_MAX =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.link.width.max",
 				.unit = "",
@@ -62,7 +62,7 @@ constexpr auto link_width_max =
 					return r;
 				}};
 
-constexpr auto link_gen_current =
+constexpr auto LINK_GEN_CURRENT =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.link.gen.current",
 				.unit = "",
@@ -82,7 +82,7 @@ constexpr auto link_gen_current =
 					return r;
 				}};
 
-constexpr auto link_width_current =
+constexpr auto LINK_WIDTH_CURRENT =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.link.width.current",
 				.unit = "",
@@ -102,7 +102,7 @@ constexpr auto link_width_current =
 					return r;
 				}};
 
-constexpr auto tx_throughput =
+constexpr auto TX_THROUGHPUT =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.tx.throughput",
 				.unit = "MB/s",
@@ -119,7 +119,7 @@ constexpr auto tx_throughput =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto rx_throughput =
+constexpr auto RX_THROUGHPUT =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.rx.throughput",
 				.unit = "MB/s",
@@ -136,7 +136,7 @@ constexpr auto rx_throughput =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto replay_counter =
+constexpr auto REPLAY_COUNTER =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.replay.counter",
 				.unit = "",
@@ -151,7 +151,7 @@ constexpr auto replay_counter =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto rx_throughput_kbs =
+constexpr auto RX_THROUGHPUT_KBS =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.rx.throughput.kbs",
 				.unit = "kB/s",
@@ -168,7 +168,7 @@ constexpr auto rx_throughput_kbs =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto tx_throughput_kbs =
+constexpr auto TX_THROUGHPUT_KBS =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.tx.throughput.kbs",
 				.unit = "kB/s",
@@ -186,15 +186,15 @@ constexpr auto tx_throughput_kbs =
 				}};
 
 constexpr auto ALL = std::to_array<QueryMetric>({
-	link_gen_max,
-	link_width_max,
-	link_gen_current,
-	link_width_current,
-	tx_throughput,
-	rx_throughput,
-	replay_counter,
-	rx_throughput_kbs,
-	tx_throughput_kbs,
+	LINK_GEN_MAX,
+	LINK_WIDTH_MAX,
+	LINK_GEN_CURRENT,
+	LINK_WIDTH_CURRENT,
+	TX_THROUGHPUT,
+	RX_THROUGHPUT,
+	REPLAY_COUNTER,
+	RX_THROUGHPUT_KBS,
+	TX_THROUGHPUT_KBS,
 });
 
 } // namespace

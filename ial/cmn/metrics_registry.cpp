@@ -11,6 +11,7 @@
 #include "metrics/eu_array.h"
 #include "metrics/fan.h"
 #include "metrics/memory.h"
+#include "metrics/power.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
@@ -69,7 +70,7 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 {
 	MetricCache cache;
 	enginegroup *eg = dev.dev->getEngineGroup();
-	power *pw = dev.dev->getPower();
+	auto *pw = dev.dev->getPower();
 	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
@@ -112,7 +113,7 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 {
 	enginegroup *eg = dev.dev->getEngineGroup();
-	power *pw = dev.dev->getPower();
+	auto *pw = dev.dev->getPower();
 	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
@@ -229,9 +230,10 @@ std::span<const QueryMetric> getQueryMetrics()
 		const auto euArrayMetrics = metrics::eu_array::getEuArrayMetrics();
 		const auto fanMetrics = metrics::fan::getFanMetrics();
 		const auto memoryMetrics = metrics::memory::getMemoryMetrics();
-		const auto groups =
-			std::to_array<std::span<const QueryMetric>>({identityMetrics, temperatureMetrics, utilizationMetrics,
-														 pciMetrics, euArrayMetrics, fanMetrics, memoryMetrics});
+		const auto powerMetrics = metrics::power::getPowerMetrics();
+		const auto groups = std::to_array<std::span<const QueryMetric>>({identityMetrics, temperatureMetrics,
+																		 utilizationMetrics, pciMetrics, euArrayMetrics,
+																		 fanMetrics, memoryMetrics, powerMetrics});
 		std::vector<QueryMetric> v;
 		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));
