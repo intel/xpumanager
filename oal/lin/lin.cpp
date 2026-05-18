@@ -6,8 +6,10 @@
 
 #include <os.h>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cerrno>
+#include <cmath>
 #include <cstring>
 #include <debug.h>
 #include <fcntl.h>
@@ -17,10 +19,10 @@
 #include <functional>
 #include <grp.h>
 #include <iostream>
-#include <math.h>
 #include <pwd.h>
-#include <sys/mman.h>
+#include <spawn.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <syncstream>
 #include <termios.h>
 #include <unistd.h>
@@ -51,55 +53,92 @@
 /**
  * @brief Execute a system command and capture its output
  *
- * This function executes a shell command using popen and captures both
- * the output and exit status. It provides a safer alternative to system()
- * by capturing output and providing proper error handling with RAII.
+ * Spawns /bin/sh -c to execute the command string via posix_spawn.
+ * The shell is still in the execution path, so callers must ensure command
+ * components are not derived from untrusted input. All current call sites
+ * use hardcoded paths and hardware-derived values (hex BDF addresses).
  *
- * @param command The shell command to execute
+ * @param command The shell command string to execute
  * @return SystemCommandResult containing the command output and exit status
- *
- * @note Uses RAII with custom deleter for automatic pipe cleanup
- * @note Provides enhanced error handling for I/O operations
- * @note Uses std::fread for efficient buffer reading
  */
 SystemCommandResult execCommand(const std::string &command)
 {
-	std::vector<char> buffer(65536); // 64 KB heap buffer; avoids large stack allocation
-	std::string result;
-	// Custom deleter for pipe(), ensures it is always closed automatically on error
-	struct PipeDeleter
-	{
-		int *pExitCode;
-		explicit PipeDeleter(int *ec) : pExitCode(ec) {}
-		void operator()(FILE *f) const noexcept
-		{
-			if (f && pExitCode) {
-				*pExitCode = pclose(f);
-			}
+	std::array<int, 2> pipeFds{};
+	if (pipe(pipeFds.data()) != 0) {
+		return {"Failed to create pipe", -1};
+	}
+
+	posix_spawn_file_actions_t actions;
+	const int initResult = posix_spawn_file_actions_init(&actions);
+	int fileActionsResult = initResult;
+	if (fileActionsResult == 0) {
+		fileActionsResult = posix_spawn_file_actions_adddup2(&actions, pipeFds[1], STDOUT_FILENO);
+	}
+	if (fileActionsResult == 0) {
+		fileActionsResult = posix_spawn_file_actions_adddup2(&actions, pipeFds[1], STDERR_FILENO);
+	}
+	if (fileActionsResult == 0) {
+		fileActionsResult = posix_spawn_file_actions_addclose(&actions, pipeFds[0]);
+	}
+	if (fileActionsResult == 0) {
+		fileActionsResult = posix_spawn_file_actions_addclose(&actions, pipeFds[1]);
+	}
+	if (fileActionsResult != 0) {
+		if (initResult == 0) {
+			posix_spawn_file_actions_destroy(&actions);
 		}
-	};
-	using safePipe = std::unique_ptr<FILE, PipeDeleter>;
-	int exitcode = -1;
-	safePipe pipe(popen(command.c_str(), "r"), PipeDeleter(&exitcode));
-	if (pipe != nullptr) {
-		try {
-			std::size_t bytesRead;
-			while ((bytesRead = std::fread(buffer.data(), sizeof(char), buffer.size(), pipe.get())) != 0) {
-				result += std::string(buffer.data(), bytesRead);
-			}
-			// std::fread returns 0 both when EOF is reached and when som I/O error occurred. Check for completeness
-			if (std::ferror(pipe.get())) {
-				return SystemCommandResult{"Command output read I/O error", -1}; // Not sure;
-			} else if (!std::feof(pipe.get())) {
-				return SystemCommandResult("Command output read terminated unexpectedly", -1); // Not sure
-			}
-		} catch (...) {
-			return SystemCommandResult("Exception occurred while reading command output", -1);
+		close(pipeFds[0]);
+		close(pipeFds[1]);
+		return {"posix_spawn file actions setup failed", -1};
+	}
+
+	// posix_spawn requires a mutable argv array
+	char shPath[] = "/bin/sh";
+	char shFlag[] = "-c";
+	std::string cmdCopy = command;
+	char *argv[] = {shPath, shFlag, cmdCopy.data(), nullptr}; // NOLINT(cppcoreguidelines-avoid-c-arrays)
+
+	pid_t pid = -1;
+	const int spawnResult = posix_spawn(&pid, "/bin/sh", &actions, nullptr, argv, environ);
+	posix_spawn_file_actions_destroy(&actions);
+
+	close(pipeFds[1]);
+
+	if (spawnResult != 0) {
+		close(pipeFds[0]);
+		return {"posix_spawn failed", -1};
+	}
+
+	std::string result;
+	constexpr size_t kReadBufferSize = 65536;
+	std::vector<char> buffer(kReadBufferSize);
+	bool readError = false;
+	while (true) {
+		const ssize_t bytesRead = read(pipeFds[0], buffer.data(), buffer.size());
+		if (bytesRead > 0) {
+			result.append(buffer.data(), static_cast<size_t>(bytesRead));
+		} else if (bytesRead == 0) {
+			break;
+		} else if (errno != EINTR) {
+			ERR("read() failed during command execution: %s\n", strerror(errno));
+			readError = true;
+			break;
 		}
 	}
-	// RAII/custom deleter will close the pipe and reset the exitcode
-	pipe.reset();
-	return SystemCommandResult(result, WEXITSTATUS(exitcode));
+	close(pipeFds[0]);
+
+	int status = 0;
+	pid_t waitResult = -1;
+	do {
+		waitResult = waitpid(pid, &status, 0);
+	} while (waitResult < 0 && errno == EINTR);
+	if (waitResult < 0) {
+		ERR("waitpid failed: %s\n", strerror(errno));
+		return {result, -1};
+	}
+	const int exitcode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+
+	return {result, readError ? -1 : exitcode};
 }
 
 /**

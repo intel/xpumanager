@@ -192,6 +192,7 @@ elif is_linux
   link_args += [
     '-Wl,-z,noexecstack',
     '-Wl,-z,relro',
+    '-Wl,-z,now',
   ]
 
   # Disable LTO when sanitizers are enabled (they cause significant false positives)

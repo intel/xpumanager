@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <getopt.h>
 #include <pthread.h>
@@ -26,8 +27,8 @@
 #endif
 
 #define LIBXPUM_API
-#define STRCPY_S(dest, sz, src) strcpy(dest, src)
-#define STRNCPY_S(dest, src, sz) strncpy(dest, src, sz)
+#define STRCPY_S(dest, sz, src) snprintf((dest), (sz), "%s", (src))
+#define STRNCPY_S(dest, src, sz) snprintf((dest), (sz), "%s", (src))
 #define STRCASECMP strcasecmp
 #define THREAD_RET void *
 #define GETOPT_LONG getopt_long

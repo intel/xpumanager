@@ -8,8 +8,8 @@
 #include <debug.h>
 #include <curl/curl.h>
 #include <string>
+#include <string.h>
 #include <vector>
-#include <cstring>
 
 /**
  * @brief Callback function to write HTTP response data
@@ -197,6 +197,12 @@ int HttpClient::performRequest(const std::string &url, const std::string &userna
 
 	// Perform the request
 	res = curl_easy_perform(curl);
+
+	// Best-effort: scrub local auth string; libcurl-owned internal copies are not reachable
+	if (!authString.empty()) {
+		explicit_bzero(authString.data(), authString.size());
+		authString.clear();
+	}
 
 	if (res == CURLE_OK) {
 		// Get response code
