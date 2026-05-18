@@ -29,8 +29,8 @@ const allEventFlags = sysman.EventTypeFlags(
 		sysman.EVENT_TYPE_FLAG_PCI_LINK_HEALTH |
 		sysman.EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS |
 		sysman.EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS |
-		sysman.EVENT_TYPE_FLAG_DEVICE_RESET_REQUIRED,
-	// NOTE: sysman.EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED disabled, causes ERROR_INVALID_ENUMERATION error
+		sysman.EVENT_TYPE_FLAG_DEVICE_RESET_REQUIRED |
+		sysman.EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED,
 )
 
 const (
@@ -78,7 +78,8 @@ func pollDriver(idx int, driver *sysman.Driver) {
 	var deviceIdentifiers []string
 
 	for i, device := range sysDevices {
-		if err := device.EventRegister(allEventFlags); err != nil {
+		eventsMask, err := device.EventRegister(allEventFlags)
+		if err != nil {
 			log.Printf("Error: driver %d device %d: EventRegister: %v", idx, i, err)
 			continue
 		}
@@ -98,7 +99,7 @@ func pollDriver(idx int, driver *sysman.Driver) {
 		if props, err := device.GetProperties(); err == nil {
 			modelName = props.ModelName.String()
 		}
-		log.Printf("Registered for events on driver %d device %d: [%s] (%s)", idx, i, pciBDF, modelName)
+		log.Printf("Registered for events on driver %d device %d ([%s] %s): %s", idx, i, pciBDF, modelName, eventsMask)
 	}
 
 	if len(devices) == 0 {
