@@ -60,11 +60,13 @@ func newSysmanEventsReceiver(devices *deviceRegistry, logger *zap.SugaredLogger,
 	for i, drv := range r.drivers {
 		registered := 0
 		for j, dev := range drv.devices {
-			if err := dev.EventRegister(allEventTypeFlags); err != nil {
+			eventsMask, err := dev.EventRegister(allEventTypeFlags)
+			if err != nil {
 				r.logger.Errorw("Device EventRegister() failed: device events unavailable",
 					zap.Error(err), "deviceID", j+1, "deviceAttributes", dev.attributes)
 				continue
 			}
+			logger.Debugw("Registered Sysman device events", "eventsMask", eventsMask, "deviceAttributes", dev.attributes)
 			registered++
 		}
 		logger.Infow("Sysman devices registered for events", "registered", registered, "enumerated", len(drv.devices), "driverIndex", i)
