@@ -85,6 +85,7 @@ TEST_CASE("getQueryMetrics returns non-empty span")
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::IDENTITY).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::TEMPERATURE).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::UTILIZATION).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::PCI).size());
 }
 
 TEST_CASE("getMetricsByGroup NONE returns empty vector") { CHECK(getMetricsByGroup(MetricGroup::NONE).empty()); }
@@ -106,6 +107,25 @@ TEST_CASE("findMetric resolves identity metric names")
 	CHECK(findMetric("pci.bus_id").has_value());
 	CHECK(findMetric("pci.device_id").has_value());
 	CHECK(findMetric("pci.sub_device_id").has_value());
+}
+
+TEST_CASE("findMetric resolves PCI metric names")
+{
+	CHECK(findMetric("pcie.link.gen.max").has_value());
+	CHECK(findMetric("pcie.link.width.max").has_value());
+	CHECK(findMetric("pcie.link.gen.current").has_value());
+	CHECK(findMetric("pcie.link.width.current").has_value());
+	CHECK(findMetric("pcie.tx.throughput").has_value());
+	CHECK(findMetric("pcie.rx.throughput").has_value());
+	CHECK(findMetric("pcie.replay.counter").has_value());
+	CHECK(findMetric("pcie.rx.throughput.kbs").has_value());
+	CHECK(findMetric("pcie.tx.throughput.kbs").has_value());
+}
+
+TEST_CASE("PCI group contains exactly 12 canonical entries")
+{
+	const auto byPci = getMetricsByGroup(MetricGroup::PCI);
+	CHECK(byPci.size() == 12); // 9 from pci.cpp + 3 from identity.h (pci.bus_id, pci.device_id, pci.sub_device_id)
 }
 
 TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliases")
@@ -179,13 +199,20 @@ TEST_CASE("findMetric returns nullopt for unregistered metrics")
 	CHECK_FALSE(findMetric("__no_such_metric__").has_value());
 }
 
-TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, and UTILIZATION groups")
+TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, and PCI groups")
 {
 	CHECK_FALSE(resolveQuery("IDENTITY").empty());
 	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
 	CHECK_FALSE(resolveQuery("UTILIZATION").empty());
 	CHECK_FALSE(resolveQuery("p").empty()); // alias covers POWER|TEMPERATURE
 	CHECK_FALSE(resolveQuery("u").empty()); // single-letter alias for UTILIZATION
+	CHECK_FALSE(resolveQuery("PCI").empty());
+	CHECK_FALSE(resolveQuery("t").empty()); // single-letter shortcut for PCI
+}
+
+TEST_CASE("resolveQuery returns empty for group tokens with no registered metrics")
+{
+	// These groups are present in GROUP_TABLE but have no metrics registered yet.
 	CHECK(resolveQuery("POWER").empty());
 	CHECK(resolveQuery("FAN").empty());
 }
