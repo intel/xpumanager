@@ -176,9 +176,43 @@ func (z *Device) ProcessesGetState() ([]ProcessState, error) {
 
 // EventRegister wraps the zesDeviceEventRegister function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdeviceeventregister
-func (z *Device) EventRegister(eventType EventTypeFlags) error {
-	ret := zesDeviceEventRegister(z.handle, eventType)
-	return ret.ToError()
+//
+// The method has a built-in fallback to handle cases where the backend driver:
+// a) does not recognize some of the event flags (e.g. due to older driver version) and returns ERROR_INVALID_ENUMERATION
+// b) does not support some event and returns ERROR_UNSUPPORTED_ENUMERATION
+// In this case the method tries to register each flag individually. The method
+// returns the successfully registered set of flags.
+func (z *Device) EventRegister(flags EventTypeFlags) (EventTypeFlags, error) {
+	// Fastpath: try to register all requested flags
+	ret := zesDeviceEventRegister(z.handle, flags)
+	if ret == core.RESULT_SUCCESS {
+		return flags, nil
+	}
+	if flags <= EventTypeFlags(1) || (ret != core.RESULT_ERROR_INVALID_ENUMERATION && ret != core.RESULT_ERROR_UNSUPPORTED_ENUMERATION) {
+		// No flags to retry individually, or an error other than invalid/unsupported enumeration occurred
+		return 0, ret.ToError()
+	}
+
+	// Slowpath: iteratively register bit-by-bit
+	// NOTE: this may leave us in partially registered state, but there's no way to roll back
+	// (there's no way to know the original state before any registration attempts)
+	var registered EventTypeFlags
+	for _, flag := range flags.Bits() {
+		f := EventTypeFlags(flag)
+		if ret := zesDeviceEventRegister(z.handle, f); ret != core.RESULT_SUCCESS {
+			if ret == core.RESULT_ERROR_INVALID_ENUMERATION || ret == core.RESULT_ERROR_UNSUPPORTED_ENUMERATION {
+				continue
+			}
+			// Unexpected (other than invalid/unsupported enumeration) error
+			return 0, ret.ToError()
+		}
+		registered |= f
+	}
+	ret = zesDeviceEventRegister(z.handle, registered)
+	if ret != core.RESULT_SUCCESS {
+		return 0, ret.ToError()
+	}
+	return registered, nil
 }
 
 // PciGetProperties wraps the zesDevicePciGetProperties function:
