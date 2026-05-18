@@ -516,8 +516,11 @@ func TestDeviceProcessesGetState(t *testing.T) {
 }
 
 func TestDeviceEventRegister(t *testing.T) {
-	testDeviceActionError(t, func(d *Device) error { return d.EventRegister(0) }, withConfig(driverConfigDeviceErrs))
-	testDeviceActionSuccess(t, func(d *Device) error { return d.EventRegister(0) })
+	events := EventTypeFlags(EVENT_TYPE_FLAG_DEVICE_DETACH | EVENT_TYPE_FLAG_DEVICE_ATTACH | EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED)
+	eventRegister := func(d *Device) (EventTypeFlags, error) { return d.EventRegister(events) }
+
+	testDeviceGetterError(t, eventRegister, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, eventRegister, checkValue(events))
 }
 
 // ------------------------------------------------------------------
