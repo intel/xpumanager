@@ -8,6 +8,7 @@ ial_cmn_sources = files(
   'metrics/temperature_metrics.cpp',
   'metrics/utilization.cpp',
   'metrics/pci.cpp',
+  'metrics/power.cpp',
   'cmd_agentset.cpp',
   'cmd_amc.cpp',
   'cmd_config.cpp',

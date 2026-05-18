@@ -60,7 +60,7 @@ constexpr auto COPY_ALIASES = std::to_array<std::string_view>({
 	"utilization.copy.group",
 });
 
-constexpr auto gpu =
+constexpr auto GPU =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.gpu",
 				.unit = "%",
@@ -77,7 +77,7 @@ constexpr auto gpu =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto compute =
+constexpr auto COMPUTE =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.compute",
 				.aliases = COMPUTE_ALIASES,
@@ -95,7 +95,7 @@ constexpr auto compute =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto render =
+constexpr auto RENDER =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.render",
 				.aliases = RENDER_ALIASES,
@@ -113,7 +113,7 @@ constexpr auto render =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto media = QueryMetric{
+constexpr auto MEDIA = QueryMetric{
 	// NOLINT(readability-identifier-naming)
 	.name = "utilization.media",
 	.aliases = MEDIA_ALIASES,
@@ -131,7 +131,7 @@ constexpr auto media = QueryMetric{
 		return ZE_RESULT_SUCCESS;
 	}};
 
-constexpr auto copy =
+constexpr auto COPY =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.copy",
 				.aliases = COPY_ALIASES,
@@ -149,7 +149,7 @@ constexpr auto copy =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto mem_util =
+constexpr auto MEM_UTIL =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.memory",
 				.unit = "%",
@@ -170,7 +170,7 @@ constexpr auto mem_util =
 					return r;
 				}};
 
-constexpr auto ALL = std::to_array<QueryMetric>({gpu, compute, render, media, copy, mem_util});
+constexpr auto ALL = std::to_array<QueryMetric>({GPU, COMPUTE, RENDER, MEDIA, COPY, MEM_UTIL});
 
 } // namespace
 

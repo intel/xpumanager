@@ -58,7 +58,7 @@ constexpr auto used = QueryMetric{// NOLINT(readability-identifier-naming)
 									  return r;
 								  }};
 
-constexpr auto free =
+constexpr auto FREE =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "memory.free",
 				.unit = "MiB",
@@ -85,7 +85,7 @@ constexpr auto free =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto read_bandwidth =
+constexpr auto READ_BANDWIDTH =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "memory.read.bandwidth",
 				.unit = "kB/s",
@@ -103,7 +103,7 @@ constexpr auto read_bandwidth =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto write_bandwidth =
+constexpr auto WRITE_BANDWIDTH =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "memory.write.bandwidth",
 				.unit = "kB/s",
@@ -121,7 +121,7 @@ constexpr auto write_bandwidth =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto bandwidth_utilization = QueryMetric{
+constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 	// NOLINT(readability-identifier-naming)
 	.name = "memory.bandwidth.utilization",
 	.unit = "%",
@@ -141,7 +141,7 @@ constexpr auto bandwidth_utilization = QueryMetric{
 	}};
 
 constexpr auto ALL =
-	std::to_array<QueryMetric>({total, used, free, read_bandwidth, write_bandwidth, bandwidth_utilization});
+	std::to_array<QueryMetric>({total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION});
 
 } // namespace
 
