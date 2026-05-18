@@ -7,6 +7,7 @@
 #include "metrics_registry.h"
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
+#include "metrics/pci.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
@@ -67,7 +68,7 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 	enginegroup *eg = dev.dev->getEngineGroup();
 	power *pw = dev.dev->getPower();
 	memory *mem = dev.dev->getMemory();
-	pci *p = dev.dev->getPCI();
+	auto *p = dev.dev->getPCI();
 
 	for (const auto &entry : ENGINE_MAP) {
 		auto &s = cache.engines.*entry.slot;
@@ -103,7 +104,7 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	enginegroup *eg = dev.dev->getEngineGroup();
 	power *pw = dev.dev->getPower();
 	memory *mem = dev.dev->getMemory();
-	pci *p = dev.dev->getPCI();
+	auto *p = dev.dev->getPCI();
 
 	for (const auto &entry : ENGINE_MAP) {
 		auto &s = cache.engines.*entry.slot;
@@ -212,8 +213,9 @@ std::span<const QueryMetric> getQueryMetrics()
 		const auto identityMetrics = metrics::identity::getIdentityMetrics();
 		const auto temperatureMetrics = metrics::temperature::getTemperatureMetrics();
 		const auto utilizationMetrics = metrics::utilization::getUtilizationMetrics();
-		const auto groups =
-			std::to_array<std::span<const QueryMetric>>({identityMetrics, temperatureMetrics, utilizationMetrics});
+		const auto pciMetrics = metrics::pci::getPciMetrics();
+		const auto groups = std::to_array<std::span<const QueryMetric>>(
+			{identityMetrics, temperatureMetrics, utilizationMetrics, pciMetrics});
 		std::vector<QueryMetric> v;
 		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));

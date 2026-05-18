@@ -89,6 +89,28 @@ ze_result_t pci::getState(zes_device_handle_t device, zes_pci_link_status_t &pci
 }
 
 /**
+ * @brief Gets the current negotiated PCIe link speed for a device
+ *
+ * Retrieves the current PCIe state and returns the speed (generation and
+ * width) of the negotiated link.
+ *
+ * @param device Handle to the device
+ * @param speed Output structure filled with the current link speed
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, error code otherwise
+ */
+ze_result_t pci::getCurrentLinkSpeed(zes_device_handle_t device, zes_pci_speed_t &speed)
+{
+	zes_pci_state_t state{};
+	ze_result_t result = zesDevicePciGetState(device, &state);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get PCI state for link speed: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+	speed = state.speed;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Gets PCI Base Address Registers (BARs) information for a device
  *
  * This function retrieves PCI BAR information for the specified device,

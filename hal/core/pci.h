@@ -48,6 +48,7 @@ public:
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);
 	ze_result_t getBars(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device, zes_pci_link_status_t &pciLinkStatus);
+	ze_result_t getCurrentLinkSpeed(zes_device_handle_t device, zes_pci_speed_t &speed);
 	ze_result_t getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats);
 	ze_result_t getPciDowngradeState(const zes_device_handle_t &device, PciDowngradeState &state);
 	ze_result_t setPciDowngradeState(const zes_device_handle_t &device, bool enabled, PciDowngradeState &state);
