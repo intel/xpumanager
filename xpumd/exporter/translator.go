@@ -24,12 +24,13 @@ type metricsTranslator struct {
 	resp   map[string]*pb.DeviceHealth
 
 	// helpers for quick'n'easy lookups
-	health   map[string]domainHealth
+	health   map[string]healthStatusIndex
 	memory   map[string][]*pb.MemoryInfo
 	mappings []HwStatusMapping
 }
 
-type domainHealth map[string]*pb.HealthStatus
+// healthStatusIndex contains health status entries for a specific device
+type healthStatusIndex map[string]*pb.HealthStatus
 
 func newMetricsTranslator(logger *zap.SugaredLogger, cfg *Config) *metricsTranslator {
 	var mappings []HwStatusMapping
@@ -39,7 +40,7 @@ func newMetricsTranslator(logger *zap.SugaredLogger, cfg *Config) *metricsTransl
 	return &metricsTranslator{
 		logger:   logger,
 		resp:     make(map[string]*pb.DeviceHealth),
-		health:   make(map[string]domainHealth),
+		health:   make(map[string]healthStatusIndex),
 		memory:   make(map[string][]*pb.MemoryInfo),
 		mappings: mappings,
 	}
@@ -226,15 +227,15 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 
 		health := t.health[id]
 		if health == nil {
-			health = make(domainHealth)
+			health = make(healthStatusIndex)
 			t.health[id] = health
 		}
 
-		t.updateHealthDomainStatus(health, metricName, attrs, t.mappings)
+		t.updateDeviceHealthStatus(health, metricName, attrs, t.mappings)
 	}
 }
 
-func (t *metricsTranslator) updateHealthDomainStatus(domain domainHealth, metricName string, attrs pcommon.Map, mappings []HwStatusMapping) {
+func (t *metricsTranslator) updateDeviceHealthStatus(healthIndex healthStatusIndex, metricName string, attrs pcommon.Map, mappings []HwStatusMapping) {
 	m, ok := matchHwStatusMapping(mappings, attrs)
 	if !ok {
 		return
@@ -260,8 +261,8 @@ func (t *metricsTranslator) updateHealthDomainStatus(domain domainHealth, metric
 		reason = hwState
 	}
 
-	if status, exists := domain[healthDomain]; !exists {
-		domain[healthDomain] = &pb.HealthStatus{
+	if status, exists := healthIndex[healthDomain]; !exists {
+		healthIndex[healthDomain] = &pb.HealthStatus{
 			Name:     healthDomain,
 			Severity: sm.severityLevel,
 			Reason:   reason,
@@ -270,9 +271,9 @@ func (t *metricsTranslator) updateHealthDomainStatus(domain domainHealth, metric
 	} else if sm.severityLevel != pb.SeverityLevel_SEVERITY_LEVEL_OK {
 		// Pick the worst severity level if multiple statuses exist for the same domain
 		if sm.severityLevel > status.Severity {
-			domain[healthDomain].Severity = sm.severityLevel
-			domain[healthDomain].Reason = reason
-			domain[healthDomain].Message = sm.Message
+			healthIndex[healthDomain].Severity = sm.severityLevel
+			healthIndex[healthDomain].Reason = reason
+			healthIndex[healthDomain].Message = sm.Message
 		}
 	}
 }
