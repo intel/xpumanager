@@ -480,7 +480,7 @@ int amclib::amcGpuReset(uint32_t cardNum)
  * @note The function handles multipart transfers for large files and ensures proper assembly of data
  * @note The caller is responsible for providing a valid device index and file PDR ID
  */
-int amclib::amcReadFile(int deviceIndex, uint32_t filePdrId, std::vector<uint8_t> &fileData)
+int amclib::amcReadFile(int deviceIndex, uint16_t filePdrId, std::vector<uint8_t> &fileData)
 {
 	TRACING();
 

@@ -761,79 +761,79 @@ uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<u
 }
 
 /**
- * @brief Retrieves the PLDM file descriptor PDR for a given file PDR ID.
+ * @brief Retrieves the PLDM file descriptor PDR for a given file identifier.
  *
- * This function searches through the PDR records to find the file descriptor PDR corresponding to the provided file PDR
- * ID.
+ * This function searches through the PDR records to find the file descriptor PDR whose
+ * fileIdentifier field matches the provided filePdrId.
  *
- * @param[in] filePdrId The index of the file PDR to retrieve
- * @return const PdrRecord* Pointer to the file descriptor PDR if found, nullptr on failure
+ * @param[in] filePdrId The file identifier to match against PDR records
+ * @return const PdrRecord* Pointer to the matching file descriptor PDR, nullptr if not found
  */
-const PdrRecord *pldm::getFilePdrById(uint32_t filePdrId)
+const PdrRecord *pldm::getFilePdrById(uint16_t filePdrId)
 {
 	TRACING();
 
-	std::vector<const PdrRecord *> filePdrs{};
+	const size_t minFilePdrSize = sizeof(struct pldmFileDescriptorPdr) - 1;
 	for (const auto &pdr : mPdrManager.getPdrRecords()) {
-		if (pdr.header.type == PLDM_FILE_DESCRIPTOR_PDR) {
-			filePdrs.push_back(&pdr);
+		if (pdr.header.type != PLDM_FILE_DESCRIPTOR_PDR) {
+			continue;
+		}
+		if (pdr.data.size() < minFilePdrSize) {
+			ERR("PLDM File Transfer: Skipping malformed file PDR: buffer size {} < {}\n", pdr.data.size(),
+				minFilePdrSize);
+			continue;
+		}
+		const auto *fileDescPdr = reinterpret_cast<const struct pldmFileDescriptorPdr *>(pdr.data.data());
+		DBG("Checking file PDR with identifier 0x{:04x}\n", fileDescPdr->fileIdentifier);
+		if (fileDescPdr->fileIdentifier == filePdrId) {
+			DBG("Found matching file PDR with identifier 0x{:04x}\n", filePdrId);
+			return &pdr;
 		}
 	}
 
-	if (filePdrId >= filePdrs.size()) {
-		ERR("PLDM File Transfer: Invalid file PDR ID {}\n", filePdrId);
-		return nullptr;
-	}
-
-	const PdrRecord *filePdr = filePdrs[filePdrId];
-	const size_t minFilePdrSize = sizeof(struct pldmFileDescriptorPdr) - 1;
-	if (filePdr->data.size() < minFilePdrSize) {
-		ERR("PLDM File Transfer: Invalid file PDR size ({})\n", filePdr->data.size());
-		return nullptr;
-	}
-
-	return filePdr;
+	ERR("PLDM File Transfer: File PDR with identifier 0x{:04x} not found\n", filePdrId);
+	return nullptr;
 }
 
 /**
- * @brief Reads a file using PLDM file transfer commands based on a given file PDR ID.
+ * @brief Reads a file using PLDM file transfer commands based on a given file PDR identifier.
  *
  * This function initializes the platform monitoring, retrieves the file descriptor PDR, opens the file, and reads its
  * contents using multipart receive if necessary.
  *
- * @param[in] filePdrId The index of the file PDR to read
+ * @param[in] filePdrId The identifier of the file PDR to read
  * @param[out] fileData The vector to store the read file data
  * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
  */
-uint8_t pldm::getFile(uint32_t filePdrId, std::vector<uint8_t> &fileData)
+uint8_t pldm::getFile(uint16_t filePdrId, std::vector<uint8_t> &fileData)
 {
 	TRACING();
 
-	INFO("PLDM File Transfer: Initiating file read for file PDR ID {}\n", filePdrId);
+	DBG("PLDM File Transfer: Initiating file read for file PDR identifier {}\n", filePdrId);
 	uint8_t ret = pfMonCtrlInitialize();
 	if (ret != PLDM_SUCCESS) {
 		ERR("PLDM File Transfer: Failed to initialize platform monitoring\n");
 		return ret;
 	}
-	INFO("PLDM File Transfer: Platform monitoring initialized successfully\n");
+	DBG("PLDM File Transfer: Platform monitoring initialized successfully\n");
 
 	const PdrRecord *filePdr = getFilePdrById(filePdrId);
 	if (filePdr == nullptr) {
-		ERR("PLDM File Transfer: Failed to retrieve file PDR with ID {}\n", filePdrId);
+		ERR("PLDM File Transfer: Failed to retrieve file PDR with identifier {}\n", filePdrId);
 		return PLDM_ERROR;
 	}
 
 	const auto *fileDescPdr = reinterpret_cast<const struct pldmFileDescriptorPdr *>(filePdr->data.data());
 	uint16_t fileIdentifier = fileDescPdr->fileIdentifier;
-	INFO("PLDM File Transfer: Found file PDR with ID {}, file identifier=0x{:04x}\n", filePdrId, fileIdentifier);
+	DBG("PLDM File Transfer: Found file PDR with identifier {}, file identifier=0x{:04x}\n", filePdrId, fileIdentifier);
 
 	uint16_t fileDescriptor = 0;
 	ret = pldmDfOpenCommand(fileIdentifier, fileDescriptor);
 	if (ret != PLDM_SUCCESS) {
 		return ret;
 	}
-	INFO("PLDM File Transfer: Opened file identifier 0x{:04x} with descriptor 0x{:04x}\n", fileIdentifier,
-		 fileDescriptor);
+	DBG("PLDM File Transfer: Opened file identifier 0x{:04x} with descriptor 0x{:04x}\n", fileIdentifier,
+		fileDescriptor);
 
 	fileData.clear();
 	ret = pldmMultipartReceiveCommand(fileDescriptor, fileData);
@@ -845,7 +845,7 @@ uint8_t pldm::getFile(uint32_t filePdrId, std::vector<uint8_t> &fileData)
 			ret = closeRet;
 		}
 	}
-	INFO("PLDM File Transfer: Closed file descriptor 0x{:04x}\n", fileDescriptor);
+	DBG("PLDM File Transfer: Closed file descriptor 0x{:04x}\n", fileDescriptor);
 
 	if (ret == PLDM_SUCCESS) {
 		INFO("PLDM File Transfer: File read completed, total bytes={}\n", fileData.size());

@@ -50,7 +50,7 @@ public:
 	int amcGetSerialNumber(uint8_t card_num, char *serialNumber, size_t *bufferSize);
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
 	int amcGpuReset(uint32_t cardNum);
-	int amcReadFile(int deviceIndex, uint32_t filePdrId, std::vector<uint8_t> &fileData);
+	int amcReadFile(int deviceIndex, uint16_t filePdrId, std::vector<uint8_t> &fileData);
 };
 
 #endif

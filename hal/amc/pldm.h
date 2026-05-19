@@ -292,7 +292,7 @@ private:
 	uint8_t pldmDfOpenCommand(uint16_t fileIdentifier, uint16_t &fileDescriptor);
 	uint8_t pldmDfCloseCommand(uint16_t fileDescriptor);
 	uint8_t pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<uint8_t> &fileData);
-	const PdrRecord *getFilePdrById(uint32_t filePdrId);
+	const PdrRecord *getFilePdrById(uint16_t filePdrId);
 
 public:
 	pldm(const std::string &devpath, int cardnum)
@@ -310,7 +310,7 @@ public:
 	int fwupd(const char *pkgFilePath);
 	uint8_t getSensorInfoById(uint16_t sensorId);
 	uint8_t getSensorInfoByUnit(sensorUnits unit);
-	uint8_t getFile(uint32_t filePdrId, std::vector<uint8_t> &fileData);
+	uint8_t getFile(uint16_t filePdrId, std::vector<uint8_t> &fileData);
 	std::vector<pldmSensorInfo> &getSensorInfoList() { return mSensorInfoList; }
 	uint8_t oemVrsyncCmd(uint8_t cmd);
 	int fwupdProgress() { return mProgPercent; }
