@@ -22,9 +22,9 @@ func init() {
 
 type power struct {
 	*l0sysman.Power
-	logger  *zap.SugaredLogger
-	attribs powerAttribs
-	state   powerState
+	logger     *zap.SugaredLogger
+	attributes powerAttributes
+	state      powerState
 }
 
 // powerState holds the dynamic runtime state of the power instance.
@@ -32,7 +32,7 @@ type powerState struct {
 	hasLimits bool
 	counter   *l0sysman.PowerEnergyCounter
 }
-type powerAttribs struct {
+type powerAttributes struct {
 	hwID           string
 	hwName         string
 	pciBDF         string
@@ -83,7 +83,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 	p := &power{
 		Power:  pwr,
 		logger: device.logger,
-		attribs: powerAttribs{
+		attributes: powerAttributes{
 			hwID:           device.attributes.hwID,
 			hwName:         name,
 			pciBDF:         device.attributes.pciBDF,
@@ -97,7 +97,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 	}
 
 	if _, err = pwr.GetLimitsExt(); err != nil {
-		device.logger.Infow("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "attributes", p.attribs)
+		device.logger.Infow("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "attributes", p.attributes)
 		p.state.hasLimits = false
 	}
 
@@ -116,7 +116,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	counter, err := power.GetEnergyCounter()
 	if err != nil {
-		power.logger.Errorw("Power GetEnergyCounter() failed: power metrics disabled", zap.Error(err), "attributes", power.attribs)
+		power.logger.Errorw("Power GetEnergyCounter() failed: power metrics disabled", zap.Error(err), "attributes", power.attributes)
 		power.state.counter = nil
 		return
 	}
@@ -127,11 +127,11 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwEnergyDataPoint(
 		ts,
 		float64(counter.Energy)/1e6, // uJ -> J
-		power.attribs.hwID,
-		power.attribs.hwName,
-		power.attribs.pciBDF,
-		power.attribs.subdeviceId,
-		power.attribs.sensorLocation,
+		power.attributes.hwID,
+		power.attributes.hwName,
+		power.attributes.pciBDF,
+		power.attributes.subdeviceId,
+		power.attributes.sensorLocation,
 	)
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
@@ -146,11 +146,11 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	watts := float64(ediff) / float64(tdiff)
 	mb.RecordHwPowerDataPoint(
 		ts, watts,
-		power.attribs.hwID,
-		power.attribs.hwName,
-		power.attribs.pciBDF,
-		power.attribs.subdeviceId,
-		power.attribs.sensorLocation,
+		power.attributes.hwID,
+		power.attributes.hwName,
+		power.attributes.pciBDF,
+		power.attributes.subdeviceId,
+		power.attributes.sensorLocation,
 	)
 
 	// log only once
@@ -161,7 +161,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// TODO: find HW supporting this / test it
 	limits, err := power.GetLimitsExt()
 	if err != nil {
-		power.logger.Errorw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attribs)
+		power.logger.Errorw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attributes)
 		power.state.hasLimits = false
 		return
 	}
@@ -175,11 +175,11 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwPowerLimitDataPoint(
 			ts,
 			float64(limit.Limit)*1e3, // mW -> W
-			power.attribs.hwID,
-			power.attribs.hwName,
-			power.attribs.pciBDF,
-			power.attribs.subdeviceId,
-			power.attribs.sensorLocation,
+			power.attributes.hwID,
+			power.attributes.hwName,
+			power.attributes.pciBDF,
+			power.attributes.subdeviceId,
+			power.attributes.sensorLocation,
 			strings.ToLower(limit.Level.String()),
 			strings.ToLower(limit.Source.String()),
 		)
@@ -187,7 +187,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 
 	if count == 0 {
-		power.logger.Infow("Power GetLimitsExt(): no suitable power limits", "all", len(limits), "attributes", power.attribs)
+		power.logger.Infow("Power GetLimitsExt(): no suitable power limits", "all", len(limits), "attributes", power.attributes)
 		power.state.hasLimits = false
 	}
 }
