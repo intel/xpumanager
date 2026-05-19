@@ -69,6 +69,9 @@ type HwStatusMapping struct {
 	// "*" acts as a default catch-all for any state not matched by an
 	// exact key.
 	StateMapping map[string]HwStateMapping `mapstructure:"state_mapping"`
+	// ShowAllStates, if true, includes all active hw.state values in the
+	// output, not just the one with the highest severity for each health domain.
+	ShowAllStates bool `mapstructure:"show_all_states"`
 
 	// healthDomainTmpl is compiled from HealthDomain during Validate.
 	healthDomainTmpl *template.Template
