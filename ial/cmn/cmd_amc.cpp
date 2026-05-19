@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <algorithm>
 #include <nlohmann/json.hpp>
+#include <ctime>
+#include <array>
 
 static std::unordered_map<amcSubCmdType, amcSubCmdStruct> amcCmds = {
 	{AMC_HELP, {{"help", no_argument, 0, 'h'}, nullptr, false, ""}},
@@ -93,32 +95,32 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "AMC Operations"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s amc [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -y", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId] -y", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset -y", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset -d [deviceId] -y", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId] -j", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --file -d [deviceId] --filetype [fileType] --filename [outputFile]",
+	helpList.push_back(helpCmd(HEADING, "%s amc --file -d [deviceId] --fileType [fileType] --fileName [outputFile]",
 							   progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-d,--device                 Specify the device ID or PCI BDF address"));
-	helpList.push_back(helpCmd(HEADING, "--gpureset                  Reset GPU(s) via AMC"));
+	helpList.push_back(helpCmd(HEADING, "--gpuReset                  Reset GPU(s) via AMC"));
 	helpList.push_back(helpCmd(HEADING, "--sensor                    Read AMC real-time sensor readings"));
 	helpList.push_back(
-		helpCmd(HEADING, "-s,--sensorid               Specify the sensor ID (Sensor IDs are listed below)"));
+		helpCmd(HEADING, "-s,--sensorId               Specify the sensor ID (Sensor IDs are listed below)"));
 	helpList.push_back(helpCmd(HEADING, "--file                      Read a file from GPU via AMC"));
 	helpList.push_back(helpCmd(
-		HEADING, "--filetype                  Specify the type of file to read (Filetype ids are listed below)"));
+		HEADING, "--fileType                  Specify the type of file to read (Filetype ids are listed below)"));
 	helpList.push_back(helpCmd(
 		HEADING,
-		"--filename                  Specify the output file name. Default is amc_file_<YrMthDt_HrMinSec>.txt"));
+		"--fileName                  Specify the output file name. Default is <filepdrname_YrMthDt_HrMinSec>.bin"));
 	helpList.push_back(helpCmd(HEADING, "-y,--yes                    Skip confirmation prompt"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Sensor IDs (used with -s/--sensorid):"));
+	helpList.push_back(helpCmd(TITLE, "Sensor IDs (used with -s/--sensorId):"));
 	helpList.push_back(helpCmd(SUB_HEADING, "1. Temperature Sensor 0 from Add-In-Card"));
 	helpList.push_back(helpCmd(SUB_HEADING, "2. Temperature Sensor 1 from Add-In-Card"));
 	helpList.push_back(helpCmd(SUB_HEADING, "3. VR Voltage from Add-In-Card"));
@@ -127,9 +129,11 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "6. VR Temperature Sensor"));
 	helpList.push_back(helpCmd(SUB_HEADING, "7. Total Board Power"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "File Types (used with --filetype):"));
-	// Note: The actual file type IDs and descriptions should be updated based on the implementation
-	helpList.push_back(helpCmd(SUB_HEADING, "0. GPU logs"));
+	helpList.push_back(helpCmd(TITLE, "File Types (used with --fileType):"));
+	helpList.push_back(helpCmd(SUB_HEADING, "1. AMC crash logs"));
+	helpList.push_back(helpCmd(SUB_HEADING, "2. System trace logs"));
+	helpList.push_back(helpCmd(SUB_HEADING, "3. GPU crash logs"));
+	helpList.push_back(helpCmd(SUB_HEADING, "4. GPU bulk telemetry logs"));
 	helpList.push_back(helpCmd(TITLE, "WARNING:"));
 	helpList.push_back(helpCmd(HEADING, "  - The operation may require root/administrator privileges"));
 
@@ -512,6 +516,10 @@ ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
 {
 	TRACING();
 
+	constexpr std::array<const char *, 5> filePdrNames = {
+		"Unknown", "amc_crash_dump", "syst_log", "gpu_crash_log", "gpu_bulk_telemetry",
+	};
+
 	if (!amcCmds[AMC_DEVICE].enabled || amcCmds[AMC_DEVICE].val.empty()) {
 		ERR("Device ID must be specified with --device option.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -522,14 +530,30 @@ ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	uint16_t filePdrId = 0;
+	try {
+		unsigned long parsed = std::stoul(amcCmds[AMC_FILE_TYPE].val);
+		if (parsed > UINT16_MAX) {
+			throw std::out_of_range("File type ID exceeds 16-bit limit");
+		}
+		filePdrId = static_cast<uint16_t>(parsed);
+		if (filePdrId == 0 || filePdrId >= filePdrNames.size()) {
+			ERR("Invalid file type ID: {}. Valid range is 1 to {}.\n", filePdrId, filePdrNames.size() - 1);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	} catch (const std::exception &) {
+		ERR("Invalid file type: {}. File type must be a numeric value.\n", amcCmds[AMC_FILE_TYPE].val.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	std::string opFilename{};
 	if (amcCmds[AMC_OP_FILENAME].enabled && !amcCmds[AMC_OP_FILENAME].val.empty()) {
 		opFilename = amcCmds[AMC_OP_FILENAME].val;
 	} else {
 		std::time_t now = std::time(nullptr);
 		char timeStr[20];
-		std::strftime(timeStr, sizeof(timeStr), "%Y%m%d_%H%M%S", std::localtime(&now));
-		opFilename = "amc_file_" + std::string(timeStr) + ".txt";
+		std::strftime(timeStr, sizeof(timeStr), "_%Y%m%d_%H%M%S", std::localtime(&now));
+		opFilename = filePdrNames[filePdrId] + std::string(timeStr) + ".bin";
 	}
 
 	int deviceIndex = -1;
@@ -537,13 +561,6 @@ ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	uint32_t filePdrId = 0;
-	try {
-		filePdrId = static_cast<uint32_t>(std::stoul(amcCmds[AMC_FILE_TYPE].val));
-	} catch (const std::exception &) {
-		ERR("Invalid file type: {}. File type must be a numeric value.\n", amcCmds[AMC_FILE_TYPE].val.c_str());
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
 	std::vector<uint8_t> fileData;
 	int ret = amc->amcReadFile(deviceIndex, filePdrId, fileData);
 	if (ret != AMC_SUCCESS) {
