@@ -43,6 +43,7 @@ type eccInfo struct {
 	configurable bool
 }
 
+// deviceState has values that can change after enumeration.
 type deviceState struct {
 	devStateDisabled bool
 	pciStateDisabled bool
@@ -50,13 +51,13 @@ type deviceState struct {
 	pciQualitySeen   l0sysman.PciLinkQualIssueFlags
 	pciStabilitySeen l0sysman.PciLinkStabIssueFlags
 	pciStats         *l0sysman.PciStats
-	maxBandwidth     int64
 	ecc              *eccInfo
 }
 
-// deviceAttributes fields for numeric items which values may be
-// be missing (e.g. pciLinkGen) are stored as strings instead of ints
-// to be able to better indicate missing info (= "" instead of "0").
+// deviceAttributes fields for numeric items that are always reported,
+// but which value may be unknown (e.g. pciLinkGen), are stored as
+// strings instead of ints. That way it's clearer when info is missing
+// (value = "" instead of "0").
 type deviceAttributes struct {
 	hwID              string
 	hwName            string
@@ -70,6 +71,7 @@ type deviceAttributes struct {
 	hwFirmwareVersion string
 	hwGpuType         metadata.AttributeHwGpuType
 	subDevCount       int64
+	maxBandwidth      int64 // zero = not available, skip PCI BW max/ratio metrics
 	pciLanes          string
 	pciLinkGen        string
 	demandPaging      bool
@@ -196,7 +198,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			d.attributes.pciLanes = fmt.Sprintf("%d", pci.MaxSpeed.Width)
 		}
 		if pci.MaxSpeed.MaxBandwidth > 0 {
-			d.state.maxBandwidth = pci.MaxSpeed.MaxBandwidth
+			d.attributes.maxBandwidth = pci.MaxSpeed.MaxBandwidth
 		} else {
 			d.logger.Infow("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
 		}
@@ -499,12 +501,12 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		d.attributes.pciBDF,
 	)
 
-	if d.state.maxBandwidth > 0 {
+	if d.attributes.maxBandwidth > 0 {
 		// TODO: verify that max is for read+write, not just one direction
 
 		// max BW
 		mb.RecordHwGpuBandwidthLimitDataPoint(
-			ts, d.state.maxBandwidth,
+			ts, d.attributes.maxBandwidth,
 			d.attributes.hwID,
 			d.attributes.hwNamePci,
 			d.attributes.pciBDF,
@@ -512,7 +514,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 
 		// BW utilization ratio
 		mb.RecordHwGpuBandwidthUtilizationDataPoint(
-			ts, rate/float64(d.state.maxBandwidth),
+			ts, rate/float64(d.attributes.maxBandwidth),
 			d.attributes.hwID,
 			d.attributes.hwNamePci,
 			d.attributes.pciBDF,
