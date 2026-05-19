@@ -398,11 +398,15 @@ Drivers:
               DetailedThresholds:
                 Category: [10, 11, 12, 13, 14, 15, 16]
             State:
-              Category: [5, 6, 7, 8, 9, 10, 11]
+              # first 3 correctable categories are always zero:
+              # https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/PROG.html#querying-ras-errors
+              Category: [0, 0, 0, 8, 9, 10, 11]
           - Properties:
               Type: 1 # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
-              OnSubdevice: false
-              SubdeviceId: 0
+              OnSubdevice: true
+              SubdeviceId: 1
+            State:
+              Category: [3, 2, 1, 0, 0, 0, 0]
 
         Schedulers:
           - Properties:

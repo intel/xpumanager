@@ -185,8 +185,8 @@ type testOpt func(*testCfg)
 func withConfig(cfg string) testOpt { return func(c *testCfg) { c.cfgFile = cfg } }
 func withError(err error) testOpt   { return func(c *testCfg) { c.wantErr = err } }
 func withDrvIdx(idx int) testOpt    { return func(c *testCfg) { c.drvIdx = idx } }
-func withDevIdx(idx int) testOpt    { return func(c *testCfg) { c.devIdx = idx } }  //nolint: unused // Included for completeness and future use
-func withCompIdx(idx int) testOpt   { return func(c *testCfg) { c.compIdx = idx } } //nolint: unused // Included for completeness and future use
+func withDevIdx(idx int) testOpt    { return func(c *testCfg) { c.devIdx = idx } } //nolint: unused // Included for completeness and future use
+func withCompIdx(idx int) testOpt   { return func(c *testCfg) { c.compIdx = idx } }
 func withName(name string) testOpt  { return func(c *testCfg) { c.name = name } }
 
 func (c *testCfg) applyOpts(opts ...testOpt) {
@@ -1604,6 +1604,15 @@ func TestRasGetProperties(t *testing.T) {
 			OnSubdevice: 1,
 			SubdeviceId: 1,
 		}),
+		withCompIdx(0), withName("SuccessCorrectable"),
+	)
+	testComponentGetterSuccess(t, getRas, (*Ras).GetProperties,
+		checkValue(RasProperties{
+			Type:        RAS_ERROR_TYPE_UNCORRECTABLE,
+			OnSubdevice: 1,
+			SubdeviceId: 1,
+		}),
+		withCompIdx(1), withName("SuccessUncorrectable"),
 	)
 }
 
@@ -1629,8 +1638,16 @@ func TestRasGetState(t *testing.T) {
 	testComponentGetterSuccess(t, getRas,
 		func(r *Ras) (RasState, error) { return r.GetState(false) },
 		checkValue(RasState{
-			Category: [7]uint64{5, 6, 7, 8, 9, 10, 11},
+			Category: [7]uint64{0, 0, 0, 8, 9, 10, 11},
 		}),
+		withCompIdx(0), withName("SuccessCorrectable"),
+	)
+	testComponentGetterSuccess(t, getRas,
+		func(r *Ras) (RasState, error) { return r.GetState(false) },
+		checkValue(RasState{
+			Category: [7]uint64{3, 2, 1, 0, 0, 0, 0},
+		}),
+		withCompIdx(1), withName("SuccessUncorrectable"),
 	)
 }
 
