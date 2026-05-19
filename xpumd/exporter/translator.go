@@ -24,13 +24,18 @@ type metricsTranslator struct {
 	resp   map[string]*pb.DeviceHealth
 
 	// helpers for quick'n'easy lookups
-	health   map[string]healthStatusIndex
+	health   map[string]healthStatuses
 	memory   map[string][]*pb.MemoryInfo
 	mappings []HwStatusMapping
 }
 
-// healthStatusIndex contains health status entries for a specific device
-type healthStatusIndex map[string]*pb.HealthStatus
+type healthStatusKey struct {
+	domain string
+	state  string
+}
+
+// healthStatuses contains health status entries for a specific device
+type healthStatuses map[healthStatusKey]*pb.HealthStatus
 
 func newMetricsTranslator(logger *zap.SugaredLogger, cfg *Config) *metricsTranslator {
 	var mappings []HwStatusMapping
@@ -40,7 +45,7 @@ func newMetricsTranslator(logger *zap.SugaredLogger, cfg *Config) *metricsTransl
 	return &metricsTranslator{
 		logger:   logger,
 		resp:     make(map[string]*pb.DeviceHealth),
-		health:   make(map[string]healthStatusIndex),
+		health:   make(map[string]healthStatuses),
 		memory:   make(map[string][]*pb.MemoryInfo),
 		mappings: mappings,
 	}
@@ -81,8 +86,10 @@ func (t *metricsTranslator) fillHealthData() {
 		}
 
 		// Sort for reproducibility
-		for _, domain := range slices.Sorted(maps.Keys(health)) {
-			resp.Health = append(resp.Health, health[domain])
+		for _, k := range slices.SortedFunc(maps.Keys(health), func(a, b healthStatusKey) int {
+			return cmp.Or(cmp.Compare(a.domain, b.domain), cmp.Compare(a.state, b.state))
+		}) {
+			resp.Health = append(resp.Health, health[k])
 		}
 	}
 }
@@ -227,7 +234,7 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 
 		health := t.health[id]
 		if health == nil {
-			health = make(healthStatusIndex)
+			health = make(healthStatuses)
 			t.health[id] = health
 		}
 
@@ -235,7 +242,7 @@ func (t *metricsTranslator) updateHealthStatus(metricName string, dps pmetric.Nu
 	}
 }
 
-func (t *metricsTranslator) updateDeviceHealthStatus(healthIndex healthStatusIndex, metricName string, attrs pcommon.Map, mappings []HwStatusMapping) {
+func (t *metricsTranslator) updateDeviceHealthStatus(statuses healthStatuses, metricName string, attrs pcommon.Map, mappings []HwStatusMapping) {
 	m, ok := matchHwStatusMapping(mappings, attrs)
 	if !ok {
 		return
@@ -261,8 +268,13 @@ func (t *metricsTranslator) updateDeviceHealthStatus(healthIndex healthStatusInd
 		reason = hwState
 	}
 
-	if status, exists := healthIndex[healthDomain]; !exists {
-		healthIndex[healthDomain] = &pb.HealthStatus{
+	key := healthStatusKey{domain: healthDomain}
+	if m.ShowAllStates {
+		key.state = hwState
+	}
+
+	if status, exists := statuses[key]; !exists {
+		statuses[key] = &pb.HealthStatus{
 			Name:     healthDomain,
 			Severity: sm.severityLevel,
 			Reason:   reason,
@@ -271,9 +283,9 @@ func (t *metricsTranslator) updateDeviceHealthStatus(healthIndex healthStatusInd
 	} else if sm.severityLevel != pb.SeverityLevel_SEVERITY_LEVEL_OK {
 		// Pick the worst severity level if multiple statuses exist for the same domain
 		if sm.severityLevel > status.Severity {
-			healthIndex[healthDomain].Severity = sm.severityLevel
-			healthIndex[healthDomain].Reason = reason
-			healthIndex[healthDomain].Message = sm.Message
+			statuses[key].Severity = sm.severityLevel
+			statuses[key].Reason = reason
+			statuses[key].Message = sm.Message
 		}
 	}
 }

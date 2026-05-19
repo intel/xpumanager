@@ -86,6 +86,7 @@ documentation for details.
 | `filters` | []AttributeFilter | [] | Attribute filters that must all match for this mapping to apply (AND semantics). An empty list matches unconditionally and acts as a catch-all |
 | `health_domain` | string | *required* | [Go template](https://pkg.go.dev/text/template) for the health domain name. Attribute keys are available as template variables with dots replaced by underscores (e.g. `hw.type` -> `.hw_type`) |
 | `state_mapping` | map[string]HwStateMapping | {} | Maps `hw.state` attribute values to health status output. The special key `"*"` is a a catch-all for any state not matched by an exact key. Leaving this empty can be used to filter out certain metrics (not be picked by a catch-all mapping) |
+| `show_all_states` | bool | `false` | When `true`, all active `hw.state` values are reported as separate health status entries instead of only the one with the highest severity for each health domain. Useful when multiple concurrent issues should all be visible |
 
 #### AttributeFilter
 
