@@ -2398,6 +2398,51 @@ ze_result_t zesRasGetState(zes_ras_handle_t hRas, ze_bool_t clear, zes_ras_state
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
+ze_result_t zesRasGetStateExp(zes_ras_handle_t hRas, uint32_t *pCount, zes_ras_state_exp_t *pStates)
+{
+	sysman_state_lock();
+	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	if (!ras)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (ras->return_values.zesRasGetStateExp)
+		return sysman_unlock_and_return(ras->return_values.zesRasGetStateExp);
+	if (!pCount)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+
+	uint32_t n = ras->state_exp_count;
+	if (!pStates) {
+		*pCount = n;
+		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	}
+	n = (*pCount < n) ? *pCount : n;
+	for (uint32_t i = 0; i < n; i++)
+		pStates[i] = ras->state_exp[i];
+	*pCount = n;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesRasClearStateExp(zes_ras_handle_t hRas, zes_ras_error_category_exp_t cat)
+{
+	sysman_state_lock();
+	sysman_ras_entry_t *ras = (sysman_ras_entry_t *)resolve_handle(hRas, STUB_HANDLE_RAS);
+	if (!ras)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hRas, UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (ras->return_values.zesRasClearStateExp)
+		return sysman_unlock_and_return(ras->return_values.zesRasClearStateExp);
+
+	for (uint32_t i = 0; i < ras->state_exp_count; i++) {
+		if (ras->state_exp[i].category == cat) {
+			ras->state_exp[i].errorCounter = 0;
+			return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+		}
+	}
+	return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 // ------------------------------------------------------------------
 // Schedulers
 // ------------------------------------------------------------------

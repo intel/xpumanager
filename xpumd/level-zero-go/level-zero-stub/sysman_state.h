@@ -180,6 +180,8 @@ typedef struct
 	ze_result_t zesRasGetConfig;
 	ze_result_t zesRasSetConfig;
 	ze_result_t zesRasGetState;
+	ze_result_t zesRasGetStateExp;
+	ze_result_t zesRasClearStateExp;
 } sysman_ras_rv_t;
 
 typedef struct
@@ -371,6 +373,8 @@ typedef enum
 	UNSUPPORTED_FEATURE_RAS_GET_CONFIG,					  // RasErrorSet.GetConfig
 	UNSUPPORTED_FEATURE_RAS_SET_CONFIG,					  // RasErrorSet.SetConfig
 	UNSUPPORTED_FEATURE_RAS_GET_STATE,					  // RasErrorSet.GetState
+	UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP,					  // RasErrorSet.GetStateExp
+	UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP,				  // RasErrorSet.ClearStateExp
 	UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES,			  // Scheduler.GetProperties
 	UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE,			  // Scheduler.GetCurrentMode
 	UNSUPPORTED_FEATURE_SCHED_GET_TIMEOUT_MODE_PROPS,	  // Scheduler.GetTimeoutModeProperties
@@ -643,6 +647,8 @@ typedef struct
 	zes_ras_properties_t *properties;
 	zes_ras_config_t *config;
 	zes_ras_state_t *state;
+	uint32_t state_exp_count;
+	zes_ras_state_exp_t *state_exp;
 } sysman_ras_entry_t;
 
 typedef struct
