@@ -24,7 +24,8 @@ TRANSLATOR:
       - {action: replace, from: "^ZES_"}
       - {transform: export}
       # Ignore experimental
-      - {action: ignore, from: "_EXP_"}
+      - {action: ignore, from: "_EXP[2]?_"}
+      - {action: ignore, from: "_EXP[2]?$"}
     function:
       - {action: accept, from: "^zes[A-Z]"}
       - {transform: unexport}
@@ -59,8 +60,8 @@ TRANSLATOR:
       # Map Ze types to core package
       - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
       # Ignore experimental
-      - {action: ignore, from: "^zes_vf_handle_t$"}
       - {action: ignore, from: "_exp[2]?_"}
+      - {action: ignore, from: "^zes_vf_handle_t$"}
       # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zes_oc_mode_t$"}
       - {action: ignore, from: "^zes_oc_capabilities_t$"}
