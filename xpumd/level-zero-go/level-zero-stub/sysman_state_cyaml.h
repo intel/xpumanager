@@ -130,8 +130,9 @@ static const cyaml_schema_field_t psu_rv_fields[] = {RV(sysman_psu_rv_t, zesPsuG
 													 RV(sysman_psu_rv_t, zesPsuGetState), CYAML_FIELD_END};
 
 static const cyaml_schema_field_t ras_rv_fields[] = {
-	RV(sysman_ras_rv_t, zesRasGetProperties), RV(sysman_ras_rv_t, zesRasGetConfig),
-	RV(sysman_ras_rv_t, zesRasSetConfig), RV(sysman_ras_rv_t, zesRasGetState), CYAML_FIELD_END};
+	RV(sysman_ras_rv_t, zesRasGetProperties), RV(sysman_ras_rv_t, zesRasGetConfig), RV(sysman_ras_rv_t, zesRasSetConfig),
+	RV(sysman_ras_rv_t, zesRasGetState), RV(sysman_ras_rv_t, zesRasGetStateExp), RV(sysman_ras_rv_t, zesRasClearStateExp),
+	CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sched_rv_fields[] = {RV(sysman_sched_rv_t, zesSchedulerGetProperties),
 													   RV(sysman_sched_rv_t, zesSchedulerGetCurrentMode),
@@ -257,6 +258,8 @@ static const cyaml_strval_t device_unsupported_strvals[] = {
 	{"RasErrorSet.GetConfig", UNSUPPORTED_FEATURE_RAS_GET_CONFIG},
 	{"RasErrorSet.SetConfig", UNSUPPORTED_FEATURE_RAS_SET_CONFIG},
 	{"RasErrorSet.GetState", UNSUPPORTED_FEATURE_RAS_GET_STATE},
+	{"RasErrorSet.GetStateExp", UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP},
+	{"RasErrorSet.ClearStateExp", UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP},
 	{"Schedulers", UNSUPPORTED_FEATURE_SCHEDULERS},
 	{"Scheduler.GetProperties", UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES},
 	{"Scheduler.GetCurrentMode", UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE},
@@ -739,12 +742,19 @@ static const cyaml_schema_field_t ras_config_fields[] = {
 	CYAML_FIELD_MAPPING("DetailedThresholds", CYAML_FLAG_OPTIONAL, zes_ras_config_t, detailedThresholds,
 						ras_state_fields),
 	CYAML_FIELD_END};
+static const cyaml_schema_field_t ras_state_exp_fields[] = {
+	CYAML_FIELD_UINT("Category", CYAML_FLAG_OPTIONAL, zes_ras_state_exp_t, category),
+	CYAML_FIELD_UINT("ErrorCounter", CYAML_FLAG_OPTIONAL, zes_ras_state_exp_t, errorCounter), CYAML_FIELD_END};
+static const cyaml_schema_value_t ras_state_exp_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_ras_state_exp_t, ras_state_exp_fields)};
 static const cyaml_schema_field_t ras_entry_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_ras_entry_t, return_values, ras_rv_fields),
 	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_ras_entry_t, properties,
 							ras_properties_fields),
 	CYAML_FIELD_MAPPING_PTR("Config", SYSMAN_NULLABLE_PTR_FLAGS, sysman_ras_entry_t, config, ras_config_fields),
 	CYAML_FIELD_MAPPING_PTR("State", SYSMAN_NULLABLE_PTR_FLAGS, sysman_ras_entry_t, state, ras_state_fields),
+	CYAML_FIELD_SEQUENCE_COUNT("StateExp", SYSMAN_NULLABLE_PTR_FLAGS, sysman_ras_entry_t, state_exp,
+							   state_exp_count, &ras_state_exp_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_END};
 static const cyaml_schema_value_t ras_entry_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_ras_entry_t, ras_entry_fields)};

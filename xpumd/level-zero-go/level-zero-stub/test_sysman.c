@@ -1050,6 +1050,8 @@ static void test_error_cases(void)
 	ASSERT_ZE_RET("zesRasGetConfig: NULL handle", zesRasGetConfig(bad_ras, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesRasSetConfig: NULL handle", zesRasSetConfig(bad_ras, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesRasGetState: NULL handle", zesRasGetState(bad_ras, 0, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesRasGetStateExp: NULL handle", zesRasGetStateExp(bad_ras, 0, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesRasClearStateExp: NULL handle", zesRasClearStateExp(bad_ras, 0), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 
 	// Schedulers
 	{

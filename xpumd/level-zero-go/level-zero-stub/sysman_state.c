@@ -419,6 +419,7 @@ static void free_ras_error_sets(sysman_device_state_t *dev)
 			free(dev->ras_error_sets.entries[j].properties);
 			free(dev->ras_error_sets.entries[j].config);
 			free(dev->ras_error_sets.entries[j].state);
+			free(dev->ras_error_sets.entries[j].state_exp);
 			memset(&dev->ras_error_sets.entries[j], 0, sizeof(dev->ras_error_sets.entries[j]));
 		}
 		free(dev->ras_error_sets.entries);
