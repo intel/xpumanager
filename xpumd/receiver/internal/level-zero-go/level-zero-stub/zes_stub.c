@@ -739,7 +739,6 @@ ze_result_t zesOverclockSetControlUserValue(zes_overclock_handle_t hDomainHandle
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (oc->return_values.zesOverclockSetControlUserValue)
 		return sysman_unlock_and_return(oc->return_values.zesOverclockSetControlUserValue);
-	(void)oc;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -797,7 +796,6 @@ ze_result_t zesOverclockSetVFPointValues(zes_overclock_handle_t hDomainHandle, z
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (oc->return_values.zesOverclockSetVFPointValues)
 		return sysman_unlock_and_return(oc->return_values.zesOverclockSetVFPointValues);
-	(void)oc;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1307,7 +1305,6 @@ ze_result_t zesFabricPortSetConfig(zes_fabric_port_handle_t hPort, const zes_fab
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fp->return_values.zesFabricPortSetConfig)
 		return sysman_unlock_and_return(fp->return_values.zesFabricPortSetConfig);
-	(void)fp;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1484,7 +1481,6 @@ ze_result_t zesFanSetDefaultMode(zes_fan_handle_t hFan)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fan->return_values.zesFanSetDefaultMode)
 		return sysman_unlock_and_return(fan->return_values.zesFanSetDefaultMode);
-	(void)fan;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1499,7 +1495,6 @@ ze_result_t zesFanSetFixedSpeedMode(zes_fan_handle_t hFan, const zes_fan_speed_t
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fan->return_values.zesFanSetFixedSpeedMode)
 		return sysman_unlock_and_return(fan->return_values.zesFanSetFixedSpeedMode);
-	(void)fan;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1514,7 +1509,6 @@ ze_result_t zesFanSetSpeedTableMode(zes_fan_handle_t hFan, const zes_fan_speed_t
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fan->return_values.zesFanSetSpeedTableMode)
 		return sysman_unlock_and_return(fan->return_values.zesFanSetSpeedTableMode);
-	(void)fan;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1599,7 +1593,6 @@ ze_result_t zesFirmwareFlash(zes_firmware_handle_t hFirmware, void *pImage, uint
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fw->return_values.zesFirmwareFlash)
 		return sysman_unlock_and_return(fw->return_values.zesFirmwareFlash);
-	(void)fw;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1751,7 +1744,6 @@ ze_result_t zesFrequencySetRange(zes_freq_handle_t hFrequency, const zes_freq_ra
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (fr->return_values.zesFrequencySetRange)
 		return sysman_unlock_and_return(fr->return_values.zesFrequencySetRange);
-	(void)fr;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1880,7 +1872,6 @@ ze_result_t zesLedSetState(zes_led_handle_t hLed, ze_bool_t enable)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (led->return_values.zesLedSetState)
 		return sysman_unlock_and_return(led->return_values.zesLedSetState);
-	(void)led;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -1895,7 +1886,6 @@ ze_result_t zesLedSetColor(zes_led_handle_t hLed, const zes_led_color_t *pColor)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (led->return_values.zesLedSetColor)
 		return sysman_unlock_and_return(led->return_values.zesLedSetColor);
-	(void)led;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2071,7 +2061,6 @@ ze_result_t zesPerformanceFactorSetConfig(zes_perf_handle_t hPerf, double factor
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (pf->return_values.zesPerformanceFactorSetConfig)
 		return sysman_unlock_and_return(pf->return_values.zesPerformanceFactorSetConfig);
-	(void)pf;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2189,7 +2178,6 @@ ze_result_t zesPowerSetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (pw->return_values.zesPowerSetLimitsExt)
 		return sysman_unlock_and_return(pw->return_values.zesPowerSetLimitsExt);
-	(void)pw;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2222,7 +2210,6 @@ ze_result_t zesPowerSetEnergyThreshold(zes_pwr_handle_t hPower, double threshold
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (pw->return_values.zesPowerSetEnergyThreshold)
 		return sysman_unlock_and_return(pw->return_values.zesPowerSetEnergyThreshold);
-	(void)pw;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2385,7 +2372,6 @@ ze_result_t zesRasSetConfig(zes_ras_handle_t hRas, const zes_ras_config_t *pConf
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (ras->return_values.zesRasSetConfig)
 		return sysman_unlock_and_return(ras->return_values.zesRasSetConfig);
-	(void)ras;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2559,7 +2545,6 @@ ze_result_t zesSchedulerSetTimesliceMode(zes_sched_handle_t hScheduler, zes_sche
 		return sysman_unlock_and_return(sc->return_values.zesSchedulerSetTimesliceMode);
 	if (!pProperties || !pNeedReload)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	(void)pProperties;
 	*pNeedReload = sc->need_reload;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
@@ -2659,7 +2644,6 @@ ze_result_t zesStandbySetMode(zes_standby_handle_t hStandby, zes_standby_promo_m
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (sb->return_values.zesStandbySetMode)
 		return sysman_unlock_and_return(sb->return_values.zesStandbySetMode);
-	(void)sb;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2749,7 +2733,6 @@ ze_result_t zesTemperatureSetConfig(zes_temp_handle_t hTemperature, const zes_te
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (temp->return_values.zesTemperatureSetConfig)
 		return sysman_unlock_and_return(temp->return_values.zesTemperatureSetConfig);
-	(void)temp;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
