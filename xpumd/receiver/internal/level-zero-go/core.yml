@@ -24,6 +24,9 @@ TRANSLATOR:
       - {action: accept, from: "^ZE_DEVICE_TYPE_"}
       - {action: replace, from: "^ZE_"}
       - {transform: export}
+      # Ignore experimental
+      - {action: ignore, from: "_EXP[2]?_"}
+      - {action: ignore, from: "_EXP[2]?$"}
     function:
     type:
       - {action: accept, from: "^ze_api_version_t$"}

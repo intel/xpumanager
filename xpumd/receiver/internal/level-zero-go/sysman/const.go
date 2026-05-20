@@ -100,12 +100,6 @@ const (
 	_STRUCTURE_TYPE_RESET_PROPERTIES                        structureType = 44
 	_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES                   structureType = 45
 	_STRUCTURE_TYPE_DEVICE_UUID                             structureType = 46
-	_STRUCTURE_TYPE_MEMORY_PAGE_OFFLINE_STATE_EXP           structureType = 131075
-	_STRUCTURE_TYPE_VF_UTIL_MEM_EXP                         structureType = 131078
-	_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP                      structureType = 131079
-	_STRUCTURE_TYPE_VF_UTIL_MEM_EXP2                        structureType = 131081
-	_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2                     structureType = 131088
-	_STRUCTURE_TYPE_VF_EXP2_CAPABILITIES                    structureType = 131089
 	_STRUCTURE_TYPE_DEVICE_ECC_DEFAULT_PROPERTIES_EXT       structureType = 131090
 	_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE      structureType = 131091
 	_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES structureType = 131092

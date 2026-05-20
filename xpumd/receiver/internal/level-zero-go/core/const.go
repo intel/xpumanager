@@ -42,21 +42,6 @@ const (
 	RESULT_ERROR_DEVICE_REQUIRES_RESET Result = 1879048198
 	// [Core] device currently in low power state
 	RESULT_ERROR_DEVICE_IN_LOW_POWER_STATE Result = 1879048199
-	// [Core, Experimental] device is not represented by a fabric vertex
-	RESULT_EXP_ERROR_DEVICE_IS_NOT_VERTEX Result = 2146435073
-	// [Core, Experimental] fabric vertex does not represent a device
-	RESULT_EXP_ERROR_VERTEX_IS_NOT_DEVICE Result = 2146435074
-	// [Core, Experimental] fabric vertex represents a remote device or subdevice
-	RESULT_EXP_ERROR_REMOTE_DEVICE Result = 2146435075
-	// [Core, Experimental] operands of comparison are not compatible
-	RESULT_EXP_ERROR_OPERANDS_INCOMPATIBLE Result = 2146435076
-	// [Core, Experimental] ray tracing acceleration structure build operation failed
-	// due to insufficient resources, retry with a larger acceleration structure buffer
-	// allocation
-	RESULT_EXP_RTAS_BUILD_RETRY Result = 2146435077
-	// [Core, Experimental] ray tracing acceleration structure build operation deferred
-	// to parallel operation join
-	RESULT_EXP_RTAS_BUILD_DEFERRED Result = 2146435078
 	// [Sysman] access denied due to permission level
 	RESULT_ERROR_INSUFFICIENT_PERMISSIONS Result = 1879113728
 	// [Sysman] resource already in use and simultaneous access not allowed or resource
