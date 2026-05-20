@@ -1012,6 +1012,15 @@ type EngineExtProperties struct {
 	_                              [4]byte
 }
 
+// RasStateExp declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-exp-t
+//
+// Extension structure for providing RAS error counters for different error sets.
+type RasStateExp struct {
+	Category     RasErrorCategoryExp
+	ErrorCounter uint64
+}
+
 // InitFlags declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 //

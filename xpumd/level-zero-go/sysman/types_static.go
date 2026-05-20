@@ -182,10 +182,15 @@ func (w *Psu) setHandle(h psuHandle) {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#ras-functions
 type Ras struct {
 	handle rasHandle
+	device *Device
 }
 
 func (w *Ras) setHandle(h rasHandle) {
 	w.handle = h
+}
+
+func (w *Ras) setDevice(d *Device) {
+	w.device = d
 }
 
 // Scheduler provides access to Sysman API scheduler functions:

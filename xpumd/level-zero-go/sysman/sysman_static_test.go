@@ -374,7 +374,7 @@ func TestDriverGetExtensionProperties(t *testing.T) {
 	testDriverGetterError(t, (*Driver).GetExtensionProperties, withConfig(driverConfigDriverErrs))
 	testDriverGetterSuccess(t, (*Driver).GetExtensionProperties,
 		checkValue([]DriverExtensionProperties{
-			{Name: stringProperty[core.StringProperty256]("ZES_extension_foo"), Version: 1},
+			{Name: stringProperty[core.StringProperty256]("ZES_extension_ras_state"), Version: 1},
 			{Name: stringProperty[core.StringProperty256]("ZES_extension_bar"), Version: 2},
 		}),
 	)
@@ -1649,6 +1649,68 @@ func TestRasGetState(t *testing.T) {
 		}),
 		withCompIdx(1), withName("SuccessUncorrectable"),
 	)
+}
+
+func TestRasGetStateExp(t *testing.T) {
+	testComponentGetterError(t, getRas,
+		func(r *Ras) ([]RasStateExp, error) { return r.GetStateExp() },
+		withConfig(driverConfigComponentErrs), withError(core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS),
+	)
+	testComponentGetterSuccess(t, getRas,
+		func(r *Ras) ([]RasStateExp, error) { return r.GetStateExp() },
+		checkValue([]RasStateExp{{
+			Category:     RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS,
+			ErrorCounter: 1,
+		}, {
+			Category:     RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS,
+			ErrorCounter: 2,
+		}}),
+		withCompIdx(0), withName("SuccessCorrectable"),
+	)
+	testComponentGetterSuccess(t, getRas,
+		func(r *Ras) ([]RasStateExp, error) { return r.GetStateExp() },
+		checkValue([]RasStateExp{{
+			Category:     RAS_ERROR_CATEGORY_EXP_RESET,
+			ErrorCounter: 3,
+		}, {
+			Category:     RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS,
+			ErrorCounter: 4,
+		}}),
+		withCompIdx(1), withName("SuccessUncorrectable"),
+	)
+}
+
+func TestRasClearStateExp(t *testing.T) {
+	testComponentActionError(t, getRas,
+		func(r *Ras) error { return r.ClearStateExp(0) },
+		withConfig(driverConfigComponentErrs), withError(core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS),
+	)
+	t.Run("Success", func(t *testing.T) {
+		loadDriverConfig(t, driverConfigDefault)
+		// uncorrectable
+		states, err := getRas(t, 0, 0, 1).GetStateExp()
+		require.NoError(t, err)
+		assert.EqualExportedValues(t, []RasStateExp{{
+			Category:     RAS_ERROR_CATEGORY_EXP_RESET,
+			ErrorCounter: 3,
+		}, {
+			Category:     RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS,
+			ErrorCounter: 4,
+		}}, states)
+		// single counter reset
+		err = getRas(t, 0, 0, 1).ClearStateExp(RAS_ERROR_CATEGORY_EXP_RESET)
+		require.NoError(t, err)
+		// just that zeroed?
+		states, err = getRas(t, 0, 0, 1).GetStateExp()
+		require.NoError(t, err)
+		assert.EqualExportedValues(t, []RasStateExp{{
+			Category:     RAS_ERROR_CATEGORY_EXP_RESET,
+			ErrorCounter: 0,
+		}, {
+			Category:     RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS,
+			ErrorCounter: 4,
+		}}, states)
+	})
 }
 
 // ------------------------------------------------------------------
