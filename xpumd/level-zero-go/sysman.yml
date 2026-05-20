@@ -23,14 +23,14 @@ TRANSLATOR:
       - {action: replace, from: "^ZES_STRUCTURE_TYPE_", to: "_STRUCTURE_TYPE_"}
       - {action: replace, from: "^ZES_"}
       - {transform: export}
-      # Ignore experimental
-      - {action: ignore, from: "_EXP[2]?_"}
-      - {action: ignore, from: "_EXP[2]?$"}
+      # Ignore experimental (other than RAS)
+      - {action: ignore, from: "^ZES_[^R].*_EXP[2]?_"}
+      - {action: ignore, from: "^ZES_[^R].*_EXP[2]?$"}
     function:
       - {action: accept, from: "^zes[A-Z]"}
       - {transform: unexport}
-      # Ignore experimental
-      - {action: ignore, from: "Exp[2]?$"}
+      # Ignore experimental (other than RAS)
+      - {action: ignore, from: "^zes[^R].*Exp[2]?$"}
       - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
       # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zesDeviceGetCardPowerDomain$"}
@@ -59,8 +59,8 @@ TRANSLATOR:
       - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
       # Map Ze types to core package
       - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
-      # Ignore experimental
-      - {action: ignore, from: "_exp[2]?_"}
+      # Ignore experimental (other than RAS)
+      - {action: ignore, from: "^zes_[^r].*_exp[2]?_"}
       - {action: ignore, from: "^zes_vf_handle_t$"}
       # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zes_oc_mode_t$"}
@@ -85,6 +85,7 @@ TRANSLATOR:
       - {target: "^zesFrequencyGetAvailableClocks$", tips: [ref, ref, arr]}
       - {target: "^zesPower(Get|Set)LimitsExt$", tips: [ref, ref, arr]}
       - {target: "^zesEngineGetActivityExt$", tips: [ref, ref, arr]}
+      - {target: "^zesRasGetStateExp$", tips: [ref, ref, arr]}
       # Default tip, everything is ref
       - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
   MemTips:

@@ -9,7 +9,10 @@
 
 EventNumDeviceEvents: 0
 Drivers:
-  - ExtensionProperties: []
+  - ExtensionProperties:
+      # to get specified errors for experimental RAS APIs
+      - Name: "ZES_extension_ras_state"
+        Version: 1
     Devices:
       - ECC:
           Available: true
@@ -97,6 +100,8 @@ Drivers:
               zesRasGetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
               zesRasSetConfig: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
               zesRasGetState: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesRasGetStateExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+              zesRasClearStateExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
         Schedulers:
           - ReturnValues:
               zesSchedulerGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE

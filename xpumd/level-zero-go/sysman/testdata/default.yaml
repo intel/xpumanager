@@ -6,7 +6,7 @@
 
 Drivers:
   - ExtensionProperties:
-      - Name: "ZES_extension_foo"
+      - Name: "ZES_extension_ras_state"
         Version: 1
       - Name: "ZES_extension_bar"
         Version: 2
@@ -401,12 +401,22 @@ Drivers:
               # first 3 correctable categories are always zero:
               # https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/PROG.html#querying-ras-errors
               Category: [0, 0, 0, 8, 9, 10, 11]
+            StateExp:
+              - Category: 7 # ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS
+                ErrorCounter: 1
+              - Category: 9 # ZES_RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS
+                ErrorCounter: 2
           - Properties:
               Type: 1 # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
               OnSubdevice: true
               SubdeviceId: 1
             State:
               Category: [3, 2, 1, 0, 0, 0, 0]
+            StateExp:
+              - Category: 0 # ZES_RAS_ERROR_CATEGORY_EXP_RESET
+                ErrorCounter: 3
+              - Category: 1 # ZES_RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS
+                ErrorCounter: 4
 
         Schedulers:
           - Properties:

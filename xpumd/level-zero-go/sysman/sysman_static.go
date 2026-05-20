@@ -1027,7 +1027,7 @@ func (z *Device) EnumRasErrorSets() ([]*Ras, error) {
 	}
 	handles := make([]rasHandle, count)
 	ret := zesDeviceEnumRasErrorSets(z.handle, &count, handles)
-	return handlesToWrappers[rasHandle, Ras](handles), ret.ToError()
+	return handlesToWrappersWithDevice[rasHandle, Ras](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesRasGetProperties function:
@@ -1059,6 +1059,31 @@ func (z *Ras) GetState(resetCounters bool) (RasState, error) {
 	var state RasState
 	ret := zesRasGetState(z.handle, boolToByte(resetCounters), &state)
 	return state, ret.ToError()
+}
+
+// GetStateExp wraps the (experimental) zesRasGetStateExp function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesrasgetstateexp
+func (z *Ras) GetStateExp() ([]RasStateExp, error) {
+	if !z.device.extensions[RAS_GET_STATE_EXP_NAME] {
+		return nil, core.RESULT_ERROR_UNSUPPORTED_FEATURE
+	}
+	count := uint32(0)
+	if ret := zesRasGetStateExp(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	states := make([]RasStateExp, count)
+	ret := zesRasGetStateExp(z.handle, &count, states)
+	return states, ret.ToError()
+}
+
+// ClearStateExp wraps the (experimental) zesRasClearStateExp function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesrasclearstateexp
+func (z *Ras) ClearStateExp(cat RasErrorCategoryExp) error {
+	ret := core.RESULT_ERROR_UNSUPPORTED_FEATURE
+	if z.device.extensions[RAS_GET_STATE_EXP_NAME] {
+		ret = zesRasClearStateExp(z.handle, cat)
+	}
+	return ret.ToError()
 }
 
 // EnumSchedulers wraps the zesDeviceEnumSchedulers function:

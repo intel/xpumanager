@@ -160,6 +160,7 @@ type RasInfo struct {
 	Properties *sysman.RasProperties
 	Config     *sysman.RasConfig
 	State      *sysman.RasState
+	StateExp   []sysman.RasStateExp
 }
 
 type SchedulerInfo struct {
