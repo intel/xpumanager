@@ -275,6 +275,9 @@ Drivers:
             Range:
               Min: 800.0
               Max: 3200.0
+            State:
+              Actual: 1000.0
+              Request: 1400.0
 
         Leds:
           - Properties:
@@ -366,6 +369,9 @@ Drivers:
               SubdeviceId: 1
               CanControl: false
               IsEnergyThresholdSupported: false
+            EnergyCounter:
+              Energy: 1000000
+              Timestamp: 123456789
 
         Psus:
           - Properties:
@@ -551,6 +557,9 @@ Drivers:
                   Interval: 250
                   LimitValueLocked: true
                   Limit: 150000
+            EnergyCounter:
+              Energy: 150000
+              Timestamp: 123456789
         Psus: []
         RasErrorSets: []
         Schedulers: []
