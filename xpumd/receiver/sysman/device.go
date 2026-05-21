@@ -10,6 +10,7 @@ import (
 	"iter"
 	"net/url"
 	"strings"
+	"sync"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
@@ -28,6 +29,7 @@ type driver struct {
 }
 
 type device struct {
+	sync.RWMutex
 	*l0sysman.Device
 	logger     *zap.SugaredLogger
 	attributes deviceAttributes
@@ -145,36 +147,54 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 	return devs, nil
 }
 
+// newDevice creates a new device. Use init() to scan the device.
 func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*device, error) {
-	props, err := dev.GetProperties()
-	if err != nil {
-		return nil, fmt.Errorf("device GetProperties() failed: %w", err)
-	}
-
 	d := &device{
 		Device: dev,
 		logger: logger,
 		attributes: deviceAttributes{
-			// TODO: use (Sysman ext) props.Uuid.Id.String()?
-			hwID:           props.Core.Uuid.Id.String(),
-			hwName:         name,
-			hwNamePci:      name + "-pci",
-			pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
-			pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
-			hwModel:        props.ModelName.String(),
-			hwSerialNumber: props.SerialNumber.String(),
-			hwVendor:       props.VendorName.String(),
-			subDevCount:    int64(props.NumSubdevices),
-			hwGpuType:      gpuType(props.Flags),
-			demandPaging:   props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
-		},
-		state: deviceState{
-			ecc: &eccState{
-				states: map[string]bool{},
-			},
+			hwName:    name,
+			hwNamePci: name + "-pci",
 		},
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
 	}
+
+	if err := d.init(); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// init scans and initializes the device attributes, state and scrapers. May be
+// called multiple times for re-scanning. Transactional: on error the device is not altered.
+// Must be called with device lock held.
+func (d *device) init() error {
+	props, err := d.GetProperties()
+	if err != nil {
+		return fmt.Errorf("device GetProperties() failed: %w", err)
+	}
+
+	// Preserve name fields assigned at construction, refresh everything else.
+	d.attributes = deviceAttributes{
+		hwName:    d.attributes.hwName,
+		hwNamePci: d.attributes.hwNamePci,
+		// TODO: use (Sysman ext) props.Uuid.Id.String()?
+		hwID:           props.Core.Uuid.Id.String(),
+		pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
+		pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
+		hwModel:        props.ModelName.String(),
+		hwSerialNumber: props.SerialNumber.String(),
+		hwVendor:       props.VendorName.String(),
+		subDevCount:    int64(props.NumSubdevices),
+		hwGpuType:      gpuType(props.Flags),
+		demandPaging:   props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
+	}
+	d.state = deviceState{
+		ecc: &eccState{
+			states: map[string]bool{},
+		},
+	}
+	d.scrapers = nil
 
 	_ = d.updateEccState()
 	if d.state.ecc.configurable {
@@ -190,9 +210,9 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 	}
 	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
 
-	// get device PCI attributes
-	if pci, err := dev.PciGetProperties(); err != nil {
-		logger.Errorw("Device PciGetProperties() failed: no PCI attributes", "error", err, "deviceAttributes", d.attributes)
+	// Get device PCI attributes
+	if pci, err := d.PciGetProperties(); err != nil {
+		d.logger.Errorw("Device PciGetProperties() failed: no PCI attributes", "error", err, "deviceAttributes", d.attributes)
 	} else {
 		d.attributes.pciBDF = fmt.Sprintf("%04x:%02x:%02x.%x", pci.Address.Domain, pci.Address.Bus, pci.Address.Device, pci.Address.Function)
 		if pci.MaxSpeed.Gen > 0 {
@@ -207,7 +227,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			d.logger.Infow("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
 		}
 		if pci.HaveBandwidthCounters != 0 {
-			if stats, err := dev.PciGetStats(); err == nil {
+			if stats, err := d.PciGetStats(); err == nil {
 				d.state.pci.stats = &stats
 			} else {
 				d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
@@ -217,7 +237,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		}
 	}
 
-	// check device + PCI state availability
+	// Check device + PCI state availability
 	if _, err := d.GetState(); err != nil {
 		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "deviceAttributes", d.attributes)
 		d.state.devStateDisabled = true
@@ -234,7 +254,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
 	}
 
-	return d, nil
+	return nil
 }
 
 func gpuType(flags l0sysman.DevicePropertyFlags) metadata.AttributeHwGpuType {
@@ -250,6 +270,7 @@ func gpuType(flags l0sysman.DevicePropertyFlags) metadata.AttributeHwGpuType {
 	}
 }
 
+// updateEccState updates the ECC state of the device. Must be called with device lock held.
 func (d *device) updateEccState() error {
 	configurable := false
 	retval := error(nil)
@@ -284,6 +305,9 @@ func (d *device) updateEccState() error {
 }
 
 func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	d.RLock()
+	defer d.RUnlock()
+
 	if d.state.ecc.configurable {
 		err := d.updateEccState()
 		if !d.state.ecc.configurable {
@@ -527,6 +551,8 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 }
 
 func (d *device) pollAggregatedMetrics() {
+	d.RLock()
+	defer d.RUnlock()
 	for _, s := range d.scrapers {
 		s.pollAggregatedMetrics()
 	}

@@ -138,40 +138,59 @@ func (r *sysmanEventsReceiver) runEventListener(ctx context.Context, drv *driver
 		sl := rl.ScopeLogs().AppendEmpty()
 		sl.Scope().SetName(metadata.ScopeName)
 
-		appendDeviceEventLogs(sl, drv.devices, deviceEvents)
+		ts := pcommon.NewTimestampFromTime(time.Now())
 
+		for i, flags := range deviceEvents {
+			if flags != 0 {
+				appendDeviceEventLogs(sl, drv.devices[i], flags, ts)
+			}
+		}
 		if err := r.consumer.ConsumeLogs(ctx, ld); err != nil {
 			r.logger.Warnw("ConsumeLogs failed", zap.Error(err))
+		}
+
+		// Rescan on DEVICE_ATTACH, after ConsumeLogs so that events are
+		// delivered before re-init (case of hangs or crashes).
+		// NOTE: rescan is inline here for simplicity; it stalls event processing
+		// for this driver briefly. If that proves disruptive, move to a
+		// dedicated per-device worker goroutine with a coalescing channel.
+		for i, flags := range deviceEvents {
+			if flags&l0sysman.EventTypeFlags(l0sysman.EVENT_TYPE_FLAG_DEVICE_ATTACH) != 0 {
+				dev := drv.devices[i]
+				dev.Lock()
+				r.logger.Infow("Rescanning device on DEVICE_ATTACH", "deviceAttributes", dev.attributes)
+				if err := dev.init(); err != nil {
+					r.logger.Errorw("Device rescan failed", zap.Error(err))
+				} else {
+					r.logger.Debugw("Device rescanned successfully", "deviceAttributes", dev.attributes)
+				}
+				dev.Unlock()
+			}
 		}
 	}
 }
 
-func appendDeviceEventLogs(sl plog.ScopeLogs, devices []*device, deviceEvents []l0sysman.EventTypeFlags) {
-	ts := pcommon.NewTimestampFromTime(time.Now())
+func appendDeviceEventLogs(sl plog.ScopeLogs, dev *device, flags l0sysman.EventTypeFlags, ts pcommon.Timestamp) {
+	dev.RLock()
+	defer dev.RUnlock()
+	attrs := dev.attributes
 
-	for i, flags := range deviceEvents {
-		if flags == 0 {
-			continue
-		}
-		attrs := devices[i].attributes
-		// Decode each flag as a separate log record.
-		for _, flag := range flags.Bits() {
-			lr := sl.LogRecords().AppendEmpty()
-			lr.SetTimestamp(ts)
-			sev := eventSeverity(flag)
-			lr.SetSeverityNumber(sev)
-			lr.SetSeverityText(sev.String())
-			lr.SetEventName(common.EventNamePrefix + flag.String())
-			lr.Body().SetStr(flag.String())
+	for _, flag := range flags.Bits() {
+		lr := sl.LogRecords().AppendEmpty()
+		lr.SetTimestamp(ts)
+		sev := eventSeverity(flag)
+		lr.SetSeverityNumber(sev)
+		lr.SetSeverityText(sev.String())
+		lr.SetEventName(common.EventNamePrefix + flag.String())
+		lr.Body().SetStr(flag.String())
 
-			lrAttrs := lr.Attributes()
-			lrAttrs.PutStr("hw.id", attrs.hwID)
-			lrAttrs.PutStr("hw.name", attrs.hwName)
-			lrAttrs.PutStr("hw.model", attrs.hwModel)
-			lrAttrs.PutStr("pci.bdf", attrs.pciBDF)
-			lrAttrs.PutStr("pci.device_id", attrs.pciDeviceID)
-			lrAttrs.PutStr("pci.vendor_id", attrs.pciVendorID)
-		}
+		lrAttrs := lr.Attributes()
+		lrAttrs.PutStr("hw.id", attrs.hwID)
+		lrAttrs.PutStr("hw.name", attrs.hwName)
+		lrAttrs.PutStr("hw.model", attrs.hwModel)
+		lrAttrs.PutStr("pci.bdf", attrs.pciBDF)
+		lrAttrs.PutStr("pci.device_id", attrs.pciDeviceID)
+		lrAttrs.PutStr("pci.vendor_id", attrs.pciVendorID)
 	}
 }
 
