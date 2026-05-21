@@ -18,8 +18,8 @@ require (
 	github.com/google/go-licenses/v2 v2.0.1
 	github.com/losisin/helm-values-schema-json/v2 v2.3.1
 	github.com/norwoodj/helm-docs v1.14.2
-	go.opentelemetry.io/collector/cmd/builder v0.152.0
-	go.opentelemetry.io/collector/cmd/mdatagen v0.152.0
+	go.opentelemetry.io/collector/cmd/builder v0.152.1
+	go.opentelemetry.io/collector/cmd/mdatagen v0.152.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0
 	google.golang.org/protobuf v1.36.11
 )
@@ -246,8 +246,8 @@ require (
 	go.opentelemetry.io/collector/confmap v1.58.0 // indirect
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.58.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.58.0 // indirect
-	go.opentelemetry.io/collector/filter v0.152.0 // indirect
-	go.opentelemetry.io/collector/internal/schemagen v0.152.0 // indirect
+	go.opentelemetry.io/collector/filter v0.152.1 // indirect
+	go.opentelemetry.io/collector/internal/schemagen v0.152.1 // indirect
 	go.opentelemetry.io/collector/pdata v1.58.0 // indirect
 	go.opentelemetry.io/otel v1.43.0 // indirect
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
