@@ -45,132 +45,59 @@ static std::unordered_map<discCmdType, discoveryCmdStruct> discCmds = {
 	 {{"listamcversions", no_argument, 0, 0}, &cmdDiscovery::listamcversions, nullptr, false, ""}},
 };
 
-static std::unordered_map<int, discoveryDumpStruct> discDumpCmds = {
-	{DUMP_DEVICEID, {&cmdDiscovery::deviceID, "Device ID"}},
-	{DUMP_DEVICENAME, {&cmdDiscovery::deviceName, "Device Name"}},
-	{DUMP_VENDORNAME, {&cmdDiscovery::vendorName, "Vendor Name"}},
-	{DUMP_SOCUUID, {&cmdDiscovery::socUuid, "SOC UUID"}},
-	{DUMP_SERIALNUMBER, {&cmdDiscovery::serialNumber, "Serial Number"}},
-	{DUMP_CORECLOCKRATE, {&cmdDiscovery::coreClockRate, "Core Clock Rate"}},
-	{DUMP_STEPPING, {&cmdDiscovery::stepping, "Stepping"}},
-	{DUMP_DRIVERVERSION, {&cmdDiscovery::driverVersion, "Driver Version"}},
-	{DUMP_GFXFIRMWAREVERSION, {&cmdDiscovery::gfxFirmwareVersion, "GFX Firmware Version"}},
-	{DUMP_GFXDATAFIRMWAREVERSION, {&cmdDiscovery::gfxDataFirmwareVersion, "GFX Data Firmware Version"}},
-	{DUMP_PCIBDFADDRESS, {&cmdDiscovery::pciBDFAddress, "PCI BDF Address"}},
-	{DUMP_PCISLOT, {&cmdDiscovery::pciSlot, "PCI Slot"}},
-	{DUMP_PCIEGENERATION, {&cmdDiscovery::pcieGeneration, "PCIe Generation"}},
-	{DUMP_PCIEMAXLINKWIDTH, {&cmdDiscovery::pcieMaxLinkWidth, "PCIe Max Link Width"}},
-	{DUMP_OAMSOCID, {&cmdDiscovery::oamSocketID, "OAM Socket ID"}},
-	{DUMP_MEMORYPHYSICALSIZE, {&cmdDiscovery::memoryPhysicalSize, "Memory Physical Size"}},
-	{DUMP_MEMORYCHANNELS, {&cmdDiscovery::memoryChannels, "Number of Memory Channels"}},
-	{DUMP_MEMORYBUSWIDTH, {&cmdDiscovery::memoryBusWidth, "Memory Bus Width"}},
-	{DUMP_EUS, {&cmdDiscovery::eus, "Number of EUs"}},
-	{DUMP_MEDIAENGINES, {&cmdDiscovery::mediaEngines, "Number of Media Engines"}},
-	{DUMP_MEDIAENHANCEMENTENGINES, {&cmdDiscovery::mediaEnhancementEngines, "Number of Media Enhancement Engines"}},
-	{DUMP_GFXFIRMWARESTATUS, {&cmdDiscovery::gfxFirmwareStatus, "GFX Firmware Status"}},
-	{DUMP_PCIVENDORID, {&cmdDiscovery::pciVendorID, "PCI Vendor ID"}},
-	{DUMP_PCIDEVICEID, {&cmdDiscovery::pciDeviceID, "PCI Device ID"}},
-	{DUMP_NUMBEROFTILES, {&cmdDiscovery::numberOfTiles, "Number of Tiles"}},
-	{DUMP_NUMBEROFSLICES, {&cmdDiscovery::numberOfSlices, "Number of Slices"}},
-	{DUMP_NUMBEROFSUBSLICESPERSLICE, {&cmdDiscovery::numberOfSubslicesPerSlice, "Number of Sub-slices per Slice"}},
-	{DUMP_NUMBEROFEUS_PERSUBSLICE, {&cmdDiscovery::numberOfEUsPerSubslice, "Number of EUs per Sub-slice"}},
-	{DUMP_NUMBEROFTHREADSPEREU, {&cmdDiscovery::numberOfThreadsPerEU, "Number of Threads per EU"}},
-	{DUMP_PHYSICALEUSIMDWIDTH, {&cmdDiscovery::physicalEUSimdWidth, "Physical EU SIMD Width"}},
-	{DUMP_MAXCOMMANDQUEUEPRIORITY, {&cmdDiscovery::maxCommandQueuePriority, "Max Command Queue Priority"}},
-	{DUMP_MAXHARDWARECONTEXTS, {&cmdDiscovery::maxHardwareContexts, "Max Hardware Contexts"}},
-	{DUMP_MAXMEMALLOCSIZE, {&cmdDiscovery::maxMemAllocSize, "Max Memory Alloc Size"}},
-	{DUMP_MEMORYFREESIZE, {&cmdDiscovery::memoryFreeSize, "Memory Free Size"}},
-	{DUMP_MEMORYECCSTATE, {&cmdDiscovery::memoryEccState, "Memory ECC State"}},
-	{DUMP_KERNELVERSION, {&cmdDiscovery::kernelVersion, "Kernel Version"}},
-	{DUMP_DRMDEVICE, {&cmdDiscovery::drmDevice, "DRM Device"}},
-	{DUMP_DEVICETYPE, {&cmdDiscovery::deviceType, "Device Type"}},
-	{DUMP_SKUTYPE, {&cmdDiscovery::skuType, "SKU Type"}},
-	{DUMP_PCIEMAXBANDWIDTH, {&cmdDiscovery::pcieMaxBandwidth, "PCIe Max Bandwidth"}},
-	{DUMP_AMCFIRMWARENAME, {&cmdDiscovery::amcFirmwareName, "AMC Firmware Name"}},
-	{DUMP_AMCFIRMWAREVERSION, {&cmdDiscovery::amcFirmwareVersion, "AMC Firmware Version"}},
-	{DUMP_GFXPSCBINFIRMWARENAME, {&cmdDiscovery::gfxPscBinFirmwareName, "GFX PSCBIN Firmware Name"}},
-	{DUMP_GFXPSCBINFIRMWAREVERSION, {&cmdDiscovery::gfxPscBinFirmwareVersion, "GFX PSCBIN Firmware Version"}},
-	{DUMP_OPROMCODEFIRMWARENAME, {&cmdDiscovery::opromCodeFirmwareName, "OPROM CODE Firmware Name"}},
-	{DUMP_OPROMCODEFIRMWAREVERSION, {&cmdDiscovery::opromCodeFirmwareVersion, "OPROM CODE Firmware Version"}},
-	{DUMP_OPROMDATAFIRMWARENAME, {&cmdDiscovery::opromDataFirmwareName, "OPROM DATA Firmware Name"}},
-	{DUMP_OPROMDATAFIRMWAREVERSION, {&cmdDiscovery::opromDataFirmwareVersion, "OPROM DATA Firmware Version"}},
-};
-
-/**
- * @brief Helper function to convert internal JSON keys to user-friendly display names
- *
- * @param key The internal JSON key
- * @return std::string The user-friendly display name
- */
-std::string getDisplayName(const std::string &key)
-{
-	static const std::unordered_map<std::string, std::string> keyDisplayMap = {
-		// clang-format off
-		{"device_id", "Device ID"},
-		{"device_name", "Device Name"},
-		{"device_state", "Device State"},
-		{"vendor_name", "Vendor Name"},
-		{"uuid", "UUID"},
-		{"pci_bdf_address", "PCI BDF Address"},
-		{"drm_device_path", "DRM Device"},
-		{"device_function_type", "Function Type"},
-		{"survivability_mode", "Survivability mode"},
-		{"serial_number", "Serial Number"},
-		{"core_clock_rate", "Core Clock Rate"},
-		{"device_stepping", "Stepping"},
-		{"driver_version", "Driver Version"},
-		{"gfx_firmware_version", "GFX Firmware Version"},
-		{"gfx_data_firmware_version", "GFX Data Firmware Version"},
-		{"pci_slot", "PCI Slot"},
-		{"pcie_generation", "PCIe Generation"},
-		{"pcie_max_link_width", "PCIe Max Link Width"},
-		{"oam_socket_id", "OAM Socket ID"},
-		{"memory_physical_size", "Memory Physical Size"},
-		{"memory_physical_size_byte", "Memory Physical Size"},
-		{"number_of_memory_channels", "Number of Memory Channels"},
-		{"memory_bus_width", "Memory Bus Width"},
-		{"number_of_eus", "Number of EUs"},
-		{"number_of_media_engines", "Number of Media Engines"},
-		{"number_of_media_enh_engines", "Number of Media Enhancement Engines"},
-		{"gfx_firmware_status", "GFX Firmware Status"},
-		{"pci_vendor_id", "PCI Vendor ID"},
-		{"pci_device_id", "PCI Device ID"},
-		{"number_of_tiles", "Number of Tiles"},
-		{"number_of_slices", "Number of Slices"},
-		{"number_of_sub_slices_per_slice", "Number of Sub-slices per Slice"},
-		{"number_of_eus_per_sub_slice", "Number of EUs per Sub-slice"},
-		{"number_of_threads_per_eu", "Number of Threads per EU"},
-		{"physical_eu_simd_width", "Physical EU SIMD Width"},
-		{"max_command_queue_priority", "Max Command Queue Priority"},
-		{"max_hardware_contexts", "Max Hardware Contexts"},
-		{"max_mem_alloc_size_byte", "Max Memory Alloc Size"},
-		{"memory_free_size_byte", "Memory Free Size"},
-		{"memory_ecc_state", "Memory ECC State"},
-		{"kernel_version", "Kernel Version"},
-		{"drm_device", "DRM Device"},
-		{"device_type", "Device Type"},
-		{"sku_type", "SKU Type"},
-		{"pcie_max_bandwidth", "PCIe Max Bandwidth"},
-		{"amc_firmware_name", "AMC Firmware Name"},
-		{"amc_firmware_version", "AMC Firmware Version"},
-		{"gfx_pscbin_firmware_name", "GFX PSCBIN Firmware Name"},
-		{"gfx_pscbin_firmware_version", "GFX PSCBIN Firmware Version"},
-		{"oprom_code_firmware_name", "OPROM CODE Firmware Name"},
-		{"oprom_code_firmware_version", "OPROM CODE Firmware Version"},
-		{"oprom_data_firmware_name", "OPROM DATA Firmware Name"},
-		{"oprom_data_firmware_version", "OPROM DATA Firmware Version"},
-		{"gfx_firmware_name", "GFX Firmware Name"},
-		{"gfx_data_firmware_name", "GFX Data Firmware Name"},
-		// clang-format on
-	};
-
-	auto it = keyDisplayMap.find(key);
-	if (it != keyDisplayMap.end()) {
-		return it->second;
-	}
-	// If key not found in map, return the original key (fallback)
-	return key;
-}
+// Array indexed by discDumpType enum value (1-based; slot 0 unused).
+// Direct O(1) lookup by property ID replaces the former unordered_map linear scan.
+static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> discDumpCmds{{
+	{nullptr, ""},																	 // 0 – unused
+	{&cmdDiscovery::deviceID, "Device ID"},											 // 1
+	{&cmdDiscovery::deviceName, "Device Name"},										 // 2
+	{&cmdDiscovery::vendorName, "Vendor Name"},										 // 3
+	{&cmdDiscovery::socUuid, "SOC UUID"},											 // 4
+	{&cmdDiscovery::serialNumber, "Serial Number"},									 // 5
+	{&cmdDiscovery::coreClockRate, "Core Clock Rate"},								 // 6
+	{&cmdDiscovery::stepping, "Stepping"},											 // 7
+	{&cmdDiscovery::driverVersion, "Driver Version"},								 // 8
+	{&cmdDiscovery::gfxFirmwareVersion, "GFX Firmware Version"},					 // 9
+	{&cmdDiscovery::gfxDataFirmwareVersion, "GFX Data Firmware Version"},			 // 10
+	{&cmdDiscovery::pciBDFAddress, "PCI BDF Address"},								 // 11
+	{&cmdDiscovery::pciSlot, "PCI Slot"},											 // 12
+	{&cmdDiscovery::pcieGeneration, "PCIe Generation"},								 // 13
+	{&cmdDiscovery::pcieMaxLinkWidth, "PCIe Max Link Width"},						 // 14
+	{&cmdDiscovery::oamSocketID, "OAM Socket ID"},									 // 15
+	{&cmdDiscovery::memoryPhysicalSize, "Memory Physical Size"},					 // 16
+	{&cmdDiscovery::memoryChannels, "Number of Memory Channels"},					 // 17
+	{&cmdDiscovery::memoryBusWidth, "Memory Bus Width"},							 // 18
+	{&cmdDiscovery::eus, "Number of EUs"},											 // 19
+	{&cmdDiscovery::mediaEngines, "Number of Media Engines"},						 // 20
+	{&cmdDiscovery::mediaEnhancementEngines, "Number of Media Enhancement Engines"}, // 21
+	{&cmdDiscovery::gfxFirmwareStatus, "GFX Firmware Status"},						 // 22
+	{&cmdDiscovery::pciVendorID, "PCI Vendor ID"},									 // 23
+	{&cmdDiscovery::pciDeviceID, "PCI Device ID"},									 // 24
+	{&cmdDiscovery::numberOfTiles, "Number of Tiles"},								 // 25
+	{&cmdDiscovery::numberOfSlices, "Number of Slices"},							 // 26
+	{&cmdDiscovery::numberOfSubslicesPerSlice, "Number of Sub-slices per Slice"},	 // 27
+	{&cmdDiscovery::numberOfEUsPerSubslice, "Number of EUs per Sub-slice"},			 // 28
+	{&cmdDiscovery::numberOfThreadsPerEU, "Number of Threads per EU"},				 // 29
+	{&cmdDiscovery::physicalEUSimdWidth, "Physical EU SIMD Width"},					 // 30
+	{&cmdDiscovery::maxCommandQueuePriority, "Max Command Queue Priority"},			 // 31
+	{&cmdDiscovery::maxHardwareContexts, "Max Hardware Contexts"},					 // 32
+	{&cmdDiscovery::maxMemAllocSize, "Max Memory Alloc Size"},						 // 33
+	{&cmdDiscovery::memoryFreeSize, "Memory Free Size"},							 // 34
+	{&cmdDiscovery::memoryEccState, "Memory ECC State"},							 // 35
+	{&cmdDiscovery::kernelVersion, "Kernel Version"},								 // 36
+	{&cmdDiscovery::drmDevice, "DRM Device"},										 // 37
+	{&cmdDiscovery::deviceType, "Device Type"},										 // 38
+	{&cmdDiscovery::skuType, "SKU Type"},											 // 39
+	{&cmdDiscovery::pcieMaxBandwidth, "PCIe Max Bandwidth"},						 // 40
+	{&cmdDiscovery::amcFirmwareName, "AMC Firmware Name"},							 // 41
+	{&cmdDiscovery::amcFirmwareVersion, "AMC Firmware Version"},					 // 42
+	{&cmdDiscovery::gfxPscBinFirmwareName, "GFX PSCBIN Firmware Name"},				 // 43
+	{&cmdDiscovery::gfxPscBinFirmwareVersion, "GFX PSCBIN Firmware Version"},		 // 44
+	{&cmdDiscovery::opromCodeFirmwareName, "OPROM Code Firmware Name"},				 // 45
+	{&cmdDiscovery::opromCodeFirmwareVersion, "OPROM Code Firmware Version"},		 // 46
+	{&cmdDiscovery::opromDataFirmwareName, "OPROM Data Firmware Name"},				 // 47
+	{&cmdDiscovery::opromDataFirmwareVersion, "OPROM Data Firmware Version"},		 // 48
+}};
 
 /**
  * @brief Constructor for DiscoveryTextPrinter class
@@ -403,30 +330,10 @@ void cmdDiscovery::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "--vf,--virtualFunction      Display the virtual functions only"));
 	helpList.push_back(helpCmd(HEADING, "--dump                      Property ID to dump device properties in CSV "
 										"format. Separated by the comma. \"-1\" means all properties"));
-	helpList.push_back(helpCmd(SUB_HEADING, "1. Device ID"));
-	helpList.push_back(helpCmd(SUB_HEADING, "2. Device Name"));
-	helpList.push_back(helpCmd(SUB_HEADING, "3. Vendor Name"));
-	helpList.push_back(helpCmd(SUB_HEADING, "4. SOC UUID"));
-	helpList.push_back(helpCmd(SUB_HEADING, "5. Serial Number"));
-	helpList.push_back(helpCmd(SUB_HEADING, "6. Core Clock Rate"));
-	helpList.push_back(helpCmd(SUB_HEADING, "7. Stepping"));
-	helpList.push_back(helpCmd(SUB_HEADING, "8. Driver Version"));
-	helpList.push_back(helpCmd(SUB_HEADING, "9. GFX Firmware Version"));
-	helpList.push_back(helpCmd(SUB_HEADING, "10. GFX Data Firmware Version"));
-	helpList.push_back(helpCmd(SUB_HEADING, "11. PCI BDF Address"));
-	helpList.push_back(helpCmd(SUB_HEADING, "12. PCI Slot"));
-	helpList.push_back(helpCmd(SUB_HEADING, "13. PCIe Generation"));
-	helpList.push_back(helpCmd(SUB_HEADING, "14. PCIe Max Link Width"));
-	helpList.push_back(helpCmd(SUB_HEADING, "15. OAM Socket ID"));
-	helpList.push_back(helpCmd(SUB_HEADING, "16. Memory Physical Size"));
-	helpList.push_back(helpCmd(SUB_HEADING, "17. Number of Memory Channels"));
-	helpList.push_back(helpCmd(SUB_HEADING, "18. Memory Bus Width"));
-	helpList.push_back(helpCmd(SUB_HEADING, "19. Number of EUs"));
-	helpList.push_back(helpCmd(SUB_HEADING, "20. Number of Media Engines"));
-	helpList.push_back(helpCmd(SUB_HEADING, "21. Number of Media Enhancement Engines"));
-	helpList.push_back(helpCmd(SUB_HEADING, "22. GFX Firmware Status"));
-	helpList.push_back(helpCmd(SUB_HEADING, "23. PCI Vendor ID"));
-	helpList.push_back(helpCmd(SUB_HEADING, "24. PCI Device ID"));
+
+	for (int propId = 1; propId < TOTAL_DISC_DUMPS; propId++) {
+		helpList.push_back(helpCmd(SUB_HEADING, std::format("{}. {}", propId, discDumpCmds[propId].heading).c_str()));
+	}
 	helpList.push_back(helpCmd(HEADING, "--listamcversions           Show all AMC firmware versions"));
 
 	printHelp(helpList, helpType);
@@ -472,10 +379,10 @@ ze_result_t cmdDiscovery::preCheck(std::vector<int> *dumpArgs)
 		}
 	}
 
-	// Check if each dump command argument is a number between 1 and TOTAL_DISC_DUMPS
+	// Valid IDs are 1..(TOTAL_DISC_DUMPS-1); TOTAL_DISC_DUMPS itself is the sentinel, not a valid property.
 	for (const auto arg : *dumpArgs) {
-		if (arg < DUMP_DEVICEID || arg > TOTAL_DISC_DUMPS) {
-			ERR("Invalid dump command argument '{}'. It must be between 1 and {}\n", arg, TOTAL_DISC_DUMPS);
+		if (arg < DUMP_DEVICEID || arg >= TOTAL_DISC_DUMPS) {
+			ERR("Invalid dump command argument '{}'. It must be between 1 and {}\n", arg, TOTAL_DISC_DUMPS - 1);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
@@ -505,12 +412,8 @@ ze_result_t cmdDiscovery::dumpHeading(nlohmann::ordered_json *jsonObj)
 	}
 
 	for (const auto arg : dumpArgs) {
-		for (const auto &cmd : discDumpCmds) {
-			if (cmd.first == arg) {
-				found = true;
-				headingJson->push_back(cmd.second.heading);
-			}
-		}
+		found = true;
+		headingJson->push_back(discDumpCmds[arg].heading);
 	}
 
 	if (!found) {
@@ -548,19 +451,14 @@ ze_result_t cmdDiscovery::dump(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	std::string outputLine;
 	for (const auto arg : dumpArgs) {
-		for (const auto &cmd : discDumpCmds) {
-			if (cmd.first == arg) {
-				DBG("Running command: {}\n", cmd.first);
-				result = (this->*cmd.second.func)(d, &outputLine);
-				if (result != ZE_RESULT_SUCCESS) {
-					return result;
-				}
-				valuesJson->push_back(outputLine);
-				// Set found to true to indicate that we have printed at least one command
-				found = true;
-				break;
-			}
+		const auto &cmd = discDumpCmds[arg];
+		DBG("Running command: {}\n", arg);
+		result = (this->*cmd.func)(d, &outputLine);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
 		}
+		valuesJson->push_back(outputLine);
+		found = true;
 	}
 
 	if (!found) {
